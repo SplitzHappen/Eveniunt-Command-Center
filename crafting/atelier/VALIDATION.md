@@ -12,7 +12,7 @@ Build `dist/eveniunt-atelier.html` (6.96 MB). Raphael commit `723b17e`. Date 202
 | Crafter config in Raphael's RON format | Pastes in and copies out |
 | Coverage | 13,892 recipes, 544 expert recipes, all stellar missions, 100 foods and 24 medicines, 7 languages (data and Raphael's UI strings) |
 
-## Automated tests (`tests/atelier.test.js`, 10/10 pass; Chromium from `file://`, every non-local request aborted)
+## Automated tests (`tests/atelier.test.js`, 11/11 pass; Chromium from `file://`, every non-local request aborted)
 
 1. Opens offline: no external scripts, stylesheets or requests; no console errors.
 2. Solver parity (above).
@@ -45,3 +45,4 @@ Boot takes about 0.7 s (compiling 5 MB of WebAssembly). The build uses SIMD, bul
 - The live site could not be opened from the build environment, so parity is with Raphael's source code, not a visual comparison with raphael-xiv.com.
 9. Closing the guide returns to the workbook: the big banner becomes a slim line, "Use the macro anyway" removes the grey-out, reopening resumes at the same step, and Esc closes.
 10. The guide opens inside the workbook (not a separate page). Appearance: three Mode tiles, only the 20 FFXIV themes (no ChatGPT or Codex themes; default Crystarium Dawnglass) (Abyssal Oath checked, logo colour follows it) (Dracula light and dark checked), custom accent and background by HEX and RGB kept in sync, separate light and dark modes, reduce motion, code font size; native dropdown lists use the theme colours.
+11. Installable app: `site/` is served over plain HTTP like GitHub Pages, with no special headers. The test checks that the manifest is valid, the service worker makes the page cross-origin isolated after its single automatic reload, the solver starts with more than one thread, recipe 38200 solves to the native CLI's quality (19,710, 34 steps), and the app reloads and works with the network cut.

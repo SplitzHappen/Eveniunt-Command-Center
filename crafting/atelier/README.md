@@ -19,6 +19,19 @@ On a wide screen, **01 Recipe** and **02 Crafter stats** sit side by side, and *
 
 **Live guide.** It opens inside the workbook, just above the Macro section. It shows one big action at a time, with its in-game icon. After doing it in game, tap the new condition, or press its key (N G E P C S L M R O B; hold Shift if a risky action failed; U undoes; Esc closes). **Correct state** fixes any drift. **Skip to the step-by-step guide** is always available on expert recipes, so a timed mission never waits on a solve.
 
+## Installable app
+
+The same Atelier also runs as an installable web app from the public repository SplitzHappen/Eveniunt-Command-Center, published to GitHub Pages at `/atelier/`.
+- **Install:** click **Install app** in the header, or use the browser's install icon. It works offline after the first visit.
+- **Multi-core solving:** the service worker (`site-src/sw.js`) adds the cross-origin isolation headers that GitHub Pages cannot send. With them, the solver runs Raphael's multi-threaded build (`tools/build-wasm-mt.sh`, the same flags as raphael-xiv.com) in a module worker (`site-src/solver-worker.js`).
+- **Speed:** on a 4-core test machine the hardest test recipe (38200, Auxesia Master, 34 steps) took 18.1 s on 1 browser thread, 13.2 s on 2 and 11.6 s on 4. The plain single-core file takes 15.3 s, so the browser gain is about 25%. Raphael's native program does 13.8 s → 7.4 s on the same machine. Browser threads carry overhead, so more cores help, but not twice as much.
+- **Build:**
+  1. `tools/build-wasm-mt.sh` (nightly-2026-05-10, rust-src)
+  2. `node tools/build.js`
+  3. `FONT_DIR=… node tools/make-icons.js` (icons only)
+  4. `node tools/build-site.js`, which writes `site/`
+- **Publish:** `../tools/publish-public.sh <clone of Eveniunt-Command-Center>`
+
 ## Speed
 
 From a file, browsers don't allow multi-threaded WebAssembly, so the solver uses one core. Most recipes solve in seconds; hard endgame experts can take 20–30 s. Solves are remembered: the same recipe, stats and options load instantly from history.
