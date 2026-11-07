@@ -1,0 +1,452 @@
+{
+ "generated": "2026-11-06T06:17:31.856Z",
+ "options": {
+  "n": 40,
+  "rollouts": 600,
+  "minRollouts": 16,
+  "env": "craftimizer",
+  "mode": "reliable",
+  "policies": [
+   "static",
+   "heuristic",
+   "solver"
+  ]
+ },
+ "seconds": 99.134,
+ "rows": [
+  {
+   "scenario": {
+    "key": "P119|MaterialMiracle|1",
+    "planet": "auxesia",
+    "profile": "P119",
+    "mission": 1389,
+    "missionName": "EX: Resilient Survey Equipment",
+    "recipe": 37981,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 21000,
+    "lower": [
+     12350,
+     14820
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 24700,
+   "progress": 2300,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 18783,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.125,
+     "ci95": 0.10249085325042426,
+     "completionRate": 1,
+     "meanQuality": 15135,
+     "meanSteps": 20.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 0.725,
+     "ci95": 0.1383762082151408,
+     "completionRate": 1,
+     "meanQuality": 21243,
+     "meanSteps": 25.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 22376,
+     "meanSteps": 27.4,
+     "msPerDecision": 26.7,
+     "meanFirstEstimate": 0.906
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P120|StellarSteadyHand|1",
+    "planet": "auxesia",
+    "profile": "P120",
+    "mission": 1390,
+    "missionName": "EX: Superior Transport Supplies",
+    "recipe": 37982,
+    "rank": "EX",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 14710,
+    "lower": [
+     8650,
+     10380
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 17300,
+   "progress": 9700,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 15660,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.675,
+     "ci95": 0.1451508697872665,
+     "completionRate": 1,
+     "meanQuality": 11201,
+     "meanSteps": 20.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 15254,
+     "meanSteps": 24.5,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 15692,
+     "meanSteps": 28.8,
+     "msPerDecision": 28.5,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P121||0",
+    "planet": "auxesia",
+    "profile": "P121",
+    "mission": 1391,
+    "missionName": "EX: Auxesian Fuel Development",
+    "recipe": 37983,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 16580,
+    "lower": [
+     9750,
+     11700
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 19500,
+   "progress": 8500,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 15653,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.175,
+     "ci95": 0.11775302543883956,
+     "completionRate": 1,
+     "meanQuality": 11664,
+     "meanSteps": 22.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 0.675,
+     "ci95": 0.1451508697872665,
+     "completionRate": 1,
+     "meanQuality": 16654,
+     "meanSteps": 25.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 0.925,
+     "ci95": 0.08162582311989262,
+     "completionRate": 1,
+     "meanQuality": 17404,
+     "meanSteps": 29.3,
+     "msPerDecision": 26.7,
+     "meanFirstEstimate": 0.781
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P134||0",
+    "planet": "auxesia",
+    "profile": "P134",
+    "mission": 1393,
+    "missionName": "EX+: Purified Biofuel Development",
+    "recipe": 37986,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 22100,
+    "lower": [
+     13000,
+     15600
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26000,
+   "progress": 7700,
+   "durability": 50,
+   "baseProgress": 343,
+   "baseQuality": 408,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 16562,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.025,
+     "ci95": 0.04838362326242217,
+     "completionRate": 1,
+     "meanQuality": 13291,
+     "meanSteps": 20.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 0.05,
+     "ci95": 0.06754183888524208,
+     "completionRate": 1,
+     "meanQuality": 19096,
+     "meanSteps": 25.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 0.675,
+     "ci95": 0.1451508697872665,
+     "completionRate": 1,
+     "meanQuality": 21963,
+     "meanSteps": 30.8,
+     "msPerDecision": 28.8,
+     "meanFirstEstimate": 0.375
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P136|MaterialMiracle|2",
+    "planet": "auxesia",
+    "profile": "P136",
+    "mission": 1395,
+    "missionName": "Master: Heavy Machinery Fuel Refinement",
+    "recipe": 38198,
+    "rank": "Master",
+    "special": "MaterialMiracle",
+    "charges": 2
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 21340,
+    "lower": [
+     12550,
+     15060
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 25100,
+   "progress": 7800,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 14552,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10240,
+     "meanSteps": 18.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 0.125,
+     "ci95": 0.10249085325042426,
+     "completionRate": 1,
+     "meanQuality": 18798,
+     "meanSteps": 29.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 0.775,
+     "ci95": 0.12941010393319372,
+     "completionRate": 1,
+     "meanQuality": 21111,
+     "meanSteps": 34.8,
+     "msPerDecision": 32.6,
+     "meanFirstEstimate": 0.438
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P137|StellarSteadyHand|4",
+    "planet": "auxesia",
+    "profile": "P137",
+    "mission": 1396,
+    "missionName": "Master: Potent Alchemical Compound Development",
+    "recipe": 38199,
+    "rank": "Master",
+    "special": "StellarSteadyHand",
+    "charges": 4
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 18790,
+    "lower": [
+     11050,
+     13260
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 22100,
+   "progress": 6900,
+   "durability": 45,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 35,
+   "staticNormalQuality": 13780,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10739,
+     "meanSteps": 26.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 0.15,
+     "ci95": 0.11065757994823491,
+     "completionRate": 1,
+     "meanQuality": 16533,
+     "meanSteps": 31,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 19992,
+     "meanSteps": 37.3,
+     "msPerDecision": 34.4,
+     "meanFirstEstimate": 0.594
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P138|MaterialMiracle|4",
+    "planet": "auxesia",
+    "profile": "P138",
+    "mission": 1397,
+    "missionName": "Master: Renewable Fuel Survey",
+    "recipe": 38200,
+    "rank": "Master",
+    "special": "MaterialMiracle",
+    "charges": 4
+   },
+   "stats": "high",
+   "env": "craftimizer",
+   "target": {
+    "target": 22360,
+    "lower": [
+     13150,
+     15780
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26300,
+   "progress": 7400,
+   "durability": 80,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 14449,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 9860,
+     "meanSteps": 21.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 40,
+     "successRate": 0.05,
+     "ci95": 0.06754183888524208,
+     "completionRate": 1,
+     "meanQuality": 18750,
+     "meanSteps": 32.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 40,
+     "successRate": 0.775,
+     "ci95": 0.12941010393319372,
+     "completionRate": 1,
+     "meanQuality": 22327,
+     "meanSteps": 41.3,
+     "msPerDecision": 36.5,
+     "meanFirstEstimate": 0.156
+    }
+   }
+  }
+ ]
+}

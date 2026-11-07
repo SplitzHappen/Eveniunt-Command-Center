@@ -1,0 +1,233 @@
+{
+ "Basic Synthesis": {
+  "source": "CraftAction",
+  "id": 100001,
+  "level": 1,
+  "cp": 0
+ },
+ "Basic Touch": {
+  "source": "CraftAction",
+  "id": 100002,
+  "level": 5,
+  "cp": 18
+ },
+ "Master's Mend": {
+  "source": "CraftAction",
+  "id": 100003,
+  "level": 7,
+  "cp": 88
+ },
+ "Standard Touch": {
+  "source": "CraftAction",
+  "id": 100004,
+  "level": 18,
+  "cp": 32
+ },
+ "Observe": {
+  "source": "CraftAction",
+  "id": 100010,
+  "level": 13,
+  "cp": 7
+ },
+ "Precise Touch": {
+  "source": "CraftAction",
+  "id": 100128,
+  "level": 53,
+  "cp": 18
+ },
+ "Careful Synthesis": {
+  "source": "CraftAction",
+  "id": 100203,
+  "level": 62,
+  "cp": 7
+ },
+ "Prudent Touch": {
+  "source": "CraftAction",
+  "id": 100227,
+  "level": 66,
+  "cp": 25
+ },
+ "Trained Eye": {
+  "source": "CraftAction",
+  "id": 100283,
+  "level": 80,
+  "cp": 250
+ },
+ "Preparatory Touch": {
+  "source": "CraftAction",
+  "id": 100299,
+  "level": 71,
+  "cp": 40
+ },
+ "Intensive Synthesis": {
+  "source": "CraftAction",
+  "id": 100315,
+  "level": 78,
+  "cp": 6
+ },
+ "Delicate Synthesis": {
+  "source": "CraftAction",
+  "id": 100323,
+  "level": 76,
+  "cp": 32
+ },
+ "Byregot's Blessing": {
+  "source": "CraftAction",
+  "id": 100339,
+  "level": 50,
+  "cp": 24
+ },
+ "Hasty Touch": {
+  "source": "CraftAction",
+  "id": 100355,
+  "level": 9,
+  "cp": 0
+ },
+ "Rapid Synthesis": {
+  "source": "CraftAction",
+  "id": 100363,
+  "level": 9,
+  "cp": 0
+ },
+ "Tricks of the Trade": {
+  "source": "CraftAction",
+  "id": 100371,
+  "level": 13,
+  "cp": 0
+ },
+ "Muscle Memory": {
+  "source": "CraftAction",
+  "id": 100379,
+  "level": 54,
+  "cp": 6
+ },
+ "Reflect": {
+  "source": "CraftAction",
+  "id": 100387,
+  "level": 69,
+  "cp": 6
+ },
+ "Careful Observation": {
+  "source": "CraftAction",
+  "id": 100395,
+  "level": 55,
+  "cp": 0
+ },
+ "Groundwork": {
+  "source": "CraftAction",
+  "id": 100403,
+  "level": 72,
+  "cp": 18
+ },
+ "Advanced Touch": {
+  "source": "CraftAction",
+  "id": 100411,
+  "level": 68,
+  "cp": 46
+ },
+ "Heart and Soul": {
+  "source": "CraftAction",
+  "id": 100419,
+  "level": 86,
+  "cp": 0
+ },
+ "Prudent Synthesis": {
+  "source": "CraftAction",
+  "id": 100427,
+  "level": 88,
+  "cp": 18
+ },
+ "Trained Finesse": {
+  "source": "CraftAction",
+  "id": 100435,
+  "level": 90,
+  "cp": 32
+ },
+ "Refined Touch": {
+  "source": "CraftAction",
+  "id": 100443,
+  "level": 92,
+  "cp": 24
+ },
+ "Quick Innovation": {
+  "source": "CraftAction",
+  "id": 100459,
+  "level": 96,
+  "cp": 0
+ },
+ "Immaculate Mend": {
+  "source": "CraftAction",
+  "id": 100467,
+  "level": 98,
+  "cp": 112
+ },
+ "Trained Perfection": {
+  "source": "CraftAction",
+  "id": 100475,
+  "level": 100,
+  "cp": 0
+ },
+ "Great Strides": {
+  "source": "Action",
+  "id": 260,
+  "level": 21,
+  "cp": 32,
+  "primaryCostType": 8
+ },
+ "Manipulation": {
+  "source": "Action",
+  "id": 4574,
+  "level": 65,
+  "cp": 96,
+  "primaryCostType": 8
+ },
+ "Waste Not": {
+  "source": "Action",
+  "id": 4631,
+  "level": 15,
+  "cp": 56,
+  "primaryCostType": 8
+ },
+ "Waste Not II": {
+  "source": "Action",
+  "id": 4639,
+  "level": 47,
+  "cp": 98,
+  "primaryCostType": 8
+ },
+ "Innovation": {
+  "source": "Action",
+  "id": 19004,
+  "level": 26,
+  "cp": 18,
+  "primaryCostType": 8
+ },
+ "Final Appraisal": {
+  "source": "Action",
+  "id": 19012,
+  "level": 42,
+  "cp": 1,
+  "primaryCostType": 8
+ },
+ "Veneration": {
+  "source": "Action",
+  "id": 19297,
+  "level": 15,
+  "cp": 18,
+  "primaryCostType": 8
+ },
+ "Material Miracle": {
+  "source": "Action",
+  "id": 41269,
+  "level": 0,
+  "cp": 1,
+  "primaryCostType": 20
+ },
+ "Stellar Steady Hand": {
+  "source": "Action",
+  "id": 46843,
+  "level": 0,
+  "cp": 1,
+  "primaryCostType": 20
+ }
+}

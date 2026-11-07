@@ -1,0 +1,6 @@
+node_modules/
+target/
+target-mt/
+crafting/atelier/build/
+crafting/atelier/build-mt/
+_site/

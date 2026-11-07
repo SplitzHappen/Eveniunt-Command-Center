@@ -1,0 +1,5 @@
+bridge/target/
+build/
+node_modules/
+bridge/target-mt/
+build-mt/

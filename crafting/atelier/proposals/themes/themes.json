@@ -1,0 +1,342 @@
+[
+  {
+    "id": "crystarium-dawnglass",
+    "name": "Crystarium Dawnglass",
+    "inspiration": "The Crystal Tower at dawn: crystal blue glass, rose-gold first light",
+    "light": {
+      "bg": "#d9e8f5",
+      "fg": "#0d2133",
+      "accent": "#b5476b",
+      "progress": "#2f6fae"
+    },
+    "dark": {
+      "bg": "#0f2234",
+      "fg": "#e0eefb",
+      "accent": "#ffadc4",
+      "progress": "#9ad4ff"
+    }
+  },
+  {
+    "id": "ishgard-hoarfrost",
+    "name": "Ishgard Hoarfrost",
+    "inspiration": "Ishgard: snow, grey stone, frost blue, the Holy See's gold",
+    "light": {
+      "bg": "#dbe2e9",
+      "fg": "#1b2128",
+      "accent": "#3d6c96",
+      "progress": "#8a6a1f"
+    },
+    "dark": {
+      "bg": "#1e2836",
+      "fg": "#e6edf3",
+      "accent": "#a9d3f5",
+      "progress": "#e4c27a"
+    }
+  },
+  {
+    "id": "limsa-brineward",
+    "name": "Limsa Brineward",
+    "inspiration": "Limsa Lominsa: Maelstrom navy, scarlet, ship's brass",
+    "light": {
+      "bg": "#d8e0ec",
+      "fg": "#0f1b2b",
+      "accent": "#c8202c",
+      "progress": "#9a6c12"
+    },
+    "dark": {
+      "bg": "#0f1b2b",
+      "fg": "#e3ebf5",
+      "accent": "#ff4b4b",
+      "progress": "#e3b04b"
+    }
+  },
+  {
+    "id": "uldah-sultanate-gilt",
+    "name": "Ul'dah Sultanate Gilt",
+    "inspiration": "Ul'dah: desert-sand gold, ruby silks, the sultanate's gilt",
+    "light": {
+      "bg": "#efe0b0",
+      "fg": "#2a1f07",
+      "accent": "#8f2236",
+      "progress": "#7a5a00"
+    },
+    "dark": {
+      "bg": "#271c06",
+      "fg": "#f7ecd2",
+      "accent": "#ff6b82",
+      "progress": "#ffc53d"
+    }
+  },
+  {
+    "id": "twelveswood-verdure",
+    "name": "Twelveswood Verdure",
+    "inspiration": "The Black Shroud: moss and fern greens, sap amber",
+    "light": {
+      "bg": "#dfeacd",
+      "fg": "#16220f",
+      "accent": "#3f7d18",
+      "progress": "#8a5a00"
+    },
+    "dark": {
+      "bg": "#16220f",
+      "fg": "#e4efd8",
+      "accent": "#a6d65a",
+      "progress": "#e8b84a"
+    }
+  },
+  {
+    "id": "allagan-circuitry",
+    "name": "Allagan Circuitry",
+    "inspiration": "Allagan ruins: charcoal metal, amber circuitry, cold blue-white light",
+    "light": {
+      "bg": "#dde3e2",
+      "fg": "#121818",
+      "accent": "#a35f00",
+      "progress": "#0f7f8c"
+    },
+    "dark": {
+      "bg": "#132020",
+      "fg": "#dfe9e7",
+      "accent": "#ffad2e",
+      "progress": "#46d9ea"
+    }
+  },
+  {
+    "id": "magitek-steel",
+    "name": "Magitek Steel",
+    "inspiration": "Garlemald: gunmetal plate and ceruleum-blue reactor glow",
+    "light": {
+      "bg": "#dcdfe2",
+      "fg": "#16191c",
+      "accent": "#0a7cc2",
+      "progress": "#7a1f1f"
+    },
+    "dark": {
+      "bg": "#14171a",
+      "fg": "#e6e9ec",
+      "accent": "#3fc6ff",
+      "progress": "#ff6b5b"
+    }
+  },
+  {
+    "id": "umbral-astral",
+    "name": "Umbral Ice, Astral Fire",
+    "inspiration": "Black Mage: void violet, Astral fire and Umbral ice",
+    "light": {
+      "bg": "#e4dcf0",
+      "fg": "#170d26",
+      "accent": "#c2410c",
+      "progress": "#1f6fb2"
+    },
+    "dark": {
+      "bg": "#170d26",
+      "fg": "#efe8fa",
+      "accent": "#ff6a3d",
+      "progress": "#7fd4ff"
+    }
+  },
+  {
+    "id": "lily-of-thaliak",
+    "name": "Lily of the Healer",
+    "inspiration": "White Mage: pearl-white robes, red trim, lily green",
+    "light": {
+      "bg": "#ece2e4",
+      "fg": "#231a1c",
+      "accent": "#2a7f50",
+      "progress": "#c8283c"
+    },
+    "dark": {
+      "bg": "#221a1d",
+      "fg": "#f3eaec",
+      "accent": "#9fe3b8",
+      "progress": "#ff8a9a"
+    }
+  },
+  {
+    "id": "azure-dragoon",
+    "name": "Azure Dragoon",
+    "inspiration": "Dragoon: rich cobalt plate and a silver lance",
+    "light": {
+      "bg": "#cfdcf7",
+      "fg": "#0a1840",
+      "accent": "#1846c8",
+      "progress": "#56657f"
+    },
+    "dark": {
+      "bg": "#0e2257",
+      "fg": "#e4ecfb",
+      "accent": "#6ea2ff",
+      "progress": "#d0dbee"
+    }
+  },
+  {
+    "id": "abyssal-oath",
+    "name": "Abyssal Oath",
+    "inspiration": "Dark Knight: oxblood black, blood-red edge, the dark arts' violet",
+    "light": {
+      "bg": "#efd8de",
+      "fg": "#2a0b14",
+      "accent": "#a8102c",
+      "progress": "#5b3db0"
+    },
+    "dark": {
+      "bg": "#1f0a10",
+      "fg": "#f2e0e5",
+      "accent": "#ff3452",
+      "progress": "#a98bff"
+    }
+  },
+  {
+    "id": "moonfire-faire",
+    "name": "Moonfire Faire",
+    "inspiration": "Summer festival: hot-pink fireworks and aqua surf on a magenta night",
+    "light": {
+      "bg": "#f3d6ef",
+      "fg": "#2a0d2a",
+      "accent": "#b8128f",
+      "progress": "#0b8a80"
+    },
+    "dark": {
+      "bg": "#2a0d2a",
+      "fg": "#fbe6f8",
+      "accent": "#ff4fd8",
+      "progress": "#3cf0d0"
+    }
+  },
+  {
+    "id": "starlight-celebration",
+    "name": "Starlight Celebration",
+    "inspiration": "Winter festival: pine green, holly red, gold star, snow",
+    "light": {
+      "bg": "#e3eef0",
+      "fg": "#0c2116",
+      "accent": "#c21f35",
+      "progress": "#1d7a43"
+    },
+    "dark": {
+      "bg": "#0c2116",
+      "fg": "#e8f5ee",
+      "accent": "#ffd166",
+      "progress": "#ff4d5e"
+    }
+  },
+  {
+    "id": "aetheryte-glow",
+    "name": "Aetheryte Glow",
+    "inspiration": "Aetheryte crystal: luminous cyan on deep blue-teal, gilded frame",
+    "light": {
+      "bg": "#d2eff0",
+      "fg": "#06292c",
+      "accent": "#007c8a",
+      "progress": "#9a6b00"
+    },
+    "dark": {
+      "bg": "#052628",
+      "fg": "#d6f7f5",
+      "accent": "#2ff0e0",
+      "progress": "#ffd166"
+    }
+  },
+  {
+    "id": "first-world-twilight",
+    "name": "First World Twilight",
+    "inspiration": "Norvrandt: violet sky of the First, the pale gold Flood of Light",
+    "light": {
+      "bg": "#e3ddf6",
+      "fg": "#1d1838",
+      "accent": "#5a45c4",
+      "progress": "#a07a00"
+    },
+    "dark": {
+      "bg": "#251b48",
+      "fg": "#ece7ff",
+      "accent": "#ffe08a",
+      "progress": "#b9a8ff"
+    }
+  },
+  {
+    "id": "ascian-crimson",
+    "name": "Ascian Crimson",
+    "inspiration": "Ascians: pure black robes and the red mask",
+    "light": {
+      "bg": "#e2dfdf",
+      "fg": "#111111",
+      "accent": "#c0080f",
+      "progress": "#4d4d4d"
+    },
+    "dark": {
+      "bg": "#1a1213",
+      "fg": "#efebeb",
+      "accent": "#ff2424",
+      "progress": "#bdbdbd"
+    }
+  },
+  {
+    "id": "sharlayan-lore",
+    "name": "Sharlayan Lore",
+    "inspiration": "Sharlayan: lapis ink, slate library, gold leaf",
+    "light": {
+      "bg": "#dfe1ea",
+      "fg": "#181a26",
+      "accent": "#7f5d0a",
+      "progress": "#2d4f9e"
+    },
+    "dark": {
+      "bg": "#181a26",
+      "fg": "#e6e8f2",
+      "accent": "#e2bd52",
+      "progress": "#86b8ea"
+    }
+  },
+  {
+    "id": "radz-at-han-jewel",
+    "name": "Radz-at-Han Jewel",
+    "inspiration": "Radz-at-Han: pink sandstone, saffron-gold domes, turquoise",
+    "light": {
+      "bg": "#f6dcd6",
+      "fg": "#2d0f1f",
+      "accent": "#0a7a76",
+      "progress": "#8f5600"
+    },
+    "dark": {
+      "bg": "#3a1624",
+      "fg": "#fbe7f0",
+      "accent": "#3fe0d6",
+      "progress": "#ffc23d"
+    }
+  },
+  {
+    "id": "doman-sakura",
+    "name": "Doman Sakura",
+    "inspiration": "Doma: cherry blossom, red lacquer, indigo eaves",
+    "light": {
+      "bg": "#f8dbe8",
+      "fg": "#2b1424",
+      "accent": "#c02d6c",
+      "progress": "#3a4aa8"
+    },
+    "dark": {
+      "bg": "#2b1626",
+      "fg": "#f8e6ef",
+      "accent": "#ff9cc6",
+      "progress": "#8ea2ff"
+    }
+  },
+  {
+    "id": "ultima-thule",
+    "name": "Ultima Thule",
+    "inspiration": "The edge of the universe: void black, nebula violet, starlight cyan",
+    "light": {
+      "bg": "#dcdcef",
+      "fg": "#0b0a1f",
+      "accent": "#5a35d6",
+      "progress": "#007f99"
+    },
+    "dark": {
+      "bg": "#100c26",
+      "fg": "#e9e8ff",
+      "accent": "#b07cff",
+      "progress": "#4fe3ff"
+    }
+  }
+]

@@ -1,0 +1,20 @@
+Eveniunt Network Command Center
+Copyright 2026 SplitzHappen
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software from these projects:
+
+- Raphael (https://github.com/KonaeAkira/raphael-rs), Apache License 2.0, (c) KonaeAkira and contributors.
+  The crates raphael-sim, raphael-solver and raphael-data are compiled unchanged into the Atelier's
+  WebAssembly modules; crafting/atelier/bridge/src/lib.rs follows raphael-gui's macro code, and the
+  Atelier reuses strings from raphael-translations.
+- wasm-bindgen-rayon (https://github.com/RReverser/wasm-bindgen-rayon), Apache License 2.0, (c) Google Inc.
+  (multi-core build only).
+- Fonts: Fraunces, Atkinson Hyperlegible, IBM Plex Mono, Big Shoulders Display and Cinzel, embedded from the
+  @fontsource packages under the SIL Open Font License 1.1.
+
+FINAL FANTASY XIV game data, item, recipe and action names and the crafting action icons are
+(c) SQUARE ENIX CO., LTD. All rights reserved. FINAL FANTASY is a registered trademark of Square Enix
+Holdings Co., Ltd. This is a free, non-commercial fan project, not affiliated with or endorsed by
+Square Enix. The Apache License above covers this project's own code only, not Square Enix materials.

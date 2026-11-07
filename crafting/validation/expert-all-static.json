@@ -1,0 +1,4198 @@
+{
+ "generated": "2026-11-06T05:58:20.599Z",
+ "options": {
+  "n": 40,
+  "rollouts": 800,
+  "minRollouts": 16,
+  "env": "teamcraft",
+  "mode": "reliable",
+  "policies": [
+   "static"
+  ]
+ },
+ "seconds": 1.691,
+ "rows": [
+  {
+   "scenario": {
+    "key": "P023||0",
+    "planet": "sinus-ardorum",
+    "profile": "P023",
+    "mission": 24,
+    "missionName": "Starship Insulation",
+    "recipe": 36194,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 14210,
+    "lower": [
+     8120,
+     11170
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 20300,
+   "progress": 9900,
+   "durability": 80,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 33,
+   "staticNormalQuality": 14389,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.3,
+     "ci95": 0.1420154921126565,
+     "completionRate": 1,
+     "meanQuality": 14013,
+     "meanSteps": 32,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P023||0",
+    "planet": "sinus-ardorum",
+    "profile": "P023",
+    "mission": 24,
+    "missionName": "Starship Insulation",
+    "recipe": 36194,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 14210,
+    "lower": [
+     8120,
+     11170
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 20300,
+   "progress": 9900,
+   "durability": 80,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 9545,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10545,
+     "meanSteps": 22,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P024|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P024",
+    "mission": 25,
+    "missionName": "High Burn Charcoal",
+    "recipe": 36195,
+    "rank": "A",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 14700,
+    "lower": [
+     8400,
+     11550
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 21000,
+   "progress": 400,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 16352,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 18522,
+     "meanSteps": 21,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P024|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P024",
+    "mission": 25,
+    "missionName": "High Burn Charcoal",
+    "recipe": 36195,
+    "rank": "A",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 14700,
+    "lower": [
+     8400,
+     11550
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 21000,
+   "progress": 400,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 16184,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 18155,
+     "meanSteps": 20,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P025||0",
+    "planet": "sinus-ardorum",
+    "profile": "P025",
+    "mission": 26,
+    "missionName": "Lunar Flora Test Processing",
+    "recipe": 36196,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [
+     6000,
+     8250
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15000,
+   "progress": 7500,
+   "durability": 70,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 20,
+   "staticNormalQuality": 12093,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 13213,
+     "meanSteps": 20,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P025||0",
+    "planet": "sinus-ardorum",
+    "profile": "P025",
+    "mission": 26,
+    "missionName": "Lunar Flora Test Processing",
+    "recipe": 36196,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [
+     6000,
+     8250
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15000,
+   "progress": 7500,
+   "durability": 70,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 9629,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.225,
+     "ci95": 0.12941010393319372,
+     "completionRate": 1,
+     "meanQuality": 10211,
+     "meanSteps": 24,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P026||0",
+    "planet": "sinus-ardorum",
+    "profile": "P026",
+    "mission": 26,
+    "missionName": "Lunar Flora Test Processing",
+    "recipe": 36197,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [
+     6000,
+     8250
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15000,
+   "progress": 7500,
+   "durability": 70,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 20,
+   "staticNormalQuality": 12093,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 13153,
+     "meanSteps": 20,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P026||0",
+    "planet": "sinus-ardorum",
+    "profile": "P026",
+    "mission": 26,
+    "missionName": "Lunar Flora Test Processing",
+    "recipe": 36197,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [
+     6000,
+     8250
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15000,
+   "progress": 7500,
+   "durability": 70,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 9629,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.25,
+     "ci95": 0.1341920265887657,
+     "completionRate": 1,
+     "meanQuality": 10259,
+     "meanSteps": 24,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P027||0",
+    "planet": "sinus-ardorum",
+    "profile": "P027",
+    "mission": 26,
+    "missionName": "Lunar Flora Test Processing",
+    "recipe": 36198,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [
+     6000,
+     8250
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15000,
+   "progress": 7500,
+   "durability": 70,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 20,
+   "staticNormalQuality": 12093,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 13213,
+     "meanSteps": 20,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P027||0",
+    "planet": "sinus-ardorum",
+    "profile": "P027",
+    "mission": 26,
+    "missionName": "Lunar Flora Test Processing",
+    "recipe": 36198,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [
+     6000,
+     8250
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15000,
+   "progress": 7500,
+   "durability": 70,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 9629,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.225,
+     "ci95": 0.12941010393319372,
+     "completionRate": 1,
+     "meanQuality": 10187,
+     "meanSteps": 24,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P029|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P029",
+    "mission": 28,
+    "missionName": "EX: Serving Trays",
+    "recipe": 36200,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 19550,
+    "lower": [
+     11500,
+     13800
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 23000,
+   "progress": 9000,
+   "durability": 80,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 33,
+   "staticNormalQuality": 15306,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.05,
+     "ci95": 0.06754183888524208,
+     "completionRate": 1,
+     "meanQuality": 6979,
+     "meanSteps": 19.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P029|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P029",
+    "mission": 28,
+    "missionName": "EX: Serving Trays",
+    "recipe": 36200,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 19550,
+    "lower": [
+     11500,
+     13800
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 23000,
+   "progress": 9000,
+   "durability": 80,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 12306,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4447,
+     "meanSteps": 15.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P030|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P030",
+    "mission": 29,
+    "missionName": "EX: Bunk Beds",
+    "recipe": 36201,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 18700,
+    "lower": [
+     11000,
+     13200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 22000,
+   "progress": 8700,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 31,
+   "staticNormalQuality": 15219,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.075,
+     "ci95": 0.08162582311989265,
+     "completionRate": 1,
+     "meanQuality": 6986,
+     "meanSteps": 17.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P030|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P030",
+    "mission": 29,
+    "missionName": "EX: Bunk Beds",
+    "recipe": 36201,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 18700,
+    "lower": [
+     11000,
+     13200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 22000,
+   "progress": 8700,
+   "durability": 70,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 11589,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6345,
+     "meanSteps": 16.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P031||0",
+    "planet": "sinus-ardorum",
+    "profile": "P031",
+    "mission": 30,
+    "missionName": "EX: Work Support Equipment",
+    "recipe": 36202,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [
+     6000,
+     7200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12000,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 9407,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.425,
+     "ci95": 0.15319848236846212,
+     "completionRate": 1,
+     "meanQuality": 10419,
+     "meanSteps": 25,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P031||0",
+    "planet": "sinus-ardorum",
+    "profile": "P031",
+    "mission": 30,
+    "missionName": "EX: Work Support Equipment",
+    "recipe": 36202,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [
+     6000,
+     7200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12000,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 6331,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6857,
+     "meanSteps": 26,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P032||0",
+    "planet": "sinus-ardorum",
+    "profile": "P032",
+    "mission": 30,
+    "missionName": "EX: Work Support Equipment",
+    "recipe": 36203,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [
+     6000,
+     7200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12000,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 9407,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.25,
+     "ci95": 0.1341920265887657,
+     "completionRate": 1,
+     "meanQuality": 9917,
+     "meanSteps": 25,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P032||0",
+    "planet": "sinus-ardorum",
+    "profile": "P032",
+    "mission": 30,
+    "missionName": "EX: Work Support Equipment",
+    "recipe": 36203,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [
+     6000,
+     7200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12000,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 6331,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6193,
+     "meanSteps": 25.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P033||0",
+    "planet": "sinus-ardorum",
+    "profile": "P033",
+    "mission": 30,
+    "missionName": "EX: Work Support Equipment",
+    "recipe": 36204,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [
+     6000,
+     7200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12000,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 9407,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.2,
+     "ci95": 0.12396128427860048,
+     "completionRate": 1,
+     "meanQuality": 5302,
+     "meanSteps": 17.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P033||0",
+    "planet": "sinus-ardorum",
+    "profile": "P033",
+    "mission": 30,
+    "missionName": "EX: Work Support Equipment",
+    "recipe": 36204,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [
+     6000,
+     7200
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12000,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 6331,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3284,
+     "meanSteps": 18.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P034||0",
+    "planet": "sinus-ardorum",
+    "profile": "P034",
+    "mission": 32,
+    "missionName": "EX+: Elevating Platforms",
+    "recipe": 36207,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 14900,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 14900,
+   "progress": 4700,
+   "durability": 20,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 12073,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.15,
+     "ci95": 0.11065757994823491,
+     "completionRate": 1,
+     "meanQuality": 12093,
+     "meanSteps": 20.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P034||0",
+    "planet": "sinus-ardorum",
+    "profile": "P034",
+    "mission": 32,
+    "missionName": "EX+: Elevating Platforms",
+    "recipe": 36207,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 14900,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 14900,
+   "progress": 4700,
+   "durability": 20,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 8438,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8097,
+     "meanSteps": 19.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P034|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P034",
+    "mission": 31,
+    "missionName": "EX+: High-quality Crafting Tools",
+    "recipe": 36205,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 14900,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 14900,
+   "progress": 4700,
+   "durability": 20,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 12073,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.175,
+     "ci95": 0.11775302543883956,
+     "completionRate": 1,
+     "meanQuality": 11816,
+     "meanSteps": 20.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P034|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P034",
+    "mission": 31,
+    "missionName": "EX+: High-quality Crafting Tools",
+    "recipe": 36205,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 14900,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 14900,
+   "progress": 4700,
+   "durability": 20,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 8438,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6909,
+     "meanSteps": 18.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P035|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P035",
+    "mission": 31,
+    "missionName": "EX+: High-quality Crafting Tools",
+    "recipe": 36206,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 24000,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 24000,
+   "progress": 9500,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 13180,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7124,
+     "meanSteps": 16.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P035|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P035",
+    "mission": 31,
+    "missionName": "EX+: High-quality Crafting Tools",
+    "recipe": 36206,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 24000,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 24000,
+   "progress": 9500,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 7487,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4634,
+     "meanSteps": 18.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P036||0",
+    "planet": "sinus-ardorum",
+    "profile": "P036",
+    "mission": 32,
+    "missionName": "EX+: Elevating Platforms",
+    "recipe": 36208,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 22500,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 22500,
+   "progress": 9300,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 13005,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8360,
+     "meanSteps": 20.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P036||0",
+    "planet": "sinus-ardorum",
+    "profile": "P036",
+    "mission": 32,
+    "missionName": "EX+: Elevating Platforms",
+    "recipe": 36208,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 22500,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 22500,
+   "progress": 9300,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 8221,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4914,
+     "meanSteps": 20.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P047|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P047",
+    "mission": 43,
+    "missionName": "EX+: Biofuel I",
+    "recipe": 36219,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 18900,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 18900,
+   "progress": 7300,
+   "durability": 30,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 11034,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7106,
+     "meanSteps": 18.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P047|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P047",
+    "mission": 43,
+    "missionName": "EX+: Biofuel I",
+    "recipe": 36219,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 18900,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 18900,
+   "progress": 7300,
+   "durability": 30,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 6020,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3706,
+     "meanSteps": 18.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P048|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P048",
+    "mission": 43,
+    "missionName": "EX+: Biofuel I",
+    "recipe": 36220,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 24660,
+    "lower": [
+     16440,
+     19180
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27400,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 9867,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4386,
+     "meanSteps": 17.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P048|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P048",
+    "mission": 43,
+    "missionName": "EX+: Biofuel I",
+    "recipe": 36220,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 24660,
+    "lower": [
+     16440,
+     19180
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27400,
+   "progress": 10000,
+   "durability": 55,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 7299,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 2751,
+     "meanSteps": 15.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P049|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P049",
+    "mission": 44,
+    "missionName": "EX+: Biofuel II",
+    "recipe": 36222,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 18000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 18000,
+   "progress": 6500,
+   "durability": 35,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 11657,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8394,
+     "meanSteps": 19,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P049|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P049",
+    "mission": 44,
+    "missionName": "EX+: Biofuel II",
+    "recipe": 36222,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 18000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 18000,
+   "progress": 6500,
+   "durability": 35,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 7861,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3837,
+     "meanSteps": 15.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P050|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P050",
+    "mission": 44,
+    "missionName": "EX+: Biofuel II",
+    "recipe": 36223,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 24120,
+    "lower": [
+     16080,
+     18760
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26800,
+   "progress": 9500,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 13180,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6618,
+     "meanSteps": 16.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P050|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P050",
+    "mission": 44,
+    "missionName": "EX+: Biofuel II",
+    "recipe": 36223,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 24120,
+    "lower": [
+     16080,
+     18760
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26800,
+   "progress": 9500,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 7487,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4200,
+     "meanSteps": 18.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P051|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P051",
+    "mission": 45,
+    "missionName": "EX+: Biofuel III",
+    "recipe": 36225,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 19500,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 19500,
+   "progress": 8500,
+   "durability": 40,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 11829,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7309,
+     "meanSteps": 18.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P051|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P051",
+    "mission": 45,
+    "missionName": "EX+: Biofuel III",
+    "recipe": 36225,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 19500,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 19500,
+   "progress": 8500,
+   "durability": 40,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 7846,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4228,
+     "meanSteps": 15.5,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P052|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P052",
+    "mission": 45,
+    "missionName": "EX+: Biofuel III",
+    "recipe": 36227,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 29800,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 29800,
+   "progress": 11400,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 11224,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 5110,
+     "meanSteps": 17.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P052|MaterialMiracle|1",
+    "planet": "sinus-ardorum",
+    "profile": "P052",
+    "mission": 45,
+    "missionName": "EX+: Biofuel III",
+    "recipe": 36227,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 29800,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 29800,
+   "progress": 11400,
+   "durability": 70,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 7235,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 2903,
+     "meanSteps": 18.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P078||0",
+    "planet": "phaenna",
+    "profile": "P078",
+    "mission": 568,
+    "missionName": "Improved Tent Components",
+    "recipe": 36979,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 9590,
+    "lower": [
+     5480,
+     7540
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 13700,
+   "progress": 5200,
+   "durability": 80,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 18,
+   "staticNormalQuality": 12316,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 13475,
+     "meanSteps": 18,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P078||0",
+    "planet": "phaenna",
+    "profile": "P078",
+    "mission": 568,
+    "missionName": "Improved Tent Components",
+    "recipe": 36979,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 9590,
+    "lower": [
+     5480,
+     7540
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 13700,
+   "progress": 5200,
+   "durability": 80,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 19,
+   "staticNormalQuality": 11994,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 13100,
+     "meanSteps": 19,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P079|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P079",
+    "mission": 569,
+    "missionName": "Efficient Recycled Resource Utilization II",
+    "recipe": 36980,
+    "rank": "A",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 10570,
+    "lower": [
+     6040,
+     8310
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15100,
+   "progress": 500,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 16,
+   "staticNormalQuality": 14184,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 15873,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P079|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P079",
+    "mission": 569,
+    "missionName": "Efficient Recycled Resource Utilization II",
+    "recipe": 36980,
+    "rank": "A",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 10570,
+    "lower": [
+     6040,
+     8310
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 15100,
+   "progress": 500,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 19,
+   "staticNormalQuality": 13414,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 15051,
+     "meanSteps": 18,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P080||0",
+    "planet": "phaenna",
+    "profile": "P080",
+    "mission": 570,
+    "missionName": "Phaenna Resource Utilization Research",
+    "recipe": 36981,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 7840,
+    "lower": [
+     4480,
+     6160
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11200,
+   "progress": 4000,
+   "durability": 70,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 16,
+   "staticNormalQuality": 10555,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 11551,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P080||0",
+    "planet": "phaenna",
+    "profile": "P080",
+    "mission": 570,
+    "missionName": "Phaenna Resource Utilization Research",
+    "recipe": 36981,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 7840,
+    "lower": [
+     4480,
+     6160
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11200,
+   "progress": 4000,
+   "durability": 70,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 17,
+   "staticNormalQuality": 9934,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10897,
+     "meanSteps": 17,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P081||0",
+    "planet": "phaenna",
+    "profile": "P081",
+    "mission": 570,
+    "missionName": "Phaenna Resource Utilization Research",
+    "recipe": 36982,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 7840,
+    "lower": [
+     4480,
+     6160
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11200,
+   "progress": 4000,
+   "durability": 70,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 16,
+   "staticNormalQuality": 10555,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 11510,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P081||0",
+    "planet": "phaenna",
+    "profile": "P081",
+    "mission": 570,
+    "missionName": "Phaenna Resource Utilization Research",
+    "recipe": 36982,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 7840,
+    "lower": [
+     4480,
+     6160
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11200,
+   "progress": 4000,
+   "durability": 70,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 17,
+   "staticNormalQuality": 9934,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10819,
+     "meanSteps": 17,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P082||0",
+    "planet": "phaenna",
+    "profile": "P082",
+    "mission": 570,
+    "missionName": "Phaenna Resource Utilization Research",
+    "recipe": 36983,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 7840,
+    "lower": [
+     4480,
+     6160
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11200,
+   "progress": 4000,
+   "durability": 70,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 16,
+   "staticNormalQuality": 10555,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 11551,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P082||0",
+    "planet": "phaenna",
+    "profile": "P082",
+    "mission": 570,
+    "missionName": "Phaenna Resource Utilization Research",
+    "recipe": 36983,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 7840,
+    "lower": [
+     4480,
+     6160
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11200,
+   "progress": 4000,
+   "durability": 70,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 17,
+   "staticNormalQuality": 9934,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10897,
+     "meanSteps": 17,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P084||0",
+    "planet": "phaenna",
+    "profile": "P084",
+    "mission": 572,
+    "missionName": "EX: Premium Tools",
+    "recipe": 36985,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 9860,
+    "lower": [
+     5800,
+     6960
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11600,
+   "progress": 9700,
+   "durability": 55,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 10708,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 12425,
+     "meanSteps": 22,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P084||0",
+    "planet": "phaenna",
+    "profile": "P084",
+    "mission": 572,
+    "missionName": "EX: Premium Tools",
+    "recipe": 36985,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 9860,
+    "lower": [
+     5800,
+     6960
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11600,
+   "progress": 9700,
+   "durability": 55,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 6457,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7398,
+     "meanSteps": 22,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P085||0",
+    "planet": "phaenna",
+    "profile": "P085",
+    "mission": 572,
+    "missionName": "EX: Premium Tools",
+    "recipe": 36986,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 9860,
+    "lower": [
+     5800,
+     6960
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11600,
+   "progress": 9700,
+   "durability": 55,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 10708,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 1,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 11748,
+     "meanSteps": 22,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P085||0",
+    "planet": "phaenna",
+    "profile": "P085",
+    "mission": 572,
+    "missionName": "EX: Premium Tools",
+    "recipe": 36986,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 9860,
+    "lower": [
+     5800,
+     6960
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11600,
+   "progress": 9700,
+   "durability": 55,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 6457,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6716,
+     "meanSteps": 21.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P086||0",
+    "planet": "phaenna",
+    "profile": "P086",
+    "mission": 572,
+    "missionName": "EX: Premium Tools",
+    "recipe": 36987,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 9860,
+    "lower": [
+     5800,
+     6960
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11600,
+   "progress": 9700,
+   "durability": 55,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 10708,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.4,
+     "ci95": 0.15182094717133074,
+     "completionRate": 1,
+     "meanQuality": 5003,
+     "meanSteps": 15.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P086||0",
+    "planet": "phaenna",
+    "profile": "P086",
+    "mission": 572,
+    "missionName": "EX: Premium Tools",
+    "recipe": 36987,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 9860,
+    "lower": [
+     5800,
+     6960
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11600,
+   "progress": 9700,
+   "durability": 55,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 6457,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3484,
+     "meanSteps": 16.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P089||0",
+    "planet": "phaenna",
+    "profile": "P089",
+    "mission": 574,
+    "missionName": "EX+: Temporary Collection Points",
+    "recipe": 36990,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 29700,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 29700,
+   "progress": 1700,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 28,
+   "staticNormalQuality": 18401,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 15584,
+     "meanSteps": 23.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P089||0",
+    "planet": "phaenna",
+    "profile": "P089",
+    "mission": 574,
+    "missionName": "EX+: Temporary Collection Points",
+    "recipe": 36990,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 29700,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 29700,
+   "progress": 1700,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 15487,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 16709,
+     "meanSteps": 23,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P096||0",
+    "planet": "phaenna",
+    "profile": "P096",
+    "mission": 580,
+    "missionName": "EX: Craftwork for the Forum III",
+    "recipe": 36997,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 17940,
+    "lower": [
+     10550,
+     12660
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 21100,
+   "progress": 600,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 18540,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.95,
+     "ci95": 0.06754183888524211,
+     "completionRate": 1,
+     "meanQuality": 20072,
+     "meanSteps": 25,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P096||0",
+    "planet": "phaenna",
+    "profile": "P096",
+    "mission": 580,
+    "missionName": "EX: Craftwork for the Forum III",
+    "recipe": 36997,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 17940,
+    "lower": [
+     10550,
+     12660
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 21100,
+   "progress": 600,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 16577,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.225,
+     "ci95": 0.12941010393319372,
+     "completionRate": 1,
+     "meanQuality": 16773,
+     "meanSteps": 26,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P097|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P097",
+    "mission": 582,
+    "missionName": "EX: Habitation Improvement Plan II",
+    "recipe": 36999,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 12410,
+    "lower": [
+     7300,
+     8760
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 14600,
+   "progress": 4200,
+   "durability": 65,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 13924,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.675,
+     "ci95": 0.1451508697872665,
+     "completionRate": 1,
+     "meanQuality": 10891,
+     "meanSteps": 16.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P097|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P097",
+    "mission": 582,
+    "missionName": "EX: Habitation Improvement Plan II",
+    "recipe": 36999,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 12410,
+    "lower": [
+     7300,
+     8760
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 14600,
+   "progress": 4200,
+   "durability": 65,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 20,
+   "staticNormalQuality": 13570,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.8,
+     "ci95": 0.12396128427860045,
+     "completionRate": 1,
+     "meanQuality": 12317,
+     "meanSteps": 17.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P099|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P099",
+    "mission": 584,
+    "missionName": "EX+: Resin Crystal Refinement I",
+    "recipe": 37001,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 19500,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 19500,
+   "progress": 7000,
+   "durability": 30,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 11034,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 5117,
+     "meanSteps": 16.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P099|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P099",
+    "mission": 584,
+    "missionName": "EX+: Resin Crystal Refinement I",
+    "recipe": 37001,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 19500,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 19500,
+   "progress": 7000,
+   "durability": 30,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 6534,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3320,
+     "meanSteps": 17.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P100|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P100",
+    "mission": 584,
+    "missionName": "EX+: Resin Crystal Refinement I",
+    "recipe": 37002,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 25110,
+    "lower": [
+     16740,
+     19530
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27900,
+   "progress": 10200,
+   "durability": 55,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 10637,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4542,
+     "meanSteps": 17.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P100|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P100",
+    "mission": 584,
+    "missionName": "EX+: Resin Crystal Refinement I",
+    "recipe": 37002,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 25110,
+    "lower": [
+     16740,
+     19530
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27900,
+   "progress": 10200,
+   "durability": 55,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 7611,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3449,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P101|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P101",
+    "mission": 585,
+    "missionName": "EX+: Resin Crystal Refinement II",
+    "recipe": 37003,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 19200,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 19200,
+   "progress": 6500,
+   "durability": 35,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 11657,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8394,
+     "meanSteps": 19,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P101|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P101",
+    "mission": 585,
+    "missionName": "EX+: Resin Crystal Refinement II",
+    "recipe": 37003,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 19200,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 19200,
+   "progress": 6500,
+   "durability": 35,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 7861,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 3837,
+     "meanSteps": 15.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P102|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P102",
+    "mission": 585,
+    "missionName": "EX+: Resin Crystal Refinement II",
+    "recipe": 37004,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 24840,
+    "lower": [
+     16560,
+     19320
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27600,
+   "progress": 9500,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 13180,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6618,
+     "meanSteps": 16.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P102|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P102",
+    "mission": 585,
+    "missionName": "EX+: Resin Crystal Refinement II",
+    "recipe": 37004,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 24840,
+    "lower": [
+     16560,
+     19320
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27600,
+   "progress": 9500,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 7487,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4200,
+     "meanSteps": 18.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P103|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P103",
+    "mission": 586,
+    "missionName": "EX+: Resin Crystal Refinement III",
+    "recipe": 37005,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 23000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 23000,
+   "progress": 8900,
+   "durability": 40,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 10048,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 5697,
+     "meanSteps": 17.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P103|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P103",
+    "mission": 586,
+    "missionName": "EX+: Resin Crystal Refinement III",
+    "recipe": 37005,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 23000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 23000,
+   "progress": 8900,
+   "durability": 40,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 7345,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4291,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P104|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P104",
+    "mission": 586,
+    "missionName": "EX+: Resin Crystal Refinement III",
+    "recipe": 37006,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 32300,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 32300,
+   "progress": 12000,
+   "durability": 65,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 9858,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4463,
+     "meanSteps": 16.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P104|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P104",
+    "mission": 586,
+    "missionName": "EX+: Resin Crystal Refinement III",
+    "recipe": 37006,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 32300,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 32300,
+   "progress": 12000,
+   "durability": 65,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 7047,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 1967,
+     "meanSteps": 16.5,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P119|MaterialMiracle|1",
+    "planet": "oizys",
+    "profile": "P119",
+    "mission": 1059,
+    "missionName": "EX: Mass-produced Transportation Materials",
+    "recipe": 37519,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 21000,
+    "lower": [
+     12350,
+     14820
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 24700,
+   "progress": 2300,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 18783,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.25,
+     "ci95": 0.1341920265887657,
+     "completionRate": 1,
+     "meanQuality": 15600,
+     "meanSteps": 20.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P119|MaterialMiracle|1",
+    "planet": "oizys",
+    "profile": "P119",
+    "mission": 1059,
+    "missionName": "EX: Mass-produced Transportation Materials",
+    "recipe": 37519,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 21000,
+    "lower": [
+     12350,
+     14820
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 24700,
+   "progress": 2300,
+   "durability": 70,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 22,
+   "staticNormalQuality": 15716,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.025,
+     "ci95": 0.04838362326242217,
+     "completionRate": 1,
+     "meanQuality": 13785,
+     "meanSteps": 17.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P120|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P120",
+    "mission": 1060,
+    "missionName": "EX: Excavation Necessities",
+    "recipe": 37520,
+    "rank": "EX",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 14710,
+    "lower": [
+     8650,
+     10380
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 17300,
+   "progress": 9700,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 15660,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.675,
+     "ci95": 0.1451508697872665,
+     "completionRate": 1,
+     "meanQuality": 11331,
+     "meanSteps": 20.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P120|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P120",
+    "mission": 1060,
+    "missionName": "EX: Excavation Necessities",
+    "recipe": 37520,
+    "rank": "EX",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 14710,
+    "lower": [
+     8650,
+     10380
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 17300,
+   "progress": 9700,
+   "durability": 70,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 13427,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.15,
+     "ci95": 0.11065757994823491,
+     "completionRate": 1,
+     "meanQuality": 7088,
+     "meanSteps": 19.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P121||0",
+    "planet": "oizys",
+    "profile": "P121",
+    "mission": 1061,
+    "missionName": "EX: Excavation Equipment",
+    "recipe": 37521,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 16580,
+    "lower": [
+     9750,
+     11700
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 19500,
+   "progress": 8500,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 15653,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.2,
+     "ci95": 0.12396128427860048,
+     "completionRate": 1,
+     "meanQuality": 11683,
+     "meanSteps": 22.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P121||0",
+    "planet": "oizys",
+    "profile": "P121",
+    "mission": 1061,
+    "missionName": "EX: Excavation Equipment",
+    "recipe": 37521,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 16580,
+    "lower": [
+     9750,
+     11700
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 19500,
+   "progress": 8500,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 9824,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4976,
+     "meanSteps": 21.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P124||0",
+    "planet": "oizys",
+    "profile": "P124",
+    "mission": 1063,
+    "missionName": "EX+: Planetary Resource Utilization",
+    "recipe": 37524,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 24060,
+    "lower": [
+     14150,
+     16980
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 28300,
+   "progress": 8200,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 14460,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 10285,
+     "meanSteps": 18.5,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P124||0",
+    "planet": "oizys",
+    "profile": "P124",
+    "mission": 1063,
+    "missionName": "EX+: Planetary Resource Utilization",
+    "recipe": 37524,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 24060,
+    "lower": [
+     14150,
+     16980
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 28300,
+   "progress": 8200,
+   "durability": 70,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 10231,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6576,
+     "meanSteps": 18.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P126|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P126",
+    "mission": 1065,
+    "missionName": "EX+: Renewable Fuel I",
+    "recipe": 37526,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 21000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 21000,
+   "progress": 7500,
+   "durability": 35,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 14218,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 9422,
+     "meanSteps": 17.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P126|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P126",
+    "mission": 1065,
+    "missionName": "EX+: Renewable Fuel I",
+    "recipe": 37526,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 21000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 21000,
+   "progress": 7500,
+   "durability": 35,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 9545,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6589,
+     "meanSteps": 18.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P127|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P127",
+    "mission": 1065,
+    "missionName": "EX+: Renewable Fuel I",
+    "recipe": 37527,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 23720,
+    "lower": [
+     13950,
+     16740
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27900,
+   "progress": 9800,
+   "durability": 50,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 28,
+   "staticNormalQuality": 13478,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7505,
+     "meanSteps": 18.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P127|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P127",
+    "mission": 1065,
+    "missionName": "EX+: Renewable Fuel I",
+    "recipe": 37527,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 23720,
+    "lower": [
+     13950,
+     16740
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 27900,
+   "progress": 9800,
+   "durability": 50,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 22,
+   "staticNormalQuality": 11885,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8365,
+     "meanSteps": 16.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P128|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P128",
+    "mission": 1066,
+    "missionName": "EX+: Renewable Fuel II",
+    "recipe": 37528,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 22000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 22000,
+   "progress": 8000,
+   "durability": 35,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 13180,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 9011,
+     "meanSteps": 18,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P128|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P128",
+    "mission": 1066,
+    "missionName": "EX+: Renewable Fuel II",
+    "recipe": 37528,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 22000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 22000,
+   "progress": 8000,
+   "durability": 35,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 10262,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7140,
+     "meanSteps": 17.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P129|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P129",
+    "mission": 1066,
+    "missionName": "EX+: Renewable Fuel II",
+    "recipe": 37529,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 24740,
+    "lower": [
+     14550,
+     17460
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 29100,
+   "progress": 11000,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 16119,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 11612,
+     "meanSteps": 20.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P129|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P129",
+    "mission": 1066,
+    "missionName": "EX+: Renewable Fuel II",
+    "recipe": 37529,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 24740,
+    "lower": [
+     14550,
+     17460
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 29100,
+   "progress": 11000,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 28,
+   "staticNormalQuality": 11166,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7156,
+     "meanSteps": 21,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P130|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P130",
+    "mission": 1067,
+    "missionName": "EX+: Renewable Fuel III",
+    "recipe": 37530,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 23000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 23000,
+   "progress": 9000,
+   "durability": 50,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 14876,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 12654,
+     "meanSteps": 20.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P130|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P130",
+    "mission": 1067,
+    "missionName": "EX+: Renewable Fuel III",
+    "recipe": 37530,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 23000,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 23000,
+   "progress": 9000,
+   "durability": 50,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 11277,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6994,
+     "meanSteps": 17.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P131|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P131",
+    "mission": 1067,
+    "missionName": "EX+: Renewable Fuel III",
+    "recipe": 37531,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 33500,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 33500,
+   "progress": 12500,
+   "durability": 70,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 15082,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7356,
+     "meanSteps": 19.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P131|StellarSteadyHand|1",
+    "planet": "oizys",
+    "profile": "P131",
+    "mission": 1067,
+    "missionName": "EX+: Renewable Fuel III",
+    "recipe": 37531,
+    "rank": "EX+",
+    "special": "StellarSteadyHand",
+    "charges": 1
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 33500,
+    "lower": [],
+    "label": "required quality"
+   },
+   "maxQuality": 33500,
+   "progress": 12500,
+   "durability": 70,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 9794,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 4659,
+     "meanSteps": 20.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P134||0",
+    "planet": "auxesia",
+    "profile": "P134",
+    "mission": 1393,
+    "missionName": "EX+: Purified Biofuel Development",
+    "recipe": 37986,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 22100,
+    "lower": [
+     13000,
+     15600
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26000,
+   "progress": 7700,
+   "durability": 50,
+   "baseProgress": 343,
+   "baseQuality": 408,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 16562,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.025,
+     "ci95": 0.04838362326242217,
+     "completionRate": 1,
+     "meanQuality": 13327,
+     "meanSteps": 20.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P134||0",
+    "planet": "auxesia",
+    "profile": "P134",
+    "mission": 1393,
+    "missionName": "EX+: Purified Biofuel Development",
+    "recipe": 37986,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 22100,
+    "lower": [
+     13000,
+     15600
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26000,
+   "progress": 7700,
+   "durability": 50,
+   "baseProgress": 307,
+   "baseQuality": 368,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 12215,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7776,
+     "meanSteps": 17.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P136|MaterialMiracle|2",
+    "planet": "auxesia",
+    "profile": "P136",
+    "mission": 1395,
+    "missionName": "Master: Heavy Machinery Fuel Refinement",
+    "recipe": 38198,
+    "rank": "Master",
+    "special": "MaterialMiracle",
+    "charges": 2
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 21340,
+    "lower": [
+     12550,
+     15060
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 25100,
+   "progress": 7800,
+   "durability": 60,
+   "baseProgress": 324,
+   "baseQuality": 346,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 14552,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 9364,
+     "meanSteps": 17.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P136|MaterialMiracle|2",
+    "planet": "auxesia",
+    "profile": "P136",
+    "mission": 1395,
+    "missionName": "Master: Heavy Machinery Fuel Refinement",
+    "recipe": 38198,
+    "rank": "Master",
+    "special": "MaterialMiracle",
+    "charges": 2
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 21340,
+    "lower": [
+     12550,
+     15060
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 25100,
+   "progress": 7800,
+   "durability": 60,
+   "baseProgress": 290,
+   "baseQuality": 312,
+   "staticPlanLength": 29,
+   "staticNormalQuality": 10636,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 6597,
+     "meanSteps": 20.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P137|StellarSteadyHand|4",
+    "planet": "auxesia",
+    "profile": "P137",
+    "mission": 1396,
+    "missionName": "Master: Potent Alchemical Compound Development",
+    "recipe": 38199,
+    "rank": "Master",
+    "special": "StellarSteadyHand",
+    "charges": 4
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 18790,
+    "lower": [
+     11050,
+     13260
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 22100,
+   "progress": 6900,
+   "durability": 45,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 35,
+   "staticNormalQuality": 13780,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0.075,
+     "ci95": 0.08162582311989265,
+     "completionRate": 1,
+     "meanQuality": 9575,
+     "meanSteps": 23.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P137|StellarSteadyHand|4",
+    "planet": "auxesia",
+    "profile": "P137",
+    "mission": 1396,
+    "missionName": "Master: Potent Alchemical Compound Development",
+    "recipe": 38199,
+    "rank": "Master",
+    "special": "StellarSteadyHand",
+    "charges": 4
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 18790,
+    "lower": [
+     11050,
+     13260
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 22100,
+   "progress": 6900,
+   "durability": 45,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 36,
+   "staticNormalQuality": 11801,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8004,
+     "meanSteps": 23.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P138|MaterialMiracle|4",
+    "planet": "auxesia",
+    "profile": "P138",
+    "mission": 1397,
+    "missionName": "Master: Renewable Fuel Survey",
+    "recipe": 38200,
+    "rank": "Master",
+    "special": "MaterialMiracle",
+    "charges": 4
+   },
+   "stats": "high",
+   "env": "teamcraft",
+   "target": {
+    "target": 22360,
+    "lower": [
+     13150,
+     15780
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26300,
+   "progress": 7400,
+   "durability": 80,
+   "baseProgress": 308,
+   "baseQuality": 306,
+   "staticPlanLength": 30,
+   "staticNormalQuality": 14449,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 8987,
+     "meanSteps": 20,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P138|MaterialMiracle|4",
+    "planet": "auxesia",
+    "profile": "P138",
+    "mission": 1397,
+    "missionName": "Master: Renewable Fuel Survey",
+    "recipe": 38200,
+    "rank": "Master",
+    "special": "MaterialMiracle",
+    "charges": 4
+   },
+   "stats": "mid",
+   "env": "teamcraft",
+   "target": {
+    "target": 22360,
+    "lower": [
+     13150,
+     15780
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 26300,
+   "progress": 7400,
+   "durability": 80,
+   "baseProgress": 277,
+   "baseQuality": 276,
+   "staticPlanLength": 33,
+   "staticNormalQuality": 12542,
+   "results": {
+    "static": {
+     "n": 40,
+     "successRate": 0,
+     "ci95": 0.000009800000000000001,
+     "completionRate": 1,
+     "meanQuality": 7817,
+     "meanSteps": 23.4,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    }
+   }
+  }
+ ]
+}

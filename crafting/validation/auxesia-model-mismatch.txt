@@ -1,0 +1,8 @@
+auxesia P119 r37981 EX MaterialMiraclex1 [high] tgt 21000/24700 | static 13%±10 q15135 c100% 20.3st | heuristic 73%±14 q21243 c100% 25.6st | solver 100%±0 q22376 c100% 27.4st 26.7ms est0.906
+auxesia P120 r37982 EX StellarSteadyHandx1 [high] tgt 14710/17300 | static 68%±15 q11201 c100% 20.1st | heuristic 100%±0 q15254 c100% 24.5st | solver 100%±0 q15692 c100% 28.8st 28.5ms est1
+auxesia P121 r37983 EX -x0 [high] tgt 16580/19500 | static 18%±12 q11664 c100% 22.6st | heuristic 68%±15 q16654 c100% 25.4st | solver 93%±8 q17404 c100% 29.3st 26.7ms est0.781
+auxesia P134 r37986 EX+ -x0 [high] tgt 22100/26000 | static 3%±5 q13291 c100% 20.4st | heuristic 5%±7 q19096 c100% 25.3st | solver 68%±15 q21963 c100% 30.8st 28.8ms est0.375
+auxesia P136 r38198 Master MaterialMiraclex2 [high] tgt 21340/25100 | static 0%±0 q10240 c100% 18.4st | heuristic 13%±10 q18798 c100% 29.9st | solver 78%±13 q21111 c100% 34.8st 32.6ms est0.438
+auxesia P137 r38199 Master StellarSteadyHandx4 [high] tgt 18790/22100 | static 0%±0 q10739 c100% 26.6st | heuristic 15%±11 q16533 c100% 31st | solver 100%±0 q19992 c100% 37.3st 34.4ms est0.594
+auxesia P138 r38200 Master MaterialMiraclex4 [high] tgt 22360/26300 | static 0%±0 q9860 c100% 21.6st | heuristic 5%±7 q18750 c100% 32.8st | solver 78%±13 q22327 c100% 41.3st 36.5ms est0.156
+done in 99.134s

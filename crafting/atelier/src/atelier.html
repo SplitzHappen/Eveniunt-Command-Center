@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eveniunt Atelier</title>
+<meta name="description" content="Offline crafting solver for Final Fantasy XIV: Raphael's macro solver plus a live step-by-step guide for expert recipes. Part of the Eveniunt Network Command Center.">
+<style>{{FONTS}}
+{{CSS}}</style>
+</head>
+<body>
+<div class="boot" id="boot"><div class="lb-mark big"><span class="lb-top">Eveniunt</span><span class="lb-word">Atelier</span><span class="lb-gauge charging" aria-hidden="true"><i></i><i></i><i></i></span><em>Opening the workbook…</em></div></div>
+<header class="mast">
+  <a class="wordmark lb-mark" href="#" aria-label="Eveniunt Atelier"><span class="lb-top">Eveniunt</span><span class="lb-word">Atelier</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
+  <span class="lb-tag">Network Command Center<br>Crafting</span>
+  <span class="grow"></span>
+  <div class="mast-tools">
+    <select id="locale" aria-label="Language"></select>
+    <button class="btn sm ghost" data-act="settings" aria-label="Settings">Settings</button>
+  </div>
+</header>
+<nav class="tabs" aria-label="Sections">
+  <button data-act="tab" data-pane="recipe" class="on">Recipe</button>
+  <button data-act="tab" data-pane="crafter">Crafter</button>
+  <button data-act="tab" data-pane="rotation">Macro</button>
+</nav>
+<main class="bench">
+  <section class="pane on" id="pane-recipe" aria-label="Recipe"></section>
+  <section class="pane" id="pane-crafter" aria-label="Crafter"></section>
+  <section class="guide hidden" id="guide" aria-label="Step-by-step guide"></section>
+  <section class="pane" id="pane-rotation" aria-label="Macro"></section>
+</main>
+<p class="foot">Powered by Raphael (KonaeAkira/raphael-rs, Apache-2.0) · Game data and action icons © SQUARE ENIX · Live guide: Eveniunt engine · Fonts under the SIL Open Font License · Build {{BUILD}}</p>
+<dialog id="dlg"></dialog>
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+<script id="atelier-data" type="application/json">{{DATA}}</script>
+<script id="icons" type="application/json">{{ICONS}}</script>
+<script id="raphael-glue" type="text/plain">{{GLUE}}</script>
+<script id="raphael-wasm" type="text/plain">{{WASM}}</script>
+<script id="engine">{{ENGINE}}</script>
+<script id="app">{{APP}}</script>
+</body>
+</html>

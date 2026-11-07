@@ -1,0 +1,8 @@
+auxesia P119 r37981 EX MaterialMiraclex1 [high] tgt 21000/24700 | static 13%±10 q15135 c100% 20.3st
+auxesia P120 r37982 EX StellarSteadyHandx1 [high] tgt 14710/17300 | static 68%±15 q11201 c100% 20.1st
+auxesia P121 r37983 EX -x0 [high] tgt 16580/19500 | static 18%±12 q11664 c100% 22.6st
+auxesia P134 r37986 EX+ -x0 [high] tgt 22100/26000 | static 3%±5 q13291 c100% 20.4st
+auxesia P136 r38198 Master MaterialMiraclex2 [high] tgt 21340/25100 | static 0%±0 q10240 c100% 18.4st
+auxesia P137 r38199 Master StellarSteadyHandx4 [high] tgt 18790/22100 | static 0%±0 q10739 c100% 26.6st
+auxesia P138 r38200 Master MaterialMiraclex4 [high] tgt 22360/26300 | static 0%±0 q9860 c100% 21.6st
+done in 0.432s

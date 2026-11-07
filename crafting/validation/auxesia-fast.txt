@@ -1,0 +1,8 @@
+auxesia P119 r37981 EX MaterialMiraclex1 [high] tgt 21000/24700 | solver 100%±0 q21993 c100% 27.4st 27.2ms est0.906
+auxesia P120 r37982 EX StellarSteadyHandx1 [high] tgt 14710/17300 | solver 100%±0 q15668 c100% 24st 27.5ms est1
+auxesia P121 r37983 EX -x0 [high] tgt 16580/19500 | solver 98%±5 q17499 c100% 27.8st 28ms est0.781
+auxesia P134 r37986 EX+ -x0 [high] tgt 22100/26000 | solver 85%±11 q22002 c100% 30.1st 30.4ms est0.375
+auxesia P136 r38198 Master MaterialMiraclex2 [high] tgt 21340/25100 | solver 85%±11 q21308 c100% 35.1st 32.6ms est0.438
+auxesia P137 r38199 Master StellarSteadyHandx4 [high] tgt 18790/22100 | solver 98%±5 q19229 c100% 35.3st 37.1ms est0.594
+auxesia P138 r38200 Master MaterialMiraclex4 [high] tgt 22360/26300 | solver 73%±14 q20564 c100% 40.9st 40.8ms est0.188
+done in 98.751s
