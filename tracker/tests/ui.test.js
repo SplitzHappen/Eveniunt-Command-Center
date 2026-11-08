@@ -105,9 +105,9 @@ test('group header ticks a whole group for one character; level fields tick at t
   await go(page, 'levels');
   const lv = page.locator('.lvl[data-c="c1"]').first();
   await lv.fill('90'); await lv.dispatchEvent('change');
-  assert.equal(await tally(page, 'c1'), '0 / 33');
+  assert.equal(await tally(page, 'c1'), '0 / 34'); // 33 jobs plus Beastmaster (7.56)
   await page.locator('.lvl[data-c="c1"]').first().fill('100'); await page.locator('.lvl[data-c="c1"]').first().dispatchEvent('change');
-  assert.equal(await tally(page, 'c1'), '1 / 33');
+  assert.equal(await tally(page, 'c1'), '1 / 34');
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -243,6 +243,12 @@ test('data counts match the pinned sheets and FFXIV Collect where they overlap',
   const mounts = data.sections.find((s) => s.id === 'mounts').g.flatMap((g) => g.e);
   assert.equal(mounts.filter((e) => e.x === 'gone').length, 13);
   assert.equal(data.sections.reduce((a, s) => a + s.g.reduce((b, g) => b + g.e.length, 0), 0) > 41000, true);
+  // content added after the checklist's 7.45 edition, appended from the game data (7.57h1)
+  const late = {};
+  for (const s of data.sections) for (const g of s.g) for (const e of g.e) if ((e.d || '').includes("Added after the checklist's 7.45 edition")) late[s.id] = (late[s.id] || 0) + 1;
+  assert.deepEqual(late, { plate: 76, portraits: 98, phantomjobs: 8, collection: 29, ocevents: 15, ocduties: 2, relicweapons: 42, relictools: 33, fishingspots: 1, levels: 1, oclevel: 20 });
+  const ids = (id) => data.sections.find((s) => s.id === id).g.flatMap((g) => g.e.map((e) => e.i));
+  for (const s of data.sections) assert.equal(new Set(ids(s.id)).size, ids(s.id).length, s.id + ' has repeated ids');
 });
 
 test('hosted site over HTTP: installable, works offline after the first visit', async () => {

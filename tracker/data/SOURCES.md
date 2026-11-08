@@ -6,6 +6,26 @@
 
 - Extra lists and the desktop-app import map (owner decision 2026-11-07, option 3, credited): the community "FFXIV 100% Completion Checklist" workbook 7.45 by its volunteer team (the same team as the FFXIV Completionist desktop app). `tools/add-checklist.py <workbook.xlsx>` runs after `tools/extract.py`, appends 38 lists (marked `src: "checklist"`) and writes `data/desktop-map.json`. Rows the workbook pre-marks with X carry the "no longer obtainable" mark. The workbook file itself is not committed.
 
+## Content added after the workbook's 7.45 edition
+
+The workbook stops at 7.45; the game sheets are pinned at 7.57h1. `tools/add-checklist.py <workbook.xlsx> --dm <datamining checkout>` compares each relevant game sheet at the 7.45h2 commit (`d67201a2a27933a444bf249d900f7afd2840f6ff`) with the pinned commit and appends the new rows to the matching workbook list, each with the note "Added after the checklist's 7.45 edition (from the game data, 7.57)". Existing rows keep their ids, so the desktop-app import map is unchanged; new rows use ids above 100000.
+
+| List | Added | From |
+| --- | --- | --- |
+| Adventurer Plate | 76 (12 base plates, 13 borders, 38 decorations, 13 design presets; unnamed and duplicate-name rows skipped) | CharaCardBase, CharaCardHeader, CharaCardDecoration, CharaCardDesignPreset |
+| Portraits | 98 (backgrounds, frames, accents) | BannerBg, BannerFrame, BannerDecoration |
+| Relic Weapons | 42: Phantom weapons, stages Eclipticum and Occultum, 21 jobs each (Paladin sword and shield as one row; replicas left out) | Item (main hand and shield slots) |
+| Relic Tools | 33: Hyper tools v1.1 and v1.2 and the "of Stars" tools, 11 crafters and gatherers | Item (item level above the workbook's highest, 765) |
+| Occult Crescent: Phantom Jobs | 8 (Ninja, White Mage, Black Mage, Dragoon, Summoner, Blue Mage, Red Mage, Necromancer) | MKDSupportJob |
+| Portable Archive and Collections | 29 Occult Records (North Horn) | MKDLore |
+| Occult Crescent: Events | 15 North Horn critical engagements | DynamicEvent |
+| Occult Crescent: Duties | 2 (The Forked Tower: Magic, and Extreme) | DynamicEvent |
+| Occult Crescent: Knowledge Levels | 20 (levels 21 to 40) | cap from the 7.55 patch notes as reported by guides; the game's MKDGrowData table now grows past 20 (the build stops if that changes) |
+| Classes and Jobs | Beastmaster (Limited Job), level cap 50 | ClassJob 43; unlock quest from Quest; cap from the 7.56 notes as reported by guides |
+| Fishing Log: Spots | 1 ocean-fishing spot (Thavnair Spectral Current) | FishingSpot (rows with a zone only; the 37 zoneless rows are Cosmic Exploration mission spots, which the workbook does not list) |
+
+Not added, because no reachable data identifies them: 3 Triple Triad opponents the game sheets list without a name (TripleTriadResident 2293903 to 2293905), and the North Horn aether shards (the official Lodestone and the wikis could not be opened from the build session; web search did not name them). Lists drawn from the game sheets (mounts, minions, quests, achievements, logs, duties and so on) already include everything up to 7.57h1.
+
 ## Availability marks
 
 - `x: "lim"`: only obtainable from time-limited sources (events, seasonal content, ended campaigns, PvP seasons); it may return. 514 entries.

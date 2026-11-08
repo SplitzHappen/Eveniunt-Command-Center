@@ -14,9 +14,13 @@ Writes data/tracker-data.json (sections appended) and data/desktop-map.json.
 import json, os, re, sys, collections
 import openpyxl
 
-WB_PATH = sys.argv[1]
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+DM = sys.argv[sys.argv.index("--dm") + 1] if "--dm" in sys.argv else None  # game-sheet checkout: adds what came after the workbook
+if DM in ARGS:
+    ARGS.remove(DM)
+WB_PATH = ARGS[0]
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "data", "tracker-data.json")
+DATA = ARGS[1] if len(ARGS) > 1 else os.path.join(HERE, "..", "data", "tracker-data.json")
 MAP_OUT = os.path.join(os.path.dirname(DATA), "desktop-map.json")
 WB_VERSION = "7.45"
 
@@ -279,6 +283,139 @@ rules.append({"p": "duty/exploratory-missions/bozja/events", "s": "id", "sec": "
 rules.append({"p": "character/character/classes--jobs", "s": "global", "k": LV_KEYS["jobs"], "val": 1})
 rules.append({"p": "character/character/desynthesis", "s": "global", "k": LV_KEYS["desynth"], "val": 1})
 
+# ---------------------------------------------------------------- content added after the workbook's edition
+# The workbook is the 7.45 edition; the game sheets are pinned at 7.57h1. Rows the game added after 7.45 (compared with
+# the game sheets at the 7.45h2 commit) that the workbook lists do not contain are appended from the game data, each
+# marked as added after the workbook. Existing rows keep their ids, so the desktop-app import map is unaffected.
+OLD_COMMIT = "d67201a2a27933a444bf249d900f7afd2840f6ff"  # xivapi/ffxiv-datamining "7.45h2"
+after_745 = collections.Counter()
+if DM:
+    import subprocess, csv as _csv
+    def gsheet(name, commit=None):
+        if commit:
+            txt = subprocess.run(["git", "-C", DM, "show", f"{commit}:csv/en/{name}.csv"], capture_output=True, text=True).stdout
+            rr = list(_csv.reader(txt.splitlines()))
+        else:
+            with open(os.path.join(DM, "csv", "en", name + ".csv"), encoding="utf-8-sig") as fh:
+                rr = list(_csv.reader(fh))
+        hh = rr[0]
+        return {int(x[0]): dict(zip(hh, x)) for x in rr[1:] if x and x[0].isdigit()}
+    def added_rows(name):
+        old = gsheet(name, OLD_COMMIT)
+        return [(k, v) for k, v in sorted(gsheet(name).items()) if k not in old]
+    NOTE = "Added after the checklist's 7.45 edition (from the game data, 7.57)"
+    def append(sid, group, items, base):
+        sec = SEC[sid]
+        have = {norm(e["n"]) for g in sec["g"] for e in g["e"]}
+        es = []
+        for rid, name, det in items:
+            if not name or norm(name) in have:
+                continue
+            have.add(norm(name))
+            es.append({"i": base + rid, "n": name, "d": (det + " · " if det else "") + NOTE})
+        if es:
+            tgt = next((g for g in sec["g"] if g["t"] == group), None)
+            if tgt:
+                tgt["e"].extend(es)
+            else:
+                sec["g"].append({"t": group, "e": es})
+            after_745[sid] += len(es)
+    # adventurer plate parts and portrait parts
+    deco_kind = {}
+    for sheet_, label in (("CharaCardBase", "Base plate"), ("CharaCardHeader", "Top and bottom border"), ("CharaCardDecoration", "Decoration"), ("CharaCardDesignPreset", "Design preset")):
+        append("plate", "Added after 7.45", [(k, v.get("Name", "").strip(), label) for k, v in added_rows(sheet_)],
+               {"CharaCardBase": 100000, "CharaCardHeader": 200000, "CharaCardDecoration": 300000, "CharaCardDesignPreset": 400000}[sheet_])
+    for sheet_, label, base in (("BannerBg", "Background", 100000), ("BannerFrame", "Frame", 200000), ("BannerDecoration", "Accent", 300000)):
+        append("portraits", "Added after 7.45", [(k, v.get("Name", "").strip(), label) for k, v in added_rows(sheet_)], base)
+    # Occult Crescent: phantom jobs, records, critical engagements and duties
+    append("phantomjobs", "Phantom Jobs", [(k, v["Name"].strip(), "") for k, v in added_rows("MKDSupportJob")], 100000)
+    append("collection", "Occult Record", [(k, v["Name"].strip(), "") for k, v in added_rows("MKDLore")], 100000)
+    de_all = gsheet("DynamicEvent")
+    oc_first = min((k for k, v in de_all.items() if v.get("Name", "").strip() == "Calamity Bound"), default=None)
+    if oc_first is not None:
+        ces = [(k, v["Name"].strip(), "Critical engagement") for k, v in sorted(de_all.items()) if k >= oc_first and v.get("Name", "").strip() and not v["Name"].startswith("The Forked Tower")]
+        append("ocevents", "The Occult Crescent: North Horn Events", ces, 100000)
+        towers = [(k, v["Name"].strip(), "") for k, v in sorted(de_all.items()) if v.get("Name", "").startswith("The Forked Tower")]
+        append("ocduties", "Added after 7.45", towers, 100000)
+    # relic weapons: new stages of the Dawntrail (phantom) weapons
+    items_new = added_rows("Item")
+    rw = SEC["relicweapons"]
+    dt = next(g for g in rw["g"] if "Dawntrail" in g["t"])
+    # A new stage is a final word that the existing rows do not use and that ends many new "Phantom ..." items (one per
+    # job; weapons and shields only); replicas are left out, and the Paladin shield joins the sword in one row, as the workbook writes it.
+    prefix = collections.Counter(e["n"].split()[0] for e in dt["e"]).most_common(1)[0][0]
+    old_stages = {w.strip() for e in dt["e"] for part in e["n"].split("&") for w in part.split()[-1:]}
+    cand = [(k, v) for k, v in items_new if v["Name"].startswith(prefix + " ") and "Replica" not in v["Name"] and v.get("EquipSlotCategory") in ("1", "2", "13") and len(v["Name"].split()) > 2
+            and v["Name"].split()[-1] not in old_stages]
+    stage_n = collections.Counter(v["Name"].split()[-1] for k, v in cand)
+    cand = [(k, v) for k, v in cand if stage_n[v["Name"].split()[-1]] >= 10]
+    shields = {v["Name"].split()[-1]: v["Name"].strip() for k, v in cand if v["Name"].split()[1] == "Shield"}
+    cjc = gsheet("ClassJobCategory")
+    rows_ = []
+    for k, v in cand:
+        nm, stage = v["Name"].strip(), v["Name"].split()[-1]
+        if nm.split()[1] == "Shield":
+            continue
+        job = (clean(cjc.get(int(v.get("ClassJobCategory") or 0), {}).get("Name")).split() or [""])[-1]
+        if job == "PLD" and stage in shields:
+            nm += " & " + shields[stage]
+        rows_.append((k, nm, job + " · item level " + v.get("LevelItem", "")))
+    append("relicweapons", dt["t"], rows_, 100000)
+    # relic tools: new Dawntrail (cosmic) tool stages are crafter or gatherer main-hand items above the highest item
+    # level the workbook lists for them; replicas are left out
+    dtt = next(g for g in SEC["relictools"]["g"] if "Dawntrail" in g["t"])
+    top_il = max(int(m.group(1)) for e in dtt["e"] for m in [re.search(r" · (\d+)(?: · |$)", e.get("d", ""))] if m)
+    cjn = {v["Abbreviation"]: clean(v["Name"]).title() for v in gsheet("ClassJob").values() if v.get("Abbreviation")}
+    hand = {"CRP", "BSM", "ARM", "GSM", "LTW", "WVR", "ALC", "CUL", "MIN", "BTN", "FSH"}
+    tools_ = []
+    for k, v in items_new:
+        job = clean(cjc.get(int(v.get("ClassJobCategory") or 0), {}).get("Name"))
+        if (v.get("EquipSlotCategory") in ("1", "13") and job in hand and "Replica" not in v["Name"]
+                and int(v.get("LevelItem") or 0) > top_il):
+            tools_.append((k, v["Name"].strip(), cjn.get(job, job) + " · " + v["LevelItem"]))
+    append("relictools", dtt["t"], tools_, 100000)
+    # Triple Triad opponents (only those the game data names) and fishing spots (only those placed in a zone; the
+    # zoneless rows are Cosmic Exploration mission spots, which the workbook does not list)
+    npc = gsheet("ENpcResident")
+    tt_new = added_rows("TripleTriadResident")
+    append("ttnpcs", "Added after 7.45", [(k, clean(npc.get(k, {}).get("Singular")).title(), "") for k, v in tt_new], 0)
+    unnamed_tt = sum(1 for k, v in tt_new if not clean(npc.get(k, {}).get("Singular")))
+    place, terr = gsheet("PlaceName"), gsheet("TerritoryType")
+    append("fishingspots", "Added after 7.45", [(k, clean(place.get(int(v.get("PlaceName") or 0), {}).get("Name")),
+                                                 "Ocean fishing" if v.get("TerritoryType") == "900" else clean(place.get(int(terr.get(int(v.get("TerritoryType") or 0), {}).get("PlaceName") or 0), {}).get("Name")))
+                                                for k, v in added_rows("FishingSpot") if (v.get("TerritoryType") or "0") != "0"], 100000)
+    # Limited jobs the game data adds after 7.45 (Beastmaster, 7.56; level cap 50 per the 7.56 notes and guides; its job
+    # quests and the Crucible of the Unbroken are already in the game-data quest and duty lists)
+    LIMITED_CAP = {"BST": 50}
+    cj_old = gsheet("ClassJob", OLD_COMMIT)
+    quests = gsheet("Quest")
+    for k, v in sorted(gsheet("ClassJob").items()):
+        if v.get("Abbreviation") in LIMITED_CAP and not (cj_old.get(k, {}).get("Abbreviation")):
+            q = clean(quests.get(int(v.get("UnlockQuest") or 0), {}).get("Name"))
+            lv = SEC["levels"]
+            grp = next((g for g in lv["g"] if g["t"] == "Limited Jobs"), None)
+            if not grp:
+                grp = {"t": "Limited Jobs", "e": []}
+                lv["g"].insert(next(i for i, g in enumerate(lv["g"]) if g["t"].startswith("Disciples of the Hand")), grp)
+            grp["e"].append({"i": 100000 + k, "n": clean(v["Name"]).title() + " (Limited Job)", "val": 1, "max": LIMITED_CAP[v["Abbreviation"]],
+                             "d": ("Quest: " + q + " · " if q else "") + NOTE})
+            after_745["levels"] += 1
+    # Occult Crescent knowledge levels: the cap rose from 20 to 40 with North Horn (7.55); the game's experience table
+    # keeps growing past 20 (to level 39), where the 7.45 table went flat at 20; the cap itself is from the 7.55 notes
+    grow, grow_old = gsheet("MKDGrowData"), gsheet("MKDGrowData", OLD_COMMIT)
+    assert grow[21]["Unknown0"] != grow[20]["Unknown0"] and grow_old[21]["Unknown0"] == grow_old[20]["Unknown0"], "knowledge table changed again"
+    new_cap = 40
+    ocl = SEC["oclevel"]
+    have_lv = {e["n"] for g in ocl["g"] for e in g["e"]}
+    extra = [{"i": 100000 + n, "n": str(n), "d": "North Horn · " + NOTE} for n in range(1, new_cap + 1) if str(n) not in have_lv]
+    if extra:
+        ocl["g"][-1]["e"].extend(extra)
+        after_745["oclevel"] += len(extra)
+    if unnamed_tt:
+        after_745["ttnpcs (not named in the game data, left out)"] = unnamed_tt
+    for sid, n in [(s_, n_) for s_, n_ in after_745.items() if s_ in SEC]:
+        report[sid] += n
+
 credit = ("Extra lists and the desktop-app import map: FFXIV 100% Completion Checklist " + WB_VERSION +
           " by its volunteer team (same team as the FFXIV Completionist app), used with credit.")
 data["meta"]["sources"]["checklist"] = credit
@@ -286,4 +423,4 @@ with open(DATA, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 with open(MAP_OUT, "w", encoding="utf-8") as f:
     json.dump({"source": credit, "rules": rules}, f, ensure_ascii=False, separators=(",", ":"))
-print(json.dumps({"added": report, "total_entries": sum(len(g["e"]) for s in data["sections"] for g in s["g"])}, indent=1))
+print(json.dumps({"added": report, "after_745": dict(after_745), "total_entries": sum(len(g["e"]) for s in data["sections"] for g in s["g"])}, indent=1))
