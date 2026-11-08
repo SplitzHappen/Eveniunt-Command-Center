@@ -6,7 +6,7 @@ Date: 2026-11-08. Data: `xivapi/ffxiv-datamining` @ `44948e4c` (7.57h1), FFXIV T
 
 | Suite | Result | What it checks |
 | --- | --- | --- |
-| `node --test tests/core.test.js` | 49 / 49 pass | characters 1–8; totals; the ✕ switch both ways; ticks on uncounted entries kept but not added; group ticking; per-character “does not apply”; level values (cap ticks, desynthesis recorded only); backup file and transfer code round trips; three-way merge and conflicts; FFXIV Collect refresh (first run asks, later gains apply, clashes ask, private profiles, no connection); Google Drive sync against a simulated Drive; desktop-app import (game ids, positions, X marks, levels, master books never read as recipe ids); **red-team cases**: crafted backups (prototype keys, markup in names, cities, levels, keys), huge or malformed transfer codes, levels of a removed character, Lodestone addresses, merged-entry ticks moving over, and cloud sync with a damaged copy, a large removal, a simultaneous write and odd ids in the cloud file; **links**: built for this data and refused for other data, the main story from "The Ultimate Weapon" down to the character's own city and company quests only, achievement and title both ways, quest and aether current both ways, Freebird only after the last current, the gold-rating switch, level achievements, never ticking what does not apply; achievement tiers, Dawntrail relic stages, Grand Company rank and officer quest, a checked desktop-app link (Firebird quest and the lanners) |
+| `node --test tests/core.test.js` | 50 / 50 pass | characters 1–8; totals; the ✕ switch both ways; ticks on uncounted entries kept but not added; group ticking; per-character “does not apply”; level values (cap ticks, desynthesis recorded only); backup file and transfer code round trips; three-way merge and conflicts; FFXIV Collect refresh (first run asks, later gains apply, clashes ask, private profiles, no connection); Google Drive sync against a simulated Drive; desktop-app import (game ids, positions, X marks, levels, master books never read as recipe ids); **red-team cases**: crafted backups (prototype keys, markup in names, cities, levels, keys), huge or malformed transfer codes, levels of a removed character, Lodestone addresses, merged-entry ticks moving over, and cloud sync with a damaged copy, a large removal, a simultaneous write and odd ids in the cloud file; **links**: built for this data and refused for other data, the main story from "The Ultimate Weapon" down to the character's own city and company quests only, achievement and title both ways, quest and aether current both ways, Freebird only after the last current, the gold-rating switch, level achievements, never ticking what does not apply; achievement tiers, Dawntrail relic stages, Grand Company rank and officer quest, a checked desktop-app link (Firebird quest and the lanners) |
 | `node --test tests/ui.test.js` | 23 / 23 pass | the built file from `file://` with every network request blocked: first run with 8 characters; lists open with every group closed (Open all, Close all, find opens matches); a tick follows its links with an Undo message and explains them in the details, the switch turns links off, and Settings fills in what existing ticks prove (preview and Undo); click marks done, right-click and press-and-hold mark “does not apply”, a second click clears either; ticking, ✕ both ways and “does not apply” update the tallies and survive a reload; group ticks; level fields; every list renders and every list over 60 entries is grouped; search; the menu is Character, Duty, Logs, Travel, Social; desktop-app import through the interface; transfer code between two browsers; phone width 390 px with no sideways scroll; **all 20 themes in light and dark** (text contrast ≥ 7, accent ≥ 3, dropdowns ≥ 7, themes listed alphabetically, wordmark coloured by the theme); data counts; the **hosted site over HTTP** (manifest, service worker, offline reload keeps the characters, no cross-origin isolation so Google sign-in can open); **red-team cases**: a crafted backup loaded through the page runs no script, the first-run window cannot be dismissed, unreadable saved data is offered for download and kept, and two windows of the tracker never overwrite each other |
 
 ## Starting city and Grand Company
@@ -120,3 +120,30 @@ Two independent red-team reviews (ChatGPT, 8 findings; Claude, 41 findings) of t
     - allied society ranks: reputation needed.
   - Wiki text is not copied word for word: the Console Games Wiki states no licence for its text. The facts taken from it (spawn triggers, what unlocks a record, a route's choices) are stated in the tracker's own words or as short facts, and credited.
   - The information is stored compressed in the page (about 0.6 MB, up from 5.0 MB to 5.9 MB in all) and unpacked the first time a window opens.
+
+## Every entry explained; crafting and gathering in depth (2026-11-08)
+
+- **Every one of the 43,944 entries now has how-to text in its window.** A test fails if any entry has neither information lines nor a source.
+- **Crafting log (13,892 recipes):**
+  - job, level, stars and recipe level;
+  - specialist-only, expert and collectable;
+  - every material with where it comes from (crafted by which job at which level, gathered by which job, or fished) and the yield;
+  - minimum Craftsmanship and Control;
+  - required item or status;
+  - the master book or quest that unlocks it;
+  - durability, whether it can be HQ, and whether Quick Synthesis is available.
+- **Gathering log (1,153 items):**
+  - node type (mining, quarrying, logging, harvesting), level, area and zone with coordinates, for up to three zones;
+  - unspoiled, ephemeral and legendary nodes with their Eorzea times and how long they stay up;
+  - hidden items;
+  - the folklore book a legendary node needs (227 of 286, matched from the node's region);
+  - whether the item is a collectable, and any Perception requirement;
+  - "Sublime" items: which ordinary item they replace.
+- **Every other list:** a plain instruction built from the entry's own facts. Examples:
+  - Cosmic missions: job, planet, silver and gold scores, time limit;
+  - plates and portraits: their source;
+  - relic stages: what they need;
+  - fishing holes: coordinates and the fish found there;
+  - Triple Triad opponents: place, difficulty and rules;
+  - master and folklore books: vendor and price;
+  - porters, field operation levels, Island Sanctuary, Grand Company ranks, the Masked Carnivale, chocobo companion skills, Trust and more.
