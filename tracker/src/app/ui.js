@@ -209,16 +209,21 @@
   }
   function headRowHtml(t) { return '<div class="lr lh" id="lh"><span class="c0">' + (UI.view === 'sec' ? esc(SEC.get(UI.sec).t) : 'Entry') + '</span>' + headCells(t) + '</div>'; }
   function groupHtml(sid, gi, g, keys, label) {
-    var cnt = groupCounts(g.keys), folded = UI.folded[sid + '#' + gi];
+    var id = sid + '#' + gi, sec = SEC.get(sid);
+    // Groups start closed when a list opens (only their headers and counts show), so a long list reads as a short
+    // table of contents. A list with one group, a search inside the list and the global search show rows directly.
+    var folded = !(OPENG.has(id) || UI.find || sid.indexOf('find:') === 0 || (sec && sec.groups.length === 1));
+    var cnt = groupCounts(g.keys);
     return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '"><span class="fold">▾</span><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '</span>' +
       ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" title="' + esc(c.name) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '. Click to tick or clear the whole group.">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>' +
-      keys.map(rowHtml).join('') + '</div>';
+      (folded ? '' : keys.map(rowHtml).join('')) + '</div>';
   }
+  var OPENG = new Set(); // groups opened in the current list (reset each time a list is entered)
   var GROUP_KEYS = new Map(); // "sid#gi" -> keys of the full group
 
   // ── pages ──
   function setView(view, sec, push) {
-    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear();
+    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear(); OPENG.clear(); UI.find = '';
     persist(); render();
     var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : '#/';
     if (push !== false && location.hash !== h) history.pushState(null, '', h);
@@ -257,6 +262,7 @@
     return '<div class="bar"><input class="find" id="find" type="search" placeholder="Find in this list" value="' + esc(UI.find) + '" aria-label="Find in this list">' +
       '<span class="chips" role="group" aria-label="Show">' + chip('all', 'All') + chip('missing', 'Missing') + chip('done', 'Done') + '</span>' +
       '<span class="grow"></span>' +
+      '<button type="button" class="opt-btn" data-openall="1">Open all</button><button type="button" class="opt-btn" data-openall="0">Close all</button>' +
       '<button type="button" class="opt-btn' + (UI.showX ? ' on' : '') + '" data-showx="1" title="Entries that are not counted (time-limited, unobtainable or unknown)">' + (UI.showX ? '✓ ' : '') + 'Show not counted</button>' +
       '<button type="button" class="opt-btn' + (UI.mode === 'na' ? ' on' : '') + '" data-mode="' + (UI.mode === 'na' ? 'tick' : 'na') + '" title="Mark entries that do not apply to one character">' + (UI.mode === 'na' ? '✓ ' : '') + 'Mark “does not apply”</button>' +
       (UI.mode === 'na' ? '<span class="mode-note">Clicking a box now marks that entry as not applying to that character. Click “Mark does not apply” again to go back to ticking.</span>' : '<span class="mode-note quiet">Click a box: done. Right-click (or press and hold): does not apply. Click a marked box again to clear it.</span>') + '</div>';
@@ -400,7 +406,9 @@
       refreshAfter(keys); return;
     }
     var fold = e.target.closest('[data-fold]');
-    if (fold) { var id = fold.dataset.fold; UI.folded[id] = !UI.folded[id]; if (!UI.folded[id]) delete UI.folded[id]; fold.closest('.lgroup').classList.toggle('folded', !!UI.folded[id]); persist(); return; }
+    if (fold) { var id = fold.dataset.fold; if (fold.closest('.lgroup').classList.contains('folded')) OPENG.add(id); else OPENG.delete(id); if (UI.view === 'search') renderSearch(); else renderLedger(); return; }
+    var oa = e.target.closest('[data-openall]');
+    if (oa) { if (oa.dataset.openall === '1') SEC.get(UI.sec).groups.forEach(function (g, gi) { OPENG.add(UI.sec + '#' + gi); }); else OPENG.clear(); renderLedger(); return; }
     var fl = e.target.closest('[data-filter]');
     if (fl) { UI.filter = fl.dataset.filter; persist(); $$('[data-filter]').forEach(function (b) { b.classList.toggle('on', b === fl); }); renderLedger(); return; }
     var sx = e.target.closest('[data-showx]');
@@ -811,5 +819,5 @@
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
   })();
-  window.__tracker = { get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
+  window.__tracker = { openAll: function () { SEC.get(UI.sec).groups.forEach(function (g, gi) { OPENG.add(UI.sec + '#' + gi); }); renderLedger(); }, get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
 })();

@@ -35,7 +35,8 @@ async function setup(page, n) {
   await page.click('#go');
   await page.waitForSelector('.ov-table');
 }
-const go = (page, sid) => page.evaluate((s) => window.__tracker.setView('sec', s), sid);
+// lists open with every group closed; the tests open them all, as the "Open all" button does
+const go = (page, sid) => page.evaluate((s) => { window.__tracker.setView('sec', s); window.__tracker.openAll(); }, sid);
 // "done / total" for a character in the open list, read from the column header the user sees
 const tally = (page, c) => page.evaluate((cid) => {
   const i = window.__tracker.ST.chars.findIndex((x) => x.id === cid);
@@ -410,5 +411,28 @@ test('two windows of the tracker: a tick in one shows in the other, never overwr
   const st = await page.evaluate(() => window.__tracker.ST);
   assert.ok(st.ticks.c1[key], 'first tick kept');
   assert.equal(Object.keys(st.ticks.c2).length, 1, 'second tick kept');
+  await ctx.close();
+});
+
+test('a list opens with every group closed; a group header opens it; Open all and Close all; find shows matches', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  await page.evaluate(() => window.__tracker.setView('sec', 'mounts'));
+  const groups = await page.locator('.lgroup').count();
+  assert.ok(groups > 1);
+  assert.equal(await page.locator('.lgroup.folded').count(), groups);
+  assert.equal(await page.locator('.er').count(), 0, 'no rows until a group is opened');
+  await page.locator('.lgroup .gh .c0').first().click();
+  assert.equal(await page.locator('.lgroup.folded').count(), groups - 1);
+  assert.ok(await page.locator('.er').count() > 0);
+  await page.click('[data-openall="1"]');
+  assert.equal(await page.locator('.lgroup.folded').count(), 0);
+  await page.click('[data-openall="0"]');
+  assert.equal(await page.locator('.lgroup.folded').count(), groups);
+  await page.fill('#find', 'chocobo');
+  await page.waitForFunction(() => document.querySelectorAll('.er').length > 0);
+  // entering another list starts closed again
+  await page.evaluate(() => window.__tracker.setView('sec', 'minions'));
+  assert.equal(await page.locator('.er').count(), 0);
+  assert.deepEqual(errors, []);
   await ctx.close();
 });
