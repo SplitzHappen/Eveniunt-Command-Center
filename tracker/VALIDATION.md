@@ -161,3 +161,15 @@ Owner request: "do all of them, quest steps included … i do not want generic o
 - **Smaller lists:** Blue Magic (how learning works, where the source is), Blue Mage log duties (unlock), Masked Carnivale stages (where to register, the quests later stages need), chocobo skills, Shared FATE, Island Sanctuary crafts, allied society ranks (who gives the dailies), class unlocks and mount speed (quest givers), spearfishing (hole, coordinates, shadow size and speed, fish to spear first), gathering levequests, fishing windows shown as hours and minutes, and no "Gig: UNKNOWN".
 - **Tests:** core 50/50 (the information test now also checks an ultimate, a treasure dungeon, a solo quest duty, a hunt bill mark, a Hunting Log area, a Masked Carnivale stage, and that no icon glyphs, "Gig: UNKNOWN" or "gold rating" lines remain); browser 23/23 (21 themes, including Solution Nine, each with text contrast ≥ 7 and accent ≥ 3 in light and dark).
 - **Solution Nine theme:** light: background #e6e8f8, text #0c0f2e (contrast 15.4), accent #b8166f (5.1); dark: background #0a0d24, text #e9ecff (16.3), accent #ff4fb8 (6.4). Added to the tracker's theme list at build time; the Atelier's own list is unchanged.
+
+## Relic weapon and tool guides (2026-11-08)
+
+Owner request: guides, tied to the tracker's own relic entries, for getting the relic weapons and tools.
+
+- Every one of the 1,114 relic stages (707 weapon, 407 tool) in Relics → Relic Weapons and Relic Tools now opens a guide for its stage in the information window. The guide covers 11 series: Zodiac, Anima, Eurekan, Resistance, Manderville and Phantom weapons; Lucis, Skysteel, Resplendent, Splendorous and Cosmic tools. Each guide gives:
+  - the series, the stage and its place in the series (for example "Zodiac Zeta stage (8 of 8)"), the job and the item level;
+  - what to do: first-time quests and NPCs, the repeatable quest, the grind and the fastest way through it;
+  - what that exact weapon or tool needs, with where each item comes from (vendor with place and price, duty drops, FATE rewards);
+  - how the dungeons and trials the stage asks for are unlocked (quest, giver and place, from the game data).
+- The guides are written for the tracker from the Console Games Wiki relic pages (`data/relic-guides.json`); no text is copied.
+- Tests: core 50/50 (the information test now checks a Zodiac, a Eurekan and a Splendorous stage, and that every relic stage has a guide); browser 23/23.

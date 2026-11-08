@@ -1128,6 +1128,49 @@ def fallback(sid, g, e):
     if sid in ("mounts", "minions", "emotes", "fashion", "facewear", "hairstyles", "barding", "orchestrion"): return ["No source recorded for it yet (FFXIV Collect lists none)"]
     if bits: return ["Details: " + " · ".join(coords(b) for b in bits)]
     return []
+# ---------------------------------------------------------------- relic weapons and tools: a stage-by-stage guide on every entry
+RELIC = json.load(open(os.path.join(T, "data", "relic-guides.json"), encoding="utf-8"))["series"]
+def relic_stage(series, name, il):
+    st = series["stages"]
+    for k, sg in enumerate(st):
+        if "il" in sg and sg["il"] != il: continue
+        if sg.get("name") and sg["name"].lower() not in name.lower(): continue
+        if "il" not in sg and "name" not in sg: continue
+        return k, sg
+    return None, None
+nrelic = 0
+for sid_ in ("relicweapons", "relictools"):
+    for key, g, e in each(sid_):
+        if not key.startswith(sid_ + ":"): continue
+        m_ = re.search(r"\((\w+)\)", g["t"])
+        series = RELIC.get(m_.group(1).lower()) if m_ else None
+        if not series: continue
+        raw = [x.strip() for x in str(e.get("d") or "").split(" · ") if x.strip()]
+        job = raw[0] if raw else ""
+        il = int(raw[1]) if len(raw) > 1 and raw[1].isdigit() else 0
+        need = " · ".join(x for x in raw[2:] if not x.startswith("Added after"))
+        k, sg = relic_stage(series, e["n"], il)
+        if sg is None: continue
+        order = sorted(series["stages"], key=lambda x: x.get("il", 0)) if all("il" in x for x in series["stages"]) else None
+        pos = (order.index(sg) + 1) if order else None
+        lines = [series["title"] + ": " + sg["title"] + " stage" + ((" (" + str(pos) + " of " + str(len(order)) + ")") if pos else "") + ((" for " + job) if job else "") + ((", item level " + str(il)) if il else "")]
+        lines += sg["lines"]
+        if need: lines.append("This weapon or tool needs: " + coords(need))
+        for nm in re.split(r"\s*[,/]\s*", need):
+            nm = re.sub(r"\s*(x\d+|\(.*?\))\s*$", "", nm).strip()
+            it_ = ITEM_BY_NAME.get(norm(nm)) if nm else None
+            if it_:
+                src_ = item_sources(it_, 2)
+                if src_: lines.append(nm + ": " + "; ".join(x[0].lower() + x[1:] for x in src_))
+        for dn in sg.get("duties", [])[:5]:
+            c_ = cfc_named(dn)
+            if not c_: continue
+            ul = [x for x in duty_lines(c_, {}) if x.startswith(("Unlocked", "Played"))]
+            dn_ = clean(CFC[c_]["Name"]); dn_ = dn_[:1].upper() + dn_[1:]
+            if ul: lines.append(dn_ + ": " + ul[0][0].lower() + ul[0][1:])
+        put(key, lines, 16); nrelic += 1
+stats["relic stages with a guide"] = nrelic
+
 added = collections.Counter()
 for s_ in data["sections"]:
     for g in s_["g"]:

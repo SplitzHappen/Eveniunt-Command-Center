@@ -763,6 +763,10 @@ test('information window: every entry says how to get or do it; recipes and gath
   assert.match(say('hunt', 'Endymion'), /Three-star Clan Mark Bills: defeat 2 in The Sea of Clouds/);
   assert.match(say('hunting', 'Bark eft'), /Defeat 3 in South Shroud, Upper Paths/);
   assert.match(say('carnivale', "All's Well That Starts Well"), /stage 1: .*Celestium Attendant/);
+  assert.match(say('relicweapons', 'Yoichi Bow Zeta'), /Zodiac Zeta stage \(8 of 8\).*Remon in Swiftperch/);
+  assert.match(say('relicweapons', 'Pleiades Pagos'), /Pagos.*Frosted Protean Crystals/);
+  assert.match(say('relictools', 'Lodestar Mallet'), /Lodestar stage \(7 of 7\).*Stand Tool, My Friend/);
+  assert.ok(Object.entries(INFO).filter(([k]) => k.startsWith('relic')).every(([, v]) => / stage/.test(v[0])), 'every relic weapon and tool stage has its guide');
   const all = JSON.stringify(INFO);
   assert.ok(!/[-]/.test(all), 'no game icon glyphs in the text');
   assert.ok(!all.includes('Gig: UNKNOWN') && !all.includes('gold rating'), 'no placeholder or generic lines');

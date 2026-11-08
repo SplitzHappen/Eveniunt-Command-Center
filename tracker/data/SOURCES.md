@@ -124,3 +124,5 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
 - `data/duty-facts.json`: how duties open where the game data is silent (ultimates, deep dungeons, treasure dungeons, criterion, chaotic, Quantum, seasonal and PvP), restated from the Console Games Wiki (read 2026-11-08). Quest names in it are looked up in the game data for the giver and place.
 - `data/duty-unlocks.json`: duty unlock quests from Garland Tools instance data, matched by duty name and checked against the game's quest names (69 mismatches dropped).
 - `data/field-events.json` and `data/bestiary.json`: field operation triggers and Master's Bestiary taming facts from the Console Games Wiki tables; facts only.
+
+- `data/relic-guides.json` (2026-11-08): stage-by-stage relic weapon and tool guides, written for the tracker from the Console Games Wiki relic pages (Zodiac, Anima, Eurekan, Resistance, Manderville, Phantom; Lucis, Skysteel, Resplendent, Splendorous, Cosmic). Item sources and duty unlocks inside the guides come from the game data and FFXIV Teamcraft.
