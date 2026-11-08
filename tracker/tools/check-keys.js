@@ -28,7 +28,14 @@ console.log('comparing with ' + oldFrom + (oldText === newText ? ' (identical to
 const OK_RENAMES = (() => { try { return JSON.parse(fs.readFileSync(path.join(T, 'tools', 'key-renames.json'), 'utf8')); } catch (e) { return {}; } })();
 const names = (d) => { const m = new Map(); for (const s of d.sections) for (const g of s.g) for (const e of g.e) m.set(s.id + ':' + e.i, e.n); return m; };
 // ids merged into another entry (e.al) are not lost: the tracker moves their ticks to the kept entry on load
-const aliases = (d) => { const m = new Map(); for (const s of d.sections) for (const g of s.g) for (const e of g.e) for (const a of e.al || []) m.set(s.id + ':' + a, s.id + ':' + e.i); return m; };
+const aliases = (d) => {
+  const m = new Map();
+  for (const s of d.sections) for (const g of s.g) for (const e of g.e) {
+    for (const a of e.al || []) m.set(s.id + ':' + a, s.id + ':' + e.i);
+    if (e.mv) { m.set(e.mv + ':' + e.i, s.id + ':' + e.i); for (const a of e.al || []) m.set(e.mv + ':' + a, s.id + ':' + e.i); } // moved to a new list
+  }
+  return m;
+};
 const A = names(JSON.parse(oldText)), newDoc = JSON.parse(newText), B = names(newDoc), AL = aliases(newDoc);
 let merged = 0;
 const removed = [], renamed = new Map(), size = new Map();

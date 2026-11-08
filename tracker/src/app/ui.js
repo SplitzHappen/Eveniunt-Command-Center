@@ -57,17 +57,20 @@
   var TREE = [
     ['Character', [
       ['Achievements', function (s) { return s.indexOf('ach-') === 0; }],
-      ['Classes and Jobs', ['levels']],
+      ['Classes and Jobs', ['levels', 'beastmaster']],
       ['Collections', ['mounts', 'minions', 'hairstyles', 'facewear', 'fashion', 'barding', 'titles', 'plate', 'portraits']],
       ['Ranks and Deliveries', ['gcranks', 'societyranks', 'deliveries', 'companionrank', 'companionskills']],
       ['Relics', ['relicweapons', 'relictools']],
       ['Blue Mage', ['bluemagic', 'bluelog', 'carnivale']],
       ['Gold Saucer', ['cards', 'ttnpcs', 'mahjong']]]],
     ['Duty', [
-      ['Quests', function (s) { return s.indexOf('quests-') === 0 || s === 'leves'; }],
-      ['Duty Finder', function (s) { return s.indexOf('duty-') === 0; }],
+      ['Quests', function (s) { return (s.indexOf('quests-') === 0 && s.indexOf('quests-cj-') !== 0) || s === 'leves'; }],
+      ['Class and Job Quests', function (s) { return s.indexOf('quests-cj-') === 0; }],
+      ['Duty Finder', function (s) { return s.indexOf('duty-') === 0 && s !== 'duty-treasure'; }],
+      ['Trust', ['trust']],
+      ['Treasure Hunt', ['treasuremaps', 'duty-treasure']],
       ['FATEs, Hunt and Training', ['fates', 'sharedfate', 'hunt', 'novice']],
-      ['Field Operations', ['eurekalevel', 'eurekaaeth', 'logos', 'eurekaduties', 'bozjarank', 'bozjaaeth', 'lostactions', 'bozjaduties', 'oclevel', 'ocaeth', 'ocevents', 'phantomjobs', 'ocduties']],
+      ['Field Operations', ['eurekalevel', 'eurekaaeth', 'logos', 'eurekaduties', 'bozjarank', 'bozjaaeth', 'lostactions', 'bozjaduties', 'oclevel', 'ocaeth', 'ocevents', 'phantomjobs', 'oclore', 'ocduties']],
       ['Cosmic Exploration', ['cosmicmissions', 'cosmicrecords']],
       ['Island Sanctuary', function (s) { return s.indexOf('isle') === 0; }],
       ['Collection', ['collection']]]],
@@ -94,7 +97,7 @@
   })();
   function navTitle(id) {
     var t = SEC.get(id).t;
-    return t.replace(/^(Achievements|Duties|Crafting Log|Gathering Log|Eureka|Bozja|Occult Crescent|Island Sanctuary): /, '');
+    return t.replace(/^(Achievements|Duties|Crafting Log|Gathering Log|Eureka|Bozja|Occult Crescent|Island Sanctuary|Treasure Hunt): /, '');
   }
   function menuOf(id) { for (var i = 0; i < MENUS.length; i++) for (var j = 0; j < MENUS[i].folders.length; j++) if (MENUS[i].folders[j].secs.indexOf(id) >= 0) return [MENUS[i], MENUS[i].folders[j]]; return [null, null]; }
 

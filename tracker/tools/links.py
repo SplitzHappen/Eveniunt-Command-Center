@@ -75,6 +75,14 @@ duty_key = {}
 for sid in S:
     if sid.startswith("duty-"):
         for g, e in entries(sid): duty_key[e["i"]] = k(sid, e["i"])
+# the Crucible of the Unbroken's boards are duty finder rows kept in the Beastmaster list (the beasts there are not)
+if "beastmaster" in S:
+    for g, e in entries("beastmaster"):
+        if g["t"] == "Crucible of the Unbroken": duty_key[e["i"]] = k("beastmaster", e["i"])
+beast_keys = [k("beastmaster", e["i"]) for g, e in entries("beastmaster") if g["t"] == "Master's Bestiary"] if "beastmaster" in S else []
+trust_by = collections.defaultdict(dict)  # expansion -> avatar name -> (key, top level)
+if "trust" in S:
+    for g, e in entries("trust"): trust_by[g["t"]][e["n"]] = (k("trust", e["i"]), e["max"])
 Q = sheet("Quest")
 A = {aid: r for aid, r in sheet("Achievement").items() if clean(r["Name"])}
 CFC = sheet("ContentFinderCondition")
@@ -242,6 +250,31 @@ for aid, r in A.items():
     if ik:
         add_imp(ak, ik, "r")
         if single_source(ik, "Achievement", r["Name"]): add_imp(ik, ak, "r")
+    # Quantum duties and treasure dungeons: "Complete <duty>." / "Raid <duty>." (once) is exactly doing that duty
+    m = re.match(r"^(?:Complete|Raid) (.+?)\.$", desc)
+    if m and t == 1 and data[0] == 1:
+        hits = [k(sid, e["i"]) for sid in ("duty-quantum", "duty-treasure") if sid in S for g, e in entries(sid) if norm(e["n"]) == norm(m.group(1))]
+        if len(hits) == 1:
+            both(ak, hits[0], "a"); fam["a"] += 1
+            continue
+    # Beastmaster: "Befriend N unique beasts." counts the Master's Bestiary
+    m = re.match(r"^Befriend (\d+) unique beasts\.$", desc)
+    if m and beast_keys:
+        cnt_r.append([ak, int(m.group(1)), beast_keys, "a"]); fam["a"] += 1
+        continue
+    # Trust: "Achieve trust level N with the avatars for A, B, and C." / "... with all available avatars in <expansion>."
+    m = re.match(r"^Achieve trust level (\d+) with (?:the avatars for (.+)|all available avatars in (.+))\.$", desc)
+    if m and trust_by:
+        lv = int(m.group(1))
+        ex = next((x for x, ms in trust_by.items() if all(v[1] == lv for v in ms.values())), None)
+        if ex:
+            names = [n.strip() for n in re.split(r",\s*(?:and\s+)?|\s+and\s+", m.group(2))] if m.group(2) else list(trust_by[ex])
+            ks = [trust_by[ex].get(n) for n in names]
+            if all(ks):
+                lvl_r.append([ak, len(ks), [[x[0], lv] for x in ks], "a"]); fam["a"] += 1
+                continue
+        unmatched["trust achievement"] += 1
+        continue
     if t == 2:  # obtain these achievements
         subs = [ach_key.get(x) for x in [key] + data if x]
         if subs and all(subs):

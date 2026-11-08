@@ -16,7 +16,6 @@
   "quests-sidequests": 2027,
   "quests-alliedsocietyquestsareal": 612,
   "quests-alliedsocietyquestsdawnt": 104,
-  "quests-classjobquests": 875,
   "quests-otherquests": 329,
   "ach-battle": 753,
   "ach-pvp": 280,
@@ -52,6 +51,9 @@
   "duty-chaotic": 1,
   "duty-quest": 85,
   "duty-pvp": 21,
+  "duty-treasure": 10,
+  "duty-quantum": 2,
+  "duty-event": 4,
   "aetherytes": 197,
   "aethercurrents": 303,
   "leves": 1757,
@@ -61,7 +63,21 @@
   "quests-other": 180,
   "deliveries": 12,
   "cosmicmissions": 1699,
-  "cosmicrecords": 244
+  "cosmicrecords": 244,
+  "beastmaster": 55,
+  "treasuremaps": 27,
+  "oclore": 60,
+  "trust": 21,
+  "quests-cj-war": 60,
+  "quests-cj-magic": 31,
+  "quests-cj-hand": 176,
+  "quests-cj-land": 66,
+  "quests-cj-crystallinemean": 17,
+  "quests-cj-studium": 37,
+  "quests-cj-wachumeqimeqi": 37,
+  "quests-cj-warjob": 208,
+  "quests-cj-magicjob": 148,
+  "quests-cj-role": 95
  },
  "problems": {
   "no patch: mount": 14,
@@ -79,7 +95,7 @@
   "recipes outside the crafting log (kept as their own group)": 16,
   "gathering item placed by Teamcraft log pages (no node in the game data)": 53,
   "gathering log item with no known spot (kept, counted, own group)": 20,
-  "no patch: duty": 106,
+  "no patch: duty": 109,
   "PvP: repeated arena row (merged into the first)": 61,
   "FATE not placed in any zone (kept, marked availability unknown)": 463
  },
@@ -101,7 +117,7 @@
   "titles: time-limited (from their achievements)": 138
  },
  "marked": {
-  "lim": 962,
+  "lim": 966,
   "gone": 325,
   "unk": 463
  },
@@ -120,5 +136,5 @@
   "quest: starter route of a class": 16,
   "quest: joiner route of a class": 32
  },
- "total": 38457
+ "total": 38636
 }

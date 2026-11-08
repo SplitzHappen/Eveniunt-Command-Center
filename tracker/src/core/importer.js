@@ -191,7 +191,7 @@
         } else if (/^\d+$/.test(String(v)) && /^\d+$/.test(k) && rules.some((r) => r.val && path === r.p)) {
           const vr = rules.find((r) => r.val && path === r.p);
           const key = vr.k[Number(k)];
-          if (key && idx.byKey.has(key)) { if (Number(v) > 0) vals[key] = Number(v); }
+          if (key && idx.byKey.has(key)) { if (Number(v) > (vr.min || 0)) vals[key] = Number(v); } // vr.min: the page's starting value is the app's default, not progress
           else missed.push({ area: areaName(path), path, id: k, kind: 'level', value: String(v) });
         } else if (v !== '0' && v !== '' && v !== 'N' && v != null) {
           bump(levels, areaName(path));

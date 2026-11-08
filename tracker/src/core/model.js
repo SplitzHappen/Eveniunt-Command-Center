@@ -283,8 +283,10 @@
   ET.migrateAliases = function (idx, st) {
     let moved = 0;
     for (const [key, hit] of idx.byKey) {
-      for (const a of hit.e.al || []) {
-        const old = hit.s.id + ':' + a;
+      // e.mv: the list the entry was in before a list was split (e.g. Class & Job Quests into ten lists)
+      const olds = (hit.e.al || []).map((a) => hit.s.id + ':' + a);
+      if (hit.e.mv) { olds.push(hit.e.mv + ':' + hit.e.i); for (const a of hit.e.al || []) olds.push(hit.e.mv + ':' + a); }
+      for (const old of olds) {
         if (old === key || idx.byKey.has(old)) continue;
         for (const c of st.chars) {
           for (const bag of [st.ticks[c.id], st.excl[c.id]]) if (bag && bag[old]) { bag[key] = 1; delete bag[old]; moved++; }

@@ -84,3 +84,17 @@ python3 -I tools/extract.py dm tc
 
 - Repeated rows of one thing become one entry, with the other ids kept as aliases (a tick on an old id moves over on load): each Crystalline Conflict arena once per mode (61 rows: the sheet repeats each arena per match type), duplicate emote rows (Snowball, Dote, All Saints' Charm).
 - First class quests: for each starting class, the starter route (its own "Way of the …" with no prerequisite, and the level 10 quest after it) is marked `sc` and the joiner route (the guild's "So You Want to Be …", the second "Way of the …", "My First …" and the second level 10 quest) is marked `jc`, from the Quest sheet's prerequisites. A character with that starting class does not have the joiner route; others do not have the starter route. Nothing is excluded until the starting class is chosen.
+
+## Lists added 2026-11-08 (game sheets unless noted)
+
+| List | Source | Links |
+| --- | --- | --- |
+| Class and Job Quests (ten lists) | the former Class & Job Quests, split by the journal's page (the desktop app's pages); entries carry `mv` (old list) | unchanged |
+| Beastmaster: Master's Bestiary | `XBMPet` (names from `Pet`, places from `PlaceName`) | "Befriend N unique beasts" counts them |
+| Beastmaster: Crucible of the Unbroken | `ContentFinderCondition` type 40 | achievements of type 14 (clear the board); the quest that unlocks each board (`Quest.InstanceContentUnlock`) |
+| Treasure Hunt: Maps | `TreasureHuntRank` (one row per map item) | none |
+| Duties: Treasure Dungeons, Quantum Duties, Event Duties | `ContentFinderCondition` types 9, 39, 22 (event duties marked time-limited) | "Complete/Raid <duty>." (once) both ways, for treasure dungeons and Quantum duties |
+| Occult Crescent: Lore | `MKDLore` (rows from "North Horn Base Camp" on are North Horn) | none |
+| Trust | the in-game Trust avatars per expansion; member lists and level ranges as on the FFXIV Completionist desktop app's Trust page (1.0.5) | "Achieve trust level N with the avatars for …" / "… all available avatars in <expansion>" as level rules |
+
+The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`duty/trust/shb`, `ew`, `dt`) and Treasure Hunt (`duty/treasure-hunt/maps`, `duties`) pages by position, matched by name.

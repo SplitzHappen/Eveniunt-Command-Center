@@ -620,7 +620,8 @@ test('saving: a window that saves after another window saved combines both inste
 });
 
 test('class quests: each starting class does only one route of its first class quests', () => {
-  const sec = idx.sections.find((s) => s.id === 'quests-classjobquests');
+  const sec = idx.sections.find((s) => s.id === 'quests-cj-war');
+  const CJ = 'quests-cj-war:';
   const gla = sec.groups.find((g) => g.t === 'Gladiator Quests').keys.map((k) => idx.byKey.get(k).e);
   const ways = gla.filter((e) => e.n === 'Way of the Gladiator');
   assert.strictEqual(ways.length, 2);
@@ -629,27 +630,27 @@ test('class quests: each starting class does only one route of its first class q
   const st = ET.newState(['G', 'P', 'N']);
   ET.setStart(st, 'c1', 'gla', null); ET.setStart(st, 'c2', 'pgl', null);
   const [g, p, n] = st.chars;
-  assert.strictEqual(ET.notApplicable(st, g, 'quests-classjobquests:' + joiner.i, joiner), 'cls');
-  assert.strictEqual(ET.notApplicable(st, g, 'quests-classjobquests:' + starter.i, starter), null);
-  assert.strictEqual(ET.notApplicable(st, p, 'quests-classjobquests:' + starter.i, starter), 'cls');
-  assert.strictEqual(ET.notApplicable(st, p, 'quests-classjobquests:' + joiner.i, joiner), null);
-  assert.strictEqual(ET.notApplicable(st, n, 'quests-classjobquests:' + joiner.i, joiner), null, 'unknown starting class: both count');
+  assert.strictEqual(ET.notApplicable(st, g, CJ + joiner.i, joiner), 'cls');
+  assert.strictEqual(ET.notApplicable(st, g, CJ + starter.i, starter), null);
+  assert.strictEqual(ET.notApplicable(st, p, CJ + starter.i, starter), 'cls');
+  assert.strictEqual(ET.notApplicable(st, p, CJ + joiner.i, joiner), null);
+  assert.strictEqual(ET.notApplicable(st, n, CJ + joiner.i, joiner), null, 'unknown starting class: both count');
   // the guild's "So You Want to Be a Gladiator" is the joiner route's first step
   const sywtb = firstKey('quests-other', (e) => e.n === 'So You Want to Be a Gladiator');
   assert.strictEqual(idx.byKey.get(sywtb).e.jc, 'gla');
   // every same-named pair in the list is now one route each
-  for (const grp of sec.groups) {
+  for (const grp of idx.sections.filter((x) => x.id.startsWith('quests-cj-')).flatMap((x) => x.groups)) {
     const seen = new Map();
     for (const k of grp.keys) { const e = idx.byKey.get(k).e; if (seen.has(e.n)) { const o = seen.get(e.n); assert.ok((o.sc && e.jc) || (o.jc && e.sc), grp.t + ': ' + e.n); } else seen.set(e.n, e); }
   }
   assert.throws(() => ET.setStart(st, 'c1', undefined, 7), /Unknown Grand Company/);
   // a desktop-app save ticks the joiner version (the app lists one version): for a starter it moves to the starter version
-  st.ticks.c1['quests-classjobquests:' + joiner.i] = 1; st.ticks.c1[sywtb] = 1;
+  st.ticks.c1[CJ + joiner.i] = 1; st.ticks.c1[sywtb] = 1;
   ET.migrateAliases(idx, st);
-  assert.ok(st.ticks.c1['quests-classjobquests:' + starter.i] && !st.ticks.c1['quests-classjobquests:' + joiner.i]);
+  assert.ok(st.ticks.c1[CJ + starter.i] && !st.ticks.c1[CJ + joiner.i]);
   assert.ok(st.ticks.c1[sywtb], 'a joiner-only step keeps its tick (shown as not applying, not counted)');
-  st.ticks.c2['quests-classjobquests:' + joiner.i] = 1; ET.migrateAliases(idx, st);
-  assert.ok(st.ticks.c2['quests-classjobquests:' + joiner.i], 'a Pugilist starter joined Gladiator later: tick stays');
+  st.ticks.c2[CJ + joiner.i] = 1; ET.migrateAliases(idx, st);
+  assert.ok(st.ticks.c2[CJ + joiner.i], 'a Pugilist starter joined Gladiator later: tick stays');
 });
 
 test('data: repeated PvP arena rows and duplicate emote rows are merged, and old ticks move over', () => {
@@ -673,6 +674,31 @@ test('data: seasonal event quests and titles of time-limited achievements are ma
   assert.ok(ev.every((k) => idx.byKey.get(k).e.x === 'lim'));
   const titles = ET.sectionKeys(idx.sections.find((s) => s.id === 'titles')).map((k) => idx.byKey.get(k).e);
   assert.ok(titles.filter((e) => e.x === 'lim').length > 100 && titles.filter((e) => e.x === 'gone').length > 40);
+});
+
+test('class and job quests: ten lists as in the desktop app; ticks saved under the old combined list move over', () => {
+  const cj = idx.sections.filter((x) => x.id.startsWith('quests-cj-'));
+  assert.deepStrictEqual(cj.map((x) => x.t), ['Disciple of War Quests', 'Disciple of Magic Quests', 'Disciple of the Hand Quests', 'Disciple of the Land Quests', 'Crystalline Mean Quests', 'Studium Quests', 'Wachumeqimeqi Quests', 'Disciple of War Job Quests', 'Disciple of Magic Job Quests', 'Role Quests']);
+  assert.ok(!idx.sections.some((x) => x.id === 'quests-classjobquests'));
+  const bst = idx.sections.find((x) => x.id === 'quests-cj-warjob').groups.find((g) => g.t === 'Beastmaster Quests');
+  assert.ok(bst && bst.keys.length >= 10);
+  const k = bst.keys[0], e = idx.byKey.get(k).e;
+  const st = ET.newState(['A']);
+  st.ticks.c1['quests-classjobquests:' + e.i] = 1; st.excl.c1['quests-classjobquests:' + e.i] = 1;
+  ET.migrateAliases(idx, st);
+  assert.ok(st.ticks.c1[k] && st.excl.c1[k] && !st.ticks.c1['quests-classjobquests:' + e.i]);
+});
+
+test('Dawntrail additions: Beastmaster, Trust, treasure hunt, Quantum and event duties, Occult Crescent lore', () => {
+  const bm = idx.sections.find((x) => x.id === 'beastmaster');
+  assert.deepStrictEqual(bm.groups.map((g) => [g.t, g.keys.length]), [["Master's Bestiary", 50], ['Crucible of the Unbroken', 5]]);
+  const tr = idx.sections.find((x) => x.id === 'trust');
+  assert.deepStrictEqual(tr.groups.map((g) => [g.t, g.keys.length]), [['Shadowbringers', 6], ['Endwalker', 7], ['Dawntrail', 8]]);
+  assert.ok(idx.sections.find((x) => x.id === 'duty-treasure').groups.flatMap((g) => g.keys).some((k) => idx.byKey.get(k).e.n === 'Vault Oneiron'));
+  assert.ok(ET.sectionKeys(idx.sections.find((x) => x.id === 'treasuremaps')).length >= 25);
+  assert.strictEqual(ET.sectionKeys(idx.sections.find((x) => x.id === 'duty-quantum')).length, 2);
+  assert.ok(ET.sectionKeys(idx.sections.find((x) => x.id === 'duty-event')).every((k) => idx.byKey.get(k).e.x === 'lim'));
+  assert.deepStrictEqual(idx.sections.find((x) => x.id === 'oclore').groups.map((g) => [g.t, g.keys.length]), [['South Horn', 30], ['North Horn', 30]]);
 });
 
 // ---------------------------------------------------------------- links between entries
@@ -783,6 +809,31 @@ test('links: a duty unlocked by one quest per city or company never assumes a ci
   const st3 = ET.newState(['C']);
   ET.setTick(st3, 'c1', pvp, true);
   assert.deepStrictEqual(ET.applyLinks(LX, idx, st3, 'c1', [pvp]).filter((k) => idx.byKey.get(k).e.gc), [], 'no Grand Company chosen: no company quest is assumed');
+});
+
+test('links: Beastmaster beasts and boards, Trust levels, treasure dungeons and Quantum duties', () => {
+  const nm = (k) => idx.byKey.get(k).e.n;
+  const bm = idx.sections.find((x) => x.id === 'beastmaster');
+  const [beasts, boards] = bm.groups.map((g) => g.keys);
+  let st = ET.newState(['A']);
+  beasts.slice(0, 20).forEach((k) => ET.setTick(st, 'c1', k, true));
+  assert.deepStrictEqual(ET.applyLinks(LX, idx, st, 'c1', beasts.slice(0, 20)).map(nm), ['A Beast in the Hand I', 'A Beast in the Hand II']);
+  st = ET.newState(['A']); ET.setTick(st, 'c1', boards[0], true);
+  const b1 = ET.applyLinks(LX, idx, st, 'c1', [boards[0]]).map(nm);
+  assert.ok(b1.includes('Crucible Checkmate I') && b1.includes('Into the Crucible'), 'the board proves its achievement and its unlock quest');
+  const tr = idx.sections.find((x) => x.id === 'trust');
+  st = ET.newState(['A']);
+  const shb = tr.groups[0].keys;
+  shb.slice(0, 5).forEach((k) => ET.setValue(st, 'c1', k, 80, idx.byKey.get(k).e));
+  assert.deepStrictEqual(ET.applyLinks(LX, idx, st, 'c1', [], { levels: shb }).map(nm), [], 'five of the six avatars: not yet');
+  ET.setValue(st, 'c1', shb[5], 80, idx.byKey.get(shb[5]).e);
+  assert.ok(ET.applyLinks(LX, idx, st, 'c1', [], { levels: shb }).map(nm).includes('Bound by Faith'));
+  const vault = firstKey('duty-treasure', (e) => e.n === 'Vault Oneiron');
+  st = ET.newState(['A']); ET.setTick(st, 'c1', vault, true);
+  assert.ok(ET.applyLinks(LX, idx, st, 'c1', [vault]).map(nm).includes('Dreaming in Neon I'));
+  const fv = firstKey('duty-quantum', (e) => e.n === 'The Final Verse (Quantum)');
+  st = ET.newState(['A']); ET.setTick(st, 'c1', fv, true);
+  assert.ok(ET.applyLinks(LX, idx, st, 'c1', [fv]).map(nm).includes('Unholy Sacrament'));
 });
 
 test('links: achievement tiers, Dawntrail relic stages, Grand Company ranks, and checked links from the desktop app', () => {

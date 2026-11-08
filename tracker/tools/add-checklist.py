@@ -99,6 +99,7 @@ LISTS = [
     ("Island Sanctuary - Rare Animals", "isleanimals", "Island Sanctuary: Rare Animals", "Island Sanctuary", 1, [2, 5], "head"),
 ]
 POS = {}  # section id -> list of (group title, key) in sheet order
+EXP_NORM = {norm(x) for x in data["meta"]["expansions"]}
 
 def build_list(sheet, sid, ttl, area, ncol, dcols, group):
     groups = collections.OrderedDict()
@@ -109,7 +110,9 @@ def build_list(sheet, sid, ttl, area, ncol, dcols, group):
             name = clean(r[1]) or f"Entry {n}"
         if group == "head":
             g = title(heads[-1]) if heads else ttl
-            c = title(heads[-2]) if len(heads) > 1 else ""
+            # the subtitle is the nearest expansion banner above the group (the banners are a flat list, so the one just
+            # above is usually the previous group, not a parent)
+            c = next((title(h) for h in reversed(heads[:-1]) if norm(h) in EXP_NORM), "")
         else:
             g = clean(r[group]) or "Other"
             c = ""
@@ -416,6 +419,36 @@ if DM:
         after_745["ttnpcs (not named in the game data, left out)"] = unnamed_tt
     for sid, n in [(s_, n_) for s_, n_ in after_745.items() if s_ in SEC]:
         report[sid] += n
+
+# Trust and Treasure Hunt pages of the FFXIV Completionist desktop app (1.0.5): its saves store each row by position, in
+# the page order below; the rows are matched by name to the tracker's Trust, treasure map and treasure dungeon lists.
+DESKTOP_PAGES = {
+    "duty/trust/shb": ("trust", "Shadowbringers", ["Alphinaud", "Alisaie", "Thancred", "Urianger", "Y'shtola", "Ryne"]),
+    "duty/trust/ew": ("trust", "Endwalker", ["Alphinaud", "Alisaie", "Thancred", "Urianger", "Y'shtola", "Estinien", "G'raha Tia"]),
+    "duty/trust/dt": ("trust", "Dawntrail", ["Alphinaud", "Alisaie", "Thancred", "Urianger", "Y'shtola", "Estinien", "G'raha Tia", "Krile"]),
+    "duty/treasure-hunt/maps": ("treasuremaps", None, ["Timeworn Leather Map", "Timeworn Goatskin Map", "Timeworn Toadskin Map", "Timeworn Boarskin Map",
+        "Timeworn Peisteskin Map", "Unhidden Leather Map", "Timeworn Archaeoskin Map", "Timeworn Wyvernskin Map", "Timeworn Dragonskin Map",
+        "Timeworn Gaganaskin Map", "Timeworn Gazelleskin Map", "Timeworn Thief's Map", "Timeworn Gliderskin Map", "Timeworn Zonureskin Map",
+        "Timeworn Saigaskin Map", "Timeworn Kumbhiraskin Map", "Timeworn Ophiotauroskin Map", "Timeworn Loboskin Map", "Timeworn Br'aaxskin Map"]),
+    "duty/treasure-hunt/duties": ("duty-treasure", None, ["The Aquapolis", "The Lost Canals of Uznair", "The Hidden Canals of Uznair",
+        "The Shifting Altars of Uznair", "The Dungeons of Lyhe Ghiah", "The Shifting Oubliettes of Lyhe Ghiah", "The Excitatron 6000",
+        "The Shifting Gymnasion Agonon", "Cenote Ja Ja Gural"]),
+}
+for path_, (sid_, grp_, names_) in DESKTOP_PAGES.items():
+    sec_ = next((x for x in data["sections"] if x["id"] == sid_), None)
+    if not sec_:
+        continue
+    pool = [(e, g["t"]) for g in sec_["g"] for e in g["e"] if grp_ is None or g["t"] == grp_]
+    keys_ = []
+    for nm_ in names_:
+        hit = [e for e, _ in pool if norm(e["n"]) == norm(nm_)]
+        assert len(hit) == 1, ("desktop page row", path_, nm_)
+        keys_.append(sid_ + ":" + str(hit[0]["i"]))
+    rule_ = {"p": path_, "s": "global", "k": keys_}
+    if sid_ == "trust":
+        rule_["val"] = 1
+        rule_["min"] = {"Shadowbringers": 71, "Endwalker": 81, "Dawntrail": 91}[grp_]  # the app's default before any progress
+    rules.append(rule_)
 
 credit = ("Extra lists and the desktop-app import map: FFXIV 100% Completion Checklist " + WB_VERSION +
           " by its volunteer team (same team as the FFXIV Completionist app), used with credit.")

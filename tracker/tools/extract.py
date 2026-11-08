@@ -608,7 +608,8 @@ section("sightseeing", "Sightseeing Log", "Logs", sightseeing_log())
 def duties():
     cfc, ct, terr = sheet("ContentFinderCondition"), sheet("ContentType"), sheet("TerritoryType")
     keep = {2: "Dungeons", 3: "Guildhests", 4: "Trials", 5: "Raids", 28: "Ultimate Raids", 21: "Deep Dungeons",
-            30: "Variant and Criterion Dungeons", 37: "Chaotic Alliance Raids", 7: "Quest Battles", 6: "PvP"}
+            30: "Variant and Criterion Dungeons", 37: "Chaotic Alliance Raids", 7: "Quest Battles", 6: "PvP",
+            9: "Treasure Dungeons", 39: "Quantum Duties", 22: "Event Duties"}
     tree = collections.OrderedDict()
     pvp_first = {}
     for did, r in sorted(cfc.items(), key=lambda kv: (i(kv[1]["SortKey"]), kv[0])):
@@ -634,6 +635,10 @@ def duties():
     for t in keep:
         if t in tree:
             groups = [{"t": EXPANSIONS[ex], "e": es} for ex, es in sorted(tree[t].items())]
+            if t == 22:  # seasonal event duties (the Haunted Manor and others) only open while their event runs
+                for g in groups:
+                    for e in g["e"]:
+                        e["x"] = "lim"
             section("duty-" + keep[t].split()[0].lower(), "Duties: " + keep[t], "Duties", groups)
 
 def aetherytes():
@@ -976,6 +981,74 @@ def cosmic():
 custom_deliveries()
 cosmic()
 
+# ---------------------------------------------------------------- Dawntrail additions (2026-11-08 sweep)
+def beastmaster():
+    """The Beastmaster limited job (7.56): the beasts of the Master's Bestiary (XBMPet, names from Pet) and the
+    Crucible of the Unbroken's boards (duty finder type 40)."""
+    pet, place = sheet("Pet"), sheet("PlaceName")
+    beasts = []
+    for k, r in sorted(sheet("XBMPet").items()):
+        name = clean(pet.get(i(r["Pet"]), {}).get("Name"))
+        if not k or not name:
+            continue
+        where = clean(place.get(i(r["Location"]), {}).get("Name"))
+        beasts.append({"i": k, "n": name[0].upper() + name[1:], "p": "7.56", "d": where or "Location not in the game data"})
+    boards = []
+    for cid, r in sorted(sheet("ContentFinderCondition").items()):
+        if i(r["ContentType"]) == 40 and clean(r["Name"]) and i(r["ContentLinkType"]) == 1:
+            boards.append({"i": cid, "n": clean(r["Name"]), "p": "7.56", "lv": i(r["ClassJobLevelRequired"]), "d": "Crucible of the Unbroken · Beastmaster level " + str(i(r["ClassJobLevelRequired"]))})
+    assert len(beasts) >= 50 and len(boards) >= 5, ("beastmaster", len(beasts), len(boards))
+    section("beastmaster", "Beastmaster", "Character",
+            [{"t": "Master's Bestiary", "e": beasts}, {"t": "Crucible of the Unbroken", "e": boards}],
+            note="Tick a beast once the character has befriended it, and a board once it is cleared. Beastmaster quests are under Class and Job Quests; the level is under Classes and Jobs.")
+
+def treasure_maps():
+    """One row per kind of treasure map (TreasureHuntRank): tick once the character has dug one up."""
+    seen, out = set(), []
+    item = sheet("Item")
+    for k, r in sorted(sheet("TreasureHuntRank").items()):
+        iid = i(r["ItemName"])
+        name = clean(item.get(iid, {}).get("Name"))
+        if not iid or not name or iid in seen:
+            continue
+        seen.add(iid)
+        out.append(entry(iid, name, item_patch(iid), _kind="treasure map", party=i(r["MaxPartySize"])))
+    for e in out:
+        e.pop("ex", None)
+        e["d"] = "Party map (up to 8)" if e.pop("party", 1) > 1 else "Solo map"
+    section("treasuremaps", "Treasure Hunt: Maps", "Duties", [{"t": "Treasure Maps", "e": out}],
+            note="Tick a map once the character has found the treasure of that kind of map at least once.")
+
+def occult_lore():
+    """The Occult Crescent's lore entries (MKDLore), South Horn and North Horn."""
+    south, north = [], []
+    for k, r in sorted(sheet("MKDLore").items()):
+        name = clean(r["Name"])
+        if not k or not name:
+            continue
+        (north if north or name == "North Horn Base Camp" else south).append({"i": k, "n": name})
+    section("oclore", "Occult Crescent: Lore", "Field Operations",
+            [{"t": "South Horn", "e": south}, {"t": "North Horn", "e": north}],
+            note="Tick a lore entry once the character has unlocked it.")
+
+# Trust levels: the avatars each expansion lets a character level (the in-game Trust menu; member lists and level
+# ranges as in the FFXIV Completionist desktop app's Trust page, checked against the game's Trust achievements).
+TRUST = [("Shadowbringers", 71, 80, "5.0", ["Alphinaud", "Alisaie", "Thancred", "Urianger", "Y'shtola", "Ryne"]),
+         ("Endwalker", 81, 90, "6.0", ["Alphinaud", "Alisaie", "Thancred", "Urianger", "Y'shtola", "Estinien", "G'raha Tia"]),
+         ("Dawntrail", 91, 100, "7.0", ["Alphinaud", "Alisaie", "Thancred", "Urianger", "Y'shtola", "Estinien", "G'raha Tia", "Krile"])]
+def trust():
+    groups = []
+    for gi, (ex, lo, hi, patch, names) in enumerate(TRUST, 1):
+        groups.append({"t": ex, "e": [{"i": gi * 100 + n, "n": nm, "val": 1, "max": hi, "unit": "level", "p": patch,
+                                         "d": ex + " · levels " + str(lo) + " to " + str(hi)} for n, nm in enumerate(names, 1)]})
+    section("trust", "Trust", "Duties", groups,
+            note="Enter each avatar's trust level. An avatar counts as complete at the expansion's top level.")
+
+beastmaster()
+treasure_maps()
+occult_lore()
+trust()
+
 CITY, GCQ = city_and_gc()
 # Outside the quest sheet: the introductory levequest of each region and the three "leaving the city" achievements
 # (FFXIV Collect marks the achievements and these leves as limited to characters who started in that city).
@@ -1028,7 +1101,7 @@ def class_routes():
     q = sheet("Quest")
     abbr = {clean(r["Name"]).lower(): r["Abbreviation"].lower() for r in sheet("ClassJob").values() if r.get("Abbreviation")}
     prev = lambda k: [i(q[k][f"PreviousQuest[{n}]"]) for n in range(3) if i(q.get(k, {}).get(f"PreviousQuest[{n}]"))]
-    sec = next(x for x in sections if x["id"] == "quests-classjobquests")
+    sec = next(x for x in sections if x["id"] == "quests-classjobquests")  # before the split below
     tag = {}
     for g in sec["g"]:
         cls = abbr.get(re.sub(r" quests$", "", g["t"].lower()))
@@ -1066,6 +1139,27 @@ def class_routes():
                         city_stats["quest: " + ("starter" if v == "sc" else "joiner") + " route of a class"] += 1
 class_routes()
 CITY_STATS = dict(city_stats)
+
+CJ_SPLIT = [("Disciple of War Quests", "quests-cj-war"), ("Disciple of Magic Quests", "quests-cj-magic"),
+            ("Disciple of the Hand Quests", "quests-cj-hand"), ("Disciple of the Land Quests", "quests-cj-land"),
+            ("Crystalline Mean Quests", "quests-cj-crystallinemean"), ("Studium Quests", "quests-cj-studium"),
+            ("Wachumeqimeqi Quests", "quests-cj-wachumeqimeqi"), ("Disciple of War Job Quests", "quests-cj-warjob"),
+            ("Disciple of Magic Job Quests", "quests-cj-magicjob"), ("Role Quests", "quests-cj-role")]
+def split_class_job():
+    at = next(n for n, x in enumerate(sections) if x["id"] == "quests-classjobquests")
+    old = sections.pop(at)
+    by = collections.OrderedDict((c, []) for c, _ in CJ_SPLIT)
+    for g in old["g"]:
+        assert g.get("c") in by, ("class and job quest page", g["t"], g.get("c"))
+        for e in g["e"]:
+            e["mv"] = old["id"]  # saved before the split as quests-classjobquests:<id>
+        by[g["c"]].append({"t": g["t"], "e": g["e"]})
+    del report[old["id"]]
+    for n, (c, sid) in enumerate(CJ_SPLIT):
+        s_ = {"id": sid, "t": c, "area": old["area"], "g": by[c]}
+        sections.insert(at + n, s_)
+        report[sid] = sum(len(g["e"]) for g in by[c])
+split_class_job()
 
 # ---------------------------------------------------------------- output
 meta = {
