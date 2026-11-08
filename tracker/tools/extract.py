@@ -884,6 +884,22 @@ for sec in sections:
             if c:
                 e["city"] = c
                 city_stats[sec["id"].split("-")[0] + ": " + c] += 1
+# A city's opening quests come in one variant per starting class (several "Close to Home" rows); a character does only
+# one of them, so the variants are merged into one entry (the other ids become aliases, so a tick on any variant counts).
+for sec in sections:
+    if not sec["id"].startswith("quests-"):
+        continue
+    for g in sec["g"]:
+        first, keep = {}, []
+        for e in g["e"]:
+            k = (e["n"], e.get("city"))
+            if e.get("city") and k in first:
+                first[k].setdefault("al", []).append(e["i"])
+                city_stats["quest variants merged"] += 1
+                continue
+            first[k] = e
+            keep.append(e)
+        g["e"] = keep
 CITY_STATS = dict(city_stats)
 
 # ---------------------------------------------------------------- output
