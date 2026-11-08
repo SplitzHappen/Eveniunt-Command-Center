@@ -226,6 +226,33 @@
     return { ticks, excl, vals, missed, infer, imported: Object.keys(ticks).length, placed, done: doneCount, notPlaced: list(notPlaced), levels: list(levels), version: String(doc.version) };
   };
 
+  // Where one desktop-app entry lands in the tracker: resolve(path, id) for a save path ("duty/quest/main-scenario/x")
+  // and an entry id, or null. Used to read the desktop app's own links between entries (tools/desktop-links.js).
+  ET.desktopKeyResolver = function (idx, map) {
+    const look = buildLookup(idx);
+    const rules = (map && map.rules) || [];
+    const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const hunting = new Map();
+    const hsec = idx.sections.find((s) => s.id === 'hunting');
+    if (hsec) for (const g of hsec.groups) for (const k of g.keys) {
+      const e = idx.byKey.get(k).e;
+      const id = slug(g.c) + '|' + (e.pg - 1);
+      (hunting.get(id) || hunting.set(id, []).get(id)).push(k);
+    }
+    return function resolve(path, id, siblings, pagesSeen) {
+      const k = String(id);
+      if (!/^\d+$/.test(k)) return null;
+      const prule = rules.filter((r) => path === r.p || path.startsWith(r.p + '/')).sort((a, b) => b.p.length - a.p.length)[0];
+      if (prule) {
+        const key = positionKey(prule, path === prule.p ? [] : path.slice(prule.p.length + 1).split('/'), Number(k), siblings || {}, pagesSeen || new Map(), idx);
+        return key && idx.byKey.has(key) ? key : null;
+      }
+      if (path.startsWith('logs/hunting-log/')) return hunting.get(path.split('/')[2] + '|' + k) || null; // a page: its targets
+      const rule = ET.DESKTOP_MAP.find(([pre]) => path === pre || path.startsWith(pre + '/'));
+      return (rule && look.get(rule[1]).get(Number(k))) || null;
+    };
+  };
+
   // Put an import into one character. mode 'add' keeps existing ticks; 'replace' clears that character first.
   ET.applyImport = function (st, charId, result, mode) {
     if (!st.ticks[charId]) throw new Error('No such character');

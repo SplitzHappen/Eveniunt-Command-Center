@@ -363,6 +363,31 @@ for ak, qk, job in relic_pending:
         if n >= 2 and pos < len(es): both(ak, k(rsid, es[pos]["i"]), "a"); continue
     unmatched["relic weapon achievement"] += 1
 
+# achievement tiers: the same counter at a higher threshold proves the lower ones ("Defeat 500 enemies" proves
+# "Defeat 100 enemies"); per type, which field names the counter and which holds the threshold
+TIER = {1: ("Key", 0), 3: ("Key", 0), 11: ("Key", 0), 15: ("Key", 0), 18: ("Key", 0), 21: ("Key", 0), 32: ("Key", 0),
+        10: (None, "Key"), 12: (None, "Key"), 13: (None, "Key"), 17: (None, "Key"), 19: (None, "Key")}
+tiers = collections.defaultdict(lambda: collections.defaultdict(list))
+for aid, r in A.items():
+    t = i(r["Type"])
+    if t not in TIER or aid not in ach_key: continue
+    gf, tf = TIER[t]
+    grp = (t, i(r["Key"]) if gf == "Key" else 0)
+    thr = i(r["Key"]) if tf == "Key" else i(r[f"Data[{tf}]"])
+    if thr > 0: tiers[grp][thr].append(ach_key[aid])
+for grp, levels in tiers.items():
+    ths = sorted(levels)
+    for hi, lo in zip(ths[1:], ths[:-1]):
+        for a_ in levels[hi]:
+            for b_ in levels[lo]: add_imp(a_, b_, "a")
+# emotes unlocked by the same item come together
+by_item = collections.defaultdict(list)
+for g, e in entries("emotes"):
+    if e.get("it"): by_item[e["it"]].append(k("emotes", e["i"]))
+for it_, ks_ in by_item.items():
+    for a_ in ks_:
+        for b_ in ks_: add_imp(a_, b_, "r")
+
 # ---------------------------------------------------------------- 5. ladders (l), hunting log ranks (h)
 def ladder(keys, kind="l"):
     for hi, lo in zip(keys[1:], keys[:-1]): add_imp(hi, lo, kind)
@@ -393,10 +418,10 @@ for g, e in entries("mountspeed"):
 for z, d in speed.items():
     if "1st" in d and "2nd" in d: add_imp(d["2nd"], d["1st"], "l")
 # relic stages: in each series, a job's stages in the workbook's order must also rise (or hold) in item level; a later
-# stage needs the earlier one. Dawntrail series are left out (their skip rules are not settled in reachable sources).
+# stage needs the earlier one (for Dawntrail, Console Games Wiki "Phantom Weapons": each upgrade needs the previous
+# stage, Penumbrae to Occultum; "Cosmic Tools": a 19-step upgrade of the same tool)
 for sid in ["relicweapons", "relictools"]:
     for g in S[sid]["g"]:
-        if g["t"].lower().startswith("dawntrail"): continue
         byjob = collections.OrderedDict()
         for e in g["e"]:
             parts = e.get("d", "").split(" · ")
@@ -420,6 +445,29 @@ for g, e in entries("sharedfate"):
     m = re.match(r"^Complete (\d+) FATEs? in (.+)$", e["n"])
     if m and fates_zone.get(norm(m.group(2))):
         cnt_r.append([k("sharedfate", e["i"]), int(m.group(1)), fates_zone[norm(m.group(2))], "f"]); fam["f"] += 1
+
+# mount speed: the first increase in a zone that the workbook gives as a quest comes from that quest (and only it)
+def one_quest(name):
+    # the tracked quest with that name; when several share it (a quest remade in 6.1), the main-story one
+    qs = quest_by_name.get(norm(name), [])
+    if len(qs) > 1: qs = [q for q in qs if quest_key[q].startswith("quests-mainscenario")]
+    return qs
+for g, e in entries("mountspeed"):
+    qs = one_quest(re.sub(r"\s*\(Quest\)$", "", e.get("d", "")))
+    if e["n"].endswith("1st increase") and qs and len(qs) == 1: both(k("mountspeed", e["i"]), quest_key[qs[0]], "r")
+# Grand Company: the first rank comes with the company's officer quest; promotions that need a hunting log rank
+officer = {1: "Till Sea Swallows All", 2: "Wood's Will Be Done", 3: "For Coin and Country"}
+gc_of_group = {"maelstrom": 1, "order of the twin adder": 2, "immortal flames": 3}
+for g in S["gcranks"]["g"]:
+    gc_ = gc_of_group.get(norm(g["t"]))
+    if not gc_ or not g["e"]: continue
+    qs = one_quest(officer[gc_])
+    if len(qs) == 1: both(k("gcranks", g["e"][0]["i"]), quest_key[qs[0]], "q")
+    for e in g["e"]:
+        m = re.search(r"Hunting Log: (.+?) Rank (\d+)", e.get("d", ""))
+        if m and int(m.group(2)) in hl.get(next((c for c in hl if norm(c) == norm(m.group(1))), None), {}):
+            who = next(c for c in hl if norm(c) == norm(m.group(1)))
+            ab_r.append([[k("gcranks", e["i"])], hl[who][int(m.group(2))], "h"]); fam["h"] += 1
 
 # ---------------------------------------------------------------- 6. master recipe books (m)
 books = {norm(e["n"]): k("masterbooks", e["i"]) for g, e in entries("masterbooks")}

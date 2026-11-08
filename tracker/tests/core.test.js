@@ -559,3 +559,19 @@ test('links: a level reached ticks the level achievement; links only add and ski
   assert.ok(!ET.applyLinks(LX, idx, st2, 'c1', [q]).includes(cur));
   assert.ok(!st2.ticks.c1[cur]);
 });
+
+test('links: achievement tiers, Dawntrail relic stages, Grand Company ranks, and checked links from the desktop app', () => {
+  const byName = (sid, n) => firstKey(sid, (e) => e.n === n);
+  const fill = (k, opts) => { const st = ET.newState(['A']); ET.setTick(st, 'c1', k, true); return ET.applyLinks(LX, idx, st, 'c1', [k], opts || {}); };
+  // "To Crush Your Enemies III" (1,000 enemies) proves II (500) and I (100)
+  const crush = fill(firstKey('ach-battle', (e) => e.n === 'To Crush Your Enemies III'));
+  assert.ok(['To Crush Your Enemies II', 'To Crush Your Enemies I'].every((n) => crush.some((k) => idx.byKey.get(k).e.n === n)));
+  // the last Phantom stage proves the four before it (Console Games Wiki: each upgrade needs the previous stage)
+  const occ = fill(byName('relicweapons', 'Phantom Sword Occultum & Phantom Shield Occultum'));
+  for (const st of ['Penumbrae', 'Umbrae', 'Obscurum', 'Eclipticum']) assert.ok(occ.some((k) => /^Phantom Sword/.test(idx.byKey.get(k).e.n) && idx.byKey.get(k).e.n.includes(st)), st);
+  // the first Maelstrom rank comes with "Till Sea Swallows All"
+  assert.ok(fill(byName('gcranks', 'Storm Private Third Class')).some((k) => idx.byKey.get(k).e.n === 'Till Sea Swallows All'));
+  // from the desktop app, checked: the Firebird quest needs the Heavensward lanners
+  const fire = fill(byName('quests-sidequests', 'Fiery Wings, Fiery Hearts'));
+  assert.ok(fire.includes(byName('mounts', 'Warring Lanner')) && fire.includes(byName('mounts', 'Dark Lanner')));
+});

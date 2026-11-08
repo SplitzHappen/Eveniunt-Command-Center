@@ -31,7 +31,16 @@ Built by `tools/extract.py` from the pinned game sheets; neither the workbook no
 | Shared FATE ranks | "Complete N FATEs in a zone" once N different FATEs of that zone are ticked | FATEs → rank |
 | Master recipe books | `Recipe.SecretRecipeBook` | master recipe → book |
 
-Not linked (no reliable link in the data): the six "Big Game Hunter" notorious-monster achievements (their monsters are not tied to FATEs in the sheets), Dawntrail relic stages (skip rules for North Horn upgrades are not settled in reachable sources), skyward and cosmic score achievements, and achievements counted from things the tracker does not record (enemies defeated, levequest counts, and so on).
+| Achievement tiers | the same counter (`Achievement.Type`/`Key`) at a higher threshold proves the lower ones (enemies, dungeons, PvP matches, levels, ranks, minion counts) | higher → lower |
+| Emotes | emotes unlocked by the same item | both ways |
+| Grand Company | the first rank and the company's officer quest (both ways); promotions that need a hunting log rank (workbook notes) | as noted |
+| Mount speed | a first increase the workbook gives as a quest, and that quest (both ways) | both ways |
+
+**From the FFXIV Completionist desktop app (1.0.5).** `tools/desktop-links.js` reads the link fields its data files carry (`cPrev`, `cNext`, `cSiblings`, `cCombo`, from the installer the owner shared) and `tools/merge-desktop-links.js` adopts the ones the game data does not already give, after checks: both ends must still be the same entry by name (its data is from patch 7.38, so its position-based lists no longer line up everywhere), no link across starting cities or Grand Companies (a link from a shared entry to one city's entry applies only to that city), relic links within one job, nothing the game's quest order contradicts, and only links that add ticks (its "unticking unticks" cascades are not adopted). 822 links and 27 "complete this set" rules were adopted (kind `x`), for example the Firebird, Kamuy and Landerwaffe quests needing their mounts, allied society rank quests, hunt-mark achievements, "Tales of War/Magic/the Hand/the Land" needing every class quest, class quests that give the first relic tools, and Hall of the Novice order.
+
+**Checked on Console Games Wiki (2026-11-08):** Phantom Weapons and Cosmic Tools are upgraded one stage at a time (so Dawntrail relic stages are linked like the others); the "Big Game Hunter" achievements are Legacy (from version 1.0, unobtainable), so they need no FATE link; spot checks of items that prove their only source (Black Chocobo, Manacutter, Unicorn, Firebird, Wind-up Louisoix) match.
+
+Not linked (no reliable link): skyward and cosmic score achievements, and achievements counted from things the tracker does not record (enemies defeated, levequest counts, and so on).
 
 ## Content added after the workbook's 7.45 edition
 

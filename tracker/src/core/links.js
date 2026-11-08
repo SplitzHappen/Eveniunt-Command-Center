@@ -11,7 +11,7 @@
   ET.LINK_KIND = {
     q: 'needed before it (quest)', qc: 'needed before it (your starting city)', qg: 'needed before it (your Grand Company)', c: 'aether current from this quest', r: 'reward', d: 'duty', t: 'title', a: 'achievement',
     l: 'earlier rank or stage', h: 'earlier hunting log rank', s: 'sightseeing log achievement', m: 'master recipe book',
-    f: 'FATE', g: 'FATE achievement (assumes a gold rating)',
+    f: 'FATE', g: 'FATE achievement (assumes a gold rating)', x: 'from the FFXIV Completionist desktop app',
   };
 
   ET.indexLinks = function (idx, L) {
