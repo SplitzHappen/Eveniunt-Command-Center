@@ -22,10 +22,11 @@ jobs:
       - name: Assemble the site
         run: |
           set -euo pipefail
-          mkdir -p _site/atelier _site/cosmic
+          mkdir -p _site/atelier _site/cosmic _site/tracker
           cp web/index.html _site/index.html
           cp -r web/assets _site/assets
           cp -r crafting/atelier/site/. _site/atelier/
+          cp -r tracker/site/. _site/tracker/
           cp crafting/dist/cosmic-*.html _site/cosmic/
           touch _site/.nojekyll
           du -sh _site

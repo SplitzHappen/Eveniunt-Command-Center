@@ -1,0 +1,639 @@
+// Eveniunt Tracker — interface. Core logic lives in src/core (globalThis.ET); the Appearance module
+// (themes, Mode/Theme/Accent/Background/Foreground, Advanced) is inserted from the Eveniunt Atelier at build time.
+(function () {
+  'use strict';
+  var ET = globalThis.ET;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var DATA = JSON.parse($('#tracker-data').textContent);
+  var MAP = JSON.parse($('#desktop-map').textContent);
+  var IDX = ET.indexData(DATA);
+  var RAW = new Map(DATA.sections.map(function (s) { return [s.id, s]; }));
+  var SEC = new Map(IDX.sections.map(function (s) { return [s.id, s]; }));
+  var HOSTED = /^https?:/.test(location.protocol);
+  var ST = null; // tracker state (characters, ticks, exclusions, availability choices)
+
+  // ── preferences (appearance and view; per device) ──
+  var PREF_KEY = 'eveniunt-tracker-ui';
+  function load() { try { return JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { return null; } }
+  var S = { theme: (load() || {}).theme || 'system', look: null };
+  var UI = Object.assign({ view: 'home', sec: null, mode: 'tick', filter: 'all', folded: {}, open: {} }, (load() || {}).ui || {});
+  UI.q = ''; UI.find = '';
+  function persist() {
+    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode } })); } catch (e) { /* private window */ }
+  }
+  var toastTimer = null;
+  function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 2600); }
+  function clampInt(v, lo, hi, d) { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); }
+  function copyText(text, msg) {
+    var done = function () { toast(msg || 'Copied'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    function fallback() { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed: select the text and copy it'); } ta.remove(); }
+  }
+  function download(name, text, type) {
+    var u = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })), a = document.createElement('a');
+    a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 3000);
+  }
+
+  /*{{LOOK}}*/
+
+  function applyTheme() { applyLook(); }
+
+  // ── the menu: the in-game main menu, as the desktop app lays it out ──
+  var TREE = [
+    ['Character', [
+      ['Achievements', function (s) { return s.indexOf('ach-') === 0; }],
+      ['Classes and Jobs', ['levels']],
+      ['Collections', ['mounts', 'minions', 'hairstyles', 'facewear', 'fashion', 'barding', 'titles', 'plate', 'portraits']],
+      ['Ranks and Companion', ['gcranks', 'societyranks', 'companionrank', 'companionskills']],
+      ['Relics', ['relicweapons', 'relictools']],
+      ['Blue Mage', ['bluemagic', 'bluelog', 'carnivale']],
+      ['Gold Saucer', ['cards', 'ttnpcs', 'mahjong']]]],
+    ['Duty', [
+      ['Quests', function (s) { return s.indexOf('quests-') === 0 || s === 'leves'; }],
+      ['Duty Finder', function (s) { return s.indexOf('duty-') === 0; }],
+      ['FATEs, Hunt and Training', ['fates', 'hunt', 'novice']],
+      ['Field Operations', ['eurekalevel', 'eurekaaeth', 'logos', 'eurekaduties', 'bozjarank', 'bozjaaeth', 'lostactions', 'bozjaduties', 'oclevel', 'ocaeth', 'ocevents', 'phantomjobs', 'ocduties']],
+      ['Island Sanctuary', function (s) { return s.indexOf('isle') === 0; }],
+      ['Collection', ['collection']]]],
+    ['Logs', [
+      ['Crafting', function (s) { return s.indexOf('craft-') === 0 || s === 'masterbooks'; }],
+      ['Gathering', function (s) { return s.indexOf('gather-') === 0 || s === 'folklore'; }],
+      ['Fishing', ['fishing', 'fishingspots', 'spearfishing']],
+      ['Hunting, Sightseeing and Music', ['hunting', 'sightseeing', 'orchestrion']]]],
+    ['Travel', [['Travel', ['aetherytes', 'aethercurrents', 'mountspeed', 'porters', 'sharedfate']]]],
+    ['Social', [['Social', ['emotes']]]]
+  ];
+  var MENUS = (function () {
+    var used = new Set();
+    var menus = TREE.map(function (m) {
+      return { t: m[0], folders: m[1].map(function (f) {
+        var secs = typeof f[1] === 'function' ? IDX.sections.filter(function (s) { return f[1](s.id); }).map(function (s) { return s.id; }) : f[1].filter(function (id) { return SEC.has(id); });
+        secs.forEach(function (id) { used.add(id); });
+        return { t: f[0], secs: secs };
+      }).filter(function (f) { return f.secs.length; }) };
+    });
+    var rest = IDX.sections.filter(function (s) { return !used.has(s.id); }).map(function (s) { return s.id; });
+    if (rest.length) menus.push({ t: 'Other', folders: [{ t: 'Other', secs: rest }] });
+    return menus;
+  })();
+  function navTitle(id) {
+    var t = SEC.get(id).t;
+    return t.replace(/^(Achievements|Duties|Crafting Log|Gathering Log|Eureka|Bozja|Occult Crescent|Island Sanctuary): /, '');
+  }
+  function menuOf(id) { for (var i = 0; i < MENUS.length; i++) for (var j = 0; j < MENUS[i].folders.length; j++) if (MENUS[i].folders[j].secs.indexOf(id) >= 0) return [MENUS[i], MENUS[i].folders[j]]; return [null, null]; }
+
+  // ── tallies ──
+  var KEYS = new Map(IDX.sections.map(function (s) { return [s.id, ET.sectionKeys(s)]; }));
+  function tallyOf(ids) { var keys = []; ids.forEach(function (id) { keys = keys.concat(KEYS.get(id)); }); return ET.tally(IDX, ST, keys); }
+  function combined(t) { var d = 0, n = 0; ST.chars.forEach(function (c) { d += t.done[c.id]; n += t.totals[c.id]; }); return { d: d, n: n, p: ET.percent(d, n) }; }
+  function pctTxt(d, n) { return n ? ET.percent(d, n).toFixed(1).replace(/\.0$/, '') + '%' : '–'; }
+
+  // ── sidebar ──
+  function renderSide() {
+    var h = '<button type="button" class="home' + (UI.view === 'home' ? ' on' : '') + '" data-act="home">Overview</button>';
+    MENUS.forEach(function (m) {
+      var all = []; m.folders.forEach(function (f) { all = all.concat(f.secs); });
+      var mt = combined(tallyOf(all));
+      h += '<div class="nav-menu"><h3>' + esc(m.t) + '<span class="pc">' + pctTxt(mt.d, mt.n) + '</span></h3>';
+      m.folders.forEach(function (f) {
+        var single = m.folders.length === 1 && f.t === m.t;
+        var ft = combined(tallyOf(f.secs)), key = m.t + '/' + f.t;
+        var open = single || UI.open[key] || f.secs.indexOf(UI.sec) >= 0;
+        var links = f.secs.map(function (id) {
+          var t = combined(tallyOf([id]));
+          return '<button type="button" class="nav-link' + (UI.view === 'sec' && UI.sec === id ? ' on' : '') + (t.n && t.d === t.n ? ' full' : '') + '" data-act="sec" data-id="' + id + '"><span class="nm">' + esc(navTitle(id)) + '</span><span class="pc">' + pctTxt(t.d, t.n) + '</span></button>';
+        }).join('');
+        h += single ? links : '<details class="nav-folder" data-key="' + esc(key) + '"' + (open ? ' open' : '') + '><summary class="' + (ft.n && ft.d === ft.n ? 'full' : '') + '"><span class="nm">' + esc(f.t) + '</span><span class="pc">' + pctTxt(ft.d, ft.n) + '</span></summary>' + links + '</details>';
+      });
+      h += '</div>';
+    });
+    $('#side').innerHTML = h;
+  }
+  var sideQueued = false;
+  function queueSide() { if (sideQueued) return; sideQueued = true; requestAnimationFrame(function () { sideQueued = false; renderSide(); }); }
+
+  // ── per-character tallies ──
+  function talliesHtml(t) {
+    return '<div class="tallies">' + ST.chars.map(function (c, i) {
+      var d = t.done[c.id], n = t.totals[c.id], p = n ? d / n : 0;
+      var seg = [0, 1, 2].map(function (k) { return '<i style="--f:' + Math.max(0, Math.min(100, (p * 3 - k) * 100)).toFixed(1) + '%"></i>'; }).join('');
+      return '<div class="tally" data-c="' + c.id + '"><span class="who"><span class="ix">' + (i + 1) + '</span><b>' + esc(c.name) + '</b><span class="n">' + d + ' / ' + n + '</span></span><span class="gauge">' + seg + '</span><span class="pct">' + pctTxt(d, n) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  // ── entries ──
+  var MARK = { lim: 'Time-limited only', gone: 'No longer obtainable', unk: 'Availability unknown' };
+  function metaHtml(e, sid, av) {
+    var bits = [];
+    if (e.p) bits.push('<span class="p">' + esc(e.p) + '</span>');
+    if (av.marked) bits.push('<span class="why">' + (av.manual === 'x' ? 'Marked unobtainable by you' : MARK[av.builtIn] || 'Not counted') + '</span>');
+    else if (av.manual === 'ok' && av.builtIn) bits.push('<span class="why">Counted by your choice (' + esc(MARK[av.builtIn] || '') + ')</span>');
+    if (e.cnt) bits.push('Defeat ×' + e.cnt);
+    if (e.lv) bits.push('Lv ' + e.lv);
+    if (e.stars) bits.push('★'.repeat(Math.min(5, e.stars)));
+    if (e.no) bits.push('No. ' + e.no);
+    if (e.cmd) bits.push(esc(e.cmd));
+    if (e.race) bits.push(esc(e.race));
+    if (e.zone) bits.push(esc(e.zone));
+    if (e.spot) bits.push(esc(e.spot));
+    if (e.kind) bits.push(esc(e.kind));
+    if (e.pts) bits.push(e.pts + ' pts');
+    if (e.max) bits.push('Complete at level ' + e.max);
+    if (e.d) bits.push(esc(e.d));
+    if (e.src) bits.push('<span class="src">' + esc(e.src.join(' · ')) + '</span>');
+    return bits.length ? '<span class="meta">' + bits.join(' ') + '</span>' : '';
+  }
+  function rowHtml(k) {
+    var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e);
+    var cells = ST.chars.map(function (c) {
+      var on = !!ST.ticks[c.id][k], na = !!ST.excl[c.id][k];
+      if (e.val) {
+        var v = ET.getValue(ST, c.id, k);
+        return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : v) + '" placeholder="–" aria-label="' + esc(c.name) + ' level"></span>';
+      }
+      return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
+    }).join('');
+    return '<div class="lr er' + (av.marked ? ' x' : '') + (av.manual ? ' manual' : '') + '" data-k="' + k + '"><span class="c0">' + (av.info ? '<span></span>' : '<button type="button" class="xb" data-x="' + k + '" title="' + (av.marked ? 'Not counted: click to count it' : 'Counted: click to mark it unobtainable') + '" aria-label="' + (av.marked ? 'Count this entry' : 'Mark unobtainable') + '">✕</button>') + '<span class="nm">' + esc(e.n) + '</span>' + metaHtml(e, hit.s.id, av) + '</span>' + cells + '</div>';
+  }
+  function norm(s) { return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function passes(k, q) {
+    var e = IDX.byKey.get(k).e;
+    if (q && norm(e.n + ' ' + (e.d || '') + ' ' + (e.src ? e.src.join(' ') : '')).indexOf(q) < 0) return false;
+    if (UI.filter === 'all') return true;
+    var av = ET.availability(ST, k, e);
+    if (UI.filter === 'unob') return av.marked;
+    if (!av.counted) return false;
+    var apply = ST.chars.filter(function (c) { return !ST.excl[c.id][k]; });
+    var done = apply.filter(function (c) { return ST.ticks[c.id][k]; }).length;
+    if (UI.filter === 'missing') return done < apply.length;
+    if (UI.filter === 'done') return apply.length > 0 && done === apply.length;
+    return true;
+  }
+  function groupCounts(keys) {
+    return ST.chars.map(function (c) {
+      var n = 0, d = 0;
+      keys.forEach(function (k) { var hit = IDX.byKey.get(k); if (!hit || ST.excl[c.id][k] || !ET.availability(ST, k, hit.e).counted) return; n++; if (ST.ticks[c.id][k]) d++; });
+      return [d, n];
+    });
+  }
+  function headRowHtml() {
+    var narrow = window.innerWidth < 640 || ST.chars.length > 5 && window.innerWidth < 1100;
+    return '<div class="lr lh"><span class="c0">Entry</span>' + ST.chars.map(function (c) {
+      return '<span class="c' + (narrow ? ' ini' : '') + '" title="' + esc(c.name) + '">' + (narrow ? (ST.chars.indexOf(c) + 1) : esc(c.name)) + '</span>';
+    }).join('') + '</div>';
+  }
+  function groupHtml(sid, gi, g, keys, label) {
+    var cnt = groupCounts(g.keys), folded = UI.folded[sid + '#' + gi];
+    return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '"><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '<span class="fold">' + (folded ? '▸' : '▾') + '</span></span>' +
+      ST.chars.map(function (c, i) { return '<span class="c' + (cnt[i][1] && cnt[i][0] === cnt[i][1] ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" title="' + esc(c.name) + ': tick or clear the whole group">' + cnt[i][0] + '<br>' + cnt[i][1] + '</span>'; }).join('') + '</div>' +
+      keys.map(rowHtml).join('') + '</div>';
+  }
+  var GROUP_KEYS = new Map(); // "sid#gi" -> keys of the full group
+
+  // ── pages ──
+  function setView(view, sec, push) {
+    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer');
+    persist(); render();
+    var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : '#/';
+    if (push !== false && location.hash !== h) history.pushState(null, '', h);
+    $('#page').focus({ preventScroll: true }); window.scrollTo(0, 0);
+  }
+  function render() {
+    renderSide();
+    if (UI.view === 'sec' && SEC.has(UI.sec)) renderSection(UI.sec);
+    else if (UI.view === 'search' && UI.q) renderSearch();
+    else renderHome();
+    $('#page').style.setProperty('--n', ST.chars.length);
+  }
+  function cw() { var w = Math.min(window.innerWidth, 1760); var n = ST.chars.length; return w < 520 ? Math.max(24, Math.min(40, Math.floor((w - 190) / n))) : w < 860 ? Math.max(30, Math.min(46, Math.floor((w - 280) / n))) : n > 6 ? 44 : 52; }
+  function renderHome() {
+    var all = combined(tallyOf(IDX.sections.map(function (s) { return s.id; })));
+    var h = '<div class="p-head"><span class="ttl"><span class="kick">Overview</span><h2>Completion ledger</h2><p class="note">' + ST.chars.length + ' character' + (ST.chars.length > 1 ? 's' : '') + ' side by side. Entries marked ✕ are not counted; switch any of them on, or mark anything unobtainable, from its row.</p></span><span class="tot">' + all.d.toLocaleString() + ' of ' + all.n.toLocaleString() + ' ticks<br>' + pctTxt(all.d, all.n) + '</span></div>';
+    h += talliesHtml(tallyOf(IDX.sections.map(function (s) { return s.id; })));
+    h += '<div class="ov">' + MENUS.map(function (m) {
+      return '<section class="ov-card"><h3>' + esc(m.t) + '</h3>' + m.folders.map(function (f) {
+        var t = tallyOf(f.secs), c = combined(t);
+        return '<button type="button" class="ov-row" data-act="sec" data-id="' + f.secs[0] + '" style="--n:' + ST.chars.length + '"><span class="t">' + esc(f.t) + '</span><span class="v">' + pctTxt(c.d, c.n) + '</span><span class="bars">' + ST.chars.map(function (ch) { return '<i title="' + esc(ch.name) + ': ' + t.done[ch.id] + ' / ' + t.totals[ch.id] + '" style="--f:' + ET.percent(t.done[ch.id], t.totals[ch.id]) + '%"></i>'; }).join('') + '</span></button>';
+      }).join('') + '</section>';
+    }).join('') + '</div>';
+    $('#page').innerHTML = h;
+  }
+  function toolbarHtml(groups) {
+    var opt = function (v, l) { return '<option value="' + v + '"' + (UI.filter === v ? ' selected' : '') + '>' + l + '</option>'; };
+    return '<div class="bar"><input class="find" id="find" type="search" placeholder="Find in this list…" value="' + esc(UI.find) + '" aria-label="Find in this list">' +
+      '<select id="filter" aria-label="Show">' + opt('all', 'Show everything') + opt('missing', 'Still missing (any character)') + opt('done', 'Done by every character') + opt('unob', 'Not counted (✕) only') + '</select>' +
+      (groups && groups.length > 1 ? '<select id="jump" aria-label="Jump to group"><option value="">Jump to group…</option>' + groups.map(function (g, i) { return '<option value="' + i + '">' + esc(g.t) + '</option>'; }).join('') + '</select>' : '') +
+      '<span class="mode" title="What clicking a character box does"><span class="seg2"><button type="button" data-mode="tick" class="' + (UI.mode === 'tick' ? 'on' : '') + '">Tick</button><button type="button" data-mode="na" class="na' + (UI.mode === 'na' ? ' on' : '') + '">Does not apply</button></span></span></div>';
+  }
+  function renderSection(sid) {
+    var sec = SEC.get(sid), raw = RAW.get(sid), mo = menuOf(sid);
+    var t = tallyOf([sid]), c = combined(t);
+    var h = '<div class="p-head"><span class="ttl"><span class="kick">' + esc((mo[0] ? mo[0].t : '') + (mo[1] && mo[1].t !== (mo[0] && mo[0].t) ? ' · ' + mo[1].t : '')) + '</span><h2>' + esc(sec.t) + '</h2>' + (raw.note ? '<p class="note">' + esc(raw.note) + '</p>' : '') + '</span><span class="tot">' + t.total.toLocaleString() + ' counted' + (t.marked ? ' · ' + t.marked.toLocaleString() + ' not counted (✕)' : '') + '<br>' + pctTxt(c.d, c.n) + ' overall</span></div>';
+    h += '<div id="tallies">' + talliesHtml(t) + '</div>';
+    h += toolbarHtml(sec.groups);
+    h += '<div class="ledger" id="ledger" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px"></div>';
+    $('#page').innerHTML = h;
+    renderLedger();
+  }
+  function renderLedger() {
+    var sid = UI.sec, sec = SEC.get(sid), q = norm(UI.find), any = false;
+    var h = headRowHtml();
+    sec.groups.forEach(function (g, gi) {
+      GROUP_KEYS.set(sid + '#' + gi, g.keys);
+      var keys = g.keys.filter(function (k) { return passes(k, q); });
+      if (!keys.length) return;
+      any = true;
+      h += groupHtml(sid, gi, g, keys);
+    });
+    if (!any) h += '<p class="empty">Nothing here matches. Clear the search or choose “Show everything”.</p>';
+    $('#ledger').innerHTML = h;
+  }
+  function renderSearch() {
+    var q = norm(UI.q), out = [], total = 0;
+    IDX.sections.forEach(function (s) {
+      var keys = KEYS.get(s.id).filter(function (k) { return norm(IDX.byKey.get(k).e.n).indexOf(q) >= 0; });
+      total += keys.length;
+      if (keys.length) out.push([s, keys.slice(0, 60)]);
+    });
+    var h = '<div class="p-head"><span class="ttl"><span class="kick">Search</span><h2>“' + esc(UI.q) + '”</h2><p class="note">' + total.toLocaleString() + ' match' + (total === 1 ? '' : 'es') + ' in ' + out.length + ' list' + (out.length === 1 ? '' : 's') + (total > 600 ? '; showing the first 60 per list' : '') + '.</p></span></div>';
+    h += '<div class="ledger" id="ledger" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px">' + headRowHtml();
+    out.forEach(function (o) {
+      var g = { t: o[0].t, c: '', keys: o[1] };
+      GROUP_KEYS.set('find:' + o[0].id + '#0', o[1]);
+      h += groupHtml('find:' + o[0].id, 0, g, o[1], o[0].t);
+    });
+    if (!out.length) h += '<p class="empty">No entry has that name.</p>';
+    $('#page').innerHTML = h + '</div>';
+  }
+
+  // ── updating after a change, without re-rendering the whole list ──
+  function refreshAfter(keys) {
+    keys.forEach(function (k) {
+      var row = $('.er[data-k="' + CSS.escape(k) + '"]', $('#page'));
+      if (!row || !row.isConnected) return;
+      if (row.querySelector('.lvl')) { // level rows update in place (the field may still have focus)
+        $$('.lvl', row).forEach(function (inp) { inp.classList.toggle('on', !!ST.ticks[inp.dataset.c][k]); });
+        return;
+      }
+      row.outerHTML = rowHtml(k);
+    });
+    $$('.lgroup', $('#page')).forEach(function (gEl) {
+      var gk = gEl.dataset.g, full = GROUP_KEYS.get(gk.indexOf('find:') === 0 ? gk : gk);
+      if (!full) return;
+      var cnt = groupCounts(full);
+      $$('.gh .c', gEl).forEach(function (cell, i) { cell.innerHTML = cnt[i][0] + '<br>' + cnt[i][1]; cell.classList.toggle('full', !!cnt[i][1] && cnt[i][0] === cnt[i][1]); });
+    });
+    if (UI.view === 'sec') {
+      var t = tallyOf([UI.sec]); $('#tallies').innerHTML = talliesHtml(t);
+    }
+    queueSide();
+    save();
+  }
+  var dirty = false;
+  function save() { ET.saveState(ST); dirty = true; queueDriveSync(); }
+
+  // ── events ──
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-act]');
+    if (a) {
+      var act = a.dataset.act;
+      if (act === 'home') { e.preventDefault(); setView('home'); return; }
+      if (act === 'sec') { setView('sec', a.dataset.id); return; }
+      if (act === 'settings') { openSettings(); return; }
+      if (act === 'drawer') { document.body.classList.toggle('drawer'); return; }
+    }
+    if (document.body.classList.contains('drawer') && !e.target.closest('.side') && !e.target.closest('.menu-btn')) document.body.classList.remove('drawer');
+    var tk = e.target.closest('.tk');
+    if (tk) {
+      var k = tk.dataset.k, c = tk.dataset.c;
+      if (UI.mode === 'na') ET.setExcluded(ST, c, k, !ET.isExcluded(ST, c, k)); else ET.toggleTick(ST, c, k);
+      refreshAfter([k]); return;
+    }
+    var xb = e.target.closest('.xb');
+    if (xb) { var key = xb.dataset.x; var counted = ET.toggleAvailability(ST, key, IDX.byKey.get(key).e); toast(counted ? 'Counted in totals' : 'Marked unobtainable: not counted'); refreshAfter([key]); return; }
+    var gc = e.target.closest('[data-gc]');
+    if (gc) {
+      var keys = (GROUP_KEYS.get(gc.dataset.gk) || []), ch = gc.dataset.gc;
+      if (UI.mode === 'na') {
+        var allNa = keys.every(function (k2) { return ST.excl[ch][k2]; });
+        keys.forEach(function (k2) { ET.setExcluded(ST, ch, k2, !allNa); });
+      } else {
+        var live = keys.filter(function (k2) { return !ST.excl[ch][k2] && ET.availability(ST, k2, IDX.byKey.get(k2).e).counted; });
+        var allOn = live.length && live.every(function (k2) { return ST.ticks[ch][k2]; });
+        if (!allOn && live.length > 25 && !confirm('Tick all ' + live.length + ' entries in this group for ' + charName(ch) + '?')) return;
+        ET.setMany(ST, [ch], live, !allOn);
+      }
+      refreshAfter(keys); return;
+    }
+    var fold = e.target.closest('[data-fold]');
+    if (fold) { var id = fold.dataset.fold; UI.folded[id] = !UI.folded[id]; if (!UI.folded[id]) delete UI.folded[id]; fold.closest('.lgroup').classList.toggle('folded', !!UI.folded[id]); fold.querySelector('.fold').textContent = UI.folded[id] ? '▸' : '▾'; persist(); return; }
+    var md = e.target.closest('[data-mode]');
+    if (md) { UI.mode = md.dataset.mode; $$('[data-mode]').forEach(function (b) { b.classList.toggle('on', b.dataset.mode === UI.mode); }); persist(); toast(UI.mode === 'na' ? 'Clicking a box now marks “does not apply” for that character' : 'Clicking a box now ticks it'); return; }
+  });
+  document.addEventListener('toggle', function (e) { if (e.target.classList && e.target.classList.contains('nav-folder')) { UI.open[e.target.dataset.key] = e.target.open; persist(); } }, true);
+  var findTimer = null;
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'find') { clearTimeout(findTimer); findTimer = setTimeout(function () { UI.find = e.target.value; renderLedger(); }, 160); }
+    if (e.target.id === 'q') { clearTimeout(findTimer); findTimer = setTimeout(function () { UI.q = e.target.value.trim(); if (UI.q.length >= 2) setView('search', null, false); else if (UI.view === 'search') setView('home', null, false); }, 220); }
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.classList.contains('lvl')) { var lk = e.target.dataset.k; ET.setValue(ST, e.target.dataset.c, lk, e.target.value, IDX.byKey.get(lk).e); refreshAfter([lk]); return; }
+    if (e.target.id === 'filter') { UI.filter = e.target.value; persist(); renderLedger(); }
+    if (e.target.id === 'jump' && e.target.value !== '') { var g = $('.lgroup[data-g="' + UI.sec + '#' + e.target.value + '"]'); if (g) g.scrollIntoView({ block: 'start' }); else toast('That group is hidden by the current filter'); e.target.value = ''; }
+  });
+  window.addEventListener('popstate', route);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.body.classList.contains('drawer')) document.body.classList.remove('drawer'); });
+  var resizeTimer = null;
+  window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { var l = $('#ledger'); if (l) { l.style.setProperty('--cw', cw() + 'px'); if (UI.view === 'sec') renderLedger(); } }, 200); });
+  function route() {
+    var m = location.hash.match(/^#\/s\/(.+)$/);
+    if (m && SEC.has(m[1])) setView('sec', m[1], false);
+    else if (location.hash === '#/' || !location.hash) setView(UI.view === 'sec' && SEC.has(UI.sec) && !location.hash ? 'sec' : 'home', UI.sec, false);
+  }
+  function charName(id) { var c = ST.chars.find(function (x) { return x.id === id; }); return c ? c.name : id; }
+
+  // ── dialogs ──
+  var dlg = $('#dlg');
+  function openDialog(html, bind) { dlg.innerHTML = html; if (!dlg.open) dlg.showModal(); if (bind) bind(dlg); }
+  function closeDialog() { if (dlg.open) dlg.close(); }
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) closeDialog(); if (e.target.closest('[data-close]')) closeDialog(); });
+
+  function setupDialog() {
+    var n = 8, names = [];
+    var draw = function () {
+      var rows = '';
+      for (var i = 0; i < n; i++) rows += '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-name="' + i + '" placeholder="Character ' + (i + 1) + ' name" value="' + esc(names[i] || '') + '" aria-label="Character ' + (i + 1) + ' name"><span></span></div>';
+      openDialog('<h3>Welcome to the Eveniunt Tracker</h3><p class="help">Track up to eight characters side by side. Choose how many, and give them names (you can change both later in Settings).</p>' +
+        '<div class="row"><label class="label" for="nchars">Characters</label><select id="nchars" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === n ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+        '<div class="chars" style="margin-top:10px">' + rows + '</div>' +
+        '<div class="row" style="margin-top:16px"><button type="button" class="btn" id="go">Start tracking</button><button type="button" class="btn ghost" id="load-backup">Load a backup or transfer code instead</button></div>', function (d) {
+        $('#nchars', d).onchange = function (e) { keep(); n = +e.target.value; draw(); };
+        $('#go', d).onclick = function () { keep(); ST = ET.newState(names.slice(0, n).map(function (x, i) { return x || 'Character ' + (i + 1); })); ET.saveState(ST, true); closeDialog(); afterBoot(); toast('Ready. Import your desktop-app saves from Settings → Import and backup.'); };
+        $('#load-backup', d).onclick = function () { keep(); ST = ET.newState(names.slice(0, n).map(function (x, i) { return x || 'Character ' + (i + 1); })); afterBoot(); openSettings('data'); };
+      });
+    };
+    var keep = function () { $$('[data-name]', dlg).forEach(function (inp) { names[+inp.dataset.name] = inp.value.trim(); }); };
+    draw();
+    dlg.addEventListener('cancel', function (e) { if (!ST) e.preventDefault(); });
+  }
+
+  var setTab = 'chars';
+  function openSettings(tab) {
+    if (tab) setTab = tab;
+    var tabs = [['chars', 'Characters'], ['count', 'Counting'], ['data', 'Import and backup'], ['online', 'Online refresh'], ['cloud', 'Cloud sync'], ['look', 'Appearance'], ['about', 'About']];
+    var body = { chars: charsTab, count: countTab, data: dataTab, online: onlineTab, cloud: cloudTab, look: function () { return '<div id="s-appearance" class="appearance">' + appearanceHtml() + '</div>'; }, about: aboutTab }[setTab]();
+    openDialog('<h3>Settings</h3><nav class="set-nav">' + tabs.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" class="' + (setTab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</nav>' + body + '<div class="row" style="margin-top:18px"><button type="button" class="btn sm" data-close>Close</button></div>', function (d) {
+      $$('[data-tab]', d).forEach(function (b) { b.onclick = function () { openSettings(b.dataset.tab); }; });
+      if (setTab === 'look') bindAppearance(d);
+      ({ chars: bindChars, count: bindCount, data: bindData, online: bindOnline, cloud: bindCloud }[setTab] || function () {})(d);
+    });
+  }
+  function charsTab() {
+    return '<p class="help">Up to eight characters, shown side by side in every list. The Lodestone number (or the character’s Lodestone page address) enables the online refresh.</p>' +
+      '<div class="row"><label class="label" for="cn">How many</label><select id="cn" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === ST.chars.length ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="chars" style="margin-top:10px">' + ST.chars.map(function (c, i) { return '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-cname="' + c.id + '" value="' + esc(c.name) + '" aria-label="Name of character ' + (i + 1) + '"><input class="inp" data-lode="' + c.id + '" value="' + esc(c.lodestone || '') + '" placeholder="Lodestone number" aria-label="Lodestone number of character ' + (i + 1) + '"></div>'; }).join('') + '</div>' +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn sm" id="save-chars">Save characters</button></div>';
+  }
+  function bindChars(d) {
+    $('#cn', d).onchange = function (e) {
+      var n = +e.target.value;
+      if (n < ST.chars.length) {
+        var lost = ST.chars.slice(n).map(function (c) { return c.name; }).join(', ');
+        if (!confirm('Remove ' + lost + '? Their ticks will be deleted from this device (save a backup first if unsure).')) { e.target.value = ST.chars.length; return; }
+      }
+      ET.setCharacterCount(ST, n); save(); render(); openSettings('chars');
+    };
+    $('#save-chars', d).onclick = function () {
+      $$('[data-cname]', d).forEach(function (inp) { ET.renameCharacter(ST, inp.dataset.cname, inp.value); });
+      var bad = [];
+      $$('[data-lode]', d).forEach(function (inp) { var c = ST.chars.find(function (x) { return x.id === inp.dataset.lode; }); var v = inp.value.trim(); var id = v ? ET.parseLodestoneId(v) : null; if (v && !id) bad.push(c.name); c.lodestone = id; });
+      ST.updated = Date.now(); save(); render(); toast(bad.length ? 'Not a Lodestone number for: ' + bad.join(', ') : 'Characters saved'); openSettings('chars');
+    };
+  }
+  function countTab() {
+    var sw = function (k, label, help) { return '<div class="look-row"><span><b>' + label + '</b><small>' + help + '</small></span><span class="look-ctl"><label class="switch"><input type="checkbox" data-count="' + k + '"' + (ST.settings[k] ? ' checked' : '') + '><i></i></label></span></div>'; };
+    var manual = Object.keys(ST.avail).length;
+    return '<p class="help">Entries marked ✕ are left out of every total. These switches count a whole kind of ✕ entry at once; the ✕ button on any row overrides it for that entry.</p><div class="look-card">' +
+      sw('countLimited', 'Count time-limited entries', 'Only obtainable from events, seasonal content or ended campaigns (they may return)') +
+      sw('countGone', 'Count entries that are no longer obtainable', 'Legacy achievements, retired items and rows the checklist excludes') +
+      sw('countUnknown', 'Count entries of unknown availability', 'Mostly FATEs not placed in any zone') + '</div>' +
+      '<div class="row" style="margin-top:12px"><span class="help">' + manual + ' entr' + (manual === 1 ? 'y has' : 'ies have') + ' your own ✕ choice.</span>' + (manual ? '<button type="button" class="btn sm ghost" id="clear-avail">Clear my ✕ choices</button>' : '') + '</div>';
+  }
+  function bindCount(d) {
+    $$('[data-count]', d).forEach(function (inp) { inp.onchange = function () { ST.settings[inp.dataset.count] = inp.checked; ST.updated = Date.now(); save(); render(); }; });
+    var cl = $('#clear-avail', d); if (cl) cl.onclick = function () { if (!confirm('Return every entry to its built-in mark?')) return; ST.avail = {}; ST.updated = Date.now(); save(); render(); openSettings('count'); };
+  }
+  function dataTab() {
+    return '<h4>Import from the FFXIV Completionist desktop app</h4><p class="help">Choose one or more character files saved by the desktop app (JSON). You then pick which column each file goes into. Ticks and its “X” marks (does not apply to that character) are imported; anything that cannot be placed exactly is listed so you can do it by hand.</p>' +
+      '<div class="row"><input type="file" id="desk-files" accept=".json,application/json" multiple></div>' +
+      '<h4>Backup file</h4><p class="help">Everything in one file: characters, ticks, “does not apply” marks and your ✕ choices.</p>' +
+      '<div class="row"><button type="button" class="btn sm" id="save-backup">Save a backup file</button><label class="btn sm ghost">Load a backup file<input type="file" id="load-file" accept=".json,application/json" hidden></label></div>' +
+      '<h4>Transfer code</h4><p class="help">A pasteable code with everything in it, to move to another device without files.</p>' +
+      '<div class="row"><button type="button" class="btn sm" id="make-code">Make a transfer code</button></div><textarea class="inp code" id="code" rows="4" placeholder="Paste a transfer code here to load it"></textarea>' +
+      '<div class="row"><button type="button" class="btn sm ghost" id="copy-code">Copy</button><button type="button" class="btn sm ghost" id="read-code">Load this code</button></div>' +
+      '<h4>Start over</h4><div class="row"><button type="button" class="btn sm ghost" id="wipe">Erase everything on this device</button></div>';
+  }
+  function bindData(d) {
+    $('#save-backup', d).onclick = function () { download('eveniunt-tracker-backup-' + new Date().toISOString().slice(0, 10) + '.json', ET.exportFile(ST)); toast('Backup saved'); };
+    $('#load-file', d).onchange = function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      f.text().then(function (txt) {
+        var doc = null; try { doc = JSON.parse(txt); } catch (err) { /* handled below */ }
+        if (doc && ET.isDesktopSave(doc)) { deskImport([{ name: f.name, doc: doc }]); return; }
+        var st = ET.importFile(txt);
+        if (!confirm('Replace everything on this device with this backup (' + st.chars.map(function (c) { return c.name; }).join(', ') + ')?')) return;
+        st.sync = ST.sync; ST = st; ET.saveState(ST, true); render(); toast('Backup loaded'); closeDialog();
+      }).catch(function (err) { toast(err.message); });
+    };
+    $('#make-code', d).onclick = function () { ET.makeTransferCode(ST).then(function (code) { $('#code', d).value = code; toast('Transfer code ready (' + code.length.toLocaleString() + ' characters)'); }); };
+    $('#copy-code', d).onclick = function () { var v = $('#code', d).value; if (v) copyText(v, 'Transfer code copied'); };
+    $('#read-code', d).onclick = function () {
+      ET.readTransferCode($('#code', d).value).then(function (st) {
+        if (!confirm('Replace everything on this device with this code (' + st.chars.map(function (c) { return c.name; }).join(', ') + ')?')) return;
+        st.sync = ST.sync; ST = st; ET.saveState(ST, true); render(); toast('Transfer code loaded'); closeDialog();
+      }).catch(function (err) { toast(err.message); });
+    };
+    $('#desk-files', d).onchange = function (e) {
+      var files = Array.prototype.slice.call(e.target.files);
+      Promise.all(files.map(function (f) { return f.text().then(function (t) { return { name: f.name, doc: JSON.parse(t) }; }); })).then(deskImport).catch(function () { toast('One of those files is not a desktop-app save'); });
+    };
+    $('#wipe', d).onclick = function () { if (!confirm('Erase all characters and ticks on this device? Save a backup first if unsure.')) return; ET.clearState().then(function () { location.reload(); }); };
+  }
+  function deskImport(files) {
+    files = files.filter(function (f) { return ET.isDesktopSave(f.doc); });
+    if (!files.length) { toast('Those are not desktop-app saves'); return; }
+    var guess = function (f, i) {
+      var nm = norm(ET.nameFromDesktopFile(f.name));
+      var hit = ST.chars.find(function (c) { return norm(c.name) === nm; });
+      return hit ? hit.id : (ST.chars[i] || ST.chars[0]).id;
+    };
+    openDialog('<h3>Import desktop-app saves</h3><p class="help">Choose the column for each file. “Add” keeps ticks already in that column; “Replace” clears that column first.</p><div class="files">' + files.map(function (f, i) {
+      return '<div class="f"><span><b>' + esc(ET.nameFromDesktopFile(f.name) || f.name) + '</b><br><small class="dim">' + esc(f.name) + '</small></span><select class="inp" data-file="' + i + '"><option value="">Skip</option>' + ST.chars.map(function (c) { return '<option value="' + c.id + '"' + (c.id === guess(f, i) ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></div>';
+    }).join('') + '</div><div class="row" style="margin-top:10px"><label class="check"><input type="checkbox" id="rename" checked> Rename the column to the file’s character name</label></div>' +
+      '<div class="row" style="margin-top:6px"><span class="seg2" id="imode"><button type="button" class="on" data-im="add">Add</button><button type="button" data-im="replace">Replace</button></span></div>' +
+      '<div class="row" style="margin-top:14px"><button type="button" class="btn" id="do-import">Import</button><button type="button" class="btn ghost" data-close>Cancel</button></div>', function (d) {
+      var mode = 'add';
+      $$('[data-im]', d).forEach(function (b) { b.onclick = function () { mode = b.dataset.im; $$('[data-im]', d).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+      $('#do-import', d).onclick = function () {
+        var results = [];
+        $$('[data-file]', d).forEach(function (sel) {
+          if (!sel.value) return;
+          var f = files[+sel.dataset.file], r = ET.importDesktopSave(IDX, f.doc, MAP);
+          ET.applyImport(ST, sel.value, r, mode);
+          if ($('#rename', d).checked && ET.nameFromDesktopFile(f.name)) ET.renameCharacter(ST, sel.value, ET.nameFromDesktopFile(f.name));
+          results.push({ who: charName(sel.value), r: r });
+        });
+        ET.saveState(ST, true); save(); render(); importReport(results);
+      };
+    });
+  }
+  function importReport(results) {
+    var rows = [];
+    results.forEach(function (x) { x.r.missed.forEach(function (m) { rows.push([x.who, m.kind === 'level' ? 'Level ' + m.value : m.kind === 'exclusion' ? '“X” mark' : 'Tick', m.area, m.path + ' #' + m.id]); }); });
+    var csv = 'Character,Type,Area,Where in the desktop app\n' + rows.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    openDialog('<h3>Import finished</h3>' + results.map(function (x) {
+      return '<p class="help"><b>' + esc(x.who) + ':</b> ' + x.r.placed.toLocaleString() + ' of ' + x.r.done.toLocaleString() + ' ticks imported (' + pctTxt(x.r.placed, x.r.done) + '), ' + Object.keys(x.r.excl).length + ' “does not apply” marks; ' + x.r.missed.filter(function (m) { return m.kind !== 'level'; }).length + ' to do by hand, ' + x.r.missed.filter(function (m) { return m.kind === 'level'; }).length + ' level values not imported.</p>';
+    }).join('') + (rows.length ? '<div class="report"><table>' + rows.slice(0, 300).map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="row"><button type="button" class="btn sm" id="dl-report">Download the full list</button></div>' : '') +
+      '<div class="row" style="margin-top:14px"><button type="button" class="btn" data-close>Done</button></div>', function (d) {
+      var b = $('#dl-report', d); if (b) b.onclick = function () { download('tracker-import-not-merged.csv', csv, 'text/csv'); };
+    });
+  }
+
+  // ── online refresh (FFXIV Collect) ──
+  function onlineTab() {
+    var withId = ST.chars.filter(function (c) { return c.lodestone; });
+    return '<p class="help">Reads public character data from FFXIV Collect (a community site) for characters with a Lodestone number: mounts, minions, orchestrion rolls, emotes, hairstyles, barding, fashion accessories, facewear, Blue Magic and achievements. It runs when the tracker opens with internet, and never changes anything you changed yourself without asking. Nothing is sent except the Lodestone number.</p>' +
+      '<div class="report"><table>' + ST.chars.map(function (c) { var s = ST.sync.fc[c.id]; return '<tr><td><b>' + esc(c.name) + '</b></td><td>' + (c.lodestone ? esc(c.lodestone) : '<span class="dim">no Lodestone number</span>') + '</td><td>' + (s ? 'Last refresh ' + esc(new Date(s.at).toLocaleString()) + (s.unavailable && Object.keys(s.unavailable).length ? '<br><small class="dim">Not available: ' + esc(Object.keys(s.unavailable).join(', ')) + '</small>' : '') : '<span class="dim">never</span>') + '</td></tr>'; }).join('') + '</table></div>' +
+      '<div class="row"><button type="button" class="btn sm" id="fc-now"' + (withId.length ? '' : ' disabled') + '>Refresh now</button><button type="button" class="btn sm ghost" data-tab-go="chars">Add Lodestone numbers</button></div>';
+  }
+  function bindOnline(d) {
+    var b = $('#fc-now', d); if (b) b.onclick = function () { closeDialog(); refreshOnline(true); };
+    var g = $('[data-tab-go]', d); if (g) g.onclick = function () { openSettings('chars'); };
+  }
+  function setSyncState(t) { $('#sync-state').textContent = t || ''; }
+  function refreshOnline(manual) {
+    var chars = ST.chars.filter(function (c) { return c.lodestone; });
+    if (!chars.length) { if (manual) toast('Add a Lodestone number first'); return Promise.resolve(); }
+    if (!navigator.onLine) { setSyncState('Offline: online refresh waits for a connection'); return Promise.resolve(); }
+    setSyncState('Refreshing from FFXIV Collect…');
+    var asks = [], applied = 0, problems = [];
+    return chars.reduce(function (p, c) {
+      return p.then(function () {
+        return ET.fetchOwned(c.lodestone).then(function (owned) {
+          if (owned.offline) { problems.push(c.name + ': no connection'); return; }
+          if (owned.unavailable._character) { problems.push(c.name + ': ' + owned.unavailable._character); return; }
+          var rec = ET.reconcileOwned(IDX, ST, c.id, owned);
+          applied += rec.auto.length;
+          if (rec.ask.length) asks.push({ c: c, owned: owned, rec: rec }); else ET.acceptRefresh(ST, c.id, owned, rec, {});
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      save(); render();
+      setSyncState('Online refresh ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + (applied ? ': ' + applied + ' new' : ''));
+      if (problems.length && manual) toast(problems.join(' · '));
+      if (asks.length) askOnline(asks);
+      else if (manual) toast(applied ? applied + ' new entries ticked from FFXIV Collect' : 'Everything already matches FFXIV Collect');
+    });
+  }
+  function askOnline(asks) {
+    var items = [];
+    asks.forEach(function (a) { a.rec.ask.forEach(function (q) { items.push({ id: a.c.id + '|' + q.key, who: a.c.name, what: q.name + ' (' + q.section + ')', local: q.local ? 'ticked' : 'not ticked', remote: q.online ? 'owned' : 'not owned' }); }); });
+    conflictDialog('Online and this device disagree', 'FFXIV Collect and this device disagree on these entries. Choose which one is right.', 'FFXIV Collect', items, function (choices) {
+      asks.forEach(function (a) {
+        var ch = {};
+        a.rec.ask.forEach(function (q) { ch[q.key] = choices[a.c.id + '|' + q.key] === 'remote' ? 'online' : 'local'; });
+        ET.acceptRefresh(ST, a.c.id, a.owned, a.rec, ch);
+      });
+      save(); render(); toast('Saved');
+    });
+  }
+  function conflictDialog(title, help, otherLabel, items, done) {
+    var choice = {};
+    items.forEach(function (it) { choice[it.id] = 'local'; });
+    var draw = function () {
+      openDialog('<h3>' + esc(title) + '</h3><p class="help">' + esc(help) + '</p><div class="row"><button type="button" class="btn sm" data-all="remote">' + esc(otherLabel) + ' is right for all</button><button type="button" class="btn sm" data-all="local">This device is right for all</button></div><div class="report" style="max-height:50vh">' +
+        items.map(function (it) {
+          return '<div class="conf"><span class="w">' + (it.who ? esc(it.who) + ': ' : '') + esc(it.what) + '<small>' + esc(otherLabel) + ': ' + esc(it.remote) + ' · This device: ' + esc(it.local) + '</small></span><span class="seg2"><button type="button" data-pick="' + esc(it.id) + '" data-v="remote" class="' + (choice[it.id] === 'remote' ? 'on' : '') + '">' + esc(otherLabel) + '</button><button type="button" data-pick="' + esc(it.id) + '" data-v="local" class="' + (choice[it.id] === 'local' ? 'on' : '') + '">This device</button></span></div>';
+        }).join('') + '</div><div class="row" style="margin-top:14px"><button type="button" class="btn" id="apply">Apply</button></div>', function (d) {
+        $$('[data-all]', d).forEach(function (b) { b.onclick = function () { items.forEach(function (it) { choice[it.id] = b.dataset.all; }); draw(); }; });
+        $$('[data-pick]', d).forEach(function (b) { b.onclick = function () { choice[b.dataset.pick] = b.dataset.v; $$('[data-pick="' + CSS.escape(b.dataset.pick) + '"]', d).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+        $('#apply', d).onclick = function () { closeDialog(); done(choice); };
+      });
+    };
+    draw();
+  }
+
+  // ── cloud sync (Google Drive app-data folder) ──
+  var DRIVE = { token: null, at: 0, busy: false, timer: null };
+  function cloudTab() {
+    var s = ST.sync.drive;
+    var ok = HOSTED && location.origin === 'https://splitzhappen.github.io';
+    return '<p class="help">Keeps a private copy in your own Google Drive (a hidden app folder only this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else.</p>' +
+      (ok ? '' : '<p class="help"><b>Cloud sync works in the installed app at splitzhappen.github.io/Eveniunt-Command-Center/tracker/.</b> In this copy, use backup files or a transfer code.</p>') +
+      '<p class="help">' + (s ? 'Last sync: ' + esc(new Date(s.at).toLocaleString()) : 'Not synced yet.') + (DRIVE.token ? ' Signed in.' : '') + '</p>' +
+      '<div class="row"><button type="button" class="btn sm" id="sync-now"' + (ok ? '' : ' disabled') + '>' + (DRIVE.token ? 'Sync now' : 'Sign in with Google and sync') + '</button></div>';
+  }
+  function bindCloud(d) { var b = $('#sync-now', d); if (b) b.onclick = function () { closeDialog(); syncDrive(true); }; }
+  function syncDrive(interactive) {
+    if (DRIVE.busy) return Promise.resolve();
+    var fresh = DRIVE.token && Date.now() - DRIVE.at < 50 * 60 * 1000;
+    var get = fresh ? Promise.resolve(DRIVE.token) : interactive ? ET.driveSignIn(ET.GDRIVE_CLIENT_ID).then(function (t) { DRIVE.token = t; DRIVE.at = Date.now(); return t; }) : Promise.reject(new Error('not signed in'));
+    DRIVE.busy = true; setSyncState('Syncing with Google Drive…');
+    return get.then(function (tok) {
+      return ET.driveSync(ST, tok).then(function (r) {
+        if (r.done) { ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); if (interactive) toast(r.created ? 'Cloud copy created' : 'Synced'); return; }
+        var items = r.conflicts.map(function (c) { var x = ET.describeConflict(c, IDX, ST); return { id: c.id, who: x.who, what: x.what, local: x.local, remote: x.remote }; });
+        conflictDialog('Your devices disagree', 'These entries were changed differently on another device. Choose which one is right.', 'Other device', items, function (choices) {
+          ET.driveFinish(ST, tok, r, choices).then(function () { ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); toast('Synced'); });
+        });
+      });
+    }).catch(function (err) {
+      if (err && err.code === 401) DRIVE.token = null;
+      if (interactive || (err && err.message !== 'not signed in')) setSyncState('Cloud sync: ' + (err.message || err));
+    }).then(function () { DRIVE.busy = false; });
+  }
+  function queueDriveSync() {
+    if (!DRIVE.token) return;
+    clearTimeout(DRIVE.timer); DRIVE.timer = setTimeout(function () { syncDrive(false); }, 15000);
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { if (dirty) ET.saveState(ST, true); if (DRIVE.token) syncDrive(false); } });
+
+  function aboutTab() {
+    var m = DATA.meta || {}, src = m.sources || {};
+    var n = DATA.sections.reduce(function (a, s) { return a + s.g.reduce(function (b, g) { return b + g.e.length; }, 0); }, 0);
+    return '<p class="help"><b>Eveniunt Tracker</b>, part of the Eveniunt Network Command Center. ' + n.toLocaleString() + ' entries in ' + DATA.sections.length + ' lists. Works offline; your data stays on this device unless you use a backup, a transfer code, the online refresh or cloud sync.</p>' +
+      '<h4>Sources and credits</h4><ul class="help">' + Object.keys(src).map(function (k) { return '<li>' + esc(src[k]) + '</li>'; }).join('') + '</ul>' +
+      '<p class="help">' + esc(m.copyright || '') + ' FINAL FANTASY is a registered trademark of Square Enix Holdings Co., Ltd. This is a fan-made tool, not affiliated with or endorsed by Square Enix. It never reads game memory or automates the game.</p>' +
+      '<p class="help">Storage on this device: ' + esc(ET.storageKind) + '.</p>';
+  }
+
+  // ── boot ──
+  function afterBoot() {
+    var b = $('#boot'); if (b) b.remove();
+    render(); route();
+    if (navigator.onLine) setTimeout(function () { refreshOnline(false); }, 1500);
+  }
+  applyTheme();
+  ET.loadState().then(function (st) {
+    if (st) { ST = st; afterBoot(); }
+    else { var b = $('#boot'); if (b) b.remove(); setupDialog(); }
+  });
+  window.addEventListener('online', function () { if (ST) refreshOnline(false); });
+
+  // ── installable app (hosted only) ──
+  (function pwa() {
+    if (!HOSTED || !('serviceWorker' in navigator)) return;
+    var link = document.createElement('link'); link.rel = 'manifest'; link.href = 'manifest.webmanifest'; document.head.appendChild(link);
+    var tc = document.createElement('meta'); tc.name = 'theme-color'; tc.content = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() || '#0f2234'; document.head.appendChild(tc);
+    navigator.serviceWorker.register('sw.js').catch(function () { /* the page still works */ });
+    var deferred = null, btn = document.createElement('button');
+    btn.className = 'btn sm install-btn hidden'; btn.textContent = '⤓ Install app'; btn.setAttribute('data-install', '1');
+    var tools = document.querySelector('.mast-tools'); if (tools) tools.insertBefore(btn, tools.firstChild);
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; btn.classList.remove('hidden'); });
+    window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
+    btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
+  })();
+  window.__tracker = { get ST() { return ST; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
+})();

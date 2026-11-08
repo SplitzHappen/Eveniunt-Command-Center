@@ -11,6 +11,15 @@ This product includes software from these projects:
   Atelier reuses strings from raphael-translations.
 - wasm-bindgen-rayon (https://github.com/RReverser/wasm-bindgen-rayon), Apache License 2.0, (c) Google Inc.
   (multi-core build only).
+- Eveniunt Tracker data sources (see tracker/data/SOURCES.md):
+  - xivapi/ffxiv-datamining (game sheets; FINAL FANTASY XIV data (c) SQUARE ENIX CO., LTD.).
+  - FFXIV Teamcraft (https://github.com/ffxiv-teamcraft/ffxiv-teamcraft), MIT License, (c) Flavien Normand:
+    patch labels, gathering-log pages and FATE zones.
+  - FFXIV Collect (https://ffxivcollect.com, https://github.com/mattantonelli/ffxiv-collect, MIT License,
+    (c) Matt Antonelli): "how to get it" sources and time-limited flags (community data, snapshot of 2026-11-07),
+    and the optional online character refresh.
+  - FFXIV 100% Completion Checklist, by its volunteer team (the same team as the FFXIV Completionist app):
+    extra lists and the map used to import FFXIV Completionist app saves. Credited with thanks.
 - Fonts: Fraunces, Atkinson Hyperlegible, IBM Plex Mono, Big Shoulders Display and Cinzel, embedded from the
   @fontsource packages under the SIL Open Font License 1.1.
 

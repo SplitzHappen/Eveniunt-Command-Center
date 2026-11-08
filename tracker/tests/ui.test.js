@@ -1,0 +1,270 @@
+'use strict';
+// Eveniunt Tracker end-to-end tests: the built single file in headless Chromium opened from file:// with every
+// non-local request aborted, plus the hosted site over HTTP (service worker, offline reload).
+// Run: node tools/build.js && node tools/build-site.js && node --test tests/ui.test.js
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('path');
+const fs = require('fs');
+const http = require('http');
+const { chromium } = require('playwright');
+const T = path.join(__dirname, '..');
+const URL = 'file://' + path.join(T, 'dist', 'eveniunt-tracker.html');
+const NAMES = ['Alba Eveniunt', 'Brio Eveniunt', 'Cara Eveniunt', 'Dax Eveniunt', 'Eli Eveniunt', 'Fen Eveniunt', 'Gia Eveniunt', 'Hal Eveniunt'];
+
+let browser;
+test.before(async () => { browser = await chromium.launch(); });
+test.after(async () => { await browser.close(); });
+
+async function open(opts = {}) {
+  const ctx = await browser.newContext(Object.assign({ viewport: { width: 1440, height: 1000 } }, opts.context || {}));
+  const page = await ctx.newPage();
+  const errors = [], external = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('dialog', (d) => d.accept());
+  await ctx.route('**/*', (r) => { const u = r.request().url(); if (/^(file|blob|data):/.test(u)) return r.continue(); external.push(u); return r.abort(); });
+  await page.goto(URL);
+  await page.waitForSelector('#dlg[open]', { timeout: 30000 });
+  if (opts.setup !== false) await setup(page, opts.n || 8);
+  return { ctx, page, errors, external };
+}
+async function setup(page, n) {
+  await page.selectOption('#nchars', String(n));
+  for (let i = 0; i < n; i++) await page.fill(`[data-name="${i}"]`, NAMES[i]);
+  await page.click('#go');
+  await page.waitForSelector('.ov');
+}
+const go = (page, sid) => page.evaluate((s) => window.__tracker.setView('sec', s), sid);
+const tally = (page, c) => page.evaluate((cid) => { const t = document.querySelector(`.tally[data-c="${cid}"] .n`); return t ? t.textContent.trim() : null; }, c);
+
+test('first run: choose 1 to 8 characters, names shown as columns and tallies; nothing goes online', async () => {
+  const { ctx, page, errors, external } = await open({ setup: false });
+  assert.match(await page.textContent('#dlg'), /up to eight characters/i);
+  await setup(page, 8);
+  await go(page, 'mounts');
+  await page.waitForSelector('.er');
+  const heads = await page.$$eval('.lh .c', (els) => els.map((e) => e.getAttribute('title')));
+  assert.deepEqual(heads, NAMES);
+  assert.equal(await page.locator('.tally').count(), 8);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(external.filter((u) => !/ffxivcollect|google/.test(u)), [], 'no unexpected network requests');
+  await ctx.close();
+});
+
+test('ticking, the X availability switch both ways, and per-character "does not apply"', async () => {
+  const { ctx, page, errors } = await open({ n: 3 });
+  await go(page, 'mounts');
+  const before = await tally(page, 'c1');
+  const total0 = Number(before.split('/')[1]);
+  // tick the first counted mount for character 1
+  const counted = page.locator('.er:not(.x)').first();
+  const key = await counted.getAttribute('data-k');
+  await counted.locator('.tk[data-c="c1"]').click();
+  assert.equal(await tally(page, 'c1'), '1 / ' + total0);
+  // mark it unobtainable: it leaves the count (and its tick with it)
+  await page.locator(`.er[data-k="${key}"] .xb`).click();
+  assert.equal(await tally(page, 'c1'), '0 / ' + (total0 - 1));
+  assert.ok(await page.locator(`.er[data-k="${key}"]`).evaluate((e) => e.classList.contains('x')));
+  // switch an X entry on: it joins the count
+  const xrow = page.locator('.er.x').nth(1);
+  await xrow.locator('.xb').click();
+  assert.equal(await tally(page, 'c1'), '0 / ' + total0);
+  // "does not apply" for character 2 only
+  await page.click('[data-mode="na"]');
+  await page.locator(`.er[data-k="${key}"]`).first().waitFor();
+  const other = page.locator('.er:not(.x)').nth(2);
+  await other.locator('.tk[data-c="c2"]').click();
+  assert.equal(await tally(page, 'c2'), '0 / ' + (total0 - 1));
+  assert.equal(await tally(page, 'c3'), '0 / ' + total0);
+  await page.click('[data-mode="tick"]');
+  // the state survives a reload (IndexedDB)
+  await page.waitForTimeout(700);
+  await page.reload(); await page.waitForSelector('.page');
+  await go(page, 'mounts');
+  assert.equal(await tally(page, 'c2'), '0 / ' + (total0 - 1));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('group header ticks a whole group for one character; level fields tick at the cap', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  await go(page, 'emotes');
+  const g = page.locator('.lgroup').first();
+  const n = await g.locator('.er:not(.x)').count();
+  await g.locator('.gh .c[data-gc="c2"]').click();
+  assert.equal(await g.locator('.er:not(.x) .tk.on[data-c="c2"]').count(), n);
+  assert.equal(await g.locator('.tk.on[data-c="c1"]').count(), 0);
+  await go(page, 'levels');
+  const lv = page.locator('.lvl[data-c="c1"]').first();
+  await lv.fill('90'); await lv.dispatchEvent('change');
+  assert.equal(await tally(page, 'c1'), '0 / 33');
+  await page.locator('.lvl[data-c="c1"]').first().fill('100'); await page.locator('.lvl[data-c="c1"]').first().dispatchEvent('change');
+  assert.equal(await tally(page, 'c1'), '1 / 33');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('lists are grouped (never one flat list) and every list renders', async () => {
+  const { ctx, page, errors } = await open({ n: 1 });
+  const ids = await page.evaluate(() => window.__tracker.IDX.sections.map((s) => [s.id, s.groups.length, s.groups.reduce((a, g) => a + g.keys.length, 0)]));
+  for (const [id, groups, n] of ids) if (n > 60) assert.ok(groups > 1, id + ' has ' + n + ' entries in one group');
+  for (const [id] of ids) { await go(page, id); await page.waitForSelector('.lr.lh'); }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('search across everything, and the menu follows the game (Character, Duty, Logs, Travel, Social)', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  assert.deepEqual(await page.$$eval('.nav-menu > h3', (h) => h.map((x) => x.firstChild.textContent)), ['Character', 'Duty', 'Logs', 'Travel', 'Social']);
+  await page.fill('#q', 'coeurl');
+  await page.waitForSelector('text=“coeurl”');
+  assert.ok(await page.locator('.er').count() >= 2);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('desktop-app import: ticks, X marks and levels land in the chosen column; the report lists the rest', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  const save = {
+    version: '1.0.5', 'starting-class': '', custom: {}, 'bookmarked-groups': [], 'bookmarked-tasks': [],
+    overall: {
+      character: { 'mount-guide': { 1: 'Y', 6: 'Y' }, character: { 'classes--jobs': { 0: '100', 1: '90' } } },
+      duty: { quest: { 'main-scenario': { x: { 65621: 'X' } } }, squadron: { squadron: { 0: 'Y' } } },
+      travel: { porters: { 'la-noscea': { 0: 'Y' } } },
+    },
+  };
+  const file = path.join(require('os').tmpdir(), 'Test Hero (World) - FFXIV Completionist.json');
+  fs.writeFileSync(file, JSON.stringify(save));
+  await page.click('[data-act=settings]'); await page.click('[data-tab=data]');
+  await page.setInputFiles('#desk-files', file);
+  await page.selectOption('[data-file="0"]', 'c2');
+  await page.click('#do-import');
+  await page.waitForSelector('text=Import finished');
+  const txt = await page.textContent('#dlg');
+  assert.match(txt, /Test Hero: 3 of 4 ticks imported/);
+  assert.match(txt, /1 “does not apply”/);
+  assert.match(txt, /Squadron/);
+  const st = await page.evaluate(() => { const s = window.__tracker.ST; return { name: s.chars[1].name, t: Object.keys(s.ticks.c2).sort(), e: Object.keys(s.excl.c2), v: s.vals.c2, c1: Object.keys(s.ticks.c1).length }; });
+  assert.equal(st.name, 'Test Hero');
+  assert.deepEqual(st.t, ['levels:1', 'mounts:1', 'mounts:6', 'porters:1']);
+  assert.deepEqual(st.e, ['quests-mainscenarioarealmreborn:65621']);
+  assert.deepEqual(st.v, { 'levels:1': 100, 'levels:2': 90 });
+  assert.equal(st.c1, 0);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('transfer code round trip through the interface', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  await go(page, 'minions');
+  await page.locator('.er:not(.x) .tk[data-c="c2"]').first().click();
+  await page.click('[data-act=settings]'); await page.click('[data-tab=data]');
+  await page.click('#make-code');
+  await page.waitForFunction(() => document.querySelector('#code').value.startsWith('EVT1-'));
+  const code = await page.inputValue('#code');
+  const p2 = await open({ setup: false });
+  await setup(p2.page, 1);
+  await p2.page.click('[data-act=settings]'); await p2.page.click('[data-tab=data]');
+  await p2.page.fill('#code', code); await p2.page.click('#read-code');
+  await p2.page.waitForFunction(() => window.__tracker.ST.chars.length === 2);
+  assert.equal(await p2.page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c2).length), 1);
+  assert.deepEqual(errors, []); assert.deepEqual(p2.errors, []);
+  await ctx.close(); await p2.ctx.close();
+});
+
+test('phone width: no sideways scroll on the overview, a long list or settings', async () => {
+  const { ctx, page, errors } = await open({ context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 } });
+  const sw = () => page.evaluate(() => document.documentElement.scrollWidth);
+  assert.ok(await sw() <= 390, 'overview ' + await sw());
+  await go(page, 'quests-sidequests'); await page.waitForSelector('.er');
+  assert.ok(await sw() <= 390, 'list ' + await sw());
+  await page.click('[data-act=drawer]'); await page.waitForTimeout(250);
+  assert.ok(await page.locator('.side').evaluate((e) => e.getBoundingClientRect().left >= 0));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(250);
+  await page.click('[data-act=settings]'); await page.click('[data-tab=look]');
+  assert.ok(await sw() <= 390, 'settings ' + await sw());
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('all 20 themes, light and dark: readable text, readable dropdowns, distinct accent', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  await go(page, 'mounts');
+  // Drive the real Appearance settings: open the theme menu and pick each theme in each mode.
+  await page.click('[data-act=settings]'); await page.click('[data-tab=look]');
+  const names = [];
+  for (const mode of ['light', 'dark']) {
+    await page.click(`[data-look="mode"][data-v="${mode}"]`);
+    await page.click('[data-look="toggle"][data-v="shared:theme"]');
+    const ids = await page.$$eval('[data-look="theme"]', (b) => b.map((x) => x.dataset.v));
+    assert.equal(ids.length, 20);
+    const labels = await page.$$eval('[data-look="theme"]', (b) => b.map((x) => x.textContent.replace(/^Aa|✓$/g, '').trim()));
+    assert.deepEqual(labels, labels.slice().sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })), 'themes listed alphabetically');
+    for (const id of ids) {
+      if (!(await page.locator('[data-look="theme"]').count())) await page.click('[data-look="toggle"][data-v="shared:theme"]');
+      await page.click(`[data-look="theme"][data-v="${id}"]`);
+      const m = await page.evaluate(() => {
+        const cs = getComputedStyle(document.documentElement);
+        const hex = (v) => { v = v.trim().replace('#', ''); return [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16)); };
+        const L = (c) => { const v = c.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+        const cr = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+        const paper = hex(cs.getPropertyValue('--paper')), ink = hex(cs.getPropertyValue('--ink')), seal = hex(cs.getPropertyValue('--seal'));
+        const sel = document.querySelector('#filter'); const so = getComputedStyle(sel);
+        const rgb = (s) => (s.match(/\d+/g) || []).slice(0, 3).map(Number);
+        return { text: cr(paper, ink), accent: cr(paper, seal), select: cr(rgb(so.backgroundColor), rgb(so.color)) };
+      });
+      names.push(mode + ':' + id);
+      assert.ok(m.text >= 7, `${mode} ${id}: text contrast ${m.text.toFixed(2)}`);
+      assert.ok(m.accent >= 3, `${mode} ${id}: accent contrast ${m.accent.toFixed(2)}`);
+      assert.ok(m.select >= 7, `${mode} ${id}: dropdown contrast ${m.select.toFixed(2)}`);
+    }
+  }
+  assert.equal(names.length, 40);
+  assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--lb-b').length > 0), true, 'wordmark coloured by the theme');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('data counts match the pinned sheets and FFXIV Collect where they overlap', async () => {
+  const data = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8'));
+  const n = (id) => data.sections.find((s) => s.id === id).g.reduce((a, g) => a + g.e.length, 0);
+  const ach = data.sections.filter((s) => s.id.startsWith('ach-')).reduce((a, s) => a + s.g.reduce((b, g) => b + g.e.length, 0), 0);
+  assert.deepEqual({ mounts: n('mounts'), orchestrion: n('orchestrion'), cards: n('cards'), bluemagic: n('bluemagic'), facewear: n('facewear'), fashion: n('fashion'), barding: n('barding'), titles: n('titles'), ach },
+    { mounts: 369, orchestrion: 886, cards: 475, bluemagic: 124, facewear: 61, fashion: 52, barding: 107, titles: 885, ach: 4000 });
+  // 356 collectable mounts (FFXIV Collect) plus 13 quest-vehicle mounts kept with the "no longer obtainable" mark
+  const mounts = data.sections.find((s) => s.id === 'mounts').g.flatMap((g) => g.e);
+  assert.equal(mounts.filter((e) => e.x === 'gone').length, 13);
+  assert.equal(data.sections.reduce((a, s) => a + s.g.reduce((b, g) => b + g.e.length, 0), 0) > 41000, true);
+});
+
+test('hosted site over HTTP: installable, works offline after the first visit', async () => {
+  const SITE = path.join(T, 'site');
+  const server = http.createServer((req, res) => {
+    const u = decodeURIComponent(req.url.split('?')[0]).replace(/^\/tracker\//, '/');
+    let f = path.join(SITE, u.endsWith('/') ? u + 'index.html' : u);
+    if (!f.startsWith(SITE) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+    const type = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json' }[path.extname(f)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': type }); fs.createReadStream(f).pipe(res);
+  });
+  await new Promise((r) => server.listen(0, r));
+  const base = `http://localhost:${server.address().port}/tracker/`;
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage(); const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('dialog', (d) => d.accept());
+  await ctx.route(/ffxivcollect|google/, (r) => r.abort());
+  await page.goto(base);
+  await page.waitForSelector('#dlg[open]', { timeout: 30000 });
+  await setup(page, 2);
+  assert.ok(await page.evaluate(() => !!document.querySelector('link[rel=manifest]')));
+  await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(async () => { await page.reload(); await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 20000 }); });
+  await ctx.setOffline(true);
+  await page.reload();
+  await page.waitForSelector('.ov', { timeout: 20000 });
+  assert.equal(await page.evaluate(() => window.__tracker.ST.chars.length), 2, 'offline reload keeps the characters');
+  const coop = await page.evaluate(() => self.crossOriginIsolated);
+  assert.equal(coop, false, 'no cross-origin isolation (Google sign-in needs popups)');
+  assert.deepEqual(errors, []);
+  await ctx.close(); server.close();
+});

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eveniunt Tracker</title>
+<meta name="description" content="Offline Final Fantasy XIV completion tracker for up to eight characters side by side. Part of the Eveniunt Network Command Center.">
+<style>{{FONTS}}
+{{CSS}}</style>
+</head>
+<body>
+<div class="boot" id="boot"><div class="lb-mark big"><span class="lb-top">Eveniunt</span><span class="lb-word">Tracker</span><span class="lb-gauge charging" aria-hidden="true"><i></i><i></i><i></i></span><em>Opening the ledger…</em></div></div>
+<header class="mast">
+  <button class="btn sm ghost menu-btn" data-act="drawer" aria-label="Open the menu">☰ Menu</button>
+  <a class="wordmark lb-mark" href="#/" data-act="home" aria-label="Eveniunt Tracker"><span class="lb-top">Eveniunt</span><span class="lb-word">Tracker</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
+  <span class="lb-tag">Network Command Center<br>Completion</span>
+  <span class="grow"></span>
+  <div class="mast-tools">
+    <label class="search"><span class="sr">Search everything</span><input id="q" type="search" placeholder="Search everything…" autocomplete="off" spellcheck="false"></label>
+    <span class="sync-state" id="sync-state" aria-live="polite"></span>
+    <button class="btn sm ghost" data-act="settings" aria-label="Settings">Settings</button>
+  </div>
+</header>
+<div class="shell">
+  <nav class="side" id="side" aria-label="Menu"></nav>
+  <main class="page" id="page" tabindex="-1"></main>
+</div>
+<p class="foot">Game data © SQUARE ENIX CO., LTD. from xivapi/ffxiv-datamining · Patch labels: FFXIV Teamcraft (MIT) · How to get it and time-limited marks: FFXIV Collect (community data) · Extra lists and desktop-app import map: FFXIV 100% Completion Checklist team · Fonts under the SIL Open Font License · Fan-made, not affiliated with Square Enix · Build {{BUILD}}</p>
+<dialog id="dlg"></dialog>
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+<script id="tracker-data" type="application/json">{{DATA}}</script>
+<script id="desktop-map" type="application/json">{{MAP}}</script>
+<script id="core">{{CORE}}</script>
+<script id="app">{{APP}}</script>
+</body>
+</html>

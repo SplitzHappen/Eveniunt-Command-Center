@@ -17,6 +17,14 @@ An installable app built on [Raphael](https://github.com/KonaeAkira/raphael-rs)'
   - When it runs as the installed or hosted app, the solver uses several CPU cores.
 - **Prefer a single file?** Download `index.html` from the Atelier and open it from your computer. It works offline on one CPU core.
 
+### Eveniunt Tracker: completion tracker
+An installable app that tracks everything the game has to offer for **up to eight characters side by side**.
+- **About 41,500 entries in 98 lists:** collections, the full quest journal, achievements, every log, duties, FATEs, the Hunt, field operations, Island Sanctuary, travel unlocks and job levels, grouped the way the game groups them.
+- **Unobtainable entries** (time-limited only, no longer obtainable, or unknown) carry an ✕ and are left out of totals; one click on any row overrides the mark either way. Entries that do not apply to one character (for example another city's starting quests) can be marked for that character only.
+- **Bring your progress:** imports FFXIV Completionist app saves (ticks, "X" marks and job levels; anything that cannot be placed exactly is listed), backup files and transfer codes.
+- **Online, optional:** refreshes from public character data on FFXIV Collect and asks you whenever it disagrees with your ticks; syncs through a private app folder in your own Google Drive.
+- **Open it:** https://splitzhappen.github.io/Eveniunt-Command-Center/tracker/ (install it from the page header; works offline after the first visit), or download `index.html` and open it from your computer.
+
 ### Cosmic Exploration solver
 Step-by-step guides for Cosmic Exploration missions: Sinus Ardorum, Phaenna, Oizys and Auxesia. Open them from the website, or read `crafting/docs/USER_README.md`.
 
@@ -26,6 +34,7 @@ Step-by-step guides for Cosmic Exploration missions: Sinus Ardorum, Phaenna, Oiz
 | --- | --- |
 | `web/` | The Command Center front page |
 | `crafting/atelier/` | Eveniunt Atelier: source (`src/`, `bridge/`, `tools/`, `tests/`, `data/`), the built offline file (`dist/`) and the installable app (`site/`) |
+| `tracker/` | Eveniunt Tracker: source (`src/`, `tools/`, `tests/`, `data/`), the built offline file (`dist/`) and the installable app (`site/`); see `tracker/README.md` |
 | `crafting/src`, `crafting/tools`, `crafting/tests`, `crafting/docs` | The Cosmic Exploration solver and the shared step-by-step engine (`crafting/src/engine/`) |
 | `.github/workflows/pages.yml` | Publishes the website to GitHub Pages |
 

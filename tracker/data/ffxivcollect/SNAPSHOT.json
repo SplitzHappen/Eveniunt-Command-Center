@@ -1,0 +1,58 @@
+{
+ "fetched": "2026-11-07",
+ "api": "https://ffxivcollect.com/api/",
+ "counts": {
+  "mounts": {
+   "items": 356,
+   "time_limited_only": 42
+  },
+  "minions": {
+   "items": 584,
+   "time_limited_only": 70
+  },
+  "orchestrions": {
+   "items": 886,
+   "time_limited_only": 25
+  },
+  "emotes": {
+   "items": 201,
+   "time_limited_only": 29
+  },
+  "hairstyles": {
+   "items": 54,
+   "time_limited_only": 5
+  },
+  "bardings": {
+   "items": 107,
+   "time_limited_only": 1
+  },
+  "fashions": {
+   "items": 52,
+   "time_limited_only": 6
+  },
+  "facewear": {
+   "items": 61,
+   "time_limited_only": 8
+  },
+  "spells": {
+   "items": 124,
+   "time_limited_only": 0
+  },
+  "achievements": {
+   "items": 4000,
+   "time_limited_only": 0
+  },
+  "titles": {
+   "items": 885,
+   "time_limited_only": 0
+  },
+  "frames": {
+   "items": 401,
+   "time_limited_only": 0
+  },
+  "triad/cards": {
+   "items": 475,
+   "time_limited_only": 0
+  }
+ }
+}
