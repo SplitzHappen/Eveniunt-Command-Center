@@ -54,7 +54,7 @@
     ['Duty', [
       ['Quests', function (s) { return s.indexOf('quests-') === 0 || s === 'leves'; }],
       ['Duty Finder', function (s) { return s.indexOf('duty-') === 0; }],
-      ['FATEs, Hunt and Training', ['fates', 'hunt', 'novice']],
+      ['FATEs, Hunt and Training', ['fates', 'sharedfate', 'hunt', 'novice']],
       ['Field Operations', ['eurekalevel', 'eurekaaeth', 'logos', 'eurekaduties', 'bozjarank', 'bozjaaeth', 'lostactions', 'bozjaduties', 'oclevel', 'ocaeth', 'ocevents', 'phantomjobs', 'ocduties']],
       ['Cosmic Exploration', ['cosmicmissions', 'cosmicrecords']],
       ['Island Sanctuary', function (s) { return s.indexOf('isle') === 0; }],
@@ -64,8 +64,8 @@
       ['Gathering', function (s) { return s.indexOf('gather-') === 0 || s === 'folklore'; }],
       ['Fishing', ['fishing', 'fishingspots', 'spearfishing']],
       ['Hunting, Sightseeing and Music', ['hunting', 'sightseeing', 'orchestrion']]]],
-    ['Travel', [['Travel', ['aetherytes', 'aethercurrents', 'mountspeed', 'porters', 'sharedfate']]]],
-    ['Social', [['Social', ['emotes']]]]
+    ['Travel', [['Aetherytes and Flying', ['aetherytes', 'aethercurrents']], ['Mounts and Porters', ['mountspeed', 'porters']]]],
+    ['Social', [['Emotes', ['emotes']]]]
   ];
   var MENUS = (function () {
     var used = new Set();
@@ -112,7 +112,7 @@
       var mt = combined(tallyOf(all));
       h += '<div class="nav-menu"><h3>' + esc(m.t) + '<span class="pc">' + pctTxt(mt.d, mt.n) + '</span></h3>';
       m.folders.forEach(function (f) {
-        var single = m.folders.length === 1 && f.t === m.t;
+        var single = false; // every menu uses folders, so all sections look and behave the same
         var ft = combined(tallyOf(f.secs)), key = m.t + '/' + f.t;
         var open = single || UI.open[key] || f.secs.indexOf(UI.sec) >= 0;
         var links = f.secs.map(function (id) {

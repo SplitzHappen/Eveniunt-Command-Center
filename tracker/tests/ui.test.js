@@ -151,6 +151,9 @@ test('lists are grouped (never one flat list) and every list renders', async () 
 test('search across everything, and the menu follows the game (Character, Duty, Logs, Travel, Social)', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
   assert.deepEqual(await page.$$eval('.nav-menu > h3', (h) => h.map((x) => x.firstChild.textContent)), ['Character', 'Duty', 'Logs', 'Travel', 'Social']);
+  // every menu, Travel and Social included, groups its lists in dropdown folders (no loose links)
+  assert.equal(await page.locator('.nav-menu > .nav-link').count(), 0);
+  assert.deepEqual(await page.$$eval('.nav-menu', (ms) => ms.slice(3).map((m) => [...m.querySelectorAll('.nav-folder > summary .nm')].map((x) => x.textContent))), [['Aetherytes and Flying', 'Mounts and Porters'], ['Emotes']]);
   await page.fill('#q', 'coeurl');
   await page.waitForSelector('text=“coeurl”');
   assert.ok(await page.locator('.er').count() >= 2);

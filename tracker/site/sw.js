@@ -1,7 +1,7 @@
 // Eveniunt Tracker — service worker: works offline after the first visit.
 // Unlike the Atelier's worker it adds no cross-origin isolation headers: the Tracker needs no shared memory, and those
 // headers would block Google's sign-in window used by cloud sync. Cache name carries the build id; a new build replaces it.
-const BUILD = 'b3a6f32361e3';
+const BUILD = '9b74a5629ec4';
 const CACHE = 'eveniunt-tracker-' + BUILD;
 const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest"];
 self.addEventListener('install', (e) => {
