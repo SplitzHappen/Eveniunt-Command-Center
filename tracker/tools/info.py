@@ -1182,6 +1182,14 @@ for s_ in data["sections"]:
             if lines: put(k, lines); added[s_["id"]] += 1
 stats["plain instruction from the entry's own facts"] = sum(added.values())
 
+_desc = {s_["id"] + ":" + str(e_["i"]): str(e_.get("d") or "").strip() for s_ in data["sections"] for g_ in s_["g"] for e_ in g_["e"]}
+for k_ in list(INFO):
+    seen_, keep_ = set(), []
+    for l_ in INFO[k_]:
+        if l_ in seen_ or (_desc.get(k_) and l_.strip() == _desc[k_]): continue
+        seen_.add(l_); keep_.append(l_)
+    if keep_: INFO[k_] = keep_
+    else: del INFO[k_]
 with open(os.path.join(T, "data", "info.json"), "w", encoding="utf-8") as fh:
     json.dump(INFO, fh, ensure_ascii=False, separators=(",", ":"))
 print(json.dumps({"entries with information": len(INFO), "of": sum(len(g["e"]) for s in data["sections"] for g in s["g"]), "by family": dict(stats), "bytes": os.path.getsize(os.path.join(T, "data", "info.json"))}, indent=1))

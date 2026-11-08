@@ -170,10 +170,10 @@
   function markText(hit, code, table) { if (code === 'gone' && RAW.get(hit.s.id).src === 'checklist') return table === SHORT ? 'Not applicable' : 'Not applicable or no longer obtainable (the checklist lists no such step)'; return table[code] || ''; }
   function detailHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
+    if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
     infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
     if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
-    if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
-    if (e.d) bits.push('<div>' + esc(e.d) + '</div>');
+    if (e.src && !infoLines(k).length) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
     var facts = [];
     if (e.p) facts.push('Patch ' + esc(e.p));
     if (e.cnt) facts.push('Defeat ×' + e.cnt);
@@ -252,9 +252,9 @@
   function tipHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, bits = [];
     bits.push('<b class="tt">' + esc(e.n) + '</b>' + (e.p ? ' <span class="p">' + esc(e.p) + '</span>' : ''));
-    infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
-    if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
+    infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
+    if (e.src && !infoLines(k).length) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No how-to details for this one yet.</div>');
     return bits.join('');
   }

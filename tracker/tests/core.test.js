@@ -736,7 +736,7 @@ test('variant dungeon records: 12 or 13 per dungeon, and all of them give the du
 
 test('information window: every entry says how to get or do it; recipes and gathering in depth', () => {
   const INFO = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'info.json'), 'utf8'));
-  const bare = [...idx.byKey].filter(([k, h]) => !(INFO[k] && INFO[k].length) && !h.e.src).map(([k]) => k);
+  const bare = [...idx.byKey].filter(([k, h]) => !(INFO[k] && INFO[k].length) && !h.e.src && !h.e.d).map(([k]) => k);
   assert.deepStrictEqual(bare, [], 'no entry without how-to text');
   const recipe = firstKey('craft-weaver', (e) => e.n === 'Dwarven Cotton Breeches');
   assert.match(INFO[recipe].join(' / '), /Weaver level 80.*Materials: 2× Dwarven Cotton \(craft WVR \d+\)/);
