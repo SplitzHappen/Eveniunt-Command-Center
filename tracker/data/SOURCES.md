@@ -109,4 +109,10 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
 - `tools/info.py` writes `data/info.json`, a few lines per entry. Sources:
   - game sheets: `Quest` (issuer, level, class category, prerequisites, `InstanceContentUnlock`, `INSTANCEDUNGEON` parameters of quests that add content), `ContentFinderCondition`, `Adventure` + `Level` + `Map` (vista coordinates, time, weather, emote), `Recipe` + `RecipeLevelTable` + `SecretRecipeBook`, `AetherCurrent`, `Achievement`, `Title`;
   - FFXIV Teamcraft data files (MIT, commit `70429e2`): `npcs.json` (positions), `fates.json`, `monsters.json`, `aetherytes.json`, `leves.json`, `fishing-spots.json`, `fishing-sources.json`, `fish-parameter.json`, and the `nodes.json` already used by the extractor.
-- The window's guide link is the Console Games Wiki's search for the entry's name, which goes straight to the page of that name. No wiki text is stored: the wiki states no licence for its text.
+- The windows link nowhere (owner, 2026-11-08: the information belongs in the tracker). Further sources:
+  - `data/fish-tracker.json`: fishing windows, weather, bait chains, intuition and folklore from ff14-fish-tracker-app (MIT License, (c) icykoneko). Fetched by `tools/fetch-fishdata.py` at a pinned commit; the file is read as text, never run.
+  - `data/elite-marks.json`: each elite mark's rank, area, spawn trigger and respawn time. These are facts from the Console Games Wiki's Elite Marks tables (2026-11-08).
+  - `data/occult-lore.json`: what unlocks each Occult Crescent record. These are facts from the wiki's Occult Record table.
+  - `data/variant-routes.json`: each variant dungeon record's route, written for the tracker from the facts in the wiki's route tables.
+  - Field aether current spots come from the game data: `EObj.Data` names the current, and the `Level` row holding that object gives the spot.
+- The wiki states no licence for its text, so nothing is copied from it word for word. Only facts are taken, in the tracker's own wording or as short factual entries, and the wiki is credited for them in `NOTICE.md`.

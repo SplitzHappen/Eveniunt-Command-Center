@@ -484,8 +484,8 @@ test('expansion headings above groups fold away; resting the pointer on a name o
   await page.waitForSelector('#tip:not(.hidden)', { timeout: 5000 });
   const tip = await page.locator('#tip').innerText();
   assert.match(tip, /Starts with /);
-  assert.match(tip, /Console Games Wiki/);
-  assert.match(await page.locator('#tip a').getAttribute('href'), /^https:\/\/ffxiv\.consolegameswiki\.com\//);
+  assert.match(tip, /Level \d+/);
+  assert.equal(await page.locator('#tip a').count(), 0, 'no links out: the information is in the window itself');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

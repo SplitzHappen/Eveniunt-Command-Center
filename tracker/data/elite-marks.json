@@ -1,0 +1,1229 @@
+{
+"_about": "Elite mark facts (area, spawn trigger, respawn time) from the Console Games Wiki's Elite Marks tables, read 2026-11-08; facts only.",
+"marks": {
+"Go'ozoabek'be": {
+"rank": "B",
+"area": "Kozama'uka",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"The Slammer": {
+"rank": "B",
+"area": "Kozama'uka",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Chupacabra": {
+"rank": "B",
+"area": "Urqopacha",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Mad Maguey": {
+"rank": "B",
+"area": "Urqopacha",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Leafscourge Hadoll Ja": {
+"rank": "B",
+"area": "Yak T'el",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Xty'iinbek": {
+"rank": "B",
+"area": "Yak T'el",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Nopalitender Fabuloso": {
+"rank": "B",
+"area": "Shaaloani",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Uktena": {
+"rank": "B",
+"area": "Shaaloani",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Gallowsbeak": {
+"rank": "B",
+"area": "Heritage Found",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Gargant": {
+"rank": "B",
+"area": "Heritage Found",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"13th Child": {
+"rank": "B",
+"area": "Living Memory",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Jewel Bearer": {
+"rank": "B",
+"area": "Living Memory",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Pkuucha": {
+"rank": "A",
+"area": "Kozama'uka",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"The Raintriller": {
+"rank": "A",
+"area": "Kozama'uka",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Nechuciho": {
+"rank": "A",
+"area": "Urqopacha",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Queen Hawk": {
+"rank": "A",
+"area": "Urqopacha",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Rrax Yity'a": {
+"rank": "A",
+"area": "Yak T'el",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Starcrier": {
+"rank": "A",
+"area": "Yak T'el",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Keheniheyamewi": {
+"rank": "A",
+"area": "Shaaloani",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Yehehetoaua'pyo": {
+"rank": "A",
+"area": "Shaaloani",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Heshuala": {
+"rank": "A",
+"area": "Heritage Found",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Urna Variabilis": {
+"rank": "A",
+"area": "Heritage Found",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Cat's Eye": {
+"rank": "A",
+"area": "Living Memory",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Sally the Sweeper": {
+"rank": "A",
+"area": "Living Memory",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Ihnuxokiy": {
+"rank": "S",
+"area": "Kozama'uka",
+"spawn": "Use the Morpho minion on spawn points.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Kirlirger the Abhorrent": {
+"rank": "S",
+"area": "Urqopacha",
+"spawn": "Be on a spawn point during fog and a new moon.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Neyoozoteel": {
+"rank": "S",
+"area": "Yak T'el",
+"spawn": "Discard a stack of at least 50 Fish Meal.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Sansheya": {
+"rank": "S",
+"area": "Shaaloani",
+"spawn": "Complete ' You Are What You Drink ' FATE at (X: 14, Y: 23.5) three times in a row.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Atticus the Primogenitor": {
+"rank": "S",
+"area": "Heritage Found",
+"spawn": "Craft HQ Rroneek Steak.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"The Forecaster": {
+"rank": "S",
+"area": "Living Memory",
+"spawn": "Cast the blue mage action Northerlies on spawn points.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Arch Aethereater": {
+"rank": "S",
+"area": "Dawntrail areas",
+"spawn": "When an S rank dies in a Dawntrail area, it has a chance to spawn Crystal Incarnations. Killing all four will spawn Arch Aethereater.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Ü-u-ü-u": {
+"rank": "B",
+"area": "Labyrinthos",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Green Archon": {
+"rank": "B",
+"area": "Labyrinthos",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Iravati": {
+"rank": "B",
+"area": "Thavnair",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Vajrakumara": {
+"rank": "B",
+"area": "Thavnair",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Emperor's Rose": {
+"rank": "B",
+"area": "Garlemald",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Warmonger": {
+"rank": "B",
+"area": "Garlemald",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Genesis Rock": {
+"rank": "B",
+"area": "Mare Lamentorum",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Daphnia Magna": {
+"rank": "B",
+"area": "Mare Lamentorum",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Shockmaw": {
+"rank": "B",
+"area": "Elpis",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Yumcax": {
+"rank": "B",
+"area": "Elpis",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Oskh Rhei": {
+"rank": "B",
+"area": "Ultima Thule",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Level Cheater": {
+"rank": "B",
+"area": "Ultima Thule",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Hulder": {
+"rank": "A",
+"area": "Labyrinthos",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Storsie": {
+"rank": "A",
+"area": "Labyrinthos",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Sugriva": {
+"rank": "A",
+"area": "Thavnair",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Yilan": {
+"rank": "A",
+"area": "Thavnair",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Aegeiros": {
+"rank": "A",
+"area": "Garlemald",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Minerva": {
+"rank": "A",
+"area": "Garlemald",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Mousse Princess": {
+"rank": "A",
+"area": "Mare Lamentorum",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Lunatender Queen": {
+"rank": "A",
+"area": "Mare Lamentorum",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Petalodus": {
+"rank": "A",
+"area": "Elpis",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Gurangatch": {
+"rank": "A",
+"area": "Elpis",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Arch-Eta": {
+"rank": "A",
+"area": "Ultima Thule",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Fan Ail": {
+"rank": "A",
+"area": "Ultima Thule",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Burfurlur the Canny": {
+"rank": "S",
+"area": "Labyrinthos",
+"spawn": "Use a Tiny Troll minion on spawn points in Clear Skies / Fair Skies daytime.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Sphatika": {
+"rank": "S",
+"area": "Thavnair",
+"spawn": "Kill 100 Vajralangula, 100 Pisaca and 100 Asvattha.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Armstrong": {
+"rank": "S",
+"area": "Garlemald",
+"spawn": "Wear Mended Imperial Pot Helm and Mended Imperial Short Robe and die on spawn points.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Ruminator": {
+"rank": "S",
+"area": "Mare Lamentorum",
+"spawn": "Kill 100 Thinkers, 100 Weepers, and 100 Wanderers.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Ophioneus": {
+"rank": "S",
+"area": "Elpis",
+"spawn": "Discard a stack of 5 Egg of Elpis.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Narrow-rift": {
+"rank": "S",
+"area": "Ultima Thule",
+"spawn": "Have 10 people travel over spawn points with the Wee Ea minion summoned.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Ker": {
+"rank": "S",
+"area": "Endwalker areas",
+"spawn": "When an S rank dies in and Endwalker area, it has a chance to spawn Ker Shrouds. Killing all four will spawn Ker.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"La Velue": {
+"rank": "B",
+"area": "Lakeland",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Itzpapalotl": {
+"rank": "B",
+"area": "Lakeland",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Domovoi": {
+"rank": "B",
+"area": "Il Mheg",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Vulpangue": {
+"rank": "B",
+"area": "Il Mheg",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Coquecigrue": {
+"rank": "B",
+"area": "Kholusia",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Indomitable": {
+"rank": "B",
+"area": "Kholusia",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Worm of the Well": {
+"rank": "B",
+"area": "Amh Araeng",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Juggler Hecatomb": {
+"rank": "B",
+"area": "Amh Araeng",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Mindmaker": {
+"rank": "B",
+"area": "The Rak'tika Greatwood",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Pachamama": {
+"rank": "B",
+"area": "The Rak'tika Greatwood",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Deacon": {
+"rank": "B",
+"area": "The Tempest",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Gilshs Aath Swiftclaw": {
+"rank": "B",
+"area": "The Tempest",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Nariphon": {
+"rank": "A",
+"area": "Lakeland",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Nuckelavee": {
+"rank": "A",
+"area": "Lakeland",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"O Poorest Pauldia": {
+"rank": "A",
+"area": "Il Mheg",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"The Mudman": {
+"rank": "A",
+"area": "Il Mheg",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Li'l Murderer": {
+"rank": "A",
+"area": "Kholusia",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Huracan": {
+"rank": "A",
+"area": "Kholusia",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Maliktender": {
+"rank": "A",
+"area": "Amh Araeng",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Sugaar": {
+"rank": "A",
+"area": "Amh Araeng",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Grassman": {
+"rank": "A",
+"area": "The Rak'tika Greatwood",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Supay": {
+"rank": "A",
+"area": "The Rak'tika Greatwood",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Baal": {
+"rank": "A",
+"area": "The Tempest",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Rusalka": {
+"rank": "A",
+"area": "The Tempest",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Tyger": {
+"rank": "S",
+"area": "Lakeland",
+"spawn": "Discard a Rail Tenderloin.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Aglaope": {
+"rank": "S",
+"area": "Il Mheg",
+"spawn": "Travel over spawn points with the Scarlet Peacock minion out.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Forgiven Pedantry": {
+"rank": "S",
+"area": "Kholusia",
+"spawn": "Gather 50 Dwarven Cotton Boll s.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Tarchia": {
+"rank": "S",
+"area": "Amh Araeng",
+"spawn": "Cast the blue mage action Self-destruct on spawn points.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Ixtab": {
+"rank": "S",
+"area": "The Rak'tika Greatwood",
+"spawn": "Kill 100 Cracked Ronkan Dolls, 100 Cracked Ronkan Thorns and 100 Cracked Ronkan Vessels.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Gunitt": {
+"rank": "S",
+"area": "The Tempest",
+"spawn": "Drag 3 Deep-sea Leeches to a Clionid and get hit by its attack \"Buccal Cones\".",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Forgiven Rebellion": {
+"rank": "S",
+"area": "Norvrandt",
+"spawn": "When an S rank dies in Norvrandt, it has a chance to spawn Forgiven Gossips. Killing all four will spawn Forgiven Rebellion.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Shadow-dweller Yamini": {
+"rank": "B",
+"area": "The Fringes",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Ouzelum": {
+"rank": "B",
+"area": "The Fringes",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Deidar": {
+"rank": "B",
+"area": "Yanxia",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Gyorai Quickstrike": {
+"rank": "B",
+"area": "Yanxia",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Guhuo Niao": {
+"rank": "B",
+"area": "The Ruby Sea",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Gauki Strongblade": {
+"rank": "B",
+"area": "The Ruby Sea",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Gwas-y-neidr": {
+"rank": "B",
+"area": "The Peaks",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Buccaboo": {
+"rank": "B",
+"area": "The Peaks",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Aswang": {
+"rank": "B",
+"area": "The Azim Steppe",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Kurma": {
+"rank": "B",
+"area": "The Azim Steppe",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Kiwa": {
+"rank": "B",
+"area": "The Lochs",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Manes": {
+"rank": "B",
+"area": "The Lochs",
+"spawn": "None",
+"respawn": "5 Seconds"
+},
+"Orcus": {
+"rank": "A",
+"area": "The Fringes",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Erle": {
+"rank": "A",
+"area": "The Fringes",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Gajasura": {
+"rank": "A",
+"area": "Yanxia",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Angada": {
+"rank": "A",
+"area": "Yanxia",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Funa Yurei": {
+"rank": "A",
+"area": "The Ruby Sea",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Oni Yumemi": {
+"rank": "A",
+"area": "The Ruby Sea",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Vochstein": {
+"rank": "A",
+"area": "The Peaks",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Aqrabuamelu": {
+"rank": "A",
+"area": "The Peaks",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Girimekhala": {
+"rank": "A",
+"area": "The Azim Steppe",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Sum": {
+"rank": "A",
+"area": "The Azim Steppe",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Mahisha": {
+"rank": "A",
+"area": "The Lochs",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Luminare": {
+"rank": "A",
+"area": "The Lochs",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Udumbara": {
+"rank": "S",
+"area": "The Fringes",
+"spawn": "Kill 100 Leshy & 100 Diakka.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Gamma": {
+"rank": "S",
+"area": "Yanxia",
+"spawn": "Fly over spawn points with the Toy Alexander minion.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Okina": {
+"rank": "S",
+"area": "The Ruby Sea",
+"spawn": "Kill 100 Yumemi and 100 Naked Yumemi. Spawns from 12pm during a Full Moon.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Bone Crawler": {
+"rank": "S",
+"area": "The Peaks",
+"spawn": "Travel via chocobo porter.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Orghana": {
+"rank": "S",
+"area": "The Azim Steppe",
+"spawn": "Complete ' Not Just a Tribute ' FATE at (X: 12, Y: 14) then fly over spawn points.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Salt and Light": {
+"rank": "S",
+"area": "The Lochs",
+"spawn": "Discard items 50 times.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Alteci": {
+"rank": "B",
+"area": "Coerthas Western Highlands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Kreutzet": {
+"rank": "B",
+"area": "Coerthas Western Highlands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Gnath Cometdrone": {
+"rank": "B",
+"area": "The Dravanian Forelands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Thextera": {
+"rank": "B",
+"area": "The Dravanian Forelands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Scitalis": {
+"rank": "B",
+"area": "The Churning Mists",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"The Scarecrow": {
+"rank": "B",
+"area": "The Churning Mists",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Squonk": {
+"rank": "B",
+"area": "The Sea of Clouds",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Sanu Vali of Dancing Wings": {
+"rank": "B",
+"area": "The Sea of Clouds",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Pterygotus": {
+"rank": "B",
+"area": "The Dravanian Hinterlands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"False Gigantopithecus": {
+"rank": "B",
+"area": "The Dravanian Hinterlands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Lycidas": {
+"rank": "B",
+"area": "Azys Lla",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Omni": {
+"rank": "B",
+"area": "Azys Lla",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Mirka": {
+"rank": "A",
+"area": "Coerthas Western Highlands",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Lyuba": {
+"rank": "A",
+"area": "Coerthas Western Highlands",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Pylraster": {
+"rank": "A",
+"area": "The Dravanian Forelands",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Lord of the Wyverns": {
+"rank": "A",
+"area": "The Dravanian Forelands",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Bune": {
+"rank": "A",
+"area": "The Churning Mists",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Agathos": {
+"rank": "A",
+"area": "The Churning Mists",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Enkelados": {
+"rank": "A",
+"area": "The Sea of Clouds",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Sisiutl": {
+"rank": "A",
+"area": "The Sea of Clouds",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Slipkinx Steeljoints": {
+"rank": "A",
+"area": "The Dravanian Hinterlands",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Stolas": {
+"rank": "A",
+"area": "The Dravanian Hinterlands",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Campacti": {
+"rank": "A",
+"area": "Azys Lla",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Stench Blossom": {
+"rank": "A",
+"area": "Azys Lla",
+"spawn": "None",
+"respawn": "4 to 6 hours"
+},
+"Kaiser Behemoth": {
+"rank": "S",
+"area": "Coerthas Western Highlands",
+"spawn": "Fly over spawn points with Behemoth Heir.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Senmurv": {
+"rank": "S",
+"area": "The Dravanian Forelands",
+"spawn": "Complete the \" Cerf's Up \" FATE at (X: 19, Y: 27) 5 times in a row.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Gandarewa": {
+"rank": "S",
+"area": "The Churning Mists",
+"spawn": "Harvest Seventh Heaven or mine Aurum Regis Ore.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Bird of Paradise": {
+"rank": "S",
+"area": "The Sea of Clouds",
+"spawn": "Squonk 's Chirp AoE has a chance to spawn it.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"The Pale Rider": {
+"rank": "S",
+"area": "The Dravanian Hinterlands",
+"spawn": "Open treasure coffers from Timeworn Wyvernskin Map s.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Leucrotta": {
+"rank": "S",
+"area": "Azys Lla",
+"spawn": "Kill 50 Allagan Chimera, 50 Meracydian Vouivre, and 50 Lesser Hydra.",
+"respawn": "84-132; Maintenance: 50-80"
+},
+"Skogs Fru": {
+"rank": "B",
+"area": "Middle La Noscea",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Barbastelle": {
+"rank": "B",
+"area": "Lower La Noscea",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Dark Helmet": {
+"rank": "B",
+"area": "Western La Noscea",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Bloody Mary": {
+"rank": "B",
+"area": "Eastern La Noscea",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Myradrosh": {
+"rank": "B",
+"area": "Upper La Noscea",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Vuokho": {
+"rank": "B",
+"area": "Outer La Noscea",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Ovjang": {
+"rank": "B",
+"area": "Central Thanalan",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Sewer Syrup": {
+"rank": "B",
+"area": "Western Thanalan",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Gatling": {
+"rank": "B",
+"area": "Eastern Thanalan",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Albin the Ashen": {
+"rank": "B",
+"area": "Southern Thanalan",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Flame Sergeant Dalvag": {
+"rank": "B",
+"area": "Northern Thanalan",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"White Joker": {
+"rank": "B",
+"area": "Central Shroud",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Monarch Ogrefly": {
+"rank": "B",
+"area": "South Shroud",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Stinging Sophie": {
+"rank": "B",
+"area": "East Shroud",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Phecda": {
+"rank": "B",
+"area": "North Shroud",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Naul": {
+"rank": "B",
+"area": "Coerthas Central Highlands",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Leech King": {
+"rank": "B",
+"area": "Mor Dhona",
+"spawn": "None",
+"respawn": "5 seconds"
+},
+"Vogaal Ja": {
+"rank": "A",
+"area": "Middle La Noscea",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Unktehi": {
+"rank": "A",
+"area": "Lower La Noscea",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Nahn": {
+"rank": "A",
+"area": "Western La Noscea",
+"spawn": "None",
+"respawn": "3:30 to 5:00 hours"
+},
+"Hellsclaw": {
+"rank": "A",
+"area": "Eastern La Noscea",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Marberry": {
+"rank": "A",
+"area": "Upper La Noscea",
+"spawn": "None",
+"respawn": "4 to 5 hours"
+},
+"Cornu": {
+"rank": "A",
+"area": "Outer La Noscea",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Sabotender Bailarina": {
+"rank": "A",
+"area": "Central Thanalan",
+"spawn": "None",
+"respawn": "4 to 5 hours"
+},
+"Alectryon": {
+"rank": "A",
+"area": "Western Thanalan",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Maahes": {
+"rank": "A",
+"area": "Eastern Thanalan",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Zanig'oh": {
+"rank": "A",
+"area": "Southern Thanalan",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Dalvag's Final Flame": {
+"rank": "A",
+"area": "Northern Thanalan",
+"spawn": "None",
+"respawn": "4 to 5 hours"
+},
+"Forneus": {
+"rank": "A",
+"area": "Central Shroud",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Ghede Ti Malice": {
+"rank": "A",
+"area": "South Shroud",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Melt": {
+"rank": "A",
+"area": "Eastern Shroud",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Girtab": {
+"rank": "A",
+"area": "North Shroud",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Marraco": {
+"rank": "A",
+"area": "Coerthas Central Highlands",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Kurrea": {
+"rank": "A",
+"area": "Mor Dhona",
+"spawn": "None",
+"respawn": "3:20 to 5:00 hours"
+},
+"Croque-Mitaine": {
+"rank": "S",
+"area": "Middle La Noscea",
+"spawn": "Mine Grade 3 La Noscean Topsoil. Node shows 7pm-10pm Eorzea Time.",
+"respawn": "65-75; Maintenance: 39-45"
+},
+"Croakadile": {
+"rank": "S",
+"area": "Lower La Noscea",
+"spawn": "Traverse spawn points during a Full Moon.",
+"respawn": "50; Maintenance: 30"
+},
+"Bonnacon": {
+"rank": "S",
+"area": "Western La Noscea",
+"spawn": "Harvest La Noscean Leek s. Node shows 8am-11am Eorzea Time.",
+"respawn": "65-75; Maintenance: 39-45"
+},
+"The Garlok": {
+"rank": "S",
+"area": "Eastern La Noscea",
+"spawn": "Spawns after its random timer expires. Rain puts it to sleep, ensuring it won't spawn for 200 minutes. (3 hours 20 minutes)",
+"respawn": "42-48; Maintenance: 21-29"
+},
+"Nandi": {
+"rank": "S",
+"area": "Upper La Noscea",
+"spawn": "Traverse spawn points with a minion out.",
+"respawn": "47-53; Maintenance: 28-32"
+},
+"Chernobog": {
+"rank": "S",
+"area": "Outer La Noscea",
+"spawn": "A player dying.",
+"respawn": "65-71, Maintenance: 39-43"
+},
+"Brontes": {
+"rank": "S",
+"area": "Central Thanalan",
+"spawn": "Eat food at spawn points.",
+"respawn": "66-78; Maintenance: 39-47"
+},
+"Zona Seeker": {
+"rank": "S",
+"area": "Western Thanalan",
+"spawn": "Fish a Glimmerscale.",
+"respawn": "57-63; Maintenance: 34-38"
+},
+"Lampalagua": {
+"rank": "S",
+"area": "Eastern Thanalan",
+"spawn": "Initiate Battlecraft Leves.",
+"respawn": "66-78; Maintenance: 39-47"
+},
+"Nunyunuwi": {
+"rank": "S",
+"area": "Southern Thanalan",
+"spawn": "Ensure all FATEs succeed for exactly 1 hour straight.",
+"respawn": "44-54; Maintenance: 26-33"
+},
+"Minhocao": {
+"rank": "S",
+"area": "Northern Thanalan",
+"spawn": "Kill 100 Earth Sprites.",
+"respawn": "57-63; Maintenance: 34-38"
+},
+"Laideronnette": {
+"rank": "S",
+"area": "Central Shroud",
+"spawn": "Spawns 6 minutes into the second consecutive Rain weather window.",
+"respawn": "42-48; Maintenance: 25-29"
+},
+"Mindflayer": {
+"rank": "S",
+"area": "South Shroud",
+"spawn": "Traverse spawn points at 00:00 during a New Moon.",
+"respawn": "50; Maintenance: 30"
+},
+"Wulgaru": {
+"rank": "S",
+"area": "East Shroud",
+"spawn": "Initiate Battlecraft Leves.",
+"respawn": "66-78; Maintenance: 39-47"
+},
+"Thousand-cast Theda": {
+"rank": "S",
+"area": "North Shroud",
+"spawn": "Fish a Judgeray at 5-9pm.",
+"respawn": "57-63; Maintenance: 34-38"
+},
+"Safat": {
+"rank": "S",
+"area": "Coerthas Central Highlands",
+"spawn": "Fall off cliffs to 1 HP.",
+"respawn": "60-84, Maintenance: 36-51"
+},
+"Agrippa the Mighty": {
+"rank": "S",
+"area": "Mor Dhona",
+"spawn": "Complete Treasure Maps.",
+"respawn": "60-84; Maintenance: 36-51"
+}
+}
+}

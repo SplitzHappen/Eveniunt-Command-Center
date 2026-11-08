@@ -17,6 +17,7 @@ import collections, csv, json, os, re, sys
 if len(sys.argv) < 4:
     sys.exit(__doc__)
 DM, TC, TJ = sys.argv[1:4]
+FISHDATA = sys.argv[4] if len(sys.argv) > 4 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "fish-tracker.json")  # tools/fetch-fishdata.py
 T = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 data = json.load(open(os.path.join(T, "data", "tracker-data.json"), encoding="utf-8"))
 
@@ -155,10 +156,15 @@ def mon_lines(ids, verb="Found"):
             out.append(verb + " in " + zone + " (%.1f, %.1f), level %d" % (p["x"], p["y"], p.get("level", 0)))
             if len(out) >= 3: return out
     return out
+ELITE = {norm(k): v for k, v in json.load(open(os.path.join(T, "data", "elite-marks.json"), encoding="utf-8"))["marks"].items()}
 for key, g, e in each("hunt-"):
-    lines = mon_lines([e["i"]] + list(e.get("al") or []))
-    if g["t"] in ("S rank", "SS rank", "A rank", "B rank"):
-        lines.insert(0, g["t"] + " elite mark" + (" (spawn condition: see the guide)" if g["t"] in ("S rank", "SS rank") else ""))
+    lines = mon_lines([e["i"]] + list(e.get("al") or [])) or mon_lines(BNPC.get(norm(e["n"]), []))
+    el = ELITE.get(norm(e["n"]))
+    if el:
+        head = el["rank"] + " rank elite mark in " + el["area"]
+        lines = [head] + ([("Spawns when: " + el["spawn"])] if el.get("spawn") and el["spawn"].lower() != "none" else []) + ([("Respawn: " + el["respawn"] + ("" if "hour" in el["respawn"].lower() or "second" in el["respawn"].lower() else " hours"))] if el.get("respawn") else []) + lines
+    elif g["t"] == "Hunt bill marks":
+        lines = ["Hunt bill mark (from the Hunt board's daily and weekly bills)"] + lines
     put(key, lines); stats["hunt"] += 1
 for key, g, e in each("hunting"):
     put(key, ["Defeat " + str(e.get("cnt", 1))] + mon_lines(BNPC.get(norm(e["n"]), []))); stats["hunting log"] += 1
@@ -169,10 +175,15 @@ for key, g, e in each("aetherytes"):
     a = AE.get(e["i"])
     if a: put(key, ["Attune in " + (PLACE.get(i(a.get("zoneid")), "") or e.get("zone", "")) + " (%.1f, %.1f)" % (a["x"], a["y"])])
 AC = sheet("AetherCurrent")
+CURRENT_AT = {}  # field aether current -> its spot (EObj.Data = the current, Level.Object = that EObj)
+eobj_cur = {k: i(r.get("Data")) for k, r in sheet("EObj").items() if 2818000 < i(r.get("Data")) < 2819000}
+for lid, lv in LEVEL.items():
+    c = eobj_cur.get(i(lv.get("Object")))
+    if c and c not in CURRENT_AT: CURRENT_AT[c] = level_where(lid)
 for key, g, e in each("aethercurrents"):
     qid = i(AC.get(e["i"], {}).get("Quest"))
     if qid: put(key, ["Reward of the quest " + QNAME.get(qid, "")] + quest_lines(qid)[:2])
-    else: put(key, ["Found in the field in " + g["t"] + " (the guide shows the spot)"])
+    else: put(key, ["Field aether current at " + CURRENT_AT[e["i"]] if CURRENT_AT.get(e["i"]) else "Field aether current in " + g["t"], "Fly or walk there and interact with it"])
 ADV = sheet("Adventure")
 EMOTE = {k: clean(r["Name"]) for k, r in sheet("Emote").items()}
 WEATHER = {k: clean(r["Name"]) for k, r in sheet("Weather").items()}
@@ -225,6 +236,30 @@ for key, g, e in each("gather-"):
         lines.append("Level %d node in %s (%.1f, %.1f)" % (n.get("level", 0), zone, n.get("x", 0), n.get("y", 0)) + (" · timed" if n.get("spawns") else "") + (" · legendary" if n.get("legendary") else ""))
         if len(lines) >= 3: break
     put(key, lines); stats["gathering"] += 1
+FT = json.load(open(FISHDATA, encoding="utf-8")) if FISHDATA else {}
+FT_FISH, FT_ITEMS, FT_WEATHER = FT.get("FISH", {}), FT.get("ITEMS", {}), FT.get("WEATHER_TYPES", {})
+FT_FOLK = FT.get("FOLKLORE", {})
+def ft_name(iid): return (FT_ITEMS.get(str(iid)) or {}).get("name_en") or ITEM.get(i(iid), "")
+def fish_extra(iid):
+    f = FT_FISH.get(str(iid))
+    if not f: return []
+    out = []
+    a, b = f.get("startHour"), f.get("endHour")
+    if a is not None and b is not None and not (a == 0 and b == 24):
+        out.append("Bites between %s:00 and %s:00 Eorzea time" % (str(a).rstrip("0").rstrip(".") if isinstance(a, float) else a, str(b).rstrip("0").rstrip(".") if isinstance(b, float) else b))
+    w = [FT_WEATHER.get(str(x), {}).get("name_en") for x in f.get("weatherSet") or []]
+    pw = [FT_WEATHER.get(str(x), {}).get("name_en") for x in f.get("previousWeatherSet") or []]
+    if w: out.append("Weather: " + ", ".join(x for x in w if x) + (" (after " + ", ".join(x for x in pw if x) + ")" if pw else ""))
+    path = [ft_name(x) for x in f.get("bestCatchPath") or []]
+    if len(path) > 1: out.append("Bait chain: " + " → ".join(x for x in path if x))
+    elif path and path[0]: out.append("Best bait: " + path[0])
+    pred = [str(n) + "× " + ft_name(x) for x, n in (f.get("predators") or [])]
+    if pred: out.append("First catch " + ", ".join(pred) + " for Fisher's Intuition")
+    extra = [x for x, on in (("Fish Eyes", f.get("fishEyes") is True), ("Snagging", f.get("snagging"))) if on]
+    if f.get("folklore"):
+        extra.append("needs the folklore book " + ((FT_FOLK.get(str(f["folklore"])) or {}).get("book_en") or ""))
+    if extra: out.append("Also: " + ", ".join(extra))
+    return out
 SPOTS = {s["id"]: s for s in tc("fishing-spots.json")}
 FSRC, FPAR = tc("fishing-sources.json"), tc("fish-parameter.json")
 HOOK = {1: "Precision Hookset", 2: "Powerful Hookset"}
@@ -237,10 +272,19 @@ for key, g, e in each("fishing"):
         zone = PLACE.get(i(sp.get("placeId")), "")
         bait = ITEM.get(i(src.get("bait")), "")
         lines.append((zone or "Fishing hole") + ((" (%.1f, %.1f)" % (sp["coords"]["x"], sp["coords"]["y"])) if sp.get("coords") else "") + (" · bait: " + bait if bait else "") + (" · " + TUG[src["tug"]] + " bite" if src.get("tug") in TUG else "") + (" · " + HOOK[src["hookset"]] if src.get("hookset") in HOOK else ""))
-    fp = FPAR.get(str(e.get("it")), {})
-    if fp.get("timed") or fp.get("weathered"):
-        lines.append("Needs " + " and ".join(x for x, on in (("a time window", fp.get("timed")), ("certain weather", fp.get("weathered"))) if on) + " (see the guide)")
-    put(key, lines); stats["fishing"] += 1
+    lines += fish_extra(e.get("it"))
+    put(key, lines[:7]); stats["fishing"] += 1
+
+FT_SPEAR = FT.get("SPEARFISHING_SPOTS", {})
+for key, g, e in each("spearfishing"):
+    f = FT_FISH.get(str(e.get("it")))
+    lines = []
+    if f:
+        sp = FT_SPEAR.get(str(f.get("location"))) or {}
+        if sp.get("name_en"): lines.append("Spearfishing spot: " + sp["name_en"] + (" in " + g["t"] if g["t"] != "Other" else ""))
+        if f.get("gig"): lines.append("Gig: " + str(f["gig"]))
+        lines += fish_extra(e.get("it"))
+    put(key, lines); stats["spearfishing"] += 1
 
 # ---------------------------------------------------------------- achievements and titles
 ACH = sheet("Achievement")
@@ -256,8 +300,18 @@ for key, g, e in each("titles"):
     if r: put(key, ["From the achievement " + clean(r.get("Name")), clean(r.get("Description"))])
 
 # ---------------------------------------------------------------- variant records
+ROUTES = {norm(k): v for k, v in json.load(open(os.path.join(T, "data", "variant-routes.json"), encoding="utf-8")).items() if not k.startswith("_")}
 for key, g, e in each("variantrecords"):
-    put(key, ["A record of " + (e.get("d") or g["t"]) + ": finish the dungeon by the route that ends with this record", "The guide lists the choices for each route"])
+    r = ROUTES.get(norm(e["n"]))
+    put(key, [(e.get("d") or g["t"]).replace("*", "") + ": " + (r or "finish the dungeon by the route that ends with this record")]); stats["variant records"] += 1
+LORE = json.load(open(os.path.join(T, "data", "occult-lore.json"), encoding="utf-8"))["records"]
+for key, g, e in each("oclore"):
+    l = LORE.get(str(e["i"]))
+    if l and l.get("unlocked"):
+        u = re.sub(r"\s+for$", "", l["unlocked"])
+        put(key, ["Unlocked by: " + u]); stats["occult records"] += 1
+for key, g, e in each("societyranks"):
+    put(key, ["Raise your reputation with the " + g["t"] + " through their daily quests (" + str(e.get("d", "")) + " reputation for this rank)" if e.get("d") else "Raise your reputation with the " + g["t"] + " through their daily quests", "Some ranks also need that society's rank quest"])
 
 with open(os.path.join(T, "data", "info.json"), "w", encoding="utf-8") as fh:
     json.dump(INFO, fh, ensure_ascii=False, separators=(",", ":"))

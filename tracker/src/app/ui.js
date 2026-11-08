@@ -173,7 +173,6 @@
     infoLines(k).forEach(function (l) { bits.push('<div>' + esc(l) + '</div>'); });
     if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
     if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
-    bits.push('<div><a href="' + wikiUrl(k) + '" target="_blank" rel="noopener noreferrer">Step-by-step guide on Console Games Wiki ↗</a></div>');
     if (e.d) bits.push('<div>' + esc(e.d) + '</div>');
     var facts = [];
     if (e.p) facts.push('Patch ' + esc(e.p));
@@ -247,15 +246,6 @@
     });
     return INFO_P;
   }
-  // a guide for any entry: the Console Games Wiki page of that name (its search goes straight to the page when one exists)
-  function wikiUrl(k) {
-    var hit = IDX.byKey.get(k), e = hit.e, sid = hit.s.id, q = e.n;
-    if (sid === 'variantrecords') q = (e.d || hit.g.t).replace(/\*/g, '');
-    else if (sid === 'aethercurrents') q = 'Aether Current ' + hit.g.t;
-    else if (sid.indexOf('quests-cj-') === 0 && /^Level /.test(q)) q = hit.g.t;
-    q = String(q).replace(/^Quest:\s*/, '').replace(/\s*\((?:Floors|Stones) [^)]*\)$/, '').replace(/\*/g, '');
-    return 'https://ffxiv.consolegameswiki.com/mediawiki/index.php?search=' + encodeURIComponent(q) + '&title=Special%3ASearch&go=Go';
-  }
   function infoLines(k) { return (INFO && INFO[k]) || []; }
   function tipHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, bits = [];
@@ -263,8 +253,7 @@
     infoLines(k).forEach(function (l) { bits.push('<div>' + esc(l) + '</div>'); });
     if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
-    if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No details in the data for this one.</div>');
-    bits.push('<div class="row"><a href="' + wikiUrl(k) + '" target="_blank" rel="noopener noreferrer">Step-by-step guide on Console Games Wiki ↗</a></div>');
+    if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No how-to details for this one yet.</div>');
     return bits.join('');
   }
   var tipTimer = null, tipHide = null, tipKey = null;

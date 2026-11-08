@@ -111,6 +111,12 @@ Two independent red-team reviews (ChatGPT, 8 findings; Claude, 41 findings) of t
 - **Information window:** rest the pointer on a name; on touch screens, tap the name for the details.
   - 33,000 entries have information lines built from the game sheets and FFXIV Teamcraft (MIT): quest givers with place and coordinates, level, prerequisites, duties a quest unlocks, duty levels and the quest that unlocks them, FATE levels and spots, hunt marks and Hunting Log monsters with zones and coordinates, aetheryte spots, vista spots with time, weather and emote, levemete places, recipe ingredients and books, gathering nodes (timed, legendary), and fishing holes with bait, bite and hook.
   - Collections keep their FFXIV Collect sources, and the checklist lists keep their details.
-  - Every window links to the entry's page on the Console Games Wiki. Spot-checked links went straight to the right page.
-  - No wiki text is copied: the wiki publishes no licence for its text.
+  - Owner follow-up, same day: "copy the information unto the tracker itself instead" of linking out. The windows now carry the answers and link nowhere:
+    - fish: time window, weather and previous weather, bait and mooch chain, fish to catch first for Fisher's Intuition, Fish Eyes, folklore book (ff14-fish-tracker-app, MIT; 1,110 fish), and spearfishing spots;
+    - field aether currents: their spot, from the game's own objects (152);
+    - elite marks: rank, area, spawn condition and respawn time (204 marks);
+    - Variant records: the route for each, written for the tracker (49);
+    - Occult Crescent records: what unlocks each (60);
+    - allied society ranks: reputation needed.
+  - Wiki text is not copied word for word: the Console Games Wiki states no licence for its text. The facts taken from it (spawn triggers, what unlocks a record, a route's choices) are stated in the tracker's own words or as short facts, and credited.
   - The information is stored compressed in the page (about 0.6 MB, up from 5.0 MB to 5.9 MB in all) and unpacked the first time a window opens.
