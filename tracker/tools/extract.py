@@ -195,6 +195,19 @@ def emotes():
         e = entry(eid, name, item_patch(item) if item else None, _kind="emote", it=item, cmd=cmd)
         e.pop("ex", None)
         groups.setdefault(clean(cats.get(i(r["EmoteCategory"]), {}).get("Name")) or "Other", []).append(e)
+    # the sheet has a second row for a few emotes (same name, same unlock item, or no item at all): one emote to the
+    # player, so the later row becomes an alias of the first (FFXIV Collect lists the lower id; ticks on either count)
+    for es in groups.values():
+        first, keep = {}, []
+        for e in es:
+            k = (e["n"], e.get("it"))
+            if k in first:
+                first[k].setdefault("al", []).append(e["i"])
+                problems["emote duplicate row (merged into the first)"] += 1
+                continue
+            first[k] = e
+            keep.append(e)
+        es[:] = keep
     return [{"t": k, "e": v} for k, v in groups.items()]
 
 def hairstyles():
@@ -338,6 +351,11 @@ def quests():
         s = i(cats.get(c, {}).get("JournalSection"))
         e = entry(qid, name, CONTENT_PATCH["quest"].get(qid), _kind="quest", lv=i(r.get("ClassJobLevel[0]")))
         e.pop("ex", None)
+        # seasonal event quests (the journal genres "... Events", and any quest the sheet ties to a festival) can only be
+        # done while their event runs and each year brings new ones: time-limited, left out of totals unless counted
+        if clean(gens[g]["Name"]).endswith(" Events") or i(r.get("Festival")):
+            e["x"] = "lim"
+            problems["quest: seasonal event (marked time-limited)"] += 1
         tree.setdefault(s, collections.OrderedDict()).setdefault(c, collections.OrderedDict()).setdefault(g, []).append(e)
     out = []
     for s in sorted(tree):
@@ -592,6 +610,7 @@ def duties():
     keep = {2: "Dungeons", 3: "Guildhests", 4: "Trials", 5: "Raids", 28: "Ultimate Raids", 21: "Deep Dungeons",
             30: "Variant and Criterion Dungeons", 37: "Chaotic Alliance Raids", 7: "Quest Battles", 6: "PvP"}
     tree = collections.OrderedDict()
+    pvp_first = {}
     for did, r in sorted(cfc.items(), key=lambda kv: (i(kv[1]["SortKey"]), kv[0])):
         name = clean(r["Name"])
         t = i(r["ContentType"])
@@ -603,6 +622,14 @@ def duties():
         e.pop("ex", None)
         if t == 6:  # PvP: the game's member type is the mode
             e["grp"] = {7: "Frontline", 18: "Rival Wings", 29: "Crystalline Conflict", 30: "Crystalline Conflict: custom matches"}.get(i(r["ContentMemberType"]), "Other PvP")
+            # the sheet repeats each arena once per match type (casual, ranked, seasonal rules): one arena to the player,
+            # so later rows of the same arena in the same mode become aliases of the first (ticks on any of them count)
+            k = (e["grp"], e["n"])
+            if k in pvp_first:
+                pvp_first[k].setdefault("al", []).append(did)
+                problems["PvP: repeated arena row (merged into the first)"] += 1
+                continue
+            pvp_first[k] = e
         tree.setdefault(t, collections.OrderedDict()).setdefault(ex, []).append(e)
     for t in keep:
         if t in tree:
@@ -740,6 +767,13 @@ def hunt():
         add(i(r["BNpcName"]), ranks.get(i(r["Rank"]), "Elite marks"))
     for mid, r in sorted(sheet("MobHuntTarget").items()):
         add(i(r["Name"]), "Hunt bill marks")
+    # an alias names the same monster under another game id; an id that is itself a tracked mark is not an alias
+    for es in tree.values():
+        for e in es:
+            if e.get("al"):
+                e["al"] = [b for b in e["al"] if b not in seen]
+                if not e["al"]:
+                    del e["al"]
     order = ["SS rank", "S rank", "A rank", "B rank", "Hunt bill marks", "Elite marks"]
     return [{"t": rank, "c": EXPANSIONS[ex] if ex < len(EXPANSIONS) else "Patch not recorded", "e": es}
             for (ex, rank), es in sorted(tree.items(), key=lambda kv: (kv[0][0], order.index(kv[0][1])))]
@@ -805,6 +839,29 @@ def apply_ffxivcollect():
                     fc_stats["achievements: time-limited"] += 1
 
 apply_ffxivcollect()
+
+# A title comes only from its achievements: when every achievement that grants it is time-limited (or Legacy), the
+# title cannot be obtained either and takes the same mark, so the two lists agree.
+def mark_titles():
+    secs = {x["id"]: x for x in sections}
+    ach_mark = {}
+    for sid, sec in secs.items():
+        if sid.startswith("ach-"):
+            for g in sec["g"]:
+                for e in g["e"]:
+                    ach_mark[e["i"]] = e.get("x")
+    by_title = collections.defaultdict(list)
+    for aid, r in sheet("Achievement").items():
+        if i(r["Title"]) and aid in ach_mark:
+            by_title[i(r["Title"])].append(ach_mark[aid])
+    for g in secs["titles"]["g"]:
+        for e in g["e"]:
+            marks = by_title.get(e["i"])
+            if marks and all(m == "lim" for m in marks):
+                e["x"] = "lim"; fc_stats["titles: time-limited (from their achievements)"] += 1
+            elif marks and all(m == "gone" for m in marks):
+                e["x"] = "gone"; fc_stats["titles: no longer obtainable (Legacy achievements)"] += 1
+mark_titles()
 
 def regroup(sid, keyfn, order=None):
     sec = next(x for x in sections if x["id"] == sid)
@@ -961,6 +1018,53 @@ for sec in sections:
             first[k] = e
             keep.append(e)
         g["e"] = keep
+# The first class quests exist twice for each starting class: once for characters who started as that class (its own
+# "Way of the ..." with no prerequisite, and the level 10 quest after it) and once for characters who joined it later
+# (the guild's "So You Want to Be ..." quest, a second "Way of the ...", "My First ...", and a second level 10 quest).
+# A character does only one route, set by the starting class: "sc" marks the starter route (applies only to starters of
+# that class), "jc" the joiner route (does not apply to them). Quests after level 10 need either route and stay unmarked.
+START_CLS = {"mrd", "acn", "lnc", "arc", "cnj", "gla", "pgl", "thm"}
+def class_routes():
+    q = sheet("Quest")
+    abbr = {clean(r["Name"]).lower(): r["Abbreviation"].lower() for r in sheet("ClassJob").values() if r.get("Abbreviation")}
+    prev = lambda k: [i(q[k][f"PreviousQuest[{n}]"]) for n in range(3) if i(q.get(k, {}).get(f"PreviousQuest[{n}]"))]
+    sec = next(x for x in sections if x["id"] == "quests-classjobquests")
+    tag = {}
+    for g in sec["g"]:
+        cls = abbr.get(re.sub(r" quests$", "", g["t"].lower()))
+        if cls not in START_CLS:
+            continue
+        ways = [e["i"] for e in g["e"] if e["n"].startswith("Way of the ") and i(q[e["i"]].get("ClassJobLevel[0]")) == 1]
+        starter = [k for k in ways if not prev(k)]
+        joiner = [k for k in ways if prev(k)]
+        assert len(starter) == 1 and len(joiner) == 1, ("class routes", g["t"], ways)
+        route = {starter[0]: "sc", joiner[0]: "jc"}
+        for p_ in prev(joiner[0]):
+            route[p_] = "jc"  # the guild's "So You Want to Be ..." quest
+        changed = True
+        while changed:
+            changed = False
+            for e in g["e"]:
+                if e["i"] in route:
+                    continue
+                ps = prev(e["i"])
+                if q[e["i"]].get("PreviousQuestJoin") == "2" and len(ps) > 1:
+                    continue
+                rs = {route[p_] for p_ in ps if p_ in route}
+                if len(rs) == 1:
+                    route[e["i"]] = rs.pop()
+                    changed = True
+        for k, v in route.items():
+            tag[k] = (v, cls)
+    for sec_ in sections:
+        if sec_["id"].startswith("quests-"):
+            for g in sec_["g"]:
+                for e in g["e"]:
+                    if e["i"] in tag:
+                        v, cls = tag[e["i"]]
+                        e[v] = cls
+                        city_stats["quest: " + ("starter" if v == "sc" else "joiner") + " route of a class"] += 1
+class_routes()
 CITY_STATS = dict(city_stats)
 
 # ---------------------------------------------------------------- output

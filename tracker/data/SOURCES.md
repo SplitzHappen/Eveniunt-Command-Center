@@ -36,7 +36,7 @@ Built by `tools/extract.py` from the pinned game sheets; neither the workbook no
 | Grand Company | the first rank and the company's officer quest (both ways); promotions that need a hunting log rank (workbook notes) | as noted |
 | Mount speed | a first increase the workbook gives as a quest, and that quest (both ways) | both ways |
 
-**From the FFXIV Completionist desktop app (1.0.5).** `tools/desktop-links.js` reads the link fields its data files carry (`cPrev`, `cNext`, `cSiblings`, `cCombo`, from the installer the owner shared) and `tools/merge-desktop-links.js` adopts the ones the game data does not already give, after checks: both ends must still be the same entry by name (its data is from patch 7.38, so its position-based lists no longer line up everywhere), no link across starting cities or Grand Companies (a link from a shared entry to one city's entry applies only to that city), relic links within one job, nothing the game's quest order contradicts, and only links that add ticks (its "unticking unticks" cascades are not adopted). 822 links and 27 "complete this set" rules were adopted (kind `x`), for example the Firebird, Kamuy and Landerwaffe quests needing their mounts, allied society rank quests, hunt-mark achievements, "Tales of War/Magic/the Hand/the Land" needing every class quest, class quests that give the first relic tools, and Hall of the Novice order.
+**From the FFXIV Completionist desktop app (1.0.5).** `tools/desktop-links.js` reads the link fields its data files carry (`cPrev`, `cNext`, `cSiblings`, `cCombo`, from the installer the owner shared) and `tools/merge-desktop-links.js` adopts the ones the game data does not already give, after checks: both ends must still be the same entry by name (its data is from patch 7.38, so its position-based lists no longer line up everywhere), no link across starting cities or Grand Companies (a link from a shared entry to one city's entry applies only to that city), relic links within one job, nothing the game's quest order contradicts, and only links that add ticks (its "unticking unticks" cascades are not adopted). 802 links and 27 "complete this set" rules were adopted (kind `x`); a link into one of two same-named versions of a quest (the first class quests' starter and joiner routes) is not adopted (19), for example the Firebird, Kamuy and Landerwaffe quests needing their mounts, allied society rank quests, hunt-mark achievements, "Tales of War/Magic/the Hand/the Land" needing every class quest, class quests that give the first relic tools, and Hall of the Novice order.
 
 **Checked on Console Games Wiki (2026-11-08):** Phantom Weapons and Cosmic Tools are upgraded one stage at a time (so Dawntrail relic stages are linked like the others); the "Big Game Hunter" achievements are Legacy (from version 1.0, unobtainable), so they need no FATE link; spot checks of items that prove their only source (Black Chocobo, Manacutter, Unicorn, Firebird, Wind-up Louisoix) match.
 
@@ -64,8 +64,8 @@ Not added, because no reachable data identifies them: 3 Triple Triad opponents t
 
 ## Availability marks
 
-- `x: "lim"`: only obtainable from time-limited sources (events, seasonal content, ended campaigns, PvP seasons); it may return. 514 entries.
-- `x: "gone"`: no longer obtainable: Legacy achievements (261) and 13 mounts that exist in the game files but are quest or duty vehicles, never collectable.
+- `x: "lim"`: only obtainable from time-limited sources (events, seasonal content, ended campaigns, PvP seasons); it may return. 962 entries: 514 from FFXIV Collect, 310 seasonal quests (the journal's "… Events" genres and quests the game ties to a festival: Gold Saucer campaigns and collaboration events) and 138 titles whose every achievement is time-limited.
+- `x: "gone"`: no longer obtainable: Legacy achievements (261), 51 titles that only Legacy achievements grant, 13 mounts that exist in the game files but are quest or duty vehicles, never collectable, and the rows the checklist workbook pre-excludes (shown as "Not applicable": many never existed, for example a second mount speed increase in a zone that has only one).
 - `x: "unk"`: availability unknown: 463 named FATEs that no reachable data places in any zone (special areas or unused).
 - All three are shown with an X and left out of totals by default; every entry has a manual switch that overrides the mark both ways (owner rule, 2026-11-07).
 - Nothing is marked only because a source is missing: 20 gathering-log items whose spot is in no reachable data stay counted in their own group.
@@ -79,3 +79,8 @@ python3 -I tools/extract.py dm tc
 ```
 
 `data/tracker-data-report.json` lists the count per list and every dropped or unlabelled row by reason.
+
+## Merged rows and class routes (2026-11-08)
+
+- Repeated rows of one thing become one entry, with the other ids kept as aliases (a tick on an old id moves over on load): each Crystalline Conflict arena once per mode (61 rows: the sheet repeats each arena per match type), duplicate emote rows (Snowball, Dote, All Saints' Charm).
+- First class quests: for each starting class, the starter route (its own "Way of the …" with no prerequisite, and the level 10 quest after it) is marked `sc` and the joiner route (the guild's "So You Want to Be …", the second "Way of the …", "My First …" and the second level 10 quest) is marked `jc`, from the Quest sheet's prerequisites. A character with that starting class does not have the joiner route; others do not have the starter route. Nothing is excluded until the starting class is chosen.

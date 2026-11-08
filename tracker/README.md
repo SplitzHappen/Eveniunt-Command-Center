@@ -44,14 +44,15 @@ FONT_DIR=<node_modules/@fontsource> node tools/make-icons.js                    
 node tools/build-site.js                                                          # site/ (installable app, scope /tracker/)
 node --test tests/core.test.js                                                    # core logic
 node --test tests/ui.test.js                                                      # browser tests (Playwright + Chromium)
-node tools/check-keys.js                                                          # key stability against the last committed data
+node tools/check-keys.js [--against <commit>]                                     # key stability against the last merged data (origin/main), and links built for this data
 ```
 
 ## Updating to a new patch
 
 1. Point `tools/extract.py` at the new `ffxiv-datamining` commit (and Teamcraft, if updated) and run the four data steps above; update the commit ids in `data/SOURCES.md` and the version label in `tools/extract.py`.
-2. Run `node tools/check-keys.js`. It must pass: an entry that disappears or an id that now names something else would hide or move people's ticks. Merging duplicates is fine when the old ids are kept as aliases (`al`): the tracker moves ticks over on load.
+2. Run `node tools/check-keys.js` before committing the new data (it compares with the last merged data at `origin/main`; pass `--against <commit>` for another copy, and it says so when it compared the file with itself). It must pass: an entry that disappears or an id that now names something else would hide or move people's ticks, so every changed name fails until it is checked and listed with its new name in `tools/key-renames.json`. Merging duplicates is fine when the old ids are kept as aliases (`al`): the tracker moves ticks over on load. It also fails when `data/links.json` was built for other data (the links carry a hash of the key list; the tracker refuses a links file whose hash does not match).
 3. Rebuild, run both test suites, and update the pinned counts in `tests/ui.test.js` only after checking the new entries are real.
+4. Check the constants a new expansion changes, which the tools cannot read from the data: job level caps (100, Blue Mage 80, Beastmaster 50) and the Occult Crescent Knowledge Level cap (40) in `tools/add-checklist.py`, the version label in `tools/extract.py`, and the Cosmic Exploration planet count (the extractor stops when the sheet's shape changes).
 
 The Appearance module (themes and settings) is taken from the Eveniunt Atelier's source at build time, so both apps share one visual system.
 

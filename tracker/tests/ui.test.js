@@ -140,6 +140,27 @@ test('group header ticks a whole group for one character; level fields tick at t
   await ctx.close();
 });
 
+test('clearing a whole group from its header asks first and can be undone', async () => {
+  const { ctx, page, errors } = await open({ n: 1 });
+  const dialogs = []; page.on('dialog', (d) => dialogs.push(d.message()));
+  await page.evaluate(() => { window.__tracker.ST.settings.links = false; });
+  await go(page, 'orchestrion');
+  const g = page.locator('.lgroup').nth(1);
+  const n = await g.locator('.er:not(.x)').count();
+  assert.ok(n > 25);
+  await g.locator('.gh .c[data-gc="c1"]').click();
+  assert.equal(await g.locator('.er:not(.x) .tk.on[data-c="c1"]').count(), n);
+  assert.match(dialogs[dialogs.length - 1], /Tick all/);
+  await g.locator('.gh .c[data-gc="c1"]').click();
+  assert.match(dialogs[dialogs.length - 1], /Clear all \d+ ticks/, 'clearing is confirmed');
+  assert.equal(await g.locator('.er:not(.x) .tk.on[data-c="c1"]').count(), 0);
+  await page.waitForSelector('#toast .toast-btn');
+  await page.click('#toast .toast-btn');
+  assert.equal(await g.locator('.er:not(.x) .tk.on[data-c="c1"]').count(), n, 'Undo puts the ticks back');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('lists are grouped (never one flat list) and every list renders', async () => {
   const { ctx, page, errors } = await open({ n: 1 });
   const ids = await page.evaluate(() => window.__tracker.IDX.sections.map((s) => [s.id, s.groups.length, s.groups.reduce((a, g) => a + g.keys.length, 0)]));
@@ -419,6 +440,31 @@ test('two windows of the tracker: a tick in one shows in the other, never overwr
   const st = await page.evaluate(() => window.__tracker.ST);
   assert.ok(st.ticks.c1[key], 'first tick kept');
   assert.equal(Object.keys(st.ticks.c2).length, 1, 'second tick kept');
+  await ctx.close();
+});
+
+test('two windows ticking within the same moment: both ticks are kept and both windows show them', async () => {
+  const { ctx, page } = await open({ n: 1 });
+  const other = await ctx.newPage();
+  other.on('dialog', (d) => d.accept());
+  await other.goto(URL); await other.waitForSelector('.ov-table');
+  for (const p of [page, other]) await p.evaluate(() => { window.__tracker.ST.settings.links = false; });
+  await go(page, 'mounts'); await go(other, 'mounts');
+  await page.waitForSelector('.er'); await other.waitForSelector('.er');
+  const k1 = await page.locator('.er:not(.x)').nth(0).getAttribute('data-k');
+  const k2 = await other.locator('.er:not(.x)').nth(1).getAttribute('data-k');
+  // each window ticks before the other's save (400 ms after a tick) has run
+  await page.locator('.er:not(.x)').nth(0).locator('.tk[data-c="c1"]').click();
+  await page.waitForTimeout(150);
+  await other.locator('.er:not(.x)').nth(1).locator('.tk[data-c="c1"]').click();
+  await page.waitForTimeout(2500);
+  for (const p of [page, other]) {
+    const t = await p.evaluate(() => window.__tracker.ST.ticks.c1);
+    assert.ok(t[k1] && t[k2], 'this window shows both ticks');
+  }
+  await page.reload(); await page.waitForSelector('.page');
+  const t = await page.evaluate(() => window.__tracker.ST.ticks.c1);
+  assert.ok(t[k1] && t[k2], 'both ticks saved');
   await ctx.close();
 });
 

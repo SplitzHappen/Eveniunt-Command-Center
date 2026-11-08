@@ -420,6 +420,8 @@ if DM:
 credit = ("Extra lists and the desktop-app import map: FFXIV 100% Completion Checklist " + WB_VERSION +
           " by its volunteer team (same team as the FFXIV Completionist app), used with credit.")
 data["meta"]["sources"]["checklist"] = credit
+data["meta"]["sources"]["desktop"] = ("About 800 links between entries read from the FFXIV Completionist desktop app's data files"
+                                      " (version 1.0.5, same team) and adopted after checks, used with credit.")
 with open(DATA, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 with open(MAP_OUT, "w", encoding="utf-8") as f:

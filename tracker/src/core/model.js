@@ -199,13 +199,16 @@
     const c = st.chars.find((x) => x.id === charId);
     if (!c) throw new Error('No such character');
     if (cls !== undefined) { if (cls && !ET.START_CLASSES.some((x) => x[0] === cls)) throw new Error('Unknown starting class'); c.cls = cls || null; if (cls) delete c.city; }
-    if (gc !== undefined) { c.gc = gc ? Number(gc) : null; }
+    if (gc !== undefined) { if (gc && !ET.GCS[Number(gc)]) throw new Error('Unknown Grand Company'); c.gc = gc ? Number(gc) : null; }
     st.updated = Date.now();
   };
-  // Why an entry does not apply to a character: 'manual' (marked by the user), 'city', 'gc', or null (it applies).
+  // Why an entry does not apply to a character: 'manual' (marked by the user), 'city', 'gc', 'cls', or null (it applies).
+  // 'cls': the first class quests of a starting class exist on two routes (e.sc: only for characters who started as
+  // that class; e.jc: only for those who joined it later); unknown until the starting class is chosen.
   ET.notApplicable = function (st, char, key, entry) {
     if (st.excl[char.id] && st.excl[char.id][key]) return 'manual';
     if (entry && entry.city) { const city = ET.cityOf(char); if (city && entry.city !== city) return 'city'; }
+    if (entry && char.cls && ((entry.sc && entry.sc !== char.cls) || (entry.jc && entry.jc === char.cls))) return 'cls';
     if (entry && entry.gc && char.gc && entry.gc !== char.gc) return 'gc';
     return null;
   };
@@ -289,6 +292,28 @@
           if (v && v[old] != null) { if (v[key] == null) v[key] = v[old]; delete v[old]; moved++; }
         }
         if (st.avail[old]) { if (!st.avail[key]) st.avail[key] = st.avail[old]; delete st.avail[old]; moved++; }
+      }
+    }
+    // A tick on the joiner-route version of a first class quest, for a character who started as that class, belongs
+    // to the starter-route version of the same quest (the FFXIV Completionist app lists one version only): it moves
+    // there. Joiner-only steps without a starter twin keep their tick, shown as "does not apply" and not counted.
+    if (!idx.routeTwin) {
+      idx.routeTwin = new Map();
+      for (const sec of idx.sections) for (const g of sec.groups) {
+        const byName = new Map();
+        for (const k of g.keys) { const e = idx.byKey.get(k).e; if (e.sc || e.jc) (byName.get(e.n) || byName.set(e.n, []).get(e.n)).push(k); }
+        for (const ks of byName.values()) {
+          const j = ks.find((k) => idx.byKey.get(k).e.jc), sk = ks.find((k) => idx.byKey.get(k).e.sc);
+          if (j && sk && idx.byKey.get(j).e.jc === idx.byKey.get(sk).e.sc) idx.routeTwin.set(j, sk);
+        }
+      }
+    }
+    for (const c of st.chars) {
+      if (!c.cls) continue;
+      for (const [j, sk] of idx.routeTwin) {
+        if (idx.byKey.get(j).e.jc !== c.cls) continue;
+        const t = st.ticks[c.id];
+        if (t && t[j]) { t[sk] = 1; delete t[j]; moved++; }
       }
     }
     if (moved) st.updated = Date.now();

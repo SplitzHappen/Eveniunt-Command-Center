@@ -4,7 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
-for (const f of ['model', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'links']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+for (const f of ['model', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'links', 'storage']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+globalThis.ET.DRIVE_SETTLE_MS = 0; // the cloud re-check after writing waits a moment in the app; not in tests
 const ET = globalThis.ET;
 
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'tracker-data.json'), 'utf8'));
@@ -167,6 +168,52 @@ test('online refresh: first refresh asks; later new acquisitions apply automatic
   assert.ok(ET.isTicked(st, 'c1', 'mounts:' + m1.i));
   assert.ok(ET.isTicked(st, 'c1', 'mounts:' + m2.i));
   assert.ok(ET.isTicked(st, 'c1', 'mounts:' + m3.i));
+});
+
+test('online refresh: a difference answered with "this device is right" is not asked again until a side changes', async () => {
+  const st = ET.newState(['A']);
+  const [m1, m2, m3] = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).map((k) => idx.byKey.get(k).e);
+  ET.setTick(st, 'c1', 'mounts:' + m2.i, true); // ticked by hand, not on FFXIV Collect
+  let owned = await ET.fetchOwned('123', fakeFc({ mounts: [m1.i] }));
+  let rec = ET.reconcileOwned(idx, st, 'c1', owned);
+  assert.deepStrictEqual(rec.ask.map((a) => a.key).sort(), ['mounts:' + m1.i, 'mounts:' + m2.i].sort(), 'first refresh asks both');
+  ET.acceptRefresh(st, 'c1', owned, rec, { ['mounts:' + m1.i]: 'local', ['mounts:' + m2.i]: 'local' });
+  rec = ET.reconcileOwned(idx, st, 'c1', owned); // the same online lists the next day
+  assert.deepStrictEqual(rec.ask, [], 'nothing asked again while nothing changed');
+  assert.deepStrictEqual(rec.auto, []);
+  assert.ok(ET.isTicked(st, 'c1', 'mounts:' + m2.i) && !ET.isTicked(st, 'c1', 'mounts:' + m1.i), 'the answers stand');
+  owned = await ET.fetchOwned('123', fakeFc({ mounts: [m1.i, m3.i] })); // m3 newly owned online: applied; m1 unchanged: still not asked
+  rec = ET.reconcileOwned(idx, st, 'c1', owned);
+  assert.deepStrictEqual(rec.auto.map((a) => a.key), ['mounts:' + m3.i]);
+  assert.deepStrictEqual(rec.ask, []);
+  ET.acceptRefresh(st, 'c1', owned, rec, {});
+  owned = await ET.fetchOwned('123', fakeFc({ mounts: [m1.i, m2.i, m3.i] })); // m2 now owned online too: agreement, nothing to ask
+  rec = ET.reconcileOwned(idx, st, 'c1', owned);
+  assert.deepStrictEqual(rec.ask, []);
+  ET.acceptRefresh(st, 'c1', owned, rec, {});
+  ET.setTick(st, 'c1', 'mounts:' + m1.i, true); ET.setTick(st, 'c1', 'mounts:' + m1.i, false); // still unticked here
+  owned = await ET.fetchOwned('123', fakeFc({ mounts: [m2.i, m3.i] })); // m1 no longer owned online: the sides now agree
+  rec = ET.reconcileOwned(idx, st, 'c1', owned);
+  assert.deepStrictEqual(rec.ask, []);
+  // an answered difference returns when a side changes: m2 unticked here while owned online
+  ET.setTick(st, 'c1', 'mounts:' + m2.i, false);
+  rec = ET.reconcileOwned(idx, st, 'c1', owned);
+  assert.deepStrictEqual(rec.ask.map((a) => a.key), ['mounts:' + m2.i]);
+  // "FFXIV Collect is right" forgets the remembered answer
+  ET.acceptRefresh(st, 'c1', owned, rec, { ['mounts:' + m2.i]: 'online' });
+  assert.ok(ET.isTicked(st, 'c1', 'mounts:' + m2.i));
+  assert.strictEqual(st.sync.fc.c1.answered['mounts:' + m2.i], undefined);
+});
+
+test('online refresh: an empty collection on FFXIV Collect is "not recorded there", never "owns none"', async () => {
+  const st = ET.newState(['A']);
+  const rolls = ET.sectionKeys(idx.sections.find((s) => s.id === 'orchestrion')).slice(0, 50);
+  rolls.forEach((k) => ET.setTick(st, 'c1', k, true));
+  const owned = await ET.fetchOwned('123', fakeFc({ orchestrions: [], mounts: [] }));
+  assert.strictEqual(owned.unavailable.orchestrions, 'nothing recorded on FFXIV Collect');
+  assert.strictEqual(owned.ok.orchestrions, undefined);
+  const rec = ET.reconcileOwned(idx, st, 'c1', owned);
+  assert.deepStrictEqual(rec.ask, [], 'never offers to untick 50 hand-ticked rolls because the online list is empty');
 });
 
 test('online refresh: hairstyles and facewear use FFXIV Collect ids', async () => {
@@ -365,6 +412,11 @@ test('red team: a crafted backup cannot reach Object.prototype or smuggle markup
   assert.deepStrictEqual(st.settings, { countLimited: false, countGone: false, countUnknown: false, links: true, gold: true });
 });
 
+test('red team: a backup file cannot plant cloud-sync bookkeeping (file id, merge base) or refresh lists', () => {
+  const st = ET.importFile(backupDoc({ chars: [{ id: 'c1', name: 'A' }], sync: { drive: { fileId: 'planted', at: 'x', base: { ticks: { c1: { 'mounts:1': 1 } } } }, fc: { c1: { owned: 5 } }, backupAt: 1 } }));
+  assert.deepStrictEqual(st.sync, { fc: {}, drive: null, backupAt: null });
+});
+
 test('red team: transfer codes that are damaged, huge or malformed are refused with a plain message', async () => {
   await assert.rejects(ET.readTransferCode('EVT1-' + 'A'.repeat(5 * 1024 * 1024)), /far too long/);
   await assert.rejects(ET.readTransferCode('EVT1-abc'), /incomplete or damaged/);
@@ -401,7 +453,7 @@ test('merged entries: ticks saved under an old variant id move to the kept entry
 });
 
 function fakeDrive() {
-  const files = {}, mtime = {};
+  const files = {}, mtime = {}, fail = { patch: 0 }, hooks = {};
   let nextId = 1, clock = 0;
   const f = async (url, opts = {}) => {
     const method = opts.method || 'GET';
@@ -410,14 +462,19 @@ function fakeDrive() {
     if (method === 'POST' && url.includes('uploadType=multipart')) {
       const id = 'f' + nextId++;
       files[id] = JSON.parse(opts.body.split('\r\n\r\n')[2].split('\r\n--')[0]); mtime[id] = ++clock;
-      return json({ id });
+      return json({ id, modifiedTime: String(mtime[id]) });
     }
     const m = url.match(/files\/(f\d+)/);
-    if (method === 'PATCH') { files[m[1]] = JSON.parse(opts.body); mtime[m[1]] = ++clock; return json({}); }
+    if (method === 'PATCH') {
+      if (fail.patch) { fail.patch--; return { ok: false, status: 500 }; }
+      files[m[1]] = JSON.parse(opts.body); const written = String(mtime[m[1]] = ++clock);
+      if (hooks.afterPatch) { const h = hooks.afterPatch; hooks.afterPatch = null; await h(); }
+      return json({ id: m[1], modifiedTime: written });
+    }
     if (url.includes('alt=media')) return json(files[m[1]]);
     return { ok: false, status: 400 };
   };
-  return { f, files, touch: (id, doc) => { files[id] = doc; mtime[id] = ++clock; } };
+  return { f, files, fail, hooks, touch: (id, doc) => { files[id] = doc; mtime[id] = ++clock; } };
 }
 
 test('cloud sync: a damaged cloud copy never wipes this device', async () => {
@@ -468,17 +525,154 @@ test('cloud sync: if another device writes between reading and writing, nothing 
   assert.ok(d.files.f1.ticks.c1[k], "B's newer tick is still in the cloud");
 });
 
-test('cloud sync: the merged copy is validated (odd ids in a cloud file are ignored)', async () => {
+test('cloud sync: the merged copy is validated (a cloud file with an odd character is refused; odd keys are ignored)', async () => {
   const d = fakeDrive();
   const st = ET.newState(['A']);
   await ET.driveSync(st, 'tok', d.f);
+  const bad = JSON.parse(JSON.stringify(d.files.f1));
+  bad.chars.push({ id: '__proto__', name: 'x' }); bad.ticks.__proto__ = { 'mounts:1': 1 };
+  d.touch('f1', bad);
+  await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
   const doc = JSON.parse(JSON.stringify(d.files.f1));
-  doc.chars.push({ id: '__proto__', name: 'x' }); doc.ticks.__proto__ = { 'mounts:1': 1 }; doc.ticks.c1 = { 'mounts:1': 1, '<b>': 1 };
+  doc.chars.pop(); doc.ticks.c1 = { 'mounts:1': 1, '<b>': 1 };
   d.touch('f1', doc);
   await ET.driveSync(st, 'tok', d.f);
   assert.deepStrictEqual(st.chars.map((c) => c.id), ['c1']);
   assert.deepStrictEqual(Object.keys(st.ticks.c1), ['mounts:1']);
   assert.strictEqual(({})['mounts:1'], undefined);
+});
+
+test('cloud sync: a copy missing a character\'s ticks, or of another app, is refused; any removal from the other device asks first', async () => {
+  const d = fakeDrive();
+  const st = ET.newState(['A']);
+  const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).slice(0, 10);
+  keys.forEach((k) => ET.setTick(st, 'c1', k, true));
+  await ET.driveSync(st, 'tok', d.f);
+  const noMap = JSON.parse(JSON.stringify(d.files.f1)); delete noMap.ticks.c1;
+  d.touch('f1', noMap);
+  await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
+  d.touch('f1', Object.assign({}, JSON.parse(JSON.stringify(st.sync.drive.base)), { app: 'something-else', v: 1 }));
+  await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
+  const one = JSON.parse(JSON.stringify(st.sync.drive.base)); one.app = 'eveniunt-completionist-tracker'; one.v = ET.STATE_VERSION; delete one.ticks.c1[keys[0]];
+  d.touch('f1', one); // one tick removed on the other device
+  const r = await ET.driveSync(st, 'tok', d.f);
+  assert.strictEqual(r.done, false);
+  assert.strictEqual(r.loss, 1, 'even one removal is confirmed');
+  assert.strictEqual(Object.keys(st.ticks.c1).length, 10);
+});
+
+test('cloud sync: a failed upload leaves this device unchanged; ticks made during the upload are kept', async () => {
+  const d = fakeDrive();
+  const a = ET.newState(['A']);
+  await ET.driveSync(a, 'tok', d.f);
+  const b = ET.newState(['A']);
+  await ET.driveSync(b, 'tok', d.f);
+  const [k1, k2, k3] = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).slice(0, 3);
+  ET.setTick(b, 'c1', k1, true);
+  await ET.driveSync(b, 'tok', d.f);
+  d.fail.patch = 1;
+  await assert.rejects(ET.driveSync(a, 'tok', d.f), /answered 500/);
+  assert.ok(!a.ticks.c1[k1], 'nothing merged here when the upload failed');
+  d.hooks.afterPatch = () => { ET.setTick(a, 'c1', k2, true); }; // ticked on this device while the upload runs
+  await ET.driveSync(a, 'tok', d.f);
+  assert.ok(a.ticks.c1[k1] && a.ticks.c1[k2]);
+  ET.setTick(a, 'c1', k3, true);
+  await ET.driveSync(a, 'tok', d.f);
+  assert.ok(d.files.f1.ticks.c1[k2] && d.files.f1.ticks.c1[k3], 'the tick made during the upload reaches the cloud on the next sync');
+});
+
+test('cloud sync: two devices writing at the same moment end with both devices\' ticks', async () => {
+  const d = fakeDrive();
+  const a = ET.newState(['A']);
+  await ET.driveSync(a, 'tok', d.f);
+  const b = ET.newState(['A']);
+  await ET.driveSync(b, 'tok', d.f);
+  const [ka, kb] = ET.sectionKeys(idx.sections.find((s) => s.id === 'minions')).slice(0, 2);
+  ET.setTick(a, 'c1', ka, true); ET.setTick(b, 'c1', kb, true);
+  // B read the cloud copy and passed its check before A wrote; A uploads, and right after A's upload lands, B's upload
+  // (made from the older copy, so without A's tick) overwrites it. Drive has no "write only if unchanged".
+  const before = JSON.parse(JSON.stringify(d.files.f1));
+  d.hooks.afterPatch = () => {
+    const merged = ET.applyMerge(JSON.parse(JSON.stringify(b)), ET.threeWay(b.sync.drive.base, ET.portable(b), before), {});
+    const docB = Object.assign({ app: 'eveniunt-completionist-tracker', v: ET.STATE_VERSION }, JSON.parse(JSON.stringify(ET.portable(merged))));
+    d.touch('f1', docB);
+    b.sync.drive.base = JSON.parse(JSON.stringify(ET.portable(merged)));
+  };
+  await assert.rejects(ET.driveSync(a, 'tok', d.f), (e) => e.code === 'changed', 'A notices the later write');
+  assert.ok(!d.files.f1.ticks.c1[ka] && d.files.f1.ticks.c1[kb], "for a moment the cloud lacks A's tick");
+  await ET.driveSync(a, 'tok', d.f); // the automatic second sync
+  await ET.driveSync(b, 'tok', d.f);
+  assert.ok(d.files.f1.ticks.c1[ka] && d.files.f1.ticks.c1[kb], 'the cloud copy has both ticks');
+  assert.ok(a.ticks.c1[kb] && b.ticks.c1[ka], 'and so do both devices');
+});
+
+test('saving: a window that saves after another window saved combines both instead of overwriting', () => {
+  const [k1, k2, k3] = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).slice(0, 3);
+  const loaded = ET.newState(['A']); ET.setTick(loaded, 'c1', k3, true);
+  const base = JSON.parse(JSON.stringify(ET.portable(loaded)));
+  const w1 = JSON.parse(JSON.stringify(loaded)); ET.setTick(w1, 'c1', k1, true); // window 1 saved first (stored now)
+  const w2 = JSON.parse(JSON.stringify(loaded)); ET.setTick(w2, 'c1', k2, true); ET.setTick(w2, 'c1', k3, false); // window 2
+  const same = ET.saveMerge(w2, 'r1', w1, 'r1', base);
+  assert.strictEqual(same.merged, false, 'no other save since: written as is');
+  const r = ET.saveMerge(w2, 'r2', w1, 'r1', base);
+  assert.strictEqual(r.merged, true);
+  assert.deepStrictEqual(Object.keys(r.state.ticks.c1).sort(), [k1, k2].sort(), "window 1's tick kept, window 2's tick added and its removal applied");
+});
+
+test('class quests: each starting class does only one route of its first class quests', () => {
+  const sec = idx.sections.find((s) => s.id === 'quests-classjobquests');
+  const gla = sec.groups.find((g) => g.t === 'Gladiator Quests').keys.map((k) => idx.byKey.get(k).e);
+  const ways = gla.filter((e) => e.n === 'Way of the Gladiator');
+  assert.strictEqual(ways.length, 2);
+  const starter = ways.find((e) => e.sc === 'gla'), joiner = ways.find((e) => e.jc === 'gla');
+  assert.ok(starter && joiner);
+  const st = ET.newState(['G', 'P', 'N']);
+  ET.setStart(st, 'c1', 'gla', null); ET.setStart(st, 'c2', 'pgl', null);
+  const [g, p, n] = st.chars;
+  assert.strictEqual(ET.notApplicable(st, g, 'quests-classjobquests:' + joiner.i, joiner), 'cls');
+  assert.strictEqual(ET.notApplicable(st, g, 'quests-classjobquests:' + starter.i, starter), null);
+  assert.strictEqual(ET.notApplicable(st, p, 'quests-classjobquests:' + starter.i, starter), 'cls');
+  assert.strictEqual(ET.notApplicable(st, p, 'quests-classjobquests:' + joiner.i, joiner), null);
+  assert.strictEqual(ET.notApplicable(st, n, 'quests-classjobquests:' + joiner.i, joiner), null, 'unknown starting class: both count');
+  // the guild's "So You Want to Be a Gladiator" is the joiner route's first step
+  const sywtb = firstKey('quests-other', (e) => e.n === 'So You Want to Be a Gladiator');
+  assert.strictEqual(idx.byKey.get(sywtb).e.jc, 'gla');
+  // every same-named pair in the list is now one route each
+  for (const grp of sec.groups) {
+    const seen = new Map();
+    for (const k of grp.keys) { const e = idx.byKey.get(k).e; if (seen.has(e.n)) { const o = seen.get(e.n); assert.ok((o.sc && e.jc) || (o.jc && e.sc), grp.t + ': ' + e.n); } else seen.set(e.n, e); }
+  }
+  assert.throws(() => ET.setStart(st, 'c1', undefined, 7), /Unknown Grand Company/);
+  // a desktop-app save ticks the joiner version (the app lists one version): for a starter it moves to the starter version
+  st.ticks.c1['quests-classjobquests:' + joiner.i] = 1; st.ticks.c1[sywtb] = 1;
+  ET.migrateAliases(idx, st);
+  assert.ok(st.ticks.c1['quests-classjobquests:' + starter.i] && !st.ticks.c1['quests-classjobquests:' + joiner.i]);
+  assert.ok(st.ticks.c1[sywtb], 'a joiner-only step keeps its tick (shown as not applying, not counted)');
+  st.ticks.c2['quests-classjobquests:' + joiner.i] = 1; ET.migrateAliases(idx, st);
+  assert.ok(st.ticks.c2['quests-classjobquests:' + joiner.i], 'a Pugilist starter joined Gladiator later: tick stays');
+});
+
+test('data: repeated PvP arena rows and duplicate emote rows are merged, and old ticks move over', () => {
+  const pvp = idx.sections.find((s) => s.id === 'duty-pvp');
+  const names = ET.sectionKeys(pvp).map((k) => { const h = idx.byKey.get(k); return h.g.t + '|' + h.e.n; });
+  assert.strictEqual(new Set(names).size, names.length, 'one row per arena and mode');
+  const pal = ET.sectionKeys(pvp).map((k) => idx.byKey.get(k).e).find((e) => e.n === 'The Palaistra' && e.al);
+  assert.ok(pal && pal.al.length >= 5);
+  const st = ET.newState(['A']);
+  st.ticks.c1['duty-pvp:' + pal.al[0]] = 1;
+  ET.migrateAliases(idx, st);
+  assert.ok(st.ticks.c1['duty-pvp:' + pal.i]);
+  const em = ET.sectionKeys(idx.sections.find((s) => s.id === 'emotes')).map((k) => idx.byKey.get(k).e.n);
+  assert.strictEqual(em.filter((n) => n === 'Dote').length, 1);
+});
+
+test('data: seasonal event quests and titles of time-limited achievements are marked time-limited', () => {
+  const oq = idx.sections.find((s) => s.id === 'quests-otherquests');
+  const ev = oq.groups.filter((g) => / Events$/.test(g.t)).flatMap((g) => g.keys);
+  assert.ok(ev.length > 250);
+  assert.ok(ev.every((k) => idx.byKey.get(k).e.x === 'lim'));
+  const titles = ET.sectionKeys(idx.sections.find((s) => s.id === 'titles')).map((k) => idx.byKey.get(k).e);
+  assert.ok(titles.filter((e) => e.x === 'lim').length > 100 && titles.filter((e) => e.x === 'gone').length > 40);
 });
 
 // ---------------------------------------------------------------- links between entries
@@ -489,6 +683,19 @@ const edgesOf = (kind) => [...LX.imp].flatMap(([a, ts]) => ts.filter((t) => t[1]
 test('links: built for this data, and refused when built for other data', () => {
   assert.ok(LX && LX.count > 10000);
   assert.strictEqual(ET.indexLinks(idx, Object.assign({}, LINKS, { entries: LINKS.entries + 1 })), null);
+  // the same number of entries, but one removed and another added elsewhere: every link after the change would land
+  // on the wrong row, so a links file that carries the data's key hash is refused
+  const keys = [...idx.byKey.keys()];
+  const hashed = Object.assign({}, LINKS, { keys_hash: ET.keysHash(keys) });
+  assert.ok(ET.indexLinks(idx, hashed), 'accepted with the matching hash');
+  const other = JSON.parse(JSON.stringify(data));
+  const m = other.sections.find((s) => s.id === 'mounts'); m.g[0].e.splice(0, 1);
+  const mi = other.sections.find((s) => s.id === 'minions'); mi.g[mi.g.length - 1].e.push({ i: 999999, n: 'New' });
+  const idx2 = ET.indexData(other);
+  assert.strictEqual(idx2.byKey.size, idx.byKey.size);
+  assert.strictEqual(ET.indexLinks(idx2, hashed), null, 'refused: same count, other entries');
+  assert.strictEqual(ET.keysHash(['a:1', 'b:2']), ET.keysHash(['a:1', 'b:2']));
+  assert.notStrictEqual(ET.keysHash(['a:1', 'b:2']), ET.keysHash(['b:2', 'a:1']));
 });
 
 test('links: a quest ticks the quests it needs, all the way back, and never another city\'s quests', () => {
@@ -558,6 +765,24 @@ test('links: a level reached ticks the level achievement; links only add and ski
   ET.setTick(st2, 'c1', q, true);
   assert.ok(!ET.applyLinks(LX, idx, st2, 'c1', [q]).includes(cur));
   assert.ok(!st2.ticks.c1[cur]);
+});
+
+test('links: a duty unlocked by one quest per city or company never assumes a city or company', () => {
+  const byName = (sid, n) => firstKey(sid, (e) => e.n === n);
+  const gh = byName('duty-guildhests', 'Basic Training: Enemy Parties'); // unlocked by one "Simply the Hest" per starting city
+  const st = ET.newState(['A']);
+  ET.setTick(st, 'c1', gh, true);
+  const added = ET.applyLinks(LX, idx, st, 'c1', [gh]);
+  assert.deepStrictEqual(added.filter((k) => idx.byKey.get(k).e.city), [], 'no starting class chosen: no city quest is assumed');
+  const st2 = ET.newState(['B']);
+  ET.setStart(st2, 'c1', 'cnj', null);
+  ET.setTick(st2, 'c1', gh, true);
+  const cities = new Set(ET.applyLinks(LX, idx, st2, 'c1', [gh]).map((k) => idx.byKey.get(k).e.city).filter(Boolean));
+  assert.deepStrictEqual([...cities], ['gri'], 'a Gridania starter: Gridania quests only');
+  const pvp = byName('duty-pvp', 'The Borderland Ruins (Secure)'); // unlocked by one quest per Grand Company
+  const st3 = ET.newState(['C']);
+  ET.setTick(st3, 'c1', pvp, true);
+  assert.deepStrictEqual(ET.applyLinks(LX, idx, st3, 'c1', [pvp]).filter((k) => idx.byKey.get(k).e.gc), [], 'no Grand Company chosen: no company quest is assumed');
 });
 
 test('links: achievement tiers, Dawntrail relic stages, Grand Company ranks, and checked links from the desktop app', () => {

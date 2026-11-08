@@ -50,22 +50,29 @@
 
   async function findFile(f, token) {
     const q = encodeURIComponent("name='" + FILE + "'");
-    const r = await call(f, token, DRIVE + '?spaces=appDataFolder&fields=files(id,modifiedTime)&q=' + q);
+    // oldest first: if two devices ever created the file at the same moment, every device keeps using the same one
+    const r = await call(f, token, DRIVE + '?spaces=appDataFolder&orderBy=createdTime&fields=files(id,modifiedTime)&q=' + q);
     const j = await r.json();
     return (j.files && j.files[0]) || null;
   }
 
+  // Returns { id, modifiedTime } of the written file. Google accepts at most 5 MB in one such request: a larger copy
+  // is refused here with a plain message instead of Google's bare error (backup files and transfer codes still work).
+  ET.DRIVE_MAX_BYTES = 5 * 1024 * 1024 - 64 * 1024;
   async function upload(f, token, fileId, doc) {
     const body = JSON.stringify(doc);
+    if (body.length > ET.DRIVE_MAX_BYTES) throw Object.assign(new Error('The cloud copy has grown past the 5 MB that cloud sync can send in one go, so nothing was sent. Use backup files or a transfer code until the tracker is updated.'), { code: 'too-large' });
     if (fileId) {
-      await call(f, token, UPLOAD + '/' + fileId + '?uploadType=media', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
-      return fileId;
+      const r = await call(f, token, UPLOAD + '/' + fileId + '?uploadType=media&fields=id,modifiedTime', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+      let j = null; try { j = await r.json(); } catch (e) { j = null; }
+      return { id: fileId, modifiedTime: (j && j.modifiedTime) || null };
     }
     const boundary = 'evt' + Math.random().toString(36).slice(2);
     const meta = JSON.stringify({ name: FILE, parents: ['appDataFolder'] });
     const multipart = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + meta + '\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--' + boundary + '--';
-    const r = await call(f, token, UPLOAD + '?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + boundary }, body: multipart });
-    return (await r.json()).id;
+    const r = await call(f, token, UPLOAD + '?uploadType=multipart&fields=id,modifiedTime', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + boundary }, body: multipart });
+    const j = await r.json();
+    return { id: j.id, modifiedTime: j.modifiedTime || null };
   }
 
   // Step 1: read the cloud copy and merge. Returns { done: true } when nothing needs the owner,
@@ -73,7 +80,11 @@
   // The cloud copy carries the app tag and state version, so a copy written by a newer version is never merged by an
   // older one (it would read the unknown parts as deletions).
   const cloudDoc = (st) => Object.assign({ app: 'eveniunt-completionist-tracker', v: ET.STATE_VERSION }, ET.portable(st));
-  const looksValid = (doc) => !!(doc && typeof doc === 'object' && Array.isArray(doc.chars) && doc.chars.some((c) => c && ET.CHAR_ID.test(c.id)) && doc.ticks && typeof doc.ticks === 'object');
+  const looksValid = (doc) => {
+    if (!doc || doc.app !== 'eveniunt-completionist-tracker' || !Number.isInteger(doc.v) || doc.v < 1 || doc.v > ET.STATE_VERSION || !Array.isArray(doc.chars) || !doc.chars.length || doc.chars.length > ET.MAX_CHARS || !doc.ticks || typeof doc.ticks !== 'object' || Array.isArray(doc.ticks)) return false;
+    const ids = new Set();
+    return doc.chars.every((c) => c && typeof c.id === 'string' && ET.CHAR_ID.test(c.id) && !ids.has(c.id) && ids.add(c.id) && Object.prototype.hasOwnProperty.call(doc.ticks, c.id) && doc.ticks[c.id] && typeof doc.ticks[c.id] === 'object' && !Array.isArray(doc.ticks[c.id]));
+  };
   const tickCount = (p) => Object.values((p && p.ticks) || {}).reduce((a, t) => a + Object.keys(t || {}).length, 0);
   // How many of this device's ticks the merge would remove without asking (changes made on the other device).
   ET.mergeLoss = function (local, result) {
@@ -89,8 +100,8 @@
     const file = await findFile(f, token);
     const local = ET.portable(st);
     if (!file) {
-      const id = await upload(f, token, null, cloudDoc(st));
-      st.sync.drive = { fileId: id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(local)) };
+      const w = await upload(f, token, null, cloudDoc(st));
+      st.sync.drive = { fileId: w.id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(local)) };
       return { done: true, created: true };
     }
     const r = await call(f, token, DRIVE + '/' + file.id + '?alt=media');
@@ -101,31 +112,53 @@
     const base = st.sync.drive && st.sync.drive.fileId === file.id ? st.sync.drive.base : null;
     const result = ET.threeWay(base, local, remote);
     const loss = ET.mergeLoss(local, result);
-    const pending = { result, fileId: file.id, modifiedTime: file.modifiedTime };
-    const big = loss > 50 && loss > tickCount(local) / 10;
+    const pending = { result, fileId: file.id, modifiedTime: file.modifiedTime, remote };
+    // every tick the other device's copy would remove here is confirmed first, however few (a damaged or stale copy
+    // must never remove ticks silently; unticking is rare in a completion tracker, so the question is rare too)
+    const big = loss > 0;
     if (result.conflicts.length || big) return Object.assign({ done: false, conflicts: result.conflicts, loss: big ? loss : 0 }, pending);
     await ET.driveFinish(st, token, pending, {}, f);
     return { done: true };
   };
 
-  // Step 2: apply the owner's choices, write the merged copy back, and remember it as the new base. If the cloud copy
-  // changed since step 1 (another device synced meanwhile), nothing is written and the caller syncs again.
+  // Step 2: apply the owner's choices, write the merged copy back, and remember it as the new base.
+  //  - If the cloud copy changed since step 1 (another device synced meanwhile), nothing is written ('changed': the
+  //    caller syncs again).
+  //  - The merge is built on a copy and applied here only once the upload has worked; ticks made on this device during
+  //    the upload are kept.
+  //  - Google Drive has no "write only if unchanged", so a device writing in the instant between the check and the
+  //    upload could still be overwritten. After writing, the file is checked again a moment later: if another device
+  //    wrote after this one, the base is set back to the copy this device merged from, so the next sync (started at
+  //    once: 'changed') combines both copies instead of reading the other device's ticks as removals. Each device does
+  //    the same check, so whichever wrote first also sees the later write and combines.
+  ET.DRIVE_SETTLE_MS = 2500;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ET.driveFinish = async function (st, token, pending, choices, fetchImpl) {
     const f = fetchImpl || globalThis.fetch;
     if (pending.modifiedTime) {
       const now = await findFile(f, token);
       if (now && now.modifiedTime && now.modifiedTime !== pending.modifiedTime) throw Object.assign(new Error('Another device synced at the same time. Sync again to include its changes.'), { code: 'changed' });
     }
-    ET.applyMerge(st, pending.result, choices);
-    const doc = ET.portable(st);
-    const id = await upload(f, token, pending.fileId, cloudDoc(st));
-    st.sync.drive = { fileId: id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(doc)) };
+    const before = JSON.parse(JSON.stringify(ET.portable(st)));
+    const candidate = ET.applyMerge(JSON.parse(JSON.stringify(st)), pending.result, choices);
+    const doc = JSON.parse(JSON.stringify(ET.portable(candidate)));
+    const w = await upload(f, token, pending.fileId, cloudDoc(candidate));
+    // apply the merged copy here; anything changed on this device since step 1 is kept on top of it
+    ET.applyMerge(st, ET.threeWay(before, ET.portable(st), doc), {});
+    st.sync.drive = { fileId: w.id, at: new Date().toISOString(), base: doc };
+    if (!w.modifiedTime) return;
+    if (ET.DRIVE_SETTLE_MS) await wait(ET.DRIVE_SETTLE_MS);
+    const after = await findFile(f, token);
+    if (after && after.id === w.id && after.modifiedTime && after.modifiedTime !== w.modifiedTime) {
+      st.sync.drive.base = pending.remote ? JSON.parse(JSON.stringify(pending.remote)) : null;
+      throw Object.assign(new Error('Another device synced at the same moment. Syncing again to combine both.'), { code: 'changed' });
+    }
   };
 
   // Replace the cloud copy with this device's data (used only when the owner chooses it, e.g. after a damaged copy).
   ET.driveOverwrite = async function (st, token, fileId, fetchImpl) {
     const f = fetchImpl || globalThis.fetch;
-    const id = await upload(f, token, fileId || null, cloudDoc(st));
-    st.sync.drive = { fileId: id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(ET.portable(st))) };
+    const w = await upload(f, token, fileId || null, cloudDoc(st));
+    st.sync.drive = { fileId: w.id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(ET.portable(st))) };
   };
 })();

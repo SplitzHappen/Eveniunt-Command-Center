@@ -48,6 +48,10 @@
         if (!r.ok) { out.unavailable[col] = 'FFXIV Collect answered ' + r.status; continue; }
         const rows = await r.json();
         if (!Array.isArray(rows)) { out.unavailable[col] = 'unexpected answer from FFXIV Collect'; continue; }
+        // FFXIV Collect fills mounts, minions, achievements, emotes and facewear from the Lodestone; the other
+        // collections are only what the player recorded on its site by hand. An empty list almost always means
+        // "nothing recorded there", never "owns none", so it is not compared (it could only ask to untick everything).
+        if (!rows.length) { out.unavailable[col] = 'nothing recorded on FFXIV Collect'; continue; }
         out.ok[col] = rows.map((x) => x && x.id).filter((x) => Number.isInteger(x));
       } catch (e) {
         out.offline = true;
@@ -60,9 +64,12 @@
   // Compare one character's online ownership with this device.
   //  - base: the online lists stored at the last accepted refresh.
   //  - auto: newly owned online, and this device had not changed that entry since the last refresh.
-  //  - ask:  every other difference (including the first refresh, which has no base).
+  //  - ask:  every other difference (including the first refresh, which has no base), except one the owner has
+  //          already answered with "this device is right" while neither side has changed since (answered: key ->
+  //          [online, local] at the time of the answer); otherwise the same prompt would return at every start.
   ET.reconcileOwned = function (idx, st, charId, owned) {
     const prev = (st.sync.fc[charId] && st.sync.fc[charId].owned) || {};
+    const answered = (st.sync.fc[charId] && st.sync.fc[charId].answered) || {};
     const auto = [];
     const ask = [];
     for (const sec of idx.sections) {
@@ -76,6 +83,8 @@
         const on = online.has(fid);
         const local = ET.isTicked(st, charId, k);
         if (on === local) continue;
+        const a = answered[k];
+        if (Array.isArray(a) && a[0] === on && a[1] === local) continue;
         const wasOn = base ? base.has(fid) : null;
         if (base && on && local === wasOn) auto.push({ key: k, value: true });
         else ask.push({ key: k, local, online: on, name: e.n, section: sec.t });
@@ -87,11 +96,13 @@
   // Apply the result: auto changes, the owner's choices for asked items ({key: 'online'|'local'}),
   // and remember the online lists as the new base.
   ET.acceptRefresh = function (st, charId, owned, rec, choices) {
+    const answered = Object.assign({}, (st.sync.fc[charId] && st.sync.fc[charId].answered) || {});
     for (const a of rec.auto) ET.setTick(st, charId, a.key, a.value);
     for (const q of rec.ask) {
-      if ((choices || {})[q.key] === 'online') ET.setTick(st, charId, q.key, q.online);
+      if ((choices || {})[q.key] === 'online') { ET.setTick(st, charId, q.key, q.online); delete answered[q.key]; }
+      else answered[q.key] = [q.online, q.local]; // remembered, so the same difference is not asked again
     }
     const keep = (st.sync.fc[charId] && st.sync.fc[charId].owned) || {};
-    st.sync.fc[charId] = { at: new Date().toISOString(), owned: Object.assign({}, keep, owned.ok), unavailable: owned.unavailable };
+    st.sync.fc[charId] = { at: new Date().toISOString(), owned: Object.assign({}, keep, owned.ok), unavailable: owned.unavailable, answered };
   };
 })();

@@ -146,6 +146,9 @@ for qid, key in list(quest_key.items()):
     me = KEYS[key][2]
     kind_, opts_ = choice_prereqs(qid)
     for targets_, code_ in opts_:
+        # a quest of one company (or city) only ever follows its own company's option: the others never apply
+        if me.get("gc") and code_.startswith("qg:") and code_ != "qg:" + str(me["gc"]): continue
+        if me.get("city") and code_.startswith("qc:") and {"lim": "l", "gri": "g", "uld": "u"}[me["city"]] not in code_[3:]: continue
         for t_ in targets_: add_imp(key, t_, code_)
     for pk in nearest_tracked(qid, {qid}):
         pe = KEYS[pk][2]
@@ -379,7 +382,10 @@ for grp, levels in tiers.items():
     ths = sorted(levels)
     for hi, lo in zip(ths[1:], ths[:-1]):
         for a_ in levels[hi]:
-            for b_ in levels[lo]: add_imp(a_, b_, "a")
+            for b_ in levels[lo]:
+                # a Legacy (version 1.0) achievement shares its counter with today's, but nobody can earn it now
+                if b_.startswith("ach-legacy:") or a_.startswith("ach-legacy:"): unmatched["tier link into Legacy achievements (skipped)"] += 1; continue
+                add_imp(a_, b_, "a")
 # emotes unlocked by the same item come together
 by_item = collections.defaultdict(list)
 for g, e in entries("emotes"):
@@ -489,7 +495,16 @@ for s_ in DATA["sections"]:
         for e in g["e"]: ORDER[s_["id"] + ":" + str(e["i"])] = len(ORDER)
 n_ = lambda key: ORDER[key]
 ns = lambda keys: keys if isinstance(keys, str) else [n_(x) for x in keys]
-out = {"v": 1, "entries": len(ORDER),
+def keys_hash(keys):
+    # FNV-1a (32 bit) over the key list, the same as ET.keysHash in src/core/links.js: the tracker refuses a links
+    # file whose hash does not match its data (an entry added, removed or moved since the links were built)
+    h = 0x811C9DC5
+    for key in keys:
+        for ch in key.encode("utf-8"):
+            h = ((h ^ ch) * 0x01000193) & 0xFFFFFFFF
+        h = ((h ^ 10) * 0x01000193) & 0xFFFFFFFF
+    return "%08x" % h
+out = {"v": 1, "entries": len(ORDER), "keys_hash": keys_hash(list(ORDER)),
        "imp": [[n_(a), n_(b), kind] for a, b, kind in imp2],
        "all": [[n_(t_), ns(m_), kind] for t_, m_, kind in all_r],
        "any": [[n_(t_), ns(m_), kind] for t_, m_, kind in any_r],

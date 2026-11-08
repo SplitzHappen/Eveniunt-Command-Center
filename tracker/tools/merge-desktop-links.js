@@ -46,6 +46,12 @@ function sameEntry(key, dname, dgroup) {
   if (tn === dn || h.e.n.split('&').some((p) => norm(p) === dn) || String(dname).split('&').some((p) => norm(p) === tn)) return true;
   return h.s.id.startsWith('quests-') && tn.length > 6 && lev(tn, dn) <= 2;
 }
+// two entries with the same name in the same group are alternative versions of one step (the game offers each
+// character only one of them: the level 1 to 10 class quests exist once for characters who started as that class and
+// once for those who joined it later); the desktop app links to one version only, which is wrong for everyone on the
+// other version, so such links are left to the game data
+const twins = new Set();
+for (const s of data.sections) for (const g of s.g) { const seen = new Map(); for (const e of g.e) { const k = s.id + ':' + e.i; if (seen.has(e.n)) { twins.add(k); twins.add(seen.get(e.n)); } else seen.set(e.n, k); } }
 const ctx = [['cnj', 2], ['mrd', 1], ['gla', 3]];
 const cache = new Map();
 function closure(a) {
@@ -62,6 +68,7 @@ for (const [a, b, field, na, nb, ga, gb] of D.imp) {
   if (!idx.byKey.has(a) || !idx.byKey.has(b)) continue;
   if (closure(a).has(b)) { rep.covered++; continue; }
   if (!sameEntry(a, na, ga) || !sameEntry(b, nb, gb)) { reject('not the same entry any more (desktop data from patch 7.38)', a, b); continue; }
+  if (twins.has(b) && b.startsWith('quests-')) { reject('points at one of two same-named quest versions (starter and joiner routes)', a, b); continue; }
   const ea = idx.byKey.get(a).e, eb = idx.byKey.get(b).e;
   if ((ea.city && eb.city && ea.city !== eb.city) || (ea.gc && eb.gc && ea.gc !== eb.gc)) { reject('crosses starting cities or Grand Companies', a, b); continue; }
   if (job(a) && job(b) && job(a) !== job(b)) { reject('relic link across jobs (desktop data error)', a, b); continue; }
@@ -95,5 +102,8 @@ for (const [t, m, , tn, mn] of D.all) {
 }
 rep.combosAdopted = combos;
 rep.brokenInDesktopData = (D.broken || []).length;
+// stable order, so rerunning on the same inputs gives the same file byte for byte
+const cmp = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
+L.imp.sort((x, y) => x[0] - y[0] || x[1] - y[1] || cmp(String(x[2]), String(y[2])));
 fs.writeFileSync(LP, JSON.stringify(L));
 console.log(JSON.stringify(rep, null, 1));

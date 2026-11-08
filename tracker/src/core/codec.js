@@ -16,7 +16,9 @@
     let doc;
     try { doc = JSON.parse(text); } catch (e) { throw new Error('This file is not a tracker backup (not JSON).'); }
     if (!doc || doc.app !== FILE_TAG || !doc.state) throw new Error('This file is not a tracker backup.');
-    const st = Object.assign({ sync: { fc: {}, drive: null }, updated: Date.now() }, doc.state);
+    // sync bookkeeping (cloud file id and merge base, online-refresh lists) is this device's own and never travels
+    // in a file: a crafted file must not plant a merge base or a cloud file id
+    const st = Object.assign({}, doc.state, { sync: { fc: {}, drive: null, backupAt: null }, updated: Date.now() });
     return ET.validateState(st);
   };
 

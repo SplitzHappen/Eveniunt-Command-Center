@@ -14,11 +14,23 @@
     f: 'FATE', g: 'FATE achievement (assumes a gold rating)', x: 'from the FFXIV Completionist desktop app',
   };
 
+  // Links name entries by their position in the data file. A links file built for other data (an entry added,
+  // removed or moved) would tick the wrong things, so the data's key list is hashed and compared (FNV-1a, 32 bit);
+  // the entry count alone cannot tell a reordered list from the original.
+  ET.keysHash = function (keys) {
+    let h = 0x811c9dc5;
+    for (const k of keys) {
+      for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+      h ^= 10; h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return ('00000000' + h.toString(16)).slice(-8);
+  };
   ET.indexLinks = function (idx, L) {
     if (!L || !Array.isArray(L.imp)) return null;
     const keys = [];
     for (const s of idx.data.sections) for (const g of s.g) for (const e of g.e) keys.push(s.id + ':' + e.i);
     if (L.entries !== keys.length) return null; // built for other data: unusable, never misapplied
+    if (L.keys_hash !== ET.keysHash(keys)) return null; // same count but other entries or another order (or no hash)
     const secKeys = new Map(idx.sections.map((s) => [s.id, ET.sectionKeys(s)]));
     const K = (x) => keys[x];
     const M = (m) => (typeof m === 'string' ? secKeys.get(m.slice(2)) || [] : m.map(K));
@@ -57,10 +69,21 @@
     // a choice between the starting cities' (or Grand Companies') versions of a step: only with the character's own
     // kind "qc:lg" applies to Limsa and Gridania starters, "qg:2" to the Twin Adder, and so on
     const cityLetter = { lim: 'l', gri: 'g', uld: 'u' }[ET.cityOf(char)] || '';
-    const chosen = (k, kind) => {
+    // an entry of one starting city, Grand Company or class route is never assumed for a character whose city,
+    // company or starting class is not set yet, unless the entry it follows from already belongs to the same one (a
+    // company rank proves its own company's quest; a guildhest unlocked by one quest per city proves none of them)
+    const same = (from, to) => {
+      const f = idx.byKey.get(from), t = idx.byKey.get(to);
+      if (!f || !t) return false;
+      if (t.e.city && !cityLetter && f.e.city !== t.e.city) return false;
+      if (t.e.gc && !char.gc && f.e.gc !== t.e.gc) return false;
+      if ((t.e.sc || t.e.jc) && !char.cls && (f.e.sc !== t.e.sc || f.e.jc !== t.e.jc)) return false; // class route
+      return true;
+    };
+    const chosen = (from, k, kind) => {
       if (kind.startsWith('qc:')) return !!cityLetter && kind.slice(3).includes(cityLetter);
       if (kind.startsWith('qg:')) return !!char.gc && kind.slice(3) === String(char.gc);
-      return true;
+      return same(from, k);
     };
     const check = (id) => {
       const r = X.rules[id];
@@ -84,7 +107,7 @@
     if (opts && opts.everything) X.rules.forEach((r, id) => { if (r.type === 'lvl' || r.type === 'cnt') check(id); });
     while (queue.length) {
       const k = queue.shift();
-      for (const [t, kind] of X.imp.get(k) || []) if ((kind !== 'g' || gold) && chosen(t, kind)) tick(t);
+      for (const [t, kind] of X.imp.get(k) || []) if ((kind !== 'g' || gold) && chosen(k, t, kind)) tick(t);
       for (const id of X.member.get(k) || []) check(id);
     }
     if (added.length) st.updated = Date.now();

@@ -3,7 +3,7 @@
   "mounts": 369,
   "minions": 587,
   "orchestrion": 886,
-  "emotes": 205,
+  "emotes": 202,
   "hairstyles": 53,
   "cards": 475,
   "bluemagic": 124,
@@ -51,7 +51,7 @@
   "duty-variant": 12,
   "duty-chaotic": 1,
   "duty-quest": 85,
-  "duty-pvp": 82,
+  "duty-pvp": 21,
   "aetherytes": 197,
   "aethercurrents": 303,
   "leves": 1757,
@@ -69,15 +69,18 @@
   "no patch: minion": 7,
   "minion duplicate name (dropped)": 3,
   "no patch: emote": 37,
+  "emote duplicate row (merged into the first)": 3,
   "fashion accessory now facewear (dropped)": 4,
   "barding without item": 1,
   "no patch: barding": 6,
   "quest patch not recorded (4.31 or earlier)": 3050,
   "no patch: quest": 3050,
+  "quest: seasonal event (marked time-limited)": 310,
   "recipes outside the crafting log (kept as their own group)": 16,
   "gathering item placed by Teamcraft log pages (no node in the game data)": 53,
   "gathering log item with no known spot (kept, counted, own group)": 20,
   "no patch: duty": 106,
+  "PvP: repeated arena row (merged into the first)": 61,
   "FATE not placed in any zone (kept, marked availability unknown)": 463
  },
  "status": {
@@ -86,18 +89,20 @@
   "minions: time-limited only": 70,
   "minions: not in FFXIV Collect": 3,
   "orchestrion: time-limited only": 25,
-  "emotes: not in FFXIV Collect": 4,
+  "emotes: not in FFXIV Collect": 3,
   "emotes: time-limited only": 29,
   "hairstyles: time-limited only": 5,
   "barding: time-limited only": 1,
   "fashion: time-limited only": 6,
   "facewear: time-limited only": 8,
   "achievements: time-limited": 328,
-  "achievements: legacy (no longer obtainable)": 261
+  "achievements: legacy (no longer obtainable)": 261,
+  "titles: no longer obtainable (Legacy achievements)": 51,
+  "titles: time-limited (from their achievements)": 138
  },
  "marked": {
-  "lim": 514,
-  "gone": 274,
+  "lim": 962,
+  "gone": 325,
   "unk": 463
  },
  "city_and_gc": {
@@ -111,7 +116,9 @@
   "leves: gri": 1,
   "leves: lim": 1,
   "leves: uld": 1,
-  "quest variants merged": 5
+  "quest variants merged": 5,
+  "quest: starter route of a class": 16,
+  "quest: joiner route of a class": 32
  },
- "total": 38521
+ "total": 38457
 }

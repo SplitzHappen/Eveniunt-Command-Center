@@ -9,6 +9,10 @@
   var DATA = JSON.parse($('#tracker-data').textContent);
   var MAP = JSON.parse($('#desktop-map').textContent);
   var IDX = ET.indexData(DATA);
+  // rows whose name repeats inside their group (portrait parts, fishing spots, FATE versions, missions) show the first
+  // part of their details next to the name, so they can be told apart without opening each one
+  var TWIN = new Set();
+  IDX.sections.forEach(function (sec) { sec.groups.forEach(function (g) { var n = {}; g.keys.forEach(function (k) { var nm = IDX.byKey.get(k).e.n; (n[nm] = n[nm] || []).push(k); }); Object.keys(n).forEach(function (nm) { if (n[nm].length > 1) n[nm].forEach(function (k) { TWIN.add(k); }); }); }); });
   var LX = ET.indexLinks(IDX, JSON.parse($('#links-data').textContent)); // links between entries (null if they do not fit this data)
   var RAW = new Map(DATA.sections.map(function (s) { return [s.id, s]; }));
   var SEC = new Map(IDX.sections.map(function (s) { return [s.id, s]; }));
@@ -21,7 +25,7 @@
   var S = { theme: (load() || {}).theme || 'system', look: null };
   var UI = Object.assign({ view: 'home', sec: null, mode: 'tick', filter: 'all', folded: {}, open: {}, showX: true }, (load() || {}).ui || {});
   if (['all', 'missing', 'done', 'unob'].indexOf(UI.filter) < 0) UI.filter = 'all';
-  UI.q = ''; UI.find = '';
+  UI.q = ''; UI.find = ''; UI.mode = 'tick'; // the "does not apply" mode is for one sitting: a plain click always means done after a reload
   function persist() {
     try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode, showX: UI.showX } })); } catch (e) { /* private window */ }
   }
@@ -149,7 +153,10 @@
   // ── entries ──
   var MARK = { lim: 'Time-limited: only from events, seasonal content or ended campaigns', gone: 'No longer obtainable', unk: 'Availability unknown' };
   var SHORT = { lim: 'Time-limited', gone: 'Unobtainable', unk: 'Unknown' };
-  var WHY = { city: 'another starting city', gc: 'another Grand Company', manual: 'marked by you' };
+  var WHY = { city: 'another starting city', gc: 'another Grand Company', cls: 'the other route of the first class quests (set by the starting class)', manual: 'marked by you' };
+  // the checklist workbook pre-excludes rows that do not exist or no longer can be done (for example a second mount
+  // speed increase in a zone that has only one), so its mark is worded for both cases
+  function markText(hit, code, table) { if (code === 'gone' && RAW.get(hit.s.id).src === 'checklist') return table === SHORT ? 'Not applicable' : 'Not applicable or no longer obtainable (the checklist lists no such step)'; return table[code] || ''; }
   function detailHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
     if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
@@ -192,7 +199,7 @@
     var na = ST.chars.map(function (c) { var w = ET.notApplicable(ST, c, k, e); return w ? esc(c.name) + ' (' + WHY[w] + ')' : null; }).filter(Boolean);
     if (na.length) bits.push('<div><b>Does not apply to:</b> ' + na.join(', ') + '</div>');
     if (!av.info) {
-      var status = av.counted ? (av.manual === 'ok' ? 'Counted (your choice; normally: ' + esc(MARK[av.builtIn] || '') + ')' : 'Counted in totals') : (av.manual === 'x' ? 'Not counted: you marked it unobtainable' : 'Not counted: ' + esc(MARK[av.builtIn] || ''));
+      var status = av.counted ? (av.manual === 'ok' ? 'Counted (your choice; normally: ' + esc(markText(hit, av.builtIn, MARK)) + ')' : 'Counted in totals') : (av.manual === 'x' ? 'Not counted: you marked it unobtainable' : 'Not counted: ' + esc(markText(hit, av.builtIn, MARK)));
       bits.push('<div class="row"><span><b>Status:</b> ' + status + '</span><button type="button" class="btn sm" data-x="' + k + '">' + (av.counted ? 'Mark unobtainable (stop counting)' : 'Count it anyway') + '</button>' + (av.manual ? '<button type="button" class="btn sm ghost" data-xauto="' + k + '">Back to the default</button>' : '') + '</div>');
     }
     return '<div class="det" data-det="' + k + '">' + bits.join('') + '</div>';
@@ -207,8 +214,8 @@
       }
       return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" title="' + esc(c.name) + (na ? ': does not apply (' + WHY[na] + ')' : '') + (na && na !== 'manual' ? '' : ' · click: done · right-click: does not apply · click again: clear') + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
     }).join('');
-    var pill = av.marked ? '<button type="button" class="pill" data-x="' + k + '" title="Not counted. Click to count it anyway.">' + (av.manual === 'x' ? 'Not counted' : SHORT[av.builtIn] || 'Not counted') + '</button>' : '';
-    return '<div class="lr er' + (av.marked ? ' x' : '') + (open ? ' open' : '') + '" data-k="' + k + '"><span class="c0" data-open="' + k + '"><span class="nm">' + esc(e.n) + '</span>' + (e.p ? '<span class="p">' + esc(e.p) + '</span>' : '') + pill + '</span>' + cells + '</div>' + (open ? detailHtml(k) : '');
+    var pill = av.marked ? '<button type="button" class="pill" data-x="' + k + '" title="Not counted. Click to count it anyway.">' + (av.manual === 'x' ? 'Not counted' : markText(hit, av.builtIn, SHORT) || 'Not counted') + '</button>' : '';
+    return '<div class="lr er' + (av.marked ? ' x' : '') + (open ? ' open' : '') + '" data-k="' + k + '"><span class="c0" data-open="' + k + '" tabindex="0" role="button" aria-expanded="' + open + '"><span class="nm">' + esc(e.n) + '</span>' + (TWIN.has(k) && (e.d || e.sc || e.jc) ? '<span class="p">' + esc(e.sc ? 'starting class route' : e.jc ? 'joined later route' : String(e.d).split(' · ')[0]) + '</span>' : '') + (e.p ? '<span class="p">' + esc(e.p) + '</span>' : '') + pill + '</span>' + cells + '</div>' + (open ? detailHtml(k) : '');
   }
   var OPEN = new Set();
   function norm(s) { return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
@@ -241,8 +248,8 @@
     // table of contents. A list with one group, a search inside the list and the global search show rows directly.
     var folded = !(OPENG.has(id) || UI.find || sid.indexOf('find:') === 0 || (sec && sec.groups.length === 1));
     var cnt = groupCounts(g.keys);
-    return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '"><span class="fold">▾</span><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '</span>' +
-      ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" title="' + esc(c.name) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '. Click to tick or clear the whole group.">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>' +
+    return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '" tabindex="0" role="button" aria-expanded="' + !folded + '"><span class="fold">▾</span><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '</span>' +
+      ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" tabindex="0" role="button" title="' + esc(c.name) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '. Click to tick or clear the whole group.">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>' +
       (folded ? '' : keys.map(rowHtml).join('')) + '</div>';
   }
   var OPENG = new Set(); // groups opened in the current list (reset each time a list is entered)
@@ -450,8 +457,13 @@
         var allOn = live.length && live.every(function (k2) { return ST.ticks[ch][k2]; });
         if (!live.length) { toast('Nothing in this group applies to ' + chObj.name); return; }
         if (!allOn && live.length > 25 && !confirm('Tick all ' + live.length + ' entries in this group for ' + chObj.name + '?')) return;
+        // clearing a whole group removes ticks: it is confirmed like a large tick and can be undone right after
+        if (allOn && live.length > 25 && !confirm('Clear all ' + live.length + ' ticks in this group for ' + chObj.name + '?')) return;
         ET.setMany(ST, [ch], live, !allOn);
         if (!allOn) { var gAdded = followLinks(ch, live); refreshAfter(keys.concat(gAdded)); announceLinks(ch, gAdded); return; }
+        refreshAfter(keys);
+        toastAction(live.length + ' ticks cleared for ' + chObj.name, 'Undo', function () { ET.setMany(ST, [ch], live, true); refreshAfter(keys); toast('Undone'); });
+        return;
       }
       refreshAfter(keys); return;
     }
@@ -483,7 +495,12 @@
     if (e.target.id === 'jump' && e.target.value !== '') { var g = $('.lgroup[data-g="' + UI.sec + '#' + e.target.value + '"]'); if (g) g.scrollIntoView({ block: 'start' }); else toast('That group is hidden by the current filter'); e.target.value = ''; }
   });
   window.addEventListener('popstate', route);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches && e.target.matches('.fr[data-act]')) { e.target.click(); return; } if (e.key === 'Escape' && document.body.classList.contains('drawer')) document.body.classList.remove('drawer'); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('.fr[data-act]')) { e.target.click(); return; }
+    // entry names (details), group headers (open/close) and group counts (tick/clear) are spans: Enter and Space act like a click
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-open], [data-fold], [data-gc]')) { e.preventDefault(); e.target.click(); return; }
+    if (e.key === 'Escape' && document.body.classList.contains('drawer')) document.body.classList.remove('drawer');
+  });
   var resizeTimer = null;
   window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { var l = $('#ledger'); if (l) { l.style.setProperty('--cw', cw() + 'px'); if (UI.view === 'sec') renderLedger(); } }, 200); });
   function route() {
@@ -557,9 +574,11 @@
     });
   }
   function charsTab() {
-    var missing = ST.chars.filter(function (c) { return !ET.cityOf(c); }).map(function (c) { return c.name; });
+    var missing = ST.chars.filter(function (c) { return !c.cls; }).map(function (c) { return c.name; });
+    var noGc = ST.chars.filter(function (c) { return !c.gc; }).map(function (c) { return c.name; });
     return '<p class="help">Up to eight characters, side by side in every list. The starting class decides which city’s opening quests apply; the Grand Company does the same for company quests. Entries for the other cities and companies are greyed out for that character and left out of its totals. The Lodestone number (or the character’s Lodestone page address) turns on the online refresh.</p>' +
-      (missing.length ? '<p class="help"><b>Choose a starting class for:</b> ' + esc(missing.join(', ')) + '. Until then, all three cities’ opening quests count for them.</p>' : '') +
+      (missing.length ? '<p class="help"><b>Choose a starting class for:</b> ' + esc(missing.join(', ')) + '. Until then, all three cities’ opening quests and both versions of the first class quests count for them.</p>' : '') +
+      (noGc.length ? '<p class="help"><b>Choose a Grand Company for:</b> ' + esc(noGc.join(', ')) + ' (once they have joined one). Until then, all three companies’ quests, ranks and hunting logs count for them.</p>' : '') +
       '<div class="row"><label class="help" for="cn">How many characters</label><select id="cn" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === ST.chars.length ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
       '<div class="chars" style="margin-top:10px"><div class="ch head"><span></span><span>Name and Lodestone number</span><span>Starting class</span><span>Grand Company</span></div>' + ST.chars.map(function (c, i) {
         return '<div class="ch"><b>' + (i + 1) + '</b><span style="display:grid;gap:4px"><input class="inp" data-cname="' + c.id + '" value="' + esc(c.name) + '" aria-label="Name of character ' + (i + 1) + '"><input class="inp" data-lode="' + c.id + '" value="' + esc(c.lodestone || '') + '" placeholder="Lodestone number (optional)" aria-label="Lodestone number of character ' + (i + 1) + '"></span>' +
@@ -582,6 +601,7 @@
       $$('[data-lode]', d).forEach(function (inp) { var c = ST.chars.find(function (x) { return x.id === inp.dataset.lode; }); var v = inp.value.trim(); var id = v ? ET.parseLodestoneId(v) : null; if (v && !id) bad.push(c.name); c.lodestone = id; });
       $$('[data-ccls]', d).forEach(function (s) { var c = ST.chars.find(function (x) { return x.id === s.dataset.ccls; }); if (s.value.indexOf('city:') === 0) return; ET.setStart(ST, c.id, s.value || null, undefined); if (!s.value) delete c.city; });
       $$('[data-cgc]', d).forEach(function (s) { ET.setStart(ST, s.dataset.cgc, undefined, s.value ? Number(s.value) : null); });
+      ET.migrateAliases(IDX, ST); // a starting class just chosen puts first class quest ticks on its route
       ST.updated = Date.now(); save(); render(); toast(bad.length ? 'Not a Lodestone number for: ' + bad.join(', ') : 'Characters saved'); openSettings('chars');
     };
   }
@@ -667,7 +687,7 @@
   // kept), so the next sync merges the two copies and asks about differences, instead of reading everything the
   // loaded copy lacks as deletions to send to the other devices.
   function adoptLoaded(st) {
-    st.sync = { fc: ST.sync.fc, drive: ST.sync.drive ? { fileId: ST.sync.drive.fileId, at: ST.sync.drive.at, base: null } : null, backupAt: ST.sync.backupAt };
+    st.sync = { fc: {}, drive: ST.sync.drive ? { fileId: ST.sync.drive.fileId, at: ST.sync.drive.at, base: null } : null, backupAt: ST.sync.backupAt };
     ST = st; ET.migrateAliases(IDX, ST); ET.saveState(ST, true); render();
   }
   function markBackedUp() { ST.sync.backupAt = Date.now(); ET.saveState(ST); }
@@ -692,6 +712,7 @@
           if (!sel.value) return;
           var f = files[+sel.dataset.file], r = ET.importDesktopSave(IDX, f.doc, MAP);
           ET.applyImport(ST, sel.value, r, mode);
+          ET.migrateAliases(IDX, ST); // a starting class learned from the save puts first class quest ticks on its route
           r.linked = linksOn() ? ET.fillLinks(LX, IDX, ST, sel.value, { gold: ST.settings.gold !== false }).length : 0;
           if ($('#rename', d).checked && ET.nameFromDesktopFile(f.name)) ET.renameCharacter(ST, sel.value, ET.nameFromDesktopFile(f.name));
           results.push({ who: charName(sel.value), r: r });
@@ -703,7 +724,8 @@
   function importReport(results) {
     var rows = [];
     results.forEach(function (x) { x.r.missed.forEach(function (m) { rows.push([x.who, m.kind === 'level' ? 'Level ' + m.value : m.kind === 'exclusion' ? '“X” mark' : 'Tick', m.area, m.path + ' #' + m.id]); }); });
-    var csv = 'Character,Type,Area,Where in the desktop app\n' + rows.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+    // a cell starting with = + - @ would run as a formula in a spreadsheet: it gets a leading apostrophe (the values come from the save file)
+    var csv = 'Character,Type,Area,Where in the desktop app\n' + rows.map(function (r) { return r.map(function (v) { v = String(v); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
     openDialog('<h3>Import finished</h3>' + results.map(function (x) {
       return '<p class="help"><b>' + esc(x.who) + ':</b> ' + x.r.placed.toLocaleString() + ' of ' + x.r.done.toLocaleString() + ' ticks imported (' + pctTxt(x.r.placed, x.r.done) + '), ' + Object.keys(x.r.excl).length + ' “does not apply” marks' + (x.r.linked ? ', ' + x.r.linked.toLocaleString() + ' more ticked by links (what those ticks prove)' : '') + '; ' + x.r.missed.filter(function (m) { return m.kind !== 'level'; }).length + ' to do by hand, ' + x.r.missed.filter(function (m) { return m.kind === 'level'; }).length + ' level values not imported.</p>';
     }).join('') + (rows.length ? '<div class="report"><table>' + rows.slice(0, 300).map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="row"><button type="button" class="btn sm" id="dl-report">Download the full list</button></div>' : '') +
@@ -736,30 +758,39 @@
           if (owned.offline) { problems.push(c.name + ': no connection'); return; }
           if (owned.unavailable._character) { problems.push(c.name + ': ' + owned.unavailable._character); return; }
           var rec = ET.reconcileOwned(IDX, ST, c.id, owned);
-          applied += rec.auto.length;
-          if (rec.ask.length) asks.push({ c: c, owned: owned, rec: rec }); else ET.acceptRefresh(ST, c.id, owned, rec, {});
-          applied += followLinks(c.id, rec.auto.map(function (a) { return a.key; })).length;
+          // a character with questions waits for the owner's answers: its automatic ticks are applied (and counted) then
+          if (rec.ask.length) { asks.push({ c: c, owned: owned, rec: rec }); return; }
+          ET.acceptRefresh(ST, c.id, owned, rec, {});
+          applied += rec.auto.length + followLinks(c.id, rec.auto.map(function (a) { return a.key; })).length;
         });
       });
     }, Promise.resolve()).then(function () {
       save(); render();
-      setSyncState('Online refresh ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + (applied ? ': ' + applied + ' new' : ''));
-      if (problems.length && manual) toast(problems.join(' · '));
+      // a character that could not be refreshed is named: the status never reads as a full refresh when one failed
+      var when = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setSyncState(problems.length ? 'Online refresh ' + when + ' incomplete: ' + problems.join(' · ') : 'Online refresh ' + when + (applied ? ': ' + applied + ' new' : ''));
+      if (problems.length && manual) toast('Not refreshed: ' + problems.join(' · '));
       if (asks.length) whenDialogFree(function () { askOnline(asks); });
-      else if (manual) toast(applied ? applied + ' new entries ticked from FFXIV Collect' : 'Everything already matches FFXIV Collect');
-    });
+      else if (manual && !problems.length) toast(applied ? applied + ' new entries ticked from FFXIV Collect' : 'Everything already matches FFXIV Collect');
+    }).catch(function (err) { save(); setSyncState('Online refresh failed: ' + ((err && err.message) || err)); });
   }
   function askOnline(asks) {
     var items = [];
     asks.forEach(function (a) { a.rec.ask.forEach(function (q) { items.push({ id: a.c.id + '|' + q.key, who: a.c.name, what: q.name + ' (' + q.section + ')', local: q.local ? 'ticked' : 'not ticked', remote: q.online ? 'owned' : 'not owned' }); }); });
     conflictDialog('Online and this device disagree', 'FFXIV Collect and this device disagree on these entries. Choose which one is right.', 'FFXIV Collect', items, function (choices) {
+      // taking FFXIV Collect's side on an entry ticked here removes that tick: confirmed when many, and undoable
+      var removed = [];
+      asks.forEach(function (a) { a.rec.ask.forEach(function (q) { if (choices[a.c.id + '|' + q.key] === 'remote' && q.local && !q.online) removed.push([a.c.id, q.key]); }); });
+      if (removed.length > 10 && !confirm('This removes ' + removed.length + ' ticks made on this device because FFXIV Collect does not list them. Remove them?')) { toast('Nothing changed'); return; }
       asks.forEach(function (a) {
         var ch = {};
         a.rec.ask.forEach(function (q) { ch[q.key] = choices[a.c.id + '|' + q.key] === 'remote' ? 'online' : 'local'; });
         ET.acceptRefresh(ST, a.c.id, a.owned, a.rec, ch);
         followLinks(a.c.id, a.rec.auto.map(function (x) { return x.key; }).concat(a.rec.ask.filter(function (q) { return ch[q.key] === 'online' && q.online; }).map(function (q) { return q.key; })));
       });
-      save(); render(); toast('Saved');
+      save(); render();
+      if (removed.length) toastAction(removed.length + ' ticks removed to match FFXIV Collect', 'Undo', function () { removed.forEach(function (r) { ET.setTick(ST, r[0], r[1], true); }); save(); render(); toast('Undone'); });
+      else toast('Saved');
     });
   }
   function conflictDialog(title, help, otherLabel, items, done, onCancel) {
@@ -786,7 +817,7 @@
     var ok = HOSTED && location.origin === 'https://splitzhappen.github.io';
     return '<p class="help">Keeps a private copy in your own Google Drive (a hidden app folder only this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else.</p>' +
       (ok ? '' : '<p class="help"><b>Cloud sync works in the installed app at splitzhappen.github.io/Eveniunt-Command-Center/tracker/.</b> In this copy, use backup files or a transfer code.</p>') +
-      '<p class="help">' + (s ? 'Last sync: ' + esc(new Date(s.at).toLocaleString()) : 'Not synced yet.') + (DRIVE.token ? ' Signed in.' : '') + '</p>' +
+      '<p class="help">' + (s ? 'Last sync: ' + esc(new Date(s.at).toLocaleString()) : 'Not synced yet.') + (DRIVE.token ? ' Signed in: changes sync automatically while this page stays open.' : s ? ' <b>Not signed in on this device right now: nothing is syncing until you sign in below.</b> Sign-in lasts about an hour and is needed again each time the tracker is opened.' : '') + '</p>' +
       '<div class="row"><button type="button" class="btn sm" id="sync-now"' + (ok ? '' : ' disabled') + '>' + (DRIVE.token ? 'Sync now' : 'Sign in with Google and sync') + '</button></div>';
   }
   function bindCloud(d) { var b = $('#sync-now', d); if (b) b.onclick = function () { closeDialog(); syncDrive(true); }; }
@@ -796,12 +827,14 @@
     var get = fresh ? Promise.resolve(DRIVE.token) : interactive ? ET.driveSignIn(ET.GDRIVE_CLIENT_ID).then(function (t) { DRIVE.token = t; DRIVE.at = Date.now(); return t; }) : Promise.reject(new Error('not signed in'));
     var synced = function (msg) { ET.migrateAliases(IDX, ST); ST.sync.backupAt = Date.now(); ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); if (msg) toast(msg); };
     var failed = function (err, tok) {
+      ET.saveState(ST); // a finished step may already have combined copies here: keep it
       if (err && err.code === 401) DRIVE.token = null;
       if (err && err.code === 'changed' && !retried) { DRIVE.busy = false; return syncDrive(interactive, true); }
       if (err && err.code === 'damaged' && interactive && tok && confirm(err.message + ' Replace the cloud copy with this device’s data?')) {
         return ET.driveOverwrite(ST, tok, err.fileId).then(function () { synced('Cloud copy replaced with this device’s data'); });
       }
       if (interactive || (err && err.message !== 'not signed in')) setSyncState('Cloud sync: ' + (err.message || err));
+      else if (ST.sync.drive) setSyncState('Cloud sync paused: sign in again (Settings → Cloud sync)'); // the hour-long sign-in ran out
     };
     DRIVE.busy = true; setSyncState('Syncing with Google Drive…');
     var tokNow = null;
@@ -814,8 +847,11 @@
           return ET.driveFinish(ST, tok, r, choices).then(function () { synced('Synced'); }).catch(function (err) { return failed(err, tok); }).then(function () { DRIVE.busy = false; });
         };
         // A large removal coming from the other device is confirmed first (it could be a mistake made there).
-        if (r.loss && !confirm('The other device’s copy would remove ' + r.loss.toLocaleString() + ' ticks from this device (they were removed there since the last sync). Apply that? Choose Cancel to keep this device unchanged and not sync now.')) {
-          setSyncState('Cloud sync paused: nothing was changed'); return;
+        // A removal coming from the other device is confirmed first (it could be a mistake made there); once declined,
+        // the same cloud copy is not asked about again by the automatic syncs (only "Sync now" asks again)
+        if (r.loss && !interactive && DRIVE.declined === r.modifiedTime) { setSyncState('Cloud sync paused: the other device’s removals wait for you (Settings → Cloud sync → Sync now)'); return; }
+        if (r.loss && !confirm('The other device’s copy would remove ' + r.loss.toLocaleString() + ' tick' + (r.loss === 1 ? '' : 's') + ' from this device (removed there since the last sync). Apply that? Choose Cancel to keep this device unchanged and not sync now.')) {
+          DRIVE.declined = r.modifiedTime; setSyncState('Cloud sync paused: nothing was changed'); return;
         }
         if (!r.conflicts.length) { DRIVE.busy = false; return finish({}); }
         var items = r.conflicts.map(function (c) { var x = ET.describeConflict(c, IDX, ST); return { id: c.id, who: x.who, what: x.what, local: x.local, remote: x.remote }; });
@@ -825,7 +861,7 @@
     }).catch(function (err) { return failed(err, tokNow); }).then(function () { DRIVE.busy = false; });
   }
   function queueDriveSync() {
-    if (!DRIVE.token) return;
+    if (!DRIVE.token) { if (ST.sync.drive && !$('#sync-state').textContent) setSyncState('Cloud sync is off until you sign in (Settings → Cloud sync)'); return; }
     clearTimeout(DRIVE.timer); DRIVE.timer = setTimeout(function () { syncDrive(false); }, 15000);
   }
   document.addEventListener('visibilitychange', function () {
@@ -839,11 +875,18 @@
   // ── another tab or window of the tracker saved: take its newer copy (unless this tab has a change still waiting) ──
   function checkOtherTab() {
     if (!ST || ET.hasPendingSave()) return;
-    ET.loadState().then(function (st) {
-      if (st && st.updated > ST.updated) { ST = st; ET.migrateAliases(IDX, ST); render(); toast('Updated with changes made in another window'); }
+    ET.loadState(true).then(function (st) {
+      if (st && st.updated > ST.updated && !ET.hasPendingSave()) { ET.acceptLoaded(); ST = st; ET.migrateAliases(IDX, ST); render(); toast('Updated with changes made in another window'); }
     });
   }
   ET.onOtherTabSave = function () { checkOtherTab(); };
+  // this window saved while another had saved first: the save combined both, and this window takes in the other's
+  // changes (anything changed here since that save is kept)
+  ET.onSaveMerged = function (merged, snap) {
+    if (!ST) return;
+    ST = ET.applyMerge(ST, ET.threeWay(ET.portable(snap), ET.portable(ST), ET.portable(merged)), {});
+    ET.migrateAliases(IDX, ST); render(); toast('Combined with changes made in another window');
+  };
 
   // ── saving problems are shown, never silent ──
   var saveWarned = false;
@@ -869,6 +912,8 @@
     if (navigator.onLine) setTimeout(function () { refreshOnline(false); }, 1500);
     ET.requestPersistence();
     backupReminder();
+    // a device that synced before is not syncing now: sign-in is per visit, so say so instead of looking synced
+    if (ST.sync.drive && !DRIVE.token && !$('#sync-state').textContent) setSyncState('Cloud sync is off until you sign in (Settings → Cloud sync)');
   }
   // Browsers can clear a website's saved data (Safari after weeks without a visit, any browser when storage runs
   // low), so a gentle reminder appears when there are ticks and no backup, transfer code or cloud sync for 30 days.
