@@ -286,6 +286,7 @@
       // e.mv: the list the entry was in before a list was split (e.g. Class & Job Quests into ten lists)
       const olds = (hit.e.al || []).map((a) => hit.s.id + ':' + a);
       if (hit.e.mv) { olds.push(hit.e.mv + ':' + hit.e.i); for (const a of hit.e.al || []) olds.push(hit.e.mv + ':' + a); }
+      for (const pv of hit.e.pv || []) olds.push(pv + ':' + hit.e.i); // lists it was published in since
       for (const old of olds) {
         if (old === key || idx.byKey.has(old)) continue;
         for (const c of st.chars) {

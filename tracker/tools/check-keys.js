@@ -33,6 +33,7 @@ const aliases = (d) => {
   for (const s of d.sections) for (const g of s.g) for (const e of g.e) {
     for (const a of e.al || []) m.set(s.id + ':' + a, s.id + ':' + e.i);
     if (e.mv) { m.set(e.mv + ':' + e.i, s.id + ':' + e.i); for (const a of e.al || []) m.set(e.mv + ':' + a, s.id + ':' + e.i); } // moved to a new list
+    for (const pv of e.pv || []) m.set(pv + ':' + e.i, s.id + ':' + e.i);
   }
   return m;
 };

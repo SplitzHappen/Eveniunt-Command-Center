@@ -705,11 +705,19 @@ test('Dawntrail additions: Beastmaster, Trust, treasure hunt, Quantum and event 
 test('organised by expansion: big lists split per expansion, an expansion layer elsewhere, deep dungeons by series', () => {
   const EXP = ['A Realm Reborn', 'Heavensward', 'Stormblood', 'Shadowbringers', 'Endwalker', 'Dawntrail'];
   for (const base of ['quests-msq', 'quests-side', 'quests-allied', 'leves', 'fates', 'hunt']) {
-    const lists = idx.sections.filter((x) => x.id.startsWith(base + '-'));
+    const lists = idx.sections.filter((x) => x.id.startsWith(base + '-') && x.id !== 'quests-side-hildibrand');
     assert.deepStrictEqual(lists.map((x) => x.t.split(': ')[1]), EXP, base);
     assert.ok(!idx.sections.some((x) => x.id === base), base + ' itself is gone');
   }
   assert.ok(!idx.sections.some((x) => x.id === 'quests-other'), 'no list of quests outside the journal');
+  const hil = idx.sections.find((x) => x.id === 'quests-side-hildibrand');
+  const hilNames = hil.groups.flatMap((g) => g.keys.map((k) => idx.byKey.get(k).e.n));
+  assert.equal(hilNames.length, 57, 'all Hildibrand quests in one list');
+  assert.ok(hilNames.includes('The Rise and Fall of Gentlemen') && hilNames.includes('The Imperfect Gentleman'));
+  const vague = idx.sections.flatMap((x) => x.groups.filter((g) => /^(Other|\?\?\?|Patch not recorded)$|Not placed|Added after|spot not in the data/.test(g.t) || (x.groups.some((h) => h.xp) && (!g.xp || g.xp === 'Other'))).map((g) => x.id + ': ' + g.t));
+  assert.deepStrictEqual(vague, [], 'no vague groups ("Other", "Patch not recorded", "Not placed ...")');
+  assert.ok(!idx.sections.some((x) => /: Other\b|^Other$/.test(x.t)), 'no list called "Other"');
+
   const deep = idx.sections.find((x) => x.id === 'duty-deep');
   const where = (n) => deep.groups.find((g) => g.keys.some((k) => idx.byKey.get(k).e.n.startsWith(n))).t;
   assert.deepStrictEqual(["The Palace of the Dead", 'Heaven-on-High', 'Eureka Orthos', "Pilgrim's Traverse"].map(where), ['Heavensward', 'Stormblood', 'Endwalker', 'Dawntrail']);

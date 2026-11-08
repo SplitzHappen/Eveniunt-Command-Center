@@ -44,6 +44,22 @@ for r in sheet("TerritoryType").values():
     if n: ZONE_EX[n] = min(ZONE_EX.get(n, 9), i(r.get("ExVersion")))
 EXP_NORM = {norm(x): n for n, x in enumerate(EXP)}
 
+TT = sheet("TerritoryType")
+ZONE_NAME = {k: clean(place.get(i(r.get("PlaceName")), {}).get("Name")) for k, r in TT.items()}
+REGION_OF = {}
+for r in TT.values():
+    z, rg = norm(place.get(i(r.get("PlaceName")), {}).get("Name")), clean(place.get(i(r.get("PlaceNameRegion")), {}).get("Name"))
+    if z and rg: REGION_OF.setdefault(z, rg)
+SUB_EX = dict(ZONE_EX)  # areas inside zones (Gangos, Lower Jeuno ...) through the maps that show them
+for r in sheet("Map").values():
+    t = TT.get(i(r.get("TerritoryType")))
+    if not t: continue
+    for col in ("PlaceNameSub", "PlaceName"):
+        n = norm(place.get(i(r.get(col)), {}).get("Name"))
+        if n: SUB_EX.setdefault(n, i(t.get("ExVersion")))
+def remember(e, old_sid):  # the entry leaves a list it was published in: keep that list for saved ticks
+    pv = e.setdefault("pv", [])
+    if old_sid not in pv and old_sid != e.get("mv"): pv.append(old_sid)
 def patch_ex(p):
     m = re.match(r"^(\d+)", str(p or ""))
     if not m: return None
@@ -104,6 +120,28 @@ if "quests-other" in S:
     oq["g"].append({"t": "Feature Unlocks", "e": unlocks})
     secs.remove(other); del S["quests-other"]
 
+# ---------------------------------------------------------------- 1b. FATEs without a zone: the game's own Fate.Location
+if "fates" in S:
+    FATE_ZONE = json.load(open(os.path.join(T, "data", "fate-zones.json"), encoding="utf-8"))["zones"]  # Garland Tools + FATE type
+    gs = S["fates"]["g"]
+    by_t = {g["t"]: g for g in gs}
+    keep = []
+    for g in list(gs):
+        if not g["t"].startswith("Not placed"): continue
+        gs.remove(g)
+        for e in g["e"]:
+            px = patch_ex(e.get("p"))  # where the last published version listed it
+            remember(e, "fates-" + (ABBR[px] if px is not None else "other"))
+            zone = FATE_ZONE.get(str(e["i"]), "")
+            if zone == "The Diadem": zone = "The Diadem (original 3.x version)"
+            if zone:
+                tg = by_t.get(zone)
+                if not tg: tg = by_t[zone] = {"t": zone, "e": []}; gs.append(tg)
+                tg["e"].append(e); stats["FATE placed in its zone (Garland Tools or its type)"] += 1
+            else:
+                e["x"] = "gone"; keep.append(e); stats["FATE never placed in the game (not counted)"] += 1
+    if keep: gs.append({"t": "Never placed in the game world (test or removed FATEs, not counted)", "e": keep})
+
 # ---------------------------------------------------------------- 2. one list per expansion
 SPLITS = [
     (["quests-mainscenarioarealmreborn", "quests-mainscenariodawntrail"], "quests-msq", "Main Scenario"),
@@ -139,6 +177,39 @@ for olds, base, title in SPLITS:
         new.append(s); S[sid] = s
         stats["split " + title] += 1
     secs[at:at] = new
+
+# ---------------------------------------------------------------- 2a. Hildibrand Adventures: one list across expansions
+hil = {"id": "quests-side-hildibrand", "t": "Sidequests: Hildibrand Adventures", "area": "", "folder": "Sidequests", "g": [],
+       "note": "Hildibrand's comic quest lines from every expansion, in order. Finishing them up to The Imperfect Gentleman (and the later Endwalker ones) is needed for the Manderville relic weapons."}
+for x, ab in enumerate(ABBR):
+    s_ = S.get("quests-side-" + ab)
+    if not s_: continue
+    hil["area"] = s_["area"]
+    for g in list(s_["g"]):
+        if "Hildibrand" in g["t"]:
+            s_["g"].remove(g)
+            for e in g["e"]: remember(e, s_["id"])
+            hil["g"].append({"t": g["t"], "e": g["e"], "xp": EXP[x]}); stats["Hildibrand quests gathered"] += len(g["e"])
+if hil["g"]:
+    last = max(n for n, s_ in enumerate(secs) if s_["id"].startswith("quests-side-"))
+    secs.insert(last + 1, hil); S[hil["id"]] = hil
+
+# ---------------------------------------------------------------- 2b. collection entries without a patch
+for s in secs:
+    nop = [g for g in s["g"] if g["t"] == "Patch not recorded"]
+    if not nop: continue
+    dated = sorted((e["i"], e["p"]) for g in s["g"] for e in g["e"] if e.get("p"))
+    for g in nop:
+        s["g"].remove(g)
+        for e in g["e"]:
+            before = [p for k, p in dated if k < e["i"]]
+            p = before[-1] if before else (dated[0][1] if dated else None)
+            x = patch_ex(p)
+            tg = next((h for h in s["g"] if norm(h["t"]) == norm(EXP[x])), None) if x is not None else None
+            if tg is None: tg = {"t": EXP[x if x is not None else 0], "e": []}; s["g"].append(tg)
+            e["pe"] = 1  # its expansion is estimated from its neighbours
+            tg["e"].append(e); stats["collection entry placed by its neighbours' patch"] += 1
+    s["g"].sort(key=lambda g: EXP_NORM.get(norm(g["t"]), 99))
 
 # ---------------------------------------------------------------- 3. expansion layer inside the other lists
 SPLIT_BASES = tuple(b + "-" for _, b, _ in SPLITS)
@@ -181,6 +252,85 @@ for s in secs:
         groups.append(ng)
     s["g"] = groups
     stats["expansion layer"] += 1
+
+# ---------------------------------------------------------------- 4. no "Other", "???" or "Added after" groups
+SPEAR_ITEM = {i(r.get("Item")): r for r in sheet("SpearfishingItem").values()}
+SPEAR_NODE = sheet("SpearfishingNotebook")
+FSPOT = sheet("FishingSpot")
+for s in secs:
+    sid = s["id"]
+    for g in list(s["g"]):
+        if sid == "spearfishing" and g["t"] == "Other":
+            s["g"].remove(g)
+            for e in g["e"]:
+                nb = SPEAR_NODE.get(i(SPEAR_ITEM.get(e.get("it"), {}).get("SpearfishingNotebook")), {})
+                zone = ZONE_NAME.get(i(nb.get("TerritoryType")), "") if nb else ""
+                t = zone or ("Treasure Maps" if "Map" in e["n"] else g.get("xp", ""))
+                tg = next((h for h in s["g"] if h["t"] == t and h.get("xp") == g.get("xp")), None)
+                if not tg: tg = {"t": t, "e": [], "xp": g.get("xp")}; s["g"].append(tg)
+                tg["e"].append(e)
+            stats["spearfishing Other split by zone"] += 1
+        elif sid.startswith("craft-") and g["t"] == "Other":
+            ns = [e["n"] for e in g["e"]]
+            g["t"] = "Replica Gear (glamour)" if sum(n.startswith("Replica") for n in ns) * 2 > len(ns) else ("Aetherial Wheels" if all("Wheel" in n for n in ns) else "Special Recipes")
+            stats["craft Other renamed"] += 1
+        elif sid == "ttnpcs" and (g.get("xp") in (None, "Other") or g["t"] == "???"):
+            if g["t"] == "???":
+                s["g"].remove(g)
+                for e in g["e"]:
+                    loc = re.sub(r"\s*\(.*$", "", (e.get("d") or "").split(" · ")[0]).strip() or "Elsewhere"
+                    x = SUB_EX.get(norm(loc))
+                    tg = next((h for h in s["g"] if h["t"] == loc), None)
+                    if not tg: tg = {"t": loc, "e": [], "xp": EXP[x] if x is not None else EXP[-1]}; s["g"].append(tg)
+                    tg["e"].append(e)
+            elif "Battlehall" in g["t"]: g["t"], g["xp"] = "The Gold Saucer: Triple Triad Battlehall", EXP[0]
+            elif norm(g["t"]) in ("azysla", "azyslla"): g["t"], g["xp"] = "Azys Lla", EXP[1]
+            stats["Triple Triad groups placed"] += 1
+        elif sid == "fishingspots" and g.get("xp") in (None, "Other"):
+            xs = [i(TT.get(i(FSPOT.get(e["i"], {}).get("TerritoryType")), {}).get("ExVersion")) for e in g["e"] if FSPOT.get(e["i"])]
+            g["xp"] = EXP[max(xs)] if xs else EXP[3]
+            if g["t"].startswith("Added after"): g["t"] = "Ocean Fishing: " + g["e"][0]["n"]
+            elif not g["t"].startswith("Ocean"): g["t"] = "Ocean Fishing: " + g["t"]
+            stats["ocean fishing groups placed"] += 1
+        elif g["t"] == "Other" and sid.startswith("ach-"):
+            s["g"].remove(g)
+            for e in g["e"]:
+                m = re.match(r"^Mapping the Realm: (.+)$", e["n"])
+                t = REGION_OF.get(norm(m.group(1)), "") if m else ""
+                t = t or "General"
+                tg = next((h for h in s["g"] if h["t"] == t and h.get("xp") == g.get("xp")), None)
+                if not tg: tg = {"t": t, "e": [], "xp": g.get("xp")}; s["g"].append(tg)
+                tg["e"].append(e)
+            stats["achievement Other split by region"] += 1
+        if sid == "gather-other": s["t"] = "Gathering Log: Relic Tool Materials"
+        if sid == "gather-other" and g["t"].startswith("In the gathering log"):
+            g["t"] = "Skysteel tool materials" if any(e["n"].startswith("Oddly Specific") for e in g["e"]) else ("Splendorous tool materials" if g.get("xp") == EXP[4] else "Relic tool materials")
+        if g["t"].startswith("Added after") and g in s["g"]:  # entries newer than the checklist join the group of their kind
+            s["g"].remove(g)
+            base_group = {}
+            for h in s["g"]:
+                for e in h["e"]: base_group.setdefault(norm(re.sub(r"\s*\d+$", "", e["n"])), h)
+            for e in g["e"]:
+                h = base_group.get(norm(re.sub(r"\s*\d+$", "", e["n"])))
+                if not h and "Cosmic" in e["n"]: h = next((x for x in s["g"] if x["t"] == "Cosmic Exploration"), None)
+                if not h and len(s["g"]) == 1: h = s["g"][0]
+                if not h:
+                    nm = e["n"]
+                    if re.search(r"Vana'diel|Jeuno|San d'Oria|Windurst|Ark Angel|Shadow Lord|Kam'lanaut|Eald'narche|Shantotto|Promathia|Prishe|Distant Chains|Fafnir", nm) and not nm.startswith("Wind-up"): t = "Echoes of Vana'diel (alliance raids)"
+                    elif re.search(r"Brute Bomber|Wicked Thunder|Dancing Green|Sugar Riot|Howling Blade|Vamp Fatale|Deep Blue|Red Hot|The Tyrant|Honey B\. Lovely|Black Cat|Breaker of Beasts", nm): t = "AAC Arcadion (raids)"
+                    elif re.search(r"Beastmaster|Crucible of the Unbroken|Keybound", nm): t = "Beastmaster"
+                    elif re.search(r"Maelstrom|Twin Adder|Immortal Flames", nm): t = "Grand Company"
+                    elif "DRAGON QUEST" in nm: t = "Event"
+                    elif "Archeia" in nm: t = "PvP"
+                    elif re.search(r"Occult", nm): t = "Occult Crescent"
+                    else: t = "Patch 7.5 additions (source not yet published)"
+                    h = next((x for x in s["g"] if x["t"] == t), None)
+                    if not h: h = {"t": t, "e": []}; s["g"].append(h)
+                h["e"].append(e)
+            stats["newer entries joined their kind's group: " + sid] = len(g["e"])
+    if any(g.get("xp") for g in s["g"]):  # keep expansion order after the moves
+        order = {x: n for n, x in enumerate(EXP)}
+        s["g"].sort(key=lambda g: order.get(g.get("xp"), 99))
 
 with open(DATA, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))

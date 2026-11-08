@@ -125,4 +125,5 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
 - `data/duty-unlocks.json`: duty unlock quests from Garland Tools instance data, matched by duty name and checked against the game's quest names (69 mismatches dropped).
 - `data/field-events.json` and `data/bestiary.json`: field operation triggers and Master's Bestiary taming facts from the Console Games Wiki tables; facts only.
 
+- `data/fate-zones.json` (2026-11-08): zones for FATEs that Teamcraft does not place, from Garland Tools FATE data (garlandtools.org), or the FATE type in the game sheet.
 - `data/relic-guides.json` (2026-11-08): stage-by-stage relic weapon and tool guides, written for the tracker from the Console Games Wiki relic pages (Zodiac, Anima, Eurekan, Resistance, Manderville, Phantom; Lucis, Skysteel, Resplendent, Splendorous, Cosmic). Item sources and duty unlocks inside the guides come from the game data and FFXIV Teamcraft.

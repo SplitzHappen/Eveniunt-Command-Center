@@ -23,7 +23,7 @@ const X = ET.indexLinks(idx, L);
 const D = JSON.parse(fs.readFileSync(path.join(T, 'data', 'desktop-links.json'), 'utf8'));
 // keys saved under a list that was later split (e.mv, e.g. Class & Job Quests) are read as their new keys
 const MOVED = new Map();
-for (const s of data.sections) for (const g of s.g) for (const e of g.e) if (e.mv) MOVED.set(e.mv + ':' + e.i, s.id + ':' + e.i);
+for (const s of data.sections) for (const g of s.g) for (const e of g.e) { if (e.mv) MOVED.set(e.mv + ':' + e.i, s.id + ':' + e.i); for (const pv of e.pv || []) MOVED.set(pv + ':' + e.i, s.id + ':' + e.i); }
 const mv = (x) => MOVED.get(x) || x;
 for (const r of D.imp) { r[0] = mv(r[0]); r[1] = mv(r[1]); }
 for (const r of D.all) { r[0] = mv(r[0]); r[1] = r[1].map(mv); }
