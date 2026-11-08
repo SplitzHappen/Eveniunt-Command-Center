@@ -872,13 +872,24 @@ for sid_ in COLLECTION_LISTS:
         if not key.startswith(sid_ + ":"): continue
         ex = expand_src(e.get("src") or [], e.get("it"))
         if not e.get("it"):
+            if ex: ex[0] = "How to obtain: " + ex[0]
             if ex: put(key, ex); stats["collections with item sources"] += 1
             continue
         lines = ex + [l for l in item_sources(e["it"]) if not (l.startswith("Sold by") and any(x.startswith(("Buy ", "Buy it")) for x in ex))
                       and not (l.startswith("Drops in") and any(x.startswith(("Drops in", "Defeat ")) for x in ex))]
-        tl = trade_line(e["it"])
-        if tl: lines.append(tl)
-        if lines: put(key, lines); stats["collections with item sources"] += 1
+        mog = [l for l in lines if l.startswith("Mog Station (online store)")]
+        if mog and any(l.startswith("Sold on the Mog Station") for l in lines):
+            pr = re.search(r"about \$[\d.]+", mog[0])
+            lines = [(l.replace("(the online store, paid with real money)", "(the online store, " + pr.group(0) + ")") if pr and l.startswith("Sold on the Mog Station") else l) for l in lines if not l.startswith("Mog Station (online store)")]
+        if any(l.startswith("Sold on the Mog Station") for l in lines):
+            lines = [l.replace(". Rewards of past events are usually sold later on the Mog Station (the online store)", "") for l in lines]
+        if lines: lines[0] = "How to obtain: " + lines[0]
+        tags = []
+        if ITEMROW_ALL.get(e["it"], {}).get("IsUntradable") == "True": tags.append("untradable")
+        if i(ITEMROW_ALL.get(e["it"], {}).get("DyeCount")) > 0: tags.append("dye" + str(i(ITEMROW_ALL[e["it"]]["DyeCount"])))
+        elif ITEMROW_ALL.get(e["it"], {}).get("IsUntradable") != "True": lines.append("Tradable: also sold by players on the market board")
+        if tags: lines.insert(0, "§" + ",".join(tags))
+        if lines: put(key, lines, 8); stats["collections with item sources"] += 1
 
 # ---------------------------------------------------------------- achievements and titles
 ACH = sheet("Achievement")
@@ -1182,6 +1193,10 @@ for s_ in data["sections"]:
             if lines: put(k, lines); added[s_["id"]] += 1
 stats["plain instruction from the entry's own facts"] = sum(added.values())
 
+for key, g, e in each("craft-"):  # crafted gear: dyeable and untradable stamps too
+    it_ = i(RECIPE.get(e["i"], {}).get("ItemResult")); row_ = ITEMROW_ALL.get(it_, {})
+    tg_ = (["untradable"] if row_.get("IsUntradable") == "True" else []) + (["dye" + str(i(row_.get("DyeCount")))] if i(row_.get("DyeCount")) else [])
+    if tg_ and INFO.get(key): INFO[key] = ["§" + ",".join(tg_)] + INFO[key]
 _desc = {s_["id"] + ":" + str(e_["i"]): str(e_.get("d") or "").strip() for s_ in data["sections"] for g_ in s_["g"] for e_ in g_["e"]}
 for k_ in list(INFO):
     seen_, keep_ = set(), []

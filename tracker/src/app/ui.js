@@ -171,9 +171,10 @@
   function detailHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
+    var st = stampsHtml(k); if (st) bits.push(st);
     infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
     if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
-    if (e.src && !infoLines(k).length) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
+    if (e.src && !infoLines(k).filter(function (l) { return l.charAt(0) !== '§'; }).length) bits.push('<div><b>How to obtain:</b> ' + esc(e.src.join(' · ')) + '</div>');
     var facts = [];
     if (e.p) facts.push('Patch ' + esc(e.p));
     if (e.cnt) facts.push('Defeat ×' + e.cnt);
@@ -248,13 +249,30 @@
   }
   function infoLines(k) { return (INFO && INFO[k]) || []; }
   // "Step 3: Speak with X." reads as a numbered walkthrough; other lines are plain
-  function lineHtml(l) { var m = /^Step (\d+): (.*)$/.exec(l); return m ? '<div class="step"><b>' + m[1] + '.</b> ' + esc(m[2]) + '</div>' : '<div>' + esc(l) + '</div>'; }
+  function lineHtml(l) {
+    if (l.charAt(0) === '§') return '';
+    var m = /^Step (\d+): (.*)$/.exec(l); if (m) return '<div class="step"><b>' + m[1] + '.</b> ' + esc(m[2]) + '</div>';
+    m = /^How to obtain: (.*)$/.exec(l); if (m) return '<div><b>How to obtain:</b> ' + esc(m[1]) + '</div>';
+    return '<div>' + esc(l) + '</div>';
+  }
+  // item stamps from the first information line ("§untradable,dye2"): an untradable stamp and the dye drop
+  var DYE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5C8 1.5 3.2 7 3.2 10.2a4.8 4.8 0 0 0 9.6 0C12.8 7 8 1.5 8 1.5z" fill="currentColor"/><path d="M6 10.5a2 2 0 0 0 2 2" stroke="var(--paper)" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".7"/></svg>';
+  function stampsHtml(k) {
+    var l = infoLines(k)[0];
+    if (!l || l.charAt(0) !== '§') return '';
+    var out = '';
+    l.slice(1).split(',').forEach(function (t) {
+      if (t === 'untradable') out += '<span class="stamp" title="Cannot be traded or sold on the market board">Untradable</span>';
+      var d = /^dye(\d)$/.exec(t); if (d) out += '<span class="dye" title="Dyeable' + (d[1] === '2' ? ' (two dye channels)' : '') + '">' + DYE_SVG + (d[1] === '2' ? DYE_SVG : '') + '</span>';
+    });
+    return out ? '<span class="stamps">' + out + '</span>' : '';
+  }
   function tipHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, bits = [];
-    bits.push('<b class="tt">' + esc(e.n) + '</b>' + (e.p ? ' <span class="p">' + esc(e.p) + '</span>' : ''));
+    bits.push('<div class="tt-row"><span><b class="tt">' + esc(e.n) + '</b>' + (e.p ? ' <span class="p">' + esc(e.p) + '</span>' : '') + '</span>' + stampsHtml(k) + '</div>');
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
     infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
-    if (e.src && !infoLines(k).length) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
+    if (e.src && !infoLines(k).filter(function (l) { return l.charAt(0) !== '§'; }).length) bits.push('<div><b>How to obtain:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No how-to details for this one yet.</div>');
     return bits.join('');
   }

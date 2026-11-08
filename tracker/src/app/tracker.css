@@ -221,3 +221,12 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 .tip .step { padding-left: 1.4em; text-indent: -1.4em; }
 .tip .step b { color: var(--seal); font-weight: 700; }
 .det .step { padding-left: 1.4em; text-indent: -1.4em; }
+
+/* item stamps in the information window: a slightly rotated ink stamp and the dye drop, both in theme colours */
+.tt-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.stamps { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.stamp { font: 700 10px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--seal);
+  border: 1.5px solid var(--seal); border-radius: 3px; padding: 3px 6px 2px; transform: rotate(-4deg);
+  opacity: .85; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--seal) 25%, transparent); white-space: nowrap; }
+.dye { display: inline-flex; gap: 1px; color: var(--seal); }
+.dye svg { width: 13px; height: 13px; }
