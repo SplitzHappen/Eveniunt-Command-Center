@@ -58,6 +58,7 @@ body { font-family: var(--f-body); }
 .bar .opt-btn { border: 0; background: none; cursor: pointer; font: 600 13px var(--f-body); color: var(--ink-2); padding: 6px 4px; }
 .bar .opt-btn.on { color: var(--seal); }
 .mode-note { flex-basis: 100%; font: 600 13px var(--f-body); color: var(--seal); }
+.mode-note.quiet { font-weight: 400; color: var(--ink-3); }
 
 /* ── the list ── */
 .ledger { --n: 1; --cw: 64px; border-top: 1px solid var(--rule); }
@@ -189,3 +190,6 @@ textarea.inp { font: 400 12px var(--f-data); }
 .ov-table .lh .c .pc { display: none; }
 select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body); font-size: 14px; font-weight: 400; }
 .foot { font: 400 12px/1.5 var(--f-body); color: var(--ink-3); }
+
+/* press and hold on a box means "does not apply": no text-selection callout on touch screens */
+.tk { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }

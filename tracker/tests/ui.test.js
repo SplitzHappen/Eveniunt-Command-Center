@@ -94,6 +94,33 @@ test('ticking, the X availability switch both ways, and per-character "does not 
   await ctx.close();
 });
 
+test('left click marks done, right click (or a long press) marks does not apply, a second click clears either', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  await go(page, 'mounts');
+  const total0 = Number((await tally(page, 'c1')).split('/')[1]);
+  const box = page.locator('.er:not(.x)').first().locator('.tk[data-c="c1"]');
+  const state = () => box.evaluate((b) => (b.classList.contains('on') ? 'done' : b.classList.contains('na') ? 'na' : 'none'));
+  await box.click();
+  assert.equal(await state(), 'done'); assert.equal(await tally(page, 'c1'), '1 / ' + total0);
+  await box.click({ button: 'right' });
+  assert.equal(await state(), 'none'); assert.equal(await tally(page, 'c1'), '0 / ' + total0);
+  await box.click({ button: 'right' });
+  assert.equal(await state(), 'na'); assert.equal(await tally(page, 'c1'), '0 / ' + (total0 - 1));
+  await box.click({ button: 'right' });
+  assert.equal(await state(), 'none'); assert.equal(await tally(page, 'c1'), '0 / ' + total0);
+  await box.click({ button: 'right' }); await box.click();
+  assert.equal(await state(), 'none', 'a left click clears does not apply too');
+  // touch: press and hold marks does not apply; the click that follows the hold is ignored
+  await box.dispatchEvent('pointerdown', { pointerType: 'touch', bubbles: true });
+  await page.waitForTimeout(700);
+  await box.dispatchEvent('pointerup', { pointerType: 'touch', bubbles: true });
+  await box.click();
+  assert.equal(await state(), 'na');
+  assert.equal(await tally(page, 'c2'), '0 / ' + total0, 'other characters untouched');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('group header ticks a whole group for one character; level fields tick at the cap', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
   await go(page, 'emotes');

@@ -166,7 +166,7 @@
         var v = ET.getValue(ST, c.id, k);
         return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : v) + '" placeholder="–" aria-label="' + esc(c.name) + ' ' + (e.unit || 'level') + '"></span>';
       }
-      return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" title="' + esc(c.name) + (na ? ': does not apply (' + WHY[na] + ')' : '') + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
+      return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" title="' + esc(c.name) + (na ? ': does not apply (' + WHY[na] + ')' : '') + (na && na !== 'manual' ? '' : ' · click: done · right-click: does not apply · click again: clear') + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
     }).join('');
     var pill = av.marked ? '<button type="button" class="pill" data-x="' + k + '" title="Not counted. Click to count it anyway.">' + (av.manual === 'x' ? 'Not counted' : SHORT[av.builtIn] || 'Not counted') + '</button>' : '';
     return '<div class="lr er' + (av.marked ? ' x' : '') + (open ? ' open' : '') + '" data-k="' + k + '"><span class="c0" data-open="' + k + '"><span class="nm">' + esc(e.n) + '</span>' + (e.p ? '<span class="p">' + esc(e.p) + '</span>' : '') + pill + '</span>' + cells + '</div>' + (open ? detailHtml(k) : '');
@@ -246,7 +246,7 @@
       '<span class="grow"></span>' +
       '<button type="button" class="opt-btn' + (UI.showX ? ' on' : '') + '" data-showx="1" title="Entries that are not counted (time-limited, unobtainable or unknown)">' + (UI.showX ? '✓ ' : '') + 'Show not counted</button>' +
       '<button type="button" class="opt-btn' + (UI.mode === 'na' ? ' on' : '') + '" data-mode="' + (UI.mode === 'na' ? 'tick' : 'na') + '" title="Mark entries that do not apply to one character">' + (UI.mode === 'na' ? '✓ ' : '') + 'Mark “does not apply”</button>' +
-      (UI.mode === 'na' ? '<span class="mode-note">Clicking a box now marks that entry as not applying to that character. Click “Mark does not apply” again to go back to ticking.</span>' : '') + '</div>';
+      (UI.mode === 'na' ? '<span class="mode-note">Clicking a box now marks that entry as not applying to that character. Click “Mark does not apply” again to go back to ticking.</span>' : '<span class="mode-note quiet">Click a box: done. Right-click (or press and hold): does not apply. Click a marked box again to clear it.</span>') + '</div>';
   }
   function renderSection(sid) {
     var sec = SEC.get(sid), raw = RAW.get(sid), mo = menuOf(sid);
@@ -315,6 +315,41 @@
   var dirty = false;
   function save() { ET.saveState(ST); dirty = true; queueDriveSync(); }
 
+  // ── a character's box: left click marks it done, right click (or a long press on a touch screen) marks it as not
+  // applying to that character; any click on a box that is already marked returns it to unmarked (and counted) ──
+  var longPressAt = 0;
+  function boxAction(tk, button) {
+    var k = tk.dataset.k, c = tk.dataset.c, ent = IDX.byKey.get(k).e, ch0 = ST.chars.find(function (x) { return x.id === c; });
+    var why = ET.notApplicable(ST, ch0, k, ent);
+    if (why && why !== 'manual') { toast('Does not apply to ' + ch0.name + ': ' + WHY[why] + '. Change it in Settings → Characters.'); return; }
+    var done = !!ST.ticks[c][k], na = ET.isExcluded(ST, c, k);
+    if (done || na) {
+      if (done) ET.setTick(ST, c, k, false);
+      if (na) ET.setExcluded(ST, c, k, false);
+    } else if (button === 'right' || UI.mode === 'na') ET.setExcluded(ST, c, k, true);
+    else ET.setTick(ST, c, k, true);
+    refreshAfter([k]);
+  }
+  document.addEventListener('contextmenu', function (e) {
+    var tk = e.target.closest && e.target.closest('.tk');
+    if (!tk) return;
+    e.preventDefault();
+    if (Date.now() - longPressAt < 700) return; // the long press below already handled it
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; longPressAt = Date.now(); } // a touch browser's own long-press menu: handle it once
+    boxAction(tk, 'right');
+  });
+  var pressTimer = null;
+  document.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'touch') return;
+    var tk = e.target.closest && e.target.closest('.tk');
+    if (!tk) return;
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(function () { pressTimer = null; longPressAt = Date.now(); boxAction(tk, 'right'); if (navigator.vibrate) navigator.vibrate(15); }, 550);
+  });
+  ['pointerup', 'pointercancel', 'pointermove'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { if (ev !== 'pointermove' || Math.abs(e.movementX) + Math.abs(e.movementY) > 6) { clearTimeout(pressTimer); pressTimer = null; } });
+  });
+
   // ── events ──
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]');
@@ -327,17 +362,7 @@
     }
     if (document.body.classList.contains('drawer') && !e.target.closest('.side') && !e.target.closest('.menu-btn')) document.body.classList.remove('drawer');
     var tk = e.target.closest('.tk');
-    if (tk) {
-      var k = tk.dataset.k, c = tk.dataset.c, ent = IDX.byKey.get(k).e, ch0 = ST.chars.find(function (x) { return x.id === c; });
-      var why = ET.notApplicable(ST, ch0, k, ent);
-      if (UI.mode === 'na') {
-        if (why && why !== 'manual') { toast('This already does not apply to ' + ch0.name + ' (' + WHY[why] + ')'); return; }
-        ET.setExcluded(ST, c, k, !ET.isExcluded(ST, c, k));
-      } else if (why && why !== 'manual') {
-        toast('Does not apply to ' + ch0.name + ': ' + WHY[why] + '. Change it in Settings → Characters.'); return;
-      } else ET.toggleTick(ST, c, k);
-      refreshAfter([k]); return;
-    }
+    if (tk) { if (Date.now() - longPressAt < 700) return; boxAction(tk, 'left'); return; }
     var xa = e.target.closest('[data-xauto]');
     if (xa) { ET.setAvailability(ST, xa.dataset.xauto, 'auto'); toast('Back to the default'); refreshAfter([xa.dataset.xauto]); return; }
     var xb = e.target.closest('[data-x]');
