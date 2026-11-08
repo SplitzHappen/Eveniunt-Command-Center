@@ -21,10 +21,10 @@
     ['character/gold-saucer/triple-triad-card-list', 'cards'],
     ['character/blue-mage/spellbook', 'bluemagic'],
     ['duty/duty-raid-finder', 'duty-'],
-    ['duty/quest/levequests', 'leves'],
+    ['duty/quest/levequests', 'leves-'],
     ['duty/quest', 'quests-'],
-    ['duty/fate', 'fates'],
-    ['duty/the-hunt', 'hunt'],
+    ['duty/fate', 'fates-'],
+    ['duty/the-hunt', 'hunt-'],
     ['logs/crafting-log', 'craft-'],
     ['logs/gathering/fishing-guide', 'fishing'],
     ['logs/sightseeing-log', 'sightseeing'],
@@ -97,7 +97,11 @@
   function positionKey(rule, rest, pos, siblings, pagesSeen, idx) {
     if (rule.s === 'global') return rule.k[pos] || null;
     if (rule.s === 'leaf') { const g = leafGroup(rule.g, rest.length ? rest[0] : rule.p.split('/').pop()); return (g && g[pos]) || null; }
-    if (rule.s === 'id') return idx.byKey.has(rule.sec + ':' + pos) ? rule.sec + ':' + pos : null;
+    if (rule.s === 'id') {
+      if (!rule.sec.endsWith('-')) return idx.byKey.has(rule.sec + ':' + pos) ? rule.sec + ':' + pos : null;
+      const hit = idx.sections.find((s) => s.id.startsWith(rule.sec) && idx.byKey.has(s.id + ':' + pos)); // a list split by expansion
+      return hit ? hit.id + ':' + pos : null;
+    }
     if (rule.s === 'currents') {
       const z = rule.z[nrm(rest[rest.length - 1])];
       if (!z) return null;

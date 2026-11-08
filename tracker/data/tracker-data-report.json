@@ -66,6 +66,7 @@
   "cosmicrecords": 244,
   "beastmaster": 55,
   "treasuremaps": 27,
+  "variantrecords": 49,
   "oclore": 60,
   "trust": 21,
   "quests-cj-war": 60,
@@ -136,5 +137,5 @@
   "quest: starter route of a class": 16,
   "quest: joiner route of a class": 32
  },
- "total": 38636
+ "total": 38685
 }

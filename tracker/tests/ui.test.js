@@ -145,7 +145,9 @@ test('clearing a whole group from its header asks first and can be undone', asyn
   const dialogs = []; page.on('dialog', (d) => dialogs.push(d.message()));
   await page.evaluate(() => { window.__tracker.ST.settings.links = false; });
   await go(page, 'orchestrion');
-  const g = page.locator('.lgroup').nth(1);
+  // the largest group (groups are split by expansion, so pick one with more than 25 rows)
+  const sizes = await page.locator('.lgroup').evaluateAll((gs) => gs.map((g) => g.querySelectorAll('.er:not(.x)').length));
+  const g = page.locator('.lgroup').nth(sizes.indexOf(Math.max(...sizes)));
   const n = await g.locator('.er:not(.x)').count();
   assert.ok(n > 25);
   await g.locator('.gh .c[data-gc="c1"]').click();
@@ -210,10 +212,10 @@ test('desktop-app import: ticks, X marks and levels land in the chosen column; t
   for (const k of ['levels:1', 'mounts:1', 'mounts:6', 'porters:1']) assert.ok(st.t.includes(k), k);
   // mount 6 is the Magitek Armor, which only the quest "The Ultimate Weapon" gives: that quest (and the story before
   // it) is proven too
-  const twu = await page.evaluate(() => [...window.__tracker.IDX.byKey].find(([k, h]) => h.e.n === 'The Ultimate Weapon' && k.startsWith('quests-main'))[0]);
+  const twu = await page.evaluate(() => [...window.__tracker.IDX.byKey].find(([k, h]) => h.e.n === 'The Ultimate Weapon' && k.startsWith('quests-msq-'))[0]);
   assert.ok(st.t.includes(twu));
   assert.match(txt, /more ticked by links/);
-  assert.deepEqual(st.e, ['quests-mainscenarioarealmreborn:65621']);
+  assert.deepEqual(st.e, ['quests-msq-arr:65621']);
   assert.deepEqual(st.v, { 'levels:1': 100, 'levels:2': 90 });
   assert.equal(st.c1, 0);
   assert.deepEqual(errors, []);
@@ -242,7 +244,7 @@ test('phone width: no sideways scroll on the overview, a long list or settings',
   const { ctx, page, errors } = await open({ context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 } });
   const sw = () => page.evaluate(() => document.documentElement.scrollWidth);
   assert.ok(await sw() <= 390, 'overview ' + await sw());
-  await go(page, 'quests-sidequests'); await page.waitForSelector('.er');
+  await go(page, 'quests-side-arr'); await page.waitForSelector('.er');
   assert.ok(await sw() <= 390, 'list ' + await sw());
   await page.click('[data-act=drawer]'); await page.waitForTimeout(250);
   assert.ok(await page.locator('.side').evaluate((e) => e.getBoundingClientRect().left >= 0));
@@ -352,9 +354,9 @@ test('starting class greys out the other cities’ opening quests; Grand Company
   await page.fill('[data-name="1"]', 'Gri Starter'); await page.selectOption('[data-cls="1"]', 'cnj');
   await page.fill('[data-name="2"]', 'No Class Yet');
   await page.click('#go'); await page.waitForSelector('.ov-table');
-  await go(page, 'quests-mainscenarioarealmreborn'); await page.waitForSelector('.er');
+  await go(page, 'quests-msq-arr'); await page.waitForSelector('.er');
   const st = await page.evaluate(() => {
-    const T = window.__tracker, ET = globalThis.ET, keys = T.IDX.sections.find((s) => s.id === 'quests-mainscenarioarealmreborn').groups.flatMap((g) => g.keys);
+    const T = window.__tracker, ET = globalThis.ET, keys = T.IDX.sections.find((s) => s.id === 'quests-msq-arr').groups.flatMap((g) => g.keys);
     const gri = keys.find((k) => T.IDX.byKey.get(k).e.city === 'gri'), lim = keys.find((k) => T.IDX.byKey.get(k).e.city === 'lim');
     const cell = (k, c) => document.querySelector(`.tk[data-k="${k}"][data-c="${c}"]`).classList.contains('na');
     const t = ET.tally(T.IDX, T.ST, keys);
@@ -363,7 +365,7 @@ test('starting class greys out the other cities’ opening quests; Grand Company
   assert.deepEqual([st.griForLim, st.griForGri, st.limForGri, st.griForNone], [true, false, true, false]);
   assert.ok(st.totals[0] < st.totals[2] && st.totals[1] < st.totals[2], 'city quests leave the totals: ' + st.totals);
   // clicking a greyed box explains instead of ticking
-  const gk = await page.evaluate(() => { const T = window.__tracker; return T.IDX.sections.find((s) => s.id === 'quests-mainscenarioarealmreborn').groups.flatMap((g) => g.keys).find((k) => T.IDX.byKey.get(k).e.city === 'gri'); });
+  const gk = await page.evaluate(() => { const T = window.__tracker; return T.IDX.sections.find((s) => s.id === 'quests-msq-arr').groups.flatMap((g) => g.keys).find((k) => T.IDX.byKey.get(k).e.city === 'gri'); });
   await page.locator(`.tk[data-k="${gk}"][data-c="c1"]`).click();
   assert.match(await page.textContent('#toast'), /another starting city/);
   assert.equal(await page.evaluate((k) => !!window.__tracker.ST.ticks.c1[k], gk), false);
@@ -468,6 +470,26 @@ test('two windows ticking within the same moment: both ticks are kept and both w
   await ctx.close();
 });
 
+test('expansion headings above groups fold away; resting the pointer on a name opens its information window', async () => {
+  const { ctx, page, errors } = await open({ n: 1 });
+  await page.evaluate(() => window.__tracker.setView('sec', 'ach-battle'));
+  const heads = await page.locator('.gx .t').allInnerTexts();
+  assert.deepEqual(heads, ['A Realm Reborn', 'Heavensward', 'Stormblood', 'Shadowbringers', 'Endwalker', 'Dawntrail']);
+  const before = await page.locator('.lgroup').count();
+  await page.locator('.gx .c0').first().click();
+  assert.ok(await page.locator('.lgroup').count() < before, 'folding an expansion hides its groups');
+  await page.evaluate(() => { window.__tracker.setView('sec', 'quests-side-hw'); window.__tracker.openAll(); });
+  await page.waitForSelector('.er .nm');
+  await page.locator('.er .c0 .nm').nth(3).hover();
+  await page.waitForSelector('#tip:not(.hidden)', { timeout: 5000 });
+  const tip = await page.locator('#tip').innerText();
+  assert.match(tip, /Starts with /);
+  assert.match(tip, /Console Games Wiki/);
+  assert.match(await page.locator('#tip a').getAttribute('href'), /^https:\/\/ffxiv\.consolegameswiki\.com\//);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('a list opens with every group closed; a group header opens it; Open all and Close all; find shows matches', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
   await page.evaluate(() => window.__tracker.setView('sec', 'mounts'));
@@ -495,8 +517,8 @@ test('links: ticking a quest ticks what it proves, says so with Undo, explains i
   const { ctx, page, errors } = await open({ n: 2 });
   // set character 1's starting class and Grand Company, so the main story reaches its own city's opening quests
   await page.evaluate(() => { const t = window.__tracker; ET.setStart(t.ST, 'c1', 'cnj', 2); t.render(); });
-  await go(page, 'quests-mainscenarioarealmreborn');
-  const key = await page.evaluate(() => [...window.__tracker.IDX.byKey].find(([k, h]) => h.e.n === 'The Ultimate Weapon' && k.startsWith('quests-main'))[0]);
+  await go(page, 'quests-msq-arr');
+  const key = await page.evaluate(() => [...window.__tracker.IDX.byKey].find(([k, h]) => h.e.n === 'The Ultimate Weapon' && k.startsWith('quests-msq-'))[0]);
   await page.locator(`.er[data-k="${key}"] .tk[data-c="c1"]`).click();
   await page.waitForSelector('#toast .toast-btn');
   assert.match(await page.textContent('#toast'), /Also ticked for Alba Eveniunt: .* and \d+ more/);
@@ -511,7 +533,7 @@ test('links: ticking a quest ticks what it proves, says so with Undo, explains i
   assert.match(await page.textContent(`.det[data-det="${key}"]`), /Ticking it also ticks:/);
   // switched off: a tick is just a tick
   await page.evaluate(() => { window.__tracker.ST.settings.links = false; });
-  const prev = await page.evaluate((k) => { const t = window.__tracker; const h = [...t.IDX.byKey].find(([x, v]) => v.e.n === 'Operation Archon' && x.startsWith('quests-main')); return h[0]; }, key);
+  const prev = await page.evaluate((k) => { const t = window.__tracker; const h = [...t.IDX.byKey].find(([x, v]) => v.e.n === 'Operation Archon' && x.startsWith('quests-msq-')); return h[0]; }, key);
   await page.locator(`.er[data-k="${prev}"] .tk[data-c="c2"]`).click();
   assert.deepEqual(await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c2)), [prev]);
   assert.deepEqual(errors, []);
@@ -522,7 +544,7 @@ test('links: Settings fills in what existing ticks prove, with a preview and Und
   const { ctx, page, errors } = await open({ n: 1 });
   const ach = await page.evaluate(() => {
     const t = window.__tracker;
-    const k = [...t.IDX.byKey].find(([x, h]) => h.e.n === 'The Ultimate Weapon' && x.startsWith('quests-main'))[0];
+    const k = [...t.IDX.byKey].find(([x, h]) => h.e.n === 'The Ultimate Weapon' && x.startsWith('quests-msq-'))[0];
     t.ST.ticks.c1[k] = 1; t.render(); return k;
   });
   await page.click('text=Settings'); await page.click('[data-tab="count"]');

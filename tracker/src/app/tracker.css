@@ -198,3 +198,20 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 .toast { display: flex; align-items: center; gap: 12px; max-width: min(92vw, 640px); }
 .toast-btn { flex: none; background: transparent; color: inherit; border: 1px solid currentColor; border-radius: 6px; padding: 3px 10px; font: 700 13px var(--f-body); cursor: pointer; }
 .det .links { display: grid; gap: 3px; }
+
+/* expansion heading above a list's groups */
+.gx { border-bottom: 1px solid var(--rule); background: var(--paper-3); }
+.gx .c0 { display: flex; align-items: baseline; gap: 8px; padding: 11px 8px; min-width: 0; cursor: pointer; }
+.gx .c0 .fold { color: var(--seal); font-size: 12px; width: 10px; transition: transform .12s; }
+.gx.folded .c0 .fold { transform: rotate(-90deg); }
+.gx .c0 .t { font: 700 15px/1.2 var(--f-serif); color: var(--seal); letter-spacing: .02em; }
+.gx .c { font: 600 11.5px var(--f-body); color: var(--ink-2); display: flex; align-items: center; justify-content: center; }
+.gx .c.full { color: var(--seal); }
+
+/* the information window shown when the pointer rests on an entry's name */
+.tip { position: fixed; z-index: 60; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.18)); padding: 10px 12px; font: 400 13px/1.45 var(--f-body); display: grid; gap: 4px; }
+.tip.hidden { display: none; }
+.tip .tt { font-weight: 700; font-size: 14px; }
+.tip .p { color: var(--ink-3); font-size: 12px; }
+.tip .dim { color: var(--ink-3); }
+.tip a { color: var(--seal); font-weight: 600; }

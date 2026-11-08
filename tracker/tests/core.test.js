@@ -10,7 +10,8 @@ const ET = globalThis.ET;
 
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'tracker-data.json'), 'utf8'));
 const idx = ET.indexData(data);
-const firstKey = (sid, pred) => ET.sectionKeys(idx.sections.find((s) => s.id === sid)).find((k) => pred(idx.byKey.get(k).e));
+// sid may name a list split by expansion (e.g. 'fates' for fates-arr ... fates-dt)
+const firstKey = (sid, pred) => idx.sections.filter((s) => s.id === sid || s.id.startsWith(sid + '-')).flatMap((s) => ET.sectionKeys(s)).find((k) => pred(idx.byKey.get(k).e));
 
 test('state: 1 to 8 characters, names kept, bad counts refused', () => {
   const st = ET.newState(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
@@ -280,7 +281,7 @@ require(path.join(__dirname, '..', 'src', 'core', 'importer.js'));
 
 test('desktop-app import: game-id areas land on the right entries; others are reported, not guessed', () => {
   const pick = (sid) => idx.byKey.get(ET.sectionKeys(idx.sections.find((s) => s.id === sid))[0]).e;
-  const mount = pick('mounts'), quest = pick('quests-sidequests'), recipe = pick('craft-carpenter');
+  const mount = pick('mounts'), quest = pick('quests-side-arr'), recipe = pick('craft-carpenter');
   const hair = idx.byKey.get(firstKey('hairstyles', (e) => e.al && e.al.length > 1)).e;
   const save = {
     version: '1.0.5', 'starting-class': '', custom: {}, 'bookmarked-groups': [], 'bookmarked-tasks': [],
@@ -299,7 +300,7 @@ test('desktop-app import: game-id areas land on the right entries; others are re
   assert.ok(!r0.ticks['aetherytes:' + 2] || true);
   const r = ET.importDesktopSave(idx, JSON.stringify(save), map);
   assert.ok(r.ticks['mounts:' + mount.i]);
-  assert.ok(r.ticks['quests-sidequests:' + quest.i]);
+  assert.ok(r.ticks['quests-side-arr:' + quest.i]);
   assert.ok(r.ticks['craft-carpenter:' + recipe.i]);
   assert.ok(r.ticks['hairstyles:' + hair.i], 'hairstyle matched through its race/gender row');
   const glad = idx.sections.find((s) => s.id === 'hunting').groups.find((g) => g.c === 'Gladiator');
@@ -338,7 +339,7 @@ test('availability unknown entries are not counted until switched on', () => {
 
 test('per-character exclusion: left out of that character only; travels in files, codes and merges', async () => {
   const st = ET.newState(['A', 'B']);
-  const sec = idx.sections.find((s) => s.id === 'quests-sidequests');
+  const sec = idx.sections.find((s) => s.id === 'quests-side-arr');
   const keys = ET.sectionKeys(sec);
   const k = keys.find((x) => ET.availability(st, x, idx.byKey.get(x).e).counted);
   const before = ET.tally(idx, st, keys);
@@ -363,7 +364,7 @@ test('per-character exclusion: left out of that character only; travels in files
 
 test('starting class and Grand Company decide what applies; the importer works them out from X marks', () => {
   const st = ET.newState(['A', 'B']);
-  const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'quests-mainscenarioarealmreborn'));
+  const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'quests-msq-arr'));
   const gri = keys.find((k) => idx.byKey.get(k).e.city === 'gri');
   const uld = keys.find((k) => idx.byKey.get(k).e.city === 'uld');
   const before = ET.tally(idx, st, keys).totals.c1;
@@ -636,7 +637,7 @@ test('class quests: each starting class does only one route of its first class q
   assert.strictEqual(ET.notApplicable(st, p, CJ + joiner.i, joiner), null);
   assert.strictEqual(ET.notApplicable(st, n, CJ + joiner.i, joiner), null, 'unknown starting class: both count');
   // the guild's "So You Want to Be a Gladiator" is the joiner route's first step
-  const sywtb = firstKey('quests-other', (e) => e.n === 'So You Want to Be a Gladiator');
+  const sywtb = firstKey('quests-cj-war', (e) => e.n === 'So You Want to Be a Gladiator');
   assert.strictEqual(idx.byKey.get(sywtb).e.jc, 'gla');
   // every same-named pair in the list is now one route each
   for (const grp of idx.sections.filter((x) => x.id.startsWith('quests-cj-')).flatMap((x) => x.groups)) {
@@ -701,6 +702,38 @@ test('Dawntrail additions: Beastmaster, Trust, treasure hunt, Quantum and event 
   assert.deepStrictEqual(idx.sections.find((x) => x.id === 'oclore').groups.map((g) => [g.t, g.keys.length]), [['South Horn', 30], ['North Horn', 30]]);
 });
 
+test('organised by expansion: big lists split per expansion, an expansion layer elsewhere, deep dungeons by series', () => {
+  const EXP = ['A Realm Reborn', 'Heavensward', 'Stormblood', 'Shadowbringers', 'Endwalker', 'Dawntrail'];
+  for (const base of ['quests-msq', 'quests-side', 'quests-allied', 'leves', 'fates', 'hunt']) {
+    const lists = idx.sections.filter((x) => x.id.startsWith(base + '-'));
+    assert.deepStrictEqual(lists.map((x) => x.t.split(': ')[1]), EXP, base);
+    assert.ok(!idx.sections.some((x) => x.id === base), base + ' itself is gone');
+  }
+  assert.ok(!idx.sections.some((x) => x.id === 'quests-other'), 'no list of quests outside the journal');
+  const deep = idx.sections.find((x) => x.id === 'duty-deep');
+  const where = (n) => deep.groups.find((g) => g.keys.some((k) => idx.byKey.get(k).e.n.startsWith(n))).t;
+  assert.deepStrictEqual(["The Palace of the Dead", 'Heaven-on-High', 'Eureka Orthos', "Pilgrim's Traverse"].map(where), ['Heavensward', 'Stormblood', 'Endwalker', 'Dawntrail']);
+  const ach = idx.sections.find((x) => x.id === 'ach-battle');
+  assert.deepStrictEqual([...new Set(ach.groups.map((g) => g.xp))], EXP, 'achievements: expansion, then their category');
+  const fu = idx.sections.find((x) => x.id === 'quests-otherquests').groups.filter((g) => g.t === 'Feature Unlocks');
+  assert.ok(fu.length >= 5 && fu.every((g) => g.xp));
+  // a tick saved under an old list moves to the new one
+  const fk = ET.sectionKeys(idx.sections.find((x) => x.id === 'fates-dt'))[0];
+  const st = ET.newState(['A']);
+  st.ticks.c1['fates:' + idx.byKey.get(fk).e.i] = 1;
+  ET.migrateAliases(idx, st);
+  assert.ok(st.ticks.c1[fk]);
+});
+
+test('variant dungeon records: 12 or 13 per dungeon, and all of them give the dungeon\'s achievement', () => {
+  const vr = idx.sections.find((x) => x.id === 'variantrecords');
+  assert.deepStrictEqual(vr.groups.map((g) => g.keys.length), [12, 12, 12, 13]);
+  const all = LINKS && ET.indexLinks(idx, LINKS);
+  const st = ET.newState(['A']);
+  vr.groups[0].keys.forEach((k) => ET.setTick(st, 'c1', k, true));
+  assert.ok(ET.applyLinks(all, idx, st, 'c1', vr.groups[0].keys).map((k) => idx.byKey.get(k).e.n).includes('Dig Deep: The Sil\'dihn Subterrane'));
+});
+
 // ---------------------------------------------------------------- links between entries
 const LINKS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'links.json'), 'utf8'));
 const LX = ET.indexLinks(idx, LINKS);
@@ -727,10 +760,10 @@ test('links: built for this data, and refused when built for other data', () => 
 test('links: a quest ticks the quests it needs, all the way back, and never another city\'s quests', () => {
   const st = ET.newState(['A']);
   // the last quest of the A Realm Reborn main story pulls in its whole chain
-  const twu = firstKey('quests-mainscenarioarealmreborn', (e) => e.n === 'The Ultimate Weapon');
+  const twu = firstKey('quests-msq', (e) => e.n === 'The Ultimate Weapon');
   ET.setTick(st, 'c1', twu, true);
   const added = ET.applyLinks(LX, idx, st, 'c1', [twu], { gold: false });
-  const msq = added.filter((k) => k.startsWith('quests-mainscenarioarealmreborn:'));
+  const msq = added.filter((k) => k.startsWith('quests-msq-'));
   assert.ok(msq.length > 100, 'the main story before it: ' + msq.length);
   // a Gridania starter in the Twin Adder: the chain runs through that company's officer quest down to the Gridania
   // opening quests, never Limsa's or Ul'dah's (the game's data only says "one of the three" at those steps)
@@ -848,6 +881,6 @@ test('links: achievement tiers, Dawntrail relic stages, Grand Company ranks, and
   // the first Maelstrom rank comes with "Till Sea Swallows All"
   assert.ok(fill(byName('gcranks', 'Storm Private Third Class')).some((k) => idx.byKey.get(k).e.n === 'Till Sea Swallows All'));
   // from the desktop app, checked: the Firebird quest needs the Heavensward lanners
-  const fire = fill(byName('quests-sidequests', 'Fiery Wings, Fiery Hearts'));
+  const fire = fill(byName('quests-side', 'Fiery Wings, Fiery Hearts'));
   assert.ok(fire.includes(byName('mounts', 'Warring Lanner')) && fire.includes(byName('mounts', 'Dark Lanner')));
 });

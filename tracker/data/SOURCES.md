@@ -98,3 +98,15 @@ python3 -I tools/extract.py dm tc
 | Trust | the in-game Trust avatars per expansion; member lists and level ranges as on the FFXIV Completionist desktop app's Trust page (1.0.5) | "Achieve trust level N with the avatars for …" / "… all available avatars in <expansion>" as level rules |
 
 The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`duty/trust/shb`, `ew`, `dt`) and Treasure Hunt (`duty/treasure-hunt/maps`, `duties`) pages by position, matched by name.
+
+## Organisation and the information window (2026-11-08)
+
+- `tools/organize.py` (run after `tools/add-checklist.py`) does three things. Each moved entry keeps its old list in `mv`, so saved ticks move over.
+  - It splits the big lists into one list per expansion.
+  - It adds the expansion layer (`xp` on each group).
+  - It places duties by their map's expansion, with the deep-dungeon series and the Aquapolis by name.
+  - Expansion sources: `Quest.Expansion` for quests; `TerritoryType.ExVersion` (through the group's zone) for duties, FATEs and the Hunt; level bands for levequests; the release patch for everything else.
+- `tools/info.py` writes `data/info.json`, a few lines per entry. Sources:
+  - game sheets: `Quest` (issuer, level, class category, prerequisites, `InstanceContentUnlock`, `INSTANCEDUNGEON` parameters of quests that add content), `ContentFinderCondition`, `Adventure` + `Level` + `Map` (vista coordinates, time, weather, emote), `Recipe` + `RecipeLevelTable` + `SecretRecipeBook`, `AetherCurrent`, `Achievement`, `Title`;
+  - FFXIV Teamcraft data files (MIT, commit `70429e2`): `npcs.json` (positions), `fates.json`, `monsters.json`, `aetherytes.json`, `leves.json`, `fishing-spots.json`, `fishing-sources.json`, `fish-parameter.json`, and the `nodes.json` already used by the extractor.
+- The window's guide link is the Console Games Wiki's search for the entry's name, which goes straight to the page of that name. No wiki text is stored: the wiki states no licence for its text.

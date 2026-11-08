@@ -1,6 +1,6 @@
 # Eveniunt Tracker
 
-A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command Center. It tracks up to **eight characters side by side** across everything the game has to offer: about 43,900 entries in 117 lists, up to date with patch 7.57, including Custom Deliveries and Cosmic Exploration (missions by planet and class, and records).
+A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command Center. It tracks up to **eight characters side by side** across everything the game has to offer: about 43,900 entries in 145 lists, up to date with patch 7.57, including Custom Deliveries and Cosmic Exploration (missions by planet and class, and records).
 
 - **Open it:** https://splitzhappen.github.io/Eveniunt-Command-Center/tracker/ (click **Install app** in the header to install it; it works offline after the first visit).
 - **Single file:** `dist/eveniunt-tracker.html` works offline from your computer. Cloud sync needs the hosted app.
@@ -16,6 +16,7 @@ A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command
    - **Links:** ticking an entry also ticks what it proves, from the game's own data: the earlier quests it needs (through your own starting city and Grand Company), the aether current or reward a quest gives, the achievement and title it earns, Freebird when every current of a zone is ticked, level achievements from job levels, earlier ranks and relic stages, master recipe books from master recipes, achievement tiers, the links the FFXIV Completionist desktop app ships (checked and corrected), and more (about 17,900 links). A message lists what was added, with **Undo**. Links only add: unticking never unticks anything else, and nothing that does not apply to a character is ticked. The entry's details say what it ticks and what ticks it. Settings → Counting turns links off, sets whether a FATE with its own achievement assumes a gold rating, and **fills in what your existing ticks prove** (with a preview and Undo).
    - **Mark “does not apply”** (toolbar): the same as right-clicking, for a plain click; handy for marking many boxes in a row.
    - **Classes and Jobs, Trust:** type each character's level; a job counts as complete at its level cap, a Trust avatar at its expansion's top level.
+   - **Information window:** rest the pointer on an entry's name to see how to get or do it (who gives a quest and where, level and what comes before it, where a monster or gathering node is, the fishing hole with bait and hook, a recipe's ingredients, a vista's time, weather and emote, and so on), with a link to the entry's page on the Console Games Wiki for step-by-step guides. On a phone or tablet, tap the name: the same information is in the details.
    - **Find, All / Missing / Done:** filter the list. The search box in the header searches every list.
 4. **Appearance:** Settings → Appearance has the same 20 FFXIV themes and settings as the Eveniunt Atelier (Mode, Theme, Accent, Background, Foreground, Advanced).
 
@@ -28,16 +29,18 @@ A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command
 
 ## Data
 
-Built from pinned sources and regenerated, never typed by hand: see `data/SOURCES.md`. Every list is grouped the way the game groups it (expansion and patch, journal sections, zones, log pages, categories).
+Built from pinned sources and regenerated, never typed by hand: see `data/SOURCES.md`. Every list is grouped by expansion first (the biggest ones are one list per expansion), then the way the game groups it (journal sections, zones, log pages, categories).
 
 ## Build and test
 
 ```
 python3 -I tools/extract.py <ffxiv-datamining checkout> <teamcraft json dir>     # data/tracker-data.json
 python3 -I tools/add-checklist.py <FFXIV Checklist workbook.xlsx> --dm <ffxiv-datamining checkout>   # adds the checklist lists (plus what came after 7.45), data/desktop-map.json
+python3 -I tools/organize.py <ffxiv-datamining checkout>                             # lists by expansion (one list per expansion for the big ones), moved entries keep their old key
 python3 -I tools/links.py <ffxiv-datamining checkout>                                # data/links.json (links between entries)
 node tools/desktop-links.js <desktop app resources/resources> [<app.asar>/assets/i18n/en.json]   # optional: data/desktop-links.json
 node tools/merge-desktop-links.js                                                 # adds the desktop app's checked links to data/links.json
+python3 -I tools/info.py <datamining> <teamcraft libs/data/src/lib/json> <teamcraft json dir>   # data/info.json (the information window)
 python3 -I tools/fetch-ffxivcollect.py                                            # optional: refresh the FFXIV Collect snapshot
 FONT_DIR=<node_modules/@fontsource> node tools/build.js                           # dist/eveniunt-tracker.html
 FONT_DIR=<node_modules/@fontsource> node tools/make-icons.js                      # icons only

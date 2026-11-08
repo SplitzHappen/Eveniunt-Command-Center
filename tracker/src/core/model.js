@@ -25,9 +25,9 @@
           byKey.set(k, { e, s, g });
           return k;
         });
-        groups.push({ t: g.t, c: g.c || '', keys });
+        groups.push({ t: g.t, c: g.c || '', xp: g.xp || '', keys });
       }
-      sections.push({ id: s.id, t: s.t, area: s.area, groups });
+      sections.push({ id: s.id, t: s.t, area: s.area, folder: s.folder || '', groups });
     }
     return { data, byKey, sections };
   };

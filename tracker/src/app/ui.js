@@ -64,12 +64,19 @@
       ['Blue Mage', ['bluemagic', 'bluelog', 'carnivale']],
       ['Gold Saucer', ['cards', 'ttnpcs', 'mahjong']]]],
     ['Duty', [
-      ['Quests', function (s) { return (s.indexOf('quests-') === 0 && s.indexOf('quests-cj-') !== 0) || s === 'leves'; }],
+      ['Main Scenario Quests', function (s) { return s.indexOf('quests-msq-') === 0; }],
+      ['Chronicles of a New Era', ['quests-chroniclesofanewera']],
+      ['Sidequests', function (s) { return s.indexOf('quests-side-') === 0; }],
+      ['Allied Society Quests', function (s) { return s.indexOf('quests-allied-') === 0; }],
       ['Class and Job Quests', function (s) { return s.indexOf('quests-cj-') === 0; }],
-      ['Duty Finder', function (s) { return s.indexOf('duty-') === 0 && s !== 'duty-treasure'; }],
+      ['Other Quests', ['quests-otherquests']],
+      ['Levequests', function (s) { return s.indexOf('leves-') === 0; }],
+      ['Duty Finder', function (s) { return (s.indexOf('duty-') === 0 && s !== 'duty-treasure') || s === 'variantrecords'; }],
       ['Trust', ['trust']],
       ['Treasure Hunt', ['treasuremaps', 'duty-treasure']],
-      ['FATEs, Hunt and Training', ['fates', 'sharedfate', 'hunt', 'novice']],
+      ['FATEs', function (s) { return s.indexOf('fates-') === 0 || s === 'sharedfate'; }],
+      ['The Hunt', function (s) { return s.indexOf('hunt-') === 0; }],
+      ['Training', ['novice']],
       ['Field Operations', ['eurekalevel', 'eurekaaeth', 'logos', 'eurekaduties', 'bozjarank', 'bozjaaeth', 'lostactions', 'bozjaduties', 'oclevel', 'ocaeth', 'ocevents', 'phantomjobs', 'oclore', 'ocduties']],
       ['Cosmic Exploration', ['cosmicmissions', 'cosmicrecords']],
       ['Island Sanctuary', function (s) { return s.indexOf('isle') === 0; }],
@@ -96,7 +103,8 @@
     return menus;
   })();
   function navTitle(id) {
-    var t = SEC.get(id).t;
+    var s = SEC.get(id), t = s.t;
+    if (s.folder && t.indexOf(': ') > 0) return t.slice(t.indexOf(': ') + 2);
     return t.replace(/^(Achievements|Duties|Crafting Log|Gathering Log|Eureka|Bozja|Occult Crescent|Island Sanctuary|Treasure Hunt): /, '');
   }
   function menuOf(id) { for (var i = 0; i < MENUS.length; i++) for (var j = 0; j < MENUS[i].folders.length; j++) if (MENUS[i].folders[j].secs.indexOf(id) >= 0) return [MENUS[i], MENUS[i].folders[j]]; return [null, null]; }
@@ -162,7 +170,10 @@
   function markText(hit, code, table) { if (code === 'gone' && RAW.get(hit.s.id).src === 'checklist') return table === SHORT ? 'Not applicable' : 'Not applicable or no longer obtainable (the checklist lists no such step)'; return table[code] || ''; }
   function detailHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
+    infoLines(k).forEach(function (l) { bits.push('<div>' + esc(l) + '</div>'); });
+    if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
     if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
+    bits.push('<div><a href="' + wikiUrl(k) + '" target="_blank" rel="noopener noreferrer">Step-by-step guide on Console Games Wiki ↗</a></div>');
     if (e.d) bits.push('<div>' + esc(e.d) + '</div>');
     var facts = [];
     if (e.p) facts.push('Patch ' + esc(e.p));
@@ -220,6 +231,69 @@
     var pill = av.marked ? '<button type="button" class="pill" data-x="' + k + '" title="Not counted. Click to count it anyway.">' + (av.manual === 'x' ? 'Not counted' : markText(hit, av.builtIn, SHORT) || 'Not counted') + '</button>' : '';
     return '<div class="lr er' + (av.marked ? ' x' : '') + (open ? ' open' : '') + '" data-k="' + k + '"><span class="c0" data-open="' + k + '" tabindex="0" role="button" aria-expanded="' + open + '"><span class="nm">' + esc(e.n) + '</span>' + (TWIN.has(k) && (e.d || e.sc || e.jc) ? '<span class="p">' + esc(e.sc ? 'starting class route' : e.jc ? 'joined later route' : String(e.d).split(' · ')[0]) + '</span>' : '') + (e.p ? '<span class="p">' + esc(e.p) + '</span>' : '') + pill + '</span>' + cells + '</div>' + (open ? detailHtml(k) : '');
   }
+  // ── how to get it: the information window (hover over a name; tap the name on a touch screen for the details) ──
+  var INFO = null, INFO_P = null;
+  function loadInfo() {
+    if (INFO_P) return INFO_P;
+    INFO_P = new Promise(function (resolve) {
+      try {
+        var el = document.getElementById('info-data'), b64 = el ? el.textContent.trim() : '';
+        if (!b64 || typeof DecompressionStream !== 'function') { INFO = {}; return resolve(INFO); }
+        var bin = atob(b64), bytes = new Uint8Array(bin.length);
+        for (var n = 0; n < bin.length; n++) bytes[n] = bin.charCodeAt(n);
+        new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()
+          .then(function (t) { INFO = JSON.parse(t); resolve(INFO); }, function () { INFO = {}; resolve(INFO); });
+      } catch (e) { INFO = {}; resolve(INFO); }
+    });
+    return INFO_P;
+  }
+  // a guide for any entry: the Console Games Wiki page of that name (its search goes straight to the page when one exists)
+  function wikiUrl(k) {
+    var hit = IDX.byKey.get(k), e = hit.e, sid = hit.s.id, q = e.n;
+    if (sid === 'variantrecords') q = (e.d || hit.g.t).replace(/\*/g, '');
+    else if (sid === 'aethercurrents') q = 'Aether Current ' + hit.g.t;
+    else if (sid.indexOf('quests-cj-') === 0 && /^Level /.test(q)) q = hit.g.t;
+    q = String(q).replace(/^Quest:\s*/, '').replace(/\s*\((?:Floors|Stones) [^)]*\)$/, '').replace(/\*/g, '');
+    return 'https://ffxiv.consolegameswiki.com/mediawiki/index.php?search=' + encodeURIComponent(q) + '&title=Special%3ASearch&go=Go';
+  }
+  function infoLines(k) { return (INFO && INFO[k]) || []; }
+  function tipHtml(k) {
+    var hit = IDX.byKey.get(k), e = hit.e, bits = [];
+    bits.push('<b class="tt">' + esc(e.n) + '</b>' + (e.p ? ' <span class="p">' + esc(e.p) + '</span>' : ''));
+    infoLines(k).forEach(function (l) { bits.push('<div>' + esc(l) + '</div>'); });
+    if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
+    if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
+    if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No details in the data for this one.</div>');
+    bits.push('<div class="row"><a href="' + wikiUrl(k) + '" target="_blank" rel="noopener noreferrer">Step-by-step guide on Console Games Wiki ↗</a></div>');
+    return bits.join('');
+  }
+  var tipTimer = null, tipHide = null, tipKey = null;
+  function showTip(k, anchor) {
+    loadInfo().then(function () {
+      if (tipKey !== k) return;
+      var t = $('#tip'); t.innerHTML = tipHtml(k); t.classList.remove('hidden');
+      var r = anchor.getBoundingClientRect(), w = Math.min(420, window.innerWidth - 24);
+      t.style.maxWidth = w + 'px';
+      var left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12));
+      var top = r.bottom + 6; t.style.left = left + 'px'; t.style.top = top + 'px';
+      var th = t.getBoundingClientRect().height;
+      if (top + th > window.innerHeight - 8) t.style.top = Math.max(8, r.top - th - 6) + 'px';
+    });
+  }
+  function hideTip() { tipKey = null; clearTimeout(tipTimer); var t = $('#tip'); if (t) t.classList.add('hidden'); }
+  if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+    document.addEventListener('mouseover', function (ev) {
+      var nm = ev.target.closest && ev.target.closest('.er .c0 .nm');
+      if (ev.target.closest && ev.target.closest('#tip')) { clearTimeout(tipHide); return; }
+      if (!nm) { if (tipKey) { clearTimeout(tipHide); tipHide = setTimeout(hideTip, 250); } return; }
+      var k = nm.closest('.er').dataset.k;
+      clearTimeout(tipHide);
+      if (tipKey === k) return;
+      clearTimeout(tipTimer); tipKey = k;
+      tipTimer = setTimeout(function () { showTip(k, nm); }, 350);
+    });
+    window.addEventListener('scroll', hideTip, true);
+  }
   var OPEN = new Set();
   function norm(s) { return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
   function applying(k, e) { return ST.chars.filter(function (c) { return !ET.notApplicable(ST, c, k, e); }); }
@@ -260,7 +334,7 @@
 
   // ── pages ──
   function setView(view, sec, push) {
-    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear(); OPENG.clear(); UI.find = '';
+    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear(); OPENG.clear(); XFOLD.clear(); UI.find = '';
     persist(); render();
     var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : '#/';
     if (push !== false && location.hash !== h) history.pushState(null, '', h);
@@ -313,14 +387,29 @@
     $('#page').innerHTML = h;
     renderLedger();
   }
+  // A list whose groups belong to different expansions shows an expansion heading above them (with each character's
+  // count for that expansion); clicking it folds the expansion's groups away.
+  var XFOLD = new Set(); // "sid|expansion" folded in the current visit
+  function expansionHtml(sid, xp, keys) {
+    var id = sid + '|' + xp, folded = XFOLD.has(id) && !UI.find, cnt = groupCounts(keys);
+    return '<div class="lr gx' + (folded ? ' folded' : '') + '"><span class="c0" data-xfold="' + esc(id) + '" tabindex="0" role="button" aria-expanded="' + !folded + '"><span class="fold">▾</span><span class="t">' + esc(xp) + '</span></span>' +
+      ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" title="' + esc(c.name) + ', ' + esc(xp) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>';
+  }
   function renderLedger() {
     var sid = UI.sec, sec = SEC.get(sid), q = norm(UI.find), any = false;
     var h = headRowHtml(tallyOf([sid]));
+    var layered = sec.groups.some(function (g) { return g.xp; }), xp = null;
     sec.groups.forEach(function (g, gi) {
       GROUP_KEYS.set(sid + '#' + gi, g.keys);
       var keys = g.keys.filter(function (k) { return passes(k, q); });
       if (!keys.length) return;
       any = true;
+      if (layered && g.xp !== xp) {
+        xp = g.xp;
+        var all = []; sec.groups.forEach(function (o) { if (o.xp === xp) all = all.concat(o.keys); });
+        h += expansionHtml(sid, xp || 'Other', all);
+      }
+      if (layered && XFOLD.has(sid + '|' + (g.xp || 'Other')) && !UI.find) return;
       h += groupHtml(sid, gi, g, keys);
     });
     if (!any) h += '<p class="empty">Nothing to show. Clear the search, choose All, or turn on “Show not counted”.</p>';
@@ -470,6 +559,8 @@
       }
       refreshAfter(keys); return;
     }
+    var xf = e.target.closest('[data-xfold]');
+    if (xf) { var xid = xf.dataset.xfold; if (XFOLD.has(xid)) XFOLD.delete(xid); else XFOLD.add(xid); renderLedger(); return; }
     var fold = e.target.closest('[data-fold]');
     if (fold) { var id = fold.dataset.fold; if (fold.closest('.lgroup').classList.contains('folded')) OPENG.add(id); else OPENG.delete(id); if (UI.view === 'search') renderSearch(); else renderLedger(); return; }
     var oa = e.target.closest('[data-openall]');
@@ -501,7 +592,7 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target.matches && e.target.matches('.fr[data-act]')) { e.target.click(); return; }
     // entry names (details), group headers (open/close) and group counts (tick/clear) are spans: Enter and Space act like a click
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-open], [data-fold], [data-gc]')) { e.preventDefault(); e.target.click(); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-open], [data-fold], [data-gc], [data-xfold]')) { e.preventDefault(); e.target.click(); return; }
     if (e.key === 'Escape' && document.body.classList.contains('drawer')) document.body.classList.remove('drawer');
   });
   var resizeTimer = null;

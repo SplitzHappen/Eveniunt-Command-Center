@@ -46,6 +46,11 @@ def entries(sid):
     for g in S[sid]["g"]:
         for e in g["e"]:
             yield g, e
+def family(base):
+    """(section id, group, entry) over a list split into one list per expansion (e.g. fates-arr ... fates-dt)."""
+    for sid in S:
+        if sid == base or sid.startswith(base + "-"):
+            for g, e in entries(sid): yield sid, g, e
 
 imp, all_r, any_r, ab_r, cnt_r, lvl_r = [], [], [], [], [], []
 fam = collections.Counter()
@@ -223,7 +228,8 @@ for rid, r in rep.items():
     for nm in (r["Name"], r["AlliedNames"]):
         if clean(nm): rank_index.setdefault(norm(nm), rid)
 fate_by_name = collections.defaultdict(list)
-for g, e in entries("fates"): fate_by_name[norm(e["n"])].append(k("fates", e["i"]))
+for sid_, g, e in family("fates"): fate_by_name[norm(e["n"])].append(k(sid_, e["i"]))
+ALL_FATES = [k(sid_, e["i"]) for sid_, g, e in family("fates")]
 minion_by_name = {norm(e["n"]): k("minions", e["i"]) for g, e in entries("minions")}
 cards_by_no = {e["no"]: k("cards", e["i"]) for g, e in entries("cards") if e.get("no")}
 sight = collections.defaultdict(dict)  # expansion -> entry number within that expansion's log -> key
@@ -257,6 +263,16 @@ for aid, r in A.items():
         if len(hits) == 1:
             both(ak, hits[0], "a"); fam["a"] += 1
             continue
+    # Variant dungeons: "Unlock all <kind> records in/on <dungeon>." needs every record of that dungeon
+    m = re.match(r"^Unlock all \w+ records (?:in|on) (.+?)\.$", desc)
+    if m and "variantrecords" in S:
+        want = norm(m.group(1).replace("*", ""))
+        grp = [g for g in S["variantrecords"]["g"] if want and (norm(g.get("c", "")) .endswith(want) or want.endswith(norm(g.get("c", ""))) or want in norm(g["t"]))]
+        if len(grp) == 1:
+            ks = [k("variantrecords", e["i"]) for e in grp[0]["e"]]
+            all_r.append([ak, ks, "a"]); fam["a"] += 1
+            continue
+        unmatched["variant records achievement"] += 1
     # Beastmaster: "Befriend N unique beasts." counts the Master's Bestiary
     m = re.match(r"^Befriend (\d+) unique beasts\.$", desc)
     if m and beast_keys:
@@ -365,7 +381,7 @@ for aid, r in A.items():
             else: unmatched["FATE achievement (FATE not found)"] += 1
             continue
         m = re.match(r"^Successfully complete (\d+) FATEs\.$", desc)
-        if m: cnt_r.append([ak, int(m.group(1)), "s:fates", "a"]); fam["a"] += 1; continue
+        if m: cnt_r.append([ak, int(m.group(1)), ALL_FATES, "a"]); fam["a"] += 1; continue
         m = re.match(r"^Add (\d+) unique music rolls to your orchestrion\.$", desc)
         if m: cnt_r.append([ak, int(m.group(1)), "s:orchestrion", "a"]); fam["a"] += 1; continue
         m = re.match(r"^Obtain (\d+|a) Triple Triad cards?\.$", desc)
@@ -479,7 +495,7 @@ for who, ranks in hl.items():
         if n - 1 in ranks: ab_r.append([ranks[n], ranks[n - 1], "h"]); fam["h"] += 1
 # shared FATE ranks: "Complete N FATEs in <zone>" is reached once N different FATEs of that zone are ticked
 fates_zone = collections.defaultdict(list)
-for g, e in entries("fates"): fates_zone[norm(g["t"])].append(k("fates", e["i"]))
+for sid_, g, e in family("fates"): fates_zone[norm(g["t"])].append(k(sid_, e["i"]))
 for g, e in entries("sharedfate"):
     m = re.match(r"^Complete (\d+) FATEs? in (.+)$", e["n"])
     if m and fates_zone.get(norm(m.group(2))):
@@ -489,7 +505,7 @@ for g, e in entries("sharedfate"):
 def one_quest(name):
     # the tracked quest with that name; when several share it (a quest remade in 6.1), the main-story one
     qs = quest_by_name.get(norm(name), [])
-    if len(qs) > 1: qs = [q for q in qs if quest_key[q].startswith("quests-mainscenario")]
+    if len(qs) > 1: qs = [q for q in qs if quest_key[q].startswith("quests-msq-")]
     return qs
 for g, e in entries("mountspeed"):
     qs = one_quest(re.sub(r"\s*\(Quest\)$", "", e.get("d", "")))

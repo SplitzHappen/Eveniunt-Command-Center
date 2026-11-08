@@ -280,8 +280,8 @@ for tab, (sheet, typ) in TABS.items():
 rules.append({"p": "logs/gathering/gathering-log", "s": "gather", "t": gl})
 
 # Areas stored by game FATE id in the desktop app (Eureka notorious monsters, Bozja events).
-rules.append({"p": "duty/exploratory-missions/eureka/notorious-monsters", "s": "id", "sec": "fates"})
-rules.append({"p": "duty/exploratory-missions/bozja/events", "s": "id", "sec": "fates"})
+rules.append({"p": "duty/exploratory-missions/eureka/notorious-monsters", "s": "id", "sec": "fates-"})  # FATEs: one list per expansion (tools/organize.py)
+rules.append({"p": "duty/exploratory-missions/bozja/events", "s": "id", "sec": "fates-"})
 # Level values (the desktop app stores a number, not "Y").
 rules.append({"p": "character/character/classes--jobs", "s": "global", "k": LV_KEYS["jobs"], "val": 1})
 rules.append({"p": "character/character/desynthesis", "s": "global", "k": LV_KEYS["desynth"], "val": 1})

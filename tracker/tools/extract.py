@@ -1044,8 +1044,26 @@ def trust():
     section("trust", "Trust", "Duties", groups,
             note="Enter each avatar's trust level. An avatar counts as complete at the expansion's top level.")
 
+def variant_records():
+    """The records of each variant dungeon (VVDNotebookSeries / VVDNotebookContents): one per route's ending."""
+    cfc, contents = sheet("ContentFinderCondition"), sheet("VVDNotebookContents")
+    dungeon, dpatch = {}, {}
+    for k, r in sheet("VVDData").items():
+        if i(r["Sequence"]) == 1:
+            row = cfc.get(i(r["ContentFinderCondition"]), {})
+            dungeon[i(r["Series"])] = clean(row.get("Name"))
+            dpatch[i(r["Series"])] = str(i(sheet("TerritoryType").get(i(row.get("TerritoryType")), {}).get("ExVersion")) + 2) + ".0"  # its expansion (the map's)
+    groups = []
+    for k, r in sorted(sheet("VVDNotebookSeries").items()):
+        es = [dict({"i": c, "n": clean(contents[c]["Name"]), "d": dungeon.get(k, "")}, **({"p": dpatch[k]} if dpatch.get(k) else {})) for c in [i(r[f"Contents[{n}]"]) for n in range(13)] if c and clean(contents.get(c, {}).get("Name"))]
+        if es:
+            groups.append({"t": clean(r["Name"]), "c": dungeon.get(k, ""), "e": es})
+    section("variantrecords", "Variant Dungeon Records", "Duties", groups,
+            note="Each variant dungeon has a record for every route through it; tick a record once the character has finished that route. Hover over a name for the dungeon and a link to a route guide.")
+
 beastmaster()
 treasure_maps()
+variant_records()
 occult_lore()
 trust()
 
