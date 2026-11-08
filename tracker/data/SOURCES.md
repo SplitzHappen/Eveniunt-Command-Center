@@ -6,6 +6,15 @@
 
 - Extra lists and the desktop-app import map (owner decision 2026-11-07, option 3, credited): the community "FFXIV 100% Completion Checklist" workbook 7.45 by its volunteer team (the same team as the FFXIV Completionist desktop app). `tools/add-checklist.py <workbook.xlsx>` runs after `tools/extract.py`, appends 38 lists (marked `src: "checklist"`) and writes `data/desktop-map.json`. Rows the workbook pre-marks with X carry the "no longer obtainable" mark. The workbook file itself is not committed.
 
+## Custom Deliveries and Cosmic Exploration (game data, owner request 2026-11-08)
+
+Built by `tools/extract.py` from the pinned game sheets; neither the workbook nor the desktop app has these lists.
+
+- **Custom Deliveries** (12 clients, Zhloe Aliapoh to Tiisol Ja): `SatisfactionNpc` (client from `Npc` via `ENpcResident`, unlock quest, unlock level). Each character's satisfaction rank is entered as a number; a client counts as complete at the top rank (one more than the number of rank thresholds in the sheet: 5 for every client).
+- **Cosmic Exploration: Missions** (1,699): `WKSMissionUnit`, grouped by planet and class. The sheet lists each planet's missions class by class (Carpenter first), followed by short runs of extra missions; a new planet starts where a long Carpenter run begins, and the build stops unless that gives exactly the planets in `WKSPlanetSelect` (Sinus Ardorum, Phaenna, Oizys, Auxesia). Icon glyphs in mission names are removed.
+- **Cosmic Exploration: Records** (244): `WKSAchievement` (the Cosmic Exploration record list), grouped by planet from its wording ("on the moon" is Sinus Ardorum); six general records.
+- Not included: development grades and the Pioneering Trail, which belong to the whole world (server) rather than to a character; cosmic tools are already in Relic Tools.
+
 ## Content added after the workbook's 7.45 edition
 
 The workbook stops at 7.45; the game sheets are pinned at 7.57h1. `tools/add-checklist.py <workbook.xlsx> --dm <datamining checkout>` compares each relevant game sheet at the 7.45h2 commit (`d67201a2a27933a444bf249d900f7afd2840f6ff`) with the pinned commit and appends the new rows to the matching workbook list, each with the note "Added after the checklist's 7.45 edition (from the game data, 7.57)". Existing rows keep their ids, so the desktop-app import map is unchanged; new rows use ids above 100000.

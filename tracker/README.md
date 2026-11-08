@@ -1,6 +1,6 @@
 # Eveniunt Tracker
 
-A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command Center. It tracks up to **eight characters side by side** across everything the game has to offer: about 41,800 entries in 98 lists, up to date with patch 7.57.
+A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command Center. It tracks up to **eight characters side by side** across everything the game has to offer: about 43,800 entries in 101 lists, up to date with patch 7.57, including Custom Deliveries and Cosmic Exploration (missions by planet and class, and records).
 
 - **Open it:** https://splitzhappen.github.io/Eveniunt-Command-Center/tracker/ (click **Install app** in the header to install it; it works offline after the first visit).
 - **Single file:** `dist/eveniunt-tracker.html` works offline from your computer. Cloud sync needs the hosted app.

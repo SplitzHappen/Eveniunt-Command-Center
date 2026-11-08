@@ -858,6 +858,67 @@ def city_and_gc():
             gc[k] = g
     return city, gc
 
+# ---------------------------------------------------------------- custom deliveries and cosmic exploration
+PUA = re.compile("[-]")
+
+def custom_deliveries():
+    """One row per client; the value is the character's satisfaction rank, complete at the client's top rank."""
+    npc, q, out = sheet("ENpcResident"), sheet("Quest"), []
+    for k, r in sorted(sheet("SatisfactionNpc").items()):
+        name = clean(npc.get(i(r.get("Npc")), {}).get("Singular"))
+        if not name:
+            continue
+        steps = sum(1 for n in range(6) if i(r.get(f"SatisfactionNpcParams[{n}].SatisfactionRequired")))
+        quest = clean(q.get(i(r.get("QuestRequired")), {}).get("Name"))
+        out.append({"i": k, "n": name, "val": 1, "max": steps + 1, "unit": "rank",
+                    "d": ("Quest: " + quest + " · " if quest else "") + "from level " + str(i(r.get("LevelUnlock")) or i(r.get("Level")))})
+    section("deliveries", "Custom Deliveries", "Ranks", [{"t": "Custom Delivery Clients", "e": out}],
+            note="Enter each character's satisfaction rank with each client. A client counts as complete at their top rank.")
+
+def cosmic():
+    place = sheet("PlaceName")
+    planets = [clean(place.get(i(r.get("Name")), {}).get("Name")) for k, r in sorted(sheet("WKSPlanetSelect").items())]
+    planets = [p for p in planets if p]
+    cjc = sheet("ClassJobCategory")
+    cj = {r["Abbreviation"]: clean(r["Name"]).title() for r in sheet("ClassJob").values() if r.get("Abbreviation")}
+    rows = [(k, r) for k, r in sorted(sheet("WKSMissionUnit").items()) if clean(PUA.sub("", r.get("Name", "")))]
+    # The sheet lists each planet's missions class by class (Carpenter first, a few dozen each), followed by short runs
+    # of extra missions; a new planet starts where a long Carpenter run begins.
+    runs, cur = [], None
+    for k, r in rows:
+        c = r["ClassJobCategory[0]"]
+        if not cur or cur[0] != c:
+            cur = [c, []]
+            runs.append(cur)
+        cur[1].append((k, r))
+    first_cat = rows[0][1]["ClassJobCategory[0]"]
+    starts = [n for n, (c, rs) in enumerate(runs) if c == first_cat and len(rs) >= 20]
+    assert len(starts) == len(planets), ("cosmic planets", len(starts), planets)
+    groups = collections.OrderedDict()
+    pidx = -1
+    for n, (c, rs) in enumerate(runs):
+        if n in starts:
+            pidx += 1
+        job = cj.get(clean(cjc.get(i(c), {}).get("Name")), clean(cjc.get(i(c), {}).get("Name")))
+        for k, r in rs:
+            groups.setdefault((planets[pidx], job), []).append({"i": k, "n": clean(PUA.sub("", r["Name"])), "d": job + " · " + planets[pidx]})
+    section("cosmicmissions", "Cosmic Exploration: Missions", "Cosmic Exploration",
+            [{"t": p + ": " + j, "e": es} for (p, j), es in groups.items()],
+            note="Tick a mission once the character has completed it.")
+    # Records (the Cosmic Exploration achievement list, with credit rewards), grouped by planet from their wording.
+    keys = [("the moon", planets[0])] + [(p, p) for p in planets[1:]]
+    rec = collections.OrderedDict((t, []) for t in ["General"] + planets)
+    for k, r in sorted(sheet("WKSAchievement").items()):
+        text = clean(r.get("Description"))
+        if not text:
+            continue
+        where = next((p for w, p in keys if ("on " + w) in text or ("in " + w) in text), "General")
+        rec[where].append({"i": k, "n": text})
+    section("cosmicrecords", "Cosmic Exploration: Records", "Cosmic Exploration", [{"t": t, "e": es} for t, es in rec.items() if es])
+
+custom_deliveries()
+cosmic()
+
 CITY, GCQ = city_and_gc()
 # Outside the quest sheet: the introductory levequest of each region and the three "leaving the city" achievements
 # (FFXIV Collect marks the achievements and these leves as limited to characters who started in that city).

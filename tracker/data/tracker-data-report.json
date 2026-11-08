@@ -58,7 +58,10 @@
   "titles": 885,
   "fates": 1712,
   "hunt": 932,
-  "quests-other": 180
+  "quests-other": 180,
+  "deliveries": 12,
+  "cosmicmissions": 1699,
+  "cosmicrecords": 244
  },
  "problems": {
   "no patch: mount": 14,
@@ -110,5 +113,5 @@
   "leves: uld": 1,
   "quest variants merged": 5
  },
- "total": 36566
+ "total": 38521
 }

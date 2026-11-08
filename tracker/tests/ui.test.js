@@ -247,6 +247,11 @@ test('data counts match the pinned sheets and FFXIV Collect where they overlap',
   const late = {};
   for (const s of data.sections) for (const g of s.g) for (const e of g.e) if ((e.d || '').includes("Added after the checklist's 7.45 edition")) late[s.id] = (late[s.id] || 0) + 1;
   assert.deepEqual(late, { plate: 76, portraits: 98, phantomjobs: 8, collection: 29, ocevents: 15, ocduties: 2, relicweapons: 42, relictools: 33, fishingspots: 1, levels: 1, oclevel: 20 });
+  // custom deliveries (one per client, rank 5 is complete) and cosmic exploration (missions by planet and class; records)
+  assert.deepEqual({ deliveries: n('deliveries'), missions: n('cosmicmissions'), records: n('cosmicrecords') }, { deliveries: 12, missions: 1699, records: 244 });
+  const dl = data.sections.find((s) => s.id === 'deliveries').g[0].e;
+  assert.ok(dl.some((e) => e.n === 'Tiisol Ja' && e.max === 5 && e.unit === 'rank'));
+  assert.deepEqual([...new Set(data.sections.find((s) => s.id === 'cosmicmissions').g.map((g) => g.t.split(':')[0]))], ['Sinus Ardorum', 'Phaenna', 'Oizys', 'Auxesia']);
   const ids = (id) => data.sections.find((s) => s.id === id).g.flatMap((g) => g.e.map((e) => e.i));
   for (const s of data.sections) assert.equal(new Set(ids(s.id)).size, ids(s.id).length, s.id + ' has repeated ids');
 });

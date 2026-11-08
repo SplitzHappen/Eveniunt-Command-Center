@@ -47,7 +47,7 @@
       ['Achievements', function (s) { return s.indexOf('ach-') === 0; }],
       ['Classes and Jobs', ['levels']],
       ['Collections', ['mounts', 'minions', 'hairstyles', 'facewear', 'fashion', 'barding', 'titles', 'plate', 'portraits']],
-      ['Ranks and Companion', ['gcranks', 'societyranks', 'companionrank', 'companionskills']],
+      ['Ranks and Deliveries', ['gcranks', 'societyranks', 'deliveries', 'companionrank', 'companionskills']],
       ['Relics', ['relicweapons', 'relictools']],
       ['Blue Mage', ['bluemagic', 'bluelog', 'carnivale']],
       ['Gold Saucer', ['cards', 'ttnpcs', 'mahjong']]]],
@@ -56,6 +56,7 @@
       ['Duty Finder', function (s) { return s.indexOf('duty-') === 0; }],
       ['FATEs, Hunt and Training', ['fates', 'hunt', 'novice']],
       ['Field Operations', ['eurekalevel', 'eurekaaeth', 'logos', 'eurekaduties', 'bozjarank', 'bozjaaeth', 'lostactions', 'bozjaduties', 'oclevel', 'ocaeth', 'ocevents', 'phantomjobs', 'ocduties']],
+      ['Cosmic Exploration', ['cosmicmissions', 'cosmicrecords']],
       ['Island Sanctuary', function (s) { return s.indexOf('isle') === 0; }],
       ['Collection', ['collection']]]],
     ['Logs', [
@@ -145,7 +146,7 @@
     if (e.spot) facts.push(esc(e.spot));
     if (e.kind) facts.push(esc(e.kind));
     if (e.pts) facts.push(e.pts + ' points');
-    if (e.max) facts.push('Complete at level ' + e.max);
+    if (e.max) facts.push('Complete at ' + (e.unit || 'level') + ' ' + e.max);
     if (e.city) facts.push('Only for characters who started in ' + ET.CITIES[e.city]);
     if (e.gc) facts.push('Only for the ' + ET.GCS[e.gc]);
     if (facts.length) bits.push('<div>' + facts.join(' · ') + '</div>');
@@ -163,7 +164,7 @@
       var on = !!ST.ticks[c.id][k], na = ET.notApplicable(ST, c, k, e);
       if (e.val) {
         var v = ET.getValue(ST, c.id, k);
-        return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : v) + '" placeholder="–" aria-label="' + esc(c.name) + ' level"></span>';
+        return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : v) + '" placeholder="–" aria-label="' + esc(c.name) + ' ' + (e.unit || 'level') + '"></span>';
       }
       return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" title="' + esc(c.name) + (na ? ': does not apply (' + WHY[na] + ')' : '') + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
     }).join('');
