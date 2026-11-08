@@ -14,7 +14,8 @@ import json, os, sys, time, urllib.request, datetime
 API = "https://ffxivcollect.com/api/"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "ffxivcollect")
 KINDS = ["mounts", "minions", "orchestrions", "emotes", "hairstyles", "bardings", "fashions", "facewear", "spells",
-         "achievements", "titles", "frames", "triad/cards"]
+         "achievements", "titles", "frames", "triad/cards", "armoires", "outfits"]
+if len(sys.argv) > 1: KINDS = [k for k in KINDS if k in sys.argv[1:]]  # refresh only the named collections
 
 def get(path):
     req = urllib.request.Request(API + path, headers={"User-Agent": "eveniunt-tracker-data-snapshot"})
@@ -28,7 +29,9 @@ def get(path):
             time.sleep(2 ** attempt)
 
 os.makedirs(OUT, exist_ok=True)
-summary = {"fetched": datetime.date.today().isoformat(), "api": API, "counts": {}}
+_sp = os.path.join(OUT, "SNAPSHOT.json")
+summary = json.load(open(_sp)) if len(sys.argv) > 1 and os.path.exists(_sp) else {"fetched": datetime.date.today().isoformat(), "api": API, "counts": {}}
+if len(sys.argv) > 1: summary.setdefault("refreshed", {}).update({k: datetime.date.today().isoformat() for k in KINDS})
 for kind in KINDS:
     rows = get(f"{kind}?limit=10000")["results"]
     keep = []

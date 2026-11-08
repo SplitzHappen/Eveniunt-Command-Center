@@ -174,10 +174,10 @@ test('lists are grouped (never one flat list) and every list renders', async () 
 
 test('search across everything, and the menu follows the game (Character, Duty, Logs, Travel, Social)', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
-  assert.deepEqual(await page.$$eval('.nav-menu > h3', (h) => h.map((x) => x.firstChild.textContent)), ['Character', 'Duty', 'Logs', 'Travel', 'Social']);
+  assert.deepEqual(await page.$$eval('.nav-menu > h3', (h) => h.map((x) => x.firstChild.textContent)), ['Live', 'Character', 'Duty', 'Logs', 'Travel', 'Social']);
   // every menu, Travel and Social included, groups its lists in dropdown folders (no loose links)
   assert.equal(await page.locator('.nav-menu > .nav-link').count(), 0);
-  assert.deepEqual(await page.$$eval('.nav-menu', (ms) => ms.slice(3).map((m) => [...m.querySelectorAll('.nav-folder > summary .nm')].map((x) => x.textContent))), [['Aetherytes and Flying', 'Mounts and Porters'], ['Emotes']]);
+  assert.deepEqual(await page.$$eval('.nav-menu', (ms) => ms.slice(4).map((m) => [...m.querySelectorAll('.nav-folder > summary .nm')].map((x) => x.textContent))), [['Aetherytes and Flying', 'Mounts and Porters'], ['Emotes']]);
   await page.fill('#q', 'coeurl');
   await page.waitForSelector('text=“coeurl”');
   assert.ok(await page.locator('.er').count() >= 2);
@@ -573,6 +573,32 @@ test('clock and weather: Eorzea and local time in the header, weather for every 
   await go(page, 'sightseeing');
   await page.waitForTimeout(5500);
   assert.ok((await page.locator('.er.timed').count()) >= 80, 'vistas with a time or weather are tracked live');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('live pages: Up Now, Big Fish, Ocean Fishing, Timers, Field Monsters, Gold Saucer and Notifications render; settings stay', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  for (const v of ['now', 'bigfish', 'ocean', 'timers', 'weather', 'field', 'gold', 'notify']) {
+    await page.click(`[data-live-view="${v}"]`);
+    assert.ok((await page.textContent('#page')).length > 500, v + ' has content');
+  }
+  await page.click('[data-live-view="bigfish"]');
+  assert.equal(await page.locator('.bf-row').count(), 335, 'every big fish on the board');
+  await page.check('[data-live="legendary"]');
+  assert.equal(await page.locator('.bf-row').count(), 36, 'legendary filter');
+  await page.locator('.bf-row [data-ltick]').first().click();
+  assert.match(await page.locator('.bf-row [data-ltick]').first().textContent(), /Caught/);
+  await page.locator('.bf-row [data-watch]').first().click();
+  await page.click('[data-live-view="ocean"]');
+  assert.equal(await page.locator('.of-voy').count(), 12, '12 voyages');
+  await page.click('[data-live-view="now"]');
+  await page.check('[data-live="hide"]');
+  await page.click('[data-live-view="notify"]');
+  await page.check('[data-notify="on"]');
+  assert.ok(await page.locator('#page .lv-row').count() >= 1, 'the watched fish is listed');
+  await page.reload(); await page.waitForSelector('.side .nav-live');
+  assert.ok(await page.evaluate(() => window.__tracker.UI.live.notify.on && window.__tracker.UI.live.hide && window.__tracker.UI.live.watch.length === 1), 'Live settings survive a reload');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

@@ -11,7 +11,7 @@
   ET.FC_COLLECTIONS = [
     ['mounts', 'mounts'], ['minions', 'minions'], ['orchestrion', 'orchestrions'], ['emotes', 'emotes'],
     ['hairstyles', 'hairstyles'], ['barding', 'bardings'], ['fashion', 'fashions'], ['facewear', 'facewear'],
-    ['bluemagic', 'spells'], ['ach-', 'achievements'],
+    ['bluemagic', 'spells'], ['armoire', 'armoires'], ['outfits', 'outfits'], ['ach-', 'achievements'],
   ];
   const collectionOf = (sid) => {
     for (const [p, col] of ET.FC_COLLECTIONS) if (p.endsWith('-') ? sid.startsWith(p) : sid === p) return col;

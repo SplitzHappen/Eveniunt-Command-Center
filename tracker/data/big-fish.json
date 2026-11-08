@@ -1,0 +1,2086 @@
+{
+"_about": "Big fish and legendary fish of every expansion (names, expansion, and for the newest fish the hole, hours, weather, bait and lure), from the Console Games Wiki's Big Fishing tables (read 2026-11-08); facts only. Windows and bait chains come from ff14-fish-tracker-app where it has the fish.",
+"fish": [
+{
+"n": "Goldenfin",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Octomammoth",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Zalera",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Beguiler Chub",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Great Gudgeon",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Gigantshark",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "High Perch",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Crystal Perch",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Caterwauler",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Oschon's Print",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Syldra",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Silver Sovereign",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Sabertooth Cod",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Jacques the Snipper",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Faerie Queen",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Meteor Survivor",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Cupfish",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Greatest Bream in the World",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Shark Tuna",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Bombardfish",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Old Man in the Sea",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Salter",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Drowned Sniper",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Terpsichorean",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Mirrorscale",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Imperial Goldfish",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Little Perykos",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Armorer (Seafood)",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Junkmonger (Seafood)",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Navigator's Brand",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Lone Ripper",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Helmsman's Hand",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Frilled Shark",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Captain's Chalice",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Coelacanthus",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Seahag",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Toramafish",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Joan of Trout",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Worm of Nym",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "King of the Spring",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Thundergut",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Twitchbeard",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Stormdancer",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Bloody Brewer",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Matron Carp",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Carp Diem",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Chirurgeon",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Ghost Carp",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Levinlight",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Bloodbath (Seafood)",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Green Jester",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Dark Ambusher",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Moldva",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Assassin",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Sylphsbane",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Magicked Mushroom",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Blue Widow",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Judgeray",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Shadowstreak",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Cornelia",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Son of Levin",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Gobfather",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Vip Viper",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Floating Boulder",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Grinner",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Sinker",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Giant Takitaro",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Sweetnewt",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Glimmerscale",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Mud Golem",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Rivet Oyster",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Pirate's Bane",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Fingers",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Dirty Herry",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Ndendecki",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Bat-o'-Nine-Tails",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Dream Goby",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Slime King",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Old Softie",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Dark Knight (Seafood)",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Marrow Sucker",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Mud Pilgrim",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Warden's Wand",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Thousand-year Itch",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Olgoi-Khorkhoi",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Magic Carpet",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Old Hollow Eyes",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Discobolus",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Iron Noose",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Hannibal",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Wootz Knifefish Zenith",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Spearnose",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "The Matriarch",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Blue Corpse",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Darkstar",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Anomalocaris",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Charon's Lantern",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Daniffen's Mark",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Dawn Maiden",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Starbright",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Mahar",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Aetherlouse",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Void Bass",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Ninja Betta",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Ignus Horn",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Blood Red Bonytongue",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Canavan",
+"kind": "big",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Fat Purse",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "La Reale",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Bishopfish",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Hailfinder",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Captain Nemo",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Flarefish",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Merciless",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Impaler",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Inkfish",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Cirrostratus",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Basking Shark",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Second One",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Paikiller",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Scaleripper",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Thunderscale",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Riddle",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Lord of Lords",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Meteortoise",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Dreamweaver",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Hraesvelgr's Tear",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Twin-tongued Carp",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Vidofnir (Seafood)",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Moggle Mogpom",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Soul of the Martyr",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Dimorphodon",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Bloodchaser",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Thousand Fin",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Ewer King",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Bobgoblin Bass",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Madam Butterfly",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "The Speaker",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Augmented High Allagan Helmet",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Aetherochemical Compound 666",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Aphotic Pirarucu",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Ceti",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Allagan Bladeshark",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Crystal Pigeon",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Hundred-eyed Axolotl",
+"kind": "big",
+"ex": "Heavensward"
+},
+{
+"n": "Downstream Loach",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Sapphire Fan",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Corpse Chub",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Archbishop",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Hardhead Trout",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Hookstealer",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Watcher Catfish",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Bloodtail Zombie",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Bondsplitter",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Last Tear",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Lily of the Veil",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Hemon",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Moksha",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Undecided",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Diamond-eye",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Rising Dragon",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Gambler",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Princess Killifish",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Ku'er",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Vegetarian",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Pinhead",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Argonautica",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Winter Queen",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Seven Stars",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Rakshasa",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Hermit's End",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Suiten Ippeki",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Hagoromo Koi",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Unraveled Bow",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Pomegranate Trout",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Glarramundi",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Bokuden",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Axelrod",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Hagoromo Bijin",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Banderole",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Duskfish",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Nhaama's Treasure",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Yat Khan",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Garden Skipper",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "The Word of God",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Blade Skipper",
+"kind": "big",
+"ex": "Stormblood"
+},
+{
+"n": "Loose Pendant",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Sinsteeped",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Aster Trivi",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Winged Dame",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Sweetheart",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Unforgiven",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Python Discus",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Moonlight Guppy",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Jaws of Undeath",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "White Ronso",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Bronze Sole",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Steel Fan",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Henodus Grandis",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Steel Razor",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Shadeshifter",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Giant Taimen",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Horned King",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Nabaath Saw",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Ambling Caltrop",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Leannisg",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Sound of Fury",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Gold Hammer",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Sunken Tome",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Fae Rainbow",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Dammroen Herring",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Celestial",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Priest of Yx'Lokwa",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Golden Pipira",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Recordkiller",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Black Jet",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Pearl Pipira",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Deephaunt",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Mora Tecta",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Starchaser",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Ondotaker",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "The Mother of All Pancakes",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Ondo Sigh",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Opal Shrimp",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Maru Crab",
+"kind": "big",
+"ex": "Shadowbringers"
+},
+{
+"n": "Aetherolectric Guitarfish",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Greatsword Snook",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Catastrophizer",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Jumbo Snook",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Swampsucker Bowfin",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Mossgill Salmon",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Earful",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Lale Crab",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Hippo Frog",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Bigcuda",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Browned Banana Eel",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Vidyutvat Wrasse",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Sovereign Shadow",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Rimepike",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Disappirarucu",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Frozen Regotoise",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Foun Ahlm",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Starscryer",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Forbiddingway",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Argonauta argo",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Cosmic Haze",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Planetes",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Antheian Dahlia",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Basilosaurus Rex",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Onyx Knifefish",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Eehs Fan",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Wakeful Warden",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Gilt Dermogenys",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Mayaman",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Starscale Ephemeris",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Chlorophos Deathworm",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Durdina Fish",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "E.B.E.-852738",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Circuit Tilapia",
+"kind": "big",
+"ex": "Endwalker"
+},
+{
+"n": "Icuvlo's Barter",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Downripple",
+"weather-current": "fog",
+"bait": "red maggots",
+"gathering": "3500+"
+}
+},
+{
+"n": "Moongripper",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Sunken Stars",
+"time-start": "12",
+"time-end": "14",
+"bait": "White Worm",
+"lure": "modest;1;A pair of powerful pincers pierce the water's surface!",
+"gathering": "3500+"
+}
+},
+{
+"n": "Cazuela Crab",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Waters Hanu",
+"time-start": "16",
+"time-end": "20",
+"weather-current": "clouds,fog",
+"bait": "red maggots",
+"gathering": "3500+"
+}
+},
+{
+"n": "Ilyon Asoh Cichlid",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Xd'aa Talat Tsoly",
+"weather-current": "clear skies",
+"bait": "red maggots",
+"gathering": "3500+"
+}
+},
+{
+"n": "Stardust Sleeper",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Xty'iinbek Tsoly",
+"time-start": "20",
+"time-end": "24",
+"bait": "Crimson Lugworm",
+"gathering": "3500+",
+"mooch": "Sharknose Goby,Yak T'el Crab"
+}
+},
+{
+"n": "Hwittayoanaan Cichlid",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Niikwerepi",
+"time-start": "4",
+"time-end": "8",
+"weather-current": "clear skies,fair skies",
+"bait": "red maggots",
+"gathering": "3500+"
+}
+},
+{
+"n": "Thunderswift Trout",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "The Driftdowns",
+"time-start": "9",
+"time-end": "11",
+"bait": "red maggots",
+"lure": "ambitious;1;A lightning-fast flash disturbs the water!",
+"gathering": "3500+"
+}
+},
+{
+"n": "Pixel Loach",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Residential Sector",
+"time-start": "0",
+"time-end": "4",
+"bait": "red maggots",
+"gathering": "3500+"
+}
+},
+{
+"n": "Cabinkeep Permit",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "The For'ard Cabins",
+"time-start": "5",
+"time-end": "7",
+"bait": "Ghost Nipper",
+"gathering": "4040+"
+}
+},
+{
+"n": "Muttering Matamata",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Bopo'uihih",
+"time-start": "12",
+"time-end": "14",
+"weather-current": "clear skies",
+"bait": "Red Maggots",
+"gathering": "4040+",
+"mooch": "Poison Dyefrog"
+}
+},
+{
+"n": "Riverlong Candiru",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Miyakabek'zu",
+"time-start": "0",
+"time-end": "4",
+"weather-previous": "fair skies",
+"weather-current": "clouds",
+"bait": "Red Maggots",
+"gathering": "4040+"
+}
+},
+{
+"n": "Deep Canopy",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "\tIq Br'aax Reservoir",
+"time-start": "10",
+"time-end": "12",
+"bait": "Red Maggots",
+"gathering": "4040+"
+}
+},
+{
+"n": "Awaksbane Apoda",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Yak Awak Tsoly",
+"weather-current": "clouds,fog",
+"bait": "Red Maggots",
+"gathering": "4040+"
+}
+},
+{
+"n": "Ttokatoa",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Lake Toari",
+"time-start": "20",
+"time-end": "24",
+"weather-previous": "fair skies",
+"weather-current": "dust storms",
+"bait": "Popper Lure",
+"gathering": "4040+",
+"mooch": "Niikwerepi Trout"
+}
+},
+{
+"n": "Thunderous Flounder",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Crackling Canyons",
+"weather-current": "rain",
+"bait": "Red Maggots",
+"gathering": "4040+"
+}
+},
+{
+"n": "Harlequin Queen",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "The Knowable",
+"time-start": "16",
+"time-end": "18",
+"weather-current": "fair skies",
+"bait": "red maggots",
+"lure": "ambitious;3;Whip-like barbels unfurl near the water's surface!",
+"gathering": "4040+"
+}
+},
+{
+"n": "Prime Adjudicator",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Karvarhur the First",
+"time-start": "12",
+"time-end": "16",
+"weather-previous": "fair skies",
+"weather-current": "fog",
+"bait": "red maggots",
+"gathering": "4450+"
+}
+},
+{
+"n": "Crenicichla Miyaka",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "The Dewspun Bank",
+"time-start": "6",
+"time-end": "8",
+"weather-current": "rain",
+"bait": "red maggots",
+"lure": "ambitious;3;An impetuous challenger stirs in the water!",
+"gathering": "4450+"
+}
+},
+{
+"n": "Iron Shadowtongue",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Iq Rrax Tsoly",
+"time-start": "16",
+"time-end": "18",
+"weather-current": "rain",
+"bait": "red maggots",
+"gathering": "4450+"
+}
+},
+{
+"n": "Lotl-in-waiting",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Xobr'it Tsoly",
+"time-start": "0",
+"time-end": "4",
+"weather-previous": "fair skies",
+"weather-current": "clouds",
+"bait": "Golden Stonefly Nymph",
+"gathering": "4450+",
+"mooch": "Cloud-eye Carp"
+}
+},
+{
+"n": "Azure Diver",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Eastbound Zorgor",
+"time-start": "18",
+"time-end": "24",
+"weather-previous": "clear skies,fair skies",
+"weather-current": "gales",
+"bait": "Dragonfly (Bait)",
+"gathering": "4450+"
+}
+},
+{
+"n": "Sprouting Perch",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Outskirts Shallows",
+"time-start": "20",
+"time-end": "24",
+"weather-current": "thunderstorms",
+"bait": "red maggots",
+"gathering": "4450+"
+}
+},
+{
+"n": "Gigagiant Snakehead",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Mu Springs Eternal",
+"time-start": "4",
+"time-end": "6",
+"weather-current": "rain",
+"bait": "red maggots",
+"gathering": "4450+",
+"intuition": "3x {{i"
+}
+},
+{
+"n": "Gondola Louvar",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Canal Town South",
+"time-start": "8",
+"time-end": "12",
+"weather-previous": "rain",
+"weather-current": "fair skies",
+"bait": "ghost nipper",
+"gathering": "4450+"
+}
+},
+{
+"n": "Purse of Riches",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "High Tide Harbor",
+"time-start": "16",
+"time-end": "18",
+"weather-previous": "clouds",
+"weather-current": "rain",
+"bait": "ghost nipper",
+"gathering": "4450+"
+}
+},
+{
+"n": "Punutiy Pain",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Peaks Poga",
+"time-start": "8",
+"time-end": "12",
+"weather-previous": "clouds",
+"weather-current": "rain",
+"bait": "Golden Stonefly Nymph",
+"gathering": "4450+",
+"mooch": "Hunu Peacock Bass"
+}
+},
+{
+"n": "Shuckfin Dace",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Ku'uxage",
+"time-start": "4",
+"time-end": "6",
+"weather-current": "rain",
+"bait": "red maggots",
+"gathering": "4450+"
+}
+},
+{
+"n": "Shin Snuffler",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Ankledeep",
+"time-start": "0",
+"time-end": "2",
+"weather-current": "fog",
+"bait": "red maggots",
+"gathering": "4450+",
+"intuition": "3x {{i"
+}
+},
+{
+"n": "Moxutural Greatgar",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Cenote Moxutural",
+"time-start": "20",
+"time-end": "22",
+"weather-current": "rain",
+"bait": "popper lure",
+"gathering": "4450+",
+"mooch": "Checkered Cichlid"
+}
+},
+{
+"n": "Heirloom Goldgrouper",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Alexandrian Ruins",
+"time-start": "12",
+"time-end": "16",
+"weather-previous": "fog",
+"weather-current": "fair skies",
+"bait": "popper lure",
+"gathering": "4450+"
+}
+},
+{
+"n": "Datnioides Aeroplanos",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Leynode Aero",
+"time-start": "2",
+"time-end": "4",
+"weather-previous": "fog",
+"weather-current": "rain",
+"bait": "red maggots",
+"lure": "ambitious;3;A ferocious form darts into view!",
+"gathering": "4450+"
+}
+},
+{
+"n": "Esperance Carp",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Proto Alexandria",
+"time-start": "22",
+"time-end": "24",
+"weather-previous": "rain",
+"weather-current": "fog",
+"bait": "red maggots",
+"gathering": "4450+",
+"intuition": "3x {{i"
+}
+},
+{
+"n": "Ole Ole Ole",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Chirwagur Lake",
+"time-start": "0",
+"time-end": "2",
+"weather-previous": "clouds",
+"weather-current": "snow",
+"bait": "White Worm",
+"lure": "ambitious;3;You sense a perplexing presence in the water!",
+"gathering": "4450+"
+}
+},
+{
+"n": "Iron Oxydoras",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Miyakabek'zoma",
+"time-start": "13",
+"time-end": "15",
+"weather-previous": "clouds",
+"weather-current": "fog",
+"bait": "Golden Stonefly Nymph",
+"gathering": "4450+",
+"mooch": "Dumplingfish"
+}
+},
+{
+"n": "Excavator Catfish",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Marsh Ligaka",
+"time-start": "4",
+"time-end": "6",
+"weather-previous": "rain",
+"weather-current": "clouds",
+"bait": "popper lure",
+"gathering": "4450+"
+}
+},
+{
+"n": "Moonmarking Saucer",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Cenote Jayunja",
+"time-start": "16",
+"time-end": "21",
+"weather-previous": "clear skies",
+"weather-current": "rain",
+"bait": "red maggots",
+"gathering": "4450+",
+"mooch": "Flawless Saucer"
+}
+},
+{
+"n": "Autarch's Supper",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Sapsweet Cenote",
+"time-start": "16",
+"time-end": "18",
+"weather-previous": "rain",
+"weather-current": "fog",
+"bait": "red maggots",
+"gathering": "4450+"
+}
+},
+{
+"n": "Bitterbark Caiman",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Bitterbark Cenote",
+"time-start": "16",
+"time-end": "18",
+"weather-previous": "fog",
+"weather-current": "clear skies",
+"bait": "red maggots",
+"gathering": "4450+",
+"mooch": "Blind Brotula"
+}
+},
+{
+"n": "Vagrant Keeper",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Westbound Zorgor",
+"time-start": "6",
+"time-end": "8",
+"weather-previous": "gales",
+"weather-current": "clouds",
+"bait": "dragonfly (bait)",
+"gathering": "4450+",
+"intuition": "3x {{i"
+}
+},
+{
+"n": "Shined Copper Shark",
+"kind": "big",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Canal Town North",
+"time-start": "8",
+"time-end": "13",
+"weather-previous": "clouds",
+"weather-current": "fog",
+"bait": "ghost nipper",
+"gathering": "4450+"
+}
+},
+{
+"n": "Namitaro",
+"kind": "legendary",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Endoceras",
+"kind": "legendary",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Helicoprion",
+"kind": "legendary",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Kuno the Killer",
+"kind": "legendary",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Shonisaurus",
+"kind": "legendary",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Nepto Dragon",
+"kind": "legendary",
+"ex": "A Realm Reborn"
+},
+{
+"n": "Armor Fish",
+"kind": "legendary",
+"ex": "Heavensward"
+},
+{
+"n": "Problematicus",
+"kind": "legendary",
+"ex": "Heavensward"
+},
+{
+"n": "Opabinia",
+"kind": "legendary",
+"ex": "Heavensward"
+},
+{
+"n": "Raimdellopterus",
+"kind": "legendary",
+"ex": "Heavensward"
+},
+{
+"n": "Charibenet",
+"kind": "legendary",
+"ex": "Heavensward"
+},
+{
+"n": "Sea Butterfly",
+"kind": "legendary",
+"ex": "Heavensward"
+},
+{
+"n": "Drepanaspis",
+"kind": "legendary",
+"ex": "Stormblood"
+},
+{
+"n": "The Unconditional",
+"kind": "legendary",
+"ex": "Stormblood"
+},
+{
+"n": "Warden of the Seven Hues",
+"kind": "legendary",
+"ex": "Stormblood"
+},
+{
+"n": "Xenacanthus",
+"kind": "legendary",
+"ex": "Stormblood"
+},
+{
+"n": "Stethacanthus",
+"kind": "legendary",
+"ex": "Stormblood"
+},
+{
+"n": "The Ruby Dragon",
+"kind": "legendary",
+"ex": "Stormblood"
+},
+{
+"n": "Listracanthus",
+"kind": "legendary",
+"ex": "Shadowbringers"
+},
+{
+"n": "Aquamaton",
+"kind": "legendary",
+"ex": "Shadowbringers"
+},
+{
+"n": "Cinder Surprise",
+"kind": "legendary",
+"ex": "Shadowbringers"
+},
+{
+"n": "Ealad Skaan",
+"kind": "legendary",
+"ex": "Shadowbringers"
+},
+{
+"n": "Greater Serpent of Ronka",
+"kind": "legendary",
+"ex": "Shadowbringers"
+},
+{
+"n": "Lancetfish",
+"kind": "legendary",
+"ex": "Shadowbringers"
+},
+{
+"n": "Hyphalosaurus",
+"kind": "legendary",
+"ex": "Endwalker"
+},
+{
+"n": "Gharlichthys",
+"kind": "legendary",
+"ex": "Endwalker"
+},
+{
+"n": "Snowy Parexus",
+"kind": "legendary",
+"ex": "Endwalker"
+},
+{
+"n": "Lopoceras Elegans",
+"kind": "legendary",
+"ex": "Endwalker"
+},
+{
+"n": "Furcacauda",
+"kind": "legendary",
+"ex": "Endwalker"
+},
+{
+"n": "Sidereal Whale",
+"kind": "legendary",
+"ex": "Endwalker"
+},
+{
+"n": "Ner Lar Dor",
+"kind": "legendary",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Karvarhur the First",
+"time-start": "15",
+"time-end": "16",
+"weather-previous": "Fog",
+"weather-current": "Wind",
+"bait": "Red Maggots",
+"lure": "modest;3;A rainbow-hued form glimmers in the water!",
+"gathering": "4570"
+}
+},
+{
+"n": "Xehabopo'u",
+"kind": "legendary",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Miyakabek'zu",
+"time-start": "13",
+"time-end": "15",
+"weather-previous": "Clouds",
+"weather-current": "Showers",
+"bait": "Honeybee",
+"gathering": "4570",
+"mooch": "Driftwood Catfish",
+"intuition": "6x {{i"
+}
+},
+{
+"n": "Skyfrond",
+"kind": "legendary",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Cenote Jayunja",
+"time-start": "16",
+"time-end": "21",
+"weather-previous": "Clear Skies",
+"weather-current": "Rain",
+"bait": "Red Maggots",
+"gathering": "4570",
+"mooch": "Flawless Saucer",
+"intuition": "3x {{i"
+}
+},
+{
+"n": "Rroneek Bichir",
+"kind": "legendary",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Lake Toari",
+"time-start": "22",
+"time-end": "24",
+"weather-previous": "Fair Skies",
+"weather-current": "Dust Storms",
+"bait": "Popper Lure",
+"gathering": "4570",
+"mooch": "Niikwerepi Trout,Ttokatoa"
+}
+},
+{
+"n": "Great Ball of Lightning",
+"kind": "legendary",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Alexandrian Ruins",
+"time-start": "2",
+"time-end": "4",
+"weather-previous": "Thunderstorms",
+"weather-current": "Umbral Static",
+"bait": "Red Maggots",
+"gathering": "4570",
+"intuition": "1x {{i"
+}
+},
+{
+"n": "Triple Threat",
+"kind": "legendary",
+"ex": "Dawntrail",
+"wiki": {
+"spot": "Canal Town North",
+"time-start": "8",
+"time-end": "13",
+"weather-previous": "Clouds",
+"weather-current": "Fog",
+"bait": "Ghost Nipper",
+"gathering": "4570",
+"intuition": "2x {{i"
+}
+}
+]
+}

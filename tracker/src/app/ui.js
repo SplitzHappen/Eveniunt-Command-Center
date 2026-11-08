@@ -27,7 +27,7 @@
   if (['all', 'missing', 'done', 'unob'].indexOf(UI.filter) < 0) UI.filter = 'all';
   UI.q = ''; UI.find = ''; UI.mode = 'tick'; // the "does not apply" mode is for one sitting: a plain click always means done after a reload
   function persist() {
-    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode, showX: UI.showX } })); } catch (e) { /* private window */ }
+    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode, showX: UI.showX, live: UI.live } })); } catch (e) { /* private window */ }
   }
   var toastTimer = null;
   function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 2600); }
@@ -58,11 +58,11 @@
     ['Character', [
       ['Achievements', function (s) { return s.indexOf('ach-') === 0; }],
       ['Classes and Jobs', ['levels', 'beastmaster']],
-      ['Collections', ['mounts', 'minions', 'hairstyles', 'facewear', 'fashion', 'barding', 'titles', 'plate', 'portraits']],
+      ['Collections', ['mounts', 'minions', 'hairstyles', 'facewear', 'fashion', 'barding', 'armoire', 'outfits', 'titles', 'plate', 'portraits']],
       ['Ranks and Deliveries', ['gcranks', 'societyranks', 'deliveries', 'companionrank', 'companionskills']],
       ['Relics', ['relicweapons', 'relictools']],
       ['Blue Mage', ['bluemagic', 'bluelog', 'carnivale']],
-      ['Gold Saucer', ['cards', 'ttnpcs', 'mahjong']]]],
+      ['Gold Saucer', ['cards', 'ttnpcs', 'mahjong', 'verminion', 'chocoboracing']]]],
     ['Duty', [
       ['Main Scenario Quests', function (s) { return s.indexOf('quests-msq-') === 0; }],
       ['Chronicles of a New Era', ['quests-chroniclesofanewera']],
@@ -130,6 +130,7 @@
   // ── sidebar ──
   function renderSide() {
     var h = '<button type="button" class="home' + (UI.view === 'home' ? ' on' : '') + '" data-act="home">Overview</button>';
+    h += '<div class="nav-menu nav-live"><h3>Live</h3><div class="nav-live-links">' + LIVE_VIEWS.map(function (v) { return '<button type="button" class="nav-link' + (UI.view === v[0] ? ' on' : '') + '" data-live-view="' + v[0] + '"><span class="nm">' + esc(v[1]) + '</span></button>'; }).join('') + '</div></div>';
     MENUS.forEach(function (m) {
       var all = []; m.folders.forEach(function (f) { all = all.concat(f.secs); });
       var mt = combined(tallyOf(all));
@@ -172,6 +173,7 @@
     var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
     var st = stampsHtml(k); if (st) bits.push(st);
+    if (COND.cond[k] || COND.nodes[k] || LIVE.bigfish.some(function (f) { return f.k === k; })) bits.push('<div>' + star(k) + ' Watch for notifications</div>');
     infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
     if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
     if (e.src && !infoLines(k).filter(function (l) { return l.charAt(0) !== '§'; }).length) bits.push('<div><b>How to obtain:</b> ' + esc(e.src.join(' · ')) + '</div>');
@@ -440,14 +442,14 @@
   function setView(view, sec, push) {
     UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear(); OPENG.clear(); XFOLD.clear(); UI.find = '';
     persist(); render();
-    var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : view === 'weather' ? '#/weather' : '#/';
+    var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : isLive(view) ? '#/live/' + view : '#/';
     if (push !== false && location.hash !== h) history.pushState(null, '', h);
     $('#page').focus({ preventScroll: true }); window.scrollTo(0, 0);
   }
   function render() {
     TALLY.clear();
     renderSide();
-    if (UI.view === 'weather') renderWeather();
+    if (isLive(UI.view)) LIVE_RENDER[UI.view]();
     else if (UI.view === 'sec' && SEC.has(UI.sec)) renderSection(UI.sec);
     else if (UI.view === 'search' && UI.q) renderSearch();
     else renderHome();
@@ -709,7 +711,8 @@
   function route() {
     var m = location.hash.match(/^#\/s\/(.+)$/);
     if (m && SEC.has(m[1])) setView('sec', m[1], false);
-    else if (location.hash === '#/weather') setView('weather', null, false);
+    else if (/^#\/(live\/)?weather$/.test(location.hash)) setView('weather', null, false);
+    else if (/^#\/live\/(\w+)$/.test(location.hash) && isLive(location.hash.slice(7))) setView(location.hash.slice(7), null, false);
     else if (location.hash === '#/' || !location.hash) setView(UI.view === 'sec' && SEC.has(UI.sec) && !location.hash ? 'sec' : 'home', UI.sec, false);
   }
   function charName(id) { var c = ST.chars.find(function (x) { return x.id === id; }); return c ? c.name : id; }
@@ -1161,5 +1164,6 @@
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
   })();
+/*{{LIVE}}*/
   window.__tracker = { openAll: function () { SEC.get(UI.sec).groups.forEach(function (g, gi) { OPENG.add(UI.sec + '#' + gi); }); renderLedger(); }, get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
 })();

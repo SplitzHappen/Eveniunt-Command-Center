@@ -861,7 +861,7 @@ def expand_src(src, it=None):
                 dl = duty_lines(c, {})
                 out.append(("Defeat " + boss + " in " if boss else "Drops in ") + clean(CFC[c]["Name"]) + (" (" + "; ".join(dl[:2]) + ")" if dl else ""))
     return [x for x in dict.fromkeys(out) if x][:4]
-COLLECTION_LISTS = ("mounts", "minions", "orchestrion", "emotes", "hairstyles", "barding", "fashion", "facewear", "cards")
+COLLECTION_LISTS = ("mounts", "minions", "orchestrion", "emotes", "hairstyles", "barding", "fashion", "facewear", "cards", "armoire", "outfits")
 for key, g, e in each("bluemagic"):
     lines = expand_src(e.get("src") or [])
     lines.append("To learn it: be a Blue Mage, let the enemy use the move on you, then win; it is a chance, not a certainty, so repeat if needed")
@@ -1119,6 +1119,14 @@ def fallback(sid, g, e):
         if q_: return [quest_ref(q_)]
         return ["Unlocked by: " + coords(d)] if d else ["Level this class or job"]
     if sid == "mahjong": return [d] if d else []
+    if sid == "verminion":
+        if e["i"] <= 24: return ["Verminion Challenge %d of 24: in Minion Square (Chocobo Square, the Gold Saucer), choose Verminion Challenge at a Lord of Verminion table and win against the computer" % e["i"], "Needs at least three minions; set your Verminion hotbar in Character → Gold Saucer → Verminion. The challenges unlock one after another"]
+        if e["i"] in (111, 112, 113): return ["Master Battle (" + e["n"].split(": ")[-1] + "): a harder single-player battle against the computer, chosen at a Lord of Verminion table in Minion Square", "Open with cheap, fast minions and group same-type minions so their special action can fire"]
+        return [e.get("d") or ""]
+    if sid == "chocoboracing":
+        if e["i"] < 1000: return ["Chocobo Challenge race: choose Chocobo Challenge at the race registrar in Chocobo Square (the Gold Saucer); " + (d[0].lower() + d[1:] if d else "") , "The first clear pays a large MGP reward and can unlock ability manuals at the Tack & Feed Trader"]
+        if e["i"] < 1100: return ["Raise your race chocobo to " + e["n"].split("chocobo ")[-1] + ": experience comes from every race (more for better placings, plus a bonus when other players race too)", "Each rank up raises five random stats and gives a feeding; save feedings for grade 3 feed bought with MGP"]
+        return ["Breed a " + e["n"].lower() + ": a foal's pedigree is its lower parent's plus one, so breed each generation up from rank 40 chocobos", "Breeding opens with the quest Like Sire Like Fledgling (Chocobokeep, Chocobo Square, 6, 4)"]
     if sid == "deliveries": return ["Custom Delivery client: " + d.replace("Quest:", "unlocked by the quest").replace(" · ", "; ")] if d else []
     if sid == "collection" and gt == "Yo-kai Medallium":
         return ["Yo-kai Watch collaboration event (time-limited; last run August to October 2026): start the quest \u201cA Complete Game Changer\u201d from the Poor-heeled Youth in Ul'dah - Steps of Nald (9.2, 9.1) at level 15 or higher",

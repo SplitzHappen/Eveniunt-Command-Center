@@ -42,7 +42,7 @@ const lookPlus = look.replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION
 if (lookPlus === look || (lookPlus.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('could not add the Solution Nine theme');
 
 const core = ['model', 'storage', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'importer', 'links'].map((f) => read(path.join(T, 'src', 'core', f + '.js'))).join('\n');
-const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => lookPlus);
+const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => lookPlus).replace('/*{{LIVE}}*/', () => read(path.join(T, 'src', 'app', 'live.js')));
 const css = read(path.join(T, 'src', 'app', 'shared.css')) + '\n' + read(path.join(T, 'src', 'app', 'tracker.css'));
 const data = read(path.join(T, 'data', 'tracker-data.json')).replace(/</g, '\\u003c');
 const map = read(path.join(T, 'data', 'desktop-map.json')).replace(/</g, '\\u003c');
@@ -50,11 +50,12 @@ const links = read(path.join(T, 'data', 'links.json')).replace(/</g, '\\u003c');
 // how-to-get information (data/info.json, tools/info.py): about 4 MB of text, stored compressed (deflate-raw, base64) and
 // unpacked by the page the first time an entry's window opens
 const cond = read(path.join(T, 'data', 'conditions.json')).replace(/</g, '\\u003c');
+const live = read(path.join(T, 'data', 'live.json')).replace(/</g, '\\u003c');
 const info = require('zlib').deflateRawSync(fs.readFileSync(path.join(T, 'data', 'info.json')), { level: 9 }).toString('base64');
 for (const [n, s] of [['core', core], ['app', app]]) if (/<\/script/i.test(s)) throw new Error(n + ' contains </script>');
-const build = crypto.createHash('sha256').update(core + app + css + data + map + links + info + cond).digest('hex').slice(0, 12);
+const build = crypto.createHash('sha256').update(core + app + css + data + map + links + info + cond + live).digest('hex').slice(0, 12);
 let html = read(path.join(T, 'src', 'app', 'tracker.html'));
-const rep = { FONTS: fonts, CSS: css, DATA: data, MAP: map, LINKS: links, INFO: info, COND: cond, CORE: core, APP: app, BUILD: build };
+const rep = { FONTS: fonts, CSS: css, DATA: data, MAP: map, LINKS: links, INFO: info, COND: cond, LIVE: live, CORE: core, APP: app, BUILD: build };
 html = html.replace(/\{\{([A-Z]+)\}\}/g, (m, k) => { if (!(k in rep)) throw new Error('missing ' + k); return rep[k]; });
 if (/(src|href)\s*=\s*["']https?:/i.test(html)) throw new Error('external reference in the page');
 const out = path.join(T, 'dist'); fs.mkdirSync(out, { recursive: true });

@@ -53,6 +53,18 @@
   "triad/cards": {
    "items": 475,
    "time_limited_only": 0
+  },
+  "armoires": {
+   "items": 3563,
+   "time_limited_only": 132
+  },
+  "outfits": {
+   "items": 1088,
+   "time_limited_only": 64
   }
+ },
+ "refreshed": {
+  "armoires": "2026-11-08",
+  "outfits": "2026-11-08"
  }
 }

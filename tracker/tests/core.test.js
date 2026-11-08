@@ -930,3 +930,27 @@ test('links: achievement tiers, Dawntrail relic stages, Grand Company ranks, and
   const fire = fill(byName('quests-side', 'Fiery Wings, Fiery Hearts'));
   assert.ok(fire.includes(byName('mounts', 'Warring Lanner')) && fire.includes(byName('mounts', 'Dark Lanner')));
 });
+
+// ---------------------------------------------------------------- Live pages data
+test('live data: ocean fishing schedule, big fish, field monsters, new lists', () => {
+  const L = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'live.json'), 'utf8'));
+  const O = L.ocean;
+  assert.equal(O.table.length, 144); assert.equal(Object.keys(O.routes).length, 21);
+  // the Indigo pattern published by the community schedule (ffxiv.oceanfishing.boats), first 24 voyages; its voyage n
+  // leaves at 2-hour slot k with n = (k + 84) mod 144. The game table must give the same route for the same slot.
+  const site = [7, 10, 1, 4, 8, 11, 2, 5, 12, 3, 6, 7, 10, 1, 4, 8, 11, 2, 5, 9, 3, 6, 7, 10];
+  for (let n = 0; n < site.length; n++) { const k = (n - 84 + 144 * 10) % 144; assert.equal(O.table[(k + O.offset) % 144][0], site[n], 'voyage ' + n); }
+  const r1 = O.routes['1'];
+  assert.deepEqual(r1.stops.map((s) => s.name + ' ' + s.time), ['The Southern Strait of Merlthor Night', 'Galadion Bay Day', 'The Northern Strait of Merlthor Sunset']);
+  assert.ok(O.ach.length >= 40, 'ocean fishing achievements found');
+  assert.equal(L.bigfish.length, 335); assert.equal(L.bigfish.filter((f) => f.kind === 'legendary').length, 36);
+  assert.ok(L.bigfish.filter((f) => f.k).length >= 320, 'big fish matched to the fishing log');
+  assert.ok(L.bigfish.filter((f) => f.a != null).length >= 290, 'big fish with a window');
+  const anemos = L.field.zones['Eureka Anemos'];
+  assert.ok(anemos.filter((m) => m.el).length >= 60, 'Eureka monsters with an element');
+  assert.ok(L.field.zones['The Occult Crescent: South Horn'].filter((m) => m.weak).length >= 90);
+  assert.ok(L.field.challenge.some((c) => /Forbidden Ice/.test(c[1])), 'Eureka challenge log entries');
+  const n = (id) => idx.sections.find((s) => s.id === id).groups.reduce((a, g) => a + g.keys.length, 0);
+  assert.equal(n('armoire'), 3563); assert.equal(n('outfits'), 1088);
+  assert.equal(n('verminion'), 29); assert.ok(n('chocoboracing') >= 25);
+});

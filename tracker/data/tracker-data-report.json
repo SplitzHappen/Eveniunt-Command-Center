@@ -61,6 +61,10 @@
   "fates": 1712,
   "hunt": 932,
   "quests-other": 180,
+  "verminion": 29,
+  "chocoboracing": 28,
+  "armoire": 3563,
+  "outfits": 1088,
   "deliveries": 12,
   "cosmicmissions": 1699,
   "cosmicrecords": 244,
@@ -112,13 +116,15 @@
   "barding: time-limited only": 1,
   "fashion: time-limited only": 6,
   "facewear: time-limited only": 8,
+  "armoire: time-limited only": 132,
+  "outfits: time-limited only": 64,
   "achievements: time-limited": 328,
   "achievements: legacy (no longer obtainable)": 261,
   "titles: no longer obtainable (Legacy achievements)": 51,
   "titles: time-limited (from their achievements)": 138
  },
  "marked": {
-  "lim": 966,
+  "lim": 1162,
   "gone": 325,
   "unk": 463
  },
@@ -137,5 +143,5 @@
   "quest: starter route of a class": 16,
   "quest: joiner route of a class": 32
  },
- "total": 38685
+ "total": 43393
 }

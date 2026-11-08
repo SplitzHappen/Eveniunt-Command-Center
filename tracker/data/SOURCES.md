@@ -128,3 +128,13 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
 - `data/conditions.json` (2026-11-08): each zone's weather table (`TerritoryType.WeatherRate` → `WeatherRate`, `Weather`) and each timed entry's zone, Eorzea hours and weather, from `Adventure`, `FishingSpot`, `SpearfishingNotebook`, ff14-fish-tracker-app and Teamcraft gathering nodes.
 - `data/fate-zones.json` (2026-11-08): zones for FATEs that Teamcraft does not place, from Garland Tools FATE data (garlandtools.org), or the FATE type in the game sheet.
 - `data/relic-guides.json` (2026-11-08): stage-by-stage relic weapon and tool guides, written for the tracker from the Console Games Wiki relic pages (Zodiac, Anima, Eurekan, Resistance, Manderville, Phantom; Lucis, Skysteel, Resplendent, Splendorous, Cosmic). Item sources and duty unlocks inside the guides come from the game data and FFXIV Teamcraft.
+
+## Live pages (2026-11-08)
+
+- `tools/live.py` writes `data/live.json`. Game sheets: `IKDRoute`, `IKDRouteTable`, `IKDSpot`, `FishingSpot` (ocean fishing), `ContentsNote` (challenge log), `Achievement`, `Weather`; ff14-fish-tracker-app (bait chains, intuition, Fish Eyes, folklore); FFXIV Teamcraft (fishing holes, bite and hookset).
+- `data/big-fish.json`: big fish and legendary fish names and, for the newest, their windows and bait, from the Console Games Wiki's Big Fishing tables.
+- `data/field-monsters.json`: field operation monsters from the Console Games Wiki's structured enemy data (Semantic MediaWiki query) and Zadnor's area lists.
+- `data/ocean-fishing.json`: the voyage offset (checked against ffxiv.oceanfishing.boats) and each route's best targets (facts from that site).
+- `data/timers.json`: Xenoveritas' FFXIV timers (`tools/fetch-timers.py`).
+- `data/guides.json`: guides written for the tracker from the Console Games Wiki (Ocean Fishing, GATEs, Lord of Verminion, Chocobo Racing).
+- `data/ffxivcollect/armoires.json`, `outfits.json`: FFXIV Collect snapshots (`tools/fetch-ffxivcollect.py armoires outfits`).

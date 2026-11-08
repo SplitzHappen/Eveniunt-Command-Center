@@ -29,7 +29,9 @@ _cache = {}
 def sheet(name):
     """Return {row_id(int): {column: value}} for an English sheet."""
     if name not in _cache:
-        with open(os.path.join(DM, "csv", "en", name + ".csv"), encoding="utf-8-sig") as f:
+        _p = os.path.join(DM, "csv", "en", name + ".csv")
+        if not os.path.exists(_p) and os.environ.get("DM_RAW"): _p = os.path.join(os.environ["DM_RAW"], name + ".csv")  # same commit, fetched
+        with open(_p, encoding="utf-8-sig") as f:
             rows = list(csv.reader(f))
         head = rows[0]
         _cache[name] = {int(r[0]): dict(zip(head, r)) for r in rows[1:] if r and r[0].isdigit()}
@@ -802,9 +804,44 @@ section("quests-other", "Quests Outside the Journal", "Quests", by_expansion(que
 
 # ---------------------------------------------------------------- community status and sources (FFXIV Collect)
 FCDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "ffxivcollect")
+# Armoire and Outfit Glamours: FFXIV Collect's lists (its own ids; the game item is found by name for its details)
+_item_by_name = {}
+for _k, _r in sheet("Item").items():
+    if clean(_r.get("Name")): _item_by_name.setdefault(clean(_r["Name"]).lower(), _k)
+def fc_list(kind, group_of):
+    with open(os.path.join(FCDIR, kind + ".json"), encoding="utf-8") as f:
+        rows = json.load(f)["items"]
+    groups = collections.OrderedDict()
+    for r in sorted(rows, key=lambda r: (str(r.get("patch") or "9"), r["name"])):
+        e = {"i": r["id"], "n": r["name"]}
+        if r.get("patch"): e["p"] = str(r["patch"])
+        it = r.get("item_id") or _item_by_name.get(r["name"].lower())
+        if it: e["it"] = it
+        groups.setdefault(group_of(r), []).append(e)
+    return [{"t": t, "e": es} for t, es in groups.items()]
+# Gold Saucer: Lord of Verminion and chocobo racing goals (the game's ChocoboRaceChallenge sheet; the rest are fixed goals)
+try:
+    _crc = sheet("ChocoboRaceChallenge")
+except FileNotFoundError:
+    _crc = {}
+_verm = [{"i": n, "n": "Verminion Challenge %d" % n, "d": "Single-player challenge %d of 24" % n} for n in range(1, 25)]
+_verm += [{"i": 101, "n": "Clockwork Twintania (all 24 challenges)", "d": "Minion reward for clearing all 24 Verminion Challenges"},
+          {"i": 111, "n": "Master Battle: Easy"}, {"i": 112, "n": "Master Battle: Normal"}, {"i": 113, "n": "Master Battle: Hard"},
+          {"i": 121, "n": "Shalloweye (50 Player Battle (RP) wins)", "d": "Minion reward for 50 ranked wins"}]
+_race = [{"i": k, "n": clean(r["Name"]), "d": "Needs a racing rating of " + r.get("RatingRequirement", "?")} for k, r in sorted(_crc.items()) if clean(r.get("Name"))]
+_rank = [{"i": 1000 + n, "n": "Race chocobo rank %d" % n} for n in (10, 20, 30, 40, 50)] + [{"i": 1100 + n, "n": "Pedigree %d chocobo" % n} for n in range(2, 10)]
+section("verminion", "Lord of Verminion", "Gold Saucer", [{"t": "Verminion Challenges", "e": _verm[:24]}, {"t": "Rewards and battles", "e": _verm[24:]}],
+        note="Lord of Verminion goals: the 24 challenges (all of them give Clockwork Twintania), the Master Battles and the ranked-win minion.")
+section("chocoboracing", "Chocobo Racing", "Gold Saucer", [{"t": "Chocobo Challenge races", "e": _race}, {"t": "Ranks and breeding", "e": _rank}],
+        note="Chocobo racing goals: the Chocobo Challenge races (first clears pay MGP and unlock ability manuals), race chocobo ranks and breeding pedigrees.")
+if os.path.exists(os.path.join(FCDIR, "armoires.json")):
+    section("armoire", "Armoire", "Collections", fc_list("armoires", lambda r: r.get("category") or "Armoire"),
+            note="Items the Armoire can store (FFXIV Collect's list). Grouped by the Armoire's own categories, each under the expansion it came out in.")
+    section("outfits", "Outfit Glamours", "Collections", fc_list("outfits", lambda r: (lambda s: (s.get("text") if s.get("type") == "Other" and s.get("text") else s.get("type")) or "Unlisted source")((r.get("sources") or [{}])[0])),
+            note="Outfit glamours that can be stored in the glamour dresser as one set (FFXIV Collect's list).")
 FC_MAP = {"mounts": ("mounts", "id"), "minions": ("minions", "id"), "orchestrion": ("orchestrions", "id"),
           "emotes": ("emotes", "id"), "hairstyles": ("hairstyles", "item"), "barding": ("bardings", "id"),
-          "fashion": ("fashions", "id"), "facewear": ("facewear", "item"), "bluemagic": ("spells", "id"), "cards": ("triad-cards", "id"), "titles": ("titles", "id")}
+          "fashion": ("fashions", "id"), "facewear": ("facewear", "item"), "bluemagic": ("spells", "id"), "cards": ("triad-cards", "id"), "titles": ("titles", "id"), "armoire": ("armoires", "id"), "outfits": ("outfits", "id")}
 fc_stats = collections.Counter()
 
 def apply_ffxivcollect():

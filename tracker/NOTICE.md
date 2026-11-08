@@ -7,6 +7,8 @@
 - **FFXIV Completionist desktop app** (same team): about 800 links between entries were read from the link fields of its data files (version 1.0.5) and adopted after checks (`data/SOURCES.md`); they are marked "from the FFXIV Completionist desktop app" in the tracker. Credited with thanks.
 - **ff14-fish-tracker-app** (MIT License, © icykoneko): fishing time windows, weather, bait chains and Fisher's Intuition requirements in the information window (`data/fish-tracker.json`).
 - **Console Games Wiki** (ffxiv.consolegameswiki.com): facts about elite mark spawns, Occult Crescent records, variant dungeon routes, field operation triggers, the Master's Bestiary, how duties open and the relic weapon and tool steps, restated in the tracker's own words (the wiki publishes no licence, so none of its text is copied). Credited with thanks.
+- **ffxiv.oceanfishing.boats** (Xina, with data from Tyo'to Tayuun): each ocean fishing route's best targets, and the check of the voyage schedule. Credited with thanks.
+- **Xenoveritas' FFXIV timers** (xenoveritas.org): the list of upcoming events and maintenance on the Timers & Events page. Credited with thanks.
 - **Garland Tools** (garlandtools.org): the quest that unlocks some duties, as facts (`data/duty-unlocks.json`) and the zones of some FATEs (`data/fate-zones.json`). Credited with thanks.
 - **Eveniunt Atelier:** the Appearance module and visual system are shared with the Atelier (same repository, Apache License 2.0).
 - **Fonts:** Fraunces, Atkinson Hyperlegible, IBM Plex Mono, Big Shoulders Display and Cinzel, embedded from the @fontsource packages under the SIL Open Font License 1.1. Copyright lines and the licence text: `LICENSES-FONTS.md`.

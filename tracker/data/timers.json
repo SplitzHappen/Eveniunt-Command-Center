@@ -1,0 +1,24 @@
+{
+"_about": "Upcoming events and maintenance, from Xenoveritas' FFXIV timers (xenoveritas.org/static/ffxiv/timers.json, which follows the Lodestone); snapshot taken when the tracker was built. The hosted tracker also reads a fresh copy (timers.json next to the page) when one is published.",
+"fetched": "2026-11-08",
+"timers": [
+{
+"name": "All Worlds Maintenance (Nov. 9-10) (Patch 7.58)",
+"type": "maintenance",
+"start": 1794218400000.0,
+"end": 1794304800000.0
+},
+{
+"name": "COMPANION App Maintenance (Nov. 9-10)",
+"type": "maintenance",
+"start": 1794218400000.0,
+"end": 1794304800000.0
+},
+{
+"name": "The Lodestone Maintenance(Nov. 9-10) (Patch 7.58)",
+"type": "maintenance",
+"start": 1794222000000.0,
+"end": 1794272400000.0
+}
+]
+}

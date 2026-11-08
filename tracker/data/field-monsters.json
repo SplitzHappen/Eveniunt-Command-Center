@@ -1,0 +1,3111 @@
+{
+"_about": "Monsters of Eureka, Bozja and the Occult Crescent: level, coordinates, element (Eureka), elemental weakness (Occult Crescent), spawn condition (weather or night) and aggro, from the Console Games Wiki's structured enemy data and Zadnor's area lists (read 2026-11-08); facts only.",
+"zones": {
+"The Bozjan Southern Front": [
+{
+"n": "4th Legion Imaginifer",
+"lv": "I",
+"x": 16,
+"y": 17
+},
+{
+"n": "4th Legion Sky Armor",
+"lv": "I",
+"x": 16,
+"y": 17
+},
+{
+"n": "4th Legion Veles",
+"lv": "I",
+"x": 16,
+"y": 17
+},
+{
+"n": "Albeleo",
+"lv": "80"
+},
+{
+"n": "Bozjan Dullahan",
+"lv": "V",
+"spawn": "night"
+},
+{
+"n": "Bozjan Sabotender",
+"lv": "I"
+},
+{
+"n": "Bozjan Taipan",
+"lv": "IV"
+},
+{
+"n": "Pheremones",
+"lv": "??"
+},
+{
+"n": "Rotten Mandragora",
+"lv": "??"
+}
+],
+"Eureka Anemos": [
+{
+"n": "Abraxas",
+"lv": "13",
+"x": 14.5,
+"y": 15.5
+},
+{
+"n": "Anemos Anala",
+"lv": "21",
+"x": 35,
+"y": 18.5
+},
+{
+"n": "Anemos Apa",
+"lv": "22",
+"x": 35.2,
+"y": 17.2,
+"el": "Water"
+},
+{
+"n": "Anemos Chaser",
+"lv": "11",
+"x": 18.7,
+"y": 27.7,
+"el": "Wind"
+},
+{
+"n": "Anemos Flan",
+"lv": "8",
+"x": 25.9,
+"y": 25.8,
+"el": "Lightning"
+},
+{
+"n": "Anemos Gremlin",
+"lv": "18",
+"x": 21.7,
+"y": 16,
+"el": "Earth"
+},
+{
+"n": "Anemos Harpeia",
+"lv": "8",
+"x": 25.5,
+"y": 27
+},
+{
+"n": "Anemos Pegasus",
+"lv": "22",
+"x": 35.4,
+"y": 16.6,
+"el": "Lightning"
+},
+{
+"n": "Anemos Sanuwa",
+"lv": "17",
+"x": 18.4,
+"y": 14.8,
+"el": "Wind"
+},
+{
+"n": "Anemossling",
+"lv": "1",
+"x": 17.6,
+"y": 30.4,
+"el": "Wind"
+},
+{
+"n": "Arioch of the Isle",
+"lv": "24",
+"x": 10,
+"y": 25.1,
+"el": "Ice"
+},
+{
+"n": "Bezoar",
+"lv": "3",
+"x": 13.5,
+"y": 29.7,
+"el": "Ice"
+},
+{
+"n": "Bigfoot",
+"lv": "12",
+"x": 18.9,
+"y": 26.8,
+"el": "Ice"
+},
+{
+"n": "Black Wolf",
+"lv": "9",
+"x": 19.3,
+"y": 29.6,
+"el": "Fire"
+},
+{
+"n": "Crystal Wolf",
+"lv": "9",
+"x": 19.3,
+"y": 29.6,
+"el": "Earth"
+},
+{
+"n": "Darner",
+"lv": "9",
+"x": 17,
+"y": 21.5,
+"el": "Wind"
+},
+{
+"n": "Death Jacket",
+"lv": "10",
+"x": 24.9,
+"y": 24.7,
+"el": "Wind"
+},
+{
+"n": "Death Mask",
+"lv": "13",
+"x": 18.1,
+"y": 18,
+"el": "Lightning"
+},
+{
+"n": "Death Sprite",
+"lv": "13-54",
+"x": 19.7,
+"y": 13.1,
+"spawn": "Gloom"
+},
+{
+"n": "Defroster",
+"lv": "15",
+"x": 29,
+"y": 20,
+"el": "Fire"
+},
+{
+"n": "Dhalmel of Nightmares",
+"lv": "20",
+"x": 30.5,
+"y": 12.7,
+"el": "Earth"
+},
+{
+"n": "Drought Dweller",
+"lv": "20",
+"x": 7.8,
+"y": 21.1,
+"el": "Earth"
+},
+{
+"n": "Dud",
+"lv": "16",
+"x": 35.2,
+"y": 19.7,
+"el": "Fire"
+},
+{
+"n": "Duskfall Bhoot",
+"lv": "8",
+"x": 27.6,
+"y": 25.6,
+"el": "Earth"
+},
+{
+"n": "Duskfall Dullahan",
+"lv": "18",
+"x": 20,
+"y": 13,
+"el": "Fire",
+"spawn": "night"
+},
+{
+"n": "Duskfall Mummy",
+"lv": "14",
+"x": 17.8,
+"y": 17,
+"el": "Fire"
+},
+{
+"n": "Duskfall Skeleton",
+"lv": "10",
+"x": 18.1,
+"y": 24.6,
+"el": "Fire"
+},
+{
+"n": "Eurekan Dahak",
+"lv": "20",
+"x": 26.6,
+"y": 13.4,
+"el": "Lightning"
+},
+{
+"n": "Eurekan Screamer",
+"lv": "2",
+"x": 14.4,
+"y": 29.2,
+"el": "Wind"
+},
+{
+"n": "Ferromantoise",
+"lv": "13",
+"x": 24.7,
+"y": 20.7,
+"el": "Earth"
+},
+{
+"n": "Flowering Sabotender (Eureka Anemos)",
+"lv": "6",
+"x": 13.5,
+"y": 21.5,
+"el": "Wind"
+},
+{
+"n": "Fossil Dragon",
+"lv": "22",
+"x": 35,
+"y": 21,
+"el": "Fire",
+"spawn": "night"
+},
+{
+"n": "Four-eyes",
+"lv": "23",
+"x": 10,
+"y": 26,
+"el": "Ice"
+},
+{
+"n": "Gardenkeeper",
+"lv": "15",
+"x": 14.6,
+"y": 12.8,
+"el": "Earth"
+},
+{
+"n": "Glacier Golem",
+"lv": "16",
+"x": 17.6,
+"y": 15.3,
+"el": "Ice"
+},
+{
+"n": "Glade Wivre",
+"lv": "6",
+"x": 27.1,
+"y": 29.4,
+"el": "Earth"
+},
+{
+"n": "Guud Suud",
+"lv": "23",
+"x": 10.4,
+"y": 16.3,
+"el": "Wind"
+},
+{
+"n": "Heartbroken Ochu",
+"lv": "3",
+"x": 14,
+"y": 27.6,
+"el": "Wind"
+},
+{
+"n": "Hybrid Hog",
+"lv": "8",
+"x": 13.9,
+"y": 19.6,
+"el": "Fire"
+},
+{
+"n": "Ignis Fatuus",
+"lv": "1",
+"x": 16.1,
+"y": 31.1,
+"el": "Fire"
+},
+{
+"n": "Irregular Plasmoid",
+"lv": "7",
+"x": 31.1,
+"y": 26,
+"el": "Lightning"
+},
+{
+"n": "Judgmental Floret",
+"lv": "12",
+"x": 22.2,
+"y": 14.9,
+"el": "Ice"
+},
+{
+"n": "Judgmental Hip",
+"lv": "12",
+"x": 22.2,
+"y": 14.9
+},
+{
+"n": "Khor Claw",
+"lv": "16",
+"x": 24.5,
+"y": 18.5,
+"el": "Earth"
+},
+{
+"n": "Lentic",
+"lv": "3",
+"x": 22.6,
+"y": 32.6,
+"el": "Lightning"
+},
+{
+"n": "Leopard",
+"lv": "11",
+"x": 21.1,
+"y": 26.8,
+"el": "Fire"
+},
+{
+"n": "Lynx",
+"lv": "17",
+"x": 25.5,
+"y": 17,
+"el": "Lightning"
+},
+{
+"n": "Magia Fan",
+"lv": "21",
+"x": 31.9,
+"y": 16.7,
+"el": "Wind"
+},
+{
+"n": "Mana Bomb",
+"lv": "6",
+"x": 27.5,
+"y": 28.3,
+"el": "Fire"
+},
+{
+"n": "Mana Grenade",
+"lv": "9",
+"x": 23.7,
+"y": 28.8,
+"el": "Ice"
+},
+{
+"n": "Mighty Craklaw",
+"lv": "23",
+"x": 11,
+"y": 27.1,
+"el": "Water"
+},
+{
+"n": "Migratory Chapuli",
+"lv": "7",
+"x": 28.8,
+"y": 26.7,
+"el": "Wind"
+},
+{
+"n": "Monoeye",
+"lv": "19",
+"x": 29.5,
+"y": 16
+},
+{
+"n": "Old Goobbue",
+"lv": "14",
+"x": 24.9,
+"y": 19.9,
+"el": "Earth"
+},
+{
+"n": "Old World Zu",
+"lv": "20",
+"x": 29.5,
+"y": 12.5
+},
+{
+"n": "Phobosuchus",
+"lv": "13",
+"x": 30.8,
+"y": 24.7,
+"el": "Water"
+},
+{
+"n": "Plantoid",
+"lv": "19",
+"x": 27.2,
+"y": 16.2,
+"el": "Earth"
+},
+{
+"n": "Pneumaflayer",
+"lv": "11",
+"x": 22.5,
+"y": 24.5
+},
+{
+"n": "Poison Spore",
+"lv": "5",
+"x": 27.8,
+"y": 23.3,
+"el": "Earth"
+},
+{
+"n": "Priest of Storms",
+"lv": "20",
+"x": 7.8,
+"y": 21.1,
+"el": "Fire"
+},
+{
+"n": "Primelephas",
+"lv": "25",
+"x": 8.6,
+"y": 24.9,
+"el": "Earth"
+},
+{
+"n": "Quickwater Snake",
+"lv": "15",
+"x": 17.2,
+"y": 15.5,
+"el": "Water"
+},
+{
+"n": "Rain Sprite",
+"lv": "7-20",
+"x": 27.7,
+"y": 28.2,
+"el": "Water",
+"spawn": "Showers"
+},
+{
+"n": "Red Bonnet",
+"lv": "6",
+"x": 12.6,
+"y": 23,
+"el": "Earth"
+},
+{
+"n": "Rockfin",
+"lv": "21",
+"x": 32.7,
+"y": 22.8,
+"el": "Water"
+},
+{
+"n": "Scape Leech",
+"lv": "5",
+"x": 25.1,
+"y": 31.1,
+"el": "Water"
+},
+{
+"n": "Sea Bishop",
+"lv": "7",
+"x": 30,
+"y": 27.5
+},
+{
+"n": "Sea Pugil",
+"lv": "2",
+"x": 22,
+"y": 32
+},
+{
+"n": "Seaboard Angler",
+"lv": "3",
+"x": 22.4,
+"y": 32.2
+},
+{
+"n": "Seaboard Ogrebon",
+"lv": "4",
+"x": 23,
+"y": 33
+},
+{
+"n": "Shadow Wing",
+"lv": "19",
+"x": 24.7,
+"y": 14,
+"el": "Fire"
+},
+{
+"n": "Shadow Wraith",
+"lv": "25",
+"x": 9,
+"y": 20,
+"spawn": "night"
+},
+{
+"n": "Skeleton Noble",
+"lv": "4",
+"x": 14.1,
+"y": 26.4
+},
+{
+"n": "Snowmelt Sprite",
+"lv": "28",
+"x": 30,
+"y": 26,
+"spawn": "fog"
+},
+{
+"n": "Southwestern Wind",
+"lv": "20",
+"x": 7.8,
+"y": 21.1
+},
+{
+"n": "Spangencrab",
+"lv": "14",
+"x": 29,
+"y": 21.3,
+"el": "Water"
+},
+{
+"n": "Squib",
+"lv": "1",
+"x": 21.3,
+"y": 32.6
+},
+{
+"n": "Stalker Ziz",
+"lv": "14",
+"x": 13,
+"y": 13
+},
+{
+"n": "Tangie",
+"lv": "25",
+"x": 6.7,
+"y": 25.7,
+"el": "Water"
+},
+{
+"n": "Traveling Gourmand",
+"lv": "15",
+"x": 29,
+"y": 20,
+"spawn": "night"
+},
+{
+"n": "Typhoon Sprite",
+"lv": "12",
+"x": 20,
+"y": 18.5,
+"spawn": "gales"
+},
+{
+"n": "Val Antlion",
+"lv": "22",
+"x": 35.3,
+"y": 15.3,
+"el": "Earth"
+},
+{
+"n": "Val Bear",
+"lv": "10",
+"x": 26.5,
+"y": 22.5
+},
+{
+"n": "Val Biast",
+"lv": "9",
+"x": 24.6,
+"y": 26,
+"el": "Lightning"
+},
+{
+"n": "Val Biloko",
+"lv": "18",
+"x": 20.6,
+"y": 13.3,
+"el": "Lightning"
+},
+{
+"n": "Val Imp",
+"lv": "5",
+"x": 25.4,
+"y": 31.1,
+"el": "Ice"
+},
+{
+"n": "Val Leshy",
+"lv": "12",
+"x": 19.9,
+"y": 26.7,
+"el": "Earth"
+},
+{
+"n": "Val Revenant",
+"lv": "1",
+"el": "Earth"
+},
+{
+"n": "Val Specter",
+"lv": "24",
+"x": 7.5,
+"y": 26.5,
+"spawn": "night"
+},
+{
+"n": "Valbol",
+"lv": "4",
+"x": 13.3,
+"y": 28.7,
+"el": "Earth"
+},
+{
+"n": "Vesper Bat",
+"lv": "4",
+"x": 13,
+"y": 27
+},
+{
+"n": "Void Crack",
+"lv": "6",
+"x": 23.3,
+"y": 22,
+"el": "Lightning"
+},
+{
+"n": "Void Garm",
+"lv": "6",
+"x": 23.4,
+"y": 22,
+"el": "Lightning"
+},
+{
+"n": "Void Spark",
+"lv": "18",
+"x": 8.2,
+"y": 17.9
+},
+{
+"n": "Voidscale",
+"lv": "23",
+"x": 9,
+"y": 18
+},
+{
+"n": "Wild Baboulas",
+"lv": "10",
+"x": 24.1,
+"y": 24.8,
+"el": "Water"
+},
+{
+"n": "Wooly Woodchuck",
+"lv": "2",
+"x": 15.5,
+"y": 28.6,
+"el": "Earth"
+},
+{
+"n": "Xurble",
+"lv": "5",
+"x": 14.4,
+"y": 24.7,
+"el": "Wind"
+},
+{
+"n": "Zuniceratops",
+"lv": "24",
+"x": 10.1,
+"y": 25.6,
+"el": "Earth"
+}
+],
+"Eureka Hydatos": [
+{
+"n": "Adulator",
+"lv": "??",
+"x": 8.1,
+"y": 21.8,
+"el": "Ice"
+},
+{
+"n": "Audacious Elbst",
+"lv": "??",
+"x": 13.8,
+"y": 21.6,
+"el": "Water"
+},
+{
+"n": "Barong's Fire",
+"lv": "??",
+"x": 32.2,
+"y": 25.3
+},
+{
+"n": "Crystal Claw",
+"lv": "65",
+"x": 32.5,
+"y": 21.5
+},
+{
+"n": "Dark Gaelicat",
+"lv": "53",
+"x": 13.9,
+"y": 24.6,
+"el": "Wind"
+},
+{
+"n": "Dark Gargoyle",
+"lv": "64",
+"x": 35.9,
+"y": 14.3,
+"el": "Lightning"
+},
+{
+"n": "Dark Rider",
+"lv": "57",
+"x": 7.3,
+"y": 20.9,
+"el": "Wind",
+"spawn": "Night"
+},
+{
+"n": "Dark Void Monk",
+"lv": "60",
+"x": 26,
+"y": 15
+},
+{
+"n": "Eo'ghrah",
+"lv": "57",
+"x": 7.1,
+"y": 17.9,
+"el": "Lightning"
+},
+{
+"n": "Eurekan Deathgaze",
+"lv": "50",
+"x": 20.5,
+"y": 16.3,
+"el": "Lightning"
+},
+{
+"n": "Faithless Guard",
+"lv": "??",
+"x": 36.3,
+"y": 14
+},
+{
+"n": "Flawless Bubble",
+"lv": "??",
+"x": 10.8,
+"y": 25.6
+},
+{
+"n": "Gorpokkur",
+"lv": "60",
+"x": 22.4,
+"y": 16.5,
+"el": "Wind"
+},
+{
+"n": "Haokah Followed",
+"lv": "??",
+"x": 13.8,
+"y": 21.6,
+"el": "Water"
+},
+{
+"n": "Haokah Unburdened",
+"lv": "??",
+"x": 13.8,
+"y": 21.6,
+"el": "Water"
+},
+{
+"n": "Hydatos Delphine",
+"lv": "64",
+"x": 38,
+"y": 14
+},
+{
+"n": "Hydatos Delphyne",
+"lv": "64",
+"x": 36.6,
+"y": 13.3,
+"el": "Fire"
+},
+{
+"n": "Hydatos Elbst",
+"lv": "54",
+"x": 15.4,
+"y": 27,
+"el": "Water"
+},
+{
+"n": "Hydatos Gigantopithecus",
+"lv": "62",
+"x": 33.7,
+"y": 26.5,
+"el": "Fire"
+},
+{
+"n": "Hydatos Grenade",
+"lv": "53",
+"x": 23.7,
+"y": 20.8,
+"el": "Earth"
+},
+{
+"n": "Hydatos Nix",
+"lv": "52",
+"x": 15.5,
+"y": 21.3,
+"el": "Earth"
+},
+{
+"n": "Hydatos Peiste",
+"lv": "64",
+"x": 32.2,
+"y": 15.9,
+"el": "Wind"
+},
+{
+"n": "Hydatos Primelephas",
+"lv": "56",
+"x": 10.5,
+"y": 18
+},
+{
+"n": "Hydatos Pudding",
+"lv": "51",
+"x": 22.7,
+"y": 18.2,
+"el": "Earth"
+},
+{
+"n": "Hydatos Slug",
+"lv": "51",
+"x": 15.6,
+"y": 18,
+"el": "Water"
+},
+{
+"n": "Hydatos Squib",
+"lv": "61",
+"x": 28.9,
+"y": 15.8,
+"el": "Water"
+},
+{
+"n": "Hydatos Tsanahale",
+"lv": "55",
+"x": 11.5,
+"y": 27.3,
+"el": "Wind"
+},
+{
+"n": "Hydatos Vepar",
+"lv": "53",
+"x": 15.8,
+"y": 28,
+"el": "Water"
+},
+{
+"n": "Hydatos Wraith",
+"lv": "60",
+"x": 25,
+"y": 17,
+"spawn": "night"
+},
+{
+"n": "Hydatos Zebu",
+"lv": "65",
+"x": 34.7,
+"y": 20.5,
+"el": "Earth"
+},
+{
+"n": "Hydatos Ziz",
+"lv": "52",
+"x": 17.4,
+"y": 24.2,
+"el": "Fire"
+},
+{
+"n": "Icicle",
+"lv": "??",
+"x": 32.8,
+"y": 19.5
+},
+{
+"n": "King's Jester",
+"lv": "??",
+"x": 29.1,
+"y": 23,
+"el": "Lightning"
+},
+{
+"n": "King's Pike",
+"lv": "??",
+"x": 29.1,
+"y": 23,
+"el": "Lightning"
+},
+{
+"n": "Laboratory Coeurl",
+"lv": "51",
+"x": 21.6,
+"y": 18.4,
+"el": "Fire"
+},
+{
+"n": "Laboratory Jackal",
+"lv": "63",
+"x": 36.5,
+"y": 24.6,
+"el": "Ice"
+},
+{
+"n": "Laboratory Lion",
+"lv": "63",
+"x": 35,
+"y": 24.5
+},
+{
+"n": "Laboratory Rat",
+"lv": "54",
+"x": 14,
+"y": 27,
+"el": "Ice"
+},
+{
+"n": "Lake Yabby",
+"lv": "57",
+"x": 5.3,
+"y": 18.8,
+"el": "Water"
+},
+{
+"n": "Lifeless Slave",
+"lv": "??",
+"x": 36.3,
+"y": 14
+},
+{
+"n": "Mammet 013BL",
+"lv": "58",
+"x": 4,
+"y": 14.6,
+"el": "Ice"
+},
+{
+"n": "Nestless Cockerel",
+"lv": "54",
+"x": 24.9,
+"y": 25.9,
+"el": "Wind"
+},
+{
+"n": "Nomadic Matanga",
+"lv": "55",
+"x": 11.1,
+"y": 21.5,
+"el": "Earth"
+},
+{
+"n": "Northern Tiger",
+"lv": "59",
+"x": 6,
+"y": 26
+},
+{
+"n": "Paralarva",
+"lv": "??",
+"x": 10.8,
+"y": 25.6,
+"el": "Water"
+},
+{
+"n": "Phuabo",
+"lv": "??",
+"x": 18.7,
+"y": 28.4,
+"el": "Wind"
+},
+{
+"n": "Plume Portentious",
+"lv": "??",
+"x": 7.1,
+"y": 14.5
+},
+{
+"n": "Rusted Dreadnaught",
+"lv": "58",
+"x": 4.2,
+"y": 16.6,
+"el": "Fire"
+},
+{
+"n": "Sabotender Mariachi",
+"lv": "50",
+"x": 19.1,
+"y": 14.9,
+"el": "Earth"
+},
+{
+"n": "Samurai Corpse",
+"lv": "63",
+"x": 35.4,
+"y": 24.7,
+"el": "Water",
+"spawn": "Night"
+},
+{
+"n": "Shugen Tengu",
+"lv": "59",
+"x": 7.9,
+"y": 29.4,
+"el": "Wind"
+},
+{
+"n": "Soulless Adventurer",
+"lv": "54",
+"x": 12.8,
+"y": 26.6,
+"el": "Ice",
+"spawn": "Night"
+},
+{
+"n": "Soulless Researcher",
+"lv": "52",
+"x": 18.6,
+"y": 25.7,
+"el": "Ice",
+"spawn": "Night"
+},
+{
+"n": "Thor the Lost",
+"lv": "61",
+"x": 30.3,
+"y": 15.2,
+"el": "Lightning"
+},
+{
+"n": "Tigerhawk",
+"lv": "62",
+"x": 32.5,
+"y": 26.5
+},
+{
+"n": "Unfound Ogre",
+"lv": "62",
+"x": 29.3,
+"y": 26.3,
+"el": "Ice"
+},
+{
+"n": "Val Antelope",
+"lv": "56",
+"x": 11.9,
+"y": 20.5,
+"el": "Fire"
+},
+{
+"n": "Val Chigoe",
+"lv": "52",
+"x": 18.7,
+"y": 25.7,
+"el": "Wind"
+},
+{
+"n": "Val Mantis",
+"lv": "60",
+"x": 22.8,
+"y": 17.2,
+"el": "Ice"
+},
+{
+"n": "Val Mole",
+"lv": "61",
+"x": 28.6,
+"y": 15.5,
+"el": "Earth"
+},
+{
+"n": "Val Nanka",
+"lv": "50",
+"x": 21.4,
+"y": 15.6,
+"el": "Water"
+},
+{
+"n": "Val Nullchu",
+"lv": "57",
+"x": 7,
+"y": 22
+},
+{
+"n": "Val Tulihand",
+"lv": "56",
+"x": 8.5,
+"y": 19.6,
+"el": "Ice"
+},
+{
+"n": "Vivid Gastornis",
+"lv": "58",
+"x": 7,
+"y": 15
+},
+{
+"n": "Void Wyvern",
+"lv": "65",
+"x": 29.9,
+"y": 18.7,
+"el": "Lightning"
+},
+{
+"n": "Xzomit",
+"lv": "55",
+"x": 11,
+"y": 25
+},
+{
+"n": "Zu Nestling",
+"lv": "63",
+"x": 37.7,
+"y": 23.8,
+"el": "Wind"
+}
+],
+"Eureka Pagos": [
+{
+"n": "Ameretat",
+"lv": "40",
+"x": 22,
+"y": 14
+},
+{
+"n": "Anapos",
+"lv": "??",
+"x": 34,
+"y": 21,
+"el": "Water"
+},
+{
+"n": "Arch Angra Mainyu",
+"lv": "??",
+"x": 24.4,
+"y": 25.3,
+"el": "Wind"
+},
+{
+"n": "Asag",
+"lv": "??",
+"x": 10.5,
+"y": 10.5,
+"el": "Lightning"
+},
+{
+"n": "Ash Dragon",
+"lv": "??",
+"x": 29,
+"y": 30,
+"el": "Fire"
+},
+{
+"n": "Blood Demon",
+"lv": "27",
+"x": 30,
+"y": 30
+},
+{
+"n": "Blubber Eyes",
+"lv": "30",
+"x": 29,
+"y": 22.5
+},
+{
+"n": "Copycat Cassie",
+"lv": "35",
+"x": 22,
+"y": 14.5,
+"el": "Ice",
+"spawn": "Blizzards"
+},
+{
+"n": "Demon of the Incunable",
+"lv": "27",
+"x": 24,
+"y": 26.5,
+"spawn": "Night"
+},
+{
+"n": "Elder Buffalo",
+"lv": "36",
+"x": 27,
+"y": 17
+},
+{
+"n": "Eldertaur",
+"lv": "??",
+"x": 14,
+"y": 18.5,
+"el": "Wind"
+},
+{
+"n": "Frozen Void Dragon",
+"lv": "40",
+"el": "Ice",
+"aggro": "Sound"
+},
+{
+"n": "Gawper",
+"lv": "39",
+"x": 24.5,
+"y": 24.5
+},
+{
+"n": "Glavoid",
+"lv": "??",
+"x": 32,
+"y": 26,
+"el": "Earth"
+},
+{
+"n": "Hadhayosh",
+"lv": "70",
+"x": 31.4,
+"y": 19,
+"el": "Lightning",
+"spawn": "Thunder"
+},
+{
+"n": "Hakutaku",
+"lv": "??",
+"x": 28.5,
+"y": 22.4,
+"el": "Fire"
+},
+{
+"n": "Holy Cow",
+"lv": "??",
+"x": 26,
+"y": 17.1,
+"el": "Wind"
+},
+{
+"n": "Horus",
+"lv": "33",
+"x": 25.5,
+"y": 20.2,
+"el": "Fire",
+"spawn": "Heat Waves"
+},
+{
+"n": "Huwasi",
+"lv": "31",
+"x": 17,
+"y": 16
+},
+{
+"n": "King Arthro",
+"lv": "??",
+"x": 8.5,
+"y": 15.5,
+"el": "Water",
+"spawn": "Fog"
+},
+{
+"n": "King Igloo",
+"lv": "??",
+"x": 17.4,
+"y": 16.2,
+"el": "Ice"
+},
+{
+"n": "Lab Minotaur",
+"lv": "35",
+"x": 13.5,
+"y": 18.5
+},
+{
+"n": "Lesser Void Dragon",
+"lv": "37",
+"x": 30.5,
+"y": 18.5
+},
+{
+"n": "Louhi",
+"lv": "70",
+"x": 36.4,
+"y": 19.3
+},
+{
+"n": "Mindertaur",
+"lv": "??",
+"x": 14,
+"y": 18.5,
+"el": "Earth"
+},
+{
+"n": "Pagos Billygoat",
+"lv": "33",
+"x": 10.5,
+"y": 19.5
+},
+{
+"n": "Surabhi",
+"lv": "??",
+"x": 10,
+"y": 18.2,
+"el": "Earth"
+},
+{
+"n": "Taxim",
+"lv": "??",
+"x": 25,
+"y": 28,
+"el": "Earth"
+},
+{
+"n": "The Snow Queen",
+"lv": "??",
+"x": 21,
+"y": 26,
+"el": "Ice"
+},
+{
+"n": "Val Corpse",
+"lv": "39",
+"x": 36,
+"y": 19,
+"spawn": "Night"
+},
+{
+"n": "Val Snipper",
+"lv": "34",
+"x": 9,
+"y": 16
+},
+{
+"n": "Val Worm",
+"lv": "28",
+"x": 32.5,
+"y": 27.5
+},
+{
+"n": "Void Vouivre",
+"lv": "38",
+"x": 26,
+"y": 20
+},
+{
+"n": "Wandering Opken",
+"lv": "32",
+"x": 11,
+"y": 11
+},
+{
+"n": "Yukinko",
+"lv": "25",
+"x": 22,
+"y": 29
+}
+],
+"Eureka Pyros": [
+{
+"n": "Acane",
+"lv": "??",
+"x": 23.7,
+"y": 37.3
+},
+{
+"n": "Ancient Voidragon",
+"lv": "54",
+"x": 37.9,
+"y": 14.1,
+"el": "Fire"
+},
+{
+"n": "Audience",
+"lv": "??",
+"x": 31.9,
+"y": 32,
+"el": "Wind"
+},
+{
+"n": "Bird Eater",
+"lv": "47",
+"x": 13,
+"y": 11
+},
+{
+"n": "Blazewing",
+"lv": "41",
+"x": 24.6,
+"y": 31.9,
+"el": "Wind"
+},
+{
+"n": "Cardian",
+"lv": "38",
+"x": 24.2,
+"y": 24.5,
+"el": "Earth"
+},
+{
+"n": "Carrion Griffin",
+"lv": "??",
+"x": 23.9,
+"y": 30,
+"el": "Wind"
+},
+{
+"n": "Clipper",
+"lv": "45",
+"x": 24.2,
+"y": 18.9,
+"el": "Fire"
+},
+{
+"n": "Cobalt Ember",
+"lv": "??",
+"x": 35.5,
+"y": 6.1,
+"el": "Ice"
+},
+{
+"n": "Crimson Ember",
+"lv": "??",
+"x": 35.5,
+"y": 6.1,
+"el": "Earth"
+},
+{
+"n": "Dark Parthenope",
+"lv": "49-50",
+"x": 20.7,
+"y": 11.2,
+"el": "Lightning",
+"spawn": "Night"
+},
+{
+"n": "Dark Troubadour",
+"lv": "45",
+"x": 18,
+"y": 14.5,
+"spawn": "Night"
+},
+{
+"n": "Daughter of Glaukopis",
+"lv": "??",
+"x": 31.6,
+"y": 14.9,
+"el": "Fire"
+},
+{
+"n": "Dazzletype Magitek Vangob G-III",
+"lv": "??",
+"x": 21.8,
+"y": 8.4,
+"el": "Earth"
+},
+{
+"n": "Delphyne",
+"lv": "50-51",
+"x": 21.7,
+"y": 7.4,
+"el": "Water"
+},
+{
+"n": "Demon's Elemental",
+"lv": "??",
+"x": 17.9,
+"y": 14.3
+},
+{
+"n": "Dingo",
+"lv": "48",
+"x": 14.5,
+"y": 8.5,
+"el": "Earth"
+},
+{
+"n": "Earth Familiar",
+"lv": "??",
+"x": 19.3,
+"y": 28.1,
+"el": "Earth"
+},
+{
+"n": "Ember Sprite",
+"lv": "38-53",
+"x": 12.8,
+"y": 29,
+"el": "Fire",
+"spawn": "Heat Waves"
+},
+{
+"n": "Fabricated Singha",
+"lv": "53",
+"x": 30,
+"y": 17.1,
+"el": "Earth"
+},
+{
+"n": "Firestone Golem",
+"lv": "??",
+"x": 23.9,
+"y": 30,
+"el": "Lightning"
+},
+{
+"n": "Flame Voidragon",
+"lv": "55",
+"el": "Fire",
+"aggro": "Sound"
+},
+{
+"n": "Gibbon (Mob)",
+"lv": "37",
+"x": 23.2,
+"y": 26.1,
+"el": "Water"
+},
+{
+"n": "Graffi",
+"lv": "??",
+"x": 23.7,
+"y": 37.3
+},
+{
+"n": "Haokah Unbound",
+"lv": "40",
+"x": 28.6,
+"y": 30.8,
+"el": "Lightning"
+},
+{
+"n": "Hippomartimus",
+"lv": "42-43",
+"x": 26.3,
+"y": 35.3,
+"el": "Water"
+},
+{
+"n": "Illuminati Escapee",
+"lv": "50",
+"x": 22,
+"y": 8
+},
+{
+"n": "Islandhander",
+"lv": "46",
+"x": 10,
+"y": 15
+},
+{
+"n": "Karlabos of Pyros",
+"lv": "45-??",
+"x": 24.1,
+"y": 26.2,
+"el": "Earth"
+},
+{
+"n": "Lost Big Claw",
+"lv": "??",
+"x": 24.1,
+"y": 26.2,
+"el": "Water"
+},
+{
+"n": "Lost Snipper",
+"lv": "??",
+"x": 24.1,
+"y": 26.2,
+"el": "Water"
+},
+{
+"n": "Machairodus",
+"lv": "43",
+"x": 24,
+"y": 35,
+"el": "Earth"
+},
+{
+"n": "Matanga Castaway",
+"lv": "51",
+"x": 29,
+"y": 9
+},
+{
+"n": "Mechanoguardian",
+"lv": "40",
+"x": 29.7,
+"y": 28.6,
+"el": "Fire"
+},
+{
+"n": "Mega-gris",
+"lv": "40",
+"x": 30.6,
+"y": 29.6,
+"el": "Earth"
+},
+{
+"n": "Northern Griffin",
+"lv": "36",
+"x": 19.5,
+"y": 27.6,
+"el": "Wind"
+},
+{
+"n": "Northern Grizzly",
+"lv": "49",
+"x": 15.8,
+"y": 9.8,
+"el": "Earth"
+},
+{
+"n": "Northern Ray",
+"lv": "45",
+"x": 17.8,
+"y": 16.5,
+"el": "Water"
+},
+{
+"n": "Northern Swallow",
+"lv": "49",
+"x": 21.5,
+"y": 12
+},
+{
+"n": "Overdue Tome",
+"lv": "44",
+"x": 19.5,
+"y": 30
+},
+{
+"n": "Pure White Flame",
+"lv": "48",
+"x": 13.9,
+"y": 18.4,
+"el": "Water"
+},
+{
+"n": "Pyros Apanda",
+"lv": "42",
+"x": 32,
+"y": 31.5
+},
+{
+"n": "Pyros Bhoot",
+"lv": "38",
+"x": 27,
+"y": 26.5,
+"spawn": "night"
+},
+{
+"n": "Pyros Bombfish",
+"lv": "46",
+"x": 10.8,
+"y": 17.5,
+"el": "Water"
+},
+{
+"n": "Pyros Chelone",
+"lv": "41",
+"x": 28.3,
+"y": 32.9,
+"el": "Water"
+},
+{
+"n": "Pyros Coeurl",
+"lv": "36",
+"x": 18.8,
+"y": 26.4,
+"el": "Fire"
+},
+{
+"n": "Pyros Crab",
+"lv": "48",
+"x": 15,
+"y": 6.5
+},
+{
+"n": "Pyros Gremlin",
+"lv": "39",
+"x": 13,
+"y": 30.9,
+"el": "Ice"
+},
+{
+"n": "Pyros Gulo Gulo",
+"lv": "47",
+"x": 13.8,
+"y": 13.7,
+"el": "Fire"
+},
+{
+"n": "Pyros Hardwood Golem",
+"lv": "??",
+"x": 24.9,
+"y": 10.9,
+"el": "Earth"
+},
+{
+"n": "Pyros Hawk",
+"lv": "50",
+"x": 23.1,
+"y": 11.9,
+"el": "Wind"
+},
+{
+"n": "Pyros Hecteyes",
+"lv": "54",
+"x": 11.5,
+"y": 34
+},
+{
+"n": "Pyros Kongamato",
+"lv": "37",
+"x": 21.6,
+"y": 26.5,
+"el": "Wind"
+},
+{
+"n": "Pyros Nanka",
+"lv": "47-48",
+"x": 11,
+"y": 14.6,
+"el": "Water"
+},
+{
+"n": "Pyros Parthenope",
+"lv": "47",
+"x": 12.7,
+"y": 10.2,
+"el": "Lightning"
+},
+{
+"n": "Pyros Piranu",
+"lv": "50",
+"x": 24,
+"y": 7.9,
+"el": "Fire"
+},
+{
+"n": "Pyros Pudding",
+"lv": "46",
+"x": 10.1,
+"y": 16.1,
+"el": "Fire"
+},
+{
+"n": "Pyros Serpent",
+"lv": "38",
+"x": 24,
+"y": 29.2,
+"el": "Water"
+},
+{
+"n": "Pyros Shuck",
+"lv": "55",
+"x": 16.5,
+"y": 36
+},
+{
+"n": "Pyros Slime",
+"lv": "49",
+"x": 21,
+"y": 12.8,
+"el": "Fire"
+},
+{
+"n": "Pyros Slug",
+"lv": "37",
+"x": 14.4,
+"y": 27.7,
+"el": "Earth"
+},
+{
+"n": "Pyros Snake",
+"lv": "43",
+"x": 19.9,
+"y": 32.5,
+"el": "Water"
+},
+{
+"n": "Pyros Treant",
+"lv": "52",
+"x": 30,
+"y": 11.5
+},
+{
+"n": "Pyros Wolf",
+"lv": "35-37",
+"x": 17.3,
+"y": 26.4,
+"el": "Ice",
+"spawn": "Night"
+},
+{
+"n": "Pyros Wood Golem",
+"lv": "51-??",
+"x": 26.8,
+"y": 9.3,
+"el": "Earth"
+},
+{
+"n": "Pyros Wraith",
+"lv": "41-43",
+"x": 28.5,
+"y": 31.6,
+"el": "Ice",
+"spawn": "Night"
+},
+{
+"n": "Pyros Zoblyn",
+"lv": "35",
+"x": 17.8,
+"y": 26.6,
+"el": "Earth"
+},
+{
+"n": "Rainbow Drop",
+"lv": "??",
+"x": 21.5,
+"y": 11.9
+},
+{
+"n": "Red Eye",
+"lv": "44",
+"x": 19,
+"y": 31.4,
+"el": "Water"
+},
+{
+"n": "Snowstorm Sprite",
+"lv": "47-60",
+"x": 13.1,
+"y": 14.8,
+"el": "Ice",
+"spawn": "Snow,Blizzards"
+},
+{
+"n": "Sobbing Sapling",
+"lv": "??",
+"x": 30,
+"y": 11.6
+},
+{
+"n": "Soulless Agent",
+"lv": "53",
+"x": 31.4,
+"y": 16.7,
+"el": "Ice",
+"spawn": "Night"
+},
+{
+"n": "Soulless Pathfinder",
+"lv": "54-55",
+"x": 12,
+"y": 33.4,
+"el": "Ice",
+"spawn": "Night"
+},
+{
+"n": "Spriggan Pankratiast",
+"lv": "35",
+"x": 17.2,
+"y": 26.3,
+"el": "Ice"
+},
+{
+"n": "Stegoceras",
+"lv": "53",
+"x": 36,
+"y": 14.1,
+"el": "Water"
+},
+{
+"n": "Stray Snipper",
+"lv": "39",
+"x": 26.1,
+"y": 25.6,
+"el": "Water"
+},
+{
+"n": "Sulphuric Slime",
+"lv": "??",
+"x": 14.5,
+"y": 6.1
+},
+{
+"n": "Tear",
+"lv": "??",
+"x": 21.5,
+"y": 11.9
+},
+{
+"n": "The Defoliator",
+"lv": "38-39",
+"x": 12.7,
+"y": 29,
+"el": "Lightning"
+},
+{
+"n": "Thunderball",
+"lv": "??",
+"x": 27,
+"y": 9.1
+},
+{
+"n": "Thundercloud",
+"lv": "??",
+"x": 27,
+"y": 9.1
+},
+{
+"n": "Thunderstorm Sprite",
+"lv": "41",
+"x": 30,
+"y": 30,
+"spawn": "thunder"
+},
+{
+"n": "Val Bloodglider",
+"lv": "55",
+"x": 33,
+"y": 8
+},
+{
+"n": "Val Gigantopithecus",
+"lv": "55",
+"x": 34.6,
+"y": 18.2,
+"el": "Lightning"
+},
+{
+"n": "Val Hornbill",
+"lv": "52",
+"x": 29.2,
+"y": 17.5,
+"el": "Wind"
+},
+{
+"n": "Val Icetrap",
+"lv": "36",
+"x": 14.8,
+"y": 27.7,
+"el": "Ice"
+},
+{
+"n": "Val Mammoth",
+"lv": "42",
+"x": 27.9,
+"y": 34.4,
+"el": "Fire"
+},
+{
+"n": "Val Minotaur",
+"lv": "52",
+"x": 31.4,
+"y": 12.2,
+"el": "Fire"
+},
+{
+"n": "Val Skatene",
+"lv": "53",
+"x": 31.5,
+"y": 15
+},
+{
+"n": "Val Wraith",
+"lv": "42",
+"x": 29,
+"y": 32.8,
+"el": "Ice"
+},
+{
+"n": "Val Yeti",
+"lv": "44",
+"x": 21.7,
+"y": 31.4,
+"el": "Ice"
+},
+{
+"n": "Valking",
+"lv": "43",
+"x": 23.5,
+"y": 37
+},
+{
+"n": "Voidskipper",
+"lv": "39",
+"x": 26.5,
+"y": 25.4,
+"el": "Wind"
+},
+{
+"n": "Walking Sapling",
+"lv": "35",
+"x": 17.3,
+"y": 27.3,
+"el": "Lightning"
+},
+{
+"n": "Wasserspeier",
+"lv": "41",
+"x": 24.2,
+"y": 34.7,
+"el": "Lightning"
+},
+{
+"n": "Water Familiar",
+"lv": "??",
+"x": 19.3,
+"y": 28.1,
+"el": "Water"
+},
+{
+"n": "Wind Familiar",
+"lv": "??",
+"x": 19.3,
+"y": 28.1
+},
+{
+"n": "Zebu",
+"lv": "54",
+"x": 33.8,
+"y": 14.8,
+"el": "Earth"
+}
+],
+"The Occult Crescent: South Horn": [
+{
+"n": "Advanced Aevis",
+"lv": "100",
+"weak": "Ice"
+},
+{
+"n": "Animated Doll",
+"lv": "5",
+"x": 36,
+"y": 21,
+"weak": "Fire"
+},
+{
+"n": "Arcapetrified Netzach",
+"lv": "26",
+"x": 7,
+"y": 29,
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Black Chocobo (Occult Crescent)",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Black Star (Occult Crescent)",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Cloister Demon",
+"lv": "100",
+"weak": "Ice"
+},
+{
+"n": "Command Urn",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Aetherscab",
+"lv": "12",
+"x": 13,
+"y": 22,
+"weak": "Fire"
+},
+{
+"n": "Crescent Apa",
+"lv": "23",
+"x": 5,
+"y": 8,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Armor",
+"lv": "1-11",
+"x": 36,
+"y": 7,
+"spawn": "Night",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Bachelor",
+"lv": "17",
+"x": 34,
+"y": 34,
+"weak": "Ice"
+},
+{
+"n": "Crescent Bandersnatch",
+"lv": "1",
+"x": 36,
+"y": 7,
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Crescent Berserker",
+"lv": "100",
+"weak": "Fire"
+},
+{
+"n": "Crescent Blackguard",
+"lv": "16",
+"x": 32,
+"y": 32,
+"weak": "Wind"
+},
+{
+"n": "Crescent Blood Demon",
+"lv": "15",
+"x": 28,
+"y": 35,
+"weak": "Ice"
+},
+{
+"n": "Crescent Bomb",
+"lv": "5-28",
+"x": 30.8,
+"y": 6.7,
+"spawn": "Clear Skies",
+"weak": "Ice"
+},
+{
+"n": "Crescent Brachiosaur",
+"lv": "10",
+"x": 15,
+"y": 27,
+"weak": "Ice"
+},
+{
+"n": "Crescent Byblos",
+"lv": "13",
+"x": 7,
+"y": 25,
+"weak": "Fire"
+},
+{
+"n": "Crescent Caoineag",
+"lv": "6-23",
+"x": 19,
+"y": 10,
+"spawn": "Night",
+"aggro": "Sight",
+"weak": "Wind"
+},
+{
+"n": "Crescent Catoblepas",
+"lv": "9",
+"x": 23,
+"y": 20,
+"weak": "Fire"
+},
+{
+"n": "Crescent Cetus",
+"lv": "7",
+"x": 22,
+"y": 7,
+"weak": "Ice"
+},
+{
+"n": "Crescent Chaochu",
+"lv": "2",
+"x": 32,
+"y": 12,
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Crescent Chimera",
+"lv": "26",
+"x": 11,
+"y": 34,
+"aggro": "Sight",
+"weak": "Wind"
+},
+{
+"n": "Crescent Claw",
+"lv": "19",
+"x": 13,
+"y": 31,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Collagen",
+"lv": "19",
+"x": 8,
+"y": 28,
+"weak": "Ice"
+},
+{
+"n": "Crescent Demon Pawn",
+"lv": "17",
+"x": 30,
+"y": 36,
+"weak": "Wind"
+},
+{
+"n": "Crescent Dhruva",
+"lv": "5-28",
+"x": 38.6,
+"y": 12.6,
+"spawn": "Clouds",
+"aggro": "Spell",
+"weak": "Wind"
+},
+{
+"n": "Crescent Diplocaulus",
+"lv": "18",
+"x": 18,
+"y": 34,
+"weak": "Ice"
+},
+{
+"n": "Crescent Dirty Eye",
+"lv": "21",
+"x": 32,
+"y": 26,
+"weak": "Wind"
+},
+{
+"n": "Crescent Dullahan",
+"lv": "26-28",
+"x": 12,
+"y": 35,
+"spawn": "Night",
+"aggro": "Sound, Blood",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Echos",
+"lv": "14",
+"x": 22,
+"y": 33,
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Crescent Fan",
+"lv": "5",
+"x": 36,
+"y": 20,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Flame",
+"lv": "22",
+"x": 8,
+"y": 9,
+"aggro": "Spell",
+"weak": "Ice"
+},
+{
+"n": "Crescent Flying Lizard",
+"lv": "1",
+"x": 37,
+"y": 10,
+"aggro": "Sight",
+"weak": "Ice"
+},
+{
+"n": "Crescent Foobar",
+"lv": "25",
+"x": 7,
+"y": 17,
+"aggro": "Sight",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Fool",
+"lv": "20-28",
+"spawn": "Illusory Disturbances",
+"aggro": "Proximity"
+},
+{
+"n": "Crescent Foper",
+"lv": "11",
+"x": 16,
+"y": 28.5,
+"weak": "Fire"
+},
+{
+"n": "Crescent Gaelicat",
+"lv": "2",
+"x": 37,
+"y": 12,
+"aggro": "Sight",
+"weak": "Wind"
+},
+{
+"n": "Crescent Garula",
+"lv": "1",
+"x": 33,
+"y": 7,
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Crescent Geshunpest",
+"lv": "12-24",
+"x": 13,
+"y": 21,
+"spawn": "Night",
+"aggro": "Sight"
+},
+{
+"n": "Crescent Ghost",
+"lv": "4-20",
+"x": 30,
+"y": 24,
+"spawn": "Night",
+"aggro": "Proximity",
+"weak": "Wind"
+},
+{
+"n": "Crescent Golem",
+"lv": "8",
+"x": 12,
+"y": 8,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Goobbue",
+"lv": "6",
+"x": 20,
+"y": 10,
+"weak": "Fire"
+},
+{
+"n": "Crescent Gourmand",
+"lv": "18-20",
+"x": 17,
+"y": 33,
+"spawn": "Night",
+"weak": "Fire"
+},
+{
+"n": "Crescent Haagenti",
+"lv": "24",
+"x": 4,
+"y": 19,
+"aggro": "Sound",
+"weak": "Ice"
+},
+{
+"n": "Crescent Harpuia",
+"lv": "11",
+"x": 11,
+"y": 17,
+"weak": "Wind"
+},
+{
+"n": "Crescent Headstone",
+"lv": "16",
+"x": 31,
+"y": 30,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Inkstain",
+"lv": "20",
+"x": 13,
+"y": 35,
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Crescent Karlabos",
+"lv": "6",
+"x": 23,
+"y": 10,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Leshy",
+"lv": "3",
+"x": 28,
+"y": 12,
+"weak": "Fire"
+},
+{
+"n": "Crescent Lion Statant",
+"lv": "20",
+"x": 37,
+"y": 23,
+"aggro": "Sight",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Marolith",
+"lv": "4",
+"x": 32,
+"y": 18,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Meraevis",
+"lv": "9",
+"x": 25,
+"y": 22,
+"weak": "Wind"
+},
+{
+"n": "Crescent Mimic",
+"lv": "5-28",
+"x": 27.6,
+"y": 12,
+"spawn": "Atmospheric Phantasms",
+"aggro": "Proximity",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Monk",
+"lv": "15",
+"x": 27,
+"y": 34,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Mousse",
+"lv": "5-28",
+"x": 33.4,
+"y": 12.5,
+"spawn": "Rain",
+"aggro": "Sight",
+"weak": "Fire"
+},
+{
+"n": "Crescent Panther",
+"lv": "14",
+"x": 29,
+"y": 29,
+"weak": "Fire"
+},
+{
+"n": "Crescent Petalodite",
+"lv": "7",
+"x": 17,
+"y": 9,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Rosebear",
+"lv": "11",
+"x": 16,
+"y": 19,
+"weak": "Fire"
+},
+{
+"n": "Crescent Satana",
+"lv": "27",
+"x": 11,
+"y": 36,
+"aggro": "Sight",
+"weak": "Wind"
+},
+{
+"n": "Crescent Snapweed",
+"lv": "3",
+"x": 32,
+"y": 15,
+"weak": "Fire"
+},
+{
+"n": "Crescent Taurus",
+"lv": "12",
+"x": 13,
+"y": 24,
+"weak": "Ice"
+},
+{
+"n": "Crescent Tormentor",
+"lv": "4",
+"x": 37,
+"y": 16,
+"weak": "Ice"
+},
+{
+"n": "Crescent Triceratops",
+"lv": "10",
+"x": 27,
+"y": 26,
+"weak": "Ice"
+},
+{
+"n": "Crescent Troubadour",
+"lv": "14-21",
+"x": 30,
+"y": 30,
+"spawn": "Night",
+"aggro": "Sound",
+"weak": "Fire"
+},
+{
+"n": "Crescent Uragnite",
+"lv": "8",
+"x": 15,
+"y": 10,
+"weak": "Lightning"
+},
+{
+"n": "Crescent Void Viper",
+"lv": "18",
+"x": 14,
+"y": 33,
+"weak": "Ice"
+},
+{
+"n": "Crescent Zaghnal",
+"lv": "22",
+"x": 8,
+"y": 9,
+"weak": "Fire"
+},
+{
+"n": "Crescent Zangbeto",
+"lv": "25",
+"x": 6,
+"y": 16,
+"aggro": "Sight",
+"weak": "Ice"
+},
+{
+"n": "Crescent Zaratan",
+"lv": "23",
+"x": 7,
+"y": 11,
+"aggro": "Sound",
+"weak": "Lightning"
+},
+{
+"n": "Crescent Zirnitra",
+"lv": "28",
+"x": 9,
+"y": 37,
+"aggro": "Sight",
+"weak": "Ice"
+},
+{
+"n": "Cry of Havoc",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Crystal Dragon",
+"lv": "100",
+"weak": "Wind"
+},
+{
+"n": "Death Claw (Occult Crescent)",
+"lv": "100",
+"weak": "Ice"
+},
+{
+"n": "Dehumidifier",
+"lv": "100",
+"weak": "Ice"
+},
+{
+"n": "Execrator",
+"lv": "100",
+"weak": "Wind"
+},
+{
+"n": "Giant Bird",
+"lv": "100",
+"weak": "Wind"
+},
+{
+"n": "Gilded Headstone",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Havoc",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Hinkypunk",
+"lv": "100",
+"weak": "Wind"
+},
+{
+"n": "Lesser Cry of Havoc",
+"lv": "24",
+"x": 7,
+"y": 21,
+"aggro": "Sight",
+"weak": "Lightning"
+},
+{
+"n": "Lifereaper",
+"lv": "100",
+"weak": "Fire"
+},
+{
+"n": "Lion Rampant",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Mad Mudarch",
+"lv": "100",
+"weak": "Ice"
+},
+{
+"n": "Megaloknight",
+"lv": "100"
+},
+{
+"n": "Menacing Dahak",
+"lv": "13",
+"x": 10,
+"y": 23,
+"weak": "Ice"
+},
+{
+"n": "Mysterious Mindflayer",
+"lv": "100",
+"weak": "Fire"
+},
+{
+"n": "Mythic Idol",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Nammu",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Neo Garula",
+"lv": "100",
+"weak": "Fire"
+},
+{
+"n": "Nymian Petalodus",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Observer",
+"lv": "100",
+"weak": "Wind"
+},
+{
+"n": "Occult Golem",
+"lv": "27",
+"x": 11,
+"y": 36,
+"weak": "Lightning"
+},
+{
+"n": "Occult Isleblazer",
+"lv": "28",
+"x": 9,
+"y": 35,
+"aggro": "Spell",
+"weak": "Ice"
+},
+{
+"n": "Occult Knight",
+"lv": "100"
+},
+{
+"n": "Occult Sculpture",
+"lv": "21",
+"x": 36,
+"y": 25,
+"weak": "Lightning"
+},
+{
+"n": "Repaired Lion",
+"lv": "100",
+"weak": "Lightning"
+},
+{
+"n": "Ropross",
+"lv": "100",
+"weak": "Fire"
+},
+{
+"n": "Sanguine Recluse",
+"lv": "100"
+},
+{
+"n": "Sisyphus (Occult Crescent)",
+"lv": "100",
+"weak": "Fire"
+},
+{
+"n": "Trade Tortoise",
+"lv": "100",
+"weak": "Ice"
+},
+{
+"n": "Vassal Vessel",
+"lv": "100",
+"weak": "Lightning"
+}
+],
+"Zadnor": [
+{
+"n": "Zadnor Beetle",
+"lv": "I",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Hippogryph",
+"lv": "I",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Nimrod",
+"lv": "I",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Ziz",
+"lv": "II",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Gaur",
+"lv": "II",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Infantry",
+"lv": "II",
+"area": "The Southern Plateau"
+},
+{
+"n": "Lightning Sprite",
+"lv": "II",
+"area": "The Southern Plateau",
+"spawn": "Thunder"
+},
+{
+"n": "Zadnor Dhalmel",
+"lv": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Bhoot",
+"lv": "III",
+"area": "The Southern Plateau",
+"spawn": "Night"
+},
+{
+"n": "4th Legion Gunship",
+"lv": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Hexadrone",
+"lv": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "Water Sprite",
+"lv": "III",
+"area": "The Southern Plateau",
+"spawn": "Rain"
+},
+{
+"n": "Ice Sprite",
+"lv": "IV",
+"area": "The Southern Plateau",
+"spawn": "Blizzards"
+},
+{
+"n": "Zadnor Dullahan",
+"lv": "V",
+"area": "The Southern Plateau",
+"spawn": "Night"
+},
+{
+"n": "Wind Sprite",
+"lv": "V",
+"area": "The Southern Plateau",
+"spawn": "Wind"
+},
+{
+"n": "Vinegaroon Executioner",
+"lv": "★",
+"area": "The Southern Plateau"
+},
+{
+"n": "Anancus",
+"lv": "★",
+"area": "The Southern Plateau"
+},
+{
+"n": "Stratogryph",
+"lv": "★",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Crawler",
+"lv": "I",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Stoneshell",
+"lv": "I",
+"area": "The Western Plateau"
+},
+{
+"n": "4th Legion Death Machine",
+"lv": "I",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Exoray",
+"lv": "II",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Abaddon",
+"lv": "II",
+"area": "The Western Plateau"
+},
+{
+"n": "4th Legion Armored Weapon",
+"lv": "II",
+"area": "The Western Plateau"
+},
+{
+"n": "Wind Sprite",
+"lv": "II",
+"area": "The Western Plateau",
+"spawn": "Wind"
+},
+{
+"n": "Zadnor Grizzly",
+"lv": "III",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Banshee",
+"lv": "III",
+"area": "The Western Plateau",
+"spawn": "Night"
+},
+{
+"n": "4th Legion Satellite",
+"lv": "III",
+"area": "The Western Plateau"
+},
+{
+"n": "4th Legion Colossus",
+"lv": "III",
+"area": "The Western Plateau"
+},
+{
+"n": "Ice Sprite",
+"lv": "III",
+"area": "The Western Plateau",
+"spawn": "Blizzards"
+},
+{
+"n": "Zadnor Sasquatch",
+"lv": "IV",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Coeurl",
+"lv": "IV",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Leshy",
+"lv": "IV",
+"area": "The Western Plateau"
+},
+{
+"n": "Lightning Sprite",
+"lv": "IV",
+"area": "The Western Plateau",
+"spawn": "Thunder"
+},
+{
+"n": "Zadnor Gourmand",
+"lv": "V",
+"area": "The Western Plateau",
+"spawn": "Night"
+},
+{
+"n": "Water Sprite",
+"lv": "V",
+"area": "The Western Plateau",
+"spawn": "Rain"
+},
+{
+"n": "Earth Eater",
+"lv": "★",
+"area": "The Western Plateau"
+},
+{
+"n": "Aglaophotis",
+"lv": "★",
+"area": "The Western Plateau"
+},
+{
+"n": "Lord Ochu",
+"lv": "★",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Wamouracampa",
+"lv": "I",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Cliffmole",
+"lv": "I",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Roader",
+"lv": "I",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Yamaa",
+"lv": "II",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Raptor",
+"lv": "II",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Rearguard",
+"lv": "II",
+"area": "The Northern Plateau"
+},
+{
+"n": "Water Sprite",
+"lv": "II",
+"area": "The Northern Plateau",
+"spawn": "Rain"
+},
+{
+"n": "Zadnor Wamoura",
+"lv": "III",
+"area": "The Northern Plateau"
+},
+{
+"n": "Imperial Dead",
+"lv": "III",
+"area": "The Northern Plateau",
+"spawn": "Night"
+},
+{
+"n": "4th Legion Cavalry",
+"lv": "III",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Helldiver",
+"lv": "III",
+"area": "The Northern Plateau"
+},
+{
+"n": "Lightning Sprite",
+"lv": "III",
+"area": "The Northern Plateau",
+"spawn": "Thunder"
+},
+{
+"n": "Zadnor Harpy",
+"lv": "IV",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Lycanthrope",
+"lv": "IV",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Decotitus",
+"lv": "IV",
+"area": "The Northern Plateau"
+},
+{
+"n": "Wind Sprite",
+"lv": "IV",
+"area": "The Northern Plateau",
+"spawn": "Wind"
+},
+{
+"n": "Zadnor Wivre",
+"lv": "V",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Golem",
+"lv": "V",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Gagana",
+"lv": "V",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Haunt",
+"lv": "V",
+"area": "The Northern Plateau",
+"spawn": "Night"
+},
+{
+"n": "Ice Sprite",
+"lv": "V",
+"area": "The Northern Plateau",
+"spawn": "Blizzards"
+},
+{
+"n": "Glyptodon",
+"lv": "★",
+"area": "The Northern Plateau"
+},
+{
+"n": "Molten Scorpion",
+"lv": "★",
+"area": "The Northern Plateau"
+},
+{
+"n": "Vapula",
+"lv": "★",
+"area": "The Northern Plateau"
+}
+]
+}
+}

@@ -1,0 +1,38 @@
+{
+ "_about": "Guides for the Live pages, written for the tracker from facts on the Console Games Wiki (Ocean Fishing, GATEs, Lord of Verminion, Chocobo Racing; read 2026-11-08) and ffxiv.oceanfishing.boats. No text is copied.",
+ "ocean": [
+  ["Unlock", "Fisher level 1 and the quest All the Fish in the Sea from Fhilsnoe on the Limsa Lominsa Lower Decks (7.8, 14.5), after My First Fishing Rod. The Ruby Route needs the Stormblood main story (Ruby Price and One River) and the Endwalker main story (Thavnair)."],
+  ["Boarding", "A boat leaves every 2 hours, on the even UTC hour. Register with Dryskthota on the Lower Decks (3.0, 12.7) in the first 15 minutes; the boat leaves when 24 people have joined, or at a quarter past regardless. A party leader registers for the party."],
+  ["The voyage", "Three stops of 7 minutes each; you cannot cast in the last 30 seconds of a stop. Each route visits its stops at set times of day (day, sunset, night), and that is what decides which rare fish can bite."],
+  ["Bait", "Krill, Ragworm, Plump Worm and Versatile Lures are sold by the Merchant & Mender on the Lower Decks (3.2, 12.8) and aboard. The fabled fish need their own bait, which is not sold aboard: Glowworm (Sothis), Shrimp Cage Feeder (Coral Manta), Heavy Steel Jig (Elasmosaurus), Rat Tail (Stonescale, Manasvin), Squid Strip (Hafgufa, Hells' Claw). Buy them before boarding."],
+  ["Spectral currents", "Catching a spectral fish can start a spectral current: faster bites and far more points. At most one per stop, none once less than 1:30 is left, and a stop without one makes the next a little more likely. A current usually lasts about 2 minutes, so fish without pause while it runs."],
+  ["Points and achievements", "Rewards and the score achievements count the points you catch; releasing or discarding fish never lowers them. The mission achievements (octopodes, sharks, jellyfish, seadragons, mantas, crabs, fugu, prehistoric fish, squids, mantises, shellfish, shrimp and others) are fastest on the routes that list them as targets: the schedule below shows each voyage's targets and marks the ones you still need."],
+  ["Fast leveling", "Ocean fishing pays experience by your level, not by what you catch, so it is the quickest way to level Fisher from level 1: take every voyage you can (one every 2 hours) and fish normally between them. Gatherers' scrips come with it after the quest Inscrutable Tastes, and intuition fish give extra scrips."],
+  ["Plan your voyages", "Pick voyages whose targets you still miss, bring that route's fabled bait, and save your strongest buffs for the stop at the right time of day. The schedule highlights voyages with fish or achievements you have not ticked yet."]
+ ],
+ "gate": [
+  ["When", "A GATE starts every 20 minutes of real time. On the hour: Air Force One (the Cieldalaes), Cliffhanger or Leap of Faith. At 20 past: Any Way the Wind Blows, The Slice Is Right or Air Force One (the Gold Saucer). At 40 past: The Slice Is Right, Leap of Faith or Air Force One (the Cieldalaes)."],
+  ["Air Force One", "Shoot the cactuar targets along the ride; hitting a Ruby Bomb costs points."],
+  ["Cliffhanger", "Jump up the platforms to the lost chick at the top; you can retry until time runs out. Bombs thrown from the top knock you off, so wait for them to land."],
+  ["Leap of Faith", "Collect the cactuar trophies and reach the goal; retry until you touch the goal or time runs out. Trophies first, goal last."],
+  ["Any Way the Wind Blows", "Stand in a safe spot before Typhon's pattern locks in; patterns are random, so spots hit less often are safer, but luck still decides."],
+  ["The Slice Is Right", "Avoid the bamboo stalks as they rise and fall; you are scored by how many rounds you last."]
+ ],
+ "verminion": [
+  ["Unlock and place", "Opens with the Gold Saucer. Play in Minion Square inside Chocobo Square (lift operator Saethrith at the Entrance Square, 4.4, 6.7). You need at least three minions; set your Verminion hotbar in Character → Gold Saucer → Verminion."],
+  ["Verminion Challenges", "24 single-player challenges teach the rules; clearing all 24 gives the minion Clockwork Twintania. Master Battles add three harder single-player difficulties."],
+  ["Ranked play", "Player Battles (RP) match you by rank points; 50 wins give the minion Shalloweye. Non-RP battles are free play with someone you invite."],
+  ["How to win", "Break all three enemy Arcana Stones (or have more left when time runs out). Shields protect stones, Gates summon and heal minions, Search Eyes reveal the enemy; destroyed structures return after a while, except stones."],
+  ["Cost and timing", "You can queue up to 60 cost during the 20-second briefing and 240 in play; expensive minions delay your next summon. Open with cheap, fast minions, then add heavier ones."],
+  ["Special actions", "When four minions of the same type with full special gauges stand together, the special action button flashes. Group same-type minions to use it, and pick minions strong against the structure you are attacking."]
+ ],
+ "racing": [
+  ["Unlock", "After It Could Happen to You (the Gold Saucer), take So You Want to Be a Jockey from the Race Chocobo Registrar in the Gold Saucer (6, 4) at level 15."],
+  ["Ranks and feeding", "A race chocobo goes to rank 50 (retire from 40). Each rank up raises five random stats and gives one feeding; feedings stack, so save them for grade 3 feed bought with MGP."],
+  ["Best track to farm", "Sagolii Road: short with few hazards. A Super Sprint or Head Start build with a stamina skill such as Choco Cure III can sprint the whole course."],
+  ["In the race", "Lanes block passing: do not sprint straight into a chocobo ahead; you can also block the one behind you. Racing with other players gives a flat bonus of experience."],
+  ["Chocobo Challenge", "Sixteen challenge races against named rivals, each needing a higher rating (41 for the first, up to the 270s). The first clear of each pays a large MGP reward and unlocks ability manuals at the Tack & Feed Trader."],
+  ["Breeding", "The quest Like Sire Like Fledgling (Chocobokeep, Chocobo Square, 6, 4) opens breeding once you have a rank 40 chocobo. A foal's pedigree is the lower parent's plus one; each pedigree adds 40 to every stat cap (cap = 40 × (pedigree + stars) − 20, up to 500 at pedigree 9 with four stars)."],
+  ["Save time breeding", "The Proof of Covering stops a second covering while it is in your inventory; move it to your saddlebag or a retainer to start another one."]
+ ]
+}
