@@ -21,9 +21,9 @@ A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command
 ## Bringing your progress
 
 - **From the FFXIV Completionist desktop app:** Settings → Import and backup → choose the character files it saved (JSON), pick the column for each, Import. Ticks, its “X” marks (does not apply) and job levels are imported, and the starting city and Grand Company are worked out from the save. Anything that cannot be placed exactly (for example Squadron, which no list covers) is listed and can be downloaded, so you can do it by hand.
-- **Backup file and transfer code:** Settings → Import and backup. A transfer code is text you paste on another device.
+- **Backup file and transfer code:** Settings → Import and backup. A transfer code is text you paste on another device. Browsers can clear a website's saved data (Safari after weeks without a visit, any browser when storage runs low), so the tracker asks the browser to keep it and shows a reminder when there has been no backup, transfer code or cloud sync for a month. Loading a backup or code replaces this device's data; with cloud sync on, the next sync then merges and asks about differences rather than deleting anything elsewhere.
 - **Online refresh (optional):** add each character's Lodestone number in Settings → Characters. When the tracker opens with internet, it reads public data from FFXIV Collect (mounts, minions, orchestrion rolls, emotes, hairstyles, barding, fashion accessories, facewear, Blue Magic, achievements), ticks what you gained, and asks you whenever it disagrees with your own ticks. Without internet it simply waits.
-- **Cloud sync (optional):** Settings → Cloud sync → sign in with Google. A private copy lives in a hidden app folder in your own Google Drive; changes from your devices merge, and real clashes ask you which side is right.
+- **Cloud sync (optional):** Settings → Cloud sync → sign in with Google. A private copy lives in a hidden app folder in your own Google Drive; changes from your devices merge, and real clashes ask you which side is right. A damaged cloud copy is never merged (you can replace it with this device's data), a sync that would remove more than a few dozen ticks asks first, and two devices syncing at the same moment never overwrite each other.
 
 ## Data
 
@@ -40,7 +40,14 @@ FONT_DIR=<node_modules/@fontsource> node tools/make-icons.js                    
 node tools/build-site.js                                                          # site/ (installable app, scope /tracker/)
 node --test tests/core.test.js                                                    # core logic
 node --test tests/ui.test.js                                                      # browser tests (Playwright + Chromium)
+node tools/check-keys.js                                                          # key stability against the last committed data
 ```
+
+## Updating to a new patch
+
+1. Point `tools/extract.py` at the new `ffxiv-datamining` commit (and Teamcraft, if updated) and run the four data steps above; update the commit ids in `data/SOURCES.md` and the version label in `tools/extract.py`.
+2. Run `node tools/check-keys.js`. It must pass: an entry that disappears or an id that now names something else would hide or move people's ticks. Merging duplicates is fine when the old ids are kept as aliases (`al`): the tracker moves ticks over on load.
+3. Rebuild, run both test suites, and update the pinned counts in `tests/ui.test.js` only after checking the new entries are real.
 
 The Appearance module (themes and settings) is taken from the Eveniunt Atelier's source at build time, so both apps share one visual system.
 

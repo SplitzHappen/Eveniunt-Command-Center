@@ -6,8 +6,8 @@ Date: 2026-11-08. Data: `xivapi/ffxiv-datamining` @ `44948e4c` (7.57h1), FFXIV T
 
 | Suite | Result | What it checks |
 | --- | --- | --- |
-| `node --test tests/core.test.js` | 17 / 17 pass | characters 1–8; totals; the ✕ switch both ways; ticks on uncounted entries kept but not added; group ticking; per-character “does not apply”; level values (cap ticks, desynthesis recorded only); backup file and transfer code round trips; three-way merge and conflicts; FFXIV Collect refresh (first run asks, later gains apply, clashes ask, private profiles, no connection); Google Drive sync against a simulated Drive; desktop-app import (game ids, positions, X marks, levels, master books never read as recipe ids) |
-| `node --test tests/ui.test.js` | 13 / 13 pass | the built file from `file://` with every network request blocked: first run with 8 characters; click marks done, right-click and press-and-hold mark “does not apply”, a second click clears either; ticking, ✕ both ways and “does not apply” update the tallies and survive a reload; group ticks; level fields; every list renders and every list over 60 entries is grouped; search; the menu is Character, Duty, Logs, Travel, Social; desktop-app import through the interface; transfer code between two browsers; phone width 390 px with no sideways scroll; **all 20 themes in light and dark** (text contrast ≥ 7, accent ≥ 3, dropdowns ≥ 7, themes listed alphabetically, wordmark coloured by the theme); data counts; the **hosted site over HTTP** (manifest, service worker, offline reload keeps the characters, no cross-origin isolation so Google sign-in can open) |
+| `node --test tests/core.test.js` | 26 / 26 pass | characters 1–8; totals; the ✕ switch both ways; ticks on uncounted entries kept but not added; group ticking; per-character “does not apply”; level values (cap ticks, desynthesis recorded only); backup file and transfer code round trips; three-way merge and conflicts; FFXIV Collect refresh (first run asks, later gains apply, clashes ask, private profiles, no connection); Google Drive sync against a simulated Drive; desktop-app import (game ids, positions, X marks, levels, master books never read as recipe ids); **red-team cases**: crafted backups (prototype keys, markup in names, cities, levels, keys), huge or malformed transfer codes, levels of a removed character, Lodestone addresses, merged-entry ticks moving over, and cloud sync with a damaged copy, a large removal, a simultaneous write and odd ids in the cloud file |
+| `node --test tests/ui.test.js` | 17 / 17 pass | the built file from `file://` with every network request blocked: first run with 8 characters; click marks done, right-click and press-and-hold mark “does not apply”, a second click clears either; ticking, ✕ both ways and “does not apply” update the tallies and survive a reload; group ticks; level fields; every list renders and every list over 60 entries is grouped; search; the menu is Character, Duty, Logs, Travel, Social; desktop-app import through the interface; transfer code between two browsers; phone width 390 px with no sideways scroll; **all 20 themes in light and dark** (text contrast ≥ 7, accent ≥ 3, dropdowns ≥ 7, themes listed alphabetically, wordmark coloured by the theme); data counts; the **hosted site over HTTP** (manifest, service worker, offline reload keeps the characters, no cross-origin isolation so Google sign-in can open); **red-team cases**: a crafted backup loaded through the page runs no script, the first-run window cannot be dismissed, unreadable saved data is offered for download and kept, and two windows of the tracker never overwrite each other |
 
 ## Starting city and Grand Company
 
@@ -40,11 +40,16 @@ Availability marks: 514 time-limited only, 873 no longer obtainable (261 Legacy 
 
 ## Performance (headless Chromium, desktop)
 
-Longest lists (about 2,000–2,250 rows × 8 characters) open in about 0.3 s; a tick updates in about 0.15 s. Single file 4.5 MB.
+Measured with the owner's eight characters loaded: the longest lists (1,700–2,000 rows × 8 characters) open in 0.2–0.4 s; a tick, including the menu totals, updates in 65–125 ms (per-list totals are cached; before the red-team pass it was 300–375 ms). Single file 4.7 MB.
+
+## Red-team and pre-mortem (2026-11-08)
+
+Findings and fixes are recorded in `.ai/DECISIONS.md` (entry of 2026-11-08, "Red team and pre-mortem"). Key-stability check against the first public release (b42e037): 0 entries removed, 0 renamed, 5 merged into another entry (their ticks move over on load).
 
 ## Known limits
 
 - After-7.45 additions not made: 3 Triple Triad opponents without a name in the game data and the North Horn aether shards (not identifiable from reachable data); tick those by hand.
+- Not verifiable from the build session: Google sign-in live (the consent screen's publishing status decides who can sign in), press-and-hold on a real phone, and Safari's storage clearing (the persistence request and reminder are in place).
 - The online refresh and Google sign-in can only be tried live from the hosted app; FFXIV Collect's API was checked live from the build session (browser reads allowed), Google sign-in was not reachable there.
 - Time-limited marks come from community data: “time-limited” does not distinguish an event that never returns from one that recurs, so those entries say “Time-limited only” rather than “gone”.
 - In-game icons are not included (not in the reachable data); the design uses type and the theme colours instead.

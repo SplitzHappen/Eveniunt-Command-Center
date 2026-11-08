@@ -37,54 +37,80 @@
     if (!Array.isArray(names) || names.length < 1 || names.length > MAX_CHARS) {
       throw new Error('Choose between 1 and ' + MAX_CHARS + ' characters.');
     }
-    const chars = names.map((n, i) => ({ id: 'c' + (i + 1), name: String(n || '').trim() || 'Character ' + (i + 1), lodestone: null, cls: null, gc: null }));
+    const chars = names.map((n, i) => ({ id: 'c' + (i + 1), name: cleanName(n) || 'Character ' + (i + 1), lodestone: null, cls: null, gc: null }));
     const ticks = {};
     const excl = {};
-    for (const c of chars) { ticks[c.id] = {}; excl[c.id] = {}; }
+    const vals = {};
+    for (const c of chars) { ticks[c.id] = {}; excl[c.id] = {}; vals[c.id] = {}; }
     return {
       v: STATE_VERSION,
       chars,
       ticks,
-      vals: {}, // per character: level values for entries with e.val (e.g. job levels)
+      vals, // per character: level values for entries with e.val (e.g. job levels)
       excl, // per character: entries that do not apply to that character (e.g. another city's starting quests)
       avail: {}, // key -> 'x' (user says unobtainable) | 'ok' (user says obtainable)
       settings: { countLimited: false, countGone: false, countUnknown: false },
-      sync: { fc: {}, drive: null },
+      sync: { fc: {}, drive: null, backupAt: null },
       updated: Date.now(),
     };
   };
 
+  // Everything loaded from outside this device (a backup file, a transfer code, the cloud copy, or storage written
+  // by an older version) passes through here. It is rebuilt field by field from known shapes, so a damaged or
+  // crafted file can neither inject markup into the page nor reach Object.prototype (character ids become object
+  // keys, so only "c1".."c8" are accepted; entry keys must look like "<section>:<number>").
+  const CHAR_ID = /^c[1-8]$/;
+  const ENTRY_KEY = /^[a-z0-9-]{1,40}:\d{1,9}$/;
+  const NAME_MAX = 40;
+  ET.CHAR_ID = CHAR_ID;
+  ET.ENTRY_KEY = ENTRY_KEY;
+  const cleanName = (s) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX);
+  ET.cleanName = cleanName;
+  const plain = (o) => o && typeof o === 'object' && !Array.isArray(o);
+  const keySet = (o) => { const out = {}; if (plain(o)) for (const k of Object.keys(o)) if (ENTRY_KEY.test(k) && o[k]) out[k] = 1; return out; };
+  const levelMap = (o) => { const out = {}; if (plain(o)) for (const [k, v] of Object.entries(o)) { const n = Number(v); if (ENTRY_KEY.test(k) && Number.isFinite(n) && n >= 0) out[k] = Math.min(9999, Math.round(n)); } return out; };
+  const CLASSES = ['mrd', 'acn', 'lnc', 'arc', 'cnj', 'gla', 'pgl', 'thm'];
+  const CITY_IDS = ['lim', 'gri', 'uld'];
+
   ET.validateState = function (st) {
     const err = (m) => { throw new Error('Not a valid tracker file: ' + m); };
-    if (!st || typeof st !== 'object') err('empty');
+    if (!plain(st)) err('empty');
     if (st.v !== STATE_VERSION) err('unknown version ' + st.v);
     if (!Array.isArray(st.chars) || st.chars.length < 1 || st.chars.length > MAX_CHARS) err('characters');
     const ids = new Set();
-    for (const c of st.chars) {
-      if (!c || typeof c.id !== 'string' || ids.has(c.id)) err('character ids');
+    st.chars = st.chars.map((c, i) => {
+      if (!plain(c) || typeof c.id !== 'string' || !CHAR_ID.test(c.id) || ids.has(c.id)) err('character ids');
       ids.add(c.id);
-      if (typeof c.name !== 'string') err('character name');
-    }
-    if (!st.ticks || typeof st.ticks !== 'object') err('ticks');
-    for (const id of ids) if (!st.ticks[id]) st.ticks[id] = {};
-    for (const id of Object.keys(st.ticks)) if (!ids.has(id)) delete st.ticks[id];
-    if (!st.vals || typeof st.vals !== 'object') st.vals = {};
-    for (const id of ids) if (!st.vals[id]) st.vals[id] = {};
-    for (const id of Object.keys(st.vals)) if (!ids.has(id)) delete st.vals[id];
-    if (!st.excl || typeof st.excl !== 'object') st.excl = {};
-    for (const id of ids) if (!st.excl[id]) st.excl[id] = {};
-    for (const id of Object.keys(st.excl)) if (!ids.has(id)) delete st.excl[id];
-    if (!st.avail || typeof st.avail !== 'object') st.avail = {};
-    for (const [k, v] of Object.entries(st.avail)) if (v !== 'x' && v !== 'ok') delete st.avail[k];
-    st.settings = Object.assign({ countLimited: false, countGone: false, countUnknown: false }, st.settings || {});
-    st.sync = Object.assign({ fc: {}, drive: null }, st.sync || {});
+      const out = { id: c.id, name: cleanName(c.name) || 'Character ' + (i + 1), lodestone: null, cls: null, gc: null };
+      const lode = String(c.lodestone == null ? '' : c.lodestone);
+      if (/^\d{3,12}$/.test(lode)) out.lodestone = lode;
+      if (CLASSES.includes(c.cls)) out.cls = c.cls;
+      else if (CITY_IDS.includes(c.city)) out.city = c.city;
+      if ([1, 2, 3].includes(Number(c.gc))) out.gc = Number(c.gc);
+      return out;
+    });
+    if (!plain(st.ticks)) err('ticks');
+    const per = (src, fn) => { const out = {}; for (const id of ids) out[id] = fn(plain(src) ? (Object.prototype.hasOwnProperty.call(src, id) ? src[id] : null) : null); return out; };
+    st.ticks = per(st.ticks, keySet);
+    st.excl = per(st.excl, keySet);
+    st.vals = per(st.vals, levelMap);
+    const avail = {};
+    if (plain(st.avail)) for (const [k, v] of Object.entries(st.avail)) if (ENTRY_KEY.test(k) && (v === 'x' || v === 'ok')) avail[k] = v;
+    st.avail = avail;
+    const s = plain(st.settings) ? st.settings : {};
+    st.settings = { countLimited: s.countLimited === true, countGone: s.countGone === true, countUnknown: s.countUnknown === true };
+    const sync = plain(st.sync) ? st.sync : {};
+    const fc = {};
+    if (plain(sync.fc)) for (const id of ids) if (plain(sync.fc[id])) fc[id] = sync.fc[id];
+    st.sync = { fc, drive: plain(sync.drive) ? sync.drive : null, backupAt: typeof sync.backupAt === 'number' ? sync.backupAt : null };
+    if (typeof st.updated !== 'number') st.updated = Date.now();
     return st;
   };
 
   ET.renameCharacter = function (st, charId, name) {
     const c = st.chars.find((x) => x.id === charId);
     if (!c) throw new Error('No such character');
-    c.name = String(name || '').trim() || c.name;
+    c.name = cleanName(name) || c.name;
     st.updated = Date.now();
   };
 
@@ -97,12 +123,14 @@
       st.chars.push(c);
       st.ticks[c.id] = {};
       st.excl[c.id] = {};
+      st.vals[c.id] = {};
     }
     // Removing characters drops their ticks; the interface asks before calling this.
     while (st.chars.length > n) {
       const c = st.chars.pop();
       delete st.ticks[c.id];
       delete st.excl[c.id];
+      delete st.vals[c.id]; // otherwise a character added later in the same column would inherit these levels
       delete st.sync.fc[c.id];
     }
     st.updated = Date.now();
@@ -245,6 +273,27 @@
   };
 
   ET.sectionKeys = (sec) => sec.groups.flatMap((g) => g.keys);
+
+  // Entries merged into one (e.al lists the old ids, e.g. the per-class variants of a city's opening quest): ticks,
+  // "does not apply" marks, levels and availability choices saved under an old id move to the kept entry. Returns
+  // how many were moved. Run after loading, restoring or syncing, so nothing saved before the merge disappears.
+  ET.migrateAliases = function (idx, st) {
+    let moved = 0;
+    for (const [key, hit] of idx.byKey) {
+      for (const a of hit.e.al || []) {
+        const old = hit.s.id + ':' + a;
+        if (old === key || idx.byKey.has(old)) continue;
+        for (const c of st.chars) {
+          for (const bag of [st.ticks[c.id], st.excl[c.id]]) if (bag && bag[old]) { bag[key] = 1; delete bag[old]; moved++; }
+          const v = st.vals[c.id];
+          if (v && v[old] != null) { if (v[key] == null) v[key] = v[old]; delete v[old]; moved++; }
+        }
+        if (st.avail[old]) { if (!st.avail[key]) st.avail[key] = st.avail[old]; delete st.avail[old]; moved++; }
+      }
+    }
+    if (moved) st.updated = Date.now();
+    return moved;
+  };
 
   ET.summary = function (idx, st) {
     const out = { sections: {}, all: null };

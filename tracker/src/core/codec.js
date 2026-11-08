@@ -52,10 +52,22 @@
     return t;
   }
 
-  async function pipe(bytes, stream) {
-    const out = new Response(new Blob([bytes]).stream().pipeThrough(stream));
-    return new Uint8Array(await out.arrayBuffer());
+  // limit: stop reading past this many bytes (a pasted code can never legitimately expand beyond it)
+  async function pipe(bytes, stream, limit) {
+    const reader = new Blob([bytes]).stream().pipeThrough(stream).getReader();
+    const parts = []; let n = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      n += value.length;
+      if (limit && n > limit) { try { await reader.cancel(); } catch (e) { /* ignore */ } throw new Error('too large'); }
+      parts.push(value);
+    }
+    const out = new Uint8Array(n); let at = 0;
+    for (const p of parts) { out.set(p, at); at += p.length; }
+    return out;
   }
+  const CODE_MAX = 4 * 1024 * 1024, DOC_MAX = 64 * 1024 * 1024;
   const b64u = (bytes) => {
     let s = '';
     for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -80,13 +92,17 @@
   ET.readTransferCode = async function (code) {
     const s = String(code || '').replace(/\s+/g, '');
     if (!s.startsWith(CODE_PREFIX)) throw new Error('This is not a tracker transfer code.');
+    if (s.length > CODE_MAX) throw new Error('This transfer code is far too long to be a tracker code.');
+    const damaged = () => new Error('This transfer code is incomplete or damaged. Copy it again in full.');
     let doc;
     try {
-      const raw = await pipe(unb64u(s.slice(CODE_PREFIX.length)), new DecompressionStream('deflate-raw'));
+      const raw = await pipe(unb64u(s.slice(CODE_PREFIX.length)), new DecompressionStream('deflate-raw'), DOC_MAX);
       doc = JSON.parse(new TextDecoder().decode(raw));
     } catch (e) {
-      throw new Error('This transfer code is incomplete or damaged. Copy it again in full.');
+      throw damaged();
     }
+    if (!doc || !Array.isArray(doc.c) || !doc.t || typeof doc.t !== 'object') throw damaged();
+    if (!doc.c.every((x) => Array.isArray(x) && typeof x[0] === 'string')) throw damaged();
     const st = {
       v: ET.STATE_VERSION,
       chars: doc.c.map(([id, name, lodestone, start, gc]) => ({ id, name, lodestone: lodestone || null, cls: start && !String(start).startsWith('city:') ? start : null, city: String(start || '').startsWith('city:') ? String(start).slice(5) : null, gc: gc || null })),
@@ -97,7 +113,8 @@
       updated: Date.now(),
     };
     st.excl = {}; st.vals = doc.v || {};
-    for (const c of st.chars) { st.ticks[c.id] = unpackTicks(doc.t[c.id]); st.excl[c.id] = unpackTicks((doc.e || {})[c.id]); }
+    const own = (o, k) => (o && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : null);
+    for (const c of st.chars) { st.ticks[c.id] = unpackTicks(own(doc.t, c.id)); st.excl[c.id] = unpackTicks(own(doc.e, c.id)); }
     return ET.validateState(st);
   };
 })();

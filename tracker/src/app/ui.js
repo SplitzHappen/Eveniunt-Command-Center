@@ -88,7 +88,19 @@
 
   // ── tallies ──
   var KEYS = new Map(IDX.sections.map(function (s) { return [s.id, ET.sectionKeys(s)]; }));
-  function tallyOf(ids) { var keys = []; ids.forEach(function (id) { keys = keys.concat(KEYS.get(id)); }); return ET.tally(IDX, ST, keys); }
+  // Per-list totals are cached: a tick recounts only its own list (the menu and overview add the cached lists up),
+  // instead of all 43,000 entries for every character on every click. Any change that can affect many lists
+  // (settings, characters, loading, syncing) goes through render(), which clears the cache.
+  var TALLY = new Map();
+  function sectionTally(id) { var t = TALLY.get(id); if (!t) { t = ET.tally(IDX, ST, KEYS.get(id)); TALLY.set(id, t); } return t; }
+  function tallyOf(ids) {
+    if (ids.length === 1) return sectionTally(ids[0]);
+    var out = { total: 0, totals: {}, done: {}, marked: 0 };
+    ST.chars.forEach(function (c) { out.totals[c.id] = 0; out.done[c.id] = 0; });
+    ids.forEach(function (id) { var t = sectionTally(id); out.total += t.total; out.marked += t.marked; ST.chars.forEach(function (c) { out.totals[c.id] += t.totals[c.id] || 0; out.done[c.id] += t.done[c.id] || 0; }); });
+    return out;
+  }
+  function staleTallies(keys) { keys.forEach(function (k) { var h = IDX.byKey.get(k); if (h) TALLY.delete(h.s.id); }); }
   function combined(t) { var d = 0, n = 0; ST.chars.forEach(function (c) { d += t.done[c.id]; n += t.totals[c.id]; }); return { d: d, n: n, p: ET.percent(d, n) }; }
   function pctTxt(d, n) { return n ? ET.percent(d, n).toFixed(1).replace(/\.0$/, '') + '%' : '–'; }
 
@@ -164,7 +176,7 @@
       var on = !!ST.ticks[c.id][k], na = ET.notApplicable(ST, c, k, e);
       if (e.val) {
         var v = ET.getValue(ST, c.id, k);
-        return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : v) + '" placeholder="–" aria-label="' + esc(c.name) + ' ' + (e.unit || 'level') + '"></span>';
+        return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : esc(v)) + '" placeholder="–" aria-label="' + esc(c.name) + ' ' + (e.unit || 'level') + '"></span>';
       }
       return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" title="' + esc(c.name) + (na ? ': does not apply (' + WHY[na] + ')' : '') + (na && na !== 'manual' ? '' : ' · click: done · right-click: does not apply · click again: clear') + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
     }).join('');
@@ -213,6 +225,7 @@
     $('#page').focus({ preventScroll: true }); window.scrollTo(0, 0);
   }
   function render() {
+    TALLY.clear();
     renderSide();
     if (UI.view === 'sec' && SEC.has(UI.sec)) renderSection(UI.sec);
     else if (UI.view === 'search' && UI.q) renderSearch();
@@ -290,6 +303,7 @@
 
   // ── updating after a change, without re-rendering the whole list ──
   function refreshAfter(keys) {
+    staleTallies(keys);
     keys.forEach(function (k) {
       var row = $('.er[data-k="' + CSS.escape(k) + '"]', $('#page'));
       if (!row || !row.isConnected) return;
@@ -420,14 +434,19 @@
   var dlg = $('#dlg');
   function openDialog(html, bind) { dlg.innerHTML = html; if (!dlg.open) dlg.showModal(); if (bind) bind(dlg); }
   function closeDialog() { if (dlg.open) dlg.close(); }
-  dlg.addEventListener('click', function (e) { if (e.target === dlg) closeDialog(); if (e.target.closest('[data-close]')) closeDialog(); });
+  // Automatic prompts (online-refresh differences, cloud-sync conflicts) wait until the window is free, so one never
+  // replaces another that is still open (or a settings page the owner is using).
+  function whenDialogFree(fn) { if (!dlg.open) return fn(); dlg.addEventListener('close', function once() { dlg.removeEventListener('close', once); setTimeout(function () { whenDialogFree(fn); }, 0); }); }
+  // Before any data exists (first run, or unreadable data) the dialog must not be dismissed: the page would be empty.
+  dlg.addEventListener('click', function (e) { if (e.target === dlg && ST) closeDialog(); if (e.target.closest('[data-close]')) closeDialog(); });
+  dlg.addEventListener('cancel', function (e) { if (!ST) e.preventDefault(); });
 
   function classSelect(attr, id, cur) {
     var groups = { lim: [], gri: [], uld: [] };
     ET.START_CLASSES.forEach(function (x) { groups[x[2]].push(x); });
     return '<select class="inp" ' + attr + '="' + id + '" aria-label="Starting class"><option value="">Starting class…</option>' +
       Object.keys(groups).map(function (city) { return '<optgroup label="' + esc(ET.CITIES[city]) + '">' + groups[city].map(function (x) { return '<option value="' + x[0] + '"' + (cur === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</optgroup>'; }).join('') +
-      (cur && cur.indexOf('city:') === 0 ? '<option value="' + cur + '" selected>' + esc(ET.CITIES[cur.slice(5)]) + ' (class not recorded)</option>' : '') + '</select>';
+      (cur && cur.indexOf('city:') === 0 ? '<option value="' + esc(cur) + '" selected>' + esc(ET.CITIES[cur.slice(5)]) + ' (class not recorded)</option>' : '') + '</select>';
   }
   function gcSelect(attr, id, cur) {
     return '<select class="inp" ' + attr + '="' + id + '" aria-label="Grand Company"><option value="">Not yet</option>' + [1, 2, 3].map(function (g) { return '<option value="' + g + '"' + (Number(cur) === g ? ' selected' : '') + '>' + esc(ET.GCS[g]) + '</option>'; }).join('') + '</select>';
@@ -461,7 +480,6 @@
       $$('[data-gcs]', dlg).forEach(function (s) { var i = +s.dataset.gcs; rowsState[i] = rowsState[i] || {}; rowsState[i].gc = s.value ? Number(s.value) : null; });
     };
     draw();
-    dlg.addEventListener('cancel', function (e) { if (!ST) e.preventDefault(); });
   }
 
   var setTab = 'chars';
@@ -528,7 +546,7 @@
       '<h4>Start over</h4><div class="row"><button type="button" class="btn sm ghost" id="wipe">Erase everything on this device</button></div>';
   }
   function bindData(d) {
-    $('#save-backup', d).onclick = function () { download('eveniunt-tracker-backup-' + new Date().toISOString().slice(0, 10) + '.json', ET.exportFile(ST)); toast('Backup saved'); };
+    $('#save-backup', d).onclick = function () { download('eveniunt-tracker-backup-' + new Date().toISOString().slice(0, 10) + '.json', ET.exportFile(ST)); markBackedUp(); toast('Backup saved'); };
     $('#load-file', d).onchange = function (e) {
       var f = e.target.files[0]; if (!f) return;
       f.text().then(function (txt) {
@@ -536,15 +554,15 @@
         if (doc && ET.isDesktopSave(doc)) { deskImport([{ name: f.name, doc: doc }]); return; }
         var st = ET.importFile(txt);
         if (!confirm('Replace everything on this device with this backup (' + st.chars.map(function (c) { return c.name; }).join(', ') + ')?')) return;
-        st.sync = ST.sync; ST = st; ET.saveState(ST, true); render(); toast('Backup loaded'); closeDialog();
+        adoptLoaded(st); toast('Backup loaded'); closeDialog();
       }).catch(function (err) { toast(err.message); });
     };
-    $('#make-code', d).onclick = function () { ET.makeTransferCode(ST).then(function (code) { $('#code', d).value = code; toast('Transfer code ready (' + code.length.toLocaleString() + ' characters)'); }); };
+    $('#make-code', d).onclick = function () { ET.makeTransferCode(ST).then(function (code) { $('#code', d).value = code; markBackedUp(); toast('Transfer code ready (' + code.length.toLocaleString() + ' characters)'); }); };
     $('#copy-code', d).onclick = function () { var v = $('#code', d).value; if (v) copyText(v, 'Transfer code copied'); };
     $('#read-code', d).onclick = function () {
       ET.readTransferCode($('#code', d).value).then(function (st) {
         if (!confirm('Replace everything on this device with this code (' + st.chars.map(function (c) { return c.name; }).join(', ') + ')?')) return;
-        st.sync = ST.sync; ST = st; ET.saveState(ST, true); render(); toast('Transfer code loaded'); closeDialog();
+        adoptLoaded(st); toast('Transfer code loaded'); closeDialog();
       }).catch(function (err) { toast(err.message); });
     };
     $('#desk-files', d).onchange = function (e) {
@@ -553,6 +571,14 @@
     };
     $('#wipe', d).onclick = function () { if (!confirm('Erase all characters and ticks on this device? Save a backup first if unsure.')) return; ET.clearState().then(function () { location.reload(); }); };
   }
+  // A loaded backup or transfer code replaces this device's data. The cloud-sync base is forgotten (the file id is
+  // kept), so the next sync merges the two copies and asks about differences, instead of reading everything the
+  // loaded copy lacks as deletions to send to the other devices.
+  function adoptLoaded(st) {
+    st.sync = { fc: ST.sync.fc, drive: ST.sync.drive ? { fileId: ST.sync.drive.fileId, at: ST.sync.drive.at, base: null } : null, backupAt: ST.sync.backupAt };
+    ST = st; ET.migrateAliases(IDX, ST); ET.saveState(ST, true); render();
+  }
+  function markBackedUp() { ST.sync.backupAt = Date.now(); ET.saveState(ST); }
   function deskImport(files) {
     files = files.filter(function (f) { return ET.isDesktopSave(f.doc); });
     if (!files.length) { toast('Those are not desktop-app saves'); return; }
@@ -625,7 +651,7 @@
       save(); render();
       setSyncState('Online refresh ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + (applied ? ': ' + applied + ' new' : ''));
       if (problems.length && manual) toast(problems.join(' · '));
-      if (asks.length) askOnline(asks);
+      if (asks.length) whenDialogFree(function () { askOnline(asks); });
       else if (manual) toast(applied ? applied + ' new entries ticked from FFXIV Collect' : 'Everything already matches FFXIV Collect');
     });
   }
@@ -641,8 +667,9 @@
       save(); render(); toast('Saved');
     });
   }
-  function conflictDialog(title, help, otherLabel, items, done) {
-    var choice = {};
+  function conflictDialog(title, help, otherLabel, items, done, onCancel) {
+    var choice = {}, applied = false;
+    if (onCancel) dlg.addEventListener('close', function once() { dlg.removeEventListener('close', once); if (!applied) onCancel(); });
     items.forEach(function (it) { choice[it.id] = 'local'; });
     var draw = function () {
       openDialog('<h3>' + esc(title) + '</h3><p class="help">' + esc(help) + '</p><div class="row"><button type="button" class="btn sm" data-all="remote">' + esc(otherLabel) + ' is right for all</button><button type="button" class="btn sm" data-all="local">This device is right for all</button></div><div class="report" style="max-height:50vh">' +
@@ -651,14 +678,14 @@
         }).join('') + '</div><div class="row" style="margin-top:14px"><button type="button" class="btn" id="apply">Apply</button></div>', function (d) {
         $$('[data-all]', d).forEach(function (b) { b.onclick = function () { items.forEach(function (it) { choice[it.id] = b.dataset.all; }); draw(); }; });
         $$('[data-pick]', d).forEach(function (b) { b.onclick = function () { choice[b.dataset.pick] = b.dataset.v; $$('[data-pick="' + CSS.escape(b.dataset.pick) + '"]', d).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
-        $('#apply', d).onclick = function () { closeDialog(); done(choice); };
+        $('#apply', d).onclick = function () { applied = true; closeDialog(); done(choice); };
       });
     };
     draw();
   }
 
   // ── cloud sync (Google Drive app-data folder) ──
-  var DRIVE = { token: null, at: 0, busy: false, timer: null };
+  var DRIVE = { token: null, at: 0, busy: false, asking: false, timer: null };
   function cloudTab() {
     var s = ST.sync.drive;
     var ok = HOSTED && location.origin === 'https://splitzhappen.github.io';
@@ -668,29 +695,68 @@
       '<div class="row"><button type="button" class="btn sm" id="sync-now"' + (ok ? '' : ' disabled') + '>' + (DRIVE.token ? 'Sync now' : 'Sign in with Google and sync') + '</button></div>';
   }
   function bindCloud(d) { var b = $('#sync-now', d); if (b) b.onclick = function () { closeDialog(); syncDrive(true); }; }
-  function syncDrive(interactive) {
-    if (DRIVE.busy) return Promise.resolve();
+  function syncDrive(interactive, retried) {
+    if (DRIVE.busy || DRIVE.asking) return Promise.resolve();
     var fresh = DRIVE.token && Date.now() - DRIVE.at < 50 * 60 * 1000;
     var get = fresh ? Promise.resolve(DRIVE.token) : interactive ? ET.driveSignIn(ET.GDRIVE_CLIENT_ID).then(function (t) { DRIVE.token = t; DRIVE.at = Date.now(); return t; }) : Promise.reject(new Error('not signed in'));
-    DRIVE.busy = true; setSyncState('Syncing with Google Drive…');
-    return get.then(function (tok) {
-      return ET.driveSync(ST, tok).then(function (r) {
-        if (r.done) { ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); if (interactive) toast(r.created ? 'Cloud copy created' : 'Synced'); return; }
-        var items = r.conflicts.map(function (c) { var x = ET.describeConflict(c, IDX, ST); return { id: c.id, who: x.who, what: x.what, local: x.local, remote: x.remote }; });
-        conflictDialog('Your devices disagree', 'These entries were changed differently on another device. Choose which one is right.', 'Other device', items, function (choices) {
-          ET.driveFinish(ST, tok, r, choices).then(function () { ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); toast('Synced'); });
-        });
-      });
-    }).catch(function (err) {
+    var synced = function (msg) { ET.migrateAliases(IDX, ST); ST.sync.backupAt = Date.now(); ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); if (msg) toast(msg); };
+    var failed = function (err, tok) {
       if (err && err.code === 401) DRIVE.token = null;
+      if (err && err.code === 'changed' && !retried) { DRIVE.busy = false; return syncDrive(interactive, true); }
+      if (err && err.code === 'damaged' && interactive && tok && confirm(err.message + ' Replace the cloud copy with this device’s data?')) {
+        return ET.driveOverwrite(ST, tok, err.fileId).then(function () { synced('Cloud copy replaced with this device’s data'); });
+      }
       if (interactive || (err && err.message !== 'not signed in')) setSyncState('Cloud sync: ' + (err.message || err));
-    }).then(function () { DRIVE.busy = false; });
+    };
+    DRIVE.busy = true; setSyncState('Syncing with Google Drive…');
+    var tokNow = null;
+    return get.then(function (tok) {
+      tokNow = tok;
+      return ET.driveSync(ST, tok).then(function (r) {
+        if (r.done) { synced(interactive ? (r.created ? 'Cloud copy created' : 'Synced') : ''); return; }
+        var finish = function (choices) {
+          DRIVE.asking = false; DRIVE.busy = true;
+          return ET.driveFinish(ST, tok, r, choices).then(function () { synced('Synced'); }).catch(function (err) { return failed(err, tok); }).then(function () { DRIVE.busy = false; });
+        };
+        // A large removal coming from the other device is confirmed first (it could be a mistake made there).
+        if (r.loss && !confirm('The other device’s copy would remove ' + r.loss.toLocaleString() + ' ticks from this device (they were removed there since the last sync). Apply that? Choose Cancel to keep this device unchanged and not sync now.')) {
+          setSyncState('Cloud sync paused: nothing was changed'); return;
+        }
+        if (!r.conflicts.length) { DRIVE.busy = false; return finish({}); }
+        var items = r.conflicts.map(function (c) { var x = ET.describeConflict(c, IDX, ST); return { id: c.id, who: x.who, what: x.what, local: x.local, remote: x.remote }; });
+        DRIVE.asking = true;
+        whenDialogFree(function () { conflictDialog('Your devices disagree', 'These entries were changed differently on another device. Choose which one is right.', 'Other device', items, finish, function () { DRIVE.asking = false; setSyncState('Cloud sync waiting for your choices'); }); });
+      });
+    }).catch(function (err) { return failed(err, tokNow); }).then(function () { DRIVE.busy = false; });
   }
   function queueDriveSync() {
     if (!DRIVE.token) return;
     clearTimeout(DRIVE.timer); DRIVE.timer = setTimeout(function () { syncDrive(false); }, 15000);
   }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { if (dirty) ET.saveState(ST, true); if (DRIVE.token) syncDrive(false); } });
+  document.addEventListener('visibilitychange', function () {
+    if (!ST) return;
+    if (document.visibilityState === 'hidden') { if (ET.hasPendingSave()) ET.saveState(ST, true); if (DRIVE.token) syncDrive(false); }
+    else checkOtherTab();
+  });
+  // Closing the tab or switching apps on a phone right after a tick: write it now rather than after the short delay.
+  window.addEventListener('pagehide', function () { if (ST && ET.hasPendingSave()) ET.saveState(ST, true); });
+
+  // ── another tab or window of the tracker saved: take its newer copy (unless this tab has a change still waiting) ──
+  function checkOtherTab() {
+    if (!ST || ET.hasPendingSave()) return;
+    ET.loadState().then(function (st) {
+      if (st && st.updated > ST.updated) { ST = st; ET.migrateAliases(IDX, ST); render(); toast('Updated with changes made in another window'); }
+    });
+  }
+  ET.onOtherTabSave = function () { checkOtherTab(); };
+
+  // ── saving problems are shown, never silent ──
+  var saveWarned = false;
+  ET.onSaveResult = function (ok) {
+    if (ok) { if (saveWarned) { saveWarned = false; setSyncState(''); } return; }
+    if (!saveWarned) { saveWarned = true; toast('This browser did not let the tracker save. Save a backup file now (Settings → Import and backup).'); }
+    setSyncState('Not saved on this device: save a backup file');
+  };
 
   function aboutTab() {
     var m = DATA.meta || {}, src = m.sources || {};
@@ -706,11 +772,29 @@
     var b = $('#boot'); if (b) b.remove();
     render(); route();
     if (navigator.onLine) setTimeout(function () { refreshOnline(false); }, 1500);
+    ET.requestPersistence();
+    backupReminder();
+  }
+  // Browsers can clear a website's saved data (Safari after weeks without a visit, any browser when storage runs
+  // low), so a gentle reminder appears when there are ticks and no backup, transfer code or cloud sync for 30 days.
+  function backupReminder() {
+    var ticks = ST.chars.reduce(function (a, c) { return a + Object.keys(ST.ticks[c.id]).length; }, 0);
+    var at = ST.sync.backupAt || 0;
+    if (ticks > 20 && Date.now() - at > 30 * 24 * 3600 * 1000) setSyncState(at ? 'No backup for over a month: Settings → Import and backup, or Cloud sync' : 'Tip: save a backup or turn on cloud sync (Settings) so your ticks are safe if this browser clears its data');
+  }
+  // Saved data that could not be read is offered for download before anything new is saved over it.
+  function loadProblemDialog() {
+    var p = ET.loadProblem;
+    openDialog('<h3>Saved data could not be read</h3><p class="help">The tracker found saved data on this device but could not read it (' + esc(p.message) + '). A copy has been kept. Download it first so nothing is lost, then load a backup, use cloud sync, or start fresh.</p>' +
+      '<div class="row"><button type="button" class="btn" id="dl-bad">Download the unreadable data</button><button type="button" class="btn ghost" id="go-on">Continue</button></div>', function (d) {
+      $('#dl-bad', d).onclick = function () { download('eveniunt-tracker-unreadable-' + new Date().toISOString().slice(0, 10) + '.json', p.raw); };
+      $('#go-on', d).onclick = function () { setupDialog(); };
+    });
   }
   applyTheme();
   ET.loadState().then(function (st) {
-    if (st) { ST = st; afterBoot(); }
-    else { var b = $('#boot'); if (b) b.remove(); setupDialog(); }
+    if (st) { ST = st; if (ET.migrateAliases(IDX, ST)) save(); afterBoot(); }
+    else { var b = $('#boot'); if (b) b.remove(); if (ET.loadProblem) loadProblemDialog(); else setupDialog(); }
   });
   window.addEventListener('online', function () { if (ST) refreshOnline(false); });
 

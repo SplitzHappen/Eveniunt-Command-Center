@@ -342,3 +342,70 @@ test('starting class greys out the other cities’ opening quests; Grand Company
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+// ---------------------------------------------------------------- red-team fixes (2026-11-08)
+test('red team: a crafted backup loaded through the page runs no script and adds no markup', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  const evil = JSON.stringify({ app: 'eveniunt-completionist-tracker', state: { v: 1,
+    chars: [{ id: 'c1', name: '<img src=x onerror="window.__pwned=1">', city: '"><img src=x onerror="window.__pwned=2">' }, { id: 'c2', name: 'B' }],
+    ticks: { c1: {}, c2: {} }, vals: { c1: { 'levels:1': '"><img src=x onerror="window.__pwned=3">' } } } });
+  const file = path.join(T, 'dist', 'evil-backup.json');
+  fs.writeFileSync(file, evil);
+  try {
+    await page.click('text=Settings'); await page.click('[data-tab="data"]');
+    await page.setInputFiles('#load-file', file);
+    await page.waitForFunction(() => window.__tracker.ST.chars[1].name === 'B');
+    for (const v of ['levels', 'mounts']) { await go(page, v); await page.waitForSelector('.er'); }
+    await page.click('text=Settings'); await page.click('[data-tab="chars"]');
+    await page.waitForTimeout(300);
+    assert.equal(await page.evaluate(() => window.__pwned), undefined);
+    assert.equal(await page.locator('img[src="x"]').count(), 0);
+  } finally { fs.unlinkSync(file); }
+  assert.deepEqual(errors.filter((e) => !/ERR_FAILED|net::/.test(e)), []);
+  await ctx.close();
+});
+
+test('first run cannot be dismissed by clicking outside the window (the page would be empty)', async () => {
+  const { ctx, page } = await open({ setup: false });
+  await page.mouse.click(5, 5);
+  await page.keyboard.press('Escape');
+  assert.ok(await page.locator('#dlg[open]').count());
+  await ctx.close();
+});
+
+test('saved data that cannot be read is offered for download, not overwritten', async () => {
+  const { ctx, page } = await open({ n: 1 });
+  await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-tracker', 1); r.onsuccess = () => { const t = r.result.transaction('state', 'readwrite'); t.objectStore('state').put({ v: 1, chars: 'broken' }, 'main'); t.oncomplete = res; }; }));
+  await page.reload();
+  await page.waitForSelector('#dl-bad');
+  assert.match(await page.textContent('#dlg'), /could not be read/);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#dl-bad')]);
+  assert.match(await fs.promises.readFile(await dl.path(), 'utf8'), /broken/);
+  const kept = await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-tracker', 1); r.onsuccess = () => { const q = r.result.transaction('state').objectStore('state').getAllKeys(); q.onsuccess = () => res(q.result); }; }));
+  assert.ok(kept.some((k) => String(k).startsWith('main-unreadable-')), 'a rescue copy is kept');
+  await page.click('#go-on');
+  await page.waitForSelector('#nchars');
+  await ctx.close();
+});
+
+test('two windows of the tracker: a tick in one shows in the other, never overwritten by the older copy', async () => {
+  const { ctx, page } = await open({ n: 2 });
+  const other = await ctx.newPage();
+  other.on('dialog', (d) => d.accept());
+  await other.goto(URL); await other.waitForSelector('.ov-table');
+  await go(page, 'mounts'); await go(other, 'mounts');
+  await page.waitForSelector('.er');
+  const box = page.locator('.er:not(.x)').first().locator('.tk[data-c="c1"]');
+  const key = await page.locator('.er:not(.x)').first().getAttribute('data-k');
+  await box.click();
+  await other.waitForFunction((k) => !!window.__tracker.ST.ticks.c1[k], key, { timeout: 5000 });
+  // the second window now ticks something else; the first window's tick survives in storage
+  await other.waitForSelector('.er');
+  await other.locator('.er:not(.x)').nth(1).locator('.tk[data-c="c2"]').click();
+  await page.waitForTimeout(900);
+  await page.reload(); await page.waitForSelector('.page');
+  const st = await page.evaluate(() => window.__tracker.ST);
+  assert.ok(st.ticks.c1[key], 'first tick kept');
+  assert.equal(Object.keys(st.ticks.c2).length, 1, 'second tick kept');
+  await ctx.close();
+});

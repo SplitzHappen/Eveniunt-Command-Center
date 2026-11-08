@@ -70,30 +70,62 @@
 
   // Step 1: read the cloud copy and merge. Returns { done: true } when nothing needs the owner,
   // or { conflicts, result, fileId } for the "which one is right?" prompt.
+  // The cloud copy carries the app tag and state version, so a copy written by a newer version is never merged by an
+  // older one (it would read the unknown parts as deletions).
+  const cloudDoc = (st) => Object.assign({ app: 'eveniunt-completionist-tracker', v: ET.STATE_VERSION }, ET.portable(st));
+  const looksValid = (doc) => !!(doc && typeof doc === 'object' && Array.isArray(doc.chars) && doc.chars.some((c) => c && ET.CHAR_ID.test(c.id)) && doc.ticks && typeof doc.ticks === 'object');
+  const tickCount = (p) => Object.values((p && p.ticks) || {}).reduce((a, t) => a + Object.keys(t || {}).length, 0);
+  // How many of this device's ticks the merge would remove without asking (changes made on the other device).
+  ET.mergeLoss = function (local, result) {
+    let n = 0;
+    for (const [c, t] of Object.entries(local.ticks || {})) for (const k of Object.keys(t)) if (!result.merged.has('t|' + c + '|' + k) && !result.conflicts.some((x) => x.id === 't|' + c + '|' + k)) n++;
+    return n;
+  };
+
+  // Step 1: read the cloud copy and merge. Returns { done: true } when nothing needs the owner, or { done: false,
+  // conflicts, loss, result, fileId, modifiedTime } when the owner must choose (conflicts) or confirm (a large loss).
   ET.driveSync = async function (st, token, fetchImpl) {
     const f = fetchImpl || globalThis.fetch;
     const file = await findFile(f, token);
     const local = ET.portable(st);
     if (!file) {
-      const id = await upload(f, token, null, local);
+      const id = await upload(f, token, null, cloudDoc(st));
       st.sync.drive = { fileId: id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(local)) };
       return { done: true, created: true };
     }
     const r = await call(f, token, DRIVE + '/' + file.id + '?alt=media');
-    const remote = await r.json();
+    let remote = null;
+    try { remote = await r.json(); } catch (e) { remote = null; }
+    if (remote && typeof remote.v === 'number' && remote.v > ET.STATE_VERSION) throw new Error('The cloud copy was saved by a newer version of the tracker. Reload this page to update, then sync again.');
+    if (!looksValid(remote)) throw Object.assign(new Error('The cloud copy is damaged or not a tracker copy, so nothing was merged and this device kept its data.'), { code: 'damaged', fileId: file.id });
     const base = st.sync.drive && st.sync.drive.fileId === file.id ? st.sync.drive.base : null;
     const result = ET.threeWay(base, local, remote);
-    if (result.conflicts.length) return { done: false, conflicts: result.conflicts, result, fileId: file.id };
-    await ET.driveFinish(st, token, { result, fileId: file.id }, {}, f);
+    const loss = ET.mergeLoss(local, result);
+    const pending = { result, fileId: file.id, modifiedTime: file.modifiedTime };
+    const big = loss > 50 && loss > tickCount(local) / 10;
+    if (result.conflicts.length || big) return Object.assign({ done: false, conflicts: result.conflicts, loss: big ? loss : 0 }, pending);
+    await ET.driveFinish(st, token, pending, {}, f);
     return { done: true };
   };
 
-  // Step 2: apply the owner's choices, write the merged copy back, and remember it as the new base.
+  // Step 2: apply the owner's choices, write the merged copy back, and remember it as the new base. If the cloud copy
+  // changed since step 1 (another device synced meanwhile), nothing is written and the caller syncs again.
   ET.driveFinish = async function (st, token, pending, choices, fetchImpl) {
     const f = fetchImpl || globalThis.fetch;
+    if (pending.modifiedTime) {
+      const now = await findFile(f, token);
+      if (now && now.modifiedTime && now.modifiedTime !== pending.modifiedTime) throw Object.assign(new Error('Another device synced at the same time. Sync again to include its changes.'), { code: 'changed' });
+    }
     ET.applyMerge(st, pending.result, choices);
     const doc = ET.portable(st);
-    const id = await upload(f, token, pending.fileId, doc);
+    const id = await upload(f, token, pending.fileId, cloudDoc(st));
     st.sync.drive = { fileId: id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(doc)) };
+  };
+
+  // Replace the cloud copy with this device's data (used only when the owner chooses it, e.g. after a damaged copy).
+  ET.driveOverwrite = async function (st, token, fileId, fetchImpl) {
+    const f = fetchImpl || globalThis.fetch;
+    const id = await upload(f, token, fileId || null, cloudDoc(st));
+    st.sync.drive = { fileId: id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(ET.portable(st))) };
   };
 })();

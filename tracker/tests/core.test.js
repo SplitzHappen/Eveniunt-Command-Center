@@ -339,3 +339,144 @@ test('starting class and Grand Company decide what applies; the importer works t
   ET.applyImport(st2, 'c1', r, 'add');
   assert.strictEqual(ET.cityOf(st2.chars[0]), 'uld');
 });
+
+// ---------------------------------------------------------------- red-team fixes (2026-11-08)
+const backupDoc = (state) => JSON.stringify({ app: 'eveniunt-completionist-tracker', state: Object.assign({ v: 1, ticks: {} }, state) });
+
+test('red team: a crafted backup cannot reach Object.prototype or smuggle markup into the page', () => {
+  assert.throws(() => ET.importFile(backupDoc({ chars: [{ id: '__proto__', name: 'x' }] })), /character ids/);
+  assert.throws(() => ET.importFile(backupDoc({ chars: [{ id: 'c1"><b>', name: 'x' }] })), /character ids/);
+  const st = ET.importFile(backupDoc({
+    chars: [{ id: 'c1', name: '<img src=x onerror=alert(1)>' + 'y'.repeat(80), city: '"><img src=x>', gc: 'x', lodestone: '"><b>' }],
+    ticks: { c1: { 'mounts:1': 1, '__proto__': 1, 'bad key': 1 }, c9: { 'mounts:2': 1 } },
+    vals: { c1: { 'levels:1': '"><b>', 'levels:2': '90', 'levels:3': -5 } },
+    avail: { 'mounts:3': 'x', 'mounts:4': '<b>' },
+    settings: { countLimited: 'yes', extra: 1 },
+  }));
+  assert.strictEqual(({})['mounts:1'], undefined);
+  assert.deepStrictEqual(Object.keys(st.ticks.c1), ['mounts:1']);
+  assert.deepStrictEqual(Object.keys(st.ticks), ['c1']);
+  assert.ok(st.chars[0].name.length <= 40);
+  assert.strictEqual(st.chars[0].city, undefined);
+  assert.strictEqual(st.chars[0].gc, null);
+  assert.strictEqual(st.chars[0].lodestone, null);
+  assert.deepStrictEqual(st.vals.c1, { 'levels:2': 90 });
+  assert.deepStrictEqual(st.avail, { 'mounts:3': 'x' });
+  assert.deepStrictEqual(st.settings, { countLimited: false, countGone: false, countUnknown: false });
+});
+
+test('red team: transfer codes that are damaged, huge or malformed are refused with a plain message', async () => {
+  await assert.rejects(ET.readTransferCode('EVT1-' + 'A'.repeat(5 * 1024 * 1024)), /far too long/);
+  await assert.rejects(ET.readTransferCode('EVT1-abc'), /incomplete or damaged/);
+  const st = ET.newState(['A', 'B']);
+  ET.setTick(st, 'c2', firstKey('mounts', () => true), true);
+  const back = await ET.readTransferCode(await ET.makeTransferCode(st));
+  assert.deepStrictEqual(back.ticks.c2, st.ticks.c2);
+});
+
+test('removing a character also removes its levels, so a new character in that column starts empty', () => {
+  const st = ET.newState(['A', 'B']);
+  ET.setValue(st, 'c2', 'levels:1', 90, null);
+  ET.setCharacterCount(st, 1);
+  ET.setCharacterCount(st, 2);
+  assert.deepStrictEqual(st.vals.c2, {});
+});
+
+test('Lodestone numbers: a bare number or a character page address only', () => {
+  assert.strictEqual(ET.parseLodestoneId('12345678'), '12345678');
+  assert.strictEqual(ET.parseLodestoneId('https://na.finalfantasyxiv.com/lodestone/character/12345678/'), '12345678');
+  assert.strictEqual(ET.parseLodestoneId('https://eu.finalfantasyxiv.com/lodestone/character/987654/achievement/'), '987654');
+  assert.strictEqual(ET.parseLodestoneId('https://na.finalfantasyxiv.com/lodestone/freecompany/9229001536389012345/'), null);
+});
+
+test('merged entries: ticks saved under an old variant id move to the kept entry', () => {
+  const hit = [...idx.byKey].find(([, h]) => h.e.al && h.e.al.length);
+  assert.ok(hit, 'the data has merged entries');
+  const [key, h] = hit;
+  const old = h.s.id + ':' + h.e.al[0];
+  const st = ET.newState(['A']);
+  st.ticks.c1[old] = 1;
+  assert.strictEqual(ET.migrateAliases(idx, st), 1);
+  assert.ok(st.ticks.c1[key] && !st.ticks.c1[old]);
+});
+
+function fakeDrive() {
+  const files = {}, mtime = {};
+  let nextId = 1, clock = 0;
+  const f = async (url, opts = {}) => {
+    const method = opts.method || 'GET';
+    const json = (o) => ({ ok: true, status: 200, json: async () => o });
+    if (url.includes('/drive/v3/files?spaces=appDataFolder')) return json({ files: Object.keys(files).map((id) => ({ id, modifiedTime: String(mtime[id]) })) });
+    if (method === 'POST' && url.includes('uploadType=multipart')) {
+      const id = 'f' + nextId++;
+      files[id] = JSON.parse(opts.body.split('\r\n\r\n')[2].split('\r\n--')[0]); mtime[id] = ++clock;
+      return json({ id });
+    }
+    const m = url.match(/files\/(f\d+)/);
+    if (method === 'PATCH') { files[m[1]] = JSON.parse(opts.body); mtime[m[1]] = ++clock; return json({}); }
+    if (url.includes('alt=media')) return json(files[m[1]]);
+    return { ok: false, status: 400 };
+  };
+  return { f, files, touch: (id, doc) => { files[id] = doc; mtime[id] = ++clock; } };
+}
+
+test('cloud sync: a damaged cloud copy never wipes this device', async () => {
+  const d = fakeDrive();
+  const st = ET.newState(['A']);
+  const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).slice(0, 5);
+  keys.forEach((k) => ET.setTick(st, 'c1', k, true));
+  await ET.driveSync(st, 'tok', d.f);
+  d.touch('f1', {}); // emptied or replaced by something else
+  await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
+  assert.strictEqual(Object.keys(st.ticks.c1).length, 5);
+  await ET.driveOverwrite(st, 'tok', 'f1', d.f);
+  assert.strictEqual(Object.keys(d.files.f1.ticks.c1).length, 5);
+});
+
+test('cloud sync: a large removal from the other device is held for confirmation', async () => {
+  const d = fakeDrive();
+  const pc = ET.newState(['A']);
+  const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).slice(0, 120);
+  keys.forEach((k) => ET.setTick(pc, 'c1', k, true));
+  await ET.driveSync(pc, 'tok', d.f);
+  const phone = ET.newState(['A']);
+  await ET.driveSync(phone, 'tok', d.f); // the phone takes the 120 ticks
+  assert.strictEqual(Object.keys(phone.ticks.c1).length, 120);
+  phone.ticks.c1 = {}; phone.updated = Date.now(); // cleared by mistake on the phone
+  await ET.driveSync(phone, 'tok', d.f);
+  const r = await ET.driveSync(pc, 'tok', d.f);
+  assert.strictEqual(r.done, false);
+  assert.strictEqual(r.loss, 120);
+  assert.strictEqual(Object.keys(pc.ticks.c1).length, 120, 'nothing removed before the owner confirms');
+});
+
+test('cloud sync: if another device writes between reading and writing, nothing is overwritten', async () => {
+  const d = fakeDrive();
+  const a = ET.newState(['A']);
+  await ET.driveSync(a, 'tok', d.f);
+  ET.renameCharacter(a, 'c1', 'Name on A');
+  const b = ET.newState(['A']);
+  await ET.driveSync(b, 'tok', d.f);
+  ET.renameCharacter(b, 'c1', 'Name on B');
+  await ET.driveSync(b, 'tok', d.f);
+  const r = await ET.driveSync(a, 'tok', d.f); // conflict on the name: waits for the owner
+  assert.strictEqual(r.done, false);
+  const k = firstKey('mounts', () => true);
+  ET.setTick(b, 'c1', k, true);
+  await ET.driveSync(b, 'tok', d.f); // meanwhile B syncs again
+  await assert.rejects(ET.driveFinish(a, 'tok', r, {}, d.f), (e) => e.code === 'changed');
+  assert.ok(d.files.f1.ticks.c1[k], "B's newer tick is still in the cloud");
+});
+
+test('cloud sync: the merged copy is validated (odd ids in a cloud file are ignored)', async () => {
+  const d = fakeDrive();
+  const st = ET.newState(['A']);
+  await ET.driveSync(st, 'tok', d.f);
+  const doc = JSON.parse(JSON.stringify(d.files.f1));
+  doc.chars.push({ id: '__proto__', name: 'x' }); doc.ticks.__proto__ = { 'mounts:1': 1 }; doc.ticks.c1 = { 'mounts:1': 1, '<b>': 1 };
+  d.touch('f1', doc);
+  await ET.driveSync(st, 'tok', d.f);
+  assert.deepStrictEqual(st.chars.map((c) => c.id), ['c1']);
+  assert.deepStrictEqual(Object.keys(st.ticks.c1), ['mounts:1']);
+  assert.strictEqual(({})['mounts:1'], undefined);
+});

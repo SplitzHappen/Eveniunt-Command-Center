@@ -5,20 +5,26 @@
   'use strict';
   const ET = (globalThis.ET = globalThis.ET || {});
 
+  // Only well-formed parts of a copy take part (the cloud copy is outside data: a damaged or foreign file must not
+  // inject odd character ids or keys); the merged state is validated again at the end of applyMerge.
+  const SETTINGS = ['countLimited', 'countGone', 'countUnknown'];
   function flat(p) {
     const m = new Map();
-    if (!p) return m;
-    for (const [c, t] of Object.entries(p.ticks || {})) for (const k of Object.keys(t)) m.set('t|' + c + '|' + k, '1');
-    for (const [c, t] of Object.entries(p.excl || {})) for (const k of Object.keys(t)) m.set('e|' + c + '|' + k, '1');
-    for (const [c, t] of Object.entries(p.vals || {})) for (const [k, v] of Object.entries(t)) m.set('v|' + c + '|' + k, String(v));
-    for (const [k, v] of Object.entries(p.avail || {})) m.set('a|' + k, v);
-    for (const c of p.chars || []) {
-      m.set('n|' + c.id, c.name);
+    if (!p || typeof p !== 'object') return m;
+    const obj = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? o : {});
+    const okC = (c) => ET.CHAR_ID.test(c), okK = (k) => ET.ENTRY_KEY.test(k);
+    for (const [c, t] of Object.entries(obj(p.ticks))) if (okC(c)) for (const k of Object.keys(obj(t))) if (okK(k)) m.set('t|' + c + '|' + k, '1');
+    for (const [c, t] of Object.entries(obj(p.excl))) if (okC(c)) for (const k of Object.keys(obj(t))) if (okK(k)) m.set('e|' + c + '|' + k, '1');
+    for (const [c, t] of Object.entries(obj(p.vals))) if (okC(c)) for (const [k, v] of Object.entries(obj(t))) if (okK(k) && Number.isFinite(Number(v))) m.set('v|' + c + '|' + k, String(Number(v)));
+    for (const [k, v] of Object.entries(obj(p.avail))) if (okK(k) && (v === 'x' || v === 'ok')) m.set('a|' + k, v);
+    for (const c of Array.isArray(p.chars) ? p.chars : []) {
+      if (!c || typeof c.id !== 'string' || !okC(c.id)) continue;
+      m.set('n|' + c.id, String(c.name || ''));
       if (c.lodestone) m.set('l|' + c.id, String(c.lodestone));
       if (c.cls || c.city) m.set('k|' + c.id, c.cls || 'city:' + c.city);
       if (c.gc) m.set('g|' + c.id, String(c.gc));
     }
-    for (const [k, v] of Object.entries(p.settings || {})) m.set('s|' + k, String(v));
+    for (const [k, v] of Object.entries(obj(p.settings))) if (SETTINGS.includes(k)) m.set('s|' + k, String(v === true));
     return m;
   }
 
@@ -77,7 +83,7 @@
     st.avail = avail;
     st.settings = settings;
     st.updated = Date.now();
-    return st;
+    return ET.validateState(st);
   };
 
   // Plain-language description of a conflict, for the "which one is right?" prompt.

@@ -21,7 +21,9 @@
 
   // Accepts a number or a Lodestone character URL.
   ET.parseLodestoneId = function (text) {
-    const m = String(text || '').match(/(?:character\/)?(\d{3,12})/);
+    // a bare number, or the number after "character/" in a Lodestone address (never digits from another kind of page)
+    const t = String(text || '').trim();
+    const m = t.match(/^(\d{3,12})$/) || t.match(/\/character\/(\d{3,12})(?:\/|$|\?|#)/);
     return m ? m[1] : null;
   };
 
@@ -45,7 +47,8 @@
         if (r.status === 403) { out.unavailable[col] = 'private on the Lodestone'; continue; }
         if (!r.ok) { out.unavailable[col] = 'FFXIV Collect answered ' + r.status; continue; }
         const rows = await r.json();
-        out.ok[col] = rows.map((x) => x.id);
+        if (!Array.isArray(rows)) { out.unavailable[col] = 'unexpected answer from FFXIV Collect'; continue; }
+        out.ok[col] = rows.map((x) => x && x.id).filter((x) => Number.isInteger(x));
       } catch (e) {
         out.offline = true;
         return out;
