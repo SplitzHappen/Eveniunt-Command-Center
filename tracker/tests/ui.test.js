@@ -266,7 +266,7 @@ test('all 21 themes (the Atelier\'s 20 and Solution Nine), light and dark: reada
     await page.click('[data-look="toggle"][data-v="shared:theme"]');
     const ids = await page.$$eval('[data-look="theme"]', (b) => b.map((x) => x.dataset.v));
     assert.equal(ids.length, 21);
-    assert.ok(ids.includes('solution-nine'), 'the Solution Nine theme is offered');
+    assert.ok(ids.includes('electrope-skyline'), 'the Solution Nine theme (Electrope Skyline) is offered');
     const labels = await page.$$eval('[data-look="theme"]', (b) => b.map((x) => x.textContent.replace(/^Aa|✓$/g, '').trim()));
     assert.deepEqual(labels, labels.slice().sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })), 'themes listed alphabetically');
     for (const id of ids) {

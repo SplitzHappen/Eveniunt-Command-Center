@@ -34,9 +34,10 @@ const a1 = atelier.indexOf('  function renderHeader()');
 if (a0 < 0 || a1 < a0) throw new Error('Atelier appearance module not found');
 const look = atelier.slice(a0, a1);
 if ((look.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 20) throw new Error('expected 20 themes in the Atelier appearance module');
-// The tracker's own extra theme (owner request, 2026-11-08): Solution Nine, Dawntrail's neon city. Light and dark,
+// The tracker's own extra theme (owner request, 2026-11-08): Electrope Skyline, after Solution Nine, Dawntrail's
+// electrope-lit city: neon blue leads (accent), neon pink follows (progress). Light and dark,
 // each [background, foreground, accent, progress]; contrast against the background: text 15.4 / 16.3, accent 5.1 / 6.4.
-const SOLUTION_NINE = "    ['solution-nine', \"Solution Nine\", ['#e6e8f8', '#0c0f2e', '#b8166f', '#08708f'], ['#0a0d24', '#e9ecff', '#ff4fb8', '#36e0ff']]";
+const SOLUTION_NINE = "    ['electrope-skyline', \"Electrope Skyline\", ['#e3ebf7', '#0a1230', '#0a6c94', '#c2187a'], ['#070a20', '#e6f4ff', '#38dcff', '#ff4fb8']]";
 const lookPlus = look.replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION_NINE + '\n  ];\n  var ACCENTS');
 if (lookPlus === look || (lookPlus.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('could not add the Solution Nine theme');
 

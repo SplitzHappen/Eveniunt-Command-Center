@@ -173,3 +173,11 @@ Owner request: guides, tied to the tracker's own relic entries, for getting the 
   - how the dungeons and trials the stage asks for are unlocked (quest, giver and place, from the game data).
 - The guides are written for the tracker from the Console Games Wiki relic pages (`data/relic-guides.json`); no text is copied.
 - Tests: core 50/50 (the information test now checks a Zodiac, a Eurekan and a Splendorous stage, and that every relic stage has a guide); browser 23/23.
+
+## Owner polish round (2026-11-08)
+
+- A list's expansion heading is left out when that expansion holds a single group with the same name (for example Mounts → "A Realm Reborn" twice); the group heading alone remains.
+- The information window closes the moment the pointer leaves the name.
+- The FFXIV Collect refresh status is a small one-line chip ("Refreshed 05:30 PM · 5 not refreshed" with an amber dot); the full list of characters not refreshed and why is in its tooltip.
+- The Solution Nine theme is now **Electrope Skyline**: neon cyan leads (accent: light #0a6c94, dark #38dcff), neon pink is the second colour (light #c2187a, dark #ff4fb8). Contrast still checked by the theme test.
+- Tests: core 50/50, browser 23/23.

@@ -14,7 +14,10 @@ body { font-family: var(--f-body); }
 .menu-btn { display: none; }
 .search input { width: 260px; min-height: 36px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); padding: 6px 10px; font: 400 14px var(--f-body); }
 .search input:focus { outline: none; border-color: var(--seal); }
-.sync-state { font: 400 12.5px var(--f-body); color: var(--ink-3); max-width: 24ch; text-align: right; line-height: 1.25; }
+.sync-state { font: 400 11px var(--f-body); color: var(--ink-3); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+.sync-state.warn { cursor: help; }
+.sync-state .ss-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--seal); opacity: .7; flex: none; }
+.sync-state .ss-dot.warn { background: #d08a1a; opacity: 1; }
 .mast-tools .btn { border-radius: 8px; }
 
 /* ── shell ── */

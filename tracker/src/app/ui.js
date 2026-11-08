@@ -275,8 +275,7 @@
   if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
     document.addEventListener('mouseover', function (ev) {
       var nm = ev.target.closest && ev.target.closest('.er .c0 .nm');
-      if (ev.target.closest && ev.target.closest('#tip')) { clearTimeout(tipHide); return; }
-      if (!nm) { if (tipKey) { clearTimeout(tipHide); tipHide = setTimeout(hideTip, 250); } return; }
+      if (!nm) { if (tipKey) hideTip(); return; }
       var k = nm.closest('.er').dataset.k;
       clearTimeout(tipHide);
       if (tipKey === k) return;
@@ -395,12 +394,15 @@
       var keys = g.keys.filter(function (k) { return passes(k, q); });
       if (!keys.length) return;
       any = true;
+      // a lone group named like its expansion needs no expansion heading above it
+      var same = sec.groups.filter(function (o) { return o.xp === g.xp; });
+      var lone = layered && same.length === 1 && norm(g.t) === norm(g.xp || 'Other');
       if (layered && g.xp !== xp) {
         xp = g.xp;
-        var all = []; sec.groups.forEach(function (o) { if (o.xp === xp) all = all.concat(o.keys); });
-        h += expansionHtml(sid, xp || 'Other', all);
+        var all = []; same.forEach(function (o) { all = all.concat(o.keys); });
+        if (!lone) h += expansionHtml(sid, xp || 'Other', all);
       }
-      if (layered && XFOLD.has(sid + '|' + (g.xp || 'Other')) && !UI.find) return;
+      if (layered && !lone && XFOLD.has(sid + '|' + (g.xp || 'Other')) && !UI.find) return;
       h += groupHtml(sid, gi, g, keys);
     });
     if (!any) h += '<p class="empty">Nothing to show. Clear the search, choose All, or turn on “Show not counted”.</p>';
@@ -830,7 +832,12 @@
     var b = $('#fc-now', d); if (b) b.onclick = function () { closeDialog(); refreshOnline(true); };
     var g = $('[data-tab-go]', d); if (g) g.onclick = function () { openSettings('chars'); };
   }
-  function setSyncState(t) { $('#sync-state').textContent = t || ''; }
+  function setSyncState(t, detail, warn) {
+    var el = $('#sync-state');
+    if (!t) { el.innerHTML = ''; el.title = ''; return; }
+    el.innerHTML = '<span class="ss-dot' + (warn ? ' warn' : '') + '"></span>' + esc(t);
+    el.title = detail || t; el.classList.toggle('warn', !!warn);
+  }
   function refreshOnline(manual) {
     var chars = ST.chars.filter(function (c) { return c.lodestone; });
     if (!chars.length) { if (manual) toast('Add a Lodestone number first'); return Promise.resolve(); }
@@ -853,7 +860,8 @@
       save(); render();
       // a character that could not be refreshed is named: the status never reads as a full refresh when one failed
       var when = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setSyncState(problems.length ? 'Online refresh ' + when + ' incomplete: ' + problems.join(' · ') : 'Online refresh ' + when + (applied ? ': ' + applied + ' new' : ''));
+      if (problems.length) setSyncState('Refreshed ' + when + ' · ' + problems.length + ' not refreshed', 'Not refreshed from FFXIV Collect:\n' + problems.join('\n') + '\n\nA character not found there needs a public FFXIV Collect profile with that Lodestone number.', true);
+      else setSyncState('Refreshed ' + when + (applied ? ' · ' + applied + ' new' : ''));
       if (problems.length && manual) toast('Not refreshed: ' + problems.join(' · '));
       if (asks.length) whenDialogFree(function () { askOnline(asks); });
       else if (manual && !problems.length) toast(applied ? applied + ' new entries ticked from FFXIV Collect' : 'Everything already matches FFXIV Collect');
