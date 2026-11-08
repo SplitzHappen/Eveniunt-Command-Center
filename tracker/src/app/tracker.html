@@ -17,6 +17,7 @@
   <span class="grow"></span>
   <div class="mast-tools">
     <label class="search"><span class="sr">Search everything</span><input id="q" type="search" placeholder="Search everything…" autocomplete="off" spellcheck="false"></label>
+    <button type="button" class="clock" id="clock" data-act="weather" title="Eorzea time and your local time. Click for the weather in every zone."></button>
     <span class="sync-state" id="sync-state" aria-live="polite"></span>
     <button class="btn sm ghost" data-act="settings" aria-label="Settings">Settings</button>
   </div>
@@ -32,6 +33,7 @@
 <script id="desktop-map" type="application/json">{{MAP}}</script>
 <script id="links-data" type="application/json">{{LINKS}}</script>
 <script id="info-data" type="text/plain">{{INFO}}</script>
+<script id="cond-data" type="application/json">{{COND}}</script>
 <div class="tip hidden" id="tip" role="tooltip"></div>
 <script id="core">{{CORE}}</script>
 <script id="app">{{APP}}</script>

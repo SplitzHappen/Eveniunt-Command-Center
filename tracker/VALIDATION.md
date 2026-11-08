@@ -194,3 +194,10 @@ Owner request: no "Other" or "Patch not recorded" groups; the Hildibrand quests 
 - **Hildibrand Adventures:** all 57 Hildibrand quests from every expansion are now one list, Sidequests → Hildibrand Adventures, with expansion headings.
 - **Saved ticks:** entries that left a list they were published in remember it (`pv`), and ticks saved under the old key move on load; `check-keys` passes.
 - Tests: core 50/50 (new checks: no vague groups, no list called Other, the Hildibrand list), browser 23/23.
+
+## Clock, weather and live windows (2026-11-08)
+
+- **Header clock:** Eorzea time and your local time, updated every second. Clicking it opens **Weather**.
+- **Weather page:** all 82 zones with weather, grouped by expansion and region, including Eureka (4), Bozja and Zadnor, the Occult Crescent, the Diadem, the Firmament, Island Sanctuary and Cosmic Exploration: the weather now and for the next three 8-hour Eorzea periods, with the local time each starts. Worked out in the page with the game's own weather formula and each zone's `WeatherRate` table (`data/conditions.json`); no connection needed.
+- **Live windows:** 834 entries carry their condition: 82 vistas (time and weather), 440 fish and 1 spearfishing fish with a time, weather or previous-weather condition (ff14-fish-tracker-app data), and 311 timed gathering items (spawn hours). In the lists, an entry that can be done right now turns the accent colour with a "now" tag (checked every 5 seconds); its window says "Available now for 23 min" or "Next window in 5 h 27 min (your time 04:43 AM)", with the condition and zone.
+- Tests: core 50/50, browser 24/24 (new: clock, weather for Eureka, Bozja, the Occult Crescent and overworld zones, live vistas).

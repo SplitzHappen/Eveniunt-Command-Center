@@ -1197,6 +1197,73 @@ for key, g, e in each("craft-"):  # crafted gear: dyeable and untradable stamps 
     it_ = i(RECIPE.get(e["i"], {}).get("ItemResult")); row_ = ITEMROW_ALL.get(it_, {})
     tg_ = (["untradable"] if row_.get("IsUntradable") == "True" else []) + (["dye" + str(i(row_.get("DyeCount")))] if i(row_.get("DyeCount")) else [])
     if tg_ and INFO.get(key): INFO[key] = ["§" + ",".join(tg_)] + INFO[key]
+# ---------------------------------------------------------------- live conditions: weather of every zone, and when entries can be done
+# data/conditions.json: weather tables (TerritoryType.WeatherRate -> WeatherRate), and per entry the zone, the Eorzea hours
+# and the weather (and previous weather) it needs; timed gathering nodes carry their spawn hours. The page works out
+# "now" and "next window" from these with the game's own weather formula.
+EXP_NAMES = data["meta"]["expansions"]
+WR = sheet("WeatherRate")
+WNAME = {k: clean(r.get("Name")) for k, r in sheet("Weather").items()}
+TTS = sheet("TerritoryType")
+USE_REGION = {41: "Eureka", 48: "Bozja", 61: "Occult Crescent", 60: "Cosmic Exploration", 49: "Island Sanctuary", 26: "The Diadem", 47: "The Diadem", 21: "Ishgard Restoration"}
+WEATHER, REGIONS, ZONE_EX, used_w = {}, collections.OrderedDict(), {}, set()
+for k, r in TTS.items():
+    use, wr = i(r.get("TerritoryIntendedUse")), i(r.get("WeatherRate"))
+    if use not in (0, 1) and use not in USE_REGION: continue
+    zone = PLACE.get(i(r.get("PlaceName")), "")
+    row = WR.get(wr)
+    if not zone or not row or zone in WEATHER: continue
+    tab, cum = [], 0
+    for n_ in range(8):
+        w_, rt = i(row.get(f"Weather[{n_}]")), i(row.get(f"Rate[{n_}]"))
+        if rt and WNAME.get(w_): cum += rt; tab.append([w_, cum]); used_w.add(w_)
+    if not tab: continue
+    WEATHER[zone] = tab
+    reg = USE_REGION.get(use) or PLACE.get(i(r.get("PlaceNameRegion")), "") or "Elsewhere"
+    if reg == "???": reg = "Elsewhere"
+    ZONE_EX[zone] = i(r.get("ExVersion"))
+    REGIONS.setdefault((ZONE_EX[zone], reg), []).append(zone)
+def zone_of_territory(t): return PLACE.get(i(TTS.get(i(t), {}).get("PlaceName")), "")
+FSPOT_SHEET = sheet("FishingSpot")
+COND, NODES = {}, {}
+for key, g, e in each("sightseeing"):
+    r = ADV.get(e["i"])
+    if not r: continue
+    lv = LEVEL.get(i(r.get("Level"))); m_ = MAP.get(i(lv.get("Map"))) if lv else None
+    zone = PLACE.get(i(m_.get("PlaceName")), "") if m_ else ""
+    t0, t1, w_ = i(r.get("MinTime")), i(r.get("MaxTime")), i(r.get("Weather"))
+    if not (t0 or t1 or w_): continue
+    COND[key] = [zone, (t0 // 100 + t0 % 100 / 60) if (t0 or t1) else 0, (t1 // 100 + (t1 % 100 + 1) / 60) if (t0 or t1) else 24, [w_] if w_ else [], []]
+def fish_cond(key, it, zone):
+    f_ = FT_FISH.get(str(it))
+    if not f_: return
+    a, b = f_.get("startHour", 0), f_.get("endHour", 24)
+    w_, pw = f_.get("weatherSet") or [], f_.get("previousWeatherSet") or []
+    if (a == 0 and b == 24) and not w_ and not pw: return
+    COND[key] = [zone, a, b, w_, pw]
+for key, g, e in each("fishing"):
+    if key.startswith("fishingspots:"): continue
+    f_ = FT_FISH.get(str(e.get("it"))) or {}
+    zone = zone_of_territory(FSPOT_SHEET.get(i(f_.get("location")), {}).get("TerritoryType")) if f_.get("location") else ""
+    if not zone:
+        src_ = (FSRC.get(str(e.get("it"))) or [{}])[0]
+        zone = PLACE.get(i(SPOTS.get(src_.get("spot"), {}).get("zoneId") or SPOTS.get(src_.get("spot"), {}).get("placeId")), "")
+    fish_cond(key, e.get("it"), zone)
+for key, g, e in each("spearfishing"):
+    nb = SPEAR_NODE.get(i(SPEAR_ITEM.get(e.get("it"), {}).get("SpearfishingNotebook")), {})
+    fish_cond(key, e.get("it"), zone_of_territory(nb.get("TerritoryType")) if nb else "")
+for key, g, e in each("gather-"):
+    it = e.get("it"); base = sublime_of.get(it)
+    ns = [n for n in (by_item.get(it, []) or by_item.get(base, [])) if n.get("spawns")]
+    if ns and not [n for n in (by_item.get(it, []) or by_item.get(base, [])) if not n.get("spawns")]:
+        NODES[key] = [sorted(set(h for n in ns for h in n["spawns"])), max(n.get("duration") or 120 for n in ns)]
+COND = {k: v for k, v in COND.items() if v[0] in WEATHER or not (v[3] or v[4])}
+json.dump({"weather": WEATHER, "names": {str(k): WNAME[k] for k in sorted(used_w | {w for v in COND.values() for w in v[3] + v[4]}) if WNAME.get(k)},
+           "regions": [[EXP_NAMES[x] if x < len(EXP_NAMES) else "", reg, zs] for (x, reg), zs in sorted(REGIONS.items(), key=lambda t: t[0][0])],
+           "cond": COND, "nodes": NODES}, open(os.path.join(T, "data", "conditions.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+stats["entries with a live window (time or weather)"] = len(COND) + len(NODES)
+stats["zones with a weather forecast"] = len(WEATHER)
+
 _desc = {s_["id"] + ":" + str(e_["i"]): str(e_.get("d") or "").strip() for s_ in data["sections"] for g_ in s_["g"] for e_ in g_["e"]}
 for k_ in list(INFO):
     seen_, keep_ = set(), []

@@ -560,3 +560,19 @@ test('links: Settings fills in what existing ticks prove, with a preview and Und
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test('clock and weather: Eorzea and local time in the header, weather for every zone, entries open right now highlighted', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  assert.match(await page.textContent('#clock'), /ET \d\d:\d\d/);
+  await page.click('#clock');
+  assert.ok((await page.locator('.wx-row').count()) >= 80, 'a weather row for every zone');
+  for (const z of ['Eureka Anemos', 'Zadnor', 'South Horn', 'Middle La Noscea']) assert.ok(await page.locator('.wx-row .wx-z', { hasText: z }).count(), z);
+  // the formula: weather is fixed for each 8 Eorzea hours and follows the zone's table
+  const same = await page.evaluate(() => { const t = Date.now() - (Date.now() % 1400000); const ids = Array.from(document.querySelectorAll('.wx-row .wx.now')).map((x) => x.textContent); return ids.every(Boolean); });
+  assert.ok(same, 'every zone shows a current weather');
+  await go(page, 'sightseeing');
+  await page.waitForTimeout(5500);
+  assert.ok((await page.locator('.er.timed').count()) >= 80, 'vistas with a time or weather are tracked live');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

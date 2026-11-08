@@ -267,10 +267,106 @@
     });
     return out ? '<span class="stamps">' + out + '</span>' : '';
   }
+  // ── Eorzea time, weather and live windows ──
+  // Eorzea time runs 3600/175 times faster than real time; weather changes every 8 Eorzea hours (1,400 real seconds)
+  // and is chosen by the game's formula from the time and each zone's weather table (data/conditions.json).
+  var COND = (function () { try { return JSON.parse(document.getElementById('cond-data').textContent); } catch (err) { return { weather: {}, names: {}, regions: [], cond: {}, nodes: {} }; } })();
+  var PERIOD = 1400000;
+  function etHours(ms) { return (ms * 3600 / 175 / 1000 / 3600) % 24; }
+  function etText(ms) { var h = etHours(ms), m = Math.floor((h % 1) * 60); return ('0' + Math.floor(h)).slice(-2) + ':' + ('0' + m).slice(-2); }
+  function wTarget(ms) {
+    var unix = Math.floor(ms / 1000), bell = Math.floor(unix / 175), inc = (bell + 8 - (bell % 8)) % 24, days = Math.floor(unix / 4200);
+    var base = (days * 100 + inc) >>> 0, s1 = ((base << 11) ^ base) >>> 0, s2 = ((s1 >>> 8) ^ s1) >>> 0;
+    return s2 % 100;
+  }
+  function weatherAt(zone, ms) { var t = COND.weather[zone]; if (!t) return 0; var v = wTarget(ms); for (var n = 0; n < t.length; n++) if (v < t[n][1]) return t[n][0]; return t[t.length - 1][0]; }
+  function wName(id) { return COND.names[id] || ''; }
+  function periodStart(ms) { return Math.floor(ms / PERIOD) * PERIOD; }
+  function inHours(h, a, b) { return a <= b ? h >= a && h < b : h >= a || h < b; }
+  function realFromEt(etH) { return etH * 175000; } // Eorzea hours -> real ms
+  // is the entry's window open now, and when does it next open (searching up to about 30 days ahead)?
+  function windowInfo(k, now) {
+    var c = COND.cond[k], nd = COND.nodes[k];
+    if (nd) {
+      var h = etHours(now), dur = nd[1] / 60, open = nd[0].some(function (s) { return inHours(h, s, (s + dur) % 24); });
+      var best = null; nd[0].forEach(function (s) { var d = (s - h + 24) % 24; if (d > 0 && (best === null || d < best)) best = d; });
+      return { open: open, next: open ? null : now + realFromEt(best), until: open ? now + realFromEt(Math.min.apply(null, nd[0].map(function (s) { var e = (s + dur) % 24; return (e - h + 24) % 24 || 24; }))) : null };
+    }
+    if (!c) return null;
+    var zone = c[0], a = c[1], b = c[2], ws = c[3], pws = c[4];
+    function okWeather(p) { return (!ws.length || ws.indexOf(weatherAt(zone, p)) >= 0) && (!pws.length || pws.indexOf(weatherAt(zone, p - PERIOD)) >= 0); }
+    var p0 = periodStart(now);
+    for (var n = 0; n < 2200; n++) {
+      var p = p0 + n * PERIOD;
+      if (!okWeather(p)) continue;
+      var pe = etHours(p), lo = Math.max(p, n === 0 ? now : p), hi = p + PERIOD;
+      // walk this 8-hour period in Eorzea quarter-hours to find where the hour window is open
+      for (var t = lo; t < hi; t += 43750) {
+        if (inHours(etHours(t), a, b)) {
+          var end = t; while (end < hi && inHours(etHours(end), a, b) && okWeather(periodStart(end))) end += 43750;
+          if (end >= hi) { var q = hi; while (q < hi + 3 * PERIOD && okWeather(periodStart(q)) && inHours(etHours(q), a, b)) q += 43750; end = q; }
+          return t <= now ? { open: true, until: end, zone: zone } : { open: false, next: t, until: end, zone: zone };
+        }
+      }
+    }
+    return { open: false, next: null, zone: zone };
+  }
+  function openNow(k, now) {
+    var c = COND.cond[k], nd = COND.nodes[k], h = etHours(now);
+    if (nd) return nd[0].some(function (st) { return inHours(h, st, (st + nd[1] / 60) % 24); });
+    if (!c || !inHours(h, c[1], c[2])) return false;
+    var p = periodStart(now);
+    return (!c[3].length || c[3].indexOf(weatherAt(c[0], p)) >= 0) && (!c[4].length || c[4].indexOf(weatherAt(c[0], p - PERIOD)) >= 0);
+  }
+  function dur(ms) { var m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min'; }
+  function lt(ms) { return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  function condText(k) {
+    var c = COND.cond[k], nd = COND.nodes[k], bits = [];
+    if (nd) return 'Up at ' + nd[0].map(function (s) { return ('0' + s).slice(-2) + ':00'; }).join(', ') + ' Eorzea time';
+    if (!c) return '';
+    if (!(c[1] === 0 && c[2] === 24)) bits.push(etText(realFromEt(c[1])) + '–' + etText(realFromEt(c[2] % 24)) + ' ET');
+    if (c[3].length) bits.push(c[3].map(wName).join(' or '));
+    if (c[4].length) bits.push('after ' + c[4].map(wName).join(' or '));
+    return bits.join(' · ') + (c[0] ? ' in ' + c[0] : '');
+  }
+  function liveLine(k) {
+    var w = windowInfo(k, Date.now()); if (!w) return '';
+    var head = w.open ? '<b class="live-now">Available now</b>' + (w.until ? ' for ' + dur(w.until - Date.now()) : '') : (w.next ? '<b>Next window</b> in ' + dur(w.next - Date.now()) + ' (your time ' + lt(w.next) + ')' : '<b>No window in the next month</b>');
+    return '<div class="live-line">' + head + '<br><span class="dim">' + esc(condText(k)) + '</span></div>';
+  }
+  function tickClock() {
+    var el = $('#clock'); if (!el) return;
+    var now = Date.now();
+    el.innerHTML = '<span class="ck-et">ET ' + etText(now) + '</span><span class="ck-lt">' + lt(now) + '</span>';
+  }
+  function refreshLive() {
+    var now = Date.now();
+    $$('.er[data-k]').forEach(function (row) {
+      var k = row.dataset.k; if (!COND.cond[k] && !COND.nodes[k]) return;
+      row.classList.toggle('live', openNow(k, now)); row.classList.add('timed');
+    });
+    if (UI.view === 'weather') renderWeather(true);
+  }
+  function renderWeather(soft) {
+    var now = Date.now(), p0 = periodStart(now);
+    var rows = COND.regions.map(function (r) {
+      return '<div class="wx-reg"><h3>' + esc(r[1]) + ' <span class="dim">' + esc(r[0]) + '</span></h3>' + r[2].map(function (z) {
+        var cells = [0, 1, 2, 3].map(function (n) { var p = p0 + n * PERIOD, w = weatherAt(z, p); return '<span class="wx' + (n === 0 ? ' now' : '') + '" title="' + (n === 0 ? 'Now, until ' : 'From ') + lt(n === 0 ? p + PERIOD : p) + ' your time (ET ' + etText(p) + ')">' + esc(wName(w)) + '</span>'; }).join('');
+        return '<div class="wx-row"><span class="wx-z">' + esc(z) + '</span>' + cells + '</div>';
+      }).join('') + '</div>';
+    }).join('');
+    var head = '<div class="p-head"><span class="ttl"><span class="kick">Eorzea time ' + etText(now) + ' · your time ' + lt(now) + '</span><h2>Weather</h2><p class="note">Every zone with weather, including Eureka, Bozja, the Occult Crescent, the Diadem, Island Sanctuary and Cosmic Exploration. Columns: now (changes in ' + dur(p0 + PERIOD - now) + '), then the next three 8-hour Eorzea periods. Hover a cell for its time. Entries in the lists that can be done right now (vistas, fish, timed nodes) are highlighted there.</p></span></div>';
+    var html = head + '<div class="wx-head"><span class="wx-z">Zone</span><span class="wx">Now</span><span class="wx">Next</span><span class="wx">Then</span><span class="wx">Later</span></div>' + rows;
+    if (soft && $('#page').dataset.wx === String(p0)) { var k = $('#page .kick'); if (k) k.textContent = 'Eorzea time ' + etText(now) + ' · your time ' + lt(now); return; }
+    $('#page').innerHTML = html; $('#page').dataset.wx = String(p0);
+  }
+  setInterval(tickClock, 1000); setInterval(refreshLive, 5000);
+  setTimeout(function () { tickClock(); refreshLive(); }, 0);
   function tipHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, bits = [];
     bits.push('<div class="tt-row"><span><b class="tt">' + esc(e.n) + '</b>' + (e.p ? ' <span class="p">' + esc(e.p) + '</span>' : '') + '</span>' + stampsHtml(k) + '</div>');
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
+    var lw = liveLine(k); if (lw) bits.push(lw);
     infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
     if (e.src && !infoLines(k).filter(function (l) { return l.charAt(0) !== '§'; }).length) bits.push('<div><b>How to obtain:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No how-to details for this one yet.</div>');
@@ -344,14 +440,15 @@
   function setView(view, sec, push) {
     UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear(); OPENG.clear(); XFOLD.clear(); UI.find = '';
     persist(); render();
-    var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : '#/';
+    var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : view === 'weather' ? '#/weather' : '#/';
     if (push !== false && location.hash !== h) history.pushState(null, '', h);
     $('#page').focus({ preventScroll: true }); window.scrollTo(0, 0);
   }
   function render() {
     TALLY.clear();
     renderSide();
-    if (UI.view === 'sec' && SEC.has(UI.sec)) renderSection(UI.sec);
+    if (UI.view === 'weather') renderWeather();
+    else if (UI.view === 'sec' && SEC.has(UI.sec)) renderSection(UI.sec);
     else if (UI.view === 'search' && UI.q) renderSearch();
     else renderHome();
     $('#page').style.setProperty('--n', ST.chars.length);
@@ -535,6 +632,7 @@
     if (a) {
       var act = a.dataset.act;
       if (act === 'home') { e.preventDefault(); setView('home'); return; }
+      if (act === 'weather') { e.preventDefault(); setView('weather'); return; }
       if (act === 'sec') { setView('sec', a.dataset.id); return; }
       if (act === 'settings') { openSettings(); return; }
       if (act === 'drawer') { document.body.classList.toggle('drawer'); return; }
@@ -611,6 +709,7 @@
   function route() {
     var m = location.hash.match(/^#\/s\/(.+)$/);
     if (m && SEC.has(m[1])) setView('sec', m[1], false);
+    else if (location.hash === '#/weather') setView('weather', null, false);
     else if (location.hash === '#/' || !location.hash) setView(UI.view === 'sec' && SEC.has(UI.sec) && !location.hash ? 'sec' : 'home', UI.sec, false);
   }
   function charName(id) { var c = ST.chars.find(function (x) { return x.id === id; }); return c ? c.name : id; }
