@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
-for (const f of ['model', 'codec', 'merge', 'ffxivcollect', 'gdrive']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+for (const f of ['model', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'links']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
 const ET = globalThis.ET;
 
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'tracker-data.json'), 'utf8'));
@@ -362,7 +362,7 @@ test('red team: a crafted backup cannot reach Object.prototype or smuggle markup
   assert.strictEqual(st.chars[0].lodestone, null);
   assert.deepStrictEqual(st.vals.c1, { 'levels:2': 90 });
   assert.deepStrictEqual(st.avail, { 'mounts:3': 'x' });
-  assert.deepStrictEqual(st.settings, { countLimited: false, countGone: false, countUnknown: false });
+  assert.deepStrictEqual(st.settings, { countLimited: false, countGone: false, countUnknown: false, links: true, gold: true });
 });
 
 test('red team: transfer codes that are damaged, huge or malformed are refused with a plain message', async () => {
@@ -479,4 +479,83 @@ test('cloud sync: the merged copy is validated (odd ids in a cloud file are igno
   assert.deepStrictEqual(st.chars.map((c) => c.id), ['c1']);
   assert.deepStrictEqual(Object.keys(st.ticks.c1), ['mounts:1']);
   assert.strictEqual(({})['mounts:1'], undefined);
+});
+
+// ---------------------------------------------------------------- links between entries
+const LINKS = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'links.json'), 'utf8'));
+const LX = ET.indexLinks(idx, LINKS);
+const edgesOf = (kind) => [...LX.imp].flatMap(([a, ts]) => ts.filter((t) => t[1] === kind).map((t) => [a, t[0]]));
+
+test('links: built for this data, and refused when built for other data', () => {
+  assert.ok(LX && LX.count > 10000);
+  assert.strictEqual(ET.indexLinks(idx, Object.assign({}, LINKS, { entries: LINKS.entries + 1 })), null);
+});
+
+test('links: a quest ticks the quests it needs, all the way back, and never another city\'s quests', () => {
+  const st = ET.newState(['A']);
+  // the last quest of the A Realm Reborn main story pulls in its whole chain
+  const twu = firstKey('quests-mainscenarioarealmreborn', (e) => e.n === 'The Ultimate Weapon');
+  ET.setTick(st, 'c1', twu, true);
+  const added = ET.applyLinks(LX, idx, st, 'c1', [twu], { gold: false });
+  const msq = added.filter((k) => k.startsWith('quests-mainscenarioarealmreborn:'));
+  assert.ok(msq.length > 100, 'the main story before it: ' + msq.length);
+  // a Gridania starter in the Twin Adder: the chain runs through that company's officer quest down to the Gridania
+  // opening quests, never Limsa's or Ul'dah's (the game's data only says "one of the three" at those steps)
+  const st2 = ET.newState(['B']);
+  ET.setStart(st2, 'c1', 'cnj', 2);
+  ET.setTick(st2, 'c1', twu, true);
+  const added2 = ET.applyLinks(LX, idx, st2, 'c1', [twu], { gold: false });
+  const cities = new Set(added2.map((k) => idx.byKey.get(k).e.city).filter(Boolean));
+  assert.deepStrictEqual([...cities], ['gri'], 'the Gridania opening quests, and only those');
+  const gcs = new Set(added2.map((k) => idx.byKey.get(k).e.gc).filter(Boolean));
+  assert.deepStrictEqual([...gcs], [2], 'only Twin Adder quests');
+  assert.ok(added2.length > added.length);
+  // with no starting class chosen, no city's opening quests are assumed
+  const cities1 = new Set(added.map((k) => idx.byKey.get(k).e.city).filter(Boolean));
+  assert.deepStrictEqual([...cities1], []);
+});
+
+test('links: achievement and its own title tick each other; a quest ticks its aether current and the reverse', () => {
+  const [ach, title] = edgesOf('t').find(([a, b]) => a.startsWith('ach-') && edgesOf('t').some(([x, y]) => x === b && y === a));
+  const st = ET.newState(['A']);
+  ET.setTick(st, 'c1', title, true);
+  assert.ok(ET.applyLinks(LX, idx, st, 'c1', [title]).includes(ach));
+  const [q, cur] = edgesOf('c').find(([a]) => a.startsWith('quests-'));
+  const st2 = ET.newState(['A']);
+  ET.setTick(st2, 'c1', cur, true);
+  assert.ok(ET.applyLinks(LX, idx, st2, 'c1', [cur]).includes(q));
+});
+
+test('links: all aether currents of a zone tick its Freebird achievement', () => {
+  const r = LX.rules.find((x) => x.type === 'all' && idx.byKey.get(x.target).e.n.startsWith('Freebird'));
+  const st = ET.newState(['A']);
+  r.members.slice(0, -1).forEach((m) => ET.setTick(st, 'c1', m, true));
+  assert.ok(!ET.applyLinks(LX, idx, st, 'c1', r.members.slice(0, -1)).includes(r.target), 'not before the last one');
+  ET.setTick(st, 'c1', r.members[r.members.length - 1], true);
+  assert.ok(ET.applyLinks(LX, idx, st, 'c1', [r.members[r.members.length - 1]]).includes(r.target));
+});
+
+test('links: a FATE ticks its achievement only when a gold rating is assumed; the achievement always ticks the FATE', () => {
+  const [fate, ach] = edgesOf('g')[0];
+  const off = ET.newState(['A']); ET.setTick(off, 'c1', fate, true);
+  assert.ok(!ET.applyLinks(LX, idx, off, 'c1', [fate], { gold: false }).includes(ach));
+  const on = ET.newState(['A']); ET.setTick(on, 'c1', fate, true);
+  assert.ok(ET.applyLinks(LX, idx, on, 'c1', [fate], { gold: true }).includes(ach));
+  const rev = ET.newState(['A']); ET.setTick(rev, 'c1', ach, true);
+  assert.ok(ET.applyLinks(LX, idx, rev, 'c1', [ach], { gold: false }).includes(fate));
+});
+
+test('links: a level reached ticks the level achievement; links only add and skip what does not apply', () => {
+  const pld = firstKey('levels', (e) => e.n.startsWith('Paladin'));
+  const ach = firstKey('ach-character', (e) => e.n === 'Stick Them with the Pointy End I');
+  const st = ET.newState(['A']);
+  ET.setValue(st, 'c1', pld, 10, idx.byKey.get(pld).e);
+  assert.ok(ET.applyLinks(LX, idx, st, 'c1', [], { levels: [pld] }).includes(ach));
+  // marked "does not apply": never ticked by a link
+  const [q, cur] = edgesOf('c').find(([a]) => a.startsWith('quests-'));
+  const st2 = ET.newState(['A']);
+  ET.setExcluded(st2, 'c1', cur, true);
+  ET.setTick(st2, 'c1', q, true);
+  assert.ok(!ET.applyLinks(LX, idx, st2, 'c1', [q]).includes(cur));
+  assert.ok(!st2.ticks.c1[cur]);
 });

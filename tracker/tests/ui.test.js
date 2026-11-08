@@ -185,7 +185,13 @@ test('desktop-app import: ticks, X marks and levels land in the chosen column; t
   assert.match(txt, /Squadron/);
   const st = await page.evaluate(() => { const s = window.__tracker.ST; return { name: s.chars[1].name, t: Object.keys(s.ticks.c2).sort(), e: Object.keys(s.excl.c2), v: s.vals.c2, c1: Object.keys(s.ticks.c1).length }; });
   assert.equal(st.name, 'Test Hero');
-  assert.deepEqual(st.t, ['levels:1', 'mounts:1', 'mounts:6', 'porters:1']);
+  // the imported ticks, plus what they prove (the level achievements of a level 100 paladin and level 90 warrior)
+  for (const k of ['levels:1', 'mounts:1', 'mounts:6', 'porters:1']) assert.ok(st.t.includes(k), k);
+  // mount 6 is the Magitek Armor, which only the quest "The Ultimate Weapon" gives: that quest (and the story before
+  // it) is proven too
+  const twu = await page.evaluate(() => [...window.__tracker.IDX.byKey].find(([k, h]) => h.e.n === 'The Ultimate Weapon' && k.startsWith('quests-main'))[0]);
+  assert.ok(st.t.includes(twu));
+  assert.match(txt, /more ticked by links/);
   assert.deepEqual(st.e, ['quests-mainscenarioarealmreborn:65621']);
   assert.deepEqual(st.v, { 'levels:1': 100, 'levels:2': 90 });
   assert.equal(st.c1, 0);
@@ -403,8 +409,10 @@ test('two windows of the tracker: a tick in one shows in the other, never overwr
   const key = await page.locator('.er:not(.x)').first().getAttribute('data-k');
   await box.click();
   await other.waitForFunction((k) => !!window.__tracker.ST.ticks.c1[k], key, { timeout: 5000 });
-  // the second window now ticks something else; the first window's tick survives in storage
+  // the second window now ticks something else; the first window's tick survives in storage (links off here, so
+  // the counts below are exactly the two ticks)
   await other.waitForSelector('.er');
+  await other.evaluate(() => { window.__tracker.ST.settings.links = false; });
   await other.locator('.er:not(.x)').nth(1).locator('.tk[data-c="c2"]').click();
   await page.waitForTimeout(900);
   await page.reload(); await page.waitForSelector('.page');
@@ -433,6 +441,53 @@ test('a list opens with every group closed; a group header opens it; Open all an
   // entering another list starts closed again
   await page.evaluate(() => window.__tracker.setView('sec', 'minions'));
   assert.equal(await page.locator('.er').count(), 0);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('links: ticking a quest ticks what it proves, says so with Undo, explains it in the details; the switch turns it off', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  // set character 1's starting class and Grand Company, so the main story reaches its own city's opening quests
+  await page.evaluate(() => { const t = window.__tracker; ET.setStart(t.ST, 'c1', 'cnj', 2); t.render(); });
+  await go(page, 'quests-mainscenarioarealmreborn');
+  const key = await page.evaluate(() => [...window.__tracker.IDX.byKey].find(([k, h]) => h.e.n === 'The Ultimate Weapon' && k.startsWith('quests-main'))[0]);
+  await page.locator(`.er[data-k="${key}"] .tk[data-c="c1"]`).click();
+  await page.waitForSelector('#toast .toast-btn');
+  assert.match(await page.textContent('#toast'), /Also ticked for Alba Eveniunt: .* and \d+ more/);
+  const n = await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c1).length);
+  assert.ok(n > 150, 'the whole main story before it: ' + n);
+  assert.equal(await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c2).length), 0, 'only that character');
+  // Undo removes what the links added, and keeps the tick itself
+  await page.click('#toast .toast-btn');
+  assert.deepEqual(await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c1)), [key]);
+  // the details explain the links
+  await page.locator(`.er[data-k="${key}"] .c0`).click();
+  assert.match(await page.textContent(`.det[data-det="${key}"]`), /Ticking it also ticks:/);
+  // switched off: a tick is just a tick
+  await page.evaluate(() => { window.__tracker.ST.settings.links = false; });
+  const prev = await page.evaluate((k) => { const t = window.__tracker; const h = [...t.IDX.byKey].find(([x, v]) => v.e.n === 'Operation Archon' && x.startsWith('quests-main')); return h[0]; }, key);
+  await page.locator(`.er[data-k="${prev}"] .tk[data-c="c2"]`).click();
+  assert.deepEqual(await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c2)), [prev]);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('links: Settings fills in what existing ticks prove, with a preview and Undo', async () => {
+  const { ctx, page, errors } = await open({ n: 1 });
+  const ach = await page.evaluate(() => {
+    const t = window.__tracker;
+    const k = [...t.IDX.byKey].find(([x, h]) => h.e.n === 'The Ultimate Weapon' && x.startsWith('quests-main'))[0];
+    t.ST.ticks.c1[k] = 1; t.render(); return k;
+  });
+  await page.click('text=Settings'); await page.click('[data-tab="count"]');
+  await page.click('#fill-links');
+  await page.waitForSelector('#do-fill');
+  assert.match(await page.textContent('#dlg'), /entries would be ticked/);
+  await page.click('#do-fill');
+  await page.waitForSelector('#toast .toast-btn');
+  assert.ok(await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c1).length) > 100);
+  await page.click('#toast .toast-btn');
+  assert.deepEqual(await page.evaluate(() => Object.keys(window.__tracker.ST.ticks.c1)), [ach]);
   assert.deepEqual(errors, []);
   await ctx.close();
 });

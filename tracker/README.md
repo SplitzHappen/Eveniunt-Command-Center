@@ -13,6 +13,7 @@ A completion tracker for Final Fantasy XIV, part of the Eveniunt Network Command
    - **Click** a box to mark it done for that character. **Right-click** it (on a phone or tablet, **press and hold**) to mark that the entry does not apply to that character, which leaves it out of that character's total. **Click a marked box again** (either button) to clear it: it is back to unmarked and counted. A dash means the entry does not apply (another starting city or Grand Company, or marked by you).
    - **Group header:** the count under each character ticks or clears the whole group for that character.
    - **Click an entry's name** to see how to get it and its details, and to switch whether it counts: entries that are time-limited only, no longer obtainable or of unknown availability are not counted and carry a small label; **Count it anyway** or **Mark unobtainable** overrides the default either way. Settings → Counting turns whole kinds on or off. **Show not counted** hides or shows them.
+   - **Links:** ticking an entry also ticks what it proves, from the game's own data: the earlier quests it needs (through your own starting city and Grand Company), the aether current or reward a quest gives, the achievement and title it earns, Freebird when every current of a zone is ticked, level achievements from job levels, earlier ranks and relic stages, master recipe books from master recipes, and more (about 15,000 links). A message lists what was added, with **Undo**. Links only add: unticking never unticks anything else, and nothing that does not apply to a character is ticked. The entry's details say what it ticks and what ticks it. Settings → Counting turns links off, sets whether a FATE with its own achievement assumes a gold rating, and **fills in what your existing ticks prove** (with a preview and Undo).
    - **Mark “does not apply”** (toolbar): the same as right-clicking, for a plain click; handy for marking many boxes in a row.
    - **Classes and Jobs:** type each character's level; a job counts as complete at its level cap.
    - **Find, All / Missing / Done:** filter the list. The search box in the header searches every list.
@@ -34,6 +35,7 @@ Built from pinned sources and regenerated, never typed by hand: see `data/SOURCE
 ```
 python3 -I tools/extract.py <ffxiv-datamining checkout> <teamcraft json dir>     # data/tracker-data.json
 python3 -I tools/add-checklist.py <FFXIV Checklist workbook.xlsx> --dm <ffxiv-datamining checkout>   # adds the checklist lists (plus what came after 7.45), data/desktop-map.json
+python3 -I tools/links.py <ffxiv-datamining checkout>                                # data/links.json (links between entries)
 python3 -I tools/fetch-ffxivcollect.py                                            # optional: refresh the FFXIV Collect snapshot
 FONT_DIR=<node_modules/@fontsource> node tools/build.js                           # dist/eveniunt-tracker.html
 FONT_DIR=<node_modules/@fontsource> node tools/make-icons.js                      # icons only

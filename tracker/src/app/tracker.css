@@ -193,3 +193,8 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 
 /* press and hold on a box means "does not apply": no text-selection callout on touch screens */
 .tk { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+
+/* links: the Undo button in messages and the links block in an entry's details */
+.toast { display: flex; align-items: center; gap: 12px; max-width: min(92vw, 640px); }
+.toast-btn { flex: none; background: transparent; color: inherit; border: 1px solid currentColor; border-radius: 6px; padding: 3px 10px; font: 700 13px var(--f-body); cursor: pointer; }
+.det .links { display: grid; gap: 3px; }

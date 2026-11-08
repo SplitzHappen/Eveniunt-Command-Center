@@ -15,6 +15,24 @@ Built by `tools/extract.py` from the pinned game sheets; neither the workbook no
 - **Cosmic Exploration: Records** (244): `WKSAchievement` (the Cosmic Exploration record list), grouped by planet from its wording ("on the moon" is Sinus Ardorum); six general records.
 - Not included: development grades and the Pioneering Trail, which belong to the whole world (server) rather than to a character; cosmic tools are already in Relic Tools.
 
+## Links between entries (data/links.json)
+
+`tools/links.py <datamining checkout>` (after the two data steps) builds about 15,000 links from the pinned game sheets. They only ever add ticks, never to an entry that does not apply to the character.
+
+| Link | From the game data | Direction |
+| --- | --- | --- |
+| Earlier quests | `Quest.PreviousQuest` (all required); untracked quests in between are walked through. "One of" steps between the starting cities' or Grand Companies' versions follow the character's own city (worked out from which cities can reach each quest) or company | quest → earlier quests |
+| Aether currents | `AetherCurrent.Quest` | both ways |
+| Quest rewards | `Quest.Reward` (items everyone receives), `Quest.EmoteReward`; back to the quest only when FFXIV Collect lists that quest as the item's single source | quest → reward; item → quest |
+| Duties | `Quest.InstanceContent` (duties a quest requires), `Quest.InstanceContentUnlock` (the quest a duty needs) | quest → duty; duty → quest |
+| Achievements | `Achievement.Type`/`Key`/`Data`: one quest (both ways), any of several quests, other achievements (both ways), job levels and mastery levels, duty clears (both ways), the whole hunting log of a class (both ways), allied society ranks (both ways), Freebird (all currents of a zone, both ways), minion count, Triple Triad cards 1 to N (both ways), relic weapon and tool stages (both ways; matched by name or by the stage the achievement's quest names), sightseeing entry ranges (both ways), shared FATE rank 3, Yo-kai minions, FATE count, orchestrion count, card count, and FATEs completed with the highest rating (the achievement proves the FATE; the FATE gives the achievement only when "assume a gold rating" is on) | as noted |
+| Titles and reward items | `Achievement.Title` (both ways when only one achievement gives the title), `Achievement.Item` (back to the achievement only when it is the item's single source) | as noted |
+| Ladders | grand company ranks, allied society ranks (by the game's rank number; names that share a rank are not linked to each other), companion ranks and skills, elemental, resistance, knowledge and sanctuary ranks, shared FATE ranks, mount speed increases, hunting log ranks, relic weapon and tool stages (A Realm Reborn to Endwalker, where the workbook order also rises in item level) | higher → lower |
+| Shared FATE ranks | "Complete N FATEs in a zone" once N different FATEs of that zone are ticked | FATEs → rank |
+| Master recipe books | `Recipe.SecretRecipeBook` | master recipe → book |
+
+Not linked (no reliable link in the data): the six "Big Game Hunter" notorious-monster achievements (their monsters are not tied to FATEs in the sheets), Dawntrail relic stages (skip rules for North Horn upgrades are not settled in reachable sources), skyward and cosmic score achievements, and achievements counted from things the tracker does not record (enemies defeated, levequest counts, and so on).
+
 ## Content added after the workbook's 7.45 edition
 
 The workbook stops at 7.45; the game sheets are pinned at 7.57h1. `tools/add-checklist.py <workbook.xlsx> --dm <datamining checkout>` compares each relevant game sheet at the 7.45h2 commit (`d67201a2a27933a444bf249d900f7afd2840f6ff`) with the pinned commit and appends the new rows to the matching workbook list, each with the note "Added after the checklist's 7.45 edition (from the game data, 7.57)". Existing rows keep their ids, so the desktop-app import map is unchanged; new rows use ids above 100000.

@@ -7,7 +7,7 @@
 
   // Only well-formed parts of a copy take part (the cloud copy is outside data: a damaged or foreign file must not
   // inject odd character ids or keys); the merged state is validated again at the end of applyMerge.
-  const SETTINGS = ['countLimited', 'countGone', 'countUnknown'];
+  const SETTINGS = ['countLimited', 'countGone', 'countUnknown', 'links', 'gold'];
   function flat(p) {
     const m = new Map();
     if (!p || typeof p !== 'object') return m;

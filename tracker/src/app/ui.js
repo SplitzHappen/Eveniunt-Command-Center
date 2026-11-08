@@ -9,6 +9,7 @@
   var DATA = JSON.parse($('#tracker-data').textContent);
   var MAP = JSON.parse($('#desktop-map').textContent);
   var IDX = ET.indexData(DATA);
+  var LX = ET.indexLinks(IDX, JSON.parse($('#links-data').textContent)); // links between entries (null if they do not fit this data)
   var RAW = new Map(DATA.sections.map(function (s) { return [s.id, s]; }));
   var SEC = new Map(IDX.sections.map(function (s) { return [s.id, s]; }));
   var HOSTED = /^https?:/.test(location.protocol);
@@ -26,6 +27,13 @@
   }
   var toastTimer = null;
   function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 2600); }
+  function toastAction(msg, label, fn) {
+    var t = $('#toast');
+    t.innerHTML = '<span>' + esc(msg) + '</span><button type="button" class="toast-btn">' + esc(label) + '</button>';
+    t.classList.remove('hidden'); clearTimeout(toastTimer);
+    t.querySelector('button').onclick = function () { t.classList.add('hidden'); fn(); };
+    toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 8000);
+  }
   function clampInt(v, lo, hi, d) { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); }
   function copyText(text, msg) {
     var done = function () { toast(msg || 'Copied'); };
@@ -162,6 +170,25 @@
     if (e.city) facts.push('Only for characters who started in ' + ET.CITIES[e.city]);
     if (e.gc) facts.push('Only for the ' + ET.GCS[e.gc]);
     if (facts.length) bits.push('<div>' + facts.join(' · ') + '</div>');
+    if (LX) {
+      var lk = ET.linksOf(LX, k), gold = ST.settings.gold !== false;
+      var imp = lk.implies.filter(function (x) { return x[1] !== 'g' || gold; }).map(function (x) { return x[0]; });
+      var by = lk.by.filter(function (x) { return x[1] !== 'g' || gold; }).map(function (x) { return x[0]; });
+      var whenRules = lk.rules.filter(function (r) { return r.target === k && (r.kind !== 'g' || gold); }).map(function (r) {
+        if (r.type === 'all') return 'all ' + r.members.length + ' of: ' + nameList(r.members, 3, hit.s.id);
+        if (r.type === 'any') return 'any one of: ' + nameList(r.members, 3, hit.s.id);
+        if (r.type === 'cnt') return r.n.toLocaleString() + ' or more of ' + (IDX.byKey.get(r.members[0]) ? IDX.byKey.get(r.members[0]).s.t : 'a list');
+        if (r.type === 'lvl') return r.levels.map(function (l) { return IDX.byKey.get(l[0]).e.n + ' level ' + l[1]; }).join(r.need < r.levels.length ? ' / ' : ' and ') + (r.need < r.levels.length ? ' (' + r.need + ' of them)' : '');
+        return '';
+      }).filter(Boolean);
+      var part = lk.rules.filter(function (r) { return r.target && r.target !== k && (r.type === 'all' || r.type === 'cnt') && (r.kind !== 'g' || gold); }).map(function (r) { return r.target; });
+      var lines = [];
+      if (imp.length) lines.push('<b>Ticking it also ticks:</b> ' + esc(nameList(imp, 4, hit.s.id)));
+      if (by.length) lines.push('<b>Ticked automatically by:</b> ' + esc(nameList(by, 4, hit.s.id)));
+      whenRules.forEach(function (w) { lines.push('<b>Ticked automatically with:</b> ' + esc(w)); });
+      if (part.length) lines.push('<b>Counts toward:</b> ' + esc(nameList(part, 3, hit.s.id)));
+      if (lines.length) bits.push('<div class="links">' + lines.map(function (l) { return '<div>' + l + '</div>'; }).join('') + '</div>');
+    }
     var na = ST.chars.map(function (c) { var w = ET.notApplicable(ST, c, k, e); return w ? esc(c.name) + ' (' + WHY[w] + ')' : null; }).filter(Boolean);
     if (na.length) bits.push('<div><b>Does not apply to:</b> ' + na.join(', ') + '</div>');
     if (!av.info) {
@@ -337,6 +364,24 @@
 
   // ── a character's box: left click marks it done, right click (or a long press on a touch screen) marks it as not
   // applying to that character; any click on a box that is already marked returns it to unmarked (and counted) ──
+  // ── links: ticking an entry also ticks what it proves (only adds; Undo in the message) ──
+  function linksOn() { return !!LX && ST.settings.links !== false; }
+  function followLinks(charId, keys, extra) {
+    if (!linksOn()) return [];
+    return ET.applyLinks(LX, IDX, ST, charId, keys, Object.assign({ gold: ST.settings.gold !== false }, extra || {}));
+  }
+  // names, with the list in brackets for entries from another list than `home` (e.g. "Magitek Armor (Mounts)")
+  function nameList(keys, max, home) {
+    var names = keys.slice(0, max).map(function (k) { var h = IDX.byKey.get(k); return !h ? k : h.e.n + (home && h.s.id !== home ? ' (' + h.s.t + ')' : ''); });
+    return names.join(', ') + (keys.length > max ? ' and ' + (keys.length - max).toLocaleString() + ' more' : '');
+  }
+  function announceLinks(charId, added) {
+    if (!added.length) return;
+    toastAction('Also ticked for ' + charName(charId) + ': ' + nameList(added, 3, UI.view === 'sec' ? UI.sec : null), 'Undo', function () {
+      added.forEach(function (k) { ET.setTick(ST, charId, k, false); });
+      refreshAfter(added); toast('Undone');
+    });
+  }
   var longPressAt = 0;
   function boxAction(tk, button) {
     var k = tk.dataset.k, c = tk.dataset.c, ent = IDX.byKey.get(k).e, ch0 = ST.chars.find(function (x) { return x.id === c; });
@@ -347,7 +392,11 @@
       if (done) ET.setTick(ST, c, k, false);
       if (na) ET.setExcluded(ST, c, k, false);
     } else if (button === 'right' || UI.mode === 'na') ET.setExcluded(ST, c, k, true);
-    else ET.setTick(ST, c, k, true);
+    else {
+      ET.setTick(ST, c, k, true);
+      var added = followLinks(c, [k]);
+      refreshAfter([k].concat(added)); announceLinks(c, added); return;
+    }
     refreshAfter([k]);
   }
   document.addEventListener('contextmenu', function (e) {
@@ -402,6 +451,7 @@
         if (!live.length) { toast('Nothing in this group applies to ' + chObj.name); return; }
         if (!allOn && live.length > 25 && !confirm('Tick all ' + live.length + ' entries in this group for ' + chObj.name + '?')) return;
         ET.setMany(ST, [ch], live, !allOn);
+        if (!allOn) { var gAdded = followLinks(ch, live); refreshAfter(keys.concat(gAdded)); announceLinks(ch, gAdded); return; }
       }
       refreshAfter(keys); return;
     }
@@ -423,7 +473,12 @@
     if (e.target.id === 'q') { clearTimeout(findTimer); findTimer = setTimeout(function () { UI.q = e.target.value.trim(); if (UI.q.length >= 2) setView('search', null, false); else if (UI.view === 'search') setView('home', null, false); }, 220); }
   });
   document.addEventListener('change', function (e) {
-    if (e.target.classList.contains('lvl')) { var lk = e.target.dataset.k; ET.setValue(ST, e.target.dataset.c, lk, e.target.value, IDX.byKey.get(lk).e); refreshAfter([lk]); return; }
+    if (e.target.classList.contains('lvl')) {
+      var lk = e.target.dataset.k, lc = e.target.dataset.c;
+      ET.setValue(ST, lc, lk, e.target.value, IDX.byKey.get(lk).e);
+      var lAdded = followLinks(lc, ST.ticks[lc][lk] ? [lk] : [], { levels: [lk] });
+      refreshAfter([lk].concat(lAdded)); announceLinks(lc, lAdded); return;
+    }
     if (e.target.id === 'filter') { UI.filter = e.target.value; persist(); renderLedger(); }
     if (e.target.id === 'jump' && e.target.value !== '') { var g = $('.lgroup[data-g="' + UI.sec + '#' + e.target.value + '"]'); if (g) g.scrollIntoView({ block: 'start' }); else toast('That group is hidden by the current filter'); e.target.value = ''; }
   });
@@ -537,10 +592,39 @@
       sw('countLimited', 'Count time-limited entries', 'Only obtainable from events, seasonal content or ended campaigns (they may return)') +
       sw('countGone', 'Count entries that are no longer obtainable', 'Legacy achievements, retired items and rows the checklist excludes') +
       sw('countUnknown', 'Count entries of unknown availability', 'Mostly FATEs not placed in any zone') + '</div>' +
-      '<div class="row" style="margin-top:12px"><span class="help">' + manual + ' entr' + (manual === 1 ? 'y has' : 'ies have') + ' your own ✕ choice.</span>' + (manual ? '<button type="button" class="btn sm ghost" id="clear-avail">Clear my ✕ choices</button>' : '') + '</div>';
+      '<div class="row" style="margin-top:12px"><span class="help">' + manual + ' entr' + (manual === 1 ? 'y has' : 'ies have') + ' your own ✕ choice.</span>' + (manual ? '<button type="button" class="btn sm ghost" id="clear-avail">Clear my ✕ choices</button>' : '') + '</div>' +
+      '<h4>Links between entries</h4><p class="help">Built from the game’s own data (' + (LX ? LX.count.toLocaleString() : 0) + ' links). They only ever add ticks: unticking something never unticks anything else, and nothing that does not apply to a character is ticked.</p><div class="look-card">' +
+      sw('links', 'Tick what an entry proves', 'When you tick something, also tick what it proves: the earlier quests it needs, the achievement and title it earns, the aether current or reward a quest gives, earlier ranks and relic stages, master recipe books, and more') +
+      sw('gold', 'Assume a gold rating for FATE achievements', 'Ticking a FATE that has its own achievement also ticks that achievement (the game awards it for the highest rating)') + '</div>' +
+      '<div class="row" style="margin-top:12px"><button type="button" class="btn sm" id="fill-links"' + (LX ? '' : ' disabled') + '>Fill in what your current ticks prove</button></div>';
+  }
+  function fillLinksDialog() {
+    var copy = JSON.parse(JSON.stringify(ST)), per = [];
+    copy.chars.forEach(function (c) {
+      var added = ET.fillLinks(LX, IDX, copy, c.id, { gold: ST.settings.gold !== false });
+      var bySec = {};
+      added.forEach(function (k) { var t = IDX.byKey.get(k).s.t; bySec[t] = (bySec[t] || 0) + 1; });
+      per.push({ c: c, added: added, top: Object.keys(bySec).map(function (t) { return [t, bySec[t]]; }).sort(function (a, b) { return b[1] - a[1]; }) });
+    });
+    var total = per.reduce(function (a, p) { return a + p.added.length; }, 0);
+    openDialog('<h3>Fill in what your ticks prove</h3><p class="help">' + (total ? total.toLocaleString() + ' entries would be ticked. You can undo this right after.' : 'Nothing to add: your ticks already include everything they prove.') + '</p><div class="report">' +
+      per.filter(function (p) { return p.added.length; }).map(function (p) { return '<p class="help"><b>' + esc(p.c.name) + ': ' + p.added.length.toLocaleString() + '</b><br><small class="dim">' + p.top.slice(0, 6).map(function (x) { return esc(x[0]) + ' ' + x[1]; }).join(' · ') + '</small></p>'; }).join('') + '</div>' +
+      '<div class="row" style="margin-top:14px">' + (total ? '<button type="button" class="btn" id="do-fill">Tick them</button>' : '') + '<button type="button" class="btn ghost" data-close>' + (total ? 'Cancel' : 'Close') + '</button></div>', function (d) {
+      var b = $('#do-fill', d); if (!b) return;
+      b.onclick = function () {
+        var done = per.map(function (p) { return { c: p.c.id, added: ET.fillLinks(LX, IDX, ST, p.c.id, { gold: ST.settings.gold !== false }) }; });
+        var all = []; done.forEach(function (x) { all = all.concat(x.added); });
+        closeDialog(); save(); render();
+        toastAction(all.length.toLocaleString() + ' entries ticked from links', 'Undo', function () {
+          done.forEach(function (x) { x.added.forEach(function (k) { ET.setTick(ST, x.c, k, false); }); });
+          save(); render(); toast('Undone');
+        });
+      };
+    });
   }
   function bindCount(d) {
     $$('[data-count]', d).forEach(function (inp) { inp.onchange = function () { ST.settings[inp.dataset.count] = inp.checked; ST.updated = Date.now(); save(); render(); }; });
+    var fl = $('#fill-links', d); if (fl) fl.onclick = fillLinksDialog;
     var cl = $('#clear-avail', d); if (cl) cl.onclick = function () { if (!confirm('Return every entry to its built-in mark?')) return; ST.avail = {}; ST.updated = Date.now(); save(); render(); openSettings('count'); };
   }
   function dataTab() {
@@ -608,6 +692,7 @@
           if (!sel.value) return;
           var f = files[+sel.dataset.file], r = ET.importDesktopSave(IDX, f.doc, MAP);
           ET.applyImport(ST, sel.value, r, mode);
+          r.linked = linksOn() ? ET.fillLinks(LX, IDX, ST, sel.value, { gold: ST.settings.gold !== false }).length : 0;
           if ($('#rename', d).checked && ET.nameFromDesktopFile(f.name)) ET.renameCharacter(ST, sel.value, ET.nameFromDesktopFile(f.name));
           results.push({ who: charName(sel.value), r: r });
         });
@@ -620,7 +705,7 @@
     results.forEach(function (x) { x.r.missed.forEach(function (m) { rows.push([x.who, m.kind === 'level' ? 'Level ' + m.value : m.kind === 'exclusion' ? '“X” mark' : 'Tick', m.area, m.path + ' #' + m.id]); }); });
     var csv = 'Character,Type,Area,Where in the desktop app\n' + rows.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
     openDialog('<h3>Import finished</h3>' + results.map(function (x) {
-      return '<p class="help"><b>' + esc(x.who) + ':</b> ' + x.r.placed.toLocaleString() + ' of ' + x.r.done.toLocaleString() + ' ticks imported (' + pctTxt(x.r.placed, x.r.done) + '), ' + Object.keys(x.r.excl).length + ' “does not apply” marks; ' + x.r.missed.filter(function (m) { return m.kind !== 'level'; }).length + ' to do by hand, ' + x.r.missed.filter(function (m) { return m.kind === 'level'; }).length + ' level values not imported.</p>';
+      return '<p class="help"><b>' + esc(x.who) + ':</b> ' + x.r.placed.toLocaleString() + ' of ' + x.r.done.toLocaleString() + ' ticks imported (' + pctTxt(x.r.placed, x.r.done) + '), ' + Object.keys(x.r.excl).length + ' “does not apply” marks' + (x.r.linked ? ', ' + x.r.linked.toLocaleString() + ' more ticked by links (what those ticks prove)' : '') + '; ' + x.r.missed.filter(function (m) { return m.kind !== 'level'; }).length + ' to do by hand, ' + x.r.missed.filter(function (m) { return m.kind === 'level'; }).length + ' level values not imported.</p>';
     }).join('') + (rows.length ? '<div class="report"><table>' + rows.slice(0, 300).map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div><div class="row"><button type="button" class="btn sm" id="dl-report">Download the full list</button></div>' : '') +
       '<div class="row" style="margin-top:14px"><button type="button" class="btn" data-close>Done</button></div>', function (d) {
       var b = $('#dl-report', d); if (b) b.onclick = function () { download('tracker-import-not-merged.csv', csv, 'text/csv'); };
@@ -653,6 +738,7 @@
           var rec = ET.reconcileOwned(IDX, ST, c.id, owned);
           applied += rec.auto.length;
           if (rec.ask.length) asks.push({ c: c, owned: owned, rec: rec }); else ET.acceptRefresh(ST, c.id, owned, rec, {});
+          applied += followLinks(c.id, rec.auto.map(function (a) { return a.key; })).length;
         });
       });
     }, Promise.resolve()).then(function () {
@@ -671,6 +757,7 @@
         var ch = {};
         a.rec.ask.forEach(function (q) { ch[q.key] = choices[a.c.id + '|' + q.key] === 'remote' ? 'online' : 'local'; });
         ET.acceptRefresh(ST, a.c.id, a.owned, a.rec, ch);
+        followLinks(a.c.id, a.rec.auto.map(function (x) { return x.key; }).concat(a.rec.ask.filter(function (q) { return ch[q.key] === 'online' && q.online; }).map(function (q) { return q.key; })));
       });
       save(); render(); toast('Saved');
     });

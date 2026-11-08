@@ -351,6 +351,7 @@ if DM:
     cand = [(k, v) for k, v in cand if stage_n[v["Name"].split()[-1]] >= 10]
     shields = {v["Name"].split()[-1]: v["Name"].strip() for k, v in cand if v["Name"].split()[1] == "Shield"}
     cjc = gsheet("ClassJobCategory")
+    CJN = {v["Abbreviation"]: clean(v["Name"]).title() for v in gsheet("ClassJob").values() if v.get("Abbreviation")}  # same "Job · item level" wording as the workbook rows
     rows_ = []
     for k, v in cand:
         nm, stage = v["Name"].strip(), v["Name"].split()[-1]
@@ -359,7 +360,7 @@ if DM:
         job = (clean(cjc.get(int(v.get("ClassJobCategory") or 0), {}).get("Name")).split() or [""])[-1]
         if job == "PLD" and stage in shields:
             nm += " & " + shields[stage]
-        rows_.append((k, nm, job + " · item level " + v.get("LevelItem", "")))
+        rows_.append((k, nm, CJN.get(job, job) + " · " + v.get("LevelItem", "")))
     append("relicweapons", dt["t"], rows_, 100000)
     # relic tools: new Dawntrail (cosmic) tool stages are crafter or gatherer main-hand items above the highest item
     # level the workbook lists for them; replicas are left out

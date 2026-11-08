@@ -49,7 +49,7 @@
       vals, // per character: level values for entries with e.val (e.g. job levels)
       excl, // per character: entries that do not apply to that character (e.g. another city's starting quests)
       avail: {}, // key -> 'x' (user says unobtainable) | 'ok' (user says obtainable)
-      settings: { countLimited: false, countGone: false, countUnknown: false },
+      settings: { countLimited: false, countGone: false, countUnknown: false, links: true, gold: true },
       sync: { fc: {}, drive: null, backupAt: null },
       updated: Date.now(),
     };
@@ -98,7 +98,7 @@
     if (plain(st.avail)) for (const [k, v] of Object.entries(st.avail)) if (ENTRY_KEY.test(k) && (v === 'x' || v === 'ok')) avail[k] = v;
     st.avail = avail;
     const s = plain(st.settings) ? st.settings : {};
-    st.settings = { countLimited: s.countLimited === true, countGone: s.countGone === true, countUnknown: s.countUnknown === true };
+    st.settings = { countLimited: s.countLimited === true, countGone: s.countGone === true, countUnknown: s.countUnknown === true, links: s.links !== false, gold: s.gold !== false };
     const sync = plain(st.sync) ? st.sync : {};
     const fc = {};
     if (plain(sync.fc)) for (const id of ids) if (plain(sync.fc[id])) fc[id] = sync.fc[id];
