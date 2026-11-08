@@ -2,7 +2,8 @@
 'use strict';
 // Bundle dist/eveniunt-tracker.html: one self-contained offline file.
 // Inputs: src/app/*, src/core/*.js, data/tracker-data.json, data/desktop-map.json, fonts from @fontsource (FONT_DIR),
-// and the Appearance module (20 FFXIV themes and settings) taken verbatim from the Eveniunt Atelier source.
+// and the Appearance module (the 20 FFXIV themes and settings, taken from the Eveniunt Atelier source, plus the tracker's
+// own Solution Nine theme).
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const T = path.join(__dirname, '..');
 const ATELIER = path.join(T, '..', 'ffxiv-cosmic-crafting-solver', 'atelier', 'src');
@@ -33,9 +34,14 @@ const a1 = atelier.indexOf('  function renderHeader()');
 if (a0 < 0 || a1 < a0) throw new Error('Atelier appearance module not found');
 const look = atelier.slice(a0, a1);
 if ((look.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 20) throw new Error('expected 20 themes in the Atelier appearance module');
+// The tracker's own extra theme (owner request, 2026-11-08): Solution Nine, Dawntrail's neon city. Light and dark,
+// each [background, foreground, accent, progress]; contrast against the background: text 15.4 / 16.3, accent 5.1 / 6.4.
+const SOLUTION_NINE = "    ['solution-nine', \"Solution Nine\", ['#e6e8f8', '#0c0f2e', '#b8166f', '#08708f'], ['#0a0d24', '#e9ecff', '#ff4fb8', '#36e0ff']]";
+const lookPlus = look.replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION_NINE + '\n  ];\n  var ACCENTS');
+if (lookPlus === look || (lookPlus.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('could not add the Solution Nine theme');
 
 const core = ['model', 'storage', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'importer', 'links'].map((f) => read(path.join(T, 'src', 'core', f + '.js'))).join('\n');
-const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => look);
+const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => lookPlus);
 const css = read(path.join(T, 'src', 'app', 'shared.css')) + '\n' + read(path.join(T, 'src', 'app', 'tracker.css'));
 const data = read(path.join(T, 'data', 'tracker-data.json')).replace(/</g, '\\u003c');
 const map = read(path.join(T, 'data', 'desktop-map.json')).replace(/</g, '\\u003c');

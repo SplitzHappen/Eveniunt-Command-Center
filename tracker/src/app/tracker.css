@@ -209,9 +209,12 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 .gx .c.full { color: var(--seal); }
 
 /* the information window shown when the pointer rests on an entry's name */
-.tip { position: fixed; z-index: 60; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.18)); padding: 10px 12px; font: 400 13px/1.45 var(--f-body); display: grid; gap: 4px; }
+.tip { max-height: min(70vh, 560px); overflow-y: auto; overscroll-behavior: contain; position: fixed; z-index: 60; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.18)); padding: 10px 12px; font: 400 13px/1.45 var(--f-body); display: grid; gap: 4px; }
 .tip.hidden { display: none; }
 .tip .tt { font-weight: 700; font-size: 14px; }
 .tip .p { color: var(--ink-3); font-size: 12px; }
 .tip .dim { color: var(--ink-3); }
 .tip a { color: var(--seal); font-weight: 600; }
+.tip .step { padding-left: 1.4em; text-indent: -1.4em; }
+.tip .step b { color: var(--seal); font-weight: 700; }
+.det .step { padding-left: 1.4em; text-indent: -1.4em; }

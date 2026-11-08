@@ -748,6 +748,24 @@ test('information window: every entry says how to get or do it; recipes and gath
   assert.match(b, /Not a collectable/);
   assert.ok(Object.entries(INFO).filter(([k]) => k.startsWith('gather-')).every(([, v]) => /collectable/i.test(v.join(' '))), 'every gathering entry says whether it is a collectable');
   assert.ok(!JSON.stringify(INFO).includes('see the guide'), 'no "see the guide": the answer is in the window');
+  const say = (sid, name) => (INFO[firstKey(sid, (e) => e.n === name)] || []).join(' / ');
+  assert.match(say('quests-msq', 'The Ultimate Weapon'), /Step 1: Speak with Cid/, 'quests carry their journal steps');
+  assert.match(say('fates', 'Hide and Seek'), /Objective: Deliver the poached hides/);
+  assert.match(say('fates', 'Unsafety Dance'), /Spawns after you defeat Lv\. 6 Flowering Sabotender/);
+  assert.match(say('beastmaster', 'Squirrel'), /Tame it from a Ground Squirrel in Central Shroud/);
+  assert.match(say('leves', "Our Man in Ul'dah"), /Deliver 1× Velveteen Work Gloves/);
+  assert.match(say('cosmicmissions', 'Multi-purpose Fiberboard'), /Craft: Standard High-density Fiberboard/);
+  assert.match(say('minions', 'Princely hatchling'), /Receive 50 player commendations/);
+  assert.match(say('duty-dungeons', 'Sastasha'), /Unlocked by the quest It's Probably Pirates/);
+  assert.match(say('duty-ultimate', 'The Unending Coil of Bahamut (Ultimate)'), /Deltascape V4\.0 \(Savage\).*Wandering Minstrel in Kugane/);
+  assert.match(say('duty-treasure', 'Vault Oneiron'), /Gargantuaskin/);
+  assert.match(say('duty-quest', 'Messenger of the Winds'), /Played during the quest Messenger of the Winds/);
+  assert.match(say('hunt', 'Endymion'), /Three-star Clan Mark Bills: defeat 2 in The Sea of Clouds/);
+  assert.match(say('hunting', 'Bark eft'), /Defeat 3 in South Shroud, Upper Paths/);
+  assert.match(say('carnivale', "All's Well That Starts Well"), /stage 1: .*Celestium Attendant/);
+  const all = JSON.stringify(INFO);
+  assert.ok(!/[-]/.test(all), 'no game icon glyphs in the text');
+  assert.ok(!all.includes('Gig: UNKNOWN') && !all.includes('gold rating'), 'no placeholder or generic lines');
 });
 
 // ---------------------------------------------------------------- links between entries

@@ -255,7 +255,7 @@ test('phone width: no sideways scroll on the overview, a long list or settings',
   await ctx.close();
 });
 
-test('all 20 themes, light and dark: readable text, readable dropdowns, distinct accent', async () => {
+test('all 21 themes (the Atelier\'s 20 and Solution Nine), light and dark: readable text, readable dropdowns, distinct accent', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
   await go(page, 'mounts');
   // Drive the real Appearance settings: open the theme menu and pick each theme in each mode.
@@ -265,7 +265,8 @@ test('all 20 themes, light and dark: readable text, readable dropdowns, distinct
     await page.click(`[data-look="mode"][data-v="${mode}"]`);
     await page.click('[data-look="toggle"][data-v="shared:theme"]');
     const ids = await page.$$eval('[data-look="theme"]', (b) => b.map((x) => x.dataset.v));
-    assert.equal(ids.length, 20);
+    assert.equal(ids.length, 21);
+    assert.ok(ids.includes('solution-nine'), 'the Solution Nine theme is offered');
     const labels = await page.$$eval('[data-look="theme"]', (b) => b.map((x) => x.textContent.replace(/^Aa|✓$/g, '').trim()));
     assert.deepEqual(labels, labels.slice().sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })), 'themes listed alphabetically');
     for (const id of ids) {
@@ -287,7 +288,7 @@ test('all 20 themes, light and dark: readable text, readable dropdowns, distinct
       assert.ok(m.select >= 7, `${mode} ${id}: dropdown contrast ${m.select.toFixed(2)}`);
     }
   }
-  assert.equal(names.length, 40);
+  assert.equal(names.length, 42);
   assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--lb-b').length > 0), true, 'wordmark coloured by the theme');
   assert.deepEqual(errors, []);
   await ctx.close();

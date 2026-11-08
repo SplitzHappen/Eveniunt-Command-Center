@@ -116,3 +116,11 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
   - `data/variant-routes.json`: each variant dungeon record's route, written for the tracker from the facts in the wiki's route tables.
   - Field aether current spots come from the game data: `EObj.Data` names the current, and the `Level` row holding that object gives the spot.
 - The wiki states no licence for its text, so nothing is copied from it word for word. Only facts are taken, in the tracker's own wording or as short factual entries, and the wiki is credited for them in `NOTICE.md`.
+
+## Deeper information (2026-11-08, later the same day)
+
+- Game sheets added to `tools/info.py`: the per-quest text files (`csv/en/quest/*/<Quest.Id>.csv`: the journal summary and steps), `MobHuntTarget`, `MobHuntOrder`, `MobHuntOrderType` and `EventItem` (hunt bills), `MonsterNoteTarget` (Hunting Log areas), `SpearfishingItem` and `SpearfishingNotebook` (spearfishing holes), `Achievement` `Type`/`Key`/`Data` (what an achievement needs), `BeastTribe`, `WKS*` (Cosmic Exploration missions), and the `QUESTBATTLE` and `INSTANCEDUNGEON` quest parameters (the quest a solo duty belongs to). Sheets not in the sparse checkout are fetched from the same pinned commit (`DM_RAW`).
+- FFXIV Teamcraft (MIT, same commit): `shops.json`, `drop-sources.json`, `instance-sources.json`, `quest-sources.json`, `fate-sources.json`, `venture-sources.json`, `desynth.json`, `reduction.json`, `mogstation-sources.json`, `spearfishing-sources.json` and the Island Sanctuary files.
+- `data/duty-facts.json`: how duties open where the game data is silent (ultimates, deep dungeons, treasure dungeons, criterion, chaotic, Quantum, seasonal and PvP), restated from the Console Games Wiki (read 2026-11-08). Quest names in it are looked up in the game data for the giver and place.
+- `data/duty-unlocks.json`: duty unlock quests from Garland Tools instance data, matched by duty name and checked against the game's quest names (69 mismatches dropped).
+- `data/field-events.json` and `data/bestiary.json`: field operation triggers and Master's Bestiary taming facts from the Console Games Wiki tables; facts only.

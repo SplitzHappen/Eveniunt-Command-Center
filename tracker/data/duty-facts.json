@@ -1,0 +1,397 @@
+{
+ "_about": "Facts about how duties open, restated in our own words from the Console Games Wiki (ffxiv.consolegameswiki.com, checked November 2026; the wiki publishes no licence, so no text is copied). The game data is used first; these fill the gaps. Quest names are looked up in the game data for the giver and place.",
+ "facts": {
+  "A Hunter True": {
+   "quest": "Impostor Syndrome"
+  },
+  "Amdapor Keep (Hard)": {
+   "quest": "For Keep's Sake",
+   "entrance": "South Shroud (24, 24)"
+  },
+  "Another Aloalo Island": {
+   "unlock": "Clear Aloalo Island and its quest Stranger from Paradise, then talk to Osmon in Old Sharlayan (11.9, 13.3) as a level 90 combat job"
+  },
+  "Another Merchant's Tale": {
+   "unlock": "Defeat all three bosses of The Merchant's Tale (Advanced), then talk to Osmon in Old Sharlayan (11.9, 13.3)"
+  },
+  "Another Mount Rokkon": {
+   "unlock": "Clear Mount Rokkon and its quest Mononoke Aware, then talk to Osmon in Old Sharlayan (11.9, 13.3) as a level 90 combat job"
+  },
+  "Another Sil'dihn Subterrane": {
+   "unlock": "Clear The Sil'dihn Subterrane and its quest A Key to the Past, then talk to Osmon in Old Sharlayan (11.9, 13.3) as a level 90 combat job"
+  },
+  "Archeia Harmonias": {
+   "quest": "The Crystal (Line's) Call"
+  },
+  "Baldesion Arsenal": {
+   "entrance": "The Forbidden Land, Eureka Hydatos"
+  },
+  "Castrum Lacus Litore": {
+   "quest": "The Lady of Blades"
+  },
+  "Castrum Marinum (Extreme)": {
+   "quest": "Weapon of Choice"
+  },
+  "Cenote Ja Ja Gural": {
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Br'aaxskin Map",
+   "note": "You have 10 minutes to enter"
+  },
+  "Cinder Drift (Extreme)": {
+   "quest": "Weapon of Choice",
+   "entrance": "Eorzean Alliance Headquarters (6.2, 6.1)"
+  },
+  "Curious Gorge Meets His Match": {
+   "quest": "The Far Edge of Fate"
+  },
+  "Dancing Mad (Ultimate)": {
+   "unlock": "Clear AAC Heavyweight M4 (Savage), then talk to the Wandering Minstrel in Tuliyollal (11.1, 14.6) as a level 100 combat job",
+   "note": "Raid Finder only, with a pre-made party of eight who have all cleared that savage fight"
+  },
+  "Delubrum Reginae": {
+   "quest": "Fit for a Queen",
+   "entrance": "Gangos (5.5, 5.4)"
+  },
+  "Delubrum Reginae (Savage)": {
+   "quest": "A Seaside Story",
+   "entrance": "Gangos (6.6, 5.0)"
+  },
+  "Dragon Sound": {
+   "quest": "Heavens Weep"
+  },
+  "Dragonsong's Reprise (Ultimate)": {
+   "quest": "I Wandered Sharlayan as a Minstrel",
+   "note": "Raid Finder only, with a pre-made party of eight"
+  },
+  "Emanation (Extreme)": {
+   "quest": "Songs in the Key of Kugane"
+  },
+  "Eureka Orthos": {
+   "quest": "Delve into Myth",
+   "entrance": "Mor Dhona (34.8, 19.2); Burnel by the Revenant's Toll aetheryte (21.8, 8.1) takes you there",
+   "note": "Needs the Endwalker main story and floor 50 of the Palace of the Dead. Matched parties beyond floor 30 also need the sidequest Rage Extinguished"
+  },
+  "Futures Rewritten (Ultimate)": {
+   "unlock": "Clear AAC Light-heavyweight M4 (Savage), then talk to the Wandering Minstrel in Tuliyollal (11.1, 14.6) as a level 100 combat job",
+   "note": "Raid Finder only, with a pre-made party of eight who have all cleared that savage fight"
+  },
+  "Heaven-on-High": {
+   "quest": "Knocking on Heaven's Door",
+   "entrance": "The Ruby Sea (21.4, 9.2)",
+   "note": "Needs floor 50 of the Palace of the Dead and the quest Tide Goes in, Imperials Go Out. Matched parties beyond floor 30 also need the sidequest On the Shoulders of Giants"
+  },
+  "Hells' Kier (Extreme)": {
+   "quest": "Songs in the Key of Kugane",
+   "entrance": "Reisen Temple (6.3, 6.8)"
+  },
+  "Hidden Gorge": {
+   "quest": "Earning Your Wings"
+  },
+  "Memoria Misera (Extreme)": {
+   "quest": "The Bozja Incident"
+  },
+  "Mount Ordeals (Extreme)": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "Onsal Hakair (Danshig Naadam)": {
+   "quest": "Like Civilized Men and Women"
+  },
+  "Our Compromise": {
+   "quest": "A Familiar Face Forgotten"
+  },
+  "Pilgrim's Traverse": {
+   "quest": "Pilgrimage of Light",
+   "entrance": "Il Mheg (29.9, 6.0)",
+   "note": "Needs the Endwalker main story and floor 50 of the Palace of the Dead. After the quest Faerie Tale a new save can start from stone 1, 21, 31, 51 or 71 once you have progressed that far"
+  },
+  "Seal Rock (Seize)": {
+   "quest": "Like Civilized Men and Women"
+  },
+  "Shinryu's Domain (Unreal)": {
+   "quest": "Fantastic Mr. Faux"
+  },
+  "Sohm Al": {
+   "quest": "Mourn in Passing",
+   "entrance": "The Dravanian Forelands (8, 6)"
+  },
+  "Storm's Crown (Extreme)": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "The Abyssal Fracture (Extreme)": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "The Aery": {
+   "quest": "Into the Aery",
+   "entrance": "Foundation (7, 10)"
+  },
+  "The Aetherochemical Research Facility": {
+   "quest": "Heavensward (Quest)",
+   "entrance": "Azys Lla (21.4, 22.5, 8.7)"
+  },
+  "The Aquapolis": {
+   "unlock": "No unlock: a portal opens about half the time after you dig up and open the coffer of a Dragonskin treasure map",
+   "note": "You have 10 minutes to enter; whoever used the map opens each room's coffer"
+  },
+  "The Bayside Battleground": {
+   "quest": "The Crystal (Line's) Call"
+  },
+  "The Binding Coil of Bahamut - Turn 2": {
+   "quest": "Primal Awakening",
+   "entrance": "Eastern La Noscea (21.7, 22.3)"
+  },
+  "The Binding Coil of Bahamut - Turn 3": {
+   "quest": "Primal Awakening",
+   "entrance": "Eastern La Noscea (21.7, 22.3)"
+  },
+  "The Binding Coil of Bahamut - Turn 4": {
+   "quest": "Primal Awakening",
+   "entrance": "Eastern La Noscea (21.7, 22.3)"
+  },
+  "The Chrysalis": {
+   "quest": "An Uninvited Ascian"
+  },
+  "The Clockwork Castletown": {
+   "quest": "The Crystal (Line's) Call"
+  },
+  "The Cloud Deck (Extreme)": {
+   "quest": "Weapon of Choice"
+  },
+  "The Cloud of Darkness (Chaotic)": {
+   "unlock": "Finish the Dawntrail main story, then talk to the Wandering Minstrel",
+   "note": "24-player chaotic alliance raid; groups usually form in the Party Finder before queueing"
+  },
+  "The Crown of the Immaculate (Extreme)": {
+   "quest": "Minstrel from Another Mother"
+  },
+  "The Dancing Plague (Extreme)": {
+   "quest": "Minstrel from Another Mother",
+   "entrance": "Il Mheg (18.6, 16.1, 1.1)"
+  },
+  "The Dungeons of Lyhe Ghiah": {
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Zonureskin Map; it leads here or to the Shifting Oubliettes at random",
+   "note": "You have 10 minutes to enter"
+  },
+  "The Epic of Alexander (Ultimate)": {
+   "unlock": "Clear Eden's Gate: Sepulture (Savage), then talk to the Wandering Minstrel in Kugane (11.6, 12.6) as a level 80 combat job",
+   "note": "Raid Finder only, with a pre-made party of eight who have all cleared that savage fight"
+  },
+  "The Excitatron 6000": {
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Kumbhiraskin Map",
+   "note": "You have 10 minutes to enter"
+  },
+  "The Fields of Glory (Shatter)": {
+   "quest": "Like Civilized Men and Women"
+  },
+  "The Final Coil of Bahamut - Turn 2": {
+   "quest": "Fragments of Truth",
+   "entrance": "Northern Thanalan (19, 20)"
+  },
+  "The Final Coil of Bahamut - Turn 3": {
+   "quest": "Fragments of Truth",
+   "entrance": "Northern Thanalan (19, 20)"
+  },
+  "The Final Verse": {
+   "entrance": "Il Mheg (29.9, 6.0)",
+   "unlock": "Reach stone 99 of Pilgrim's Traverse, then talk to Vanthau in Il Mheg (29.9, 6.0) and choose Invoke the Final Verse",
+   "note": "A practice version of the stone 99 boss; your aetherpool from Pilgrim's Traverse applies, and matched parties need aetherpool +94 or more"
+  },
+  "The Final Verse (Quantum)": {
+   "quest": "A Branch and Their Sapling",
+   "entrance": "Il Mheg (29.9, 6.0)",
+   "unlock": "Clear stone 100 of Pilgrim's Traverse and finish the quest A Branch and Their Sapling, then talk to Vanthau in Il Mheg (29.9, 6.0)",
+   "note": "A harder version of the stone 99 boss"
+  },
+  "The Forked Tower: Blood": {
+   "quest": "Past and Crescent",
+   "entrance": "The Occult Crescent: South Horn (22.7, 21.5)"
+  },
+  "The Forked Tower: Magic": {
+   "quest": "In the Shadow of the Tower",
+   "entrance": "The Occult Crescent: North Horn (15.0, 29.9)"
+  },
+  "The Forked Tower: Magic (Extreme)": {
+   "quest": "In the Shadow of the Tower",
+   "entrance": "The Occult Crescent: North Horn (15.0, 29.9)"
+  },
+  "The Gilded Araya": {
+   "quest": "Gentlemen at Heart"
+  },
+  "The Great Gubal Library": {
+   "quest": "Forbidden Knowledge",
+   "entrance": "The Dravanian Hinterlands (28, 37)"
+  },
+  "The Hardened Heart": {
+   "quest": "Acht-la Ormh Inn"
+  },
+  "The Haunted Manor": {
+   "quest": "In a Manor of Spooking",
+   "entrance": "Old Gridania (10.1, 9.3)",
+   "note": "Seasonal: only open while All Saints' Wake runs; no class, job or level requirement"
+  },
+  "The Heart of the Problem": {
+   "quest": "Stars in the Dark"
+  },
+  "The Hidden Canals of Uznair": {
+   "unlock": "Find a Timeworn Thief's Map in a coffer of the Lost Canals or the Shifting Altars of Uznair, then Dig at the spot it shows to call the portal"
+  },
+  "The Jade Stoa (Extreme)": {
+   "quest": "Songs in the Key of Kugane",
+   "entrance": "Yanxia (31.4, 6.1)"
+  },
+  "The Keeper of the Lake": {
+   "quest": "The Rising Chorus",
+   "entrance": "Mor Dhona (28, 14)"
+  },
+  "The Lost Canals of Uznair": {
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Gazelleskin Map; it leads here or to the Shifting Altars at random",
+   "note": "You have 10 minutes to enter"
+  },
+  "The Lost and the Found": {
+   "quest": "Into the Wood"
+  },
+  "The Minstrel's Ballad: Endsinger's Aria": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "The Minstrel's Ballad: Hades's Elegy": {
+   "quest": "Minstrel from Another Mother"
+  },
+  "The Minstrel's Ballad: Hydaelyn's Call": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "The Minstrel's Ballad: Shinryu's Domain": {
+   "quest": "Songs in the Key of Kugane"
+  },
+  "The Minstrel's Ballad: Tsukuyomi's Pain": {
+   "quest": "Songs in the Key of Kugane"
+  },
+  "The Minstrel's Ballad: Zodiark's Fall": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "The Omega Protocol (Ultimate)": {
+   "quest": "I Wandered Sharlayan as a Minstrel",
+   "note": "Raid Finder only, with a pre-made party of eight"
+  },
+  "The Palace of the Dead": {
+   "quest": "The House That Death Built",
+   "entrance": "South Shroud, Quarrymill (25.2, 20.6)",
+   "note": "Floors 51 to 100 need floor 50 cleared and the quest What Lies Beneath; a new save can start on floor 51 after clearing floor 50 and finishing The Nightmare's End. Clearing floor 50 here is what opens the other deep dungeons"
+  },
+  "The Palaistra": {
+   "quest": "The Crystal (Line's) Call"
+  },
+  "The Phantoms' Feast": {
+   "quest": "A Feast to Remember",
+   "entrance": "Central Shroud (22.8, 22.4, 0.2)",
+   "note": "Seasonal: it ran during All Saints' Wake (2021); no class, job or level requirement"
+  },
+  "The Pool of Tribute (Extreme)": {
+   "quest": "Songs in the Key of Kugane",
+   "entrance": "The Ruby Sea (4.7, 22.2)"
+  },
+  "The Pâtisserie": {
+   "quest": "The Icing on the Cake",
+   "note": "Seasonal: Valentione's Day; enter by talking to a House Valentione Pâtissier at Mih Khetto's Amphitheatre (Old Gridania) or the Acorn Orchard (New Gridania)"
+  },
+  "The Red Sands": {
+   "quest": "The Crystal (Line's) Call"
+  },
+  "The Seat of Sacrifice (Extreme)": {
+   "quest": "Minstrel from Another Mother"
+  },
+  "The Second Coil of Bahamut (Savage) - Turn 2": {
+   "quest": "Sing Me Another Song"
+  },
+  "The Second Coil of Bahamut (Savage) - Turn 3": {
+   "quest": "Sing Me Another Song"
+  },
+  "The Second Coil of Bahamut (Savage) - Turn 4": {
+   "quest": "Sing Me Another Song"
+  },
+  "The Second Coil of Bahamut - Turn 2": {
+   "quest": "Another Turn in the Coil",
+   "entrance": "North Shroud (20, 27)"
+  },
+  "The Second Coil of Bahamut - Turn 3": {
+   "quest": "Another Turn in the Coil",
+   "entrance": "North Shroud (20, 27)"
+  },
+  "The Shifting Altars of Uznair": {
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Gazelleskin Map; it leads here or to the Lost Canals at random",
+   "note": "You have 10 minutes to enter"
+  },
+  "The Shifting Gymnasion Agonon": {
+   "entrance": "Elpis",
+   "unlock": "No unlock: a portal sometimes opens after you open the coffer of a Timeworn Ophiotauroskin Map",
+   "note": "You have 10 minutes to enter"
+  },
+  "The Shifting Oubliettes of Lyhe Ghiah": {
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Zonureskin Map; it leads here or to the Dungeons of Lyhe Ghiah at random",
+   "note": "You have 10 minutes to enter"
+  },
+  "The Singularity Reactor": {
+   "quest": "Heavensward (Quest)",
+   "entrance": "Azys Lla (21.4, 22.5, 8.7)"
+  },
+  "The Unending Coil of Bahamut (Ultimate)": {
+   "unlock": "Clear Deltascape V4.0 (Savage), then talk to the Wandering Minstrel in Kugane (11.6, 12.6) as a level 70 combat job",
+   "note": "Raid Finder only, with a pre-made party of eight who have all cleared that savage fight"
+  },
+  "The Valentione's Ceremony": {
+   "quest": "Suited for Affection",
+   "note": "Seasonal: it ran during Valentione's Day (2018 to 2020 and 2023); no class, job or level requirement"
+  },
+  "The Vault": {
+   "quest": "A Knight's Calling",
+   "entrance": "The Pillars (11, 7)"
+  },
+  "The Voidcast Dais (Extreme)": {
+   "quest": "I Wandered Sharlayan as a Minstrel"
+  },
+  "The Volcanic Heart": {
+   "quest": "The Crystal (Line's) Call"
+  },
+  "The Wanderer's Palace (Hard)": {
+   "quest": "Not Easy Being Green",
+   "entrance": "Upper La Noscea (26, 22)"
+  },
+  "The Weapon's Refrain (Ultimate)": {
+   "unlock": "Clear Sigmascape V4.0 (Savage), then talk to the Wandering Minstrel in Kugane (11.6, 12.6) as a level 70 combat job",
+   "note": "Raid Finder only, with a pre-made party of eight who have all cleared that savage fight"
+  },
+  "The Wreath of Snakes (Extreme)": {
+   "entrance": "The Ruby Sea (37.5, 15.4)"
+  },
+  "Thok ast Thok (Extreme)": {
+   "quest": "Thok Around the Clock",
+   "entrance": "The Dravanian Forelands (27.7, 41.0)"
+  },
+  "Thok ast Thok (Hard)": {
+   "quest": "Lord of the Hive"
+  },
+  "Urth's Fount": {
+   "quest": "Fear and Odin in the Shroud",
+   "entrance": "South Shroud (33.7, 23.1)"
+  },
+  "Vault Oneiron": {
+   "entrance": "Living Memory",
+   "unlock": "No unlock: a portal can open after you open the coffer of a Timeworn Gargantuaskin Map (only those maps lead here)",
+   "note": "You have 10 minutes to enter"
+  },
+  "When Clans Collide": {
+   "quest": "The Hour of Reckoning"
+  },
+  "Worqor Chirteh (Triumph)": {
+   "quest": "Like Civilized Men and Women"
+  },
+  "Worqor Lar Dor (Extreme)": {
+   "quest": "How the West Was Sung"
+  }
+ },
+ "rules": {
+  "crystalline": "Crystalline Conflict: unlocked by the Grand Company quest A Pup No Longer (level 30); The Crystal (Line's) Call then explains the rules. Only one arena is in rotation at a time and it changes every 60 minutes",
+  "custom": "Custom match on this Crystalline Conflict arena: set up a private match with your own players from the Duty Finder (needs Crystalline Conflict unlocked)",
+  "frontline": "Frontline: unlocked by the quest Like Civilized Men and Women from your Grand Company (level 30, with a job soul crystal equipped). The map in play rotates with the daily Frontline challenge",
+  "rivalwings": "Rival Wings: unlocked by the quest Earning Your Wings from Softknox at Wolves' Den Pier (5.7, 5.5). With 48 players queues are long outside bonus events",
+  "guildhest": "Guildhests open after your first guildleve and the quest Simply the Hest in your starting city-state's region; each one then appears at its level",
+  "floors": "Reach these floors by continuing a save file: each set of ten opens once the set before it has been cleared in that save"
+ }
+}

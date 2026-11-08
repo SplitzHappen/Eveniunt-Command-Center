@@ -170,7 +170,7 @@
   function markText(hit, code, table) { if (code === 'gone' && RAW.get(hit.s.id).src === 'checklist') return table === SHORT ? 'Not applicable' : 'Not applicable or no longer obtainable (the checklist lists no such step)'; return table[code] || ''; }
   function detailHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
-    infoLines(k).forEach(function (l) { bits.push('<div>' + esc(l) + '</div>'); });
+    infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
     if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
     if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (e.d) bits.push('<div>' + esc(e.d) + '</div>');
@@ -247,10 +247,12 @@
     return INFO_P;
   }
   function infoLines(k) { return (INFO && INFO[k]) || []; }
+  // "Step 3: Speak with X." reads as a numbered walkthrough; other lines are plain
+  function lineHtml(l) { var m = /^Step (\d+): (.*)$/.exec(l); return m ? '<div class="step"><b>' + m[1] + '.</b> ' + esc(m[2]) + '</div>' : '<div>' + esc(l) + '</div>'; }
   function tipHtml(k) {
     var hit = IDX.byKey.get(k), e = hit.e, bits = [];
     bits.push('<b class="tt">' + esc(e.n) + '</b>' + (e.p ? ' <span class="p">' + esc(e.p) + '</span>' : ''));
-    infoLines(k).forEach(function (l) { bits.push('<div>' + esc(l) + '</div>'); });
+    infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
     if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
     if (e.d && infoLines(k).join(' ').indexOf(e.d) < 0) bits.push('<div>' + esc(e.d) + '</div>');
     if (!infoLines(k).length && !e.src && !e.d) bits.push('<div class="dim">No how-to details for this one yet.</div>');
