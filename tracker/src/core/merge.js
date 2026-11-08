@@ -15,6 +15,8 @@
     for (const c of p.chars || []) {
       m.set('n|' + c.id, c.name);
       if (c.lodestone) m.set('l|' + c.id, String(c.lodestone));
+      if (c.cls || c.city) m.set('k|' + c.id, c.cls || 'city:' + c.city);
+      if (c.gc) m.set('g|' + c.id, String(c.gc));
     }
     for (const [k, v] of Object.entries(p.settings || {})) m.set('s|' + k, String(v));
     return m;
@@ -62,10 +64,12 @@
       } else if (kind === 'a') avail[a] = v;
       else if (kind === 'n') { if (!chars.has(a)) chars.set(a, { id: a, name: v, lodestone: null }); else chars.get(a).name = v; }
       else if (kind === 'l') { if (chars.has(a)) chars.get(a).lodestone = v; }
+      else if (kind === 'k') { if (chars.has(a)) { const ch = chars.get(a); if (v.startsWith('city:')) { ch.city = v.slice(5); ch.cls = null; } else { ch.cls = v; ch.city = null; } } }
+      else if (kind === 'g') { if (chars.has(a)) chars.get(a).gc = Number(v); }
       else if (kind === 's') settings[a] = v === 'true' ? true : v === 'false' ? false : v;
     }
     const ordered = [...chars.values()].sort((x, y) => Number(x.id.slice(1)) - Number(y.id.slice(1))).slice(0, ET.MAX_CHARS);
-    for (const c of ordered) if (!m.has('l|' + c.id)) c.lodestone = null;
+    for (const c of ordered) { if (!m.has('l|' + c.id)) c.lodestone = null; if (!m.has('k|' + c.id)) { c.cls = null; c.city = null; } if (!m.has('g|' + c.id)) c.gc = null; }
     st.chars = ordered;
     st.ticks = {};
     st.excl = {}; st.vals = {};
@@ -90,6 +94,8 @@
     }
     if (kind === 'n') return { who: '', what: 'Name of ' + a, local: c.local || '(none)', remote: c.remote || '(none)' };
     if (kind === 'l') return { who: who(a), what: 'Lodestone character number', local: c.local || '(none)', remote: c.remote || '(none)' };
+    if (kind === 'k') return { who: who(a), what: 'Starting class', local: c.local || '(none)', remote: c.remote || '(none)' };
+    if (kind === 'g') return { who: who(a), what: 'Grand Company', local: ET.GCS[c.local] || '(none)', remote: ET.GCS[c.remote] || '(none)' };
     return { who: '', what: 'Setting: ' + a, local: String(c.local), remote: String(c.remote) };
   };
 })();

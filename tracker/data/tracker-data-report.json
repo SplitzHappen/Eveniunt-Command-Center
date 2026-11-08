@@ -69,6 +69,8 @@
   "fashion accessory now facewear (dropped)": 4,
   "barding without item": 1,
   "no patch: barding": 6,
+  "quest patch not recorded (4.31 or earlier)": 3050,
+  "no patch: quest": 3050,
   "recipes outside the crafting log (kept as their own group)": 16,
   "gathering item placed by Teamcraft log pages (no node in the game data)": 53,
   "gathering log item with no known spot (kept, counted, own group)": 20,
@@ -94,6 +96,18 @@
   "lim": 514,
   "gone": 274,
   "unk": 463
+ },
+ "city_and_gc": {
+  "quests: gri": 44,
+  "quests: lim": 47,
+  "quests: uld": 52,
+  "quest: Grand Company": 30,
+  "ach: lim": 1,
+  "ach: gri": 1,
+  "ach: uld": 1,
+  "leves: gri": 1,
+  "leves: lim": 1,
+  "leves: uld": 1
  },
  "total": 36566
 }

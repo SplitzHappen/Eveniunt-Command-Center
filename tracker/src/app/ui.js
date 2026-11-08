@@ -18,10 +18,11 @@
   var PREF_KEY = 'eveniunt-tracker-ui';
   function load() { try { return JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { return null; } }
   var S = { theme: (load() || {}).theme || 'system', look: null };
-  var UI = Object.assign({ view: 'home', sec: null, mode: 'tick', filter: 'all', folded: {}, open: {} }, (load() || {}).ui || {});
+  var UI = Object.assign({ view: 'home', sec: null, mode: 'tick', filter: 'all', folded: {}, open: {}, showX: true }, (load() || {}).ui || {});
+  if (['all', 'missing', 'done', 'unob'].indexOf(UI.filter) < 0) UI.filter = 'all';
   UI.q = ''; UI.find = '';
   function persist() {
-    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode } })); } catch (e) { /* private window */ }
+    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode, showX: UI.showX } })); } catch (e) { /* private window */ }
   }
   var toastTimer = null;
   function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 2600); }
@@ -114,58 +115,73 @@
   var sideQueued = false;
   function queueSide() { if (sideQueued) return; sideQueued = true; requestAnimationFrame(function () { sideQueued = false; renderSide(); }); }
 
-  // ── per-character tallies ──
-  function talliesHtml(t) {
-    return '<div class="tallies">' + ST.chars.map(function (c, i) {
-      var d = t.done[c.id], n = t.totals[c.id], p = n ? d / n : 0;
-      var seg = [0, 1, 2].map(function (k) { return '<i style="--f:' + Math.max(0, Math.min(100, (p * 3 - k) * 100)).toFixed(1) + '%"></i>'; }).join('');
-      return '<div class="tally" data-c="' + c.id + '"><span class="who"><span class="ix">' + (i + 1) + '</span><b>' + esc(c.name) + '</b><span class="n">' + d + ' / ' + n + '</span></span><span class="gauge">' + seg + '</span><span class="pct">' + pctTxt(d, n) + '</span></div>';
-    }).join('') + '</div>';
+  // ── per-character progress (shown in the column headers) ──
+  function headCells(t) {
+    return ST.chars.map(function (c) {
+      var d = t.done[c.id], n = t.totals[c.id];
+      return '<span class="c" title="' + esc(c.name) + (charStart(c) ? ' · ' + esc(charStart(c)) : '') + ': ' + d + ' of ' + n + '"><span class="nm">' + esc(colName(c)) + '</span><span class="pc' + (n && d === n ? ' full' : '') + '">' + (colWidth() < 44 ? (n ? Math.floor(100 * d / n) + '%' : '–') : pctTxt(d, n)) + '</span></span>';
+    }).join('');
   }
+  function colName(c) { var narrow = colWidth() < 58; return narrow ? String(ST.chars.indexOf(c) + 1) : c.name.split(/\s+/)[0]; }
+  function charStart(c) { var cl = ET.START_CLASSES.find(function (x) { return x[0] === c.cls; }); var city = ET.cityOf(c); return (cl ? cl[1] + ', ' : '') + (city ? ET.CITIES[city] : ''); }
 
   // ── entries ──
-  var MARK = { lim: 'Time-limited only', gone: 'No longer obtainable', unk: 'Availability unknown' };
-  function metaHtml(e, sid, av) {
-    var bits = [];
-    if (e.p) bits.push('<span class="p">' + esc(e.p) + '</span>');
-    if (av.marked) bits.push('<span class="why">' + (av.manual === 'x' ? 'Marked unobtainable by you' : MARK[av.builtIn] || 'Not counted') + '</span>');
-    else if (av.manual === 'ok' && av.builtIn) bits.push('<span class="why">Counted by your choice (' + esc(MARK[av.builtIn] || '') + ')</span>');
-    if (e.cnt) bits.push('Defeat ×' + e.cnt);
-    if (e.lv) bits.push('Lv ' + e.lv);
-    if (e.stars) bits.push('★'.repeat(Math.min(5, e.stars)));
-    if (e.no) bits.push('No. ' + e.no);
-    if (e.cmd) bits.push(esc(e.cmd));
-    if (e.race) bits.push(esc(e.race));
-    if (e.zone) bits.push(esc(e.zone));
-    if (e.spot) bits.push(esc(e.spot));
-    if (e.kind) bits.push(esc(e.kind));
-    if (e.pts) bits.push(e.pts + ' pts');
-    if (e.max) bits.push('Complete at level ' + e.max);
-    if (e.d) bits.push(esc(e.d));
-    if (e.src) bits.push('<span class="src">' + esc(e.src.join(' · ')) + '</span>');
-    return bits.length ? '<span class="meta">' + bits.join(' ') + '</span>' : '';
+  var MARK = { lim: 'Time-limited: only from events, seasonal content or ended campaigns', gone: 'No longer obtainable', unk: 'Availability unknown' };
+  var SHORT = { lim: 'Time-limited', gone: 'Unobtainable', unk: 'Unknown' };
+  var WHY = { city: 'another starting city', gc: 'another Grand Company', manual: 'marked by you' };
+  function detailHtml(k) {
+    var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), bits = [];
+    if (e.src) bits.push('<div><b>How to get it:</b> ' + esc(e.src.join(' · ')) + '</div>');
+    if (e.d) bits.push('<div>' + esc(e.d) + '</div>');
+    var facts = [];
+    if (e.p) facts.push('Patch ' + esc(e.p));
+    if (e.cnt) facts.push('Defeat ×' + e.cnt);
+    if (e.lv) facts.push('Level ' + e.lv);
+    if (e.stars) facts.push('★'.repeat(Math.min(5, e.stars)));
+    if (e.no) facts.push('No. ' + e.no);
+    if (e.cmd) facts.push(esc(e.cmd));
+    if (e.race) facts.push(esc(e.race));
+    if (e.zone) facts.push(esc(e.zone));
+    if (e.spot) facts.push(esc(e.spot));
+    if (e.kind) facts.push(esc(e.kind));
+    if (e.pts) facts.push(e.pts + ' points');
+    if (e.max) facts.push('Complete at level ' + e.max);
+    if (e.city) facts.push('Only for characters who started in ' + ET.CITIES[e.city]);
+    if (e.gc) facts.push('Only for the ' + ET.GCS[e.gc]);
+    if (facts.length) bits.push('<div>' + facts.join(' · ') + '</div>');
+    var na = ST.chars.map(function (c) { var w = ET.notApplicable(ST, c, k, e); return w ? esc(c.name) + ' (' + WHY[w] + ')' : null; }).filter(Boolean);
+    if (na.length) bits.push('<div><b>Does not apply to:</b> ' + na.join(', ') + '</div>');
+    if (!av.info) {
+      var status = av.counted ? (av.manual === 'ok' ? 'Counted (your choice; normally: ' + esc(MARK[av.builtIn] || '') + ')' : 'Counted in totals') : (av.manual === 'x' ? 'Not counted: you marked it unobtainable' : 'Not counted: ' + esc(MARK[av.builtIn] || ''));
+      bits.push('<div class="row"><span><b>Status:</b> ' + status + '</span><button type="button" class="btn sm" data-x="' + k + '">' + (av.counted ? 'Mark unobtainable (stop counting)' : 'Count it anyway') + '</button>' + (av.manual ? '<button type="button" class="btn sm ghost" data-xauto="' + k + '">Back to the default</button>' : '') + '</div>');
+    }
+    return '<div class="det" data-det="' + k + '">' + bits.join('') + '</div>';
   }
   function rowHtml(k) {
-    var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e);
+    var hit = IDX.byKey.get(k), e = hit.e, av = ET.availability(ST, k, e), open = OPEN.has(k);
     var cells = ST.chars.map(function (c) {
-      var on = !!ST.ticks[c.id][k], na = !!ST.excl[c.id][k];
+      var on = !!ST.ticks[c.id][k], na = ET.notApplicable(ST, c, k, e);
       if (e.val) {
         var v = ET.getValue(ST, c.id, k);
         return '<span class="c"><input class="lvl' + (on ? ' on' : '') + '" type="number" inputmode="numeric" min="0" max="9999" data-k="' + k + '" data-c="' + c.id + '" value="' + (v == null ? '' : v) + '" placeholder="–" aria-label="' + esc(c.name) + ' level"></span>';
       }
-      return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
+      return '<span class="c"><button type="button" class="tk' + (on ? ' on' : '') + (na ? ' na' : '') + '" data-k="' + k + '" data-c="' + c.id + '" aria-pressed="' + on + '" title="' + esc(c.name) + (na ? ': does not apply (' + WHY[na] + ')' : '') + '" aria-label="' + esc(c.name) + (na ? ', does not apply' : '') + '"><i></i></button></span>';
     }).join('');
-    return '<div class="lr er' + (av.marked ? ' x' : '') + (av.manual ? ' manual' : '') + '" data-k="' + k + '"><span class="c0">' + (av.info ? '<span></span>' : '<button type="button" class="xb" data-x="' + k + '" title="' + (av.marked ? 'Not counted: click to count it' : 'Counted: click to mark it unobtainable') + '" aria-label="' + (av.marked ? 'Count this entry' : 'Mark unobtainable') + '">✕</button>') + '<span class="nm">' + esc(e.n) + '</span>' + metaHtml(e, hit.s.id, av) + '</span>' + cells + '</div>';
+    var pill = av.marked ? '<button type="button" class="pill" data-x="' + k + '" title="Not counted. Click to count it anyway.">' + (av.manual === 'x' ? 'Not counted' : SHORT[av.builtIn] || 'Not counted') + '</button>' : '';
+    return '<div class="lr er' + (av.marked ? ' x' : '') + (open ? ' open' : '') + '" data-k="' + k + '"><span class="c0" data-open="' + k + '"><span class="nm">' + esc(e.n) + '</span>' + (e.p ? '<span class="p">' + esc(e.p) + '</span>' : '') + pill + '</span>' + cells + '</div>' + (open ? detailHtml(k) : '');
   }
+  var OPEN = new Set();
   function norm(s) { return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function applying(k, e) { return ST.chars.filter(function (c) { return !ET.notApplicable(ST, c, k, e); }); }
   function passes(k, q) {
     var e = IDX.byKey.get(k).e;
     if (q && norm(e.n + ' ' + (e.d || '') + ' ' + (e.src ? e.src.join(' ') : '')).indexOf(q) < 0) return false;
-    if (UI.filter === 'all') return true;
     var av = ET.availability(ST, k, e);
+    if (!UI.showX && av.marked && UI.filter !== 'unob') return false;
+    if (UI.filter === 'all') return true;
     if (UI.filter === 'unob') return av.marked;
     if (!av.counted) return false;
-    var apply = ST.chars.filter(function (c) { return !ST.excl[c.id][k]; });
+    var apply = applying(k, e);
     var done = apply.filter(function (c) { return ST.ticks[c.id][k]; }).length;
     if (UI.filter === 'missing') return done < apply.length;
     if (UI.filter === 'done') return apply.length > 0 && done === apply.length;
@@ -174,27 +190,22 @@
   function groupCounts(keys) {
     return ST.chars.map(function (c) {
       var n = 0, d = 0;
-      keys.forEach(function (k) { var hit = IDX.byKey.get(k); if (!hit || ST.excl[c.id][k] || !ET.availability(ST, k, hit.e).counted) return; n++; if (ST.ticks[c.id][k]) d++; });
+      keys.forEach(function (k) { var hit = IDX.byKey.get(k); if (!hit) return; var av = ET.availability(ST, k, hit.e); if (av.info || !av.counted || ET.notApplicable(ST, c, k, hit.e)) return; n++; if (ST.ticks[c.id][k]) d++; });
       return [d, n];
     });
   }
-  function headRowHtml() {
-    var narrow = window.innerWidth < 640 || ST.chars.length > 5 && window.innerWidth < 1100;
-    return '<div class="lr lh"><span class="c0">Entry</span>' + ST.chars.map(function (c) {
-      return '<span class="c' + (narrow ? ' ini' : '') + '" title="' + esc(c.name) + '">' + (narrow ? (ST.chars.indexOf(c) + 1) : esc(c.name)) + '</span>';
-    }).join('') + '</div>';
-  }
+  function headRowHtml(t) { return '<div class="lr lh" id="lh"><span class="c0">' + (UI.view === 'sec' ? esc(SEC.get(UI.sec).t) : 'Entry') + '</span>' + headCells(t) + '</div>'; }
   function groupHtml(sid, gi, g, keys, label) {
     var cnt = groupCounts(g.keys), folded = UI.folded[sid + '#' + gi];
-    return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '"><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '<span class="fold">' + (folded ? '▸' : '▾') + '</span></span>' +
-      ST.chars.map(function (c, i) { return '<span class="c' + (cnt[i][1] && cnt[i][0] === cnt[i][1] ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" title="' + esc(c.name) + ': tick or clear the whole group">' + cnt[i][0] + '<br>' + cnt[i][1] + '</span>'; }).join('') + '</div>' +
+    return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '"><span class="fold">▾</span><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '</span>' +
+      ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" title="' + esc(c.name) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '. Click to tick or clear the whole group.">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>' +
       keys.map(rowHtml).join('') + '</div>';
   }
   var GROUP_KEYS = new Map(); // "sid#gi" -> keys of the full group
 
   // ── pages ──
   function setView(view, sec, push) {
-    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer');
+    UI.view = view; UI.sec = sec || UI.sec; document.body.classList.remove('drawer'); OPEN.clear();
     persist(); render();
     var h = view === 'sec' ? '#/s/' + sec : view === 'search' ? '#/find' : '#/';
     if (push !== false && location.hash !== h) history.pushState(null, '', h);
@@ -207,39 +218,47 @@
     else renderHome();
     $('#page').style.setProperty('--n', ST.chars.length);
   }
-  function cw() { var w = Math.min(window.innerWidth, 1760); var n = ST.chars.length; return w < 520 ? Math.max(24, Math.min(40, Math.floor((w - 190) / n))) : w < 860 ? Math.max(30, Math.min(46, Math.floor((w - 280) / n))) : n > 6 ? 44 : 52; }
-  function renderHome() {
-    var all = combined(tallyOf(IDX.sections.map(function (s) { return s.id; })));
-    var h = '<div class="p-head"><span class="ttl"><span class="kick">Overview</span><h2>Completion ledger</h2><p class="note">' + ST.chars.length + ' character' + (ST.chars.length > 1 ? 's' : '') + ' side by side. Entries marked ✕ are not counted; switch any of them on, or mark anything unobtainable, from its row.</p></span><span class="tot">' + all.d.toLocaleString() + ' of ' + all.n.toLocaleString() + ' ticks<br>' + pctTxt(all.d, all.n) + '</span></div>';
-    h += talliesHtml(tallyOf(IDX.sections.map(function (s) { return s.id; })));
-    h += '<div class="ov">' + MENUS.map(function (m) {
-      return '<section class="ov-card"><h3>' + esc(m.t) + '</h3>' + m.folders.map(function (f) {
-        var t = tallyOf(f.secs), c = combined(t);
-        return '<button type="button" class="ov-row" data-act="sec" data-id="' + f.secs[0] + '" style="--n:' + ST.chars.length + '"><span class="t">' + esc(f.t) + '</span><span class="v">' + pctTxt(c.d, c.n) + '</span><span class="bars">' + ST.chars.map(function (ch) { return '<i title="' + esc(ch.name) + ': ' + t.done[ch.id] + ' / ' + t.totals[ch.id] + '" style="--f:' + ET.percent(t.done[ch.id], t.totals[ch.id]) + '%"></i>'; }).join('') + '</span></button>';
-      }).join('') + '</section>';
-    }).join('') + '</div>';
-    $('#page').innerHTML = h;
+  function colWidth() {
+    var page = $('#page'), w = page ? page.clientWidth : window.innerWidth, n = ST.chars.length;
+    var nameCol = w < 520 ? 120 : w < 860 ? 170 : 260;
+    return Math.max(26, Math.min(96, Math.floor((w - nameCol) / n)));
   }
-  function toolbarHtml(groups) {
-    var opt = function (v, l) { return '<option value="' + v + '"' + (UI.filter === v ? ' selected' : '') + '>' + l + '</option>'; };
-    return '<div class="bar"><input class="find" id="find" type="search" placeholder="Find in this list…" value="' + esc(UI.find) + '" aria-label="Find in this list">' +
-      '<select id="filter" aria-label="Show">' + opt('all', 'Show everything') + opt('missing', 'Still missing (any character)') + opt('done', 'Done by every character') + opt('unob', 'Not counted (✕) only') + '</select>' +
-      (groups && groups.length > 1 ? '<select id="jump" aria-label="Jump to group"><option value="">Jump to group…</option>' + groups.map(function (g, i) { return '<option value="' + i + '">' + esc(g.t) + '</option>'; }).join('') + '</select>' : '') +
-      '<span class="mode" title="What clicking a character box does"><span class="seg2"><button type="button" data-mode="tick" class="' + (UI.mode === 'tick' ? 'on' : '') + '">Tick</button><button type="button" data-mode="na" class="na' + (UI.mode === 'na' ? ' on' : '') + '">Does not apply</button></span></span></div>';
+  function cw() { return colWidth(); }
+  function renderHome() {
+    var allIds = IDX.sections.map(function (s) { return s.id; }), tAll = tallyOf(allIds);
+    var cells = function (t) { return ST.chars.map(function (c) { var d = t.done[c.id], n = t.totals[c.id], full = n && d === n; return '<span class="c' + (full ? ' full' : '') + '" title="' + esc(c.name) + ': ' + d + ' of ' + n + '">' + pctTxt(d, n) + '<span class="meter"><i style="width:' + ET.percent(d, n) + '%"></i></span></span>'; }).join(''); };
+    var h = '<div class="p-head"><span class="ttl"><h2>Overview</h2><p class="note">Each row is a folder of the menu; each column is a character. Click a row to open it.</p></span></div>';
+    h += '<div class="ov-table" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px"><div class="lr lh"><span class="c0">Folder</span>' + headCells(tAll) + '</div>';
+    h += '<div class="lr fr tot-row"><span class="c0">Everything</span>' + cells(tAll) + '</div>';
+    MENUS.forEach(function (m) {
+      h += '<div class="lr mh"><span class="c0">' + esc(m.t) + '</span></div>';
+      m.folders.forEach(function (f) {
+        h += '<div class="lr fr" data-act="sec" data-id="' + f.secs[0] + '" role="link" tabindex="0"><span class="c0">' + esc(f.t) + '</span>' + cells(tallyOf(f.secs)) + '</div>';
+      });
+    });
+    $('#page').innerHTML = h + '</div>';
+  }
+  function toolbarHtml() {
+    var chip = function (v, l) { return '<button type="button" data-filter="' + v + '" class="' + (UI.filter === v ? 'on' : '') + '">' + l + '</button>'; };
+    return '<div class="bar"><input class="find" id="find" type="search" placeholder="Find in this list" value="' + esc(UI.find) + '" aria-label="Find in this list">' +
+      '<span class="chips" role="group" aria-label="Show">' + chip('all', 'All') + chip('missing', 'Missing') + chip('done', 'Done') + '</span>' +
+      '<span class="grow"></span>' +
+      '<button type="button" class="opt-btn' + (UI.showX ? ' on' : '') + '" data-showx="1" title="Entries that are not counted (time-limited, unobtainable or unknown)">' + (UI.showX ? '✓ ' : '') + 'Show not counted</button>' +
+      '<button type="button" class="opt-btn' + (UI.mode === 'na' ? ' on' : '') + '" data-mode="' + (UI.mode === 'na' ? 'tick' : 'na') + '" title="Mark entries that do not apply to one character">' + (UI.mode === 'na' ? '✓ ' : '') + 'Mark “does not apply”</button>' +
+      (UI.mode === 'na' ? '<span class="mode-note">Clicking a box now marks that entry as not applying to that character. Click “Mark does not apply” again to go back to ticking.</span>' : '') + '</div>';
   }
   function renderSection(sid) {
     var sec = SEC.get(sid), raw = RAW.get(sid), mo = menuOf(sid);
-    var t = tallyOf([sid]), c = combined(t);
-    var h = '<div class="p-head"><span class="ttl"><span class="kick">' + esc((mo[0] ? mo[0].t : '') + (mo[1] && mo[1].t !== (mo[0] && mo[0].t) ? ' · ' + mo[1].t : '')) + '</span><h2>' + esc(sec.t) + '</h2>' + (raw.note ? '<p class="note">' + esc(raw.note) + '</p>' : '') + '</span><span class="tot">' + t.total.toLocaleString() + ' counted' + (t.marked ? ' · ' + t.marked.toLocaleString() + ' not counted (✕)' : '') + '<br>' + pctTxt(c.d, c.n) + ' overall</span></div>';
-    h += '<div id="tallies">' + talliesHtml(t) + '</div>';
-    h += toolbarHtml(sec.groups);
+    var t = tallyOf([sid]);
+    var h = '<div class="p-head"><span class="ttl"><span class="kick">' + esc((mo[0] ? mo[0].t : '') + (mo[1] && mo[1].t !== (mo[0] && mo[0].t) ? ' › ' + mo[1].t : '')) + '</span><h2>' + esc(sec.t) + '</h2>' + (raw.note ? '<p class="note">' + esc(raw.note) + '</p>' : '') + '</span><span class="tot">' + t.total.toLocaleString() + ' entries' + (t.marked ? ' · ' + t.marked.toLocaleString() + ' not counted' : '') + '</span></div>';
+    h += toolbarHtml();
     h += '<div class="ledger" id="ledger" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px"></div>';
     $('#page').innerHTML = h;
     renderLedger();
   }
   function renderLedger() {
     var sid = UI.sec, sec = SEC.get(sid), q = norm(UI.find), any = false;
-    var h = headRowHtml();
+    var h = headRowHtml(tallyOf([sid]));
     sec.groups.forEach(function (g, gi) {
       GROUP_KEYS.set(sid + '#' + gi, g.keys);
       var keys = g.keys.filter(function (k) { return passes(k, q); });
@@ -247,18 +266,18 @@
       any = true;
       h += groupHtml(sid, gi, g, keys);
     });
-    if (!any) h += '<p class="empty">Nothing here matches. Clear the search or choose “Show everything”.</p>';
+    if (!any) h += '<p class="empty">Nothing to show. Clear the search, choose All, or turn on “Show not counted”.</p>';
     $('#ledger').innerHTML = h;
   }
   function renderSearch() {
-    var q = norm(UI.q), out = [], total = 0;
+    var q = norm(UI.q), out = [], total = 0, all = [];
     IDX.sections.forEach(function (s) {
       var keys = KEYS.get(s.id).filter(function (k) { return norm(IDX.byKey.get(k).e.n).indexOf(q) >= 0; });
-      total += keys.length;
+      total += keys.length; all = all.concat(keys);
       if (keys.length) out.push([s, keys.slice(0, 60)]);
     });
     var h = '<div class="p-head"><span class="ttl"><span class="kick">Search</span><h2>“' + esc(UI.q) + '”</h2><p class="note">' + total.toLocaleString() + ' match' + (total === 1 ? '' : 'es') + ' in ' + out.length + ' list' + (out.length === 1 ? '' : 's') + (total > 600 ? '; showing the first 60 per list' : '') + '.</p></span></div>';
-    h += '<div class="ledger" id="ledger" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px">' + headRowHtml();
+    h += '<div class="ledger" id="ledger" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px">' + '<div class="lr lh" id="lh"><span class="c0">Matches</span>' + headCells(ET.tally(IDX, ST, all)) + '</div>';
     out.forEach(function (o) {
       var g = { t: o[0].t, c: '', keys: o[1] };
       GROUP_KEYS.set('find:' + o[0].id + '#0', o[1]);
@@ -277,17 +296,18 @@
         $$('.lvl', row).forEach(function (inp) { inp.classList.toggle('on', !!ST.ticks[inp.dataset.c][k]); });
         return;
       }
+      var det = row.nextElementSibling && row.nextElementSibling.classList.contains('det') ? row.nextElementSibling : null;
+      if (det) det.remove();
       row.outerHTML = rowHtml(k);
     });
     $$('.lgroup', $('#page')).forEach(function (gEl) {
-      var gk = gEl.dataset.g, full = GROUP_KEYS.get(gk.indexOf('find:') === 0 ? gk : gk);
+      var full = GROUP_KEYS.get(gEl.dataset.g);
       if (!full) return;
       var cnt = groupCounts(full);
-      $$('.gh .c', gEl).forEach(function (cell, i) { cell.innerHTML = cnt[i][0] + '<br>' + cnt[i][1]; cell.classList.toggle('full', !!cnt[i][1] && cnt[i][0] === cnt[i][1]); });
+      $$('.gh .c', gEl).forEach(function (cell, i) { var f = !!cnt[i][1] && cnt[i][0] === cnt[i][1]; cell.textContent = cnt[i][1] ? (f ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–'; cell.classList.toggle('full', f); });
     });
-    if (UI.view === 'sec') {
-      var t = tallyOf([UI.sec]); $('#tallies').innerHTML = talliesHtml(t);
-    }
+    var lh = $('#lh');
+    if (lh && UI.view === 'sec') lh.outerHTML = headRowHtml(tallyOf([UI.sec]));
     queueSide();
     save();
   }
@@ -307,30 +327,46 @@
     if (document.body.classList.contains('drawer') && !e.target.closest('.side') && !e.target.closest('.menu-btn')) document.body.classList.remove('drawer');
     var tk = e.target.closest('.tk');
     if (tk) {
-      var k = tk.dataset.k, c = tk.dataset.c;
-      if (UI.mode === 'na') ET.setExcluded(ST, c, k, !ET.isExcluded(ST, c, k)); else ET.toggleTick(ST, c, k);
+      var k = tk.dataset.k, c = tk.dataset.c, ent = IDX.byKey.get(k).e, ch0 = ST.chars.find(function (x) { return x.id === c; });
+      var why = ET.notApplicable(ST, ch0, k, ent);
+      if (UI.mode === 'na') {
+        if (why && why !== 'manual') { toast('This already does not apply to ' + ch0.name + ' (' + WHY[why] + ')'); return; }
+        ET.setExcluded(ST, c, k, !ET.isExcluded(ST, c, k));
+      } else if (why && why !== 'manual') {
+        toast('Does not apply to ' + ch0.name + ': ' + WHY[why] + '. Change it in Settings → Characters.'); return;
+      } else ET.toggleTick(ST, c, k);
       refreshAfter([k]); return;
     }
-    var xb = e.target.closest('.xb');
-    if (xb) { var key = xb.dataset.x; var counted = ET.toggleAvailability(ST, key, IDX.byKey.get(key).e); toast(counted ? 'Counted in totals' : 'Marked unobtainable: not counted'); refreshAfter([key]); return; }
+    var xa = e.target.closest('[data-xauto]');
+    if (xa) { ET.setAvailability(ST, xa.dataset.xauto, 'auto'); toast('Back to the default'); refreshAfter([xa.dataset.xauto]); return; }
+    var xb = e.target.closest('[data-x]');
+    if (xb) { var key = xb.dataset.x; var counted = ET.toggleAvailability(ST, key, IDX.byKey.get(key).e); toast(counted ? 'Now counted in totals' : 'Marked unobtainable: no longer counted'); refreshAfter([key]); return; }
+    var op = e.target.closest('[data-open]');
+    if (op) { var ok = op.dataset.open; if (OPEN.has(ok)) OPEN.delete(ok); else OPEN.add(ok); var r0 = op.closest('.er'); var d0 = r0.nextElementSibling; if (d0 && d0.classList.contains('det')) d0.remove(); r0.outerHTML = rowHtml(ok); return; }
     var gc = e.target.closest('[data-gc]');
     if (gc) {
-      var keys = (GROUP_KEYS.get(gc.dataset.gk) || []), ch = gc.dataset.gc;
+      var keys = (GROUP_KEYS.get(gc.dataset.gk) || []), ch = gc.dataset.gc, chObj = ST.chars.find(function (x) { return x.id === ch; });
+      var free = keys.filter(function (k2) { var w = ET.notApplicable(ST, chObj, k2, IDX.byKey.get(k2).e); return !w || w === 'manual'; });
       if (UI.mode === 'na') {
-        var allNa = keys.every(function (k2) { return ST.excl[ch][k2]; });
-        keys.forEach(function (k2) { ET.setExcluded(ST, ch, k2, !allNa); });
+        var allNa = free.length && free.every(function (k2) { return ST.excl[ch][k2]; });
+        free.forEach(function (k2) { ET.setExcluded(ST, ch, k2, !allNa); });
       } else {
-        var live = keys.filter(function (k2) { return !ST.excl[ch][k2] && ET.availability(ST, k2, IDX.byKey.get(k2).e).counted; });
+        var live = free.filter(function (k2) { return !ST.excl[ch][k2] && ET.availability(ST, k2, IDX.byKey.get(k2).e).counted; });
         var allOn = live.length && live.every(function (k2) { return ST.ticks[ch][k2]; });
-        if (!allOn && live.length > 25 && !confirm('Tick all ' + live.length + ' entries in this group for ' + charName(ch) + '?')) return;
+        if (!live.length) { toast('Nothing in this group applies to ' + chObj.name); return; }
+        if (!allOn && live.length > 25 && !confirm('Tick all ' + live.length + ' entries in this group for ' + chObj.name + '?')) return;
         ET.setMany(ST, [ch], live, !allOn);
       }
       refreshAfter(keys); return;
     }
     var fold = e.target.closest('[data-fold]');
-    if (fold) { var id = fold.dataset.fold; UI.folded[id] = !UI.folded[id]; if (!UI.folded[id]) delete UI.folded[id]; fold.closest('.lgroup').classList.toggle('folded', !!UI.folded[id]); fold.querySelector('.fold').textContent = UI.folded[id] ? '▸' : '▾'; persist(); return; }
+    if (fold) { var id = fold.dataset.fold; UI.folded[id] = !UI.folded[id]; if (!UI.folded[id]) delete UI.folded[id]; fold.closest('.lgroup').classList.toggle('folded', !!UI.folded[id]); persist(); return; }
+    var fl = e.target.closest('[data-filter]');
+    if (fl) { UI.filter = fl.dataset.filter; persist(); $$('[data-filter]').forEach(function (b) { b.classList.toggle('on', b === fl); }); renderLedger(); return; }
+    var sx = e.target.closest('[data-showx]');
+    if (sx) { UI.showX = !UI.showX; persist(); renderSection(UI.sec); return; }
     var md = e.target.closest('[data-mode]');
-    if (md) { UI.mode = md.dataset.mode; $$('[data-mode]').forEach(function (b) { b.classList.toggle('on', b.dataset.mode === UI.mode); }); persist(); toast(UI.mode === 'na' ? 'Clicking a box now marks “does not apply” for that character' : 'Clicking a box now ticks it'); return; }
+    if (md) { UI.mode = md.dataset.mode; persist(); renderSection(UI.sec); return; }
   });
   document.addEventListener('toggle', function (e) { if (e.target.classList && e.target.classList.contains('nav-folder')) { UI.open[e.target.dataset.key] = e.target.open; persist(); } }, true);
   var findTimer = null;
@@ -344,7 +380,7 @@
     if (e.target.id === 'jump' && e.target.value !== '') { var g = $('.lgroup[data-g="' + UI.sec + '#' + e.target.value + '"]'); if (g) g.scrollIntoView({ block: 'start' }); else toast('That group is hidden by the current filter'); e.target.value = ''; }
   });
   window.addEventListener('popstate', route);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.body.classList.contains('drawer')) document.body.classList.remove('drawer'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.matches && e.target.matches('.fr[data-act]')) { e.target.click(); return; } if (e.key === 'Escape' && document.body.classList.contains('drawer')) document.body.classList.remove('drawer'); });
   var resizeTimer = null;
   window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { var l = $('#ledger'); if (l) { l.style.setProperty('--cw', cw() + 'px'); if (UI.view === 'sec') renderLedger(); } }, 200); });
   function route() {
@@ -360,21 +396,44 @@
   function closeDialog() { if (dlg.open) dlg.close(); }
   dlg.addEventListener('click', function (e) { if (e.target === dlg) closeDialog(); if (e.target.closest('[data-close]')) closeDialog(); });
 
+  function classSelect(attr, id, cur) {
+    var groups = { lim: [], gri: [], uld: [] };
+    ET.START_CLASSES.forEach(function (x) { groups[x[2]].push(x); });
+    return '<select class="inp" ' + attr + '="' + id + '" aria-label="Starting class"><option value="">Starting class…</option>' +
+      Object.keys(groups).map(function (city) { return '<optgroup label="' + esc(ET.CITIES[city]) + '">' + groups[city].map(function (x) { return '<option value="' + x[0] + '"' + (cur === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</optgroup>'; }).join('') +
+      (cur && cur.indexOf('city:') === 0 ? '<option value="' + cur + '" selected>' + esc(ET.CITIES[cur.slice(5)]) + ' (class not recorded)</option>' : '') + '</select>';
+  }
+  function gcSelect(attr, id, cur) {
+    return '<select class="inp" ' + attr + '="' + id + '" aria-label="Grand Company"><option value="">Not yet</option>' + [1, 2, 3].map(function (g) { return '<option value="' + g + '"' + (Number(cur) === g ? ' selected' : '') + '>' + esc(ET.GCS[g]) + '</option>'; }).join('') + '</select>';
+  }
   function setupDialog() {
-    var n = 8, names = [];
+    var n = 8, rowsState = [];
     var draw = function () {
-      var rows = '';
-      for (var i = 0; i < n; i++) rows += '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-name="' + i + '" placeholder="Character ' + (i + 1) + ' name" value="' + esc(names[i] || '') + '" aria-label="Character ' + (i + 1) + ' name"><span></span></div>';
-      openDialog('<h3>Welcome to the Eveniunt Tracker</h3><p class="help">Track up to eight characters side by side. Choose how many, and give them names (you can change both later in Settings).</p>' +
-        '<div class="row"><label class="label" for="nchars">Characters</label><select id="nchars" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === n ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
-        '<div class="chars" style="margin-top:10px">' + rows + '</div>' +
-        '<div class="row" style="margin-top:16px"><button type="button" class="btn" id="go">Start tracking</button><button type="button" class="btn ghost" id="load-backup">Load a backup or transfer code instead</button></div>', function (d) {
+      var rows = '<div class="ch head"><span></span><span>Name</span><span>Starting class</span><span>Grand Company</span></div>';
+      for (var i = 0; i < n; i++) {
+        var r = rowsState[i] || {};
+        rows += '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-name="' + i + '" placeholder="Character ' + (i + 1) + '" value="' + esc(r.name || '') + '" aria-label="Character ' + (i + 1) + ' name">' + classSelect('data-cls', i, r.cls) + gcSelect('data-gcs', i, r.gc) + '</div>';
+      }
+      openDialog('<h3>Welcome to the Eveniunt Tracker</h3><p class="help">Track up to eight characters side by side. For each one, the starting class decides which city’s opening quests apply (the other two cities’ quests are greyed out), and the Grand Company does the same for company quests. You can change all of this later in Settings.</p>' +
+        '<div class="row"><label class="help" for="nchars">How many characters</label><select id="nchars" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === n ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+        '<div class="chars setup" style="margin-top:10px">' + rows + '</div>' +
+        '<div class="row" style="margin-top:16px"><button type="button" class="btn" id="go">Start tracking</button><button type="button" class="btn ghost" id="load-backup">Load a backup or import saves instead</button></div>', function (d) {
         $('#nchars', d).onchange = function (e) { keep(); n = +e.target.value; draw(); };
-        $('#go', d).onclick = function () { keep(); ST = ET.newState(names.slice(0, n).map(function (x, i) { return x || 'Character ' + (i + 1); })); ET.saveState(ST, true); closeDialog(); afterBoot(); toast('Ready. Import your desktop-app saves from Settings → Import and backup.'); };
-        $('#load-backup', d).onclick = function () { keep(); ST = ET.newState(names.slice(0, n).map(function (x, i) { return x || 'Character ' + (i + 1); })); afterBoot(); openSettings('data'); };
+        var make = function () {
+          keep();
+          var st = ET.newState(Array.from({ length: n }, function (_, i) { return (rowsState[i] && rowsState[i].name) || 'Character ' + (i + 1); }));
+          st.chars.forEach(function (c, i) { var r = rowsState[i] || {}; ET.setStart(st, c.id, r.cls || null, r.gc || null); });
+          return st;
+        };
+        $('#go', d).onclick = function () { ST = make(); ET.saveState(ST, true); closeDialog(); afterBoot(); toast('Ready. Import desktop-app saves any time from Settings → Import and backup.'); };
+        $('#load-backup', d).onclick = function () { ST = make(); afterBoot(); openSettings('data'); };
       });
     };
-    var keep = function () { $$('[data-name]', dlg).forEach(function (inp) { names[+inp.dataset.name] = inp.value.trim(); }); };
+    var keep = function () {
+      $$('[data-name]', dlg).forEach(function (inp) { var i = +inp.dataset.name; rowsState[i] = rowsState[i] || {}; rowsState[i].name = inp.value.trim(); });
+      $$('[data-cls]', dlg).forEach(function (s) { var i = +s.dataset.cls; rowsState[i] = rowsState[i] || {}; rowsState[i].cls = s.value; });
+      $$('[data-gcs]', dlg).forEach(function (s) { var i = +s.dataset.gcs; rowsState[i] = rowsState[i] || {}; rowsState[i].gc = s.value ? Number(s.value) : null; });
+    };
     draw();
     dlg.addEventListener('cancel', function (e) { if (!ST) e.preventDefault(); });
   }
@@ -391,9 +450,14 @@
     });
   }
   function charsTab() {
-    return '<p class="help">Up to eight characters, shown side by side in every list. The Lodestone number (or the character’s Lodestone page address) enables the online refresh.</p>' +
-      '<div class="row"><label class="label" for="cn">How many</label><select id="cn" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === ST.chars.length ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
-      '<div class="chars" style="margin-top:10px">' + ST.chars.map(function (c, i) { return '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-cname="' + c.id + '" value="' + esc(c.name) + '" aria-label="Name of character ' + (i + 1) + '"><input class="inp" data-lode="' + c.id + '" value="' + esc(c.lodestone || '') + '" placeholder="Lodestone number" aria-label="Lodestone number of character ' + (i + 1) + '"></div>'; }).join('') + '</div>' +
+    var missing = ST.chars.filter(function (c) { return !ET.cityOf(c); }).map(function (c) { return c.name; });
+    return '<p class="help">Up to eight characters, side by side in every list. The starting class decides which city’s opening quests apply; the Grand Company does the same for company quests. Entries for the other cities and companies are greyed out for that character and left out of its totals. The Lodestone number (or the character’s Lodestone page address) turns on the online refresh.</p>' +
+      (missing.length ? '<p class="help"><b>Choose a starting class for:</b> ' + esc(missing.join(', ')) + '. Until then, all three cities’ opening quests count for them.</p>' : '') +
+      '<div class="row"><label class="help" for="cn">How many characters</label><select id="cn" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === ST.chars.length ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="chars" style="margin-top:10px"><div class="ch head"><span></span><span>Name and Lodestone number</span><span>Starting class</span><span>Grand Company</span></div>' + ST.chars.map(function (c, i) {
+        return '<div class="ch"><b>' + (i + 1) + '</b><span style="display:grid;gap:4px"><input class="inp" data-cname="' + c.id + '" value="' + esc(c.name) + '" aria-label="Name of character ' + (i + 1) + '"><input class="inp" data-lode="' + c.id + '" value="' + esc(c.lodestone || '') + '" placeholder="Lodestone number (optional)" aria-label="Lodestone number of character ' + (i + 1) + '"></span>' +
+          classSelect('data-ccls', c.id, c.cls || (c.city ? 'city:' + c.city : '')) + gcSelect('data-cgc', c.id, c.gc) + '</div>';
+      }).join('') + '</div>' +
       '<div class="row" style="margin-top:12px"><button type="button" class="btn sm" id="save-chars">Save characters</button></div>';
   }
   function bindChars(d) {
@@ -409,6 +473,8 @@
       $$('[data-cname]', d).forEach(function (inp) { ET.renameCharacter(ST, inp.dataset.cname, inp.value); });
       var bad = [];
       $$('[data-lode]', d).forEach(function (inp) { var c = ST.chars.find(function (x) { return x.id === inp.dataset.lode; }); var v = inp.value.trim(); var id = v ? ET.parseLodestoneId(v) : null; if (v && !id) bad.push(c.name); c.lodestone = id; });
+      $$('[data-ccls]', d).forEach(function (s) { var c = ST.chars.find(function (x) { return x.id === s.dataset.ccls; }); if (s.value.indexOf('city:') === 0) return; ET.setStart(ST, c.id, s.value || null, undefined); if (!s.value) delete c.city; });
+      $$('[data-cgc]', d).forEach(function (s) { ET.setStart(ST, s.dataset.cgc, undefined, s.value ? Number(s.value) : null); });
       ST.updated = Date.now(); save(); render(); toast(bad.length ? 'Not a Lodestone number for: ' + bad.join(', ') : 'Characters saved'); openSettings('chars');
     };
   }
@@ -635,5 +701,5 @@
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
   })();
-  window.__tracker = { get ST() { return ST; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
+  window.__tracker = { get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
 })();

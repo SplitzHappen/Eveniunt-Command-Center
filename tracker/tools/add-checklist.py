@@ -126,6 +126,22 @@ def build_list(sheet, sid, ttl, area, ncol, dcols, group):
 for spec in LISTS:
     build_list(*spec)
 
+# Grand Company ranks: one group per company, each rank tagged with its company (rank names carry it).
+def gc_of(name):
+    n = name.lower()
+    return 1 if "storm" in n else 2 if "serpent" in n else 3 if "flame" in n else 0
+_gcs = SEC["gcranks"]
+_groups = collections.OrderedDict((t, []) for t in ("Maelstrom", "Order of the Twin Adder", "Immortal Flames"))
+for g in _gcs["g"]:
+    for e in g["e"]:
+        k = gc_of(e["n"])
+        if k:
+            e["gc"] = k
+        _groups[list(_groups)[k - 1] if k else "Maelstrom"].append(e)
+for es in _groups.values():
+    es.sort(key=lambda e: e["i"])
+_gcs["g"] = [{"t": t, "e": es} for t, es in _groups.items() if es]
+
 # Classes and jobs: a level per character (job cap from the checklist's role grouping; desynthesis has no fixed cap here).
 def classes_jobs():
     groups = collections.OrderedDict()

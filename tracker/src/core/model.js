@@ -37,7 +37,7 @@
     if (!Array.isArray(names) || names.length < 1 || names.length > MAX_CHARS) {
       throw new Error('Choose between 1 and ' + MAX_CHARS + ' characters.');
     }
-    const chars = names.map((n, i) => ({ id: 'c' + (i + 1), name: String(n || '').trim() || 'Character ' + (i + 1), lodestone: null }));
+    const chars = names.map((n, i) => ({ id: 'c' + (i + 1), name: String(n || '').trim() || 'Character ' + (i + 1), lodestone: null, cls: null, gc: null }));
     const ticks = {};
     const excl = {};
     for (const c of chars) { ticks[c.id] = {}; excl[c.id] = {}; }
@@ -93,7 +93,7 @@
     while (st.chars.length < n) {
       let k = 1;
       while (st.chars.some((c) => c.id === 'c' + k)) k++;
-      const c = { id: 'c' + k, name: 'Character ' + (st.chars.length + 1), lodestone: null };
+      const c = { id: 'c' + k, name: 'Character ' + (st.chars.length + 1), lodestone: null, cls: null, gc: null };
       st.chars.push(c);
       st.ticks[c.id] = {};
       st.excl[c.id] = {};
@@ -156,6 +156,32 @@
     st.updated = Date.now();
   };
 
+  // ---------------------------------------------------------------- starting class and Grand Company
+  // The starting class decides the starting city; entries that belong to another city (e.city) or another Grand
+  // Company (e.gc) do not apply to that character. Unset means nothing is excluded yet.
+  ET.START_CLASSES = [
+    ['mrd', 'Marauder', 'lim'], ['acn', 'Arcanist', 'lim'],
+    ['lnc', 'Lancer', 'gri'], ['arc', 'Archer', 'gri'], ['cnj', 'Conjurer', 'gri'],
+    ['gla', 'Gladiator', 'uld'], ['pgl', 'Pugilist', 'uld'], ['thm', 'Thaumaturge', 'uld'],
+  ];
+  ET.CITIES = { lim: 'Limsa Lominsa', gri: 'Gridania', uld: "Ul'dah" };
+  ET.GCS = { 1: 'Maelstrom', 2: 'Order of the Twin Adder', 3: 'Immortal Flames' };
+  ET.cityOf = (char) => { const c = ET.START_CLASSES.find((x) => x[0] === (char && char.cls)); return c ? c[2] : (char && char.city) || null; };
+  ET.setStart = function (st, charId, cls, gc) {
+    const c = st.chars.find((x) => x.id === charId);
+    if (!c) throw new Error('No such character');
+    if (cls !== undefined) { if (cls && !ET.START_CLASSES.some((x) => x[0] === cls)) throw new Error('Unknown starting class'); c.cls = cls || null; if (cls) delete c.city; }
+    if (gc !== undefined) { c.gc = gc ? Number(gc) : null; }
+    st.updated = Date.now();
+  };
+  // Why an entry does not apply to a character: 'manual' (marked by the user), 'city', 'gc', or null (it applies).
+  ET.notApplicable = function (st, char, key, entry) {
+    if (st.excl[char.id] && st.excl[char.id][key]) return 'manual';
+    if (entry && entry.city) { const city = ET.cityOf(char); if (city && entry.city !== city) return 'city'; }
+    if (entry && entry.gc && char.gc && entry.gc !== char.gc) return 'gc';
+    return null;
+  };
+
   // ---------------------------------------------------------------- per-character exclusion
   // "Does not apply to this character": left out of that character's total only.
   ET.isExcluded = (st, charId, key) => !!(st.excl[charId] && st.excl[charId][key]);
@@ -209,7 +235,7 @@
       if (!av.counted) { marked++; continue; }
       total++;
       for (const c of st.chars) {
-        if (st.excl[c.id][k]) continue;
+        if (ET.notApplicable(st, c, k, hit.e)) continue;
         totals[c.id]++;
         if (st.ticks[c.id][k]) done[c.id]++;
       }

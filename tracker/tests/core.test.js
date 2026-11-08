@@ -313,3 +313,29 @@ test('per-character exclusion: left out of that character only; travels in files
   ET.applyImport(st, 'c2', r, 'add');
   assert.ok(ET.isExcluded(st, 'c2', k));
 });
+
+test('starting class and Grand Company decide what applies; the importer works them out from X marks', () => {
+  const st = ET.newState(['A', 'B']);
+  const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'quests-mainscenarioarealmreborn'));
+  const gri = keys.find((k) => idx.byKey.get(k).e.city === 'gri');
+  const uld = keys.find((k) => idx.byKey.get(k).e.city === 'uld');
+  const before = ET.tally(idx, st, keys).totals.c1;
+  ET.setStart(st, 'c1', 'gla', 3);
+  assert.strictEqual(ET.cityOf(st.chars[0]), 'uld');
+  assert.strictEqual(ET.notApplicable(st, st.chars[0], gri, idx.byKey.get(gri).e), 'city');
+  assert.strictEqual(ET.notApplicable(st, st.chars[0], uld, idx.byKey.get(uld).e), null);
+  assert.ok(ET.tally(idx, st, keys).totals.c1 < before);
+  assert.strictEqual(ET.tally(idx, st, keys).totals.c2, before, 'a character without a class keeps everything');
+  // starting class travels in files and codes
+  assert.strictEqual(ET.importFile(ET.exportFile(st)).chars[0].cls, 'gla');
+  // inference: X on Gridania and Limsa city quests, ticks on an Ul'dah one -> Ul'dah
+  const map = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'desktop-map.json'), 'utf8'));
+  const lim = keys.find((k) => idx.byKey.get(k).e.city === 'lim');
+  const id = (k) => idx.byKey.get(k).e.i;
+  const r = ET.importDesktopSave(idx, { version: '1.0.5', overall: { duty: { quest: { 'main-scenario': { a: { [id(gri)]: 'X', [id(lim)]: 'X', [id(uld)]: 'Y' } } } } } }, map);
+  assert.strictEqual(r.infer.city, 'uld');
+  assert.deepStrictEqual(r.excl, {}, 'X marks explained by the starting city are not kept as manual marks');
+  const st2 = ET.newState(['C']);
+  ET.applyImport(st2, 'c1', r, 'add');
+  assert.strictEqual(ET.cityOf(st2.chars[0]), 'uld');
+});

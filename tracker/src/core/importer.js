@@ -200,7 +200,30 @@
       }
     })(doc.overall, '');
     const list = (m) => [...m].map(([area, count]) => ({ area, count })).sort((a, b) => b.count - a.count);
-    return { ticks, excl, vals, missed, imported: Object.keys(ticks).length, placed, done: doneCount, notPlaced: list(notPlaced), levels: list(levels), version: String(doc.version) };
+    // Work out the starting city and Grand Company from the save: the desktop app marks the other cities' and
+    // companies' entries X, and only the character's own can be done. X marks explained this way are not kept as
+    // manual marks (the starting class and company then decide them, and stay correct if they are changed).
+    const infer = { city: null, gc: null };
+    const named = { marauder: 'mrd', arcanist: 'acn', lancer: 'lnc', archer: 'arc', conjurer: 'cnj', gladiator: 'gla', pugilist: 'pgl', thaumaturge: 'thm' };
+    const sc = named[String(doc['starting-class'] || '').toLowerCase().trim()];
+    const score = (field) => {
+      const xs = {}, ts = {};
+      for (const k of Object.keys(excl)) { const e = idx.byKey.get(k).e; if (e[field]) xs[e[field]] = (xs[e[field]] || 0) + 1; }
+      for (const k of Object.keys(ticks)) { const e = idx.byKey.get(k).e; if (e[field]) ts[e[field]] = (ts[e[field]] || 0) + 1; }
+      const all = field === 'city' ? ['lim', 'gri', 'uld'] : [1, 2, 3];
+      const ticked = all.filter((c) => ts[c] && !xs[c]);
+      const free = all.filter((c) => !xs[c]);
+      return ticked.length === 1 ? ticked[0] : free.length === 1 && Object.keys(xs).length === 2 ? free[0] : null;
+    };
+    infer.cls = sc || null;
+    infer.city = sc ? (ET.START_CLASSES.find((x) => x[0] === sc) || [])[2] : score('city');
+    infer.gc = score('gc');
+    if (infer.gc) infer.gc = Number(infer.gc);
+    for (const k of Object.keys(excl)) {
+      const e = idx.byKey.get(k).e;
+      if ((infer.city && e.city && e.city !== infer.city) || (infer.gc && e.gc && e.gc !== infer.gc)) delete excl[k];
+    }
+    return { ticks, excl, vals, missed, infer, imported: Object.keys(ticks).length, placed, done: doneCount, notPlaced: list(notPlaced), levels: list(levels), version: String(doc.version) };
   };
 
   // Put an import into one character. mode 'add' keeps existing ticks; 'replace' clears that character first.
@@ -211,6 +234,10 @@
     for (const k of Object.keys(result.excl || {})) st.excl[charId][k] = 1;
     if (mode === 'replace') st.vals[charId] = {};
     for (const [k, v] of Object.entries(result.vals || {})) { const hit = ET.indexForImport && ET.indexForImport.byKey.get(k); ET.setValue(st, charId, k, v, hit ? hit.e : null); }
+    const c = st.chars.find((x) => x.id === charId);
+    const inf = result.infer || {};
+    if (c && !c.cls && (inf.cls || inf.city)) { if (inf.cls) c.cls = inf.cls; else c.city = inf.city; }
+    if (c && !c.gc && inf.gc) c.gc = inf.gc;
     st.updated = Date.now();
   };
 })();

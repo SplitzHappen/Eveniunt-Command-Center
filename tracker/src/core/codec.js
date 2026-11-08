@@ -6,7 +6,7 @@
   const CODE_PREFIX = 'EVT1-';
 
   // The portable part of the state: what moves between devices. Sync bookkeeping stays local.
-  ET.portable = (st) => ({ chars: st.chars.map((c) => ({ id: c.id, name: c.name, lodestone: c.lodestone || null })), ticks: st.ticks, vals: st.vals || {}, excl: st.excl || {}, avail: st.avail, settings: st.settings });
+  ET.portable = (st) => ({ chars: st.chars.map((c) => ({ id: c.id, name: c.name, lodestone: c.lodestone || null, cls: c.cls || null, city: c.cls ? null : (c.city || null), gc: c.gc || null })), ticks: st.ticks, vals: st.vals || {}, excl: st.excl || {}, avail: st.avail, settings: st.settings });
 
   ET.exportFile = function (st) {
     return JSON.stringify({ app: FILE_TAG, saved: new Date().toISOString(), state: Object.assign({ v: st.v }, ET.portable(st)) }, null, 0);
@@ -70,7 +70,7 @@
 
   ET.makeTransferCode = async function (st) {
     const p = ET.portable(st);
-    const doc = { c: p.chars.map((c) => [c.id, c.name, c.lodestone || '']), t: {}, a: p.avail, s: p.settings };
+    const doc = { c: p.chars.map((c) => [c.id, c.name, c.lodestone || '', c.cls || (c.city ? 'city:' + c.city : ''), c.gc || 0]), t: {}, a: p.avail, s: p.settings };
     doc.e = {}; doc.v = st.vals || {};
     for (const c of p.chars) { doc.t[c.id] = packTicks(st.ticks[c.id] || {}); doc.e[c.id] = packTicks((st.excl || {})[c.id] || {}); }
     const raw = new TextEncoder().encode(JSON.stringify(doc));
@@ -89,7 +89,7 @@
     }
     const st = {
       v: ET.STATE_VERSION,
-      chars: doc.c.map(([id, name, lodestone]) => ({ id, name, lodestone: lodestone || null })),
+      chars: doc.c.map(([id, name, lodestone, start, gc]) => ({ id, name, lodestone: lodestone || null, cls: start && !String(start).startsWith('city:') ? start : null, city: String(start || '').startsWith('city:') ? String(start).slice(5) : null, gc: gc || null })),
       ticks: {},
       avail: doc.a || {},
       settings: doc.s || {},

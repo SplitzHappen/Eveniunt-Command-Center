@@ -13,7 +13,7 @@ Nothing is typed by hand: every entry comes from a game sheet row. Rows without 
 with no way to obtain them in the game data (no unlock item, no guide order), are dropped and counted
 in the report.
 """
-import csv, json, os, sys, collections
+import csv, json, os, re, sys, collections
 
 DM_COMMIT = "44948e4cda5846eab0baa9872122a888fcc4f1b1"
 TC_COMMIT = "c1ede0a03c0072c830e0a1b3b8e7a20ea539e3b3"  # files: item-patch, patch-content, patch-names, gathering-log-pages, fates
@@ -80,6 +80,10 @@ def by_expansion(entries, title_suffix=""):
 def entry(id_, name, patch_id=None, **extra):
     e = {"i": id_, "n": name}
     v, ex = patch_of(patch_id) if patch_id is not None else (None, None)
+    if v == "4.31" and extra.get("_kind") == "quest":
+        # Teamcraft files every quest that existed by 4.31 under 4.31 (its baseline), so the label would be wrong
+        problems["quest patch not recorded (4.31 or earlier)"] += 1
+        v = None
     if v:
         e["p"] = v
         e["ex"] = ex
@@ -747,6 +751,7 @@ def quests_outside_journal():
         if not name or i(r["JournalGenre"]):
             continue
         e = entry(qid, name, CONTENT_PATCH["quest"].get(qid), _kind="quest")
+        e["ex"] = i(r["Expansion"])  # the game's own expansion field
         out.append(e)
     return out
 
@@ -813,6 +818,74 @@ def regroup(sid, keyfn, order=None):
 regroup("facewear", lambda e: (e.get("src") or ["Other"])[0].split(":")[0])
 regroup("duty-pvp", lambda e: e.pop("grp", "Other PvP"), ["Crystalline Conflict", "Frontline", "Rival Wings", "Crystalline Conflict: custom matches", "Other PvP"])
 
+# ---------------------------------------------------------------- starting city and Grand Company
+# Each starting city's story begins at its own quest ("Coming to Gridania / Limsa Lominsa / Ul'dah"). Following the game's
+# quest prerequisites (PreviousQuest, with PreviousQuestJoin: all-of or any-of) gives, for every quest, the set of
+# starting cities that can reach it; a quest only one city can reach belongs to that city. Grand Company quests come from
+# Quest.GrandCompany, the "(Maelstrom|Twin Adder|Immortal Flames)" variants and the three officer quests.
+CITY_ROOT = {"lim": 65643, "gri": 65575, "uld": 66130}
+def city_and_gc():
+    q = sheet("Quest")
+    preds = {k: [i(v[f"PreviousQuest[{n}]"]) for n in range(3) if i(v[f"PreviousQuest[{n}]"]) in q] for k, v in q.items()}
+    ALL = frozenset(CITY_ROOT)
+    reach = {root: frozenset([c]) for c, root in CITY_ROOT.items()}
+    changed, rounds = True, 0
+    while changed and rounds < 300:
+        changed, rounds = False, rounds + 1
+        for k in q:
+            if k in CITY_ROOT.values():
+                continue
+            ps = preds[k]
+            if not ps:
+                new = ALL
+            else:
+                sets = [reach.get(p) for p in ps]
+                if any(s is None for s in sets):
+                    continue
+                new = frozenset.union(*sets) if q[k].get("PreviousQuestJoin") == "2" else frozenset.intersection(*sets)
+            if reach.get(k) != new:
+                reach[k] = new
+                changed = True
+    city = {k: next(iter(s)) for k, s in reach.items() if len(s) == 1}
+    gcname = {"maelstrom": 1, "twin adder": 2, "immortal flames": 3}
+    officer = {"till sea swallows all": 1, "wood's will be done": 2, "for coin and country": 3}
+    gc = {}
+    for k, v in q.items():
+        n = clean(v["Name"]).lower()
+        m = re.search(r"\((maelstrom|twin adder|immortal flames)\)\s*$", n)
+        g = i(v.get("GrandCompany")) or (gcname[m.group(1)] if m else 0) or officer.get(n, 0)
+        if g:
+            gc[k] = g
+    return city, gc
+
+CITY, GCQ = city_and_gc()
+# Outside the quest sheet: the introductory levequest of each region and the three "leaving the city" achievements
+# (FFXIV Collect marks the achievements and these leves as limited to characters who started in that city).
+LEVE_CITY = {556: "lim", 546: "gri", 566: "uld"}
+ACH_CITY = {310: "lim", 311: "gri", 312: "uld"}
+city_stats = collections.Counter()
+for sec in sections:
+    for g in sec["g"]:
+        for e in g["e"]:
+            c = None
+            if sec["id"].startswith("quests-"):
+                c = CITY.get(e["i"])
+                if GCQ.get(e["i"]):
+                    e["gc"] = GCQ[e["i"]]
+                    city_stats["quest: Grand Company"] += 1
+            elif sec["id"] == "leves":
+                c = LEVE_CITY.get(e["i"])
+            elif sec["id"].startswith("ach-"):
+                c = ACH_CITY.get(e["i"])
+            elif sec["id"] == "hunting":
+                gcmap = {"Maelstrom": 1, "Order of the Twin Adder": 2, "Immortal Flames": 3}
+                if g.get("c") in gcmap:
+                    e["gc"] = gcmap[g["c"]]
+            if c:
+                e["city"] = c
+                city_stats[sec["id"].split("-")[0] + ": " + c] += 1
+CITY_STATS = dict(city_stats)
+
 # ---------------------------------------------------------------- output
 meta = {
     "sources": {
@@ -827,7 +900,7 @@ os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, "w", encoding="utf-8") as f:
     json.dump({"meta": meta, "sections": sections}, f, ensure_ascii=False, separators=(",", ":"))
 marks = collections.Counter(e.get("x") for sec in sections for g in sec["g"] for e in g["e"] if e.get("x"))
-rep = {"counts": report, "problems": dict(problems), "status": dict(fc_stats), "marked": dict(marks), "total": sum(report.values())}
+rep = {"counts": report, "problems": dict(problems), "status": dict(fc_stats), "marked": dict(marks), "city_and_gc": CITY_STATS, "total": sum(report.values())}
 with open(os.path.splitext(OUT)[0] + "-report.json", "w", encoding="utf-8") as f:
     json.dump(rep, f, indent=1)
 print(json.dumps(rep, indent=1))

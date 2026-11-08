@@ -33,20 +33,26 @@ async function setup(page, n) {
   await page.selectOption('#nchars', String(n));
   for (let i = 0; i < n; i++) await page.fill(`[data-name="${i}"]`, NAMES[i]);
   await page.click('#go');
-  await page.waitForSelector('.ov');
+  await page.waitForSelector('.ov-table');
 }
 const go = (page, sid) => page.evaluate((s) => window.__tracker.setView('sec', s), sid);
-const tally = (page, c) => page.evaluate((cid) => { const t = document.querySelector(`.tally[data-c="${cid}"] .n`); return t ? t.textContent.trim() : null; }, c);
+// "done / total" for a character in the open list, read from the column header the user sees
+const tally = (page, c) => page.evaluate((cid) => {
+  const i = window.__tracker.ST.chars.findIndex((x) => x.id === cid);
+  const cell = document.querySelectorAll('#lh .c')[i];
+  const m = cell && cell.getAttribute('title').match(/: (\d+) of (\d+)$/);
+  return m ? m[1] + ' / ' + m[2] : null;
+}, c);
 
-test('first run: choose 1 to 8 characters, names shown as columns and tallies; nothing goes online', async () => {
+test('first run: choose 1 to 8 characters, names shown as columns with their progress; nothing goes online', async () => {
   const { ctx, page, errors, external } = await open({ setup: false });
   assert.match(await page.textContent('#dlg'), /up to eight characters/i);
   await setup(page, 8);
   await go(page, 'mounts');
   await page.waitForSelector('.er');
-  const heads = await page.$$eval('.lh .c', (els) => els.map((e) => e.getAttribute('title')));
+  const heads = await page.$$eval('#lh .c', (els) => els.map((e) => e.getAttribute('title').split(':')[0]));
   assert.deepEqual(heads, NAMES);
-  assert.equal(await page.locator('.tally').count(), 8);
+  assert.equal(await page.locator('#lh .c .pc').count(), 8);
   assert.deepEqual(errors, []);
   assert.deepEqual(external.filter((u) => !/ffxivcollect|google/.test(u)), [], 'no unexpected network requests');
   await ctx.close();
@@ -62,17 +68,18 @@ test('ticking, the X availability switch both ways, and per-character "does not 
   const key = await counted.getAttribute('data-k');
   await counted.locator('.tk[data-c="c1"]').click();
   assert.equal(await tally(page, 'c1'), '1 / ' + total0);
-  // mark it unobtainable: it leaves the count (and its tick with it)
-  await page.locator(`.er[data-k="${key}"] .xb`).click();
+  // open the row and mark it unobtainable: it leaves the count (and its tick with it)
+  await page.locator(`.er[data-k="${key}"] .c0`).click();
+  await page.locator(`.det[data-det="${key}"] [data-x]`).click();
   assert.equal(await tally(page, 'c1'), '0 / ' + (total0 - 1));
   assert.ok(await page.locator(`.er[data-k="${key}"]`).evaluate((e) => e.classList.contains('x')));
-  // switch an X entry on: it joins the count
+  // the pill on an entry that is not counted counts it again
   const xrow = page.locator('.er.x').nth(1);
-  await xrow.locator('.xb').click();
+  await xrow.locator('.pill').click();
   assert.equal(await tally(page, 'c1'), '0 / ' + total0);
   // "does not apply" for character 2 only
   await page.click('[data-mode="na"]');
-  await page.locator(`.er[data-k="${key}"]`).first().waitFor();
+  await page.waitForSelector('.mode-note');
   const other = page.locator('.er:not(.x)').nth(2);
   await other.locator('.tk[data-c="c2"]').click();
   assert.equal(await tally(page, 'c2'), '0 / ' + (total0 - 1));
@@ -210,7 +217,7 @@ test('all 20 themes, light and dark: readable text, readable dropdowns, distinct
         const L = (c) => { const v = c.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
         const cr = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
         const paper = hex(cs.getPropertyValue('--paper')), ink = hex(cs.getPropertyValue('--ink')), seal = hex(cs.getPropertyValue('--seal'));
-        const sel = document.querySelector('#filter'); const so = getComputedStyle(sel);
+        const sel = document.createElement('select'); sel.innerHTML = '<option>Option</option>'; document.body.appendChild(sel); const so = getComputedStyle(sel.options[0]); setTimeout(() => sel.remove());
         const rgb = (s) => (s.match(/\d+/g) || []).slice(0, 3).map(Number);
         return { text: cr(paper, ink), accent: cr(paper, seal), select: cr(rgb(so.backgroundColor), rgb(so.color)) };
       });
@@ -261,10 +268,39 @@ test('hosted site over HTTP: installable, works offline after the first visit', 
   await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(async () => { await page.reload(); await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 20000 }); });
   await ctx.setOffline(true);
   await page.reload();
-  await page.waitForSelector('.ov', { timeout: 20000 });
+  await page.waitForSelector('.ov-table', { timeout: 20000 });
   assert.equal(await page.evaluate(() => window.__tracker.ST.chars.length), 2, 'offline reload keeps the characters');
   const coop = await page.evaluate(() => self.crossOriginIsolated);
   assert.equal(coop, false, 'no cross-origin isolation (Google sign-in needs popups)');
   assert.deepEqual(errors, []);
   await ctx.close(); server.close();
+});
+
+test('starting class greys out the other cities’ opening quests; Grand Company the other companies’ quests', async () => {
+  const { ctx, page, errors } = await open({ setup: false });
+  await page.selectOption('#nchars', '3');
+  await page.fill('[data-name="0"]', 'Lim Starter'); await page.selectOption('[data-cls="0"]', 'mrd'); await page.selectOption('[data-gcs="0"]', '1');
+  await page.fill('[data-name="1"]', 'Gri Starter'); await page.selectOption('[data-cls="1"]', 'cnj');
+  await page.fill('[data-name="2"]', 'No Class Yet');
+  await page.click('#go'); await page.waitForSelector('.ov-table');
+  await go(page, 'quests-mainscenarioarealmreborn'); await page.waitForSelector('.er');
+  const st = await page.evaluate(() => {
+    const T = window.__tracker, ET = globalThis.ET, keys = T.IDX.sections.find((s) => s.id === 'quests-mainscenarioarealmreborn').groups.flatMap((g) => g.keys);
+    const gri = keys.find((k) => T.IDX.byKey.get(k).e.city === 'gri'), lim = keys.find((k) => T.IDX.byKey.get(k).e.city === 'lim');
+    const cell = (k, c) => document.querySelector(`.tk[data-k="${k}"][data-c="${c}"]`).classList.contains('na');
+    const t = ET.tally(T.IDX, T.ST, keys);
+    return { griForLim: cell(gri, 'c1'), griForGri: cell(gri, 'c2'), limForGri: cell(lim, 'c2'), griForNone: cell(gri, 'c3'), totals: [t.totals.c1, t.totals.c2, t.totals.c3] };
+  });
+  assert.deepEqual([st.griForLim, st.griForGri, st.limForGri, st.griForNone], [true, false, true, false]);
+  assert.ok(st.totals[0] < st.totals[2] && st.totals[1] < st.totals[2], 'city quests leave the totals: ' + st.totals);
+  // clicking a greyed box explains instead of ticking
+  const gk = await page.evaluate(() => { const T = window.__tracker; return T.IDX.sections.find((s) => s.id === 'quests-mainscenarioarealmreborn').groups.flatMap((g) => g.keys).find((k) => T.IDX.byKey.get(k).e.city === 'gri'); });
+  await page.locator(`.tk[data-k="${gk}"][data-c="c1"]`).click();
+  assert.match(await page.textContent('#toast'), /another starting city/);
+  assert.equal(await page.evaluate((k) => !!window.__tracker.ST.ticks.c1[k], gk), false);
+  // Grand Company: another company's quest does not apply to a Maelstrom character
+  const gc = await page.evaluate(() => { const T = window.__tracker, ET = globalThis.ET; for (const [k, h] of T.IDX.byKey) if (h.e.gc === 2 && h.s.id.startsWith('quests-')) return ET.notApplicable(T.ST, T.ST.chars[0], k, h.e); return 'none found'; });
+  assert.equal(gc, 'gc');
+  assert.deepEqual(errors, []);
+  await ctx.close();
 });
