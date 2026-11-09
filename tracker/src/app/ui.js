@@ -467,6 +467,10 @@
     var h = '<div class="p-head"><span class="ttl"><h2>Overview</h2><p class="note">Each row is a folder of the menu; each column is a character. Click a row to open it.</p></span></div>';
     h += '<div class="ov-table" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px"><div class="lr lh"><span class="c0">Folder</span>' + headCells(tAll) + '</div>';
     h += '<div class="lr fr tot-row"><span class="c0">Everything</span>' + cells(tAll) + '</div>';
+    // achievement points: the points of every ticked achievement, per character
+    var ptsAll = 0, ptsBy = {}; ST.chars.forEach(function (c) { ptsBy[c.id] = 0; });
+    IDX.sections.forEach(function (s) { if (s.id.indexOf('ach-') !== 0) return; s.groups.forEach(function (g) { g.keys.forEach(function (k) { var p = IDX.byKey.get(k).e.pts || 0; ptsAll += p; ST.chars.forEach(function (c) { if (ST.ticks[c.id][k]) ptsBy[c.id] += p; }); }); }); });
+    h += '<div class="lr fr ach-pts"><span class="c0">Achievement points</span>' + ST.chars.map(function (c) { return '<span class="c" title="' + esc(c.name) + ': ' + ptsBy[c.id].toLocaleString() + ' of ' + ptsAll.toLocaleString() + ' achievement points">' + ptsBy[c.id].toLocaleString() + '</span>'; }).join('') + '</div>';
     MENUS.forEach(function (m) {
       h += '<div class="lr mh"><span class="c0">' + esc(m.t) + '</span></div>';
       m.folders.forEach(function (f) {

@@ -3,8 +3,8 @@
   // except the optional fresh copy of the events list on the hosted site.
   var LIVE = (function () { try { return JSON.parse(document.getElementById('live-data').textContent); } catch (err) { return null; } })() ||
     { bigfish: [], ocean: null, field: { zones: {}, challenge: [], events: {}, weatherZone: {} }, timers: { timers: [] }, guides: {}, gate: [] };
-  var LIVE_VIEWS = [['now', 'Up Now'], ['bigfish', 'Big Fish'], ['ocean', 'Ocean Fishing'], ['timers', 'Timers & Events'], ['weather', 'Weather'],
-    ['field', 'Field Monsters'], ['gold', 'Gold Saucer'], ['notify', 'Notifications']];
+  var LIVE_VIEWS = [['now', 'Up Now'], ['dailies', 'Dailies & Weeklies'], ['bigfish', 'Big Fish'], ['srank', 'S Ranks'], ['ocean', 'Ocean Fishing'], ['island', 'Island Sanctuary'], ['timers', 'Timers & Events'], ['weather', 'Weather'],
+    ['field', 'Field Monsters'], ['gold', 'Gold Saucer'], ['pvp', 'PvP Series'], ['leveling', 'Leveling Guides'], ['notify', 'Notifications']];
   var NOTIFY_DEFAULT = {
     on: false, browser: true, sound: true, toast: true, lead: 5,
     bigfish: 'missing', bigfishLead: 10, legendaryOnly: false,
@@ -12,7 +12,7 @@
     ocean: 'missing', oceanLead: 10,
     daily: true, weekly: true, gc: false, fashion: false,
     gate: false, gates: {}, gateLead: 2,
-    events: true, fieldNm: false
+    events: true, fieldNm: false, srank: false, isle: false, jumbo: false
   };
   UI.live = Object.assign({ char: null, hide: false, ex: '', legendary: false, soon: false, bfHide: false, zone: 'Eureka Anemos', el: '', weak: '', spawnNow: false, watch: [] }, UI.live || {});
   UI.live.notify = Object.assign({}, NOTIFY_DEFAULT, UI.live.notify || {});
@@ -60,7 +60,7 @@
     if (now - WCACHE_AT > 60000) { WCACHE = {}; WCACHE_AT = now; }
     var hit = WCACHE[id];
     if (hit && (hit.length < 1 || hit[0].e > now)) return hit.filter(function (w) { return w.e > now; });
-    return (WCACHE[id] = windowsOf(c, now, count || 3));
+    return (WCACHE[id] = windowsOf(c, now - 2000, count || 3)); // a little early, so a window open now counts as open on the page that asked
   }
   function bfCond(f) { return f.z && (f.a != null) ? [f.z, f.a, f.b, f.w || [], f.pw || []] : null; }
   function condLabel(c) {
@@ -240,8 +240,10 @@
       var on = t.start <= now;
       return '<div class="tm-row ev ' + esc(t.type || '') + '"><b>' + esc(t.name) + '</b><span>' + (on ? (t.end ? 'ends in ' + cdown(t.end) : 'now') : 'starts in ' + cdown(t.start)) + '</span><span class="dim">' + esc(new Date(on && t.end ? t.end : t.start).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) + '</span><span class="dim">' + esc(t.type === 'maintenance' ? 'Maintenance' : 'Event') + '</span></div>';
     }).join('');
+    var jb = jumboAt(now), dcs = []; Object.keys(LIVE.dc || {}).forEach(function (r) { dcs = dcs.concat(LIVE.dc[r].dcs); });
+    other += '<div class="tm-row"><b>Jumbo Cactpot drawing</b><span>' + (jb ? cdown(jb.at) : '') + '</span><span class="dim">' + (jb ? esc(lt(jb.at) + ' · ' + new Date(jb.at).toLocaleDateString([], { weekday: 'short' })) : '') + '</span><span class="dim">Data center <select data-live="dc"><option value="">choose</option>' + dcs.sort().map(function (d) { return '<option' + (d === UI.live.dc ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' + (jb ? ' · ' + esc(jb.region) : '') + '</span></div>';
     $('#page').innerHTML = liveHead('Timers & Events', 'Game resets, the next GATE and ocean fishing boat, and the seasonal events and maintenance announced on the Lodestone (from Xenoveritas\' timer list' + (FRESH_TIMERS ? ', fresh copy' : ', as of ' + esc(LIVE.timers.fetched || 'the build')) + '). All times are in your time zone.', '') +
-      '<h3 class="lv-h">Resets</h3>' + rs + '<h3 class="lv-h">Gold Saucer and ocean fishing</h3>' + other + '<h3 class="lv-h">Seasonal events and maintenance</h3>' + (ev || '<p class="dim">Nothing announced right now.</p>');
+      '<h3 class="lv-h">Resets</h3>' + rs + '<h3 class="lv-h">Gold Saucer and ocean fishing</h3>' + other + '<h3 class="lv-h">Seasonal events and maintenance</h3>' + (ev || '<p class="dim">Nothing announced right now.</p>') + '<div class="lv-tools">' + charSelect() + '</div>' + eventRewardsHtml(now);
   }
 
   // ---- Field monsters (Eureka, Bozja, the Occult Crescent)
@@ -289,7 +291,7 @@
     var table = '<div class="fm-head"><span>Monster</span><span>Level</span><span>Where</span><span>' + (occult ? 'Weak to' : 'Element') + '</span><span>Spawns</span></div>' + mons.map(function (m) {
       var live = m.spawn ? spawnNow(m.spawn, wz, now) : null;
       var drops = (m.loot || []).filter(function (l) { return /Fragment|Cluster|Memory|Lockbox|Logogram|Crystal/.test(l); });
-      return '<div class="fm-row' + (live ? ' now' : '') + '"><span><b>' + esc(m.n) + '</b>' + (m.area ? ' <span class="dim">' + esc(m.area) + '</span>' : '') + (m.clan ? ' <span class="dim">· ' + esc(m.clan) + '</span>' : '') + (drops.length ? '<br><span class="dim">Drops: ' + esc(drops.join(', ')) + '</span>' : '') + '</span><span>' + esc(m.rank || m.lv || '') + '</span><span>' + (m.x != null ? '(' + m.x + ', ' + m.y + ')' : '') + '</span><span>' + esc(occult ? (m.weak || '') : (m.el || '')) + '</span><span>' + esc(m.spawn || 'always') + (m.rule ? ' <span class="dim" title="Not documented for this monster; Zadnor documents this rule for the same kind of monster">(usual rule)</span>' : '') + (live ? ' <b class="up">now</b>' : '') + (m.aggro ? ' <span class="dim">· aggro: ' + esc(m.aggro) + '</span>' : '') + '</span></div>';
+      return '<div class="fm-row' + (live ? ' now' : '') + '"><span><b>' + esc(m.n) + '</b>' + (m.area ? ' <span class="dim">' + esc(m.area) + '</span>' : '') + (m.clan ? ' <span class="dim">· ' + esc(m.clan) + '</span>' : '') + (drops.length ? '<br><span class="dim">Drops: ' + esc(drops.join(', ')) + '</span>' : '') + '</span><span>' + esc(m.rank || m.lv || '') + '</span><span>' + (m.x != null ? '(' + m.x + ', ' + m.y + ')' : '') + '</span><span>' + esc(occult ? (m.weak || '') : (m.el || '')) + '</span><span>' + esc(m.spawn || 'always') + (m.rule ? ' <span class="dim" title="Not documented for this monster; Zadnor documents this rule for the same kind of monster">(usual rule)</span>' : '') + (live ? ' <b class="up">now</b>' : (function () { var nx = fieldNext(m, wz, now); return nx ? ' <span class="dim">· next ' + lt(nx.s) + ' (in ' + dur(nx.s - now) + ')</span>' : ''; })()) + (m.aggro ? ' <span class="dim">· aggro: ' + esc(m.aggro) + '</span>' : '') + '</span></div>';
     }).join('');
     $('#page').innerHTML = liveHead('Field Monsters', 'Where every monster of Eureka, Bozja and the Occult Crescent is, its level and element (Eureka) or weakness (Occult Crescent), and which only appear in certain weather or at night: those turn the accent colour while they are out. Use the element filter for the Eureka challenge log.', '') + tabs + filt + chalHtml +
       (nms ? '<h3 class="lv-h">Notorious monsters and events</h3>' + nms : '') + '<h3 class="lv-h">Monsters <span class="dim">(' + mons.length + ')</span></h3>' + table;
@@ -331,6 +333,9 @@
       '<div class="nt-cat"><h4>Resets</h4>' + chk('daily', 'Daily reset') + chk('weekly', 'Weekly reset') + chk('gc', 'Grand Company reset') + chk('fashion', 'Fashion Report opens') + ' Tell me ' + sel('lead', leads) + '</div>' +
       '<div class="nt-cat"><h4>GATEs</h4>' + chk('gate', 'Before each GATE') + gates.map(function (x) { return '<label class="lv-chk"><input type="checkbox" data-notify-gate="' + esc(x) + '"' + (N.gates[x] === false ? '' : ' checked') + '> ' + esc(x) + '</label>'; }).join('') + ' Tell me ' + sel('gateLead', leads) + '</div>' +
       '<div class="nt-cat"><h4>Events and maintenance</h4>' + chk('events', 'When a seasonal event or maintenance starts') + '</div>' +
+      '<div class="nt-cat"><h4>S ranks</h4>' + chk('srank', 'When an S rank\'s weather, time or moon condition is met') + '</div>' +
+      '<div class="nt-cat"><h4>Island Sanctuary</h4>' + chk('isle', 'When a rare animal comes out') + '</div>' +
+      '<div class="nt-cat"><h4>Jumbo Cactpot</h4>' + chk('jumbo', 'Before the drawing (choose your data center on Timers & Events)') + '</div>' +
       '<div class="nt-cat"><h4>Field operations</h4>' + chk('fieldNm', 'When weather or night brings out a monster that triggers a notorious monster') + '</div>' +
       '</div><h3 class="lv-h">Watched</h3>' + watched;
   }
@@ -378,6 +383,9 @@
     resets(now).forEach(function (r) { if (N[r[0]]) fireOnce('reset:' + r[0] + ':' + r[2], r[2], +N.lead, r[1], lt(r[2])); });
     if (N.gate) { var g = nextGate(now), names = gateNames(g).filter(function (x) { return N.gates[x.replace(/ \(.*\)$/, '')] !== false; }); if (names.length) fireOnce('gate:' + g, g, +N.gateLead, 'GATE at ' + lt(g), names.join(', ')); }
     if (N.events) ((FRESH_TIMERS || LIVE.timers).timers || []).forEach(function (t) { fireOnce('ev:' + t.name + t.start, t.start, 0, t.name, 'starting now'); });
+    if (N.srank) LIVE.srank.forEach(function (m) { if (!m.spec) return; var w = srWindows(m.n, m.spec, 1)[0]; if (w) fireOnce('sr:' + m.n + ':' + w.s, w.s, 0, 'S rank: ' + m.n, 'spawn condition met in ' + (m.area || '')); });
+    if (N.isle) LIVE.island.animals.forEach(function (a) { if (!a.hours && !a.weather) return; var w = cachedWindows('isle:' + a.n, animalCond(a), 1)[0]; if (w) fireOnce('isle:' + a.n + ':' + w.s, w.s, 0, 'Island: ' + a.n, 'out now on your island'); });
+    if (N.jumbo) { var jb = jumboAt(now); if (jb) fireOnce('jumbo:' + jb.at, jb.at, 30, 'Jumbo Cactpot drawing', 'at ' + lt(jb.at)); }
     if (N.fieldNm) Object.keys(LIVE.field.events).forEach(function (n) {
       var e = LIVE.field.events[n]; if (!e.spawn || e.spawn === 'Automatic') return;
       Object.keys(LIVE.field.zones).forEach(function (z) {
@@ -390,8 +398,154 @@
   }
   setInterval(notifyTick, 15000);
 
+  // ---- shared: moon phase and reset arithmetic
+  var MOON = ['New Moon', 'Waxing Crescent', 'Waxing Half Moon', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Waning Half Moon', 'Waning Crescent'];
+  function eDays(ms) { return Math.floor(ms * 3600 / 175 / 1000 / 86400); }
+  function moonPhase(ms) { return Math.floor((eDays(ms) % 32) / 4); } // a moon is 32 Eorzean days; each phase lasts 4, starting with the new moon
+  function lastUtc(now, h, dow) { var n = nextUtc(now, h, dow); return n - (dow == null ? 86400000 : 7 * 86400000); }
+  var WID_BY_NAME = {}; Object.keys(COND.names).forEach(function (k) { if (!WID_BY_NAME[COND.names[k].toLowerCase()]) WID_BY_NAME[COND.names[k].toLowerCase()] = +k; });
+
+  // ---- S-rank board
+  function srOk(s, t) {
+    if (s.w && s.w.indexOf(weatherAt(s.zone, t)) < 0) return false;
+    if (s.pw && s.pw.indexOf(weatherAt(s.zone, t - PERIOD)) < 0) return false;
+    if (s.h && !inHours(etHours(t), s.h[0], s.h[1] % 24 === 0 && s.h[1] === 24 ? 24 : s.h[1])) return false;
+    if (s.moon && moonPhase(t) !== (s.moon === 'full' ? 4 : 0)) return false;
+    if (s.dry) { var wet = [WID_BY_NAME.rain, WID_BY_NAME.showers]; for (var p = periodStart(t - s.dry * 60000); p <= t; p += PERIOD) if (wet.indexOf(weatherAt(s.zone, p)) >= 0) return false; }
+    return true;
+  }
+  function srWindows(name, s, count) {
+    var now = Date.now(), key = 'sr:' + name, hit = WCACHE[key];
+    if (hit && (!hit.length || hit[0].e > now) && now - WCACHE_AT < 60000) return hit;
+    var out = [], start = null, t = now - (now % QUARTER), end = now + 14 * 86400000;
+    for (; t < end && out.length < count; t += QUARTER) {
+      var ok = srOk(s, t);
+      if (ok && start === null) start = t;
+      if (!ok && start !== null) { out.push({ s: start, e: t }); start = null; }
+    }
+    if (start !== null) out.push({ s: start, e: t });
+    return (WCACHE[key] = out);
+  }
+  function renderSRank() {
+    var now = Date.now(), rows = LIVE.srank.map(function (m) { var ws = m.spec ? srWindows(m.n, m.spec, 3) : []; return { m: m, ws: ws, open: ws[0] && ws[0].s <= now }; });
+    rows.sort(function (a, b) { if (!!a.m.spec !== !!b.m.spec) return a.m.spec ? -1 : 1; if (a.open !== b.open) return a.open ? -1 : 1; return (a.ws[0] ? a.ws[0].s : Infinity) - (b.ws[0] ? b.ws[0].s : Infinity); });
+    var list = rows.map(function (r) {
+      var m = r.m, st = '';
+      if (m.spec) st = r.open ? '<b class="up">Conditions met</b> · ' + cdown(r.ws[0].e) + ' left' : (r.ws[0] ? 'next in ' + cdown(r.ws[0].s) + ' <span class="dim">· ' + lt(r.ws[0].s) + '</span>' : '<span class="dim">not in the next 2 weeks</span>');
+      else st = '<span class="dim">Triggered by players (no time or weather condition)</span>';
+      return '<div class="bf-row sr' + (r.open ? ' open' : '') + '"><div><b>' + esc(m.n) + '</b><br><span class="dim">' + esc(m.area || '') + '</span></div><div>' + esc(m.spawn || '') + (m.spec && m.spec.note ? '<br><span class="dim">' + esc(m.spec.note) + '</span>' : '') + '</div><div>' + st + (r.ws.length > 1 ? '<br><span class="dim">Then ' + r.ws.slice(1).map(function (w) { return lt(w.s); }).join(' · ') + '</span>' : '') + '</div><div class="dim">' + esc(m.respawn ? 'Respawn: ' + m.respawn + (/hour/.test(m.respawn) ? '' : ' hours') : '') + '</div></div>';
+    }).join('');
+    $('#page').innerHTML = liveHead('S Ranks', 'Every S-rank elite mark and what makes it spawn. Where the condition is weather, time of day or the moon, the board says when it is met now and forecasts the next times (the moon is ' + esc(MOON[moonPhase(now)]) + ' now). It cannot know whether someone already killed the mark on your world: the respawn time is shown for that.', '') +
+      '<div class="bf-head"><span>Mark</span><span>Spawn condition</span><span>Status</span><span>Respawn</span></div>' + list;
+  }
+
+  // ---- Island Sanctuary: rare animals and the workshop planner
+  var ISLE = 'Unnamed Island';
+  function animalCond(a) { var w = (a.weather || []).map(function (n) { return WID_BY_NAME[n.toLowerCase()]; }).filter(Boolean); return [ISLE, a.hours ? a.hours[0] : 0, a.hours ? (a.hours[1] || 24) : 24, w, []]; }
+  UI.live.isle = Object.assign({ rank: 5, groove: 0, shops: 4, srank: 20, pop: {}, sup: {} }, UI.live.isle || {});
+  function islePlan() {
+    var I = LIVE.island, S = UI.live.isle, items = I.crafts.filter(function (c) { return c.lvl <= +S.srank; });
+    var POP = ['Very High', 'High', 'Average', 'Low'];
+    function val(c, eff) { var m = I.multiplier[S.pop[c.n] || 'Average'][I.supply.indexOf(S.sup[c.n] || 'Sufficient')]; return Math.floor(Math.floor(c.v * (1 + (S.rank - 1) / 10) * (1 + S.groove / 100)) * m) * (eff ? 2 : 1); }
+    var best = {}; // best[t + '|' + last] = {v, path}
+    items.forEach(function (c, j) { if (c.t <= 24) best[c.t + '|' + j] = { v: val(c, false), path: [[j, false]] }; });
+    for (var t = 4; t <= 24; t += 2) items.forEach(function (c, j) {
+      var cur = best[t + '|' + j]; if (!cur) return;
+      items.forEach(function (d, k) {
+        var nt = t + d.t; if (nt > 24) return;
+        var eff = k !== j && d.th.some(function (x) { return c.th.indexOf(x) >= 0; });
+        var nv = cur.v + val(d, eff), key = nt + '|' + k;
+        if (!best[key] || best[key].v < nv) best[key] = { v: nv, path: cur.path.concat([[k, eff]]) };
+      });
+    });
+    var top = null; Object.keys(best).forEach(function (k) { if (!top || best[k].v > top.v) top = best[k]; });
+    return { items: items, top: top, val: val, POP: POP };
+  }
+  function renderIsland() {
+    var now = Date.now(), I = LIVE.island, S = UI.live.isle;
+    var rare = I.animals.filter(function (a) { return a.hours || a.weather; }).map(function (a) { var c = animalCond(a), ws = cachedWindows('isle:' + a.n, c, 2); return { a: a, c: c, ws: ws, open: ws[0] && ws[0].s <= now }; })
+      .sort(function (x, y) { if (x.open !== y.open) return x.open ? -1 : 1; return (x.ws[0] ? x.ws[0].s : Infinity) - (y.ws[0] ? y.ws[0].s : Infinity); });
+    var animals = rare.map(function (r) {
+      var a = r.a, w = r.ws[0];
+      return '<div class="bf-row' + (r.open ? ' open' : '') + '"><div><b>' + esc(a.n) + '</b> <span class="dim">' + esc(a.size || '') + '</span><br><span class="dim">(' + (a.xy || []).join(', ') + ')</span></div><div>' + esc(condLabel(r.c)) + '</div><div>' + (r.open ? '<b class="up">Out now</b> · ' + cdown(w.e) + ' left' : (w ? 'in ' + cdown(w.s) + ' <span class="dim">· ' + lt(w.s) + '</span>' : '')) + '</div><div class="dim">' + esc((a.tool ? 'Catch with ' + a.tool : '') + (a.common ? ' · leaves ' + a.common + (a.bonus ? ' (bonus ' + a.bonus + ')' : '') : '')) + '</div></div>';
+    }).join('');
+    var plan = islePlan(), rankOpt = function (key, max, from) { var o = ''; for (var n = from; n <= max; n++) o += '<option' + (+S[key] === n ? ' selected' : '') + '>' + n + '</option>'; return '<select data-isle="' + key + '">' + o + '</select>'; };
+    var agenda = plan.top ? plan.top.path.map(function (p, n) { var c = plan.items[p[0]]; return '<div class="lv-row"><b>' + (n + 1) + '. ' + esc(c.n) + '</b><span class="dim">' + c.t + ' h · ' + esc(c.th.join(', ')) + '</span><span>' + (p[1] ? '<b class="up">efficient ×2</b>' : 'first item') + '</span><span>' + plan.val(c, p[1]) + ' cowries</span></div>'; }).join('') : '';
+    var inputs = plan.items.map(function (c) {
+      return '<div class="isle-in"><span>' + esc(c.n) + ' <span class="dim">' + c.t + 'h · ' + c.v + '</span></span><select data-isle-pop="' + esc(c.n) + '">' + plan.POP.map(function (p) { return '<option' + ((S.pop[c.n] || 'Average') === p ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select><select data-isle-sup="' + esc(c.n) + '">' + I.supply.map(function (p) { return '<option' + ((S.sup[c.n] || 'Sufficient') === p ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select></div>';
+    }).join('');
+    $('#page').innerHTML = liveHead('Island Sanctuary', 'Rare animals by their Eorzea hours and island weather (worked out with the island\'s own weather table), and a workshop planner that finds the 24-hour agenda worth the most cowries from this week\'s popularity and supply.', '') +
+      '<h3 class="lv-h">Rare animals</h3><div class="bf-head"><span>Animal</span><span>Needs</span><span>Status</span><span>Catch</span></div>' + animals +
+      '<h3 class="lv-h">Workshop planner</h3><div class="lv-guide"><b>How the weekly recommendations work</b><p>Each item\'s export value = base value × workshop rank bonus (+10% per rank above I) × groove (+1% per point) × a popularity and supply multiplier; an item that shares a category with the one before it (and is a different item) is made twice for the price of one. Community groups such as Overseas Casuals read every item\'s popularity and supply in game each week (supply also peaks on set days) and publish the best agenda. Here you enter what your workshop screen shows: set the items whose popularity is not Average and any supply that is not Sufficient, and the planner finds the best chain. Re-run it each day as supply changes, and avoid making the same item many days in a row (it floods its supply).</p></div>' +
+      '<div class="lv-tools"><label class="lv-sel">Sanctuary rank ' + rankOpt('srank', 20, 1) + '</label><label class="lv-sel">Workshop rank ' + rankOpt('rank', 5, 1) + '</label><label class="lv-sel">Groove ' + rankOpt('groove', 45, 0) + '</label><label class="lv-sel">Workshops ' + rankOpt('shops', 4, 1) + '</label><button type="button" class="btn sm ghost" data-isle-reset="1">Reset popularity and supply</button></div>' +
+      (plan.top ? '<div class="lv-guide"><b>Best agenda: ' + plan.top.v.toLocaleString() + ' cowries per workshop, ' + (plan.top.v * S.shops).toLocaleString() + ' for ' + S.shops + ' (one cycle)</b>' + agenda + '</div>' : '') +
+      '<details class="isle-details"><summary>This week\'s popularity and supply (' + plan.items.length + ' handicrafts)</summary><div class="isle-grid">' + inputs + '</div></details>';
+  }
+
+  // ---- Dailies & Weeklies (per character; clears itself at each reset; kept on this device)
+  var DKEY = 'eveniunt-tracker-dailies';
+  var DSTATE = (function () { try { return JSON.parse(localStorage.getItem(DKEY) || '{}'); } catch (e) { return {}; } })();
+  function dSave() { try { localStorage.setItem(DKEY, JSON.stringify(DSTATE)); } catch (e) { /* private window */ } }
+  function dResetOf(kind, now) { return kind === 'daily' ? lastUtc(now, 15) : kind === 'weekly' ? lastUtc(now, 8, 2) : kind === 'gc' ? lastUtc(now, 20) : null; }
+  function dGet(cid, task, now) {
+    var s = (DSTATE[cid] || {})[task[0]]; if (!s) return { n: 0 };
+    if (task[2] === 'map') return now - s.at < 18 * 3600000 ? { n: 1, at: s.at } : { n: 0 };
+    return s.at >= dResetOf(task[2], now) ? s : { n: 0 };
+  }
+  function renderDailies() {
+    var now = Date.now(), tasks = LIVE.guides.dailies || [];
+    var head = '<div class="dl-row dl-head"><span>Task</span>' + ST.chars.map(function (c) { return '<span>' + esc(c.name) + '</span>'; }).join('') + '</div>';
+    function rows(kinds) { return tasks.filter(function (t) { return kinds.indexOf(t[2]) >= 0; }).map(function (t) {
+      return '<div class="dl-row"><span>' + esc(t[1]) + '</span>' + ST.chars.map(function (c) {
+        var s = dGet(c.id, t, now), done = s.n >= t[3];
+        var label = t[2] === 'map' ? (s.n ? 'ready in ' + dur(s.at + 18 * 3600000 - now) : 'ready') : (t[3] > 1 ? s.n + '/' + t[3] : (done ? '✓' : ''));
+        return '<button type="button" class="dl-cell' + (done ? ' done' : '') + '" data-dl="' + esc(c.id + '|' + t[0]) + '">' + label + '</button>';
+      }).join('') + '</div>'; }).join(''); }
+    var r = resets(now);
+    $('#page').innerHTML = liveHead('Dailies & Weeklies', 'Tick what each character has done; every task clears itself at its reset (daily ' + lt(r[0][2]) + ', Grand Company ' + lt(r[2][2]) + ', weekly ' + new Date(r[1][2]).toLocaleDateString([], { weekday: 'long' }) + ' ' + lt(r[1][2]) + '). Click a box to count up; click a full box to clear it. The timeworn map shows when the next one can be gathered. This checklist is kept on this device.', '') +
+      '<div class="dl-table" style="--n:' + ST.chars.length + '"><h3 class="lv-h">Daily · resets in ' + cdown(r[0][2]) + '</h3>' + head + rows(['daily', 'gc', 'map']) + '<h3 class="lv-h">Weekly · resets in ' + cdown(r[1][2]) + '</h3>' + head + rows(['weekly']) + '</div>';
+  }
+
+  // ---- Leveling guides and PvP series
+  function renderLeveling() {
+    var G = LIVE.guides.leveling || {};
+    $('#page').innerHTML = liveHead('Leveling Guides', 'The fastest routes by role and level band, and the bonuses that stack. Ocean fishing and Cosmic Exploration have their own pages and guides.', '') +
+      Object.keys(G).map(function (k) { return '<h3 class="lv-h">' + esc(k) + '</h3>' + G[k].map(function (x) { return '<div class="lv-guide"><b>' + esc(x[0]) + '</b><p>' + esc(x[1]) + '</p></div>'; }).join(''); }).join('');
+  }
+  function renderPvp() {
+    var P = LIVE.pvp || {}, nums = Object.keys(P).map(Number).sort(function (a, b) { return b - a; });
+    $('#page').innerHTML = liveHead('PvP Series', 'The collectable rewards of each PvP series (Series Malmstones), newest first: the level that gives each one, and whether the chosen character has it. Series experience comes from any PvP match during that series.', '') + '<div class="lv-tools">' + charSelect() + '</div>' +
+      nums.map(function (n, i) { return '<h3 class="lv-h">Series ' + n + (i === 0 ? ' <span class="dim">(newest listed)</span>' : '') + '</h3>' + P[n].map(function (r) { return '<div class="lv-row' + (has(r[1]) ? ' got' : '') + '"><b>Level ' + r[0] + '</b>' + rowName(r[1], r[2]) + '<span class="dim">' + esc((IDX.byKey.get(r[1]) || { s: { t: '' } }).s.t) + '</span><span class="lv-got">' + (has(r[1]) ? '✓ have it' : '') + '</span></div>'; }).join(''); }).join('');
+  }
+  // ---- Jumbo Cactpot (by data center) and the current event's rewards, shown on Timers & Events
+  function jumboAt(now) {
+    var dc = UI.live.dc; if (!dc) return null;
+    var reg = Object.keys(LIVE.dc || {}).find(function (r) { return LIVE.dc[r].dcs.indexOf(dc) >= 0; }); if (!reg) return null;
+    return { at: nextUtc(now, LIVE.dc[reg].utc, LIVE.dc[reg].day), region: reg };
+  }
+  function eventRewardsHtml(now) {
+    var T = (FRESH_TIMERS || LIVE.timers).timers || [], ER = LIVE.eventRewards || {}, out = '';
+    T.filter(function (t) { return t.type !== 'maintenance' && (t.end || t.start) > now && t.start - now < 14 * 86400000; }).forEach(function (t) {
+      var base = norm(t.name.replace(/\(.*?\)|\d{4}/g, '')).slice(0, 18);
+      var keys = []; Object.keys(ER).forEach(function (n) { if (base && norm(n).indexOf(base) === 0) keys = keys.concat(ER[n]); });
+      keys = keys.filter(function (k, i, a) { return a.indexOf(k) === i && IDX.byKey.has(k); });
+      if (!keys.length) return;
+      out += '<h3 class="lv-h">' + esc(t.name) + ': rewards from this and earlier years</h3>' + keys.map(function (k) { return '<div class="lv-row' + (has(k) ? ' got' : '') + '">' + rowName(k) + '<span class="dim">' + esc(IDX.byKey.get(k).s.t) + '</span><span class="lv-got">' + (has(k) ? '✓ have it' : '') + '</span></div>'; }).join('');
+    });
+    return out;
+  }
+  // ---- field monsters: when is a weather or night monster next out?
+  function fieldNext(m, wz, now) {
+    if (!m.spawn) return null;
+    var s = m.spawn.toLowerCase(), occ = /Horn/.test(wz), c;
+    if (s === 'night') c = [wz, occ ? 22 : 18, occ ? 4 : 6, [], []];
+    else if (s === 'day') c = [wz, 6, 18, [], []];
+    else { var id = WID_BY_NAME[s] || WID_BY_NAME[s.replace(/s$/, '')]; if (!id) return null; c = [wz, 0, 24, [id], []]; }
+    return cachedWindows('fm:' + wz + ':' + s, c, 1)[0] || null;
+  }
+
   // ---- page plumbing
-  var LIVE_RENDER = { now: renderNow, bigfish: renderBigFish, ocean: renderOcean, timers: renderTimers, weather: function () { renderWeather(); }, field: renderField, gold: renderGold, notify: renderNotify };
+  var LIVE_RENDER = { now: renderNow, dailies: renderDailies, bigfish: renderBigFish, srank: renderSRank, ocean: renderOcean, island: renderIsland, timers: renderTimers, weather: function () { renderWeather(); }, field: renderField, gold: renderGold, pvp: renderPvp, leveling: renderLeveling, notify: renderNotify };
   function isLive(v) { return Object.prototype.hasOwnProperty.call(LIVE_RENDER, v); }
   function liveTick() {
     var now = Date.now();
@@ -406,11 +560,23 @@
     if (t.dataset && t.dataset.live) { UI.live[t.dataset.live] = t.type === 'checkbox' ? t.checked : t.value; liveSave(); LIVE_RENDER[UI.view] && LIVE_RENDER[UI.view](); }
     if (t.dataset && t.dataset.notify) { var N = UI.live.notify; N[t.dataset.notify] = t.type === 'checkbox' ? t.checked : t.value; liveSave(); }
     if (t.dataset && t.dataset.notifyGate) { UI.live.notify.gates[t.dataset.notifyGate] = t.checked; liveSave(); }
+    if (t.dataset && t.dataset.isle) { UI.live.isle[t.dataset.isle] = +t.value; liveSave(); renderIsland(); }
+    if (t.dataset && t.dataset.islePop) { UI.live.isle.pop[t.dataset.islePop] = t.value; liveSave(); renderIsland(); var dd = $('.isle-details'); if (dd) dd.open = true; }
+    if (t.dataset && t.dataset.isleSup) { UI.live.isle.sup[t.dataset.isleSup] = t.value; liveSave(); renderIsland(); var de = $('.isle-details'); if (de) de.open = true; }
   });
   document.addEventListener('click', function (ev) {
-    var b = ev.target.closest && ev.target.closest('[data-watch],[data-ltick],[data-live-zone],[data-live-el],[data-notify-perm],[data-notify-test],[data-live-view]');
+    var b = ev.target.closest && ev.target.closest('[data-watch],[data-ltick],[data-live-zone],[data-live-el],[data-notify-perm],[data-notify-test],[data-live-view],[data-dl],[data-isle-reset]');
     if (!b) return;
     if (b.dataset.liveView) { ev.preventDefault(); setView(b.dataset.liveView); return; }
+    if (b.dataset.isleReset) { UI.live.isle.pop = {}; UI.live.isle.sup = {}; liveSave(); renderIsland(); return; }
+    if (b.dataset.dl) {
+      var parts = b.dataset.dl.split('|'), cid = parts[0], task = (LIVE.guides.dailies || []).find(function (x) { return x[0] === parts[1]; }), nowd = Date.now();
+      var cur = dGet(cid, task, nowd), st = (DSTATE[cid] = DSTATE[cid] || {});
+      if (task[2] === 'map') st[task[0]] = cur.n ? null : { n: 1, at: nowd };
+      else st[task[0]] = cur.n >= task[3] ? null : { n: cur.n + 1, at: nowd };
+      if (!st[task[0]]) delete st[task[0]];
+      dSave(); renderDailies(); return;
+    }
     if (b.dataset.watch) { var w = UI.live.watch, k = b.dataset.watch, i = w.indexOf(k); if (i >= 0) w.splice(i, 1); else w.push(k); liveSave(); var on = i < 0; $$('[data-watch="' + CSS.escape(k) + '"]').forEach(function (x) { x.classList.toggle('on', on); x.textContent = on ? '★' : '☆'; }); toast(on ? 'Watching ' + nameOf(k) + ' for notifications' : 'No longer watching ' + nameOf(k)); return; }
     if (b.dataset.ltick) { var c = liveChar(), kk = b.dataset.ltick; ET.setTick(ST, c, kk, !ST.ticks[c][kk]); save(); staleTallies([kk]); renderSide(); LIVE_RENDER[UI.view](); return; }
     if (b.dataset.liveZone) { UI.live.zone = b.dataset.liveZone; liveSave(); renderField(); return; }

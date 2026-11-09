@@ -225,3 +225,18 @@ Owner request: add items 1 to 8 of the sweep (Up Now with a hide toggle; a detai
 - **Big fish:** the wiki's older table rows are read too (hours, weather and the weather before, hole, coordinates, bait, intuition), and fish the fish-tracker data lists without limits show as always up: all 335 have a window or none needed. Housing districts (the Goblet, the Lavender Beds, Shirogane, Empyreum) now have weather forecasts (86 zones).
 - **Events refresh (owner approved):** the public site's Pages workflow now runs every 6 hours and saves a fresh copy of Xenoveritas' timer list next to the tracker (`tracker/timers.json`), which the Timers & Events page reads. To stop it, remove the `schedule` lines from `.github/workflows/pages.yml` (or ask).
 - Tests: core 51/51 (new checks: Bozja and North Horn monsters, Bozja's weather table, every big fish with a window), browser 25/25.
+
+## Dailies, S ranks, island planner and more (2026-11-09)
+
+Owner request: add sweep items 1 to 9; data center Dynamis; a weekly Island Sanctuary workshop recommendation.
+
+- **Dailies & Weeklies:** 25 tasks (roulettes, allied society quests 0/12, Mini Cactpot 0/3, hunt bills, Grand Company turn-ins, timeworn map every 18 hours, Island Sanctuary; weekly Wondrous Tails, Custom Deliveries 0/12, elite bills, Doman Enclave, Masked Carnivale 0/3, challenge log, Faux Hollows, Fashion Report, Jumbo Cactpot 0/3, tomestones, raids, next week's workshop agenda) for every character, clearing themselves at the daily (15:00 UTC), Grand Company (20:00 UTC) and weekly (Tuesday 08:00 UTC) resets; kept on this device.
+- **S Ranks:** all 50 S-rank marks with their spawn condition and respawn time; the 10 whose condition is weather, Eorzea time, the moon or dry weather (Laideronnette, Kirlirger, Burfurlur, Okina, Croakadile, Mindflayer, Croque-Mitaine, Bonnacon, Thousand-cast Theda, the Garlok) show when it is met and the next three times. The moon phase follows the Eorzean month (32 days, a new moon on the first; Console Games Wiki).
+- **Island Sanctuary:** the 29 rare animals with time or weather needs, from the island's own weather table, with where they roam, what catches them and what they leave; a **workshop planner** using the game's export value formula (rank bonus, groove, the supply and popularity multiplier table, efficiency ×2 for chained categories) that finds the best 24-hour agenda for the popularity and supply you enter from the workshop screen.
+- **Field Monsters:** every weather or night monster shows when it is next out.
+- **Timers & Events:** the Jumbo Cactpot drawing for the data center you choose (Japan Saturday 12:00 UTC, North America Sunday 02:00 UTC, Europe Saturday 19:00 UTC, Oceania Saturday 09:00 UTC; Console Games Wiki), and, while a seasonal event is announced, its rewards from this and earlier years with ticks.
+- **PvP Series:** each series' collectable rewards by level, newest first, with ticks. **Leveling Guides:** combat jobs by level band, crafters and gatherers, and the stacking bonuses.
+- **Overview:** achievement points per character (from ticked achievements).
+- **Notifications:** new switches for S-rank conditions, rare island animals and the Jumbo Cactpot drawing.
+- The data center is chosen in the app and kept on the device; no character or world name is stored in the tracker's files.
+- Tests: core 52/52, browser 26/26.

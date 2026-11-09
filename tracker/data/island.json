@@ -1,0 +1,670 @@
+{
+"_about": "Island Sanctuary animals: where they roam, what catches them, what they leave, and the Eorzea hours and weather the rare ones need, from the Console Games Wiki's Island Animals tables (read 2026-11-09); facts only. Workshop rules (export value formula, supply and popularity multipliers, efficiency and groove) from its Island Workshop page.",
+"animals": [
+{
+"n": "Apkallu",
+"xy": [
+19.0,
+11.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fleece",
+"bonus": "Sanctuary Egg"
+},
+{
+"n": "Aurochs",
+"xy": [
+12.0,
+17.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Milk",
+"bonus": "Sanctuary Horn"
+},
+{
+"n": "Blue Back",
+"xy": [
+28.0,
+28.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Egg",
+"bonus": "Sanctuary Feather"
+},
+{
+"n": "Chocobo",
+"xy": [
+20.0,
+21.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Fur",
+"bonus": "Sanctuary Feather"
+},
+{
+"n": "Coblyn",
+"xy": [
+20.0,
+13.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Carapace"
+},
+{
+"n": "Glyptodon Pup",
+"xy": [
+30.0,
+11.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Carapace",
+"bonus": "Sanctuary Claw"
+},
+{
+"n": "Ground Squirrel",
+"xy": [
+15.0,
+19.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Claw",
+"bonus": "Sanctuary Fur"
+},
+{
+"n": "Island Doe",
+"xy": [
+21.0,
+19.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Fur",
+"bonus": "Sanctuary Milk"
+},
+{
+"n": "Island Nanny",
+"xy": [
+25.0,
+24.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Milk",
+"bonus": "Sanctuary Horn"
+},
+{
+"n": "Lost Lamb",
+"xy": [
+20.0,
+23.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fleece",
+"bonus": "Sanctuary Milk"
+},
+{
+"n": "Opo-opo",
+"xy": [
+20.0,
+26.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Claw",
+"bonus": "Sanctuary Fur"
+},
+{
+"n": "Quartz Spriggan",
+"xy": [
+26.8,
+20.9
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Fur"
+},
+{
+"n": "Wild Boar",
+"xy": [
+16.0,
+16.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Horn"
+},
+{
+"n": "Wild Dodo",
+"xy": [
+16.0,
+12.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Egg",
+"bonus": "Sanctuary Feather"
+},
+{
+"n": "Amethyst Spriggan",
+"xy": [
+28.0,
+16.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fur",
+"bonus": "Sanctuary Fang",
+"hours": [
+21,
+0
+]
+},
+{
+"n": "Apkallu of Paradise",
+"xy": [
+19.0,
+11.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Egg",
+"bonus": "Sanctuary Fleece",
+"hours": [
+12,
+15
+]
+},
+{
+"n": "Dodo of Paradise",
+"xy": [
+16.0,
+12.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Feather",
+"bonus": "Sanctuary Egg",
+"hours": [
+15,
+18
+]
+},
+{
+"n": "Glyptodon",
+"xy": [
+31.0,
+11.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Claw",
+"bonus": "Sanctuary Carapace",
+"hours": [
+0,
+3
+]
+},
+{
+"n": "Island Billy",
+"xy": [
+26.0,
+22.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Horn",
+"bonus": "Sanctuary Fleece",
+"hours": [
+3,
+6
+]
+},
+{
+"n": "Lemur",
+"xy": [
+20.0,
+26.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fur",
+"bonus": "Sanctuary Claw",
+"hours": [
+6,
+9
+]
+},
+{
+"n": "Stag",
+"xy": [
+20.0,
+19.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Fur",
+"bonus": "Sanctuary Horn",
+"hours": [
+18,
+21
+]
+},
+{
+"n": "Star Marmot",
+"xy": [
+15.0,
+19.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fur",
+"bonus": "Sanctuary Claw",
+"hours": [
+9,
+12
+]
+},
+{
+"n": "Black Chocobo",
+"xy": [
+13.0,
+11.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Feather",
+"bonus": "Sanctuary Fur",
+"weather": [
+"Clear Skies"
+]
+},
+{
+"n": "Boar of Paradise",
+"xy": [
+16.0,
+16.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Horn",
+"bonus": "Sanctuary Fang",
+"weather": [
+"Showers"
+]
+},
+{
+"n": "Gold Back",
+"xy": [
+31.0,
+28.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Feather",
+"bonus": "Sanctuary Egg",
+"weather": [
+"Rain"
+]
+},
+{
+"n": "Grand Buffalo",
+"xy": [
+12.0,
+17.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Horn",
+"bonus": "Sanctuary Milk",
+"weather": [
+"Clouds"
+]
+},
+{
+"n": "Ornery Karakul",
+"xy": [
+20.0,
+23.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Milk",
+"bonus": "Sanctuary Fleece",
+"weather": [
+"Fair Skies"
+]
+},
+{
+"n": "Yellow Coblyn",
+"xy": [
+27.0,
+19.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Carapace",
+"bonus": "Sanctuary Fang",
+"weather": [
+"Fog"
+]
+},
+{
+"n": "Adamantoise",
+"xy": [
+31.8,
+12.2
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Carapace",
+"bonus": "Sanctuary Claw",
+"hours": [
+12,
+15
+],
+"weather": [
+"Fog"
+]
+},
+{
+"n": "Alkonost",
+"xy": [
+23.0,
+30.5
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Feather",
+"bonus": "Sanctuary Egg",
+"hours": [
+21,
+0
+],
+"weather": [
+"Clear Skies"
+]
+},
+{
+"n": "Alligator",
+"xy": [
+17.0,
+24.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Claw",
+"bonus": "Sanctuary Fang",
+"hours": [
+6,
+9
+],
+"weather": [
+"Showers"
+]
+},
+{
+"n": "Beachcomb",
+"xy": [
+17.0,
+12.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Carapace",
+"bonus": "Sanctuary Claw",
+"hours": [
+0,
+3
+],
+"weather": [
+"Rain"
+]
+},
+{
+"n": "Funguar",
+"xy": [
+20.0,
+27.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fleece",
+"bonus": "Sanctuary Fur",
+"hours": [
+15,
+18
+],
+"weather": [
+"Rain"
+]
+},
+{
+"n": "Goobbue",
+"xy": [
+33.0,
+16.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Claw",
+"hours": [
+9,
+12
+],
+"weather": [
+"Clouds"
+]
+},
+{
+"n": "Grand Doblyn",
+"xy": [
+24.7,
+20.8
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Carapace",
+"hours": [
+3,
+6
+],
+"weather": [
+"Fair Skies"
+]
+},
+{
+"n": "Griffin",
+"xy": [
+15.0,
+22.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Feather",
+"bonus": "Sanctuary Claw",
+"hours": [
+15,
+18
+],
+"weather": [
+"Clear Skies"
+]
+},
+{
+"n": "Morbol",
+"xy": [
+29.3,
+23.4
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Carapace",
+"hours": [
+21,
+0
+],
+"weather": [
+"Showers"
+]
+},
+{
+"n": "Morbol Seedling",
+"xy": [
+19.0,
+19.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Carapace",
+"bonus": "Sanctuary Fang",
+"hours": [
+3,
+6
+],
+"weather": [
+"Clouds"
+]
+},
+{
+"n": "Paissa",
+"xy": [
+24.0,
+28.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Claw",
+"bonus": "Sanctuary Fleece",
+"hours": [
+12,
+15
+],
+"weather": [
+"Fair Skies"
+]
+},
+{
+"n": "Pteranodon",
+"xy": [
+25.1,
+16.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Claw",
+"bonus": "Sanctuary Horn",
+"hours": [
+9,
+12
+],
+"weather": [
+"Clear Skies"
+]
+},
+{
+"n": "Tiger of Paradise",
+"xy": [
+15.0,
+14.0
+],
+"size": "M",
+"tool": "Makeshift Restraint",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Fur",
+"hours": [
+18,
+21
+],
+"weather": [
+"Fair Skies"
+]
+},
+{
+"n": "Twinklefleece",
+"xy": [
+22.0,
+20.0
+],
+"size": "S",
+"tool": "Makeshift Net",
+"common": "Sanctuary Fleece",
+"bonus": "Sanctuary Fur",
+"hours": [
+18,
+21
+],
+"weather": [
+"Fog"
+]
+},
+{
+"n": "Weird Spriggan",
+"xy": [
+24.0,
+18.0
+],
+"size": "L",
+"tool": "Makeshift Soporific",
+"common": "Sanctuary Fang",
+"bonus": "Sanctuary Fur",
+"hours": [
+0,
+3
+],
+"weather": [
+"Fog"
+]
+}
+],
+"multiplier": {
+"Very High": [
+2.24,
+1.82,
+1.4,
+1.12,
+0.84
+],
+"High": [
+1.92,
+1.56,
+1.2,
+0.96,
+0.72
+],
+"Average": [
+1.6,
+1.3,
+1.0,
+0.8,
+0.6
+],
+"Low": [
+1.28,
+1.04,
+0.8,
+0.64,
+0.48
+]
+},
+"supply": [
+"Nonexistent",
+"Insufficient",
+"Sufficient",
+"Surplus",
+"Overflowing"
+]
+}

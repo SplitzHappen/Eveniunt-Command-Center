@@ -1,38 +1,351 @@
 {
- "_about": "Guides for the Live pages, written for the tracker from facts on the Console Games Wiki (Ocean Fishing, GATEs, Lord of Verminion, Chocobo Racing; read 2026-11-08) and ffxiv.oceanfishing.boats. No text is copied.",
+ "_about": "Guides for the Live pages, written for the tracker from facts on the Console Games Wiki (Ocean Fishing, GATEs, Lord of Verminion, Chocobo Racing; read 2026-11-08) and ffxiv.oceanfishing.boats. No text is copied; leveling routes and the daily and weekly checklist from the Console Games Wiki's Daily and Weekly Checklist (updated to 7.51) and general game knowledge.",
  "ocean": [
-  ["Unlock", "Fisher level 1 and the quest All the Fish in the Sea from Fhilsnoe on the Limsa Lominsa Lower Decks (7.8, 14.5), after My First Fishing Rod. The Ruby Route needs the Stormblood main story (Ruby Price and One River) and the Endwalker main story (Thavnair)."],
-  ["Boarding", "A boat leaves every 2 hours, on the even UTC hour. Register with Dryskthota on the Lower Decks (3.0, 12.7) in the first 15 minutes; the boat leaves when 24 people have joined, or at a quarter past regardless. A party leader registers for the party."],
-  ["The voyage", "Three stops of 7 minutes each; you cannot cast in the last 30 seconds of a stop. Each route visits its stops at set times of day (day, sunset, night), and that is what decides which rare fish can bite."],
-  ["Bait", "Krill, Ragworm, Plump Worm and Versatile Lures are sold by the Merchant & Mender on the Lower Decks (3.2, 12.8) and aboard. The fabled fish need their own bait, which is not sold aboard: Glowworm (Sothis), Shrimp Cage Feeder (Coral Manta), Heavy Steel Jig (Elasmosaurus), Rat Tail (Stonescale, Manasvin), Squid Strip (Hafgufa, Hells' Claw). Buy them before boarding."],
-  ["Spectral currents", "Catching a spectral fish can start a spectral current: faster bites and far more points. At most one per stop, none once less than 1:30 is left, and a stop without one makes the next a little more likely. A current usually lasts about 2 minutes, so fish without pause while it runs."],
-  ["Points and achievements", "Rewards and the score achievements count the points you catch; releasing or discarding fish never lowers them. The mission achievements (octopodes, sharks, jellyfish, seadragons, mantas, crabs, fugu, prehistoric fish, squids, mantises, shellfish, shrimp and others) are fastest on the routes that list them as targets: the schedule below shows each voyage's targets and marks the ones you still need."],
-  ["Fast leveling", "Ocean fishing pays experience by your level, not by what you catch, so it is the quickest way to level Fisher from level 1: take every voyage you can (one every 2 hours) and fish normally between them. Gatherers' scrips come with it after the quest Inscrutable Tastes, and intuition fish give extra scrips."],
-  ["Plan your voyages", "Pick voyages whose targets you still miss, bring that route's fabled bait, and save your strongest buffs for the stop at the right time of day. The schedule highlights voyages with fish or achievements you have not ticked yet."]
+  [
+   "Unlock",
+   "Fisher level 1 and the quest All the Fish in the Sea from Fhilsnoe on the Limsa Lominsa Lower Decks (7.8, 14.5), after My First Fishing Rod. The Ruby Route needs the Stormblood main story (Ruby Price and One River) and the Endwalker main story (Thavnair)."
+  ],
+  [
+   "Boarding",
+   "A boat leaves every 2 hours, on the even UTC hour. Register with Dryskthota on the Lower Decks (3.0, 12.7) in the first 15 minutes; the boat leaves when 24 people have joined, or at a quarter past regardless. A party leader registers for the party."
+  ],
+  [
+   "The voyage",
+   "Three stops of 7 minutes each; you cannot cast in the last 30 seconds of a stop. Each route visits its stops at set times of day (day, sunset, night), and that is what decides which rare fish can bite."
+  ],
+  [
+   "Bait",
+   "Krill, Ragworm, Plump Worm and Versatile Lures are sold by the Merchant & Mender on the Lower Decks (3.2, 12.8) and aboard. The fabled fish need their own bait, which is not sold aboard: Glowworm (Sothis), Shrimp Cage Feeder (Coral Manta), Heavy Steel Jig (Elasmosaurus), Rat Tail (Stonescale, Manasvin), Squid Strip (Hafgufa, Hells' Claw). Buy them before boarding."
+  ],
+  [
+   "Spectral currents",
+   "Catching a spectral fish can start a spectral current: faster bites and far more points. At most one per stop, none once less than 1:30 is left, and a stop without one makes the next a little more likely. A current usually lasts about 2 minutes, so fish without pause while it runs."
+  ],
+  [
+   "Points and achievements",
+   "Rewards and the score achievements count the points you catch; releasing or discarding fish never lowers them. The mission achievements (octopodes, sharks, jellyfish, seadragons, mantas, crabs, fugu, prehistoric fish, squids, mantises, shellfish, shrimp and others) are fastest on the routes that list them as targets: the schedule below shows each voyage's targets and marks the ones you still need."
+  ],
+  [
+   "Fast leveling",
+   "Ocean fishing pays experience by your level, not by what you catch, so it is the quickest way to level Fisher from level 1: take every voyage you can (one every 2 hours) and fish normally between them. Gatherers' scrips come with it after the quest Inscrutable Tastes, and intuition fish give extra scrips."
+  ],
+  [
+   "Plan your voyages",
+   "Pick voyages whose targets you still miss, bring that route's fabled bait, and save your strongest buffs for the stop at the right time of day. The schedule highlights voyages with fish or achievements you have not ticked yet."
+  ]
  ],
  "gate": [
-  ["When", "A GATE starts every 20 minutes of real time. On the hour: Air Force One (the Cieldalaes), Cliffhanger or Leap of Faith. At 20 past: Any Way the Wind Blows, The Slice Is Right or Air Force One (the Gold Saucer). At 40 past: The Slice Is Right, Leap of Faith or Air Force One (the Cieldalaes)."],
-  ["Air Force One", "Shoot the cactuar targets along the ride; hitting a Ruby Bomb costs points."],
-  ["Cliffhanger", "Jump up the platforms to the lost chick at the top; you can retry until time runs out. Bombs thrown from the top knock you off, so wait for them to land."],
-  ["Leap of Faith", "Collect the cactuar trophies and reach the goal; retry until you touch the goal or time runs out. Trophies first, goal last."],
-  ["Any Way the Wind Blows", "Stand in a safe spot before Typhon's pattern locks in; patterns are random, so spots hit less often are safer, but luck still decides."],
-  ["The Slice Is Right", "Avoid the bamboo stalks as they rise and fall; you are scored by how many rounds you last."]
+  [
+   "When",
+   "A GATE starts every 20 minutes of real time. On the hour: Air Force One (the Cieldalaes), Cliffhanger or Leap of Faith. At 20 past: Any Way the Wind Blows, The Slice Is Right or Air Force One (the Gold Saucer). At 40 past: The Slice Is Right, Leap of Faith or Air Force One (the Cieldalaes)."
+  ],
+  [
+   "Air Force One",
+   "Shoot the cactuar targets along the ride; hitting a Ruby Bomb costs points."
+  ],
+  [
+   "Cliffhanger",
+   "Jump up the platforms to the lost chick at the top; you can retry until time runs out. Bombs thrown from the top knock you off, so wait for them to land."
+  ],
+  [
+   "Leap of Faith",
+   "Collect the cactuar trophies and reach the goal; retry until you touch the goal or time runs out. Trophies first, goal last."
+  ],
+  [
+   "Any Way the Wind Blows",
+   "Stand in a safe spot before Typhon's pattern locks in; patterns are random, so spots hit less often are safer, but luck still decides."
+  ],
+  [
+   "The Slice Is Right",
+   "Avoid the bamboo stalks as they rise and fall; you are scored by how many rounds you last."
+  ]
  ],
  "verminion": [
-  ["Unlock and place", "Opens with the Gold Saucer. Play in Minion Square inside Chocobo Square (lift operator Saethrith at the Entrance Square, 4.4, 6.7). You need at least three minions; set your Verminion hotbar in Character → Gold Saucer → Verminion."],
-  ["Verminion Challenges", "24 single-player challenges teach the rules; clearing all 24 gives the minion Clockwork Twintania. Master Battles add three harder single-player difficulties."],
-  ["Ranked play", "Player Battles (RP) match you by rank points; 50 wins give the minion Shalloweye. Non-RP battles are free play with someone you invite."],
-  ["How to win", "Break all three enemy Arcana Stones (or have more left when time runs out). Shields protect stones, Gates summon and heal minions, Search Eyes reveal the enemy; destroyed structures return after a while, except stones."],
-  ["Cost and timing", "You can queue up to 60 cost during the 20-second briefing and 240 in play; expensive minions delay your next summon. Open with cheap, fast minions, then add heavier ones."],
-  ["Special actions", "When four minions of the same type with full special gauges stand together, the special action button flashes. Group same-type minions to use it, and pick minions strong against the structure you are attacking."]
+  [
+   "Unlock and place",
+   "Opens with the Gold Saucer. Play in Minion Square inside Chocobo Square (lift operator Saethrith at the Entrance Square, 4.4, 6.7). You need at least three minions; set your Verminion hotbar in Character → Gold Saucer → Verminion."
+  ],
+  [
+   "Verminion Challenges",
+   "24 single-player challenges teach the rules; clearing all 24 gives the minion Clockwork Twintania. Master Battles add three harder single-player difficulties."
+  ],
+  [
+   "Ranked play",
+   "Player Battles (RP) match you by rank points; 50 wins give the minion Shalloweye. Non-RP battles are free play with someone you invite."
+  ],
+  [
+   "How to win",
+   "Break all three enemy Arcana Stones (or have more left when time runs out). Shields protect stones, Gates summon and heal minions, Search Eyes reveal the enemy; destroyed structures return after a while, except stones."
+  ],
+  [
+   "Cost and timing",
+   "You can queue up to 60 cost during the 20-second briefing and 240 in play; expensive minions delay your next summon. Open with cheap, fast minions, then add heavier ones."
+  ],
+  [
+   "Special actions",
+   "When four minions of the same type with full special gauges stand together, the special action button flashes. Group same-type minions to use it, and pick minions strong against the structure you are attacking."
+  ]
  ],
  "racing": [
-  ["Unlock", "After It Could Happen to You (the Gold Saucer), take So You Want to Be a Jockey from the Race Chocobo Registrar in the Gold Saucer (6, 4) at level 15."],
-  ["Ranks and feeding", "A race chocobo goes to rank 50 (retire from 40). Each rank up raises five random stats and gives one feeding; feedings stack, so save them for grade 3 feed bought with MGP."],
-  ["Best track to farm", "Sagolii Road: short with few hazards. A Super Sprint or Head Start build with a stamina skill such as Choco Cure III can sprint the whole course."],
-  ["In the race", "Lanes block passing: do not sprint straight into a chocobo ahead; you can also block the one behind you. Racing with other players gives a flat bonus of experience."],
-  ["Chocobo Challenge", "Sixteen challenge races against named rivals, each needing a higher rating (41 for the first, up to the 270s). The first clear of each pays a large MGP reward and unlocks ability manuals at the Tack & Feed Trader."],
-  ["Breeding", "The quest Like Sire Like Fledgling (Chocobokeep, Chocobo Square, 6, 4) opens breeding once you have a rank 40 chocobo. A foal's pedigree is the lower parent's plus one; each pedigree adds 40 to every stat cap (cap = 40 × (pedigree + stars) − 20, up to 500 at pedigree 9 with four stars)."],
-  ["Save time breeding", "The Proof of Covering stops a second covering while it is in your inventory; move it to your saddlebag or a retainer to start another one."]
+  [
+   "Unlock",
+   "After It Could Happen to You (the Gold Saucer), take So You Want to Be a Jockey from the Race Chocobo Registrar in the Gold Saucer (6, 4) at level 15."
+  ],
+  [
+   "Ranks and feeding",
+   "A race chocobo goes to rank 50 (retire from 40). Each rank up raises five random stats and gives one feeding; feedings stack, so save them for grade 3 feed bought with MGP."
+  ],
+  [
+   "Best track to farm",
+   "Sagolii Road: short with few hazards. A Super Sprint or Head Start build with a stamina skill such as Choco Cure III can sprint the whole course."
+  ],
+  [
+   "In the race",
+   "Lanes block passing: do not sprint straight into a chocobo ahead; you can also block the one behind you. Racing with other players gives a flat bonus of experience."
+  ],
+  [
+   "Chocobo Challenge",
+   "Sixteen challenge races against named rivals, each needing a higher rating (41 for the first, up to the 270s). The first clear of each pays a large MGP reward and unlocks ability manuals at the Tack & Feed Trader."
+  ],
+  [
+   "Breeding",
+   "The quest Like Sire Like Fledgling (Chocobokeep, Chocobo Square, 6, 4) opens breeding once you have a rank 40 chocobo. A foal's pedigree is the lower parent's plus one; each pedigree adds 40 to every stat cap (cap = 40 × (pedigree + stars) − 20, up to 500 at pedigree 9 with four stars)."
+  ],
+  [
+   "Save time breeding",
+   "The Proof of Covering stops a second covering while it is in your inventory; move it to your saddlebag or a retainer to start another one."
+  ]
+ ],
+ "leveling": {
+  "Combat jobs (Disciples of War and Magic)": [
+   [
+    "Every day",
+    "Run each duty roulette once a day for its large first-clear bonus: Leveling, then High-level Dungeons, Alliance Raids, Main Scenario, Trials and Normal Raids as you unlock them. Frontline also pays experience to the job you queue as."
+   ],
+   [
+    "Bonuses that stack",
+    "The armoury bonus (+50% for a job below your highest) applies to every job but your top one; food adds 3%; rested experience builds while you are logged out in a city or inn; sanctuaries keep it from draining. Wear any experience-boosting earring or ring from events or the Mog Station while it still applies."
+   ],
+   [
+    "Levels 1 to 60",
+    "Dungeons through the Duty Finder and the Leveling roulette carry most of it; the Palace of the Dead (floors 1 to 50, then repeat 51 to 60) is a steady solo or party option."
+   ],
+   [
+    "Levels 61 to 70",
+    "Heaven-on-High (repeat floors 21 to 30) and the daily roulettes; Stormblood dungeons in between."
+   ],
+   [
+    "Levels 71 to 80",
+    "The Bozjan Southern Front: critical engagements and skirmishes give a lot of experience to jobs from level 71 once Bozja is unlocked."
+   ],
+   [
+    "Levels 81 to 90",
+    "Eureka Orthos (repeat floors 21 to 30) and the roulettes; Endwalker dungeons in between."
+   ],
+   [
+    "Levels 91 to 100",
+    "Pilgrim's Traverse and the roulettes; Dawntrail dungeons in between, plus FATEs in the Dawntrail zones while their Shared FATE ranks rise."
+   ],
+   [
+    "Side boosts",
+    "Hunt bills and FATEs fill gaps; Wondrous Tails and the daily challenge log add more. Level a new job's quests as you go: they give experience and the job's actions."
+   ]
+  ],
+  "Crafters (Disciples of the Hand)": [
+   [
+    "Fastest today",
+    "Cosmic Exploration (Dawntrail): missions there level crafters from 10 to 100 quickly and pay their own rewards; it is the default route for a fresh crafter."
+   ],
+   [
+    "Every week",
+    "Custom Deliveries: 12 allowances a week, large experience and scrips at every level band."
+   ],
+   [
+    "Steady routes",
+    "Levequests turned in high quality (Ishgard, Kugane and later hubs), Grand Company supply missions with high quality items (doubled experience), collectables for scrips, and the first-time bonus for every new recipe in the crafting log."
+   ],
+   [
+    "Ishgardian Restoration",
+    "Crafting Skybuilders' items for the Firmament still gives strong experience from level 20 to 80 and Skybuilders' Scrips."
+   ],
+   [
+    "Gear and food",
+    "Craft or buy gear every 10 levels; good gear makes higher recipes reliable, which is what keeps experience high."
+   ]
+  ],
+  "Gatherers (Disciples of the Land)": [
+   [
+    "Fastest today",
+    "Cosmic Exploration missions level Miner, Botanist and Fisher from 10 to 100 quickly, as for crafters."
+   ],
+   [
+    "Fisher",
+    "Ocean fishing pays experience by your level whatever you catch: take every boat (one every 2 hours). Spearfishing and collectables fill the gaps."
+   ],
+   [
+    "Every week",
+    "Custom Deliveries and the timed and legendary nodes for collectables (scrips)."
+   ],
+   [
+    "Steady routes",
+    "Levequests, Grand Company provisioning missions (high quality doubles experience), the Diadem (Ishgardian Restoration) from level 10, and the first-time gathering log bonus for each new item."
+   ],
+   [
+    "Timed nodes",
+    "The Up Now and Big Fish pages show which timed nodes and fish are up, so you can line up the valuable ones."
+   ]
+  ]
+ },
+ "dailies": [
+  [
+   "roulette-leveling",
+   "Duty Roulette: Leveling",
+   "daily",
+   1
+  ],
+  [
+   "roulette-high",
+   "Duty Roulette: High-level Dungeons",
+   "daily",
+   1
+  ],
+  [
+   "roulette-msq",
+   "Duty Roulette: Main Scenario",
+   "daily",
+   1
+  ],
+  [
+   "roulette-alliance",
+   "Duty Roulette: Alliance Raids",
+   "daily",
+   1
+  ],
+  [
+   "roulette-trials",
+   "Duty Roulette: Trials",
+   "daily",
+   1
+  ],
+  [
+   "roulette-normal",
+   "Duty Roulette: Normal Raids",
+   "daily",
+   1
+  ],
+  [
+   "roulette-frontline",
+   "Daily Challenge: Frontline",
+   "daily",
+   1
+  ],
+  [
+   "allied",
+   "Allied society quests",
+   "daily",
+   12
+  ],
+  [
+   "mini-cactpot",
+   "Mini Cactpot",
+   "daily",
+   3
+  ],
+  [
+   "hunt-daily",
+   "Daily hunt bills",
+   "daily",
+   1
+  ],
+  [
+   "gc",
+   "Grand Company supply and provisioning",
+   "gc",
+   1
+  ],
+  [
+   "map",
+   "Gather a timeworn map (every 18 hours)",
+   "map",
+   1
+  ],
+  [
+   "island",
+   "Island Sanctuary: gather, tend the pasture and crops",
+   "daily",
+   1
+  ],
+  [
+   "wondrous",
+   "Wondrous Tails journal",
+   "weekly",
+   1
+  ],
+  [
+   "custom",
+   "Custom Deliveries",
+   "weekly",
+   12
+  ],
+  [
+   "hunt-elite",
+   "Weekly elite hunt bills",
+   "weekly",
+   1
+  ],
+  [
+   "doman",
+   "Doman Enclave donations",
+   "weekly",
+   1
+  ],
+  [
+   "carnivale",
+   "Masked Carnivale weekly targets",
+   "weekly",
+   3
+  ],
+  [
+   "challenge",
+   "Challenge log",
+   "weekly",
+   1
+  ],
+  [
+   "faux",
+   "Faux Hollows",
+   "weekly",
+   1
+  ],
+  [
+   "fashion",
+   "Fashion Report",
+   "weekly",
+   1
+  ],
+  [
+   "jumbo",
+   "Jumbo Cactpot tickets",
+   "weekly",
+   3
+  ],
+  [
+   "tomes",
+   "Weekly tomestone cap",
+   "weekly",
+   1
+  ],
+  [
+   "raids",
+   "Savage and alliance raid rewards",
+   "weekly",
+   1
+  ],
+  [
+   "workshop",
+   "Island workshop agenda for next week",
+   "weekly",
+   1
+  ]
  ]
 }

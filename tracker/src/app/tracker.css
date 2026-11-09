@@ -293,3 +293,13 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
   .lv-row, .bf-head, .bf-row, .of-voy, .tm-row, .fm-head, .fm-row { grid-template-columns: 1fr; gap: 4px; }
   .bf-head, .fm-head { display: none; } .lv-count { margin-left: 0; }
 }
+.sr.bf-row, .bf-row.sr { grid-template-columns: minmax(170px, 1fr) minmax(220px, 2fr) minmax(180px, 1.2fr) minmax(120px, .8fr); }
+.dl-row { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(var(--n), minmax(70px, 1fr)); gap: 6px; align-items: center; padding: 4px 6px; border-bottom: 1px solid var(--rule, rgba(127,127,127,.15)); }
+.dl-head { font-weight: 700; color: var(--ink-3); }
+.dl-cell { font: inherit; font-size: 12px; min-height: 28px; border-radius: 6px; border: 1px solid var(--rule, rgba(127,127,127,.4)); background: none; color: var(--ink); cursor: pointer; }
+.dl-cell.done { background: color-mix(in srgb, var(--seal) 18%, transparent); border-color: var(--seal); color: var(--seal); font-weight: 700; }
+.isle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 4px 14px; margin-top: 8px; }
+.isle-in { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; font-size: 13px; }
+.isle-in select { font: inherit; font-size: 12px; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--rule, rgba(127,127,127,.35)); background: var(--paper); color: var(--ink); }
+.ach-pts .c { font-weight: 600; }
+@media (max-width: 760px) { .dl-row { grid-template-columns: 1fr repeat(var(--n), 52px); } }

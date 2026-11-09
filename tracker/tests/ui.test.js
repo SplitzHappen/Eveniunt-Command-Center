@@ -602,3 +602,26 @@ test('live pages: Up Now, Big Fish, Ocean Fishing, Timers, Field Monsters, Gold 
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test('more live pages: dailies count and clear, S ranks, island planner, PvP series, leveling, Jumbo Cactpot by data center', async () => {
+  const { ctx, page, errors } = await open({ n: 2 });
+  await page.click('[data-live-view="dailies"]');
+  const cell = page.locator('[data-dl$="|mini-cactpot"]').first();
+  await cell.click(); await cell.click();
+  assert.match(await page.locator('[data-dl$="|mini-cactpot"]').first().textContent(), /2\/3/);
+  await page.click('[data-live-view="srank"]');
+  assert.equal(await page.locator('.bf-row.sr').count(), 50, 'every S rank');
+  await page.click('[data-live-view="island"]');
+  assert.match(await page.textContent('#page'), /Best agenda: [\d,]+ cowries per workshop/);
+  await page.click('[data-live-view="pvp"]');
+  assert.ok(await page.locator('#page .lv-row').count() >= 30);
+  await page.click('[data-live-view="leveling"]');
+  assert.match(await page.textContent('#page'), /Cosmic Exploration/);
+  await page.click('[data-live-view="timers"]');
+  await page.selectOption('[data-live="dc"]', 'Dynamis');
+  assert.match(await page.textContent('#page'), /North America/);
+  await page.click('[data-act="home"]');
+  assert.match(await page.textContent('#page'), /Achievement points/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

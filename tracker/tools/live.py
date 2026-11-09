@@ -150,6 +150,43 @@ out["timers"] = D("timers.json")
 out["guides"] = {k: v for k, v in D("guides.json").items() if not k.startswith("_")}
 out["gate"] = [[0, ["Air Force One (the Cieldalaes)", "Cliffhanger", "Leap of Faith"]], [20, ["Any Way the Wind Blows", "The Slice Is Right", "Air Force One (the Gold Saucer)"]],
                [40, ["The Slice Is Right", "Leap of Faith", "Air Force One (the Cieldalaes)"]]]
+# ---------------------------------------------------------------- S-rank elite marks: condition text, and a computable window where weather, time or moon decide
+EM = D("elite-marks.json")["marks"]
+SPEC = {  # facts from each mark's spawn condition (data/elite-marks.json), in a form the page can forecast
+    "Laideronnette": {"zone": "Central Shroud", "w": ["Rain"], "pw": ["Rain"], "note": "appears about 6 minutes into the second Rain in a row"},
+    "Kirlirger the Abhorrent": {"zone": "Urqopacha", "w": ["Fog"], "moon": "new"},
+    "Burfurlur the Canny": {"zone": "Labyrinthos", "w": ["Clear Skies", "Fair Skies"], "h": [6, 18]},
+    "Okina": {"zone": "The Ruby Sea", "moon": "full", "h": [12, 24]},
+    "Croakadile": {"zone": "Lower La Noscea", "moon": "full"},
+    "Mindflayer": {"zone": "South Shroud", "moon": "new", "h": [0, 1]},
+    "Croque-Mitaine": {"zone": "Middle La Noscea", "h": [19, 22]},
+    "Bonnacon": {"zone": "Western La Noscea", "h": [8, 11]},
+    "Thousand-cast Theda": {"zone": "North Shroud", "h": [17, 21]},
+    "The Garlok": {"zone": "Eastern La Noscea", "dry": 200},
+}
+out["srank"] = [dict({"n": n, "area": v.get("area"), "spawn": v.get("spawn"), "respawn": v.get("respawn")}, **({"spec": {k: ([WID[norm(x)] for x in s] if k in ("w", "pw") else s) for k, s in SPEC[n].items()}} if n in SPEC else {}))
+                for n, v in EM.items() if v.get("rank") == "S"]
+# ---------------------------------------------------------------- Island Sanctuary: rare animals and the workshop planner
+ISL = D("island.json")
+THEME = {k: clean(r["Name"]) for k, r in sheet("MJICraftworksObjectTheme").items()}
+CW = json.load(open(os.path.join(TC, "island-craftworks.json")))
+out["island"] = {"animals": ISL["animals"], "multiplier": ISL["multiplier"], "supply": ISL["supply"],
+                 "crafts": sorted([{"n": re.sub(r"^Isleworks ", "", ITEM.get(c["itemId"], "")), "v": c["value"], "t": c["craftingTime"], "th": [THEME.get(x, "") for x in c.get("themes") or []], "lvl": c.get("lvl", 1)}
+                                   for c in CW.values() if ITEM.get(c.get("itemId"))], key=lambda x: (x["lvl"], x["n"]))}
+# ---------------------------------------------------------------- PvP series rewards and seasonal event rewards (from the FFXIV Collect sources on collection entries)
+series, events = collections.defaultdict(list), collections.defaultdict(list)
+for s in data["sections"]:
+    for g in s["g"]:
+        for e in g["e"]:
+            for src in e.get("src") or []:
+                m = re.match(r"PvP: PvP Series (\d+) - Level (\d+)", src)
+                if m: series[int(m.group(1))].append([int(m.group(2)), s["id"] + ":" + str(e["i"]), e["n"]])
+                m = re.match(r"Event: (.+)$", src)
+                if m: events[m.group(1).strip()].append(s["id"] + ":" + str(e["i"]))
+out["pvp"] = {str(k): sorted(v) for k, v in sorted(series.items())}
+out["eventRewards"] = dict(events)
+out["dc"] = {"Japan": {"dcs": ["Elemental", "Gaia", "Mana", "Meteor"], "day": 6, "utc": 12}, "North America": {"dcs": ["Aether", "Crystal", "Dynamis", "Primal"], "day": 0, "utc": 2},
+             "Europe": {"dcs": ["Chaos", "Light", "Shadow"], "day": 6, "utc": 19}, "Oceania": {"dcs": ["Materia"], "day": 6, "utc": 9}}
 with open(os.path.join(T, "data", "live.json"), "w", encoding="utf-8") as f:
     json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
 print(json.dumps({"big fish": len(big), "big fish with a window": sum(1 for b in big if "a" in b), "big fish in the fishing log": sum(1 for b in big if b["k"]),

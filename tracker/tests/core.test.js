@@ -957,3 +957,13 @@ test('live data: ocean fishing schedule, big fish, field monsters, new lists', (
   assert.equal(n('armoire'), 3563); assert.equal(n('outfits'), 1088);
   assert.equal(n('verminion'), 29); assert.ok(n('chocoboracing') >= 25);
 });
+
+test('live data: S ranks, island, PvP series, data centers', () => {
+  const L = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'live.json'), 'utf8'));
+  assert.equal(L.srank.length, 50); assert.ok(L.srank.filter((s) => s.spec).length >= 10);
+  assert.equal(L.island.animals.length, 43); assert.ok(L.island.animals.filter((a) => a.weather).length >= 20);
+  assert.ok(L.island.crafts.length >= 80); assert.deepEqual(L.island.multiplier.Average, [1.6, 1.3, 1, 0.8, 0.6]);
+  assert.ok(Object.keys(L.pvp).length >= 10);
+  assert.ok(L.dc['North America'].dcs.includes('Dynamis'));
+  assert.ok((L.guides.dailies || []).length >= 20 && Object.keys(L.guides.leveling || {}).length === 3);
+});
