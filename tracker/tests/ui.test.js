@@ -35,6 +35,11 @@ async function setup(page, n) {
   await page.click('#go');
   await page.waitForSelector('.ov-table');
 }
+// Live pages sit in dropdown folders of the side menu: open the folder, then click the link, as a person would
+async function liveView(page, v) {
+  await page.evaluate((x) => { const b = document.querySelector('#side [data-live-view="' + x + '"]'); const d = b && b.closest('details'); if (d) d.open = true; }, v);
+  await page.click('#side [data-live-view="' + v + '"]');
+}
 // lists open with every group closed; the tests open them all, as the "Open all" button does
 const go = (page, sid) => page.evaluate((s) => { window.__tracker.setView('sec', s); window.__tracker.openAll(); }, sid);
 // "done / total" for a character in the open list, read from the column header the user sees
@@ -178,6 +183,21 @@ test('search across everything, and the menu follows the game (Character, Duty, 
   // every menu, Travel and Social included, groups its lists in dropdown folders (no loose links)
   assert.equal(await page.locator('.nav-menu > .nav-link').count(), 0);
   assert.deepEqual(await page.$$eval('.nav-menu', (ms) => ms.slice(4).map((m) => [...m.querySelectorAll('.nav-folder > summary .nm')].map((x) => x.textContent))), [['Aetherytes and Flying', 'Mounts and Porters'], ['Emotes']]);
+  // the Live menu has dropdown folders like the others, with every Live page in one of them
+  assert.ok(await page.locator('.nav-live > .nav-folder').count() >= 4);
+  assert.equal(await page.locator('.nav-live [data-live-view]').count(), 17);
+  // A to Z by default: folders, the lists in each folder, and the entries in each group
+  const sorted = (a) => [...a].sort((x, y) => x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' }));
+  const folders = await page.$$eval('.nav-menu', (ms) => ms.map((m) => [...m.querySelectorAll(':scope > .nav-folder > summary .nm')].map((x) => x.textContent)));
+  folders.forEach((f) => assert.deepEqual(f, sorted(f)));
+  const lists = await page.$$eval('.nav-folder', (fs) => fs.map((f) => [...f.querySelectorAll('.nav-link .nm')].map((x) => x.textContent)));
+  lists.forEach((l) => assert.deepEqual(l, sorted(l)));
+  await go(page, 'mounts'); await page.waitForSelector('.er');
+  const names = () => page.$$eval('.lgroup', (gs) => [...gs[0].querySelectorAll('.er .nm')].map((x) => x.textContent));
+  const first = await names(); assert.ok(first.length > 5); assert.deepEqual(first, sorted(first));
+  await page.evaluate(() => { window.__tracker.ST.settings.gameOrder = true; window.__tracker.render(); });
+  assert.notDeepEqual(await names(), first, 'the game order is one switch away');
+  await page.evaluate(() => { window.__tracker.ST.settings.gameOrder = false; window.__tracker.render(); });
   await page.fill('#q', 'coeurl');
   await page.waitForSelector('text=“coeurl”');
   assert.ok(await page.locator('.er').count() >= 2);
@@ -580,21 +600,21 @@ test('clock and weather: Eorzea and local time in the header, weather for every 
 test('live pages: Up Now, Big Fish, Ocean Fishing, Timers, Field Monsters, Gold Saucer and Notifications render; settings stay', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
   for (const v of ['now', 'bigfish', 'ocean', 'timers', 'weather', 'field', 'gold', 'notify']) {
-    await page.click(`[data-live-view="${v}"]`);
+    await liveView(page, v);
     assert.ok((await page.textContent('#page')).length > 500, v + ' has content');
   }
-  await page.click('[data-live-view="bigfish"]');
+  await liveView(page, 'bigfish');
   assert.equal(await page.locator('.bf-row').count(), 335, 'every big fish on the board');
   await page.check('[data-live="legendary"]');
   assert.equal(await page.locator('.bf-row').count(), 36, 'legendary filter');
   await page.locator('.bf-row [data-ltick]').first().click();
   assert.match(await page.locator('.bf-row [data-ltick]').first().textContent(), /Caught/);
   await page.locator('.bf-row [data-watch]').first().click();
-  await page.click('[data-live-view="ocean"]');
+  await liveView(page, 'ocean');
   assert.equal(await page.locator('.of-voy').count(), 12, '12 voyages');
-  await page.click('[data-live-view="now"]');
+  await liveView(page, 'now');
   await page.check('[data-live="hide"]');
-  await page.click('[data-live-view="notify"]');
+  await liveView(page, 'notify');
   await page.check('[data-notify="on"]');
   assert.ok(await page.locator('#page .lv-row').count() >= 1, 'the watched fish is listed');
   await page.reload(); await page.waitForSelector('.side .nav-live');
@@ -605,19 +625,19 @@ test('live pages: Up Now, Big Fish, Ocean Fishing, Timers, Field Monsters, Gold 
 
 test('more live pages: dailies count and clear, S ranks, island planner, PvP series, leveling, Jumbo Cactpot by data center', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
-  await page.click('[data-live-view="dailies"]');
+  await liveView(page, 'dailies');
   const cell = page.locator('[data-dl$="|mini-cactpot"]').first();
   await cell.click(); await cell.click();
   assert.match(await page.locator('[data-dl$="|mini-cactpot"]').first().textContent(), /2\/3/);
-  await page.click('[data-live-view="srank"]');
+  await liveView(page, 'srank');
   assert.equal(await page.locator('.bf-row.sr').count(), 50, 'every S rank');
-  await page.click('[data-live-view="island"]');
+  await liveView(page, 'island');
   assert.match(await page.textContent('#page'), /Best agenda: [\d,]+ cowries per workshop/);
-  await page.click('[data-live-view="pvp"]');
+  await liveView(page, 'pvp');
   assert.ok(await page.locator('#page .lv-row').count() >= 30);
-  await page.click('[data-live-view="leveling"]');
+  await liveView(page, 'leveling');
   assert.match(await page.textContent('#page'), /Cosmic Exploration/);
-  await page.click('[data-live-view="timers"]');
+  await liveView(page, 'timers');
   await page.selectOption('[data-live="dc"]', 'Dynamis');
   assert.match(await page.textContent('#page'), /North America/);
   await page.click('[data-act="home"]');
@@ -640,7 +660,7 @@ test('Hunts, Market Board, Housing and News: windows from kills, spawn maps, pri
     return r.abort();
   });
   await page.goto(URL); await page.waitForSelector('#dlg[open]'); await setup(page, 2);
-  await page.click('[data-live-view="hunts"]');
+  await liveView(page, 'hunts');
   assert.match(await page.textContent('#page'), /Choose your data center/);
   await page.selectOption('[data-live="dc"]', 'Dynamis'); await page.selectOption('[data-live="world"]', 'Golem');
   assert.equal(await page.locator('.hn-row').first().locator('.hn-chip').count(), 32, 'every North American world');
@@ -656,14 +676,14 @@ test('Hunts, Market Board, Housing and News: windows from kills, spawn maps, pri
   await page.click('.hn-map circle >> nth=0');
   assert.equal(await page.locator('.hn-map circle:not(.done)').count(), before - 1, 'a checked spawn point');
   assert.equal(await page.locator('.hn-row').filter({ hasText: 'Ttokrrone' }).count(), 1, 'world boss FATE for the expansion');
-  await page.click('[data-live-view="market"]');
+  await liveView(page, 'market');
   await page.fill('[data-mbq]', 'iron ingot'); await page.waitForTimeout(500);
   await page.click('[data-mbadd] >> nth=0'); await page.waitForSelector('.mb-row');
   await page.waitForFunction(() => /1,234 gil Hyperion \(Primal\)/.test(document.querySelector('.mb-row').textContent));
-  await page.click('[data-live-view="housing"]');
+  await liveView(page, 'housing');
   await page.waitForSelector('.hs-row');
   assert.match(await page.textContent('.hs-row'), /^11Large40,000,000 gilIndividualsTaking entries · 2 entries/);
-  await page.click('[data-live-view="news"]');
+  await liveView(page, 'news');
   assert.match(await page.textContent('#page'), /hosted tracker/);
   assert.deepEqual([...new Set(external)].sort(), ['paissadb.zhu.codes', 'universalis.app']);
   assert.deepEqual(errors, []);

@@ -107,6 +107,20 @@
     if (s.folder && t.indexOf(': ') > 0) return t.slice(t.indexOf(': ') + 2);
     return t.replace(/^(Achievements|Duties|Crafting Log|Gathering Log|Eureka|Bozja|Occult Crescent|Island Sanctuary|Treasure Hunt): /, '');
   }
+  // A–Z order (the default): lists inside each folder, folders inside each menu and entries inside each group are
+  // sorted by name (numbers in natural order); Settings → Counting → "Keep the game's order" shows the game's order.
+  var COLL = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }) : { compare: function (a, b) { return a < b ? -1 : a > b ? 1 : 0; } };
+  function az() { return !(ST && ST.settings && ST.settings.gameOrder); }
+  var SORTED = new Map();
+  function orderedKeys(keys, gid) {
+    if (!az()) return keys;
+    var hit = gid && SORTED.get(gid); if (hit && hit.src === keys) return hit.keys;
+    var out = keys.slice().sort(function (a, b) { return COLL.compare(IDX.byKey.get(a).e.n, IDX.byKey.get(b).e.n); });
+    if (gid) SORTED.set(gid, { src: keys, keys: out });
+    return out;
+  }
+  function orderedFolders(folders) { return az() ? folders.slice().sort(function (a, b) { return COLL.compare(a.t, b.t); }) : folders; }
+  function orderedSecs(ids) { return az() ? ids.slice().sort(function (a, b) { return COLL.compare(navTitle(a), navTitle(b)); }) : ids; }
   function menuOf(id) { for (var i = 0; i < MENUS.length; i++) for (var j = 0; j < MENUS[i].folders.length; j++) if (MENUS[i].folders[j].secs.indexOf(id) >= 0) return [MENUS[i], MENUS[i].folders[j]]; return [null, null]; }
 
   // ── tallies ──
@@ -130,16 +144,22 @@
   // ── sidebar ──
   function renderSide() {
     var h = '<button type="button" class="home' + (UI.view === 'home' ? ' on' : '') + '" data-act="home">Overview</button>';
-    h += '<div class="nav-menu nav-live"><h3>Live</h3><div class="nav-live-links">' + LIVE_VIEWS.map(function (v) { return '<button type="button" class="nav-link' + (UI.view === v[0] ? ' on' : '') + '" data-live-view="' + v[0] + '"><span class="nm">' + esc(v[1]) + '</span></button>'; }).join('') + '</div></div>';
+    h += '<div class="nav-menu nav-live"><h3>Live</h3>' + orderedFolders(LIVE_FOLDERS).map(function (f) {
+      var key = 'Live/' + f.t, views = f.views.filter(function (v) { return LIVE_NAME[v]; });
+      if (az()) views.sort(function (a, b) { return COLL.compare(LIVE_NAME[a], LIVE_NAME[b]); });
+      var open = UI.open[key] || views.indexOf(UI.view) >= 0;
+      return '<details class="nav-folder" data-key="' + esc(key) + '"' + (open ? ' open' : '') + '><summary><span class="nm">' + esc(f.t) + '</span><span class="pc"></span></summary>' +
+        views.map(function (v) { return '<button type="button" class="nav-link' + (UI.view === v ? ' on' : '') + '" data-live-view="' + v + '"><span class="nm">' + esc(LIVE_NAME[v]) + '</span></button>'; }).join('') + '</details>';
+    }).join('') + '</div>';
     MENUS.forEach(function (m) {
       var all = []; m.folders.forEach(function (f) { all = all.concat(f.secs); });
       var mt = combined(tallyOf(all));
       h += '<div class="nav-menu"><h3>' + esc(m.t) + '<span class="pc">' + pctTxt(mt.d, mt.n) + '</span></h3>';
-      m.folders.forEach(function (f) {
+      orderedFolders(m.folders).forEach(function (f) {
         var single = false; // every menu uses folders, so all sections look and behave the same
         var ft = combined(tallyOf(f.secs)), key = m.t + '/' + f.t;
         var open = single || UI.open[key] || f.secs.indexOf(UI.sec) >= 0;
-        var links = f.secs.map(function (id) {
+        var links = orderedSecs(f.secs).map(function (id) {
           var t = combined(tallyOf([id]));
           return '<button type="button" class="nav-link' + (UI.view === 'sec' && UI.sec === id ? ' on' : '') + (t.n && t.d === t.n ? ' full' : '') + '" data-act="sec" data-id="' + id + '"><span class="nm">' + esc(navTitle(id)) + '</span><span class="pc">' + pctTxt(t.d, t.n) + '</span></button>';
         }).join('');
@@ -513,7 +533,7 @@
     var layered = sec.groups.some(function (g) { return g.xp; }), xp = null;
     sec.groups.forEach(function (g, gi) {
       GROUP_KEYS.set(sid + '#' + gi, g.keys);
-      var keys = g.keys.filter(function (k) { return passes(k, q); });
+      var keys = orderedKeys(g.keys, sid + '#' + gi).filter(function (k) { return passes(k, q); });
       if (!keys.length) return;
       any = true;
       // a lone group named like its expansion needs no expansion heading above it
@@ -535,7 +555,7 @@
     IDX.sections.forEach(function (s) {
       var keys = KEYS.get(s.id).filter(function (k) { return norm(IDX.byKey.get(k).e.n).indexOf(q) >= 0; });
       total += keys.length; all = all.concat(keys);
-      if (keys.length) out.push([s, keys.slice(0, 60)]);
+      if (keys.length) out.push([s, orderedKeys(keys).slice(0, 60)]);
     });
     var h = '<div class="p-head"><span class="ttl"><span class="kick">Search</span><h2>“' + esc(UI.q) + '”</h2><p class="note">' + total.toLocaleString() + ' match' + (total === 1 ? '' : 'es') + ' in ' + out.length + ' list' + (out.length === 1 ? '' : 's') + (total > 600 ? '; showing the first 60 per list' : '') + '.</p></span></div>';
     h += '<div class="ledger" id="ledger" style="--n:' + ST.chars.length + ';--cw:' + cw() + 'px">' + '<div class="lr lh" id="lh"><span class="c0">Matches</span>' + headCells(ET.tally(IDX, ST, all)) + '</div>';
@@ -824,6 +844,7 @@
       sw('countLimited', 'Count time-limited entries', 'Only obtainable from events, seasonal content or ended campaigns (they may return)') +
       sw('countGone', 'Count entries that are no longer obtainable', 'Legacy achievements, retired items and rows the checklist excludes') +
       sw('countUnknown', 'Count entries of unknown availability', 'Mostly FATEs not placed in any zone') + '</div>' +
+      '<h4>Order</h4><div class="look-card">' + sw('gameOrder', 'Keep the game\'s order', 'Lists, folders and entries are sorted A to Z. Switch this on to see them in the order the game uses (story order for quests, level order for recipes and leves, release order for expansions)') + '</div>' +
       '<div class="row" style="margin-top:12px"><span class="help">' + manual + ' entr' + (manual === 1 ? 'y has' : 'ies have') + ' your own ✕ choice.</span>' + (manual ? '<button type="button" class="btn sm ghost" id="clear-avail">Clear my ✕ choices</button>' : '') + '</div>' +
       '<h4>Links between entries</h4><p class="help">Built from the game’s own data (' + (LX ? LX.count.toLocaleString() : 0) + ' links). They only ever add ticks: unticking something never unticks anything else, and nothing that does not apply to a character is ticked.</p><div class="look-card">' +
       sw('links', 'Tick what an entry proves', 'When you tick something, also tick what it proves: the earlier quests it needs, the achievement and title it earns, the aether current or reward a quest gives, earlier ranks and relic stages, master recipe books, and more') +

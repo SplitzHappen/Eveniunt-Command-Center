@@ -5,6 +5,14 @@
     { bigfish: [], ocean: null, field: { zones: {}, challenge: [], events: {}, weatherZone: {} }, timers: { timers: [] }, guides: {}, gate: [] };
   var LIVE_VIEWS = [['now', 'Up Now'], ['dailies', 'Dailies & Weeklies'], ['bigfish', 'Big Fish'], ['srank', 'S Ranks'], ['ocean', 'Ocean Fishing'], ['island', 'Island Sanctuary'], ['timers', 'Timers & Events'], ['weather', 'Weather'],
     ['hunts', 'Hunts'], ['field', 'Field Monsters'], ['market', 'Market Board'], ['housing', 'Housing'], ['news', 'News'], ['gold', 'Gold Saucer'], ['pvp', 'PvP Series'], ['leveling', 'Leveling Guides'], ['notify', 'Notifications']];
+  var LIVE_NAME = {}; LIVE_VIEWS.forEach(function (v) { LIVE_NAME[v[0]] = v[1]; });
+  var LIVE_FOLDERS = [ // the Live menu's dropdown folders, like the other menus
+    { t: 'Daily Life', views: ['now', 'dailies', 'timers', 'news', 'notify'] },
+    { t: 'Economy and Housing', views: ['market', 'housing'] },
+    { t: 'Fishing and Island', views: ['bigfish', 'ocean', 'island'] },
+    { t: 'Gold Saucer, PvP and Leveling', views: ['gold', 'pvp', 'leveling'] },
+    { t: 'Hunts and Field Operations', views: ['hunts', 'srank', 'field', 'weather'] }
+  ];
   var NOTIFY_DEFAULT = {
     on: false, browser: true, sound: true, toast: true, lead: 5,
     bigfish: 'missing', bigfishLead: 10, legendaryOnly: false,
