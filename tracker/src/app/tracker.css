@@ -329,3 +329,8 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
   .bf-head.hn-head, .bf-row.hn-row, .mb-head, .mb-row, .hs-head, .hs-row, .nw-cols, .hn-map { grid-template-columns: 1fr; gap: 4px; }
   .hn-head, .mb-head, .hs-head { display: none; }
 }
+.hn-chips { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 4px; }
+.hn-dc { display: inline-flex; flex-wrap: wrap; gap: 3px; align-items: center; } .hn-dc i { font-style: normal; font-size: 11px; color: var(--ink-3); margin-right: 2px; width: 100%; }
+.hn-chip { font: 600 10px/1 var(--f-body); width: 30px; padding: 4px 0; border-radius: 3px; border: 1px solid transparent; cursor: pointer; color: var(--ink); background: color-mix(in srgb, var(--ink) 9%, transparent); }
+.hn-chip.closed { background: #6b7280; color: #fff; } .hn-chip.open { background: #16a34a; color: #fff; } .hn-chip.capped { background: #2563eb; color: #fff; }
+.hn-chip.sel { outline: 2px solid var(--seal); outline-offset: 1px; } .hn-sel { margin-top: 4px; }

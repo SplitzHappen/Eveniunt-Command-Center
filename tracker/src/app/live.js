@@ -557,11 +557,16 @@
   // ---- data center and world (shared by Hunts, Market Board, Housing and the Jumbo Cactpot)
   function dcNames() { return Object.keys(LIVE.worlds || {}).sort(); }
   function worldsOf(dc) { return (LIVE.worlds || {})[dc] || []; }
-  function curWorld() { var w = worldsOf(UI.live.dc).find(function (x) { return x[1] === UI.live.world; }); return w || null; }
-  function placeSel(withWorld, worldLabel) {
+  // a region (North America, Europe, Japan, Oceania) is every data center a character can travel to freely
+  function regionOf(dc) { return Object.keys(LIVE.dc || {}).find(function (r) { return LIVE.dc[r].dcs.indexOf(dc) >= 0; }) || null; }
+  function regionDcs() { var r = regionOf(UI.live.dc); return r ? LIVE.dc[r].dcs.filter(function (d) { return worldsOf(d).length; }) : (UI.live.dc ? [UI.live.dc] : []); }
+  function regionWorlds() { var out = []; regionDcs().forEach(function (d) { worldsOf(d).forEach(function (w) { out.push([w[0], w[1], d]); }); }); return out; }
+  function dcOfWorld(name) { var hit = null; dcNames().forEach(function (d) { if (worldsOf(d).some(function (w) { return w[1] === name; })) hit = d; }); return hit; }
+  function curWorld() { var w = regionWorlds().find(function (x) { return x[1] === UI.live.world; }); return w || null; }
+  function placeSel(withWorld, worldLabel, wLabel) {
     var w = curWorld();
     return '<label class="lv-sel">Data center <select data-live="dc"><option value="">choose</option>' + dcNames().map(function (d) { return '<option' + (d === UI.live.dc ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label>' +
-      (withWorld ? '<label class="lv-sel">World <select data-live="world"><option value="">' + esc(worldLabel || 'choose') + '</option>' + worldsOf(UI.live.dc).map(function (x) { return '<option' + (w && x[1] === w[1] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></label>' : '');
+      (withWorld ? '<label class="lv-sel">' + esc(wLabel || 'World') + ' <select data-live="world"><option value="">' + esc(worldLabel || 'choose') + '</option>' + regionDcs().map(function (d) { return '<optgroup label="' + esc(d) + '">' + worldsOf(d).map(function (x) { return '<option' + (w && x[1] === w[1] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</optgroup>'; }).join('') + '</select></label>' : '');
   }
   function store(key) {
     var s = (function () { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; } })();
@@ -573,7 +578,8 @@
   // ---- Hunts: spawn windows per world, spawn point maps, world boss FATEs (records are kept on this device)
   var HST = store('eveniunt-tracker-hunts'); HST.kills = HST.kills || {}; HST.boss = HST.boss || {}; HST.pts = HST.pts || {};
   var HOUR = 3600000;
-  UI.live = Object.assign({ hex: 'Dawntrail', hrank: 'S', hsort: 'window', hmap: '' }, UI.live);
+  UI.live = Object.assign({ hex: 'Dawntrail', hrank: 'S', hsort: 'window', hmap: '', hscope: 'region' }, UI.live);
+  if (UI.live.scopeV !== 2) { UI.live.hscope = 'region'; UI.live.mscope = 'region'; UI.live.scopeV = 2; } // region-wide by default (free travel between data centers)
   function lastMaint(now) { // end of the latest all-worlds maintenance: from the events list, or the time entered here
     var T = (FRESH_TIMERS || LIVE.timers).timers || [], auto = HST.maintAuto || 0;
     T.forEach(function (t) { if (t.type === 'maintenance' && /all worlds/i.test(t.name) && t.end && t.end <= now && t.end > auto) auto = t.end; });
@@ -619,49 +625,82 @@
     var now = Date.now(), L = UI.live, H = LIVE.hunts || { marks: [], bosses: [], spawn: {} }, w = curWorld(), world = w ? w[1] : null;
     var exps = []; H.marks.forEach(function (m) { if (exps.indexOf(m.ex) < 0) exps.push(m.ex); });
     if (exps.indexOf(L.hex) < 0) L.hex = exps[exps.length - 1];
-    var rows = H.marks.filter(function (m) { return m.ex === L.hex && (L.hrank === 'all' || (L.hrank === 'A' ? m.r === 'A' : m.r !== 'A')); }).map(function (m) { var hw = huntWin(m, world, now); return { m: m, w: hw, s: huntState(hw, now) }; });
-    var rankOrder = { capped: 0, open: 1, closed: 2, unknown: 3 };
-    if (L.hsort === 'window') rows.sort(function (a, b) { return rankOrder[a.s] - rankOrder[b.s] || (a.s === 'open' ? a.w.cap - b.w.cap : a.s === 'closed' ? a.w.open - b.w.open : a.s === 'capped' ? a.w.cap - b.w.cap : 0); });
+    var region = L.hscope !== 'world', RW = regionWorlds(), rankOrder = { capped: 0, open: 1, closed: 2, unknown: 3 };
+    function bestOf(list) { return list.slice().sort(function (a, b) { return rankOrder[a.s] - rankOrder[b.s] || (a.s === 'closed' ? a.w.open - b.w.open : (a.w.cap || 0) - (b.w.cap || 0)); })[0]; }
+    var rows = H.marks.filter(function (m) { return m.ex === L.hex && (L.hrank === 'all' || (L.hrank === 'A' ? m.r === 'A' : m.r !== 'A')); }).map(function (m) {
+      var per = region ? RW.map(function (x) { var hw = huntWin(m, x[1], now); return { world: x[1], dc: x[2], w: hw, s: huntState(hw, now) }; }) : null;
+      var hw = world ? huntWin(m, world, now) : { src: 'none' }, mine = { w: hw, s: huntState(hw, now) };
+      var lead = region && per.length ? bestOf(per) : mine;
+      return { m: m, w: mine.w, s: mine.s, per: per, lead: lead };
+    });
+    if (L.hsort === 'window') rows.sort(function (a, b) { var x = a.lead, y = b.lead; return rankOrder[x.s] - rankOrder[y.s] || (x.s === 'open' ? x.w.cap - y.w.cap : x.s === 'closed' ? x.w.open - y.w.open : x.s === 'capped' ? x.w.cap - y.w.cap : 0); });
     var mt = lastMaint(now), mn = maintNow(now);
     var tabs = '<div class="lv-tabs">' + exps.map(function (x) { return '<button type="button" class="lv-tab' + (x === L.hex ? ' on' : '') + '" data-hex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>';
-    var tools = '<div class="lv-tools">' + placeSel(true) +
+    var tools = '<div class="lv-tools">' + placeSel(true, 'choose', region ? 'Record kills on' : 'World') +
+      '<label class="lv-sel">Show <select data-live="hscope"><option value="region"' + (region ? ' selected' : '') + '>Every world in ' + esc(regionOf(L.dc) || 'the region') + '</option><option value="world"' + (!region ? ' selected' : '') + '>One world</option></select></label>' +
       '<label class="lv-sel">Ranks <select data-live="hrank"><option value="S"' + (L.hrank === 'S' ? ' selected' : '') + '>S and SS</option><option value="A"' + (L.hrank === 'A' ? ' selected' : '') + '>A (train)</option><option value="all"' + (L.hrank === 'all' ? ' selected' : '') + '>All</option></select></label>' +
       '<label class="lv-sel">Sort <select data-live="hsort"><option value="window"' + (L.hsort === 'window' ? ' selected' : '') + '>By window</option><option value="zone"' + (L.hsort === 'zone' ? ' selected' : '') + '>By zone</option></select></label>' +
       '<span class="lv-count">' + (mn ? '<b>Maintenance now</b> · ends in ' + cdown(mn.end) : 'Last maintenance ended ' + (mt ? esc(new Date(mt).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) : 'unknown')) + ' <button type="button" class="btn sm ghost" data-hmaint="1" title="Set the time the servers came back, if the events list missed it">Set</button></span></div>';
-    var list = !world ? '<p class="lv-guide">Choose your data center and world: spawn windows are different on every world, and the kills you record are kept for each world.</p>' : rows.map(function (r) {
-      var m = r.m, k = (HST.kills[world] || {})[m.n], open = L.hmap === m.n;
-      return '<div class="bf-row hn-row ' + r.s + '"><div><b>' + esc(m.n) + '</b> <span class="lv-badge' + (m.r !== 'A' ? ' leg' : '') + '">' + m.r + '</span><br><span class="dim">' + esc(m.z) + '</span></div>' +
+    var list = !L.dc ? '<p class="lv-guide">Choose your data center: the board then covers every world you can travel to in its region.</p>' : (!world && !region) ? '<p class="lv-guide">Choose a world.</p>' : rows.map(function (r) {
+      var m = r.m, k = world && (HST.kills[world] || {})[m.n], open = L.hmap === m.n && world;
+      var status = region ? chipsHtml(r.per, world) + (world ? '<div class="hn-sel"><b>' + esc(world) + ':</b> ' + huntStatusHtml(r.w, now) + '</div>' : '<div class="dim">Click a world to choose it for recording kills.</div>') : huntStatusHtml(r.w, now);
+      return '<div class="bf-row hn-row ' + r.lead.s + '"><div><b>' + esc(m.n) + '</b> <span class="lv-badge' + (m.r !== 'A' ? ' leg' : '') + '">' + m.r + '</span><br><span class="dim">' + esc(m.z) + '</span></div>' +
         '<div>' + esc(m.spawn || (m.r === 'A' ? 'Spawns by itself' : '')) + '<br><span class="dim">Respawn ' + (m.rs ? m.rs[0] + '–' + m.rs[1] + ' h' + (m.rs.length > 2 ? ', after maintenance ' + m.rs[2] + '–' + m.rs[3] + ' h' : '') : 'unknown') + '</span></div>' +
-        '<div>' + huntStatusHtml(r.w, now) + '</div>' +
-        '<div class="bf-act hn-act"><button type="button" class="lv-tick" data-hkill="' + esc(m.n) + '">Killed now</button><button type="button" class="btn sm ghost" data-hkill-at="' + esc(m.n) + '" title="Enter when it died">Killed at…</button>' + (k ? '<button type="button" class="btn sm ghost" data-hkill-clear="' + esc(m.n) + '">Clear</button>' : '') + (m.tt && H.spawn[m.tt] ? '<button type="button" class="btn sm ghost' + (open ? ' on' : '') + '" data-hmap="' + esc(m.n) + '">' + (open ? 'Hide map' : 'Spawn points') + '</button>' : '') + '</div>' +
+        '<div>' + status + '</div>' +
+        '<div class="bf-act hn-act">' + (!world ? '' : '<button type="button" class="lv-tick" data-hkill="' + esc(m.n) + '" title="Record on ' + esc(world) + '">Killed now</button>') + (world ? '<button type="button" class="btn sm ghost" data-hkill-at="' + esc(m.n) + '" title="Enter when it died">Killed at…</button>' : '') + (k ? '<button type="button" class="btn sm ghost" data-hkill-clear="' + esc(m.n) + '">Clear</button>' : '') + (world && m.tt && H.spawn[m.tt] ? '<button type="button" class="btn sm ghost' + (open ? ' on' : '') + '" data-hmap="' + esc(m.n) + '">' + (open ? 'Hide map' : 'Spawn points') + '</button>' : '') + '</div>' +
         (open ? '<div class="hn-mapwrap">' + spawnMap(m.tt, m.r === 'A' ? 'A' : 'S', world) + '</div>' : '') + '</div>';
     }).join('');
     var bosses = H.bosses.filter(function (b) { return b.ex === L.hex; }).map(function (b) {
       var bw = world ? bossWin(b, world, now) : { src: 'none' }, s = huntState(bw, now), k = world && (HST.boss[world] || {})[b.boss];
       var st = s !== 'unknown' ? huntStatusHtml(bw, now) : (k ? 'Last killed ' + ago(k) : '<span class="dim">No kill recorded' + (world ? ' on ' + esc(world) : '') + '</span>');
+      if (region && RW.length) {
+        var per = RW.map(function (x) { var w2 = bossWin(b, x[1], now), k2 = (HST.boss[x[1]] || {})[b.boss]; return { world: x[1], dc: x[2], w: w2, s: huntState(w2, now), k: k2 }; });
+        st = chipsHtml(per, world, true) + (world ? '<div class="hn-sel"><b>' + esc(world) + ':</b> ' + st + '</div>' : '');
+        s = bestOf(per).s;
+      }
       return '<div class="bf-row hn-row ' + s + '"><div><b>' + esc(b.boss) + '</b> <span class="dim">Lv. ' + b.lv + '</span><br><span class="dim">' + esc(b.fate) + '</span><br><span class="dim">' + esc(b.zone) + (b.xy ? ' (' + b.xy.join(', ') + ')' : '') + '</span></div>' +
         '<div>' + (b.after ? '<ol class="hn-chain">' + b.after.map(function (a) { return '<li>' + esc(a[0]) + (a[1] ? ' <span class="dim">(' + a[1].join(', ') + ')</span>' : '') + '</li>'; }).join('') + '<li><b>' + esc(b.fate) + '</b></li></ol>' : '') + esc(b.how) + (b.weather ? '<br><span class="dim">Zone weather turns to ' + esc(b.weather) + ' when it appears</span>' : '') + (b.spots ? '<br><span class="dim">Places: ' + esc(b.spots.map(function (p) { return p[0] + ' (' + p[1] + ', ' + p[2] + ')'; }).join(' · ')) + '</span>' : '') + (b.reward ? '<br><span class="dim">Reward: ' + esc(b.reward) + '</span>' : '') + '</div>' +
         '<div>' + st + (b.timer ? '<br><span class="dim">' + esc(b.timer.text) + '</span>' : '<br><span class="dim">Cooldown length is not documented</span>') + '</div>' +
         '<div class="bf-act hn-act">' + (world ? '<button type="button" class="lv-tick" data-hboss="' + esc(b.boss) + '">Killed now</button>' + (k ? '<button type="button" class="btn sm ghost" data-hboss-clear="' + esc(b.boss) + '">Clear</button>' : '') : '') + '</div></div>';
     }).join('');
-    $('#page').innerHTML = liveHead('Hunts', 'Spawn windows for every S, SS and A rank on your world, in the manner of the community hunt trackers. Record a kill and the board shows when the window opens, how far through it is, and when it caps (the mark should be up by then). After maintenance the shorter maintenance windows apply automatically. Spawn point maps let you tick off the points you have checked. The records stay on this device; the board cannot see kills other players make, so it only knows what you enter. Spawn conditions and weather forecasts are on S Ranks.', '') +
-      tabs + tools + '<div class="bf-head hn-head"><span>Mark</span><span>Spawn and respawn</span><span>Window' + (world ? ' on ' + esc(world) : '') + '</span><span></span></div>' + list +
+    $('#page').innerHTML = liveHead('Hunts', 'Spawn windows for every S, SS and A rank on every world of your region (all of North America for Dynamis), in the manner of the community hunt trackers: each square is a world, grey closed, green open, blue capped, and a click chooses it for recording kills. Record a kill and the board shows when the window opens, how far through it is, and when it caps (the mark should be up by then). After maintenance the shorter maintenance windows apply automatically. Spawn point maps let you tick off the points you have checked. The records stay on this device; the board cannot see kills other players make, so it only knows what you enter. Spawn conditions and weather forecasts are on S Ranks.', '') +
+      tabs + tools + '<div class="bf-head hn-head"><span>Mark</span><span>Spawn and respawn</span><span>' + (region ? 'Window on each world' : 'Window' + (world ? ' on ' + esc(world) : '')) + '</span><span></span></div>' + list +
       (bosses ? '<h3 class="lv-h">World boss FATEs</h3><div class="bf-head hn-head"><span>Boss</span><span>How it appears</span><span>Status</span><span></span></div>' + bosses : '');
   }
+  function chipsHtml(per, sel, boss) { // one small square per world, grouped by data center, coloured by window state
+    var by = {}; per.forEach(function (p) { (by[p.dc] = by[p.dc] || []).push(p); });
+    var counts = { open: 0, capped: 0 }; per.forEach(function (p) { if (counts[p.s] != null) counts[p.s]++; });
+    var now = Date.now();
+    function tip(p) { var w = p.w; return p.world + ': ' + (p.s === 'closed' ? 'closed, opens ' + lt(w.open) : p.s === 'open' ? 'open, caps ' + lt(w.cap) : p.s === 'capped' ? 'capped ' + dur(now - w.cap) + ' ago, should be up' : (boss && p.k ? 'killed ' + dur(now - p.k) + ' ago' : 'no record')); }
+    return '<div class="hn-chips">' + Object.keys(by).map(function (d) { return '<span class="hn-dc"><i>' + esc(d) + '</i>' + by[d].map(function (p) { return '<button type="button" class="hn-chip ' + p.s + (p.world === sel ? ' sel' : '') + '" data-hworld="' + esc(p.world) + '" title="' + esc(tip(p)) + '">' + esc(p.world.slice(0, 3)) + '</button>'; }).join('') + '</span>'; }).join('') + '</div>' +
+      (counts.open || counts.capped ? '<div class="dim">' + [counts.capped ? 'capped on ' + counts.capped : '', counts.open ? 'open on ' + counts.open : ''].filter(Boolean).join(', ') + ' of ' + per.length + ' worlds</div>' : '');
+  }
   function huntNotify(now) {
-    var N = UI.live.notify, w = curWorld(); if (!N.hunt || N.hunt === 'off' || !w || !LIVE.hunts) return;
+    var N = UI.live.notify; if (!N.hunt || N.hunt === 'off' || !LIVE.hunts) return;
+    var worlds = UI.live.hscope !== 'world' ? regionWorlds() : (curWorld() ? [curWorld()] : []); if (!worlds.length) return;
     LIVE.hunts.marks.forEach(function (m) {
       if (N.hunt === 'S' && m.r === 'A') return;
-      var hw = huntWin(m, w[1], now); if (!hw.open || hw.src === 'maint' && !N.huntMaint) return;
-      fireOnce('hunt:' + w[1] + ':' + m.n + ':o' + hw.open, hw.open, +N.huntLead || 0, 'Hunt window opens: ' + m.n, w[1] + ' · ' + m.z);
-      fireOnce('hunt:' + w[1] + ':' + m.n + ':c' + hw.cap, hw.cap, 0, 'Hunt window capped: ' + m.n, 'should be up on ' + w[1] + ' · ' + m.z);
+      var maintDone = false;
+      worlds.forEach(function (w) {
+        var hw = huntWin(m, w[1], now); if (!hw.open) return;
+        if (hw.src === 'maint') { // the same on every world: one notification, not one per world
+          if (!N.huntMaint || maintDone) return; maintDone = true;
+          fireOnce('hunt:maint:' + m.n + ':o' + hw.open, hw.open, +N.huntLead || 0, 'Hunt window opens: ' + m.n, 'every world without a recorded kill · ' + m.z);
+          fireOnce('hunt:maint:' + m.n + ':c' + hw.cap, hw.cap, 0, 'Hunt window capped: ' + m.n, 'should be up where it has not been killed · ' + m.z);
+          return;
+        }
+        fireOnce('hunt:' + w[1] + ':' + m.n + ':o' + hw.open, hw.open, +N.huntLead || 0, 'Hunt window opens: ' + m.n, w[1] + ' · ' + m.z);
+        fireOnce('hunt:' + w[1] + ':' + m.n + ':c' + hw.cap, hw.cap, 0, 'Hunt window capped: ' + m.n, 'should be up on ' + w[1] + ' · ' + m.z);
+      });
     });
   }
 
   // ---- Market Board (Universalis: crowd-reported market prices; no account, nothing sent but item numbers)
   var MB = {}, MB_TTL = 10 * 60000;
-  UI.live = Object.assign({ mlist: [], mqty: {}, mscope: 'dc', mq: '' }, UI.live);
-  function mbScope() { var w = curWorld(); return UI.live.mscope === 'world' && w ? w[1] : UI.live.dc; }
+  UI.live = Object.assign({ mlist: [], mqty: {}, mscope: 'region', mq: '' }, UI.live);
+  function mbScope() { var w = curWorld(), r = regionOf(UI.live.dc); return UI.live.mscope === 'world' && w ? w[1] : UI.live.mscope === 'dc' || !r ? UI.live.dc : r.replace(/ /g, '-'); }
+  function scopeLabel() { return (mbScope() || '').replace(/-/g, ' '); }
+  function whereSold(world) { var d = dcOfWorld(world); return world ? esc(world) + (d && UI.live.mscope !== 'world' ? ' (' + esc(d) + ')' : '') : ''; }
   function mbFetch(ids) {
     var scope = mbScope(), now = Date.now(); if (!scope || !window.fetch) return Promise.resolve({});
     var need = ids.filter(function (id) { var h = MB[scope + '|' + id]; return !h || now - h.at > MB_TTL; });
@@ -685,7 +724,7 @@
     if (!e.it || untradable(k)) return '';
     var inList = UI.live.mlist.indexOf(k) >= 0;
     setTimeout(fillMarketLines, 0);
-    return '<div class="mb-line" data-mb="' + e.it + '">' + (mbScope() ? '<b>Market board:</b> <span class="dim">checking prices on ' + esc(mbScope()) + '…</span>' : '<b>Market board:</b> <span class="dim">choose your data center on Live → Market Board to see prices</span>') + '</div>' +
+    return '<div class="mb-line" data-mb="' + e.it + '">' + (mbScope() ? '<b>Market board:</b> <span class="dim">checking prices in ' + esc(scopeLabel()) + '…</span>' : '<b>Market board:</b> <span class="dim">choose your data center on Live → Market Board to see prices</span>') + '</div>' +
       '<div><button type="button" class="btn sm ghost" data-mbadd="' + esc(k) + '">' + (inList ? '✓ On the shopping list' : 'Add to the shopping list') + '</button></div>';
   }
   function fillMarketLines() {
@@ -694,8 +733,8 @@
     mbFetch(ids).then(function (res) {
       els.forEach(function (el) {
         el.dataset.mbDone = '1'; var d = res[+el.dataset.mb], s = mbSummary(d);
-        el.innerHTML = '<b>Market board (' + esc(mbScope()) + '):</b> ' + (d === undefined ? '<span class="dim">no connection</span>' : !s ? '<span class="dim">not sold on the market board, or no data</span>' : s.min == null ? '<span class="dim">no listings now</span> · recent sales about ' + gil(s.avg) :
-          'from ' + gil(s.min) + (s.hq ? ' (HQ)' : '') + (s.world ? ' on ' + esc(s.world) : '') + ' · recent sales about ' + gil(s.avg) + ' · ' + s.vel.toFixed(1) + ' sold a day <span class="dim">· updated ' + (s.upd ? ago(s.upd) : 'unknown') + '</span>');
+        el.innerHTML = '<b>Market board (' + esc(scopeLabel()) + '):</b> ' + (d === undefined ? '<span class="dim">no connection</span>' : !s ? '<span class="dim">not sold on the market board, or no data</span>' : s.min == null ? '<span class="dim">no listings now</span> · recent sales about ' + gil(s.avg) :
+          'from ' + gil(s.min) + (s.hq ? ' (HQ)' : '') + (s.world ? ' on ' + whereSold(s.world) : '') + ' · recent sales about ' + gil(s.avg) + ' · ' + s.vel.toFixed(1) + ' sold a day <span class="dim">· updated ' + (s.upd ? ago(s.upd) : 'unknown') + '</span>');
       });
     });
   }
@@ -706,17 +745,17 @@
     if (!ITEM_ENTRIES) ITEM_ENTRIES = itemEntries();
     var found = q.length >= 2 ? ITEM_ENTRIES.filter(function (x) { return x[1].toLowerCase().indexOf(q) >= 0 && !untradable(x[0]); }).slice(0, 25) : [];
     var seen = {}; found = found.filter(function (x) { var it = IDX.byKey.get(x[0]).e.it; if (seen[it]) return false; seen[it] = 1; return true; });
-    var tools = '<div class="lv-tools">' + placeSel(true, 'whole data center') + '<label class="lv-sel">Prices from <select data-live="mscope"><option value="dc"' + (L.mscope !== 'world' ? ' selected' : '') + '>the whole data center</option><option value="world"' + (L.mscope === 'world' ? ' selected' : '') + '>my world only</option></select></label><button type="button" class="btn sm ghost" data-mbrefresh="1">Refresh prices</button></div>';
+    var tools = '<div class="lv-tools">' + placeSel(L.mscope === 'world', 'choose') + '<label class="lv-sel">Prices from <select data-live="mscope"><option value="region"' + (L.mscope === 'region' ? ' selected' : '') + '>all of ' + esc(regionOf(L.dc) || 'the region') + '</option><option value="dc"' + (L.mscope === 'dc' ? ' selected' : '') + '>my data center</option><option value="world"' + (L.mscope === 'world' ? ' selected' : '') + '>one world</option></select></label><button type="button" class="btn sm ghost" data-mbrefresh="1">Refresh prices</button></div>';
     var search = '<div class="lv-tools"><label class="lv-sel">Find an item <input class="inp" data-mbq="1" value="' + esc(L.mq || '') + '" placeholder="Any collectable, recipe or gathered item in the tracker"></label></div>' +
       (found.length ? '<div class="mb-found">' + found.map(function (x) { var on = L.mlist.indexOf(x[0]) >= 0; return '<div class="lv-row"><b>' + esc(x[1]) + '</b><span class="dim">' + esc(x[2]) + '</span><span></span><span></span><span></span><button type="button" class="btn sm' + (on ? ' ghost' : '') + '" data-mbadd="' + esc(x[0]) + '">' + (on ? '✓ Added' : 'Add') + '</button></div>'; }).join('') + '</div>' : (q.length >= 2 ? '<p class="dim">No tradeable item in the tracker matches.</p>' : ''));
     var list = L.mlist.filter(function (k) { return IDX.byKey.has(k); });
     var table = list.length ? '<div class="mb-head"><span>Item</span><span>Qty</span><span>Cheapest now</span><span>Recent sales</span><span>Sold a day</span><span>Updated</span><span></span></div>' + list.map(function (k) {
       var e = IDX.byKey.get(k).e, h = scope && MB[scope + '|' + e.it], s = h && mbSummary(h.d);
-      return '<div class="mb-row" data-mbrow="' + esc(k) + '"><span>' + rowName(k) + '</span><span><input class="inp qty" type="number" min="1" value="' + (L.mqty[k] || 1) + '" data-mbqty="' + esc(k) + '"></span><span>' + (!h ? '<span class="dim">…</span>' : !s ? '<span class="dim">no data</span>' : s.min == null ? '<span class="dim">no listings</span>' : gil(s.min) + (s.hq ? ' HQ' : '') + ' <span class="dim">' + esc(s.world) + '</span>') + '</span><span>' + (s ? gil(s.avg) : '') + '</span><span>' + (s ? s.vel.toFixed(1) : '') + '</span><span class="dim">' + (s && s.upd ? ago(s.upd) : '') + '</span><button type="button" class="btn sm ghost" data-mbdel="' + esc(k) + '">Remove</button></div>';
+      return '<div class="mb-row" data-mbrow="' + esc(k) + '"><span>' + rowName(k) + '</span><span><input class="inp qty" type="number" min="1" value="' + (L.mqty[k] || 1) + '" data-mbqty="' + esc(k) + '"></span><span>' + (!h ? '<span class="dim">…</span>' : !s ? '<span class="dim">no data</span>' : s.min == null ? '<span class="dim">no listings</span>' : gil(s.min) + (s.hq ? ' HQ' : '') + ' <span class="dim">' + whereSold(s.world) + '</span>') + '</span><span>' + (s ? gil(s.avg) : '') + '</span><span>' + (s ? s.vel.toFixed(1) : '') + '</span><span class="dim">' + (s && s.upd ? ago(s.upd) : '') + '</span><button type="button" class="btn sm ghost" data-mbdel="' + esc(k) + '">Remove</button></div>';
     }).join('') : '<p class="dim">The shopping list is empty. Find items above, or use "Add to the shopping list" in any entry\'s details.</p>';
     var total = 0, priced = 0; list.forEach(function (k) { var e = IDX.byKey.get(k).e, h = scope && MB[scope + '|' + e.it], s = h && mbSummary(h.d); if (s && s.min != null) { total += s.min * (L.mqty[k] || 1); priced++; } });
-    $('#page').innerHTML = liveHead('Market Board', 'Live market prices from Universalis, a community site that collects what players\' game clients report. Prices can be minutes to hours old ("updated" shows when someone last saw that item). Entries in the tracker also show their price in their details.', '') + tools + search +
-      '<h3 class="lv-h">Shopping list' + (list.length ? ' <span class="dim">· about ' + gil(total) + ' at the cheapest listing' + (priced < list.length ? ' (' + priced + ' of ' + list.length + ' priced)' : '') + '</span>' : '') + '</h3>' + (scope ? '' : '<p class="lv-guide">Choose your data center to see prices.</p>') + table;
+    $('#page').innerHTML = liveHead('Market Board', 'Live market prices from Universalis, a community site that collects what players\' game clients report. By default the whole region is searched (every data center you can travel to), and each price says which world and data center it is on. Prices can be minutes to hours old ("updated" shows when someone last saw that item). Entries in the tracker also show their price in their details.', '') + tools + search +
+      '<h3 class="lv-h">Shopping list' + (list.length ? ' <span class="dim">· ' + esc(scopeLabel()) + ' · about ' + gil(total) + ' at the cheapest listing' + (priced < list.length ? ' (' + priced + ' of ' + list.length + ' priced)' : '') + '</span>' : '') + '</h3>' + (scope ? '' : '<p class="lv-guide">Choose your data center to see prices.</p>') + table;
     if (scope && list.length) {
       var ids = list.map(function (k) { return IDX.byKey.get(k).e.it; }), need = ids.some(function (id) { var h = MB[scope + '|' + id]; return !h || Date.now() - h.at > MB_TTL; });
       if (need) mbFetch(ids).then(function () { if (UI.view === 'market') renderMarket(); });
@@ -808,10 +847,11 @@
     if (t.dataset && t.dataset.isleSup) { UI.live.isle.sup[t.dataset.isleSup] = t.value; liveSave(); renderIsland(); var de = $('.isle-details'); if (de) de.open = true; }
   });
   document.addEventListener('click', function (ev) {
-    var b = ev.target.closest && ev.target.closest('[data-watch],[data-ltick],[data-live-zone],[data-live-el],[data-notify-perm],[data-notify-test],[data-live-view],[data-dl],[data-isle-reset],[data-hex],[data-hkill],[data-hkill-at],[data-hkill-clear],[data-hmap],[data-hpt],[data-hpt-clear],[data-hmaint],[data-hboss],[data-hboss-clear],[data-mbadd],[data-mbdel],[data-mbrefresh]');
+    var b = ev.target.closest && ev.target.closest('[data-watch],[data-ltick],[data-live-zone],[data-live-el],[data-notify-perm],[data-notify-test],[data-live-view],[data-dl],[data-isle-reset],[data-hworld],[data-hex],[data-hkill],[data-hkill-at],[data-hkill-clear],[data-hmap],[data-hpt],[data-hpt-clear],[data-hmaint],[data-hboss],[data-hboss-clear],[data-mbadd],[data-mbdel],[data-mbrefresh]');
     if (!b) return;
     if (b.dataset.liveView) { ev.preventDefault(); setView(b.dataset.liveView); return; }
     var world = curWorld() ? curWorld()[1] : null, nowc = Date.now();
+    if (b.dataset.hworld) { UI.live.world = b.dataset.hworld; liveSave(); renderHunts(); return; }
     if (b.dataset.hex) { UI.live.hex = b.dataset.hex; UI.live.hmap = ''; liveSave(); renderHunts(); return; }
     if (b.dataset.hmap) { UI.live.hmap = UI.live.hmap === b.dataset.hmap ? '' : b.dataset.hmap; liveSave(); renderHunts(); return; }
     if (b.dataset.hkill && world) { (HST.kills[world] = HST.kills[world] || {})[b.dataset.hkill] = nowc; clearPoints(world, b.dataset.hkill); HST.save(); renderHunts(); toast(b.dataset.hkill + ' recorded as killed on ' + world); return; }
