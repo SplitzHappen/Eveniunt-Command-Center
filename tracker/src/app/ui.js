@@ -111,16 +111,32 @@
   // sorted by name (numbers in natural order); Settings → Counting → "Keep the game's order" shows the game's order.
   var COLL = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }) : { compare: function (a, b) { return a < b ? -1 : a > b ? 1 : 0; } };
   function az() { return !(ST && ST.settings && ST.settings.gameOrder); }
+  // expansions keep release order ahead of A–Z: a name that is or names an expansion sorts by expansion, then the rest A–Z
+  var XPANS = ['a realm reborn', 'heavensward', 'stormblood', 'shadowbringers', 'endwalker', 'dawntrail', 'evercold'];
+  var XRANK = new Map();
+  function xRank(name) {
+    var hit = XRANK.get(name); if (hit !== undefined) return hit;
+    var t = String(name || '').toLowerCase(), best = -1, at = Infinity;
+    XPANS.forEach(function (x, i) { var p = t.indexOf(x); if (p >= 0 && (p < at)) { at = p; best = i; } });
+    XRANK.set(name, best); return best;
+  }
+  function nameCompare(a, b) { // expansion order first (for names that carry one), then A–Z with numbers in natural order
+    var x = xRank(a), y = xRank(b);
+    if (x >= 0 && y >= 0 && x !== y) return x - y;
+    if (x >= 0 && y >= 0) { var sa = String(a).toLowerCase().replace(XPANS[x], ''), sb = String(b).toLowerCase().replace(XPANS[y], ''); return COLL.compare(sa, sb) || COLL.compare(a, b); }
+    if ((x >= 0) !== (y >= 0)) return x >= 0 ? -1 : 1; // expansion names first, in release order; everything else after, A–Z
+    return COLL.compare(a, b);
+  }
   var SORTED = new Map();
   function orderedKeys(keys, gid) {
     if (!az()) return keys;
     var hit = gid && SORTED.get(gid); if (hit && hit.src === keys) return hit.keys;
-    var out = keys.slice().sort(function (a, b) { return COLL.compare(IDX.byKey.get(a).e.n, IDX.byKey.get(b).e.n); });
+    var out = keys.slice().sort(function (a, b) { return nameCompare(IDX.byKey.get(a).e.n, IDX.byKey.get(b).e.n); });
     if (gid) SORTED.set(gid, { src: keys, keys: out });
     return out;
   }
-  function orderedFolders(folders) { return az() ? folders.slice().sort(function (a, b) { return COLL.compare(a.t, b.t); }) : folders; }
-  function orderedSecs(ids) { return az() ? ids.slice().sort(function (a, b) { return COLL.compare(navTitle(a), navTitle(b)); }) : ids; }
+  function orderedFolders(folders) { return az() ? folders.slice().sort(function (a, b) { return nameCompare(a.t, b.t); }) : folders; }
+  function orderedSecs(ids) { return az() ? ids.slice().sort(function (a, b) { return nameCompare(navTitle(a), navTitle(b)); }) : ids; }
   function menuOf(id) { for (var i = 0; i < MENUS.length; i++) for (var j = 0; j < MENUS[i].folders.length; j++) if (MENUS[i].folders[j].secs.indexOf(id) >= 0) return [MENUS[i], MENUS[i].folders[j]]; return [null, null]; }
 
   // ── tallies ──

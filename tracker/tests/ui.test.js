@@ -187,7 +187,12 @@ test('search across everything, and the menu follows the game (Character, Duty, 
   assert.ok(await page.locator('.nav-live > .nav-folder').count() >= 4);
   assert.equal(await page.locator('.nav-live [data-live-view]').count(), 17);
   // A to Z by default: folders, the lists in each folder, and the entries in each group
-  const sorted = (a) => [...a].sort((x, y) => x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' }));
+  // expansions first in release order, then everything else A to Z
+  const XP = ['a realm reborn', 'heavensward', 'stormblood', 'shadowbringers', 'endwalker', 'dawntrail', 'evercold'];
+  const xr = (t) => { t = t.toLowerCase(); let best = -1, at = Infinity; XP.forEach((x, i) => { const p = t.indexOf(x); if (p >= 0 && p < at) { at = p; best = i; } }); return best; };
+  const cmp = (a, b) => { const x = xr(a), y = xr(b); if (x >= 0 && y >= 0 && x !== y) return x - y; if ((x >= 0) !== (y >= 0)) return x >= 0 ? -1 : 1; return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }); };
+  const sorted = (a) => [...a].sort(cmp);
+  assert.deepEqual(await page.$$eval('.nav-folder', (fs) => { const f = fs.find((x) => /Main Scenario/.test(x.querySelector('summary').textContent)); return [...f.querySelectorAll('.nav-link .nm')].map((x) => x.textContent); }), ['A Realm Reborn', 'Heavensward', 'Stormblood', 'Shadowbringers', 'Endwalker', 'Dawntrail'], 'expansions in release order');
   const folders = await page.$$eval('.nav-menu', (ms) => ms.map((m) => [...m.querySelectorAll(':scope > .nav-folder > summary .nm')].map((x) => x.textContent)));
   folders.forEach((f) => assert.deepEqual(f, sorted(f)));
   const lists = await page.$$eval('.nav-folder', (fs) => fs.map((f) => [...f.querySelectorAll('.nav-link .nm')].map((x) => x.textContent)));
