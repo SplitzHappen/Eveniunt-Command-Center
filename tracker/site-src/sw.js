@@ -27,6 +27,12 @@ self.addEventListener('fetch', (e) => {
       const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 4000));
       try { return await Promise.race([net, slow]); } catch (err) { return cached; }
     }
+    // the lists the public site refreshes every 6 hours (events, Lodestone news): network first, saved copy offline
+    if (/\/(timers\.json|news\.xml|topics\.xml)$/.test(new URL(req.url).pathname)) {
+      try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok) { cache.put(req, r.clone()); return r; } } catch (err) { /* offline */ }
+      const saved = await cache.match(req, { ignoreSearch: true });
+      return saved || new Response('', { status: 504 });
+    }
     const hit = await cache.match(req, { ignoreSearch: true });
     if (hit) return hit;
     const net = await fetch(req);

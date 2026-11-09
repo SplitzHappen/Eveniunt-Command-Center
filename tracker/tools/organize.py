@@ -332,6 +332,18 @@ for s in secs:
         order = {x: n for n, x in enumerate(EXP)}
         s["g"].sort(key=lambda g: order.get(g.get("xp"), 99))
 
+# Triple Triad opponents: FFXIV Collect's own id for each, matched by name, for the online refresh (data/ffxivcollect/triad-npcs.json)
+_fcn = os.path.join(os.path.dirname(DATA), "ffxivcollect", "triad-npcs.json")
+if os.path.exists(_fcn):
+    byname = {}
+    for x in json.load(open(_fcn, encoding="utf-8"))["items"]: byname.setdefault(norm(x["name"]), x["id"])
+    for s in secs:
+        if s["id"] != "ttnpcs": continue
+        for g in s["g"]:
+            for e in g["e"]:
+                fid = byname.get(norm(e["n"]))
+                if fid: e["fc"] = fid; stats["Triple Triad opponents matched to FFXIV Collect"] += 1
+                else: stats["Triple Triad opponents not on FFXIV Collect"] += 1
 with open(DATA, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 print(json.dumps({"lists": len(secs), "entries": sum(len(g["e"]) for s in secs for g in s["g"]), "changes": dict(stats)}, indent=1))

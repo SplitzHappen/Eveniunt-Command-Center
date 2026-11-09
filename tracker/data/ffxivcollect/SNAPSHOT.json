@@ -61,10 +61,15 @@
   "outfits": {
    "items": 1088,
    "time_limited_only": 64
+  },
+  "triad/npcs": {
+   "items": 134,
+   "time_limited_only": 0
   }
  },
  "refreshed": {
   "armoires": "2026-11-08",
-  "outfits": "2026-11-08"
+  "outfits": "2026-11-08",
+  "triad/npcs": "2026-11-09"
  }
 }

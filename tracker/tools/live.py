@@ -187,6 +187,52 @@ out["pvp"] = {str(k): sorted(v) for k, v in sorted(series.items())}
 out["eventRewards"] = dict(events)
 out["dc"] = {"Japan": {"dcs": ["Elemental", "Gaia", "Mana", "Meteor"], "day": 6, "utc": 12}, "North America": {"dcs": ["Aether", "Crystal", "Dynamis", "Primal"], "day": 0, "utc": 2},
              "Europe": {"dcs": ["Chaos", "Light", "Shadow"], "day": 6, "utc": 19}, "Oceania": {"dcs": ["Materia"], "day": 6, "utc": 9}}
+# ---------------------------------------------------------------- worlds by data center (market board, housing and hunt records)
+WDC = {k: clean(r["Name"]) for k, r in sheet("WorldDCGroupType").items()}
+worlds = collections.defaultdict(list)
+for k, r in sheet("World").items():
+    if r.get("IsPublic") == "True" and WDC.get(i(r["DataCenter"])) and "Cloud" not in WDC[i(r["DataCenter"])]:
+        worlds[WDC[i(r["DataCenter"])]].append([k, clean(r["Name"])])
+out["worlds"] = {dc: sorted(v, key=lambda x: x[1]) for dc, v in sorted(worlds.items())}
+# ---------------------------------------------------------------- hunts: every S, SS and A rank with its respawn window, spawn points per zone, world boss FATEs
+EXV = {0: "A Realm Reborn", 1: "Heavensward", 2: "Stormblood", 3: "Shadowbringers", 4: "Endwalker", 5: "Dawntrail"}
+TT = sheet("TerritoryType"); MAPS = sheet("Map")
+zone_tt = {}
+for k, r in TT.items():
+    if i(r["TerritoryIntendedUse"]) == 1 and PLACE.get(i(r["PlaceName"])):
+        zone_tt.setdefault(norm(PLACE[i(r["PlaceName"])]), k)
+SP = D("spawn-points.json")["zones"]
+def hours(t):
+    t = t.strip()
+    m = re.match(r"^(\d+):(\d+)$", t)
+    return round(int(m.group(1)) + int(m.group(2)) / 60, 3) if m else float(t)
+def respawn(txt):
+    t = (txt or "").lower().replace(",", ";")
+    nums = re.findall(r"\d+(?::\d+)?", t)
+    if not nums: return None
+    m = re.match(r"^\s*([\d:]+)(?:\s*(?:-|to)\s*([\d:]+))?", t)
+    lo, hi = hours(m.group(1)), hours(m.group(2) or m.group(1))
+    mm = re.search(r"maintenance:\s*([\d:]+)(?:\s*-\s*([\d:]+))?", t)
+    return [lo, hi] + ([hours(mm.group(1)), hours(mm.group(2) or mm.group(1))] if mm else [])
+hunts, spawn_zones = [], {}
+SS_AREA = {"Norvrandt": "Shadowbringers", "Endwalker areas": "Endwalker", "Dawntrail areas": "Dawntrail"}
+for n, v in EM.items():
+    if v.get("rank") not in ("S", "A"): continue
+    area = v.get("area") or ""
+    tt = zone_tt.get(norm(area))
+    ss = area in SS_AREA
+    ex = SS_AREA[area] if ss else EXV.get(i(TT[tt]["ExVersion"])) if tt else None
+    if not ex: print("hunt mark without a zone:", n, area); continue
+    h = {"n": n, "r": "SS" if ss else v["rank"], "z": area, "ex": ex, "spawn": v.get("spawn") if v.get("spawn") not in (None, "None") else "", "rs": respawn(v.get("respawn"))}
+    if tt:
+        h["tt"] = tt
+        if str(tt) in SP and str(tt) not in spawn_zones:
+            sf = i(MAPS.get(i(TT[tt]["Map"]), {}).get("SizeFactor")) or 100
+            spawn_zones[str(tt)] = {"n": area, "max": round(41 * 100 / sf + 1, 1), "pts": SP[str(tt)]["pts"]}
+    hunts.append(h)
+ORDER_EX = list(EXV.values())
+hunts.sort(key=lambda h: (ORDER_EX.index(h["ex"]), h["z"], {"S": 0, "SS": 1, "A": 2}[h["r"]], h["n"]))
+out["hunts"] = {"marks": hunts, "spawn": spawn_zones, "bosses": D("boss-fates.json")["bosses"]}
 with open(os.path.join(T, "data", "live.json"), "w", encoding="utf-8") as f:
     json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
 print(json.dumps({"big fish": len(big), "big fish with a window": sum(1 for b in big if "a" in b), "big fish in the fishing log": sum(1 for b in big if b["k"]),

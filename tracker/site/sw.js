@@ -1,7 +1,7 @@
 // Eveniunt Tracker — service worker: works offline after the first visit.
 // Unlike the Atelier's worker it adds no cross-origin isolation headers: the Tracker needs no shared memory, and those
 // headers would block Google's sign-in window used by cloud sync. Cache name carries the build id; a new build replaces it.
-const BUILD = 'c1ea6b31657e';
+const BUILD = '8ab4aed1e7ba';
 const CACHE = 'eveniunt-tracker-' + BUILD;
 const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest"];
 self.addEventListener('install', (e) => {
@@ -26,6 +26,12 @@ self.addEventListener('fetch', (e) => {
       // still lands in the cache for next time)
       const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 4000));
       try { return await Promise.race([net, slow]); } catch (err) { return cached; }
+    }
+    // the lists the public site refreshes every 6 hours (events, Lodestone news): network first, saved copy offline
+    if (/\/(timers\.json|news\.xml|topics\.xml)$/.test(new URL(req.url).pathname)) {
+      try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok) { cache.put(req, r.clone()); return r; } } catch (err) { /* offline */ }
+      const saved = await cache.match(req, { ignoreSearch: true });
+      return saved || new Response('', { status: 504 });
     }
     const hit = await cache.match(req, { ignoreSearch: true });
     if (hit) return hit;

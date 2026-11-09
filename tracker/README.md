@@ -41,6 +41,7 @@ python3 -I tools/links.py <ffxiv-datamining checkout>                           
 node tools/desktop-links.js <desktop app resources/resources> [<app.asar>/assets/i18n/en.json]   # optional: data/desktop-links.json
 node tools/merge-desktop-links.js                                                 # adds the desktop app's checked links to data/links.json
 python3 -I tools/fetch-timers.py                                                  # data/timers.json (events and maintenance, Xenoveritas)
+python3 -I tools/fetch-spawnpoints.py                                             # data/spawn-points.json (hunt spawn points, Hunt Helper)
 DM_RAW=<raw sheets> python3 -I tools/live.py <datamining> <teamcraft libs/data/src/lib/json>   # data/live.json (Live pages), after info.py
 python3 -I tools/fetch-fishdata.py                                                 # optional: refresh data/fish-tracker.json (fishing windows)
 python3 -I tools/info.py <datamining> <teamcraft libs/data/src/lib/json> <teamcraft json dir>   # data/info.json (the information window)

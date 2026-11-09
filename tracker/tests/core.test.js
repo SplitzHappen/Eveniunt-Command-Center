@@ -967,3 +967,23 @@ test('live data: S ranks, island, PvP series, data centers', () => {
   assert.ok(L.dc['North America'].dcs.includes('Dynamis'));
   assert.ok((L.guides.dailies || []).length >= 20 && Object.keys(L.guides.leveling || {}).length === 3);
 });
+
+test('live data: hunts (windows, spawn points, world boss FATEs), worlds, and the wider character sync', () => {
+  const L = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'live.json'), 'utf8'));
+  const H = L.hunts;
+  assert.equal(H.marks.filter((m) => m.r === 'S').length, 47); assert.equal(H.marks.filter((m) => m.r === 'SS').length, 3);
+  assert.equal(H.marks.filter((m) => m.r === 'A').length, 76);
+  assert.ok(H.marks.every((m) => m.rs && m.rs[0] <= m.rs[1]), 'every mark has a respawn window');
+  assert.ok(H.marks.filter((m) => m.r === 'S').every((m) => m.rs.length === 4), 'every S rank has a maintenance window');
+  assert.deepEqual(H.marks.find((m) => m.n === 'Laideronnette').rs, [42, 48, 25, 29]);
+  assert.equal(Object.keys(H.spawn).length, 47, 'a spawn point map for every hunt zone');
+  assert.ok(H.marks.filter((m) => m.r !== 'SS').every((m) => H.spawn[m.tt]), 'every S and A rank finds its zone map');
+  assert.ok(Object.values(H.spawn).every((z) => z.max >= 41 && z.pts.every((p) => p[0] >= 1 && p[0] <= z.max && p[1] >= 1 && p[1] <= z.max)), 'points inside their map');
+  assert.equal(H.bosses.length, 12); assert.ok(H.bosses.every((b) => b.zone && b.how && b.ex));
+  assert.deepEqual(L.worlds.Dynamis.map((w) => w[0]).sort(), [404, 405, 406, 407, 408, 409, 410, 411]);
+  assert.ok(!Object.keys(L.worlds).some((d) => /Cloud/.test(d)), 'test data centers left out');
+  assert.ok(['cards', 'npcs', 'leves'].every((c) => ET.FC_COLLECTIONS.some((x) => x[1] === c)));
+  assert.equal(ET.fcCollectionOf('leves-dt'), 'leves'); assert.equal(ET.fcCollectionOf('ttnpcs'), 'npcs');
+  const tt = idx.sections.find((s) => s.id === 'ttnpcs');
+  assert.ok(tt.groups.reduce((a, g) => a + g.keys.filter((k) => idx.byKey.get(k).e.fc).length, 0) >= 120, 'Triple Triad opponents carry their FFXIV Collect id');
+});

@@ -14,7 +14,7 @@ import json, os, sys, time, urllib.request, datetime
 API = "https://ffxivcollect.com/api/"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "ffxivcollect")
 KINDS = ["mounts", "minions", "orchestrions", "emotes", "hairstyles", "bardings", "fashions", "facewear", "spells",
-         "achievements", "titles", "frames", "triad/cards", "armoires", "outfits"]
+         "achievements", "titles", "frames", "triad/cards", "triad/npcs", "armoires", "outfits"]
 if len(sys.argv) > 1: KINDS = [k for k in KINDS if k in sys.argv[1:]]  # refresh only the named collections
 
 def get(path):
@@ -36,7 +36,7 @@ for kind in KINDS:
     rows = get(f"{kind}?limit=10000")["results"]
     keep = []
     for r in rows:
-        k = {x: r.get(x) for x in ("id", "name", "patch", "item_id", "tradeable", "category", "type", "points", "reward", "achievement", "number") if r.get(x) not in (None, "")}
+        k = {x: r.get(x) for x in ("id", "name", "patch", "item_id", "resident_id", "tradeable", "category", "type", "points", "reward", "achievement", "number") if r.get(x) not in (None, "")}
         if isinstance(k.get("category"), dict):
             k["category"] = k["category"].get("name")
         if isinstance(k.get("type"), dict):

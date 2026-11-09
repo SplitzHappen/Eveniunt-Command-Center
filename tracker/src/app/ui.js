@@ -175,6 +175,7 @@
     var st = stampsHtml(k); if (st) bits.push(st);
     if (COND.cond[k] || COND.nodes[k] || LIVE.bigfish.some(function (f) { return f.k === k; })) bits.push('<div>' + star(k) + ' Watch for notifications</div>');
     infoLines(k).forEach(function (l) { bits.push(lineHtml(l)); });
+    var mbl = marketLineHtml(k, e); if (mbl) bits.push(mbl);
     if (!INFO) loadInfo().then(function () { var d = document.querySelector('.det[data-det="' + k + '"]'); if (d && infoLines(k).length) d.outerHTML = detailHtml(k); });
     if (e.src && !infoLines(k).filter(function (l) { return l.charAt(0) !== '§'; }).length) bits.push('<div><b>How to obtain:</b> ' + esc(e.src.join(' · ')) + '</div>');
     var facts = [];
@@ -948,7 +949,7 @@
   // ── online refresh (FFXIV Collect) ──
   function onlineTab() {
     var withId = ST.chars.filter(function (c) { return c.lodestone; });
-    return '<p class="help">Reads public character data from FFXIV Collect (a community site) for characters with a Lodestone number: mounts, minions, orchestrion rolls, emotes, hairstyles, barding, fashion accessories, facewear, Blue Magic and achievements. It runs when the tracker opens with internet, and never changes anything you changed yourself without asking. Nothing is sent except the Lodestone number.</p>' +
+    return '<p class="help">Reads public character data from FFXIV Collect (a community site) for characters with a Lodestone number: mounts, minions, orchestrion rolls, emotes, hairstyles, barding, fashion accessories, facewear, Blue Magic, armoire, outfit glamours, Triple Triad cards and opponents, levequests and achievements (mounts, minions, emotes, facewear and achievements come from the Lodestone itself; the rest is what the player recorded on FFXIV Collect). It runs when the tracker opens with internet, and never changes anything you changed yourself without asking. Nothing is sent except the Lodestone number.</p>' +
       '<div class="report"><table>' + ST.chars.map(function (c) { var s = ST.sync.fc[c.id]; return '<tr><td><b>' + esc(c.name) + '</b></td><td>' + (c.lodestone ? esc(c.lodestone) : '<span class="dim">no Lodestone number</span>') + '</td><td>' + (s ? 'Last refresh ' + esc(new Date(s.at).toLocaleString()) + (s.unavailable && Object.keys(s.unavailable).length ? '<br><small class="dim">Not available: ' + esc(Object.keys(s.unavailable).join(', ')) + '</small>' : '') : '<span class="dim">never</span>') + '</td></tr>'; }).join('') + '</table></div>' +
       '<div class="row"><button type="button" class="btn sm" id="fc-now"' + (withId.length ? '' : ' disabled') + '>Refresh now</button><button type="button" class="btn sm ghost" data-tab-go="chars">Add Lodestone numbers</button></div>';
   }

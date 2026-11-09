@@ -33,6 +33,11 @@ jobs:
           touch _site/.nojekyll
       - name: Fresh events list for the Tracker (Xenoveritas' FFXIV timers, which follow the Lodestone)
         run: curl -fsS --max-time 30 https://www.xenoveritas.org/static/ffxiv/timers.json -o _site/tracker/timers.json || echo "events list not refreshed; the Tracker uses its built-in copy"
+      - name: Lodestone news and topics for the Tracker (official Atom feeds; the browser cannot read them from another site)
+        run: |
+          for f in news topics; do
+            if curl -fsS --max-time 30 "https://na.finalfantasyxiv.com/lodestone/news/$f.xml" -o "/tmp/$f.xml" && grep -q "<feed" "/tmp/$f.xml"; then cp "/tmp/$f.xml" "_site/tracker/$f.xml"; else echo "$f feed not refreshed"; fi
+          done
           du -sh _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

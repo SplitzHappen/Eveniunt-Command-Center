@@ -136,5 +136,9 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
 - `data/field-monsters.json`: field operation monsters from the Console Games Wiki's structured enemy data (Semantic MediaWiki query) and Zadnor's area lists.
 - `data/ocean-fishing.json`: the voyage offset (checked against ffxiv.oceanfishing.boats) and each route's best targets (facts from that site).
 - `data/timers.json`: Xenoveritas' FFXIV timers (`tools/fetch-timers.py`).
+- `data/spawn-points.json`: elite mark spawn points per hunt zone from Hunt Helper (img02/HuntHelper @ 0c07d87a1e951f9dce7a17e500d41bbc752bee94, MIT licence; `tools/fetch-spawnpoints.py`).
+- `data/boss-fates.json`: the 12 world boss FATEs, their chains, coordinates and documented timers (Console Games Wiki FATE pages, read 2026-11-09; facts only).
+- `data/ffxivcollect/triad-npcs.json`: FFXIV Collect's Triple Triad opponents (ids used by the online refresh).
+- Read live in the browser, never stored: Universalis (market prices), PaissaDB (open plots); saved by the public site every 6 hours: the Lodestone news and topics feeds.
 - `data/guides.json`: guides written for the tracker from the Console Games Wiki (Ocean Fishing, GATEs, Lord of Verminion, Chocobo Racing).
 - `data/ffxivcollect/armoires.json`, `outfits.json`: FFXIV Collect snapshots (`tools/fetch-ffxivcollect.py armoires outfits`).
