@@ -795,7 +795,7 @@
     $('#page').innerHTML = head + tools + '<p class="dim">' + esc(w[1]) + ': ' + (h.d.num_open_plots || 0) + ' open plots · checked ' + ago(h.at) + '</p>' + body;
   }
 
-  // ---- News (the Lodestone's official news and topics feeds, saved by the public site every 6 hours)
+  // ---- News (the Lodestone's official news and topics feeds, saved by the public site every hour)
   var NEWS = null, NEWS_SEEN = store('eveniunt-tracker-news');
   function parseFeed(xml, cat) {
     var doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -820,9 +820,9 @@
   loadNews(); setInterval(loadNews, 30 * 60000);
   function renderNews() {
     function list(items) { return items.map(function (x) { var m = /maintenance/i.test(x.title); return '<div class="nw-row' + (m ? ' maint' : '') + '"><span class="dim">' + (x.at ? esc(new Date(x.at).toLocaleDateString([], { month: 'short', day: 'numeric' })) : '') + '</span>' + (x.link ? '<a href="' + esc(x.link) + '" target="_blank" rel="noopener">' + esc(x.title) + '</a>' : '<span>' + esc(x.title) + '</span>') + (m ? '<span class="lv-badge">Maintenance</span>' : '<span></span>') + '</div>'; }).join(''); }
-    $('#page').innerHTML = liveHead('News', 'The latest Lodestone news (maintenance, notices, updates) and topics, from the official feeds. The public site saves a fresh copy every 6 hours; titles open the Lodestone.', '') +
+    $('#page').innerHTML = liveHead('News', 'The latest Lodestone news (maintenance, notices, updates) and topics, from the official feeds. The public site saves a fresh copy every hour; titles open the Lodestone.', '') +
       (NEWS ? '<div class="nw-cols"><div><h3 class="lv-h">News</h3>' + list(NEWS.news) + '</div><div><h3 class="lv-h">Topics</h3>' + list(NEWS.topics) + '</div></div><p class="dim">Read ' + ago(NEWS.at) + '.</p>' :
-        '<p class="lv-guide">' + (HOSTED ? 'Loading the Lodestone news…' : 'The news appears on the hosted tracker (splitzhappen.github.io), which saves the Lodestone feeds every 6 hours. A copy opened from a file cannot read them.') + '</p>');
+        '<p class="lv-guide">' + (HOSTED ? 'Loading the Lodestone news…' : 'The news appears on the hosted tracker (splitzhappen.github.io), which saves the Lodestone feeds every hour. A copy opened from a file cannot read them.') + '</p>');
   }
 
   // ---- page plumbing

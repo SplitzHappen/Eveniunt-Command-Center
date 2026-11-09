@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '23 */6 * * *'  # every 6 hours (owner approved 2026-11-09): republish so the Tracker's events list is fresh
+    - cron: '23 * * * *'  # every hour (owner choice 2026-11-09; was every 6 hours): republish so the Tracker's events list and Lodestone news are fresh
 permissions:
   contents: read
   pages: write
