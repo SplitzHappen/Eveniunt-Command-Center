@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '23 */6 * * *'  # every 6 hours (owner approved 2026-11-09): republish so the Tracker's events list is fresh
 permissions:
   contents: read
   pages: write
@@ -29,6 +31,8 @@ jobs:
           cp -r tracker/site/. _site/tracker/
           cp crafting/dist/cosmic-*.html _site/cosmic/
           touch _site/.nojekyll
+      - name: Fresh events list for the Tracker (Xenoveritas' FFXIV timers, which follow the Lodestone)
+        run: curl -fsS --max-time 30 https://www.xenoveritas.org/static/ffxiv/timers.json -o _site/tracker/timers.json || echo "events list not refreshed; the Tracker uses its built-in copy"
           du -sh _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

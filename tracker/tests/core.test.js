@@ -945,7 +945,10 @@ test('live data: ocean fishing schedule, big fish, field monsters, new lists', (
   assert.ok(O.ach.length >= 40, 'ocean fishing achievements found');
   assert.equal(L.bigfish.length, 335); assert.equal(L.bigfish.filter((f) => f.kind === 'legendary').length, 36);
   assert.ok(L.bigfish.filter((f) => f.k).length >= 320, 'big fish matched to the fishing log');
-  assert.ok(L.bigfish.filter((f) => f.a != null).length >= 290, 'big fish with a window');
+  assert.equal(L.bigfish.filter((f) => f.a != null).length, 335, 'every big fish has a window (or none needed)');
+  assert.ok(L.field.zones['The Bozjan Southern Front'].length >= 70, 'Bozja monsters from the wiki pages');
+  assert.ok(L.field.zones['The Occult Crescent: North Horn'].length >= 100, 'North Horn monsters');
+  assert.equal(L.field.weatherZone['The Bozjan Southern Front'], 'Bozjan Southern Front', 'Bozja uses its own weather table');
   const anemos = L.field.zones['Eureka Anemos'];
   assert.ok(anemos.filter((m) => m.el).length >= 60, 'Eureka monsters with an element');
   assert.ok(L.field.zones['The Occult Crescent: South Horn'].filter((m) => m.weak).length >= 90);

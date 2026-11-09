@@ -4,132 +4,432 @@
 {
 "n": "Goldenfin",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Limsa Lominsa Upper Decks",
+"spot": "Limsa Lominsa Upper Decks",
+"time-start": 9.0,
+"time-end": 14.0,
+"bait": "Pill Bug"
+}
 },
 {
 "n": "Octomammoth",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Limsa Lominsa Lower Decks",
+"spot": "Limsa Lominsa Lower Decks",
+"time-start": 7.0,
+"time-end": 17.0,
+"bait": "Pill Bug, Floating Minnow",
+"req": "Mooch Harbor Herring"
+}
 },
 {
 "n": "Zalera",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Middle La Noscea",
+"spot": "Zephyr Drift",
+"xy": [
+18.0,
+21.0
+],
+"time-start": 9.0,
+"time-end": 14.0,
+"bait": "Rat Tail"
+}
 },
 {
 "n": "Beguiler Chub",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Middle La Noscea",
+"spot": "Rogue River",
+"xy": [
+22.0,
+22.0
+],
+"time-start": 9.0,
+"time-end": 14.0,
+"bait": "Moth Pupa"
+}
 },
 {
 "n": "Great Gudgeon",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Middle La Noscea",
+"spot": "West Agelyss River",
+"xy": [
+20.0,
+18.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clouds,fair skies",
+"bait": "Crayfish Ball"
+}
 },
 {
 "n": "Gigantshark",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Middle La Noscea",
+"spot": "Summerford",
+"xy": [
+14.0,
+15.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies",
+"bait": "Floating Minnow",
+"req": "Mooch Harbor Herring"
+}
 },
 {
 "n": "High Perch",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Middle La Noscea",
+"spot": "Nym River",
+"xy": [
+17.0,
+14.0
+],
+"time-start": 5.0,
+"time-end": 8.0,
+"bait": "Sinking Minnow"
+}
 },
 {
 "n": "Crystal Perch",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Middle La Noscea",
+"spot": "Woad Whisper Canyon",
+"xy": [
+21.0,
+12.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clouds,fog,wind",
+"bait": "Butterworm"
+}
 },
 {
 "n": "Caterwauler",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "The Mourning Widow",
+"xy": [
+24.0,
+22.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies,rain",
+"bait": "Moth Pupa"
+}
 },
 {
 "n": "Oschon's Print",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Moraby Bay",
+"xy": [
+26.0,
+25.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Goby Ball"
+}
 },
 {
 "n": "Syldra",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Cedarwood",
+"xy": [
+34.0,
+17.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain",
+"bait": "Spoon Worm"
+}
 },
 {
 "n": "Silver Sovereign",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Oschon's Torch",
+"xy": [
+24.0,
+39.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Yumizuno"
+}
 },
 {
 "n": "Sabertooth Cod",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Candlekeep Quay",
+"xy": [
+20.0,
+39.0
+],
+"time-start": 16.0,
+"time-end": 22.0,
+"bait": "Goby Ball, Rat Tail"
+}
 },
 {
 "n": "Jacques the Snipper",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Moraby Drydocks",
+"xy": [
+26.0,
+34.0
+],
+"time-start": 21.0,
+"time-end": 3.0,
+"bait": "Goby Ball, Rat Tail"
+}
 },
 {
 "n": "Faerie Queen",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Empty Heart",
+"xy": [
+21.0,
+34.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clouds,fog,wind",
+"bait": "Spinnerbait"
+}
 },
 {
 "n": "Meteor Survivor",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "The Salt Strand",
+"xy": [
+17.0,
+35.0
+],
+"time-start": 3.0,
+"time-end": 5.0,
+"weather-current": "clouds,fog,wind",
+"bait": "Rat Tail"
+}
 },
 {
 "n": "Cupfish",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Lower La Noscea",
+"spot": "Blind Iron Mines",
+"xy": [
+26.0,
+15.0
+],
+"time-start": 17.0,
+"time-end": 19.0,
+"weather-current": "clear skies",
+"bait": "Syrphid Basket"
+}
 },
 {
 "n": "The Greatest Bream in the World",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "South Bloodshore",
+"xy": [
+32.0,
+34.0
+],
+"time-start": 20.0,
+"time-end": 22.0,
+"weather-current": "clear skies",
+"bait": "Shrimp Cage Feeder"
+}
 },
 {
 "n": "Shark Tuna",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "Costa del Sol",
+"xy": [
+34.0,
+29.0
+],
+"time-start": 19.0,
+"time-end": 21.0,
+"weather-current": "clear skies",
+"bait": "Spoon Worm",
+"req": "Mooch Fullmoon Sardine"
+}
 },
 {
 "n": "Bombardfish",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "North Bloodshore",
+"xy": [
+32.0,
+24.0
+],
+"time-start": 9.0,
+"time-end": 14.0,
+"weather-current": "clear skies",
+"bait": "Herring Ball"
+}
 },
 {
 "n": "The Old Man in the Sea",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "Rhotano Sea (Privateer Forecastle)",
+"xy": [
+39.0,
+24.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain,clear skies",
+"bait": "Pill Bug",
+"req": "Mooch Harbor Herring ┗ into Ogre Barracuda"
+}
 },
 {
 "n": "The Salter",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "Hidden Falls",
+"xy": [
+31.0,
+23.0
+],
+"time-start": 17.0,
+"time-end": 20.0,
+"weather-current": "clear skies",
+"bait": "Honey Worm"
+}
 },
 {
 "n": "The Drowned Sniper",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "East Agelyss River",
+"xy": [
+21.0,
+25.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies",
+"bait": "Snurble Fly"
+}
 },
 {
 "n": "The Terpsichorean",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "Raincatcher Gully",
+"xy": [
+20.0,
+30.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Honey Worm"
+}
 },
 {
 "n": "Mirrorscale",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "The Juggernaut",
+"xy": [
+16.0,
+31.0
+],
+"time-start": 9.0,
+"time-end": 16.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Midge Basket",
+"req": "Mooch Copperfish"
+}
 },
 {
 "n": "Imperial Goldfish",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "Red Mantis Falls",
+"xy": [
+15.0,
+27.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Honey Worm",
+"req": "Mooch Silverfish Must catch 3x Jungle Catfish to trigger fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Little Perykos",
@@ -137,39 +437,123 @@
 "ex": "A Realm Reborn"
 },
 {
-"n": "Armorer (Seafood)",
+"n": "Armorer",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Swiftperch",
+"xy": [
+33.0,
+30.0
+],
+"time-start": 19.0,
+"time-end": 4.0,
+"bait": "Northern Krill"
+}
 },
 {
-"n": "Junkmonger (Seafood)",
+"n": "Junkmonger",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Skull Valley",
+"xy": [
+27.0,
+29.0
+],
+"time-start": 16.0,
+"time-end": 2.0,
+"bait": "Pill Bug",
+"req": "Mooch Merlthor Goby ┗ into Wahoo"
+}
 },
 {
 "n": "Navigator's Brand",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "The Brewer's Beacon",
+"xy": [
+30.0,
+30.0
+],
+"time-start": 8.0,
+"time-end": 15.0,
+"bait": "Yumizuno"
+}
 },
 {
 "n": "The Lone Ripper",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Halfstone",
+"xy": [
+16.0,
+22.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "Gales",
+"bait": "Heavy Steel Jig"
+}
 },
 {
 "n": "Helmsman's Hand",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Isles of Umbra Northshore",
+"xy": [
+15.0,
+29.0
+],
+"time-start": 9.0,
+"time-end": 14.0,
+"weather-current": "clouds",
+"bait": "Pill Bug",
+"req": "Mooch Ocean Cloud"
+}
 },
 {
 "n": "Frilled Shark",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "The Ship Graveyard",
+"xy": [
+15.0,
+35.0
+],
+"time-start": 20.0,
+"time-end": 1.0,
+"weather-current": "Gales,wind",
+"bait": "Floating Minnow",
+"req": "Mooch Fullmoon Sardine"
+}
 },
 {
 "n": "The Captain's Chalice",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Sapsa Spawning Grounds",
+"xy": [
+16.0,
+14.0
+],
+"time-start": 23.0,
+"time-end": 1.0,
+"bait": "Steel Jig",
+"req": "Mooch Fullmoon Sardine"
+}
 },
 {
 "n": "Coelacanthus",
@@ -179,102 +563,347 @@
 {
 "n": "Seahag",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Reaver Hide",
+"xy": [
+14.0,
+12.0
+],
+"time-start": 19.0,
+"time-end": 2.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Lugworm",
+"req": "Mooch Merlthor Goby ┗ into Wahoo"
+}
 },
 {
 "n": "Toramafish",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Upper La Noscea",
+"spot": "Oakwood",
+"xy": [
+15.0,
+23.0
+],
+"time-start": 17.0,
+"time-end": 20.0,
+"weather-current": "clouds,fog",
+"bait": "Spinnerbait",
+"req": "Mooch Common Sculpin"
+}
 },
 {
 "n": "Joan of Trout",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Upper La Noscea",
+"spot": "Fool Falls",
+"xy": [
+9.0,
+20.0
+],
+"time-start": 4.0,
+"time-end": 6.0,
+"bait": "Crow Fly"
+}
 },
 {
 "n": "Worm of Nym",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Upper La Noscea",
+"spot": "Bronze Lake Shallows",
+"xy": [
+33.0,
+24.0
+],
+"time-start": 19.0,
+"time-end": 22.0,
+"weather-current": "clouds",
+"bait": "Butterworm"
+}
 },
 {
 "n": "King of the Spring",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Upper La Noscea Outer La Noscea",
+"spot": "Northeast Bronze Lake Northwest Bronze Lake",
+"xy": [
+27.0,
+22.0
+],
+"time-start": 16.0,
+"time-end": 18.0,
+"weather-current": "clear skies,thunderstorms",
+"bait": "Spinnerbait"
+}
 },
 {
 "n": "Thundergut",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Outer La Noscea",
+"spot": "The Long Climb",
+"xy": [
+15.0,
+11.0
+],
+"time-start": 19.0,
+"time-end": 23.0,
+"weather-current": "rain",
+"bait": "Stem Borer"
+}
 },
 {
 "n": "Twitchbeard",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mist",
+"spot": "Mist",
+"xy": [
+10.0,
+10.0
+],
+"time-start": 4.0,
+"time-end": 6.0,
+"weather-current": "clear skies",
+"bait": "Spoon Worm",
+"req": "Mooch Fullmoon Sardine"
+}
 },
 {
 "n": "Stormdancer",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "New Gridania",
+"spot": "Jadeite Flood",
+"xy": [
+12.0,
+14.0
+],
+"time-start": 17.0,
+"time-end": 2.0,
+"weather-current": "rain",
+"bait": "Stem Borer"
+}
 },
 {
 "n": "Bloody Brewer",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "New Gridania",
+"spot": "Lower Black Tea Brook",
+"xy": [
+10.0,
+11.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies",
+"bait": "Crayfish Ball"
+}
 },
 {
 "n": "Matron Carp",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Old Gridania",
+"spot": "Whispering Gorge",
+"xy": [
+16.0,
+6.0
+],
+"time-start": 15.0,
+"time-end": 21.0,
+"bait": "Bloodworm"
+}
 },
 {
 "n": "Carp Diem",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Old Gridania",
+"spot": "Upper Black Tea Brook",
+"xy": [
+8.0,
+8.0
+],
+"time-start": 9.0,
+"time-end": 14.0,
+"weather-current": "clouds,fog",
+"bait": "Crow Fly"
+}
 },
 {
 "n": "Chirurgeon",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Shroud",
+"spot": "The Vein",
+"xy": [
+22.0,
+22.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,clouds,fair skies,rain",
+"bait": "Moth Pupa",
+"req": "Mooch Striped Goby"
+}
 },
 {
 "n": "Ghost Carp",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Shroud",
+"spot": "The Mirror",
+"xy": [
+25.0,
+27.0
+],
+"time-start": 21.0,
+"time-end": 3.0,
+"weather-current": "rain",
+"bait": "Butterworm"
+}
 },
 {
 "n": "Levinlight",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Shroud",
+"spot": "Everschade",
+"xy": [
+15.0,
+24.0
+],
+"time-start": 18.0,
+"time-end": 22.0,
+"weather-current": "clouds,rain",
+"bait": "Syrphid Basket"
+}
 },
 {
-"n": "Bloodbath (Seafood)",
+"n": "Bloodbath",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Shroud",
+"spot": "Haukke Manor",
+"xy": [
+10.0,
+23.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunderstorms",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish"
+}
 },
 {
 "n": "The Green Jester",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Shroud",
+"spot": "Hopeseed Pond",
+"xy": [
+13.0,
+21.0
+],
+"time-start": 18.0,
+"time-end": 21.0,
+"bait": "Honey Worm"
+}
 },
 {
 "n": "Dark Ambusher",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "East Shroud",
+"spot": "Sweetbloom Pier",
+"xy": [
+10.0,
+22.0
+],
+"time-start": 21.0,
+"time-end": 3.0,
+"weather-current": "clear skies,clouds,fair skies",
+"bait": "Moth Pupa",
+"req": "Mooch Striped Goby"
+}
 },
 {
 "n": "Moldva",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "East Shroud",
+"spot": "Springripple Brook",
+"xy": [
+24.0,
+25.0
+],
+"time-start": 18.0,
+"time-end": 1.0,
+"weather-current": "clear skies,clouds,fair skies",
+"bait": "Midge Basket",
+"req": "Mooch Ala Mhigan Fighting Fish"
+}
 },
 {
 "n": "The Assassin",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "East Shroud",
+"spot": "Sanctum of the Twelve",
+"xy": [
+17.0,
+16.0
+],
+"time-start": 21.0,
+"time-end": 22.0,
+"weather-current": "clear skies,clouds",
+"bait": "Butterworm"
+}
 },
 {
 "n": "Sylphsbane",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "East Shroud",
+"spot": "Verdant Drop",
+"xy": [
+20.0,
+21.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain",
+"bait": "Butterworm",
+"req": "Mooch Copperfish"
+}
 },
 {
 "n": "Magicked Mushroom",
@@ -284,52 +913,170 @@
 {
 "n": "Blue Widow",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "North Shroud",
+"spot": "Murmur Rills",
+"xy": [
+26.0,
+25.0
+],
+"time-start": 21.0,
+"time-end": 14.0,
+"bait": "Floating Minnow"
+}
 },
 {
 "n": "Judgeray",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "North Shroud",
+"spot": "Fallgourd Float",
+"xy": [
+21.0,
+24.0
+],
+"time-start": 17.0,
+"time-end": 21.0,
+"bait": "Wildfowl Fly"
+}
 },
 {
 "n": "Shadowstreak",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "North Shroud",
+"spot": "Proud Creek",
+"xy": [
+20.0,
+20.0
+],
+"time-start": 4.0,
+"time-end": 9.0,
+"weather-current": "fog",
+"bait": "Topwater Frog"
+}
 },
 {
 "n": "Cornelia",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "North Shroud",
+"spot": "Lake Tahtotl",
+"xy": [
+17.0,
+19.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Rainbow Spoon Lure",
+"req": "Must catch 5x Boxing Pleco to trigger fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Son of Levin",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "Rootslake",
+"xy": [
+18.0,
+29.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunderstorms",
+"bait": "Caddisfly Larva"
+}
 },
 {
 "n": "The Gobfather",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "Goblinblood",
+"xy": [
+27.0,
+21.0
+],
+"time-start": 0.0,
+"time-end": 6.0,
+"weather-current": "thunderstorms,thunderstorms",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish"
+}
 },
 {
 "n": "Vip Viper",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "Upper Hathoeva River",
+"xy": [
+18.0,
+19.0
+],
+"time-start": 18.0,
+"time-end": 19.0,
+"weather-current": "clear skies",
+"bait": "Butterworm"
+}
 },
 {
 "n": "Floating Boulder",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "Lower Hathoeva River",
+"xy": [
+18.0,
+24.0
+],
+"time-start": 1.0,
+"time-end": 5.0,
+"weather-current": "clouds,fog",
+"bait": "Bass Ball"
+}
 },
 {
 "n": "The Grinner",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "East Hathoeva River",
+"xy": [
+24.0,
+22.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Syrphid Basket"
+}
 },
 {
 "n": "The Sinker",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "Middle Hathoeva River",
+"xy": [
+19.0,
+22.0
+],
+"time-start": 22.0,
+"time-end": 3.0,
+"weather-current": "clear skies",
+"bait": "Sinking Minnow"
+}
 },
 {
 "n": "Giant Takitaro",
@@ -339,37 +1086,116 @@
 {
 "n": "Sweetnewt",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "The Lavender Beds",
+"spot": "The Lavender Beds",
+"time-start": 23.0,
+"time-end": 3.0,
+"weather-current": "fog",
+"bait": "Midge Basket",
+"req": "Mooch Ala Mhigan Fighting Fish"
+}
 },
 {
 "n": "Glimmerscale",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western Thanalan",
+"spot": "Nophica's Wells",
+"xy": [
+24.0,
+21.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies",
+"bait": "Butterworm"
+}
 },
 {
 "n": "Mud Golem",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western Thanalan",
+"spot": "The Footfalls",
+"xy": [
+17.0,
+15.0
+],
+"time-start": 21.0,
+"time-end": 3.0,
+"bait": "Butterworm"
+}
 },
 {
 "n": "Rivet Oyster",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western Thanalan",
+"spot": "Vesper Bay",
+"xy": [
+11.0,
+14.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Heavy Steel Jig"
+}
 },
 {
 "n": "Pirate's Bane",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western Thanalan",
+"spot": "Cape Westwind",
+"xy": [
+9.0,
+6.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Lugworm",
+"req": "Mooch Merlthor Goby ┗ into Wahoo Must catch 6x Wahoo to trigger fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Fingers",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western Thanalan",
+"spot": "Crescent Cove",
+"xy": [
+14.0,
+18.0
+],
+"time-start": 17.0,
+"time-end": 18.0,
+"weather-current": "clear skies,clouds",
+"bait": "Northern Krill"
+}
 },
 {
 "n": "Dirty Herry",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western Thanalan",
+"spot": "The Silver Bazaar",
+"xy": [
+15.0,
+29.0
+],
+"time-start": 20.0,
+"time-end": 21.0,
+"weather-current": "clear skies,clouds",
+"bait": "Northern Krill"
+}
 },
 {
 "n": "Ndendecki",
@@ -384,72 +1210,243 @@
 {
 "n": "Dream Goby",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Thanalan",
+"spot": "Upper Soot Creek",
+"xy": [
+23.0,
+18.0
+],
+"time-start": 17.0,
+"time-end": 3.0,
+"weather-current": "clear skies,dust storms,fair skies",
+"bait": "Crayfish Ball"
+}
 },
 {
 "n": "Slime King",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Thanalan",
+"spot": "Lower Soot Creek",
+"xy": [
+16.0,
+23.0
+],
+"time-start": 17.0,
+"time-end": 0.0,
+"weather-current": "clouds,dust storms",
+"bait": "Crayfish Ball"
+}
 },
 {
 "n": "Old Softie",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Thanalan",
+"spot": "The Clutch",
+"xy": [
+29.0,
+21.0
+],
+"time-start": 16.0,
+"time-end": 22.0,
+"bait": "Bloodworm"
+}
 },
 {
-"n": "Dark Knight (Seafood)",
+"n": "Dark Knight",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Central Thanalan",
+"spot": "The Unholy Heir",
+"xy": [
+27.0,
+19.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clouds,dust storms,fog",
+"bait": "Crow Fly"
+}
 },
 {
 "n": "Marrow Sucker",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern Thanalan",
+"spot": "North Drybone",
+"xy": [
+13.0,
+20.0
+],
+"time-start": 20.0,
+"time-end": 3.0,
+"weather-current": "rain",
+"bait": "Syrphid Basket"
+}
 },
 {
 "n": "Mud Pilgrim",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern Thanalan",
+"spot": "South Drybone",
+"xy": [
+17.0,
+24.0
+],
+"time-start": 17.0,
+"time-end": 7.0,
+"weather-current": "rain",
+"bait": "Midge Basket"
+}
 },
 {
 "n": "The Warden's Wand",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern Thanalan",
+"spot": "Yugr'am River",
+"xy": [
+25.0,
+22.0
+],
+"time-start": 17.0,
+"time-end": 19.0,
+"weather-current": "clear skies",
+"bait": "Honey Worm"
+}
 },
 {
 "n": "The Thousand-year Itch",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern Thanalan",
+"spot": "The Burning Wall",
+"xy": [
+30.0,
+26.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Stem Borer"
+}
 },
 {
 "n": "Olgoi-Khorkhoi",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Southern Thanalan",
+"spot": "Sagolii Dunes",
+"xy": [
+27.0,
+37.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "heat waves",
+"bait": "Sand Leech",
+"req": "Mooch Storm Rider"
+}
 },
 {
 "n": "Magic Carpet",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Southern Thanalan",
+"spot": "Sagolii Desert",
+"xy": [
+12.0,
+35.0
+],
+"time-start": 9.0,
+"time-end": 16.0,
+"weather-current": "heat waves",
+"bait": "Sand Leech",
+"req": "Mooch Storm Rider"
+}
 },
 {
 "n": "Old Hollow Eyes",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Southern Thanalan",
+"spot": "Burnt Lizard Creek",
+"xy": [
+21.0,
+15.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Midge Basket",
+"req": "Mooch Copperfish"
+}
 },
 {
 "n": "Discobolus",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Southern Thanalan",
+"spot": "Zahar'ak",
+"xy": [
+25.0,
+21.0
+],
+"time-start": 12.0,
+"time-end": 16.0,
+"weather-current": "heat waves",
+"bait": "Glowworm"
+}
 },
 {
 "n": "Iron Noose",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Southern Thanalan",
+"spot": "Forgotten Springs",
+"xy": [
+15.0,
+31.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Spinner"
+}
 },
 {
 "n": "Hannibal",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Northern Thanalan",
+"spot": "Bluefog",
+"xy": [
+24.0,
+25.0
+],
+"time-start": 1.0,
+"time-end": 4.0,
+"weather-current": "fog",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish"
+}
 },
 {
 "n": "Wootz Knifefish Zenith",
@@ -459,12 +1456,32 @@
 {
 "n": "Spearnose",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "The Goblet",
+"spot": "The Goblet",
+"time-start": 21.0,
+"time-end": 0.0,
+"weather-current": "clouds,fog",
+"bait": "Caddisfly Larva"
+}
 },
 {
 "n": "The Matriarch",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Exploratory Ice Hole",
+"xy": [
+6.0,
+22.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Honey Worm",
+"req": "Mooch Abalathian Smelt"
+}
 },
 {
 "n": "Blue Corpse",
@@ -479,97 +1496,336 @@
 {
 "n": "Anomalocaris",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Sea of Clouds",
+"xy": [
+13.0,
+14.0
+],
+"time-start": 10.0,
+"time-end": 14.0,
+"weather-current": "clear skies",
+"bait": "Hoverworm"
+}
 },
 {
 "n": "Charon's Lantern",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Daniffen Pass",
+"xy": [
+13.0,
+23.0
+],
+"time-start": 0.0,
+"time-end": 3.0,
+"weather-current": "blizzards,snow",
+"bait": "Glowworm"
+}
 },
 {
 "n": "Daniffen's Mark",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Coerthas River",
+"xy": [
+20.0,
+30.0
+],
+"time-start": 3.0,
+"time-end": 9.0,
+"weather-current": "blizzards",
+"bait": "Wildfowl Fly"
+}
 },
 {
 "n": "Dawn Maiden",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Dragonhead Latrines",
+"xy": [
+28.0,
+17.0
+],
+"time-start": 5.0,
+"time-end": 7.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Wildfowl Fly"
+}
 },
 {
 "n": "Starbright",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "The Nail",
+"xy": [
+16.0,
+21.0
+],
+"time-start": 21.0,
+"time-end": 2.0,
+"weather-current": "clear skies",
+"bait": "Syrphid Basket",
+"req": "Mooch Abalathian Smelt"
+}
 },
 {
 "n": "Mahar",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Witchdrop",
+"xy": [
+33.0,
+19.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "blizzards",
+"weather-previous": "clear skies,fair skies",
+"bait": "Hoverworm Balloon Bug",
+"req": "Mooch Cloud Cutter"
+}
 },
 {
 "n": "Aetherlouse",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "North Silvertear",
+"xy": [
+24.0,
+13.0
+],
+"time-start": 3.0,
+"time-end": 13.0,
+"weather-current": "gloom",
+"bait": "Glowworm"
+}
 },
 {
 "n": "Void Bass",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "Rathefrost",
+"xy": [
+19.0,
+18.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Glowworm"
+}
 },
 {
 "n": "Ninja Betta",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "The Tangle",
+"xy": [
+14.0,
+13.0
+],
+"time-start": 18.0,
+"time-end": 8.983333333333333,
+"weather-current": "gloom",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish ┗ into Assassin Betta"
+}
 },
 {
 "n": "Ignus Horn",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "The Deep Tangle",
+"xy": [
+12.0,
+11.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies",
+"weather-previous": "gloom",
+"bait": "Glowworm"
+}
 },
 {
 "n": "Blood Red Bonytongue",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "Singing Shards",
+"xy": [
+28.0,
+8.0
+],
+"time-start": 4.0,
+"time-end": 11.983333333333333,
+"weather-current": "fog",
+"weather-previous": "clear skies,fair skies",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish"
+}
 },
 {
 "n": "Canavan",
 "kind": "big",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "The North Shards",
+"xy": [
+31.0,
+6.0
+],
+"time-start": 8.0,
+"time-end": 17.983333333333334,
+"weather-current": "gloom",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish ┗ into Goldfish"
+}
 },
 {
 "n": "Fat Purse",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "Riversmeet",
+"xy": [
+24.0,
+24.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Brute Leech"
+}
 },
 {
 "n": "La Reale",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "Ashpool",
+"xy": [
+14.0,
+15.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Bishopfish",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "Clearpool",
+"xy": [
+36.0,
+6.0
+],
+"time-start": 10.0,
+"time-end": 14.0,
+"weather-current": "clear skies",
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Hailfinder",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "Greytail Falls",
+"xy": [
+35.0,
+26.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "blizzards",
+"weather-previous": "snow,blizzards",
+"bait": "Red Balloon",
+"req": "Mooch Glacier Core"
+}
 },
 {
 "n": "Captain Nemo",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "South Banepool",
+"xy": [
+21.0,
+11.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "blizzards",
+"weather-previous": "snow",
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Flarefish",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "Unfrozen Pond",
+"xy": [
+28.0,
+18.0
+],
+"time-start": 10.0,
+"time-end": 16.0,
+"weather-current": "blizzards",
+"bait": "Metal Spinner",
+"req": "Mooch Ice Faerie"
+}
 },
 {
 "n": "Merciless",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "West Banepool",
+"xy": [
+13.0,
+8.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "blizzards",
+"weather-previous": "snow,blizzards",
+"bait": "Caddisfly Larva",
+"req": "Mooch Ice Faerie"
+}
 },
 {
 "n": "The Impaler",
@@ -579,32 +1835,107 @@
 {
 "n": "Inkfish",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Sea of Clouds",
+"spot": "Voor Sian Siran",
+"xy": [
+29.0,
+35.0
+],
+"time-start": 14.0,
+"time-end": 16.0,
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Cirrostratus",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Sea of Clouds",
+"spot": "Cloudtop",
+"xy": [
+14.0,
+38.0
+],
+"time-start": 10.0,
+"time-end": 13.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Giant Crane Fly"
+}
 },
 {
 "n": "Basking Shark",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Sea of Clouds",
+"spot": "Mok Oogl Island",
+"xy": [
+15.0,
+7.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies",
+"weather-previous": "fog",
+"bait": "Metal Spinner",
+"req": "Mooch Sky Faerie"
+}
 },
 {
 "n": "The Second One",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Sea of Clouds",
+"spot": "The Blue Window",
+"xy": [
+7.0,
+11.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "wind",
+"bait": "Giant Crane Fly"
+}
 },
 {
 "n": "Paikiller",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Sea of Clouds",
+"spot": "The Eddies",
+"xy": [
+30.0,
+39.0
+],
+"time-start": 8.0,
+"time-end": 12.0,
+"weather-current": "clear skies",
+"weather-previous": "fog",
+"bait": "Bladed Steel Jig",
+"req": "Mooch Bullfrog"
+}
 },
 {
 "n": "Scaleripper",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "The Hundred Throes",
+"xy": [
+31.0,
+10.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clouds,dust storms,fog",
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Thunderscale",
@@ -614,272 +1945,941 @@
 {
 "n": "Riddle",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "Anyx Old",
+"xy": [
+19.0,
+10.0
+],
+"time-start": 8.0,
+"time-end": 16.0,
+"weather-current": "clear skies",
+"weather-previous": "clear skies",
+"bait": "Magma Worm",
+"req": "Mooch Granite Crab"
+}
 },
 {
 "n": "The Lord of Lords",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "Halo",
+"xy": [
+7.0,
+5.0
+],
+"time-start": 8.0,
+"time-end": 16.0,
+"weather-current": "clear skies,fair skies",
+"weather-previous": "clouds,dust storms,fog",
+"bait": "Metal Spinner",
+"req": "Mooch Granite Crab"
+}
 },
 {
 "n": "Meteortoise",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "Mourn",
+"xy": [
+13.0,
+13.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Magma Worm",
+"req": "Mooch Granite Crab"
+}
 },
 {
 "n": "The Dreamweaver",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "The Smoldering Wastes",
+"xy": [
+26.6,
+26.1
+],
+"time-start": 22.0,
+"time-end": 2.0,
+"weather-current": "clouds,dust storms,fog",
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Hraesvelgr's Tear",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "West Mourn",
+"xy": [
+9.0,
+7.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Magma Worm"
+}
 },
 {
 "n": "Twin-tongued Carp",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "Whilom River",
+"xy": [
+30.0,
+14.0
+],
+"time-start": 12.0,
+"time-end": 16.0,
+"weather-current": "clear skies",
+"weather-previous": "clouds,dust storms",
+"bait": "Brute Leech"
+}
 },
 {
-"n": "Vidofnir (Seafood)",
+"n": "Vidofnir",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Eil Tohm",
+"xy": [
+36.0,
+30.0
+],
+"time-start": 8.0,
+"time-end": 10.0,
+"bait": "Brute Leech"
+}
 },
 {
 "n": "Moggle Mogpom",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Greensward",
+"xy": [
+8.0,
+34.0
+],
+"time-start": 10.0,
+"time-end": 13.0,
+"weather-current": "clear skies",
+"weather-previous": "gales",
+"bait": "Brute Leech"
+}
 },
 {
 "n": "The Soul of the Martyr",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Landlord Colony",
+"xy": [
+29.0,
+25.0
+],
+"time-start": 4.0,
+"time-end": 6.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Giant Crane Fly"
+}
 },
 {
 "n": "Dimorphodon",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Sohm Al Summit",
+"xy": [
+18.0,
+39.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "gales",
+"weather-previous": "clear skies",
+"bait": "Giant Crane Fly",
+"req": "Mooch Rudderfish"
+}
 },
 {
 "n": "Bloodchaser",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Tharl Oom Khash",
+"xy": [
+20.0,
+6.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "gales",
+"weather-previous": "clear skies",
+"bait": "Giant Crane Fly"
+}
 },
 {
 "n": "Thousand Fin",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Weston Waters",
+"xy": [
+9.0,
+8.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "gales",
+"weather-previous": "clouds",
+"bait": "Brute Leech"
+}
 },
 {
 "n": "The Ewer King",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Hinterlands",
+"spot": "Thaliak River",
+"xy": [
+23.0,
+23.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Bladed Steel Jig",
+"req": "Mooch Sweetfish"
+}
 },
 {
 "n": "Bobgoblin Bass",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Hinterlands",
+"spot": "Middle Thaliak River",
+"xy": [
+20.0,
+25.0
+],
+"time-start": 2.0,
+"time-end": 6.0,
+"weather-current": "showers",
+"weather-previous": "rain",
+"bait": "Goblin Jig",
+"req": "Mooch Sweetfish"
+}
 },
 {
 "n": "Madam Butterfly",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Hinterlands",
+"spot": "Quickspill Delta",
+"xy": [
+11.0,
+24.0
+],
+"time-start": 21.0,
+"time-end": 2.0,
+"weather-current": "clear skies",
+"bait": "Purse Web Spider",
+"req": "Mooch Hedgemole Cricket"
+}
 },
 {
 "n": "The Speaker",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Hinterlands",
+"spot": "Upper Thaliak River",
+"xy": [
+22.0,
+35.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "showers",
+"weather-previous": "clouds,fog",
+"bait": "Purse Web Spider",
+"req": "Mooch Hedgemole Cricket"
+}
 },
 {
 "n": "Augmented High Allagan Helmet",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "Alpha Quadrant",
+"xy": [
+16.0,
+12.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Fiend Worm",
+"req": "Mooch Platinum Fish"
+}
 },
 {
 "n": "Aetherochemical Compound 666",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "Aetherochemical Spill",
+"xy": [
+30.0,
+6.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Fiend Worm",
+"req": "Mooch Platinum Fish"
+}
 },
 {
 "n": "Aphotic Pirarucu",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "Delta Quadrant",
+"xy": [
+10.0,
+31.0
+],
+"time-start": 22.0,
+"time-end": 2.0,
+"weather-current": "clouds",
+"bait": "Purse Web Spider",
+"req": "Mooch Aether Eye"
+}
 },
 {
 "n": "Ceti",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "Hyperstellar Downconverter",
+"xy": [
+6.0,
+16.0
+],
+"time-start": 18.0,
+"time-end": 22.0,
+"weather-current": "thunder",
+"weather-previous": "clouds",
+"bait": "Fiend Worm"
+}
 },
 {
 "n": "Allagan Bladeshark",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "The Flagship",
+"xy": [
+21.0,
+21.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder",
+"weather-previous": "clouds",
+"bait": "Fiend Worm",
+"req": "Mooch Platinum Fish"
+}
 },
 {
 "n": "Crystal Pigeon",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "The Habisphere",
+"xy": [
+40.0,
+18.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder",
+"weather-previous": "fair skies",
+"bait": "Giant Crane Fly",
+"req": "Mooch Rudderfish"
+}
 },
 {
 "n": "Hundred-eyed Axolotl",
 "kind": "big",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "The Pappus Tree",
+"xy": [
+6.0,
+35.0
+],
+"time-start": 6.0,
+"time-end": 10.0,
+"weather-current": "fair skies,thunder,clouds",
+"bait": "Purse Web Spider",
+"req": "Mooch Aether Eye"
+}
 },
 {
 "n": "Downstream Loach",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Fringes",
+"spot": "The Velodyna River",
+"xy": [
+19.1,
+4.3
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Sapphire Fan",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Fringes",
+"spot": "Dimwold",
+"xy": [
+9.6,
+29.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Corpse Chub",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Fringes",
+"spot": "Mirage Creek",
+"xy": [
+27.5,
+16.5
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"weather-current": "clear skies",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "The Archbishop",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Fringes",
+"spot": "The Comet's Tail",
+"xy": [
+13.0,
+31.0
+],
+"time-start": 12.0,
+"time-end": 16.0,
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Hardhead Trout",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Fringes",
+"spot": "Timmon Beck",
+"xy": [
+11.4,
+18.0
+],
+"time-start": 16.0,
+"time-end": 20.0,
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Hookstealer",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Rhalgr's Reach",
+"spot": "Upper Mirage Creek",
+"xy": [
+11.0,
+14.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Midge Larva",
+"req": "Mooch Gyr Abanian Trout"
+}
 },
 {
 "n": "Watcher Catfish",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Rhalgr's Reach",
+"spot": "Rhalgr's Reach",
+"xy": [
+11.0,
+10.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder",
+"bait": "Midge Larva",
+"req": "Mooch Gyr Abanian Trout"
+}
 },
 {
 "n": "Bloodtail Zombie",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Rhalgr's Reach",
+"spot": "The Outer Fist",
+"xy": [
+12.0,
+6.0
+],
+"time-start": 8.0,
+"time-end": 12.0,
+"bait": "Salmon Roe",
+"req": "Mooch Balloon Frog"
+}
 },
 {
 "n": "Bondsplitter",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "Grymm & Enid",
+"xy": [
+6.5,
+15.6
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "dust storms",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "The Last Tear",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "Heather Falls",
+"xy": [
+31.8,
+7.1
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fair skies",
+"weather-previous": "fog",
+"bait": "Salmon Roe"
+}
 },
 {
 "n": "Lily of the Veil",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "The Arms of Meed",
+"xy": [
+9.3,
+37.5
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fair skies",
+"weather-previous": "clear skies",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Hemon",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "The Bull's Bath",
+"xy": [
+25.0,
+32.7
+],
+"time-start": 16.0,
+"time-end": 20.0,
+"weather-current": "clouds",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Moksha",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "The Ephor",
+"xy": [
+31.0,
+17.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies",
+"weather-previous": "clouds,fog,wind,dust storms",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "The Undecided",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "The Slow Wash",
+"xy": [
+23.5,
+9.0
+],
+"time-start": 8.0,
+"time-end": 12.0,
+"bait": "Midge Larva",
+"req": "Mooch Gyr Abanian Trout"
+}
 },
 {
 "n": "Diamond-eye",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Lochs",
+"spot": "Loch Seld",
+"xy": [
+21.0,
+21.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies",
+"bait": "Silkworm",
+"req": "Mooch Rock Saltfish"
+}
 },
 {
 "n": "Rising Dragon",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Kugane",
+"spot": "Kugane Piers",
+"time-start": 0,
+"time-end": 24,
+"bait": "Metal Spinner",
+"req": "Mooch Ruby Shrimp"
+}
 },
 {
 "n": "The Gambler",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Shirogane",
+"spot": "Shirogane",
+"xy": [
+8.0,
+14.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Blue Bobbit"
+}
 },
 {
 "n": "Princess Killifish",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Shirogane",
+"spot": "The Silver Canal",
+"xy": [
+10.0,
+11.0
+],
+"time-start": 4.0,
+"time-end": 6.0,
+"bait": "Nightcrawler"
+}
 },
 {
 "n": "Ku'er",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "The Ruby Price",
+"xy": [
+38.4,
+38.5
+],
+"time-start": 0.0,
+"time-end": 8.0,
+"weather-current": "clouds",
+"weather-previous": "thunder",
+"bait": "Blue Bobbit"
+}
 },
 {
 "n": "The Vegetarian",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "Hells' Lid",
+"xy": [
+25.9,
+33.3
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"weather-current": "thunder",
+"bait": "Live Shrimp",
+"req": "Mooch Ruby Shrimp"
+}
 },
 {
 "n": "Pinhead",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "Isari",
+"xy": [
+8.5,
+12.0
+],
+"time-start": 16.0,
+"time-end": 24.0,
+"weather-current": "thunder",
+"weather-previous": "clear skies,fair skies",
+"bait": "Live Shrimp"
+}
 },
 {
 "n": "Argonautica",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "Onokoro",
+"xy": [
+22.1,
+11.0
+],
+"time-start": 16.0,
+"time-end": 24.0,
+"bait": "Live Shrimp",
+"req": "Mooch Ruby Shrimp"
+}
 },
 {
 "n": "The Winter Queen",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "Shoal Rock",
+"xy": [
+32.5,
+8.3
+],
+"time-start": 16.0,
+"time-end": 20.0,
+"bait": "Blue Bobbit"
+}
 },
 {
 "n": "Seven Stars",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "The Isle of Bekko",
+"xy": [
+34.6,
+19.7
+],
+"time-start": 10.0,
+"time-end": 18.0,
+"weather-current": "fair skies",
+"weather-previous": "thunder",
+"bait": "Blue Bobbit"
+}
 },
 {
 "n": "Rakshasa",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "The Isle of Zekki",
+"xy": [
+8.3,
+26.6
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder",
+"bait": "Metal Spinner",
+"req": "Mooch Ruby Shrimp"
+}
 },
 {
 "n": "Hermit's End",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "Namai",
+"xy": [
+29.5,
+15.5
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"weather-current": "clear skies",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Suiten Ippeki",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "Mercantile Docks",
+"xy": [
+14.0,
+14.0
+],
+"time-start": 16.0,
+"time-end": 24.0,
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Hagoromo Koi",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "Plum Spring",
+"xy": [
+36.0,
+23.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "The Unraveled Bow",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "Prism Canyon",
+"xy": [
+31.0,
+7.0
+],
+"time-start": 12.0,
+"time-end": 16.0,
+"weather-current": "fog",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Pomegranate Trout",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "The Heron's Nest",
+"xy": [
+34.7,
+14.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain",
+"bait": "Nightcrawler"
+}
 },
 {
 "n": "Glarramundi",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "The Heron's Way",
+"xy": [
+35.6,
+17.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies",
+"weather-previous": "fair skies",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Bokuden",
@@ -889,412 +2889,1395 @@
 {
 "n": "Axelrod",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "The One River (East)",
+"xy": [
+20.0,
+24.0
+],
+"time-start": 0.0,
+"time-end": 8.0,
+"weather-current": "fair skies",
+"weather-previous": "clouds",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Hagoromo Bijin",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "The One River (West)",
+"xy": [
+11.0,
+33.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies",
+"weather-previous": "clouds",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Banderole",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Hak Khaal",
+"xy": [
+29.0,
+20.0
+],
+"time-start": 0.0,
+"time-end": 8.0,
+"bait": "Nightcrawler",
+"req": "Mooch Zagas Khaal"
+}
 },
 {
 "n": "Duskfish",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Azim Khaat",
+"xy": [
+23.0,
+23.0
+],
+"time-start": 8.0,
+"time-end": 16.0,
+"weather-current": "clouds",
+"weather-previous": "rain,gales",
+"bait": "Nightcrawler",
+"req": "Mooch Zagas Khaal"
+}
 },
 {
 "n": "Nhaama's Treasure",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Dotharl Khaa",
+"xy": [
+12.4,
+33.1
+],
+"time-start": 4.0,
+"time-end": 8.0,
+"weather-current": "clear skies,fair skies",
+"weather-previous": "rain",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Yat Khan",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Lower Yat Khaal",
+"xy": [
+22.0,
+28.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "gales",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Garden Skipper",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Nem Khaal",
+"xy": [
+31.0,
+26.0
+],
+"time-start": 8.0,
+"time-end": 12.0,
+"weather-current": "clear skies",
+"weather-previous": "fair skies",
+"bait": "Midge Larva"
+}
 },
 {
 "n": "The Word of God",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Tao Khaal",
+"xy": [
+16.0,
+14.0
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Blade Skipper",
 "kind": "big",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Upper Yat Khaal",
+"xy": [
+17.0,
+18.0
+],
+"time-start": 4.0,
+"time-end": 8.0,
+"weather-current": "fog",
+"bait": "Suspending Minnow"
+}
 },
 {
 "n": "Loose Pendant",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Crystarium",
+"spot": "Crystarium Personal Suites",
+"xy": [
+12.0,
+16.0
+],
+"time-start": 18.0,
+"time-end": 21.0,
+"bait": "Baitbugs"
+}
 },
 {
 "n": "The Sinsteeped",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Crystarium",
+"spot": "The Quadrivium",
+"xy": [
+10.0,
+15.0
+],
+"time-start": 22.0,
+"time-end": 24.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Fruit Worm"
+}
 },
 {
 "n": "Aster Trivi",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Crystarium",
+"spot": "The Trivium",
+"xy": [
+8.0,
+7.0
+],
+"time-start": 22.0,
+"time-end": 24.0,
+"weather-current": "clear skies,clear skies",
+"bait": "Marble Nymph"
+}
 },
 {
 "n": "Winged Dame",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Eulmore, The Buttress",
+"spot": "The Derelicts",
+"xy": [
+11.0,
+11.0
+],
+"time-start": 12.0,
+"time-end": 20.0,
+"weather-current": "clear skies",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "Sweetheart",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Lakeland",
+"spot": "The Rift of Sighs",
+"xy": [
+31.0,
+11.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies,fair skies",
+"weather-previous": "fog",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "The Unforgiven",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Lakeland",
+"spot": "The Source",
+"xy": [
+13.0,
+29.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Python Discus",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Lakeland",
+"spot": "Sullen",
+"xy": [
+19.0,
+35.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunderstorms",
+"weather-previous": "rain",
+"bait": "Fruit Worm"
+}
 },
 {
 "n": "Moonlight Guppy",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Lakeland",
+"spot": "The Rusted Reservoir",
+"xy": [
+12.0,
+21.0
+],
+"time-start": 6.0,
+"time-end": 8.0,
+"weather-current": "fair skies",
+"weather-previous": "clear skies",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "The Jaws of Undeath",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Lakeland",
+"spot": "The Isle of Ken",
+"xy": [
+9.0,
+37.0
+],
+"time-start": 16.0,
+"time-end": 24.0,
+"weather-current": "clouds,fog",
+"weather-previous": "clear skies,fair skies",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "White Ronso",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "Lower Watts River",
+"xy": [
+30.0,
+27.0
+],
+"time-start": 24.0,
+"time-end": 2.0,
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Bronze Sole",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "Sharptongue Drip",
+"xy": [
+20.0,
+24.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain",
+"bait": "Marble Nymph"
+}
 },
 {
 "n": "Steel Fan",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "White Oil Falls",
+"xy": [
+29.0,
+21.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Marble Nymph"
+}
 },
 {
 "n": "Henodus Grandis",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "The Eastern Kholusian Coast",
+"xy": [
+35.0,
+35.0
+],
+"time-start": 22.0,
+"time-end": 24.0,
+"weather-current": "clouds",
+"bait": "Short Bill Minnow",
+"req": "Mooch Spearhead Squid"
+}
 },
 {
 "n": "Steel Razor",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "The Western Kholusian Coast",
+"xy": [
+8.0,
+35.0
+],
+"time-start": 6.0,
+"time-end": 8.0,
+"bait": "Moyebi Shrimp"
+}
 },
 {
 "n": "Shadeshifter",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "Seagazer Shoals",
+"xy": [
+16.0,
+35.0
+],
+"time-start": 10.0,
+"time-end": 14.0,
+"weather-current": "gales",
+"weather-previous": "clear skies,fair skies",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "Giant Taimen",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "Upper Watts River",
+"xy": [
+27.0,
+14.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Baitbugs"
+}
 },
 {
 "n": "The Horned King",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Amh Araeng",
+"spot": "The River of Sand",
+"xy": [
+31.0,
+12.0
+],
+"time-start": 0.0,
+"time-end": 6.0,
+"weather-current": "dust storms",
+"bait": "Jerked Ovim",
+"req": "Mooch Hornhelm"
+}
 },
 {
 "n": "Nabaath Saw",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Amh Araeng",
+"spot": "The Nabaath Severance",
+"xy": [
+31.0,
+31.0
+],
+"time-start": 6.0,
+"time-end": 10.0,
+"weather-current": "heat waves",
+"weather-previous": "clear skies,fair skies,heat waves",
+"bait": "Jerked Ovim",
+"req": "Mooch Desert Saw"
+}
 },
 {
 "n": "Ambling Caltrop",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Amh Araeng",
+"spot": "The Hills of Amber",
+"xy": [
+15.0,
+14.0
+],
+"time-start": 12.0,
+"time-end": 16.0,
+"weather-current": "clear skies",
+"bait": "Desert Dessert Frog",
+"req": "Mooch Web-footed Sand Gecko"
+}
 },
 {
 "n": "Leannisg",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "Handmirror Lake",
+"xy": [
+4.0,
+22.0
+],
+"time-start": 6.0,
+"time-end": 8.0,
+"weather-current": "rain",
+"bait": "Marble Nymph"
+}
 },
 {
 "n": "The Sound of Fury",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "Longmirror Lake",
+"xy": [
+21.0,
+22.0
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Gold Hammer",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "Saint Fathric's Temple",
+"xy": [
+34.0,
+26.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clear skies",
+"weather-previous": "clear skies,fair skies",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Sunken Tome",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "The Haughty One",
+"xy": [
+22.0,
+9.0
+],
+"time-start": 12.0,
+"time-end": 16.0,
+"weather-current": "thunderstorms",
+"weather-previous": "fair skies",
+"bait": "Marble Nymph"
+}
 },
 {
 "n": "Fae Rainbow",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "The Jealous One",
+"xy": [
+25.0,
+9.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"weather-previous": "clear skies,fair skies",
+"bait": "Marble Nymph"
+}
 },
 {
 "n": "Dammroen Herring",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "The Spoiled One",
+"xy": [
+28.0,
+13.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Celestial",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "Father Collard's Failings",
+"xy": [
+28.0,
+13.0
+],
+"time-start": 7.0,
+"time-end": 17.0,
+"weather-current": "clear skies",
+"weather-previous": "thunderstorms",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Priest of Yx'Lokwa",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "Lake Tusi Mek'ta",
+"xy": [
+28.0,
+13.0
+],
+"time-start": 10.0,
+"time-end": 12.0,
+"bait": "Robber Ball",
+"req": "Mooch Clown Tetra ┗ into Eryops"
+}
 },
 {
 "n": "Golden Pipira",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "Mjrl's Tears",
+"xy": [
+25.2,
+36.6
+],
+"time-start": 6.0,
+"time-end": 7.0,
+"bait": "Robber Ball"
+}
 },
 {
 "n": "Recordkiller",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "South Mjrl's Regret",
+"xy": [
+24.0,
+31.0
+],
+"time-start": 18.0,
+"time-end": 24.0,
+"weather-current": "fog",
+"weather-previous": "clear skies,fair skies",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Black Jet",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "Mjrl's Tears",
+"xy": [
+25.2,
+36.6
+],
+"time-start": 2.0,
+"time-end": 12.0,
+"weather-current": "fair skies",
+"weather-previous": "clouds,fog",
+"bait": "Robber Ball"
+}
 },
 {
 "n": "Pearl Pipira",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "The Red Chalice",
+"xy": [
+9.0,
+20.0
+],
+"time-start": 17.0,
+"time-end": 20.0,
+"weather-current": "fog",
+"bait": "Robber Ball",
+"req": "Mooch Diamond Pipira"
+}
 },
 {
 "n": "Deephaunt",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "Woven Oath",
+"xy": [
+7.0,
+16.0
+],
+"time-start": 2.0,
+"time-end": 6.0,
+"weather-current": "fog",
+"weather-previous": "clouds",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Mora Tecta",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "Northwest Caliban Gorge",
+"xy": [
+11.0,
+10.0
+],
+"time-start": 22.0,
+"time-end": 24.0,
+"weather-current": "fair skies",
+"bait": "Short Bill Minnow"
+}
 },
 {
 "n": "Starchaser",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "Purpure",
+"xy": [
+33.0,
+30.0
+],
+"time-start": 6.0,
+"time-end": 10.0,
+"weather-current": "clouds",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "The Ondotaker",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "Where the Dry Return",
+"xy": [
+37.0,
+7.0
+],
+"time-start": 8.0,
+"time-end": 10.0,
+"weather-current": "clouds",
+"weather-previous": "clear skies",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "The Mother of All Pancakes",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "East Caliban Gap",
+"xy": [
+8.0,
+15.0
+],
+"time-start": 0.0,
+"time-end": 3.0,
+"weather-current": "clear skies",
+"weather-previous": "clouds",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "Ondo Sigh",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "The Flounders' Floor",
+"xy": [
+8.0,
+15.0
+],
+"time-start": 12.0,
+"time-end": 2.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "Opal Shrimp",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "The Norvrandt Slope",
+"xy": [
+29.0,
+14.0
+],
+"time-start": 18.0,
+"time-end": 20.0,
+"weather-current": "clear skies",
+"weather-previous": "fair skies,clear skies,clouds",
+"bait": "Squid Strip"
+}
 },
 {
 "n": "Maru Crab",
 "kind": "big",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "West Caliban Gap",
+"xy": [
+6.0,
+13.0
+],
+"time-start": 16.0,
+"time-end": 20.0,
+"weather-current": "clouds",
+"bait": "Short Bill Minnow",
+"req": "Mooch Ancient Shrimp"
+}
 },
 {
 "n": "Aetherolectric Guitarfish",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Old Sharlayan",
+"spot": "Scholar's Harbor",
+"xy": [
+11.6,
+16.0
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"bait": "Mackerel Strip"
+}
 },
 {
 "n": "Greatsword Snook",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Old Sharlayan",
+"spot": "Oinops",
+"xy": [
+11.2,
+8.2
+],
+"time-start": 16.0,
+"time-end": 20.0,
+"weather-current": "snow",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Catastrophizer",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Old Sharlayan",
+"spot": "Reflecting Pool",
+"xy": [
+7.7,
+10.5
+],
+"time-start": 8.0,
+"time-end": 14.0,
+"weather-current": "clear skies",
+"weather-previous": "fair skies",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Jumbo Snook",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Labyrinthos",
+"spot": "Unmoved Source Alpha",
+"xy": [
+17.7,
+5.3
+],
+"time-start": 18.0,
+"time-end": 22.0,
+"weather-current": "clouds",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Swampsucker Bowfin",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Labyrinthos",
+"spot": "Unmoved Source Beta",
+"xy": [
+32.0,
+8.0
+],
+"time-start": 8.0,
+"time-end": 16.0,
+"weather-current": "clouds",
+"weather-previous": "clear skies,fair skies",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Mossgill Salmon",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Labyrinthos",
+"spot": "The Mover Alpha",
+"xy": [
+18.5,
+10.9
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain",
+"weather-previous": "clouds",
+"bait": "Sky Spoon Lure"
+}
 },
 {
 "n": "Earful",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Radz-at-Han",
+"spot": "Meghaduta",
+"xy": [
+5.5,
+11.0
+],
+"time-start": 4.0,
+"time-end": 8.0,
+"bait": "Mayfly"
+}
 },
 {
 "n": "Lale Crab",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "Yedlihmad",
+"xy": [
+25.5,
+36.5
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fog",
+"weather-previous": "clear skies,fair skies",
+"bait": "Shrimp Ball"
+}
 },
 {
 "n": "Hippo Frog",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "Giantsgall Grounds",
+"xy": [
+21.1,
+8.2
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "showers",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Bigcuda",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "Ksiroda",
+"xy": [
+30.4,
+21.3
+],
+"time-start": 8.0,
+"time-end": 16.0,
+"weather-current": "rain,Showers",
+"weather-previous": "clear skies,fair skies",
+"bait": "Sky Spoon Lure"
+}
 },
 {
 "n": "Browned Banana Eel",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "Pavana's Remorse",
+"xy": [
+23.8,
+14.2
+],
+"time-start": 22.0,
+"time-end": 2.0,
+"weather-current": "rain",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Vidyutvat Wrasse",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "The Great Runoff",
+"xy": [
+10.8,
+22.2
+],
+"time-start": 20.0,
+"time-end": 24.0,
+"weather-current": "clear skies",
+"weather-previous": "fog",
+"bait": "Shrimp Ball"
+}
 },
 {
 "n": "Sovereign Shadow",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Garlemald",
+"spot": "The Stainless Course",
+"xy": [
+23.0,
+6.8
+],
+"time-start": 2.0,
+"time-end": 8.0,
+"weather-current": "snow",
+"weather-previous": "clouds,fog",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Rimepike",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Garlemald",
+"spot": "The Eblan Thaw",
+"xy": [
+11.3,
+30.4
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "snow",
+"bait": "Gold Salmon Roe",
+"req": "Mooch Cerule Core"
+}
 },
 {
 "n": "Disappirarucu",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Mare Lamentorum",
+"spot": "Greatest Endsvale",
+"xy": [
+32.6,
+12.4
+],
+"time-start": 0.0,
+"time-end": 2.0,
+"bait": "Mayfly"
+}
 },
 {
 "n": "Frozen Regotoise",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Mare Lamentorum",
+"spot": "The Frozen Fissure",
+"xy": [
+32.6,
+12.4
+],
+"time-start": 10.0,
+"time-end": 13.0,
+"weather-current": "umbral wind",
+"bait": "Chimera Worm"
+}
 },
 {
 "n": "Foun Ahlm",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Apohelos 18-β",
+"xy": [
+9.3,
+30.8
+],
+"time-start": 10.0,
+"time-end": 14.0,
+"weather-current": "umbral wind",
+"bait": "Chimera Worm"
+}
 },
 {
 "n": "Starscryer",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "The Wellspring of Regret",
+"xy": [
+15.0,
+11.6
+],
+"time-start": 2.0,
+"time-end": 4.0,
+"weather-current": "astromagnetic storm",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Forbiddingway",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Limne 18",
+"xy": [
+7.3,
+35.4
+],
+"time-start": 8.0,
+"time-end": 12.0,
+"weather-current": "astromagnetic storm",
+"bait": "Stardust"
+}
 },
 {
 "n": "Argonauta argo",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Limne 3-α",
+"xy": [
+32.0,
+9.0
+],
+"time-start": 2.0,
+"time-end": 4.0,
+"weather-current": "Umbral Wind",
+"bait": "Stardust"
+}
 },
 {
 "n": "Cosmic Haze",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Apohelos 18-γ",
+"xy": [
+20.6,
+36.5
+],
+"time-start": 20.0,
+"time-end": 4.0,
+"weather-current": "astromagnetic storm",
+"bait": "Grey Worm",
+"req": "Mooch Vacuum Shrimp"
+}
 },
 {
 "n": "Planetes",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Elpis",
+"spot": "Rumination's Ramble",
+"xy": [
+11.0,
+19.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "Umbral Wind",
+"bait": "{{action icon|Gold Salmon Roe}}, {{action icon|Leech (Bait)}}, {{action icon|Sky Spoon Lure}}",
+"req": "Mooch Albino Loach"
+}
 },
 {
 "n": "Antheian Dahlia",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Elpis",
+"spot": "Lethe",
+"xy": [
+33.5,
+15.0
+],
+"time-start": 4.0,
+"time-end": 10.0,
+"weather-current": "clear skies",
+"weather-previous": "clouds",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Basilosaurus Rex",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "The Perfumed Tides",
+"time-start": 0,
+"time-end": 24,
+"weather-current": "fair skies",
+"bait": "Mackerel Strip",
+"req": "Mooch Puff-paya ┗ into Basilosaurus"
+}
 },
 {
 "n": "Onyx Knifefish",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Labyrinthos",
+"spot": "The Mover Beta",
+"time-start": 22.0,
+"time-end": 2.0,
+"weather-current": "fair skies",
+"weather-previous": "rain",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Eehs Fan",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Apohelos 18-α",
+"time-start": 12.0,
+"time-end": 20.0,
+"weather-current": "umbral wind",
+"weather-previous": "astromagnetic storm",
+"bait": "Chimera Worm"
+}
 },
 {
 "n": "Wakeful Warden",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "The Wakeful Torana",
+"time-start": 0,
+"time-end": 24,
+"weather-current": "clouds",
+"weather-previous": "fog",
+"bait": "Leech (Bait)"
+}
 },
 {
 "n": "Gilt Dermogenys",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Elpis",
+"spot": "The Lower Hungering Gardens",
+"time-start": 20.0,
+"time-end": 22.0,
+"weather-current": "clear skies,fair skies",
+"weather-previous": "umbral wind",
+"bait": "Sky Spoon Lure"
+}
 },
 {
 "n": "Mayaman",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "The Font of Maya",
+"time-start": 4.0,
+"time-end": 8.0,
+"weather-current": "fair skies",
+"weather-previous": "clouds",
+"bait": "Mayfly",
+"req": "Must catch 5x Thavnairian Caiman first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Starscale Ephemeris",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Abode of the Ea",
+"time-start": 18.0,
+"time-end": 22.0,
+"weather-current": "fair skies",
+"weather-previous": "astromagnetic storm",
+"bait": "Mayfly"
+}
 },
 {
 "n": "Chlorophos Deathworm",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Mare Lamentorum",
+"spot": "The Chlorophospond",
+"time-start": 2.0,
+"time-end": 8.0,
+"weather-current": "moon dust",
+"weather-previous": "fair skies",
+"bait": "Chimera Worm",
+"req": "Mooch Calicia"
+}
 },
 {
 "n": "Durdina Fish",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "The Thavnairian Coast",
+"time-start": 0.0,
+"time-end": 4.0,
+"weather-current": "clear skies",
+"weather-previous": "fair skies",
+"bait": "Shrimp Ball",
+"req": "Mooch Shadowdart Sardine"
+}
 },
 {
 "n": "E.B.E.-852738",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Limne 3-β",
+"time-start": 12.0,
+"time-end": 16.0,
+"weather-current": "umbral wind",
+"weather-previous": "fair skies",
+"bait": "Stardust"
+}
 },
 {
 "n": "Circuit Tilapia",
 "kind": "big",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Labyrinthos",
+"spot": "Deepmoat",
+"time-start": 8.0,
+"time-end": 12.0,
+"weather-current": "fair skies",
+"weather-previous": "clouds",
+"bait": "Mayfly",
+"req": "Mooch Astacus Aetherius"
+}
 },
 {
 "n": "Icuvlo's Barter",
@@ -1843,152 +4826,526 @@
 {
 "n": "Namitaro",
 "kind": "legendary",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "South Shroud",
+"spot": "Urth's Gift",
+"xy": [
+32.0,
+23.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder,thunderstorms",
+"bait": "Topwater Frog",
+"req": "Must catch Giant Takitaro first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Endoceras",
 "kind": "legendary",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Western La Noscea",
+"spot": "Isles of Umbra Southshore",
+"xy": [
+12.0,
+36.0
+],
+"time-start": 20.0,
+"time-end": 3.9833333333333334,
+"weather-current": "fog,clouds,wind",
+"weather-previous": "clear skies,fair skies",
+"bait": "Spoon Worm",
+"req": "Mooch Fullmoon Sardine"
+}
 },
 {
 "n": "Helicoprion",
 "kind": "legendary",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Southern Thanalan",
+"spot": "Sagolii Desert",
+"xy": [
+12.0,
+35.0
+],
+"time-start": 8.0,
+"time-end": 19.983333333333334,
+"weather-current": "heat waves",
+"weather-previous": "clouds,fog",
+"bait": "Sand Leech",
+"req": "Mooch Storm Rider"
+}
 },
 {
 "n": "Kuno the Killer",
 "kind": "legendary",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Mor Dhona",
+"spot": "The North Shards",
+"xy": [
+31.0,
+6.0
+],
+"time-start": 9.0,
+"time-end": 22.983333333333334,
+"weather-current": "gloom",
+"bait": "Honey Worm",
+"req": "Mooch Silverfish ┗ into Assassin Betta Must catch Canavan first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Shonisaurus",
 "kind": "legendary",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Coerthas Central Highlands",
+"spot": "Witchdrop",
+"xy": [
+33.0,
+19.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "blizzards",
+"weather-previous": "clear skies,fair skies",
+"bait": "Hoverworm Balloon Bug",
+"req": "Mooch Cloud Cutter ┗ into Mahar"
+}
 },
 {
 "n": "Nepto Dragon",
 "kind": "legendary",
-"ex": "A Realm Reborn"
+"ex": "A Realm Reborn",
+"wiki": {
+"zone": "Eastern La Noscea",
+"spot": "Rhotano Sea (Privateer Sterncastle)",
+"xy": [
+38.0,
+24.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "rain,showers",
+"bait": "Northern Krill",
+"req": "Must catch 3x Little Thalaos first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Armor Fish",
 "kind": "legendary",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Hinterlands",
+"spot": "Upper Thaliak River",
+"xy": [
+22.0,
+35.0
+],
+"time-start": 1.0,
+"time-end": 4.0,
+"weather-current": "clear skies",
+"bait": "Purse Web Spider",
+"req": "Mooch Hedgemole Cricket Must catch 6x Hedgemole Cricket first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Problematicus",
 "kind": "legendary",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Dravanian Forelands",
+"spot": "Halo",
+"xy": [
+7.0,
+5.0
+],
+"time-start": 10.0,
+"time-end": 15.0,
+"weather-current": "clear skies,fair skies",
+"bait": "Metal Spinner",
+"req": "Mooch Granite Crab Must catch 3x Fossiltongue and 5x Granite Crab first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Opabinia",
 "kind": "legendary",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Azys Lla",
+"spot": "The Flagship",
+"xy": [
+21.0,
+21.0
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "thunder",
+"bait": "Fiend Worm",
+"req": "Mooch Platinum Fish Must catch 3x Functional Proto-hropken first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Raimdellopterus",
 "kind": "legendary",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Churning Mists",
+"spot": "Tharl Oom Khash",
+"xy": [
+20.0,
+6.0
+],
+"time-start": 5.0,
+"time-end": 8.0,
+"weather-current": "gales",
+"bait": "Giant Crane Fly",
+"req": "Mooch Rudderfish Must catch 5x Rudderfish first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Charibenet",
 "kind": "legendary",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "Coerthas Western Highlands",
+"spot": "Clearpool",
+"xy": [
+36.0,
+6.0
+],
+"time-start": 0.0,
+"time-end": 3.0,
+"weather-current": "blizzards",
+"bait": "Purse Web Spider",
+"req": "Mooch Ice Faerie Must catch 5x Ice Faerie first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Sea Butterfly",
 "kind": "legendary",
-"ex": "Heavensward"
+"ex": "Heavensward",
+"wiki": {
+"zone": "The Sea of Clouds",
+"spot": "Mok Oogl Island",
+"xy": [
+15.0,
+7.0
+],
+"time-start": 5.0,
+"time-end": 7.0,
+"weather-current": "clear skies",
+"bait": "Giant Crane Fly",
+"req": "Must catch 3x Scorpionfly and 3x Sky Faerie first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Drepanaspis",
 "kind": "legendary",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Peaks",
+"spot": "Grymm & Enid",
+"xy": [
+6.5,
+15.6
+],
+"time-start": 0,
+"time-end": 24,
+"weather-current": "dust storms",
+"bait": "Suspending Minnow",
+"req": "Must catch 2x Bondsplitter first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "The Unconditional",
 "kind": "legendary",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Azim Steppe",
+"spot": "Dotharl Khaa",
+"xy": [
+12.4,
+33.1
+],
+"time-start": 5.0,
+"time-end": 7.0,
+"weather-current": "clear skies",
+"weather-previous": "rain",
+"bait": "Stonefly Larva"
+}
 },
 {
 "n": "Warden of the Seven Hues",
 "kind": "legendary",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "Yanxia",
+"spot": "Prism Lake",
+"xy": [
+29.0,
+6.0
+],
+"time-start": 0,
+"time-end": 24,
+"bait": "Stonefly Larva",
+"req": "Must catch 3x Indigo Prismfish, 3x Firelight Goldfish, and 5x Green Prismfish first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Xenacanthus",
 "kind": "legendary",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Fringes",
+"spot": "Timmon Beck",
+"xy": [
+11.4,
+18.0
+],
+"time-start": 16.0,
+"time-end": 20.0,
+"bait": "Stonefly Larva",
+"req": "Mooch Hardhead Trout"
+}
 },
 {
 "n": "Stethacanthus",
 "kind": "legendary",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Lochs",
+"spot": "Loch Seld",
+"xy": [
+21.0,
+21.0
+],
+"time-start": 16.0,
+"time-end": 18.0,
+"bait": "Silkworm",
+"req": "Mooch Rock Saltfish Must catch 2x Sculptor first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "The Ruby Dragon",
 "kind": "legendary",
-"ex": "Stormblood"
+"ex": "Stormblood",
+"wiki": {
+"zone": "The Ruby Sea",
+"spot": "The Ruby Price",
+"xy": [
+38.4,
+38.5
+],
+"time-start": 4.0,
+"time-end": 8.0,
+"weather-current": "clouds",
+"weather-previous": "thunder",
+"bait": "Blue Bobbit",
+"req": "Mooch Ku'er"
+}
 },
 {
 "n": "Listracanthus",
 "kind": "legendary",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Lakeland",
+"spot": "The Isle of Ken",
+"xy": [
+9.0,
+37.0
+],
+"time-start": 16.0,
+"time-end": 24.0,
+"weather-current": "fog",
+"weather-previous": "clear skies,fair skies",
+"bait": "Baitbugs",
+"req": "Mooch The Jaws of Undeath"
+}
 },
 {
 "n": "Aquamaton",
 "kind": "legendary",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Kholusia",
+"spot": "Seagazer Shoals",
+"xy": [
+16.0,
+35.0
+],
+"time-start": 10.0,
+"time-end": 16.0,
+"weather-current": "gales",
+"weather-previous": "clear skies,fair skies",
+"bait": "Short Bill Minnow",
+"req": "Must catch 5x Shapeshifter and 1x Shadeshifter first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Cinder Surprise",
 "kind": "legendary",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Amh Araeng",
+"spot": "The River of Sand",
+"xy": [
+31.0,
+12.0
+],
+"time-start": 0.0,
+"time-end": 2.0,
+"weather-current": "heat waves",
+"weather-previous": "dust storms",
+"bait": "Desert Dessert Frog",
+"req": "Must catch 10x Sand Egg first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Ealad Skaan",
 "kind": "legendary",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "Il Mheg",
+"spot": "Longmirror Lake",
+"xy": [
+21.0,
+22.0
+],
+"time-start": 23.0,
+"time-end": 24.0,
+"weather-current": "clear skies",
+"weather-previous": "thunderstorms",
+"bait": "Baitbugs"
+}
 },
 {
 "n": "Greater Serpent of Ronka",
 "kind": "legendary",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Rak'tika Greatwood",
+"spot": "Lake Tusi Mek'ta",
+"xy": [
+28.0,
+13.0
+],
+"time-start": 10.0,
+"time-end": 12.0,
+"bait": "Robber Ball",
+"req": "Mooch Clown Tetra ┗ into Eryops ┗ into Priest of Yx'Lokwa"
+}
 },
 {
 "n": "Lancetfish",
 "kind": "legendary",
-"ex": "Shadowbringers"
+"ex": "Shadowbringers",
+"wiki": {
+"zone": "The Tempest",
+"spot": "Northwest Caliban Gorge",
+"xy": [
+11.0,
+10.0
+],
+"time-start": 0.0,
+"time-end": 2.0,
+"weather-current": "clouds",
+"weather-previous": "fair skies",
+"bait": "Squid Strip",
+"req": "Must catch 2x Mora Tecta first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Hyphalosaurus",
 "kind": "legendary",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Labyrinthos",
+"spot": "Deepmoat",
+"time-start": 9.0,
+"time-end": 12.0,
+"weather-current": "fair skies",
+"weather-previous": "clear skies",
+"bait": "Mayfly",
+"req": "Mooch Astacus Aetherius Must catch 3x Astacus Aetherius first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Gharlichthys",
 "kind": "legendary",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Thavnair",
+"spot": "The Perfumed Tides",
+"time-start": 14.0,
+"time-end": 16.0,
+"weather-current": "fair skies",
+"weather-previous": "showers",
+"bait": "Mackerel Strip",
+"req": "Must catch 12x Basilosaurus first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Snowy Parexus",
 "kind": "legendary",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Garlemald",
+"spot": "The Eblan Thaw",
+"time-start": 16.0,
+"time-end": 24.0,
+"weather-current": "snow",
+"weather-previous": "fair skies",
+"bait": "Mayfly",
+"req": "Must catch 3x Cerule Core first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Lopoceras Elegans",
 "kind": "legendary",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Mare Lamentorum",
+"spot": "The Chlorophospond",
+"time-start": 8.0,
+"time-end": 10.0,
+"weather-current": "fair skies",
+"weather-previous": "moon dust",
+"bait": "Chimera Worm"
+}
 },
 {
 "n": "Furcacauda",
 "kind": "legendary",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Elpis",
+"spot": "Lethe",
+"time-start": 15.5,
+"time-end": 16.5,
+"weather-current": "umbral wind",
+"weather-previous": "fair Skies",
+"bait": "Sky Spoon Lure"
+}
 },
 {
 "n": "Sidereal Whale",
 "kind": "legendary",
-"ex": "Endwalker"
+"ex": "Endwalker",
+"wiki": {
+"zone": "Ultima Thule",
+"spot": "Limne 3-β",
+"time-start": 0.0,
+"time-end": 8.0,
+"weather-current": "astromagnetic storm",
+"weather-previous": "umbral wind",
+"bait": "Stardust",
+"req": "Mooch Horizon Event Must catch 1x Phallaina, 2x Unbegotten, and 3x E.B.E.-9318 first to get fishers intuition Fisher's Intuition"
+}
 },
 {
 "n": "Ner Lar Dor",

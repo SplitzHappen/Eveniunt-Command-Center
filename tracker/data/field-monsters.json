@@ -1,51 +1,6 @@
 {
-"_about": "Monsters of Eureka, Bozja and the Occult Crescent: level, coordinates, element (Eureka), elemental weakness (Occult Crescent), spawn condition (weather or night) and aggro, from the Console Games Wiki's structured enemy data and Zadnor's area lists (read 2026-11-08); facts only.",
+"_about": "Monsters of Eureka, Bozja and the Occult Crescent: level or rank, coordinates, area, element (Eureka), elemental weakness (Occult Crescent), spawn condition (weather or night), aggro, family and loot, from the Console Games Wiki (its structured enemy data, each enemy's page, and Zadnor's area lists; read 2026-11-09). Bozjan Southern Front sprites and undead without a documented condition follow the rule Zadnor documents (marked rule). Facts only.",
 "zones": {
-"The Bozjan Southern Front": [
-{
-"n": "4th Legion Imaginifer",
-"lv": "I",
-"x": 16,
-"y": 17
-},
-{
-"n": "4th Legion Sky Armor",
-"lv": "I",
-"x": 16,
-"y": 17
-},
-{
-"n": "4th Legion Veles",
-"lv": "I",
-"x": 16,
-"y": 17
-},
-{
-"n": "Albeleo",
-"lv": "80"
-},
-{
-"n": "Bozjan Dullahan",
-"lv": "V",
-"spawn": "night"
-},
-{
-"n": "Bozjan Sabotender",
-"lv": "I"
-},
-{
-"n": "Bozjan Taipan",
-"lv": "IV"
-},
-{
-"n": "Pheremones",
-"lv": "??"
-},
-{
-"n": "Rotten Mandragora",
-"lv": "??"
-}
-],
 "Eureka Anemos": [
 {
 "n": "Abraxas",
@@ -54,100 +9,159 @@
 "y": 15.5
 },
 {
+"n": "Amemet",
+"lv": "8",
+"x": 14.4,
+"y": 15.9,
+"clan": "Vinegaroon"
+},
+{
 "n": "Anemos Anala",
 "lv": "21",
 "x": 35,
-"y": 18.5
+"y": 18.5,
+"aggro": "sight",
+"clan": "Anala",
+"race": "Elemental"
 },
 {
 "n": "Anemos Apa",
 "lv": "22",
 "x": 35.2,
 "y": 17.2,
-"el": "Water"
+"el": "Water",
+"clan": "Apa"
 },
 {
 "n": "Anemos Chaser",
 "lv": "11",
 "x": 18.7,
 "y": 27.7,
-"el": "Wind"
+"el": "Wind",
+"clan": "Dragonfly"
 },
 {
 "n": "Anemos Flan",
 "lv": "8",
 "x": 25.9,
 "y": 25.8,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Flan"
 },
 {
 "n": "Anemos Gremlin",
 "lv": "18",
 "x": 21.7,
 "y": 16,
-"el": "Earth"
+"el": "Earth",
+"clan": "Gremlin"
 },
 {
 "n": "Anemos Harpeia",
 "lv": "8",
 "x": 25.5,
-"y": 27
+"y": 27,
+"aggro": "sight",
+"clan": "Harpeia",
+"race": "Cloudkin"
 },
 {
 "n": "Anemos Pegasus",
 "lv": "22",
 "x": 35.4,
 "y": 16.6,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "| model-chara = 1065"
 },
 {
 "n": "Anemos Sanuwa",
 "lv": "17",
 "x": 18.4,
 "y": 14.8,
-"el": "Wind"
+"el": "Wind",
+"clan": "Sanuwa"
 },
 {
 "n": "Anemossling",
 "lv": "1",
 "x": 17.6,
 "y": 30.4,
-"el": "Wind"
+"el": "Wind",
+"aggro": "sight",
+"clan": "Mossling",
+"race": "Seedkin"
 },
 {
 "n": "Arioch of the Isle",
 "lv": "24",
 "x": 10,
 "y": 25.1,
-"el": "Ice"
+"el": "Ice",
+"clan": "Arioch"
 },
 {
 "n": "Bezoar",
 "lv": "3",
 "x": 13.5,
 "y": 29.7,
-"el": "Ice"
+"el": "Ice",
+"clan": "Antelope"
 },
 {
 "n": "Bigfoot",
 "lv": "12",
 "x": 18.9,
 "y": 26.8,
-"el": "Ice"
+"el": "Ice",
+"clan": "Mylodon"
+},
+{
+"n": "Bitoso of the Isle",
+"lv": "24",
+"x": 11.0,
+"y": 20.3,
+"clan": "Haagenti"
 },
 {
 "n": "Black Wolf",
 "lv": "9",
 "x": 19.3,
 "y": 29.6,
-"el": "Fire"
+"el": "Fire",
+"aggro": "sight",
+"clan": "Hound",
+"race": "Beastkin"
+},
+{
+"n": "Bombadeel",
+"lv": "10",
+"x": 28.8,
+"y": 20.0,
+"clan": "Bombadeel"
+},
+{
+"n": "Callisto",
+"lv": "5",
+"x": 27.8,
+"y": 23.3,
+"clan": "Cordyceps"
+},
+{
+"n": "Caym",
+"lv": "9",
+"x": 13.0,
+"y": 10.7,
+"clan": "Caym"
 },
 {
 "n": "Crystal Wolf",
 "lv": "9",
 "x": 19.3,
 "y": 29.6,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Zombie Hound",
+"race": "Ashkin"
 },
 {
 "n": "Darner",
@@ -161,56 +175,68 @@
 "lv": "10",
 "x": 24.9,
 "y": 24.7,
-"el": "Wind"
+"el": "Wind",
+"clan": "Wespe"
 },
 {
 "n": "Death Mask",
 "lv": "13",
 "x": 18.1,
 "y": 18,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Persona"
 },
 {
 "n": "Death Sprite",
 "lv": "13-54",
 "x": 19.7,
 "y": 13.1,
-"spawn": "Gloom"
+"spawn": "Gloom",
+"aggro": "sight",
+"clan": "Sprite"
 },
 {
 "n": "Defroster",
 "lv": "15",
 "x": 29,
 "y": 20,
-"el": "Fire"
+"el": "Fire",
+"aggro": "sight"
 },
 {
 "n": "Dhalmel of Nightmares",
 "lv": "20",
 "x": 30.5,
 "y": 12.7,
-"el": "Earth"
+"el": "Earth",
+"clan": "Dhalmel"
 },
 {
 "n": "Drought Dweller",
 "lv": "20",
 "x": 7.8,
 "y": 21.1,
-"el": "Earth"
+"el": "Earth",
+"clan": "Dhara"
 },
 {
 "n": "Dud",
 "lv": "16",
 "x": 35.2,
 "y": 19.7,
-"el": "Fire"
+"el": "Fire",
+"clan": "Bomb"
 },
 {
 "n": "Duskfall Bhoot",
 "lv": "8",
 "x": 27.6,
 "y": 25.6,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Bhoot",
+"race": "Ashkin",
+"spawn": "Night"
 },
 {
 "n": "Duskfall Dullahan",
@@ -218,42 +244,58 @@
 "x": 20,
 "y": 13,
 "el": "Fire",
-"spawn": "night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Dullahan",
+"race": "Soulkin"
 },
 {
 "n": "Duskfall Mummy",
 "lv": "14",
 "x": 17.8,
 "y": 17,
-"el": "Fire"
+"el": "Fire",
+"clan": "Mummy"
 },
 {
 "n": "Duskfall Skeleton",
 "lv": "10",
 "x": 18.1,
 "y": 24.6,
-"el": "Fire"
+"el": "Fire",
+"clan": "Fell Knight"
 },
 {
 "n": "Eurekan Dahak",
 "lv": "20",
 "x": 26.6,
 "y": 13.4,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Dahak"
 },
 {
 "n": "Eurekan Screamer",
 "lv": "2",
 "x": 14.4,
 "y": 29.2,
-"el": "Wind"
+"el": "Wind",
+"aggro": "sight",
+"clan": "Vulture",
+"race": "Cloudkin"
+},
+{
+"n": "Fafnir",
+"lv": "17",
+"x": 34.6,
+"y": 21.9
 },
 {
 "n": "Ferromantoise",
 "lv": "13",
 "x": 24.7,
 "y": 20.7,
-"el": "Earth"
+"el": "Earth",
+"clan": "Adamantoise"
 },
 {
 "n": "Flowering Sabotender (Eureka Anemos)",
@@ -268,104 +310,176 @@
 "x": 35,
 "y": 21,
 "el": "Fire",
-"spawn": "night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Zombie Dragon",
+"race": "Ashkin"
 },
 {
 "n": "Four-eyes",
 "lv": "23",
 "x": 10,
 "y": 26,
-"el": "Ice"
+"el": "Ice",
+"aggro": "sight",
+"clan": "Giant Corse",
+"race": "Ashkin"
 },
 {
 "n": "Gardenkeeper",
 "lv": "15",
 "x": 14.6,
 "y": 12.8,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Marolith",
+"race": "Soulkin"
 },
 {
 "n": "Glacier Golem",
 "lv": "16",
 "x": 17.6,
 "y": 15.3,
-"el": "Ice"
+"el": "Ice",
+"clan": "Ice Golem"
 },
 {
 "n": "Glade Wivre",
 "lv": "6",
 "x": 27.1,
 "y": 29.4,
-"el": "Earth"
+"el": "Earth",
+"clan": "Wivre"
 },
 {
 "n": "Guud Suud",
 "lv": "23",
 "x": 10.4,
 "y": 16.3,
-"el": "Wind"
+"el": "Wind",
+"clan": "Muud Suud"
+},
+{
+"n": "Hazmat",
+"lv": "16",
+"x": 35.2,
+"y": 19.7,
+"clan": "Progenitrix"
 },
 {
 "n": "Heartbroken Ochu",
 "lv": "3",
 "x": 14,
 "y": 27.6,
-"el": "Wind"
+"el": "Wind",
+"aggro": "sight",
+"clan": "Ochu",
+"race": "Seedkin"
+},
+{
+"n": "Henbane",
+"lv": "17",
+"x": 22.0,
+"y": 14.5,
+"aggro": "sight",
+"clan": "Belladonna",
+"race": "Seedkin"
 },
 {
 "n": "Hybrid Hog",
 "lv": "8",
 "x": 13.9,
 "y": 19.6,
-"el": "Fire"
+"el": "Fire",
+"clan": "Boar"
 },
 {
 "n": "Ignis Fatuus",
 "lv": "1",
 "x": 16.1,
 "y": 31.1,
-"el": "Fire"
+"el": "Fire",
+"aggro": "sight",
+"clan": "Wisp",
+"race": "Ashkin"
 },
 {
 "n": "Irregular Plasmoid",
 "lv": "7",
 "x": 31.1,
 "y": 26,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Plasmoid"
+},
+{
+"n": "Jahannam",
+"lv": "7",
+"x": 18.5,
+"y": 19.6,
+"clan": "Anila"
 },
 {
 "n": "Judgmental Floret",
 "lv": "12",
 "x": 22.2,
 "y": 14.9,
-"el": "Ice"
+"el": "Ice",
+"clan": "Morbol"
 },
 {
 "n": "Judgmental Hip",
 "lv": "12",
 "x": 22.2,
-"y": 14.9
+"y": 14.9,
+"clan": "| class ="
+},
+{
+"n": "Judgmental Julika",
+"lv": "12",
+"x": 21.4,
+"y": 14.2,
+"clan": "Morbol"
 },
 {
 "n": "Khor Claw",
 "lv": "16",
 "x": 24.5,
 "y": 18.5,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Karlabos|race=Wavekin"
+},
+{
+"n": "King Hazmat",
+"lv": "16",
+"x": 35.2,
+"y": 19.7,
+"clan": "Progenitrix"
+},
+{
+"n": "Lamashtu",
+"lv": "19",
+"x": 8.2,
+"y": 25.3,
+"clan": "Calofisteri"
 },
 {
 "n": "Lentic",
 "lv": "3",
 "x": 22.6,
 "y": 32.6,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Gigantoad",
+"race": "Wavekin"
 },
 {
 "n": "Leopard",
 "lv": "11",
 "x": 21.1,
 "y": 26.8,
-"el": "Fire"
+"el": "Fire",
+"clan": "Bandersnatch"
 },
 {
 "n": "Lynx",
@@ -379,102 +493,146 @@
 "lv": "21",
 "x": 31.9,
 "y": 16.7,
-"el": "Wind"
+"el": "Wind",
+"clan": "Enchanted Fan"
 },
 {
 "n": "Mana Bomb",
 "lv": "6",
 "x": 27.5,
 "y": 28.3,
-"el": "Fire"
+"el": "Fire",
+"clan": "Bomb"
 },
 {
 "n": "Mana Grenade",
 "lv": "9",
 "x": 23.7,
 "y": 28.8,
-"el": "Ice"
+"el": "Ice",
+"clan": "Bomb"
 },
 {
 "n": "Mighty Craklaw",
 "lv": "23",
 "x": 11,
 "y": 27.1,
-"el": "Water"
+"el": "Water",
+"clan": "Craklaw"
 },
 {
 "n": "Migratory Chapuli",
 "lv": "7",
 "x": 28.8,
 "y": 26.7,
-"el": "Wind"
+"el": "Wind",
+"clan": "Chapuli"
 },
 {
 "n": "Monoeye",
 "lv": "19",
 "x": 29.5,
-"y": 16
+"y": 16,
+"aggro": "sight",
+"clan": "Cyclops",
+"race": "Spoken"
+},
+{
+"n": "Number",
+"lv": "6",
+"x": 23.2,
+"y": 22.7,
+"clan": "Chimera Poppet"
 },
 {
 "n": "Old Goobbue",
 "lv": "14",
 "x": 24.9,
 "y": 19.9,
-"el": "Earth"
+"el": "Earth",
+"clan": "Goobbue"
 },
 {
 "n": "Old World Zu",
 "lv": "20",
 "x": 29.5,
-"y": 12.5
+"y": 12.5,
+"aggro": "sight",
+"clan": "Zu",
+"race": "Cloudkin"
+},
+{
+"n": "Pazuzu",
+"lv": "20",
+"x": 7.8,
+"y": 21.1,
+"aggro": "sight",
+"clan": "Pazuzu"
 },
 {
 "n": "Phobosuchus",
 "lv": "13",
 "x": 30.8,
 "y": 24.7,
-"el": "Water"
+"el": "Water",
+"clan": "Sarcosuchus"
 },
 {
 "n": "Plantoid",
 "lv": "19",
 "x": 27.2,
 "y": 16.2,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Plantoid",
+"race": "Seedkin"
 },
 {
 "n": "Pneumaflayer",
 "lv": "11",
 "x": 22.5,
-"y": 24.5
+"y": 24.5,
+"aggro": "sight",
+"clan": "Soulflayer",
+"race": "Voidsent"
 },
 {
 "n": "Poison Spore",
 "lv": "5",
 "x": 27.8,
 "y": 23.3,
-"el": "Earth"
+"el": "Earth",
+"clan": "| model-chara = 1199"
+},
+{
+"n": "Polyphemus",
+"aggro": "sight",
+"clan": "Cyclops",
+"race": "Spoken"
 },
 {
 "n": "Priest of Storms",
 "lv": "20",
 "x": 7.8,
 "y": 21.1,
-"el": "Fire"
+"el": "Fire",
+"clan": "Living Liquid"
 },
 {
 "n": "Primelephas",
 "lv": "25",
 "x": 8.6,
 "y": 24.9,
-"el": "Earth"
+"el": "Earth",
+"clan": "Primelephas"
 },
 {
 "n": "Quickwater Snake",
 "lv": "15",
 "x": 17.2,
 "y": 15.5,
-"el": "Water"
+"el": "Water",
+"clan": "Sea Serpent"
 },
 {
 "n": "Rain Sprite",
@@ -482,704 +640,382 @@
 "x": 27.7,
 "y": 28.2,
 "el": "Water",
-"spawn": "Showers"
+"spawn": "Showers",
+"aggro": "sight",
+"clan": "Sprite"
 },
 {
 "n": "Red Bonnet",
 "lv": "6",
 "x": 12.6,
 "y": 23,
-"el": "Earth"
+"el": "Earth",
+"clan": "Funguar"
 },
 {
 "n": "Rockfin",
 "lv": "21",
 "x": 32.7,
 "y": 22.8,
-"el": "Water"
+"el": "Water",
+"clan": "Rockfin"
+},
+{
+"n": "Sabotender Corrido (Eureka Anemos)",
+"lv": "1",
+"x": 14.1,
+"y": 21.8
 },
 {
 "n": "Scape Leech",
 "lv": "5",
 "x": 25.1,
 "y": 31.1,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "Leech"
 },
 {
 "n": "Sea Bishop",
 "lv": "7",
 "x": 30,
-"y": 27.5
+"y": 27.5,
+"aggro": "sight",
+"clan": "Sea Monk",
+"race": "Wavekin"
 },
 {
 "n": "Sea Pugil",
 "lv": "2",
 "x": 22,
-"y": 32
+"y": 32,
+"aggro": "sight",
+"clan": "Pugil",
+"race": "Wavekin"
 },
 {
 "n": "Seaboard Angler",
 "lv": "3",
 "x": 22.4,
-"y": 32.2
+"y": 32.2,
+"aggro": "sight",
+"clan": "Orobon",
+"race": "Wavekin"
 },
 {
 "n": "Seaboard Ogrebon",
 "lv": "4",
 "x": 23,
-"y": 33
+"y": 33,
+"aggro": "sight",
+"clan": "Ogrebon",
+"race": "Wavekin"
+},
+{
+"n": "Serket",
+"lv": "11",
+"x": 24.0,
+"y": 20.0
 },
 {
 "n": "Shadow Wing",
 "lv": "19",
 "x": 24.7,
 "y": 14,
-"el": "Fire"
+"el": "Fire",
+"aggro": "sight",
+"clan": "Gargoyle"
 },
 {
 "n": "Shadow Wraith",
 "lv": "25",
 "x": 9,
 "y": 20,
-"spawn": "night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Wraith",
+"race": "Ashkin"
+},
+{
+"n": "Simurgh's Strider",
+"lv": "15",
+"x": 28.5,
+"y": 12.9,
+"aggro": "sight",
+"clan": "Gagana"
 },
 {
 "n": "Skeleton Noble",
 "lv": "4",
 "x": 14.1,
-"y": 26.4
+"y": 26.4,
+"aggro": "sight",
+"clan": "Wight",
+"race": "Ashkin"
 },
 {
 "n": "Snowmelt Sprite",
 "lv": "28",
 "x": 30,
 "y": 26,
-"spawn": "fog"
+"spawn": "Fog",
+"aggro": "sight",
+"clan": "Sprite",
+"race": "Elemental",
+"loot": [
+"Conceptual Logogram"
+]
 },
 {
 "n": "Southwestern Wind",
 "lv": "20",
 "x": 7.8,
-"y": 21.1
+"y": 21.1,
+"clan": "| class ="
 },
 {
 "n": "Spangencrab",
 "lv": "14",
 "x": 29,
 "y": 21.3,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "Sallet Crab"
 },
 {
 "n": "Squib",
 "lv": "1",
 "x": 21.3,
-"y": 32.6
+"y": 32.6,
+"aggro": "sight",
+"clan": "Squib",
+"race": "Vilekin"
 },
 {
 "n": "Stalker Ziz",
 "lv": "14",
 "x": 13,
-"y": 13
+"y": 13,
+"aggro": "sight",
+"clan": "Ziz",
+"race": "Scalekin"
 },
 {
 "n": "Tangie",
 "lv": "25",
 "x": 6.7,
 "y": 25.7,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "| model-chara = 2042"
+},
+{
+"n": "The Lord of Anemos",
+"lv": "2",
+"x": 29.6,
+"y": 26.9,
+"aggro": "sight",
+"clan": "Sea Monk"
+},
+{
+"n": "The White Rider",
+"lv": "13",
+"x": 20.2,
+"y": 13.5,
+"aggro": "sight",
+"clan": "Anchag"
 },
 {
 "n": "Traveling Gourmand",
 "lv": "15",
 "x": 29,
 "y": 20,
-"spawn": "night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Rotting Goobbue",
+"race": "Ashkin"
 },
 {
 "n": "Typhoon Sprite",
 "lv": "12",
 "x": 20,
 "y": 18.5,
-"spawn": "gales"
+"spawn": "Gales",
+"aggro": "sight",
+"clan": "sprite",
+"race": "elementals",
+"loot": [
+"Conceptual Logogram",
+"Inimical Logogram"
+]
+},
+{
+"n": "Vacuum Wave",
+"lv": "-",
+"x": 28.8,
+"y": 13.3,
+"aggro": "sight",
+"clan": "| model-chara = 1197"
 },
 {
 "n": "Val Antlion",
 "lv": "22",
 "x": 35.3,
 "y": 15.3,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Antlion"
 },
 {
 "n": "Val Bear",
 "lv": "10",
 "x": 26.5,
-"y": 22.5
+"y": 22.5,
+"aggro": "sight",
+"clan": "Bear",
+"race": "Beastkin"
 },
 {
 "n": "Val Biast",
 "lv": "9",
 "x": 24.6,
 "y": 26,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Drake"
 },
 {
 "n": "Val Biloko",
 "lv": "18",
 "x": 20.6,
 "y": 13.3,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Biloko"
 },
 {
 "n": "Val Imp",
 "lv": "5",
 "x": 25.4,
 "y": 31.1,
-"el": "Ice"
+"el": "Ice",
+"aggro": "sight",
+"clan": "Imp"
 },
 {
 "n": "Val Leshy",
 "lv": "12",
 "x": 19.9,
 "y": 26.7,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Leshy"
 },
 {
 "n": "Val Revenant",
 "lv": "1",
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Ghost"
 },
 {
 "n": "Val Specter",
 "lv": "24",
 "x": 7.5,
 "y": 26.5,
-"spawn": "night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Specter",
+"race": "Ashkin"
 },
 {
 "n": "Valbol",
 "lv": "4",
 "x": 13.3,
 "y": 28.7,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Morbol"
 },
 {
 "n": "Vesper Bat",
 "lv": "4",
 "x": 13,
-"y": 27
+"y": 27,
+"aggro": "sight",
+"clan": "Bat",
+"race": "Cloudkin"
 },
 {
 "n": "Void Crack",
 "lv": "6",
 "x": 23.3,
 "y": 22,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "| model-chara = 1208"
 },
 {
 "n": "Void Garm",
 "lv": "6",
 "x": 23.4,
 "y": 22,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Chimera"
 },
 {
 "n": "Void Spark",
 "lv": "18",
 "x": 8.2,
-"y": 17.9
+"y": 17.9,
+"aggro": "sight",
+"clan": "| model-chara = 1008"
 },
 {
 "n": "Voidscale",
 "lv": "23",
 "x": 9,
-"y": 18
+"y": 18,
+"aggro": "sight"
 },
 {
 "n": "Wild Baboulas",
 "lv": "10",
 "x": 24.1,
 "y": 24.8,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "Baboulas"
 },
 {
 "n": "Wooly Woodchuck",
 "lv": "2",
 "x": 15.5,
 "y": 28.6,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Rodent"
 },
 {
 "n": "Xurble",
 "lv": "5",
 "x": 14.4,
 "y": 24.7,
-"el": "Wind"
+"el": "Wind",
+"aggro": "sight",
+"clan": "Phurble",
+"race": "Elemental"
 },
 {
 "n": "Zuniceratops",
 "lv": "24",
 "x": 10.1,
 "y": 25.6,
-"el": "Earth"
-}
-],
-"Eureka Hydatos": [
-{
-"n": "Adulator",
-"lv": "??",
-"x": 8.1,
-"y": 21.8,
-"el": "Ice"
-},
-{
-"n": "Audacious Elbst",
-"lv": "??",
-"x": 13.8,
-"y": 21.6,
-"el": "Water"
-},
-{
-"n": "Barong's Fire",
-"lv": "??",
-"x": 32.2,
-"y": 25.3
-},
-{
-"n": "Crystal Claw",
-"lv": "65",
-"x": 32.5,
-"y": 21.5
-},
-{
-"n": "Dark Gaelicat",
-"lv": "53",
-"x": 13.9,
-"y": 24.6,
-"el": "Wind"
-},
-{
-"n": "Dark Gargoyle",
-"lv": "64",
-"x": 35.9,
-"y": 14.3,
-"el": "Lightning"
-},
-{
-"n": "Dark Rider",
-"lv": "57",
-"x": 7.3,
-"y": 20.9,
-"el": "Wind",
-"spawn": "Night"
-},
-{
-"n": "Dark Void Monk",
-"lv": "60",
-"x": 26,
-"y": 15
-},
-{
-"n": "Eo'ghrah",
-"lv": "57",
-"x": 7.1,
-"y": 17.9,
-"el": "Lightning"
-},
-{
-"n": "Eurekan Deathgaze",
-"lv": "50",
-"x": 20.5,
-"y": 16.3,
-"el": "Lightning"
-},
-{
-"n": "Faithless Guard",
-"lv": "??",
-"x": 36.3,
-"y": 14
-},
-{
-"n": "Flawless Bubble",
-"lv": "??",
-"x": 10.8,
-"y": 25.6
-},
-{
-"n": "Gorpokkur",
-"lv": "60",
-"x": 22.4,
-"y": 16.5,
-"el": "Wind"
-},
-{
-"n": "Haokah Followed",
-"lv": "??",
-"x": 13.8,
-"y": 21.6,
-"el": "Water"
-},
-{
-"n": "Haokah Unburdened",
-"lv": "??",
-"x": 13.8,
-"y": 21.6,
-"el": "Water"
-},
-{
-"n": "Hydatos Delphine",
-"lv": "64",
-"x": 38,
-"y": 14
-},
-{
-"n": "Hydatos Delphyne",
-"lv": "64",
-"x": 36.6,
-"y": 13.3,
-"el": "Fire"
-},
-{
-"n": "Hydatos Elbst",
-"lv": "54",
-"x": 15.4,
-"y": 27,
-"el": "Water"
-},
-{
-"n": "Hydatos Gigantopithecus",
-"lv": "62",
-"x": 33.7,
-"y": 26.5,
-"el": "Fire"
-},
-{
-"n": "Hydatos Grenade",
-"lv": "53",
-"x": 23.7,
-"y": 20.8,
-"el": "Earth"
-},
-{
-"n": "Hydatos Nix",
-"lv": "52",
-"x": 15.5,
-"y": 21.3,
-"el": "Earth"
-},
-{
-"n": "Hydatos Peiste",
-"lv": "64",
-"x": 32.2,
-"y": 15.9,
-"el": "Wind"
-},
-{
-"n": "Hydatos Primelephas",
-"lv": "56",
-"x": 10.5,
-"y": 18
-},
-{
-"n": "Hydatos Pudding",
-"lv": "51",
-"x": 22.7,
-"y": 18.2,
-"el": "Earth"
-},
-{
-"n": "Hydatos Slug",
-"lv": "51",
-"x": 15.6,
-"y": 18,
-"el": "Water"
-},
-{
-"n": "Hydatos Squib",
-"lv": "61",
-"x": 28.9,
-"y": 15.8,
-"el": "Water"
-},
-{
-"n": "Hydatos Tsanahale",
-"lv": "55",
-"x": 11.5,
-"y": 27.3,
-"el": "Wind"
-},
-{
-"n": "Hydatos Vepar",
-"lv": "53",
-"x": 15.8,
-"y": 28,
-"el": "Water"
-},
-{
-"n": "Hydatos Wraith",
-"lv": "60",
-"x": 25,
-"y": 17,
-"spawn": "night"
-},
-{
-"n": "Hydatos Zebu",
-"lv": "65",
-"x": 34.7,
-"y": 20.5,
-"el": "Earth"
-},
-{
-"n": "Hydatos Ziz",
-"lv": "52",
-"x": 17.4,
-"y": 24.2,
-"el": "Fire"
-},
-{
-"n": "Icicle",
-"lv": "??",
-"x": 32.8,
-"y": 19.5
-},
-{
-"n": "King's Jester",
-"lv": "??",
-"x": 29.1,
-"y": 23,
-"el": "Lightning"
-},
-{
-"n": "King's Pike",
-"lv": "??",
-"x": 29.1,
-"y": 23,
-"el": "Lightning"
-},
-{
-"n": "Laboratory Coeurl",
-"lv": "51",
-"x": 21.6,
-"y": 18.4,
-"el": "Fire"
-},
-{
-"n": "Laboratory Jackal",
-"lv": "63",
-"x": 36.5,
-"y": 24.6,
-"el": "Ice"
-},
-{
-"n": "Laboratory Lion",
-"lv": "63",
-"x": 35,
-"y": 24.5
-},
-{
-"n": "Laboratory Rat",
-"lv": "54",
-"x": 14,
-"y": 27,
-"el": "Ice"
-},
-{
-"n": "Lake Yabby",
-"lv": "57",
-"x": 5.3,
-"y": 18.8,
-"el": "Water"
-},
-{
-"n": "Lifeless Slave",
-"lv": "??",
-"x": 36.3,
-"y": 14
-},
-{
-"n": "Mammet 013BL",
-"lv": "58",
-"x": 4,
-"y": 14.6,
-"el": "Ice"
-},
-{
-"n": "Nestless Cockerel",
-"lv": "54",
-"x": 24.9,
-"y": 25.9,
-"el": "Wind"
-},
-{
-"n": "Nomadic Matanga",
-"lv": "55",
-"x": 11.1,
-"y": 21.5,
-"el": "Earth"
-},
-{
-"n": "Northern Tiger",
-"lv": "59",
-"x": 6,
-"y": 26
-},
-{
-"n": "Paralarva",
-"lv": "??",
-"x": 10.8,
-"y": 25.6,
-"el": "Water"
-},
-{
-"n": "Phuabo",
-"lv": "??",
-"x": 18.7,
-"y": 28.4,
-"el": "Wind"
-},
-{
-"n": "Plume Portentious",
-"lv": "??",
-"x": 7.1,
-"y": 14.5
-},
-{
-"n": "Rusted Dreadnaught",
-"lv": "58",
-"x": 4.2,
-"y": 16.6,
-"el": "Fire"
-},
-{
-"n": "Sabotender Mariachi",
-"lv": "50",
-"x": 19.1,
-"y": 14.9,
-"el": "Earth"
-},
-{
-"n": "Samurai Corpse",
-"lv": "63",
-"x": 35.4,
-"y": 24.7,
-"el": "Water",
-"spawn": "Night"
-},
-{
-"n": "Shugen Tengu",
-"lv": "59",
-"x": 7.9,
-"y": 29.4,
-"el": "Wind"
-},
-{
-"n": "Soulless Adventurer",
-"lv": "54",
-"x": 12.8,
-"y": 26.6,
-"el": "Ice",
-"spawn": "Night"
-},
-{
-"n": "Soulless Researcher",
-"lv": "52",
-"x": 18.6,
-"y": 25.7,
-"el": "Ice",
-"spawn": "Night"
-},
-{
-"n": "Thor the Lost",
-"lv": "61",
-"x": 30.3,
-"y": 15.2,
-"el": "Lightning"
-},
-{
-"n": "Tigerhawk",
-"lv": "62",
-"x": 32.5,
-"y": 26.5
-},
-{
-"n": "Unfound Ogre",
-"lv": "62",
-"x": 29.3,
-"y": 26.3,
-"el": "Ice"
-},
-{
-"n": "Val Antelope",
-"lv": "56",
-"x": 11.9,
-"y": 20.5,
-"el": "Fire"
-},
-{
-"n": "Val Chigoe",
-"lv": "52",
-"x": 18.7,
-"y": 25.7,
-"el": "Wind"
-},
-{
-"n": "Val Mantis",
-"lv": "60",
-"x": 22.8,
-"y": 17.2,
-"el": "Ice"
-},
-{
-"n": "Val Mole",
-"lv": "61",
-"x": 28.6,
-"y": 15.5,
-"el": "Earth"
-},
-{
-"n": "Val Nanka",
-"lv": "50",
-"x": 21.4,
-"y": 15.6,
-"el": "Water"
-},
-{
-"n": "Val Nullchu",
-"lv": "57",
-"x": 7,
-"y": 22
-},
-{
-"n": "Val Tulihand",
-"lv": "56",
-"x": 8.5,
-"y": 19.6,
-"el": "Ice"
-},
-{
-"n": "Vivid Gastornis",
-"lv": "58",
-"x": 7,
-"y": 15
-},
-{
-"n": "Void Wyvern",
-"lv": "65",
-"x": 29.9,
-"y": 18.7,
-"el": "Lightning"
-},
-{
-"n": "Xzomit",
-"lv": "55",
-"x": 11,
-"y": 25
-},
-{
-"n": "Zu Nestling",
-"lv": "63",
-"x": 37.7,
-"y": 23.8,
-"el": "Wind"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Triceratops",
+"race": "Scalekin"
 }
 ],
 "Eureka Pagos": [
@@ -1187,47 +1023,64 @@
 "n": "Ameretat",
 "lv": "40",
 "x": 22,
-"y": 14
+"y": 14,
+"aggro": "sight",
+"clan": "Morbol",
+"race": "Seedkin"
 },
 {
 "n": "Anapos",
 "lv": "??",
 "x": 34,
 "y": 21,
-"el": "Water"
+"el": "Water",
+"clan": "Apa",
+"race": "Elemental"
 },
 {
 "n": "Arch Angra Mainyu",
 "lv": "??",
 "x": 24.4,
 "y": 25.3,
-"el": "Wind"
+"el": "Wind",
+"clan": "Ahriman",
+"race": "Voidsent"
 },
 {
 "n": "Asag",
 "lv": "??",
 "x": 10.5,
 "y": 10.5,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Muud Suud",
+"race": "Voidsent"
 },
 {
 "n": "Ash Dragon",
 "lv": "??",
 "x": 29,
 "y": 30,
-"el": "Fire"
+"el": "Fire",
+"clan": "Dahak",
+"race": "Voidsent"
 },
 {
 "n": "Blood Demon",
 "lv": "27",
 "x": 30,
-"y": 30
+"y": 30,
+"aggro": "sight",
+"clan": "Arch Demon",
+"race": "Voidsent"
 },
 {
 "n": "Blubber Eyes",
 "lv": "30",
 "x": 29,
-"y": 22.5
+"y": 22.5,
+"aggro": "sight",
+"clan": "Hecteyes",
+"race": "Voidsent"
 },
 {
 "n": "Copycat Cassie",
@@ -1235,20 +1088,29 @@
 "x": 22,
 "y": 14.5,
 "el": "Ice",
-"spawn": "Blizzards"
+"spawn": "Blizzards",
+"aggro": "magic",
+"clan": "Rose",
+"race": "Seedkin"
 },
 {
 "n": "Demon of the Incunable",
 "lv": "27",
 "x": 24,
 "y": 26.5,
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Demon of the Tome",
+"race": "Voidsent"
 },
 {
 "n": "Elder Buffalo",
 "lv": "36",
 "x": 27,
-"y": 17
+"y": 17,
+"aggro": "sight",
+"clan": "Buffalo",
+"race": "Beastkin"
 },
 {
 "n": "Eldertaur",
@@ -1261,20 +1123,25 @@
 "n": "Frozen Void Dragon",
 "lv": "40",
 "el": "Ice",
-"aggro": "Sound"
+"aggro": "Sound",
+"clan": "| model-chara = 231"
 },
 {
 "n": "Gawper",
 "lv": "39",
 "x": 24.5,
-"y": 24.5
+"y": 24.5,
+"aggro": "sight",
+"race": "Ahriman"
 },
 {
 "n": "Glavoid",
 "lv": "??",
 "x": 32,
 "y": 26,
-"el": "Earth"
+"el": "Earth",
+"clan": "Worm",
+"race": "Vilekin"
 },
 {
 "n": "Hadhayosh",
@@ -1282,21 +1149,35 @@
 "x": 31.4,
 "y": 19,
 "el": "Lightning",
-"spawn": "Thunder"
+"spawn": "Thunder",
+"clan": "Behemoth",
+"race": "Beastkin"
 },
 {
 "n": "Hakutaku",
 "lv": "??",
 "x": 28.5,
 "y": 22.4,
-"el": "Fire"
+"el": "Fire",
+"clan": "Hecteyes",
+"race": "Voidsent"
+},
+{
+"n": "Happy Bunny",
+"lv": "-",
+"x": 24.1,
+"y": 26.2,
+"clan": "Happy Bunny",
+"race": "Elemental"
 },
 {
 "n": "Holy Cow",
 "lv": "??",
 "x": 26,
 "y": 17.1,
-"el": "Wind"
+"el": "Wind",
+"clan": "Dzo",
+"race": "Beastkin"
 },
 {
 "n": "Horus",
@@ -1304,13 +1185,19 @@
 "x": 25.5,
 "y": 20.2,
 "el": "Fire",
-"spawn": "Heat Waves"
+"spawn": "Heat Waves",
+"aggro": "sight",
+"clan": "Zu",
+"race": "Cloudkin"
 },
 {
 "n": "Huwasi",
 "lv": "31",
 "x": 17,
-"y": 16
+"y": 16,
+"aggro": "sight",
+"clan": "Huwasi",
+"race": "Soulkin"
 },
 {
 "n": "King Arthro",
@@ -1318,32 +1205,44 @@
 "x": 8.5,
 "y": 15.5,
 "el": "Water",
-"spawn": "Fog"
+"spawn": "Fog",
+"aggro": "sight",
+"clan": "Crab",
+"race": "Wavekin"
 },
 {
 "n": "King Igloo",
 "lv": "??",
 "x": 17.4,
 "y": 16.2,
-"el": "Ice"
+"el": "Ice",
+"clan": "Igloo",
+"race": "Soulkin"
 },
 {
 "n": "Lab Minotaur",
 "lv": "35",
 "x": 13.5,
-"y": 18.5
+"y": 18.5,
+"aggro": "sight",
+"clan": "Minotaur",
+"race": "Chimera"
 },
 {
 "n": "Lesser Void Dragon",
 "lv": "37",
 "x": 30.5,
-"y": 18.5
+"y": 18.5,
+"aggro": "sight",
+"race": "Dragon"
 },
 {
 "n": "Louhi",
 "lv": "70",
 "x": 36.4,
-"y": 19.3
+"y": 19.3,
+"clan": "| model-chara = 2266",
+"race": "Voidsent"
 },
 {
 "n": "Mindertaur",
@@ -1356,65 +1255,92 @@
 "n": "Pagos Billygoat",
 "lv": "33",
 "x": 10.5,
-"y": 19.5
+"y": 19.5,
+"aggro": "sight",
+"clan": "Aldgoat",
+"race": "Beastkin"
 },
 {
 "n": "Surabhi",
 "lv": "??",
 "x": 10,
 "y": 18.2,
-"el": "Earth"
+"el": "Earth",
+"clan": "Yak",
+"race": "Beastkin"
 },
 {
 "n": "Taxim",
 "lv": "??",
 "x": 25,
 "y": 28,
-"el": "Earth"
+"el": "Earth",
+"clan": "Giant Corse",
+"race": "Ashkin"
 },
 {
 "n": "The Snow Queen",
 "lv": "??",
 "x": 21,
 "y": 26,
-"el": "Ice"
+"el": "Ice",
+"clan": "Yukinko",
+"race": "Seedkin"
 },
 {
 "n": "Val Corpse",
 "lv": "39",
 "x": 36,
 "y": 19,
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Zombie",
+"race": "Ashkin"
 },
 {
 "n": "Val Snipper",
 "lv": "34",
 "x": 9,
-"y": 16
+"y": 16,
+"aggro": "sight",
+"clan": "Megalocrab",
+"race": "Wavekin"
 },
 {
 "n": "Val Worm",
 "lv": "28",
 "x": 32.5,
-"y": 27.5
+"y": 27.5,
+"aggro": "sight",
+"clan": "Worm",
+"race": "Vilekin"
 },
 {
 "n": "Void Vouivre",
 "lv": "38",
 "x": 26,
-"y": 20
+"y": 20,
+"aggro": "sight",
+"clan": "Vouivre",
+"race": "Dragon"
 },
 {
 "n": "Wandering Opken",
 "lv": "32",
 "x": 11,
-"y": 11
+"y": 11,
+"aggro": "sight",
+"clan": "Opken",
+"race": "Spoken"
 },
 {
 "n": "Yukinko",
 "lv": "25",
 "x": 22,
-"y": 29
+"y": 29,
+"aggro": "sight",
+"clan": "Yukinko",
+"race": "Seedkin"
 }
 ],
 "Eureka Pyros": [
@@ -1422,69 +1348,96 @@
 "n": "Acane",
 "lv": "??",
 "x": 23.7,
-"y": 37.3
+"y": 37.3,
+"clan": "Calcabrina"
+},
+{
+"n": "Aetolus",
+"lv": "-",
+"x": 10.2,
+"y": 14.0,
+"clan": "Endymion"
 },
 {
 "n": "Ancient Voidragon",
 "lv": "54",
 "x": 37.9,
 "y": 14.1,
-"el": "Fire"
+"el": "Fire",
+"clan": "Lesser Dragon"
+},
+{
+"n": "Askalaphos",
+"lv": "-",
+"x": 19.3,
+"y": 28.1,
+"aggro": "sight",
+"clan": "Strix"
 },
 {
 "n": "Audience",
 "lv": "??",
 "x": 31.9,
 "y": 32,
-"el": "Wind"
+"el": "Wind",
+"clan": "Apanda"
 },
 {
 "n": "Bird Eater",
 "lv": "47",
 "x": 13,
-"y": 11
+"y": 11,
+"aggro": "sight",
+"clan": "Diremite",
+"race": "Vilekin"
 },
 {
 "n": "Blazewing",
 "lv": "41",
 "x": 24.6,
 "y": 31.9,
-"el": "Wind"
+"el": "Wind",
+"clan": "Tarantula Hawk"
 },
 {
 "n": "Cardian",
 "lv": "38",
 "x": 24.2,
 "y": 24.5,
-"el": "Earth"
+"el": "Earth",
+"clan": "Khun Shavar"
 },
 {
 "n": "Carrion Griffin",
 "lv": "??",
 "x": 23.9,
 "y": 30,
-"el": "Wind"
+"el": "Wind",
+"clan": "Griffin"
 },
 {
 "n": "Clipper",
 "lv": "45",
 "x": 24.2,
 "y": 18.9,
-"el": "Fire"
+"el": "Fire",
+"clan": "Lavashell"
 },
 {
 "n": "Cobalt Ember",
 "lv": "??",
 "x": 35.5,
 "y": 6.1,
-"el": "Ice"
+"el": "Ice",
+"clan": "Fluturini"
 },
 {
 "n": "Crimson Ember",
 "lv": "??",
 "x": 35.5,
 "y": 6.1,
-"el": "Earth"
+"el": "Earth",
+"clan": "Fluturini"
 },
 {
 "n": "Dark Parthenope",
@@ -1492,55 +1445,81 @@
 "x": 20.7,
 "y": 11.2,
 "el": "Lightning",
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Parthenope"
 },
 {
 "n": "Dark Troubadour",
 "lv": "45",
 "x": 18,
 "y": 14.5,
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Troubadour (Genus)",
+"race": "Voidsent"
 },
 {
 "n": "Daughter of Glaukopis",
 "lv": "??",
 "x": 31.6,
 "y": 14.9,
-"el": "Fire"
+"el": "Fire",
+"clan": "Skatene"
 },
 {
 "n": "Dazzletype Magitek Vangob G-III",
 "lv": "??",
 "x": 21.8,
 "y": 8.4,
-"el": "Earth"
+"el": "Earth",
+"clan": "Vangob"
 },
 {
 "n": "Delphyne",
 "lv": "50-51",
 "x": 21.7,
 "y": 7.4,
-"el": "Water"
+"el": "Water",
+"clan": "Lamia"
 },
 {
 "n": "Demon's Elemental",
 "lv": "??",
 "x": 17.9,
-"y": 14.3
+"y": 14.3,
+"clan": "Sprite"
 },
 {
 "n": "Dingo",
 "lv": "48",
 "x": 14.5,
 "y": 8.5,
-"el": "Earth"
+"el": "Earth",
+"clan": "Canis Pugnax"
+},
+{
+"n": "Dux",
+"lv": "-",
+"x": 27.1,
+"y": 9.0,
+"aggro": "sight",
+"clan": "Vanara"
 },
 {
 "n": "Earth Familiar",
 "lv": "??",
 "x": 19.3,
 "y": 28.1,
-"el": "Earth"
+"el": "Earth",
+"clan": "Golem"
+},
+{
+"n": "Eldthurs",
+"lv": "-",
+"x": 14.5,
+"y": 6.1,
+"clan": "Yeti"
 },
 {
 "n": "Ember Sprite",
@@ -1548,27 +1527,49 @@
 "x": 12.8,
 "y": 29,
 "el": "Fire",
-"spawn": "Heat Waves"
+"spawn": "Heat Waves",
+"clan": "Sprite",
+"loot": [
+"Conceptual Logogram",
+"Mitigative Logogram"
+]
 },
 {
 "n": "Fabricated Singha",
 "lv": "53",
 "x": 30,
 "y": 17.1,
-"el": "Earth"
+"el": "Earth",
+"clan": "Singha"
 },
 {
 "n": "Firestone Golem",
 "lv": "??",
 "x": 23.9,
 "y": 30,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Living Rock"
 },
 {
 "n": "Flame Voidragon",
 "lv": "55",
 "el": "Fire",
-"aggro": "Sound"
+"aggro": "Sound",
+"clan": "| class ="
+},
+{
+"n": "Flauros",
+"lv": "-",
+"x": 29.1,
+"y": 29.6,
+"clan": "Verge Dragon"
+},
+{
+"n": "Gibbon",
+"lv": "37",
+"x": 23.2,
+"y": 26.1,
+"clan": "Opo-opo"
 },
 {
 "n": "Gibbon (Mob)",
@@ -1578,273 +1579,398 @@
 "el": "Water"
 },
 {
+"n": "Glaukopis",
+"lv": "-",
+"x": 31.6,
+"y": 14.9,
+"clan": "Skatene"
+},
+{
 "n": "Graffi",
 "lv": "??",
 "x": 23.7,
-"y": 37.3
+"y": 37.3,
+"clan": "Calcabrina"
+},
+{
+"n": "Graffiacane",
+"lv": "-",
+"x": 23.7,
+"y": 37.3,
+"clan": "Calcabrina"
 },
 {
 "n": "Haokah Unbound",
 "lv": "40",
 "x": 28.6,
 "y": 30.8,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Haokah"
+},
+{
+"n": "Happy Bunny",
+"lv": "-",
+"x": 24.9,
+"y": 10.9,
+"clan": "Happy Bunny",
+"race": "Elemental"
+},
+{
+"n": "Henbane",
+"lv": "51",
+"x": 29.4,
+"y": 9.2,
+"aggro": "sight",
+"clan": "Belladonna",
+"race": "Seedkin"
 },
 {
 "n": "Hippomartimus",
 "lv": "42-43",
 "x": 26.3,
 "y": 35.3,
-"el": "Water"
+"el": "Water",
+"clan": "| model-chara = 1682"
 },
 {
 "n": "Illuminati Escapee",
 "lv": "50",
 "x": 22,
-"y": 8
+"y": 8,
+"aggro": "sight",
+"clan": "Gobbledygroper",
+"race": "Chimera"
+},
+{
+"n": "Iris (Eureka)",
+"lv": "-",
+"x": 21.5,
+"y": 11.9
 },
 {
 "n": "Islandhander",
 "lv": "46",
 "x": 10,
-"y": 15
+"y": 15,
+"aggro": "sight",
+"clan": "Endymion",
+"race": "Cloudkin"
 },
 {
 "n": "Karlabos of Pyros",
 "lv": "45-??",
 "x": 24.1,
 "y": 26.2,
-"el": "Earth"
+"el": "Earth",
+"clan": "Karlabos"
+},
+{
+"n": "Lamebrix Strikebocks (Eureka Pyros)",
+"lv": "-",
+"x": 21.4,
+"y": 8.3
+},
+{
+"n": "Lesath",
+"lv": "-",
+"x": 13.0,
+"y": 10.7,
+"clan": "Lava Scorpion"
+},
+{
+"n": "Leucosia",
+"lv": "-",
+"x": 26.6,
+"y": 26.3,
+"clan": "Lorelei"
 },
 {
 "n": "Lost Big Claw",
 "lv": "??",
 "x": 24.1,
 "y": 26.2,
-"el": "Water"
+"el": "Water",
+"clan": "Megalocrab"
 },
 {
 "n": "Lost Snipper",
 "lv": "??",
 "x": 24.1,
 "y": 26.2,
-"el": "Water"
+"el": "Water",
+"clan": "Megalocrab"
 },
 {
 "n": "Machairodus",
 "lv": "43",
 "x": 24,
 "y": 35,
-"el": "Earth"
+"el": "Earth",
+"clan": "Tiger"
 },
 {
 "n": "Matanga Castaway",
 "lv": "51",
 "x": 29,
-"y": 9
+"y": 9,
+"aggro": "sight",
+"race": "Matanga"
 },
 {
 "n": "Mechanoguardian",
 "lv": "40",
 "x": 29.7,
 "y": 28.6,
-"el": "Fire"
+"el": "Fire",
+"clan": "Kiyofusa"
 },
 {
 "n": "Mega-gris",
 "lv": "40",
 "x": 30.6,
 "y": 29.6,
-"el": "Earth"
+"el": "Earth",
+"clan": "Ymir"
 },
 {
 "n": "Northern Griffin",
 "lv": "36",
 "x": 19.5,
 "y": 27.6,
-"el": "Wind"
+"el": "Wind",
+"clan": "Griffin"
 },
 {
 "n": "Northern Grizzly",
 "lv": "49",
 "x": 15.8,
 "y": 9.8,
-"el": "Earth"
+"el": "Earth",
+"clan": "Bear"
 },
 {
 "n": "Northern Ray",
 "lv": "45",
 "x": 17.8,
 "y": 16.5,
-"el": "Water"
+"el": "Water",
+"clan": "Striped Ray"
 },
 {
 "n": "Northern Swallow",
 "lv": "49",
 "x": 21.5,
-"y": 12
+"y": 12,
+"aggro": "sight",
+"clan": "Sea Swallow",
+"race": "Wavekin"
 },
 {
 "n": "Overdue Tome",
 "lv": "44",
 "x": 19.5,
-"y": 30
+"y": 30,
+"aggro": "sight",
+"clan": "Tome (genus)",
+"race": "Soulkin"
+},
+{
+"n": "Penthesilea",
+"lv": "50",
+"x": 35.5,
+"y": 5.5,
+"clan": "| model-chara = 2358"
 },
 {
 "n": "Pure White Flame",
 "lv": "48",
 "x": 13.9,
 "y": 18.4,
-"el": "Water"
+"el": "Water",
+"clan": "White Flame"
 },
 {
 "n": "Pyros Apanda",
 "lv": "42",
 "x": 32,
-"y": 31.5
+"y": 31.5,
+"aggro": "sight",
+"clan": "Apanda",
+"race": "Voidsent"
 },
 {
 "n": "Pyros Bhoot",
 "lv": "38",
 "x": 27,
 "y": 26.5,
-"spawn": "night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Bhoot",
+"race": "Ashkin"
 },
 {
 "n": "Pyros Bombfish",
 "lv": "46",
 "x": 10.8,
 "y": 17.5,
-"el": "Water"
+"el": "Water",
+"clan": "Bombfish"
 },
 {
 "n": "Pyros Chelone",
 "lv": "41",
 "x": 28.3,
 "y": 32.9,
-"el": "Water"
+"el": "Water",
+"clan": "Adamantoise"
 },
 {
 "n": "Pyros Coeurl",
 "lv": "36",
 "x": 18.8,
 "y": 26.4,
-"el": "Fire"
+"el": "Fire",
+"clan": "Coeurl"
 },
 {
 "n": "Pyros Crab",
 "lv": "48",
 "x": 15,
-"y": 6.5
+"y": 6.5,
+"aggro": "sight",
+"clan": "Lava Crab",
+"race": "Scalekin"
 },
 {
 "n": "Pyros Gremlin",
 "lv": "39",
 "x": 13,
 "y": 30.9,
-"el": "Ice"
+"el": "Ice",
+"clan": "| model-chara = 396"
 },
 {
 "n": "Pyros Gulo Gulo",
 "lv": "47",
 "x": 13.8,
 "y": 13.7,
-"el": "Fire"
+"el": "Fire",
+"clan": "Miacid"
 },
 {
 "n": "Pyros Hardwood Golem",
 "lv": "??",
 "x": 24.9,
 "y": 10.9,
-"el": "Earth"
+"el": "Earth",
+"clan": "Tenaga"
 },
 {
 "n": "Pyros Hawk",
 "lv": "50",
 "x": 23.1,
 "y": 11.9,
-"el": "Wind"
+"el": "Wind",
+"clan": "Tarantula Hawk"
 },
 {
 "n": "Pyros Hecteyes",
 "lv": "54",
 "x": 11.5,
-"y": 34
+"y": 34,
+"aggro": "sight",
+"clan": "Hecteyes",
+"race": "Voidsent"
 },
 {
 "n": "Pyros Kongamato",
 "lv": "37",
 "x": 21.6,
 "y": 26.5,
-"el": "Wind"
+"el": "Wind",
+"clan": "Kongamato"
 },
 {
 "n": "Pyros Nanka",
 "lv": "47-48",
 "x": 11,
 "y": 14.6,
-"el": "Water"
+"el": "Water",
+"clan": "Ninki Nanka"
 },
 {
 "n": "Pyros Parthenope",
 "lv": "47",
 "x": 12.7,
 "y": 10.2,
-"el": "Lightning"
+"el": "Lightning",
+"clan": "Parthenope"
 },
 {
 "n": "Pyros Piranu",
 "lv": "50",
 "x": 24,
 "y": 7.9,
-"el": "Fire"
+"el": "Fire",
+"clan": "Ogrebon"
 },
 {
 "n": "Pyros Pudding",
 "lv": "46",
 "x": 10.1,
 "y": 16.1,
-"el": "Fire"
+"el": "Fire",
+"clan": "Flan"
 },
 {
 "n": "Pyros Serpent",
 "lv": "38",
 "x": 24,
 "y": 29.2,
-"el": "Water"
+"el": "Water",
+"clan": "Cobra"
 },
 {
 "n": "Pyros Shuck",
 "lv": "55",
 "x": 16.5,
-"y": 36
+"y": 36,
+"aggro": "sight",
+"clan": "Hound",
+"race": "Beastkin"
 },
 {
 "n": "Pyros Slime",
 "lv": "49",
 "x": 21,
 "y": 12.8,
-"el": "Fire"
+"el": "Fire",
+"clan": "Slime"
 },
 {
 "n": "Pyros Slug",
 "lv": "37",
 "x": 14.4,
 "y": 27.7,
-"el": "Earth"
+"el": "Earth",
+"clan": "Slug"
 },
 {
 "n": "Pyros Snake",
 "lv": "43",
 "x": 19.9,
 "y": 32.5,
-"el": "Water"
+"el": "Water",
+"clan": "Sea Serpent"
 },
 {
 "n": "Pyros Treant",
 "lv": "52",
 "x": 30,
-"y": 11.5
+"y": 11.5,
+"aggro": "sight",
+"clan": "Treant",
+"race": "Seedkin"
 },
 {
 "n": "Pyros Wolf",
@@ -1852,14 +1978,17 @@
 "x": 17.3,
 "y": 26.4,
 "el": "Ice",
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Zombie Hound"
 },
 {
 "n": "Pyros Wood Golem",
 "lv": "51-??",
 "x": 26.8,
 "y": 9.3,
-"el": "Earth"
+"el": "Earth",
+"clan": "Tenaga"
 },
 {
 "n": "Pyros Wraith",
@@ -1867,27 +1996,40 @@
 "x": 28.5,
 "y": 31.6,
 "el": "Ice",
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Wraith"
 },
 {
 "n": "Pyros Zoblyn",
 "lv": "35",
 "x": 17.8,
 "y": 26.6,
-"el": "Earth"
+"el": "Earth",
+"clan": "Coblyn"
 },
 {
 "n": "Rainbow Drop",
 "lv": "??",
 "x": 21.5,
-"y": 11.9
+"y": 11.9,
+"clan": "| class ="
 },
 {
 "n": "Red Eye",
 "lv": "44",
 "x": 19,
 "y": 31.4,
-"el": "Water"
+"el": "Water",
+"clan": "Ahriman"
+},
+{
+"n": "Skoll",
+"lv": "-",
+"x": 23.3,
+"y": 30.2,
+"clan": "Hoarhound",
+"race": "Beastkin"
 },
 {
 "n": "Snowstorm Sprite",
@@ -1895,13 +2037,18 @@
 "x": 13.1,
 "y": 14.8,
 "el": "Ice",
-"spawn": "Snow,Blizzards"
+"spawn": "Snow,Blizzards",
+"clan": "Sprite",
+"loot": [
+"Inimical Logogram"
+]
 },
 {
 "n": "Sobbing Sapling",
 "lv": "??",
 "x": 30,
-"y": 11.6
+"y": 11.6,
+"clan": "Bulb"
 },
 {
 "n": "Soulless Agent",
@@ -1909,7 +2056,9 @@
 "x": 31.4,
 "y": 16.7,
 "el": "Ice",
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Fell Knight"
 },
 {
 "n": "Soulless Pathfinder",
@@ -1917,174 +2066,2557 @@
 "x": 12,
 "y": 33.4,
 "el": "Ice",
-"spawn": "Night"
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Fell Knight"
 },
 {
 "n": "Spriggan Pankratiast",
 "lv": "35",
 "x": 17.2,
 "y": 26.3,
-"el": "Ice"
+"el": "Ice",
+"aggro": "sight",
+"clan": "Spriggan"
 },
 {
 "n": "Stegoceras",
 "lv": "53",
 "x": 36,
 "y": 14.1,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "Stegoceras"
 },
 {
 "n": "Stray Snipper",
 "lv": "39",
 "x": 26.1,
 "y": 25.6,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "Megalocrab"
 },
 {
 "n": "Sulphuric Slime",
 "lv": "??",
 "x": 14.5,
-"y": 6.1
+"y": 6.1,
+"clan": "Slime"
 },
 {
 "n": "Tear",
 "lv": "??",
 "x": 21.5,
-"y": 11.9
+"y": 11.9,
+"clan": "Sprite"
 },
 {
 "n": "The Defoliator",
 "lv": "38-39",
 "x": 12.7,
 "y": 29,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Wamoura"
+},
+{
+"n": "The Sophist",
+"lv": "-",
+"x": 31.9,
+"y": 32.0,
+"aggro": "sight",
+"clan": "Apanda"
+},
+{
+"n": "The Weeping Willow",
+"lv": "-",
+"x": 30.0,
+"y": 11.6,
+"aggro": "sight",
+"clan": "Treant"
 },
 {
 "n": "Thunderball",
 "lv": "??",
 "x": 27,
-"y": 9.1
+"y": 9.1,
+"clan": "| class ="
 },
 {
 "n": "Thundercloud",
 "lv": "??",
 "x": 27,
-"y": 9.1
+"y": 9.1,
+"clan": "| class ="
 },
 {
 "n": "Thunderstorm Sprite",
 "lv": "41",
 "x": 30,
 "y": 30,
-"spawn": "thunder"
+"spawn": "Thunder",
+"aggro": "sight",
+"clan": "Sprite",
+"race": "Elemental",
+"loot": [
+"Conceptual Logogram",
+"Fundamental Logogram",
+"Mitigative Logogram",
+"Inimical Logogram"
+]
 },
 {
 "n": "Val Bloodglider",
 "lv": "55",
 "x": 33,
-"y": 8
+"y": 8,
+"aggro": "sight",
+"clan": "Bloodglider",
+"race": "Vilekin"
 },
 {
 "n": "Val Gigantopithecus",
 "lv": "55",
 "x": 34.6,
 "y": 18.2,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Mylodon"
 },
 {
 "n": "Val Hornbill",
 "lv": "52",
 "x": 29.2,
 "y": 17.5,
-"el": "Wind"
+"el": "Wind",
+"aggro": "sight",
+"clan": "Hornbill"
 },
 {
 "n": "Val Icetrap",
 "lv": "36",
 "x": 14.8,
 "y": 27.7,
-"el": "Ice"
+"el": "Ice",
+"aggro": "sight",
+"clan": "Flying Trap"
 },
 {
 "n": "Val Mammoth",
 "lv": "42",
 "x": 27.9,
 "y": 34.4,
-"el": "Fire"
+"el": "Fire",
+"aggro": "sight",
+"clan": "Mammoth"
 },
 {
 "n": "Val Minotaur",
 "lv": "52",
 "x": 31.4,
 "y": 12.2,
-"el": "Fire"
+"el": "Fire",
+"aggro": "sight",
+"clan": "Cyclops"
 },
 {
 "n": "Val Skatene",
 "lv": "53",
 "x": 31.5,
-"y": 15
+"y": 15,
+"aggro": "sight",
+"clan": "Skatene",
+"race": "Cloudkin"
 },
 {
 "n": "Val Wraith",
 "lv": "42",
 "x": 29,
 "y": 32.8,
-"el": "Ice"
+"el": "Ice",
+"aggro": "sight",
+"clan": "Wraith"
 },
 {
 "n": "Val Yeti",
 "lv": "44",
 "x": 21.7,
 "y": 31.4,
-"el": "Ice"
+"el": "Ice",
+"aggro": "sight",
+"clan": "Yeti"
 },
 {
 "n": "Valking",
 "lv": "43",
 "x": 23.5,
-"y": 37
+"y": 37,
+"aggro": "sight",
+"clan": "Mammet",
+"race": "Soulkin"
 },
 {
 "n": "Voidskipper",
 "lv": "39",
 "x": 26.5,
 "y": 25.4,
-"el": "Wind"
+"el": "Wind",
+"aggro": "sight",
+"clan": "Gnat"
 },
 {
 "n": "Walking Sapling",
 "lv": "35",
 "x": 17.3,
 "y": 27.3,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Bulb"
 },
 {
 "n": "Wasserspeier",
 "lv": "41",
 "x": 24.2,
 "y": 34.7,
-"el": "Lightning"
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Hallowed Statue"
 },
 {
 "n": "Water Familiar",
 "lv": "??",
 "x": 19.3,
 "y": 28.1,
-"el": "Water"
+"el": "Water",
+"aggro": "sight",
+"clan": "Apa"
 },
 {
 "n": "Wind Familiar",
 "lv": "??",
 "x": 19.3,
-"y": 28.1
+"y": 28.1,
+"clan": "| class ="
+},
+{
+"n": "Ying-Yang",
+"lv": "-",
+"x": 11.9,
+"y": 33.8,
+"aggro": "sight",
+"clan": "Ying-Yang",
+"race": "Ashkin"
 },
 {
 "n": "Zebu",
 "lv": "54",
 "x": 33.8,
 "y": 14.8,
-"el": "Earth"
+"el": "Earth",
+"aggro": "sight",
+"clan": "Buffalo",
+"race": "Beastkin"
+}
+],
+"Eureka Hydatos": [
+{
+"n": "Adulator",
+"lv": "??",
+"x": 8.1,
+"y": 21.8,
+"el": "Ice",
+"clan": "Minotaur"
+},
+{
+"n": "Audacious Elbst",
+"lv": "??",
+"x": 13.8,
+"y": 21.6,
+"el": "Water",
+"clan": "Elbst"
+},
+{
+"n": "Barong",
+"lv": "-",
+"x": 32.2,
+"y": 25.3,
+"clan": "Lion"
+},
+{
+"n": "Barong's Fire",
+"lv": "??",
+"x": 32.2,
+"y": 25.3,
+"clan": "| class ="
+},
+{
+"n": "Ceto",
+"lv": "-",
+"x": 36.2,
+"y": 12.3,
+"clan": "Echidna"
+},
+{
+"n": "Crystal Claw",
+"lv": "65",
+"x": 32.5,
+"y": 21.5,
+"aggro": "sight",
+"clan": "Crystal Claw",
+"race": "Vilekin"
+},
+{
+"n": "Daphne",
+"lv": "-",
+"x": 24.2,
+"y": 19.0,
+"clan": "Yohi"
+},
+{
+"n": "Dark Gaelicat",
+"lv": "53",
+"x": 13.9,
+"y": 24.6,
+"el": "Wind",
+"clan": "Gaelicat"
+},
+{
+"n": "Dark Gargoyle",
+"lv": "64",
+"x": 35.9,
+"y": 14.3,
+"el": "Lightning",
+"clan": "Gargoyle"
+},
+{
+"n": "Dark Rider",
+"lv": "57",
+"x": 7.3,
+"y": 20.9,
+"el": "Wind",
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Anchag"
+},
+{
+"n": "Dark Void Monk",
+"lv": "60",
+"x": 26,
+"y": 15,
+"aggro": "sight",
+"clan": "Void Monk",
+"race": "Voidsent"
+},
+{
+"n": "Death Sprite",
+"lv": "54",
+"x": 14.2,
+"y": 26.8,
+"aggro": "sight",
+"clan": "Sprite"
+},
+{
+"n": "Eo'ghrah",
+"lv": "57",
+"x": 7.1,
+"y": 17.9,
+"el": "Lightning",
+"clan": "Ghrah"
+},
+{
+"n": "Eurekan Deathgaze",
+"lv": "50",
+"x": 20.5,
+"y": 16.3,
+"el": "Lightning",
+"clan": "Deathgaze"
+},
+{
+"n": "Faithless Guard",
+"lv": "??",
+"x": 36.3,
+"y": 14,
+"clan": "Lamia"
+},
+{
+"n": "Flawless Bubble",
+"lv": "??",
+"x": 10.8,
+"y": 25.6,
+"clan": "| model-chara = 737"
+},
+{
+"n": "Frostmane",
+"lv": "-",
+"x": 8.2,
+"y": 26.1,
+"clan": "Manticore"
+},
+{
+"n": "Gorpokkur",
+"lv": "60",
+"x": 22.4,
+"y": 16.5,
+"el": "Wind",
+"clan": "Korpokkur"
+},
+{
+"n": "Haokah Followed",
+"lv": "??",
+"x": 13.8,
+"y": 21.6,
+"el": "Water",
+"clan": "Haokah"
+},
+{
+"n": "Haokah Unburdened",
+"lv": "??",
+"x": 13.8,
+"y": 21.6,
+"el": "Water",
+"clan": "Haokah"
+},
+{
+"n": "Happy Bunny",
+"lv": "-",
+"x": 13.8,
+"y": 21.6,
+"clan": "Happy Bunny",
+"race": "Elemental"
+},
+{
+"n": "Hydatos Delphine",
+"lv": "64",
+"x": 38,
+"y": 14,
+"aggro": "sight",
+"race": "Voidsent|clan=Lilith"
+},
+{
+"n": "Hydatos Delphyne",
+"lv": "64",
+"x": 36.6,
+"y": 13.3,
+"el": "Fire",
+"clan": "Lamia"
+},
+{
+"n": "Hydatos Elbst",
+"lv": "54",
+"x": 15.4,
+"y": 27,
+"el": "Water",
+"clan": "Elbst"
+},
+{
+"n": "Hydatos Gigantopithecus",
+"lv": "62",
+"x": 33.7,
+"y": 26.5,
+"el": "Fire",
+"clan": "Vanara"
+},
+{
+"n": "Hydatos Grenade",
+"lv": "53",
+"x": 23.7,
+"y": 20.8,
+"el": "Earth",
+"clan": "Bomb"
+},
+{
+"n": "Hydatos Nix",
+"lv": "52",
+"x": 15.5,
+"y": 21.3,
+"el": "Earth",
+"clan": "Gigantoad"
+},
+{
+"n": "Hydatos Peiste",
+"lv": "64",
+"x": 32.2,
+"y": 15.9,
+"el": "Wind",
+"clan": "Peiste"
+},
+{
+"n": "Hydatos Primelephas",
+"lv": "56",
+"x": 10.5,
+"y": 18,
+"aggro": "sight",
+"clan": "Primelephas",
+"race": "Scalekin"
+},
+{
+"n": "Hydatos Pudding",
+"lv": "51",
+"x": 22.7,
+"y": 18.2,
+"el": "Earth",
+"clan": "Flan"
+},
+{
+"n": "Hydatos Slug",
+"lv": "51",
+"x": 15.6,
+"y": 18,
+"el": "Water",
+"clan": "Slug"
+},
+{
+"n": "Hydatos Squib",
+"lv": "61",
+"x": 28.9,
+"y": 15.8,
+"el": "Water",
+"clan": "Squib"
+},
+{
+"n": "Hydatos Tsanahale",
+"lv": "55",
+"x": 11.5,
+"y": 27.3,
+"el": "Wind",
+"clan": "Harpeia"
+},
+{
+"n": "Hydatos Vepar",
+"lv": "53",
+"x": 15.8,
+"y": 28,
+"el": "Water",
+"clan": "Pugil"
+},
+{
+"n": "Hydatos Wraith",
+"lv": "60",
+"x": 25,
+"y": 17,
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Wraith",
+"race": "Ashkin"
+},
+{
+"n": "Hydatos Zebu",
+"lv": "65",
+"x": 34.7,
+"y": 20.5,
+"el": "Earth",
+"clan": "Buffalo"
+},
+{
+"n": "Hydatos Ziz",
+"lv": "52",
+"x": 17.4,
+"y": 24.2,
+"el": "Fire",
+"clan": "Ziz"
+},
+{
+"n": "Icicle",
+"lv": "??",
+"x": 32.8,
+"y": 19.5,
+"clan": "| model-chara = 764"
+},
+{
+"n": "Khalamari",
+"lv": "-",
+"x": 10.8,
+"y": 25.6,
+"clan": "Xzomit"
+},
+{
+"n": "King Goldemar",
+"lv": "-",
+"x": 29.1,
+"y": 23.0,
+"clan": "Dvergr"
+},
+{
+"n": "King's Jester",
+"lv": "??",
+"x": 29.1,
+"y": 23,
+"el": "Lightning",
+"clan": "Zombie"
+},
+{
+"n": "King's Pike",
+"lv": "??",
+"x": 29.1,
+"y": 23,
+"el": "Lightning",
+"clan": "Zombie"
+},
+{
+"n": "Laboratory Coeurl",
+"lv": "51",
+"x": 21.6,
+"y": 18.4,
+"el": "Fire",
+"clan": "Coeurl"
+},
+{
+"n": "Laboratory Jackal",
+"lv": "63",
+"x": 36.5,
+"y": 24.6,
+"el": "Ice",
+"clan": "Hound"
+},
+{
+"n": "Laboratory Lion",
+"lv": "63",
+"x": 35,
+"y": 24.5,
+"aggro": "sight",
+"clan": "Lion",
+"race": "Beastkin"
+},
+{
+"n": "Laboratory Rat",
+"lv": "54",
+"x": 14,
+"y": 27,
+"el": "Ice",
+"clan": "Rodent"
+},
+{
+"n": "Lake Yabby",
+"lv": "57",
+"x": 5.3,
+"y": 18.8,
+"el": "Water",
+"clan": "Yabby"
+},
+{
+"n": "Leuke",
+"lv": "-",
+"x": 37.4,
+"y": 26.4,
+"clan": "Sawtooth"
+},
+{
+"n": "Lifeless Slave",
+"lv": "??",
+"x": 36.3,
+"y": 14,
+"clan": "Lamia"
+},
+{
+"n": "Mammet 013BL",
+"lv": "58",
+"x": 4,
+"y": 14.6,
+"el": "Ice",
+"clan": "Mammet"
+},
+{
+"n": "Molech",
+"lv": "-",
+"x": 8.1,
+"y": 21.8,
+"clan": "Minotaur"
+},
+{
+"n": "Nestless Cockerel",
+"lv": "54",
+"x": 24.9,
+"y": 25.9,
+"el": "Wind",
+"clan": "Zu"
+},
+{
+"n": "Nomadic Matanga",
+"lv": "55",
+"x": 11.1,
+"y": 21.5,
+"el": "Earth",
+"clan": "| model-chara = 1800"
+},
+{
+"n": "Northern Tiger",
+"lv": "59",
+"x": 6,
+"y": 26,
+"aggro": "sight",
+"clan": "Tiger",
+"race": "Beastkin"
+},
+{
+"n": "Ovni",
+"lv": "60",
+"x": 26.3,
+"y": 29.2,
+"clan": "Yovra",
+"race": "Wavekin"
+},
+{
+"n": "Paralarva",
+"lv": "??",
+"x": 10.8,
+"y": 25.6,
+"el": "Water",
+"clan": "Xzomit"
+},
+{
+"n": "Phuabo",
+"lv": "??",
+"x": 18.7,
+"y": 28.4,
+"el": "Wind",
+"clan": "Phuabo"
+},
+{
+"n": "Piasa",
+"lv": "-",
+"x": 7.1,
+"y": 14.5,
+"clan": "Bird of Paradise"
+},
+{
+"n": "Plume Portentious",
+"lv": "??",
+"x": 7.1,
+"y": 14.5,
+"clan": "| class ="
+},
+{
+"n": "Provenance Watcher",
+"lv": "-",
+"x": 32.8,
+"y": 19.5,
+"clan": "| model-chara = 2424"
+},
+{
+"n": "Rusted Dreadnaught",
+"lv": "58",
+"x": 4.2,
+"y": 16.6,
+"el": "Fire",
+"clan": "Clockwork Dreadnaught"
+},
+{
+"n": "Sabotender Mariachi",
+"lv": "50",
+"x": 19.1,
+"y": 14.9,
+"el": "Earth",
+"aggro": "sight",
+"clan": "Cactuar"
+},
+{
+"n": "Samurai Corpse",
+"lv": "63",
+"x": 35.4,
+"y": 24.7,
+"el": "Water",
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Hatamoto"
+},
+{
+"n": "Shugen Tengu",
+"lv": "59",
+"x": 7.9,
+"y": 29.4,
+"el": "Wind",
+"aggro": "sight",
+"clan": "Tengu"
+},
+{
+"n": "Snowstorm Sprite",
+"lv": "60",
+"x": 23.4,
+"y": 16.9,
+"clan": "Sprite",
+"loot": [
+"Inimical Logogram"
+]
+},
+{
+"n": "Soulless Adventurer",
+"lv": "54",
+"x": 12.8,
+"y": 26.6,
+"el": "Ice",
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Fell Knight"
+},
+{
+"n": "Soulless Researcher",
+"lv": "52",
+"x": 18.6,
+"y": 25.7,
+"el": "Ice",
+"spawn": "Night",
+"aggro": "sight",
+"clan": "Wight"
+},
+{
+"n": "Stegodon",
+"lv": "-",
+"x": 10.4,
+"y": 17.2,
+"aggro": "sight",
+"clan": "Primelephas"
+},
+{
+"n": "Thor the Lost",
+"lv": "61",
+"x": 30.3,
+"y": 15.2,
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Haokah"
+},
+{
+"n": "Tigerhawk",
+"lv": "62",
+"x": 32.5,
+"y": 26.5,
+"aggro": "sight",
+"clan": "Tarantula Hawk",
+"race": "Vilekin"
+},
+{
+"n": "Tristitia",
+"lv": "-",
+"x": 18.7,
+"y": 28.4,
+"aggro": "sight",
+"clan": "Phuabo"
+},
+{
+"n": "Unfound Ogre",
+"lv": "62",
+"x": 29.3,
+"y": 26.3,
+"el": "Ice",
+"aggro": "sight",
+"clan": "Ogre"
+},
+{
+"n": "Val Antelope",
+"lv": "56",
+"x": 11.9,
+"y": 20.5,
+"el": "Fire",
+"aggro": "sight",
+"clan": "Antelope",
+"race": "Beastkin"
+},
+{
+"n": "Val Chigoe",
+"lv": "52",
+"x": 18.7,
+"y": 25.7,
+"el": "Wind",
+"aggro": "sight",
+"clan": "Chigoe"
+},
+{
+"n": "Val Mantis",
+"lv": "60",
+"x": 22.8,
+"y": 17.2,
+"el": "Ice",
+"aggro": "sight",
+"clan": "Mantis"
+},
+{
+"n": "Val Mole",
+"lv": "61",
+"x": 28.6,
+"y": 15.5,
+"el": "Earth",
+"aggro": "sight",
+"clan": "Mole"
+},
+{
+"n": "Val Nanka",
+"lv": "50",
+"x": 21.4,
+"y": 15.6,
+"el": "Water",
+"aggro": "sight",
+"clan": "Diplocaulus"
+},
+{
+"n": "Val Nullchu",
+"lv": "57",
+"x": 7,
+"y": 22,
+"aggro": "sight",
+"clan": "Chichu",
+"race": "Seedkin"
+},
+{
+"n": "Val Tulihand",
+"lv": "56",
+"x": 8.5,
+"y": 19.6,
+"el": "Ice",
+"aggro": "sight",
+"clan": "Dragonfly"
+},
+{
+"n": "Vivid Gastornis",
+"lv": "58",
+"x": 7,
+"y": 15,
+"aggro": "sight",
+"clan": "Dodo",
+"race": "Cloudkin"
+},
+{
+"n": "Void Wyvern",
+"lv": "65",
+"x": 29.9,
+"y": 18.7,
+"el": "Lightning",
+"aggro": "sight",
+"clan": "Wyvern"
+},
+{
+"n": "Xzomit",
+"lv": "55",
+"x": 11,
+"y": 25,
+"aggro": "sight",
+"clan": "Xzomit"
+},
+{
+"n": "Zu Nestling",
+"lv": "63",
+"x": 37.7,
+"y": 23.8,
+"el": "Wind",
+"aggro": "sight",
+"clan": "Zu",
+"race": "Cloudkin"
+}
+],
+"The Bozjan Southern Front": [
+{
+"n": "4th Legion Armored Weapon",
+"lv": "80",
+"aggro": "sight",
+"clan": "Armored Weapon",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Avenger",
+"lv": "80",
+"aggro": "sight",
+"clan": "Avenger",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Death Claw",
+"lv": "80",
+"aggro": "sight",
+"clan": "Iron Claws",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Gunship",
+"lv": "80",
+"aggro": "sight",
+"clan": "Magitek Gunship",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Hexadrone",
+"lv": "80",
+"aggro": "sight",
+"clan": "Hexadrone",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Imaginifer",
+"lv": "I",
+"x": 16,
+"y": 17,
+"clan": "Midlander"
+},
+{
+"n": "4th Legion Nimrod",
+"lv": "80",
+"aggro": "sight",
+"clan": "Nimrod",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Roader",
+"lv": "80",
+"aggro": "sight",
+"clan": "Roader",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Scorpion",
+"lv": "80",
+"aggro": "sight",
+"clan": "Magitek Scorpion",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Sky Armor",
+"lv": "I",
+"x": 16,
+"y": 17,
+"clan": "Sky Armor"
+},
+{
+"n": "4th Legion Slasher",
+"lv": "80",
+"aggro": "sight",
+"clan": "Magitek Slasher",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Vanguard",
+"lv": "80",
+"aggro": "sight",
+"clan": "Magitek Vanguard",
+"loot": [
+"Bozjan Cluster"
+]
+},
+{
+"n": "4th Legion Veles",
+"lv": "I",
+"x": 16,
+"y": 17,
+"clan": "Midlander"
+},
+{
+"n": "Akbaba",
+"lv": "80",
+"clan": "Akbaba"
+},
+{
+"n": "Albeleo",
+"lv": "80",
+"clan": "Duskwight",
+"race": "Elezen"
+},
+{
+"n": "Armored Weapon Escort",
+"x": 27.7,
+"y": 29.3
+},
+{
+"n": "Bird of Barathrum",
+"lv": "80",
+"x": 24.8,
+"y": 13.3,
+"aggro": "sight",
+"clan": "Bird of Paradise",
+"loot": [
+"Forgotten Fragment of Violence"
+]
+},
+{
+"n": "Bozjan Antlion",
+"lv": "80",
+"x": 23.9,
+"y": 20.5,
+"aggro": "sight",
+"clan": "Antlion",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Anzu",
+"lv": "80",
+"x": 22.9,
+"y": 12.8,
+"aggro": "sight",
+"clan": "Zu",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Bandersnatch",
+"lv": "80",
+"x": 23.5,
+"y": 24.0,
+"aggro": "sight",
+"clan": "Bandersnatch",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Biast",
+"lv": "80",
+"x": 20.5,
+"y": 23.0,
+"aggro": "sight",
+"clan": "Drake",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Doblyn",
+"lv": "80",
+"x": 28.6,
+"y": 21.9,
+"aggro": "sight",
+"clan": "Coblyn",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Doll",
+"lv": "80",
+"x": 24.7,
+"y": 13.9,
+"aggro": "sight",
+"clan": "Tenaga",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Dullahan",
+"lv": "V",
+"spawn": "Night",
+"x": 31.5,
+"y": 15.8,
+"aggro": "sight",
+"clan": "Evil Armor",
+"loot": [
+"Forgotten Fragment of Care"
+]
+},
+{
+"n": "Bozjan Elasmoth",
+"lv": "80",
+"x": 25.0,
+"y": 15.5,
+"aggro": "sight",
+"clan": "Behemoth",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Elbst",
+"lv": "80",
+"x": 10.1,
+"y": 19.9,
+"aggro": "sight",
+"clan": "Elbst",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Geshunpest",
+"lv": "80",
+"x": 24.3,
+"y": 29.8,
+"aggro": "sight",
+"clan": "Geshunpest",
+"loot": [
+"Forgotten Fragment of Preparation"
+]
+},
+{
+"n": "Bozjan Goobbue",
+"lv": "80",
+"x": 18.5,
+"y": 14.5,
+"aggro": "sight",
+"clan": "Goobbue",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Gravekeeper",
+"lv": "80",
+"x": 19.0,
+"y": 17.5,
+"aggro": "sight",
+"clan": "Gravekeeper",
+"loot": [
+"Forgotten Fragment of Violence"
+],
+"spawn": "Night"
+},
+{
+"n": "Bozjan Korrigan",
+"lv": "80",
+"x": 22.2,
+"y": 26.4,
+"aggro": "passive",
+"clan": "Mandragora",
+"loot": [
+"Forgotten Fragment of Skill"
+]
+},
+{
+"n": "Bozjan Matamata",
+"lv": "80",
+"x": 31.1,
+"y": 26.7,
+"aggro": "passive",
+"clan": "Matamata",
+"loot": [
+"Forgotten Fragment of Skill"
+]
+},
+{
+"n": "Bozjan Monitor",
+"lv": "80",
+"x": 18.4,
+"y": 15.1,
+"aggro": "sight",
+"clan": "Draco",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Mudpuppy",
+"lv": "80",
+"x": 22.6,
+"y": 29.1,
+"aggro": "passive",
+"clan": "Salamander",
+"loot": [
+"Forgotten Fragment of Skill"
+]
+},
+{
+"n": "Bozjan Nepenthes",
+"lv": "80",
+"x": 16.5,
+"y": 29.0,
+"aggro": "passive",
+"clan": "Snapweed",
+"loot": [
+"Forgotten Fragment of Skill"
+]
+},
+{
+"n": "Bozjan Ochu",
+"lv": "80",
+"x": 11.0,
+"y": 16.4,
+"aggro": "sight",
+"clan": "Ochu",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Orobon",
+"lv": "80",
+"x": 16.8,
+"y": 29.4,
+"aggro": "passive",
+"clan": "Orobon",
+"loot": [
+"Forgotten Fragment of Skill"
+]
+},
+{
+"n": "Bozjan Phobosuchus",
+"lv": "80",
+"x": 12.9,
+"y": 19.6,
+"aggro": "sight",
+"clan": "Sarcosuchus",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Ranunculus",
+"lv": "80",
+"x": 9.4,
+"y": 17.3,
+"aggro": "sight",
+"clan": "Anemone",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Rider",
+"lv": "80",
+"x": 22.5,
+"y": 15.5,
+"aggro": "sight",
+"clan": "Mifune",
+"loot": [
+"Forgotten Fragment of Violence"
+],
+"spawn": "Night"
+},
+{
+"n": "Bozjan Sabotender",
+"lv": "I",
+"x": 29.6,
+"y": 19.3,
+"aggro": "sight",
+"clan": "Cactuar",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Screamer",
+"lv": "80",
+"x": 10.7,
+"y": 21.6,
+"aggro": "sight",
+"clan": "Vulture",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Snake",
+"lv": "80",
+"x": 12.8,
+"y": 14.6,
+"aggro": "sight",
+"clan": "Sea Serpent",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Taipan",
+"lv": "IV",
+"x": 15.2,
+"y": 24.0,
+"aggro": "sight",
+"clan": "Bhujamga",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Tormentor",
+"lv": "80",
+"x": 27.9,
+"y": 16.8,
+"aggro": "sight",
+"clan": "Lizard",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Wadjet",
+"lv": "80",
+"x": 16.4,
+"y": 14.8,
+"aggro": "sight",
+"clan": "Peiste",
+"loot": [
+"Forgotten Fragment of Compassion"
+]
+},
+{
+"n": "Bozjan Wight",
+"lv": "80",
+"x": 24.1,
+"y": 21.1,
+"aggro": "sight",
+"clan": "Fell Knight",
+"loot": [
+"Forgotten Fragment of Care"
+]
+},
+{
+"n": "Bozjan Worm",
+"lv": "80",
+"x": 25.9,
+"y": 21.5,
+"aggro": "sight",
+"clan": "Worm",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Bozjan Wraith",
+"lv": "80",
+"x": 35.6,
+"y": 25.8,
+"aggro": "sight",
+"clan": "Wraith",
+"loot": [
+"Forgotten Fragment of Preparation"
+]
+},
+{
+"n": "Canis Dirus",
+"lv": "80",
+"clan": "Cerberus"
+},
+{
+"n": "Chlevnik",
+"lv": "80",
+"aggro": "sight",
+"clan": "Behemoth"
+},
+{
+"n": "Clingy Clare",
+"lv": "80",
+"x": 17.5,
+"y": 17.8,
+"aggro": "sight",
+"clan": "Morbol",
+"loot": [
+"Forgotten Fragment of Violence"
+]
+},
+{
+"n": "Dáinsleif",
+"lv": "80",
+"x": 14.3,
+"y": 18.3,
+"clan": "| model-chara =",
+"race": "Forgekin"
+},
+{
+"n": "Eale",
+"lv": "80",
+"aggro": "sight",
+"clan": "Catoblepas"
+},
+{
+"n": "Fern Flower",
+"lv": "80",
+"x": 26.3,
+"y": 25.3,
+"aggro": "sight",
+"clan": "Belladonna",
+"loot": [
+"Forgotten Fragment of Caution"
+]
+},
+{
+"n": "Gabriel (boss)",
+"lv": "80"
+},
+{
+"n": "Imperial Pyromancer",
+"lv": "80",
+"clan": "Midlander",
+"race": "Hyur"
+},
+{
+"n": "Ink Claw",
+"lv": "80",
+"x": 35.0,
+"y": 27.8,
+"aggro": "sight",
+"clan": "Karlabos",
+"loot": [
+"Forgotten Fragment of Caution"
+]
+},
+{
+"n": "Lyon",
+"lv": "80",
+"clan": "Highlander",
+"race": "Hyur",
+"loot": [
+"Bozjan Coin",
+"Field Notes on Lyon",
+"Life and Death (Zodiac Age Version) Orchestrion Roll",
+"Bozjan Runner's Secrets (Head Gear)",
+"Bozjan Runner's Secrets (Body Gear)",
+"Bozjan Runner's Secrets (Hand Gear)"
+]
+},
+{
+"n": "Mark XIII-X Magitek Laborer",
+"lv": "80",
+"aggro": "sight",
+"clan": "Laborer"
+},
+{
+"n": "Patriot",
+"lv": "80",
+"x": 14.2,
+"y": 21.3,
+"clan": "Avatar"
+},
+{
+"n": "Patty",
+"lv": "80",
+"x": 8.6,
+"y": 18.2,
+"aggro": "sight",
+"clan": "Vanara",
+"loot": [
+"Forgotten Fragment of Violence"
+]
+},
+{
+"n": "Peerifool",
+"lv": "80",
+"clan": "Mandragora"
+},
+{
+"n": "Pheremones",
+"lv": "??",
+"clan": "| class =",
+"race": "Non-Humanoid"
+},
+{
+"n": "Psoglav",
+"lv": "80",
+"x": 33.0,
+"y": 18.5,
+"aggro": "sight",
+"clan": "Living Rock",
+"loot": [
+"Forgotten Fragment of Ingenuity"
+]
+},
+{
+"n": "Pyrobolus Mater",
+"lv": "80",
+"clan": "Progenitrix",
+"race": "Elemental"
+},
+{
+"n": "Pyrobolus Pater",
+"lv": "80",
+"clan": "Progenitrix",
+"race": "Elemental"
+},
+{
+"n": "Red Chocobo",
+"lv": "80",
+"x": 28.7,
+"y": 18.0,
+"aggro": "sight",
+"clan": "Chocobo",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Red Comet",
+"lv": "80",
+"clan": "Chocobo",
+"race": "Cloudkin"
+},
+{
+"n": "Rotten Mandragora",
+"lv": "??",
+"clan": "Mandragora",
+"race": "Seedkin"
+},
+{
+"n": "Sartauvoir",
+"lv": "80",
+"clan": "| class = thaumaturge",
+"loot": [
+"Bozjan Mythril Coin",
+"Forgotten Fragment of Revelation",
+"Forgotten Fragment of Heroism",
+"Forgotten Fragment of Cunning",
+"Bozjan Mythril Coin"
+]
+},
+{
+"n": "Smok",
+"lv": "80",
+"x": 15.1,
+"y": 22.4,
+"aggro": "sight",
+"clan": "Stegoceras",
+"loot": [
+"Forgotten Fragment of Ingenuity"
+]
+},
+{
+"n": "Spartoi",
+"lv": "80",
+"x": 31.9,
+"y": 17.6,
+"clan": "Spartoi",
+"race": "Ashkin"
+},
+{
+"n": "Tamed Drake",
+"lv": "| alt-level-type =",
+"x": 20.9,
+"y": 14.7,
+"clan": "Drake",
+"race": "Scalekin"
+},
+{
+"n": "Tamed Ziz",
+"lv": "| alt-level-type =",
+"x": 20.9,
+"y": 14.7,
+"clan": "Ziz",
+"race": "Scalekin"
+},
+{
+"n": "Tideborn Angel",
+"lv": "80",
+"x": 19.6,
+"y": 30.3,
+"aggro": "sight",
+"clan": "Sea Swallow",
+"loot": [
+"Forgotten Fragment of Caution"
+]
+},
+{
+"n": "Vigilia",
+"lv": "80",
+"aggro": "sight",
+"clan": "Magitek Scorpion"
+},
+{
+"n": "Viy",
+"lv": "80",
+"x": 28.5,
+"y": 20.0,
+"aggro": "sight",
+"clan": "Cyclops",
+"loot": [
+"Forgotten Fragment of Ingenuity"
+]
+}
+],
+"Zadnor": [
+{
+"n": "4th Legion Armored Weapon",
+"lv": "80",
+"aggro": "sight",
+"clan": "Armored Weapon",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "II",
+"area": "The Western Plateau"
+},
+{
+"n": "4th Legion Cavalry",
+"lv": "★",
+"aggro": "sight",
+"clan": "Cavalry",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "III",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Colossus",
+"lv": "III",
+"aggro": "sight",
+"clan": "Magitek Colossus",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "III",
+"area": "The Western Plateau"
+},
+{
+"n": "4th Legion Death Machine",
+"lv": "80",
+"aggro": "sight",
+"clan": "Death Machine",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "I",
+"area": "The Western Plateau"
+},
+{
+"n": "4th Legion Gunship",
+"lv": "80",
+"aggro": "sight",
+"clan": "Magitek Gunship",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Helldiver",
+"lv": "80",
+"clan": "Helldiver",
+"loot": [
+"Bozjan Coin",
+"Magitek Helldiver F1",
+"Battle with an Esper (Zodiac Age Version) Orchestrion Roll",
+"Bozjan Runner's Secrets (Head Gear)",
+"Bozjan Runner's Secrets (Body Gear)",
+"Bozjan Runner's Secrets (Hand Gear)"
+],
+"rank": "III",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Hexadrone",
+"lv": "80",
+"aggro": "sight",
+"clan": "Hexadrone",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Imaginifer",
+"lv": "80",
+"x": 4.9,
+"y": 25.3,
+"clan": "Midlander"
+},
+{
+"n": "4th Legion Infantry",
+"lv": "80",
+"aggro": "sight",
+"clan": "Infantry",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "II",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Nimrod",
+"lv": "80",
+"aggro": "sight",
+"clan": "Nimrod",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "I",
+"area": "The Southern Plateau"
+},
+{
+"n": "4th Legion Rearguard",
+"lv": "80",
+"aggro": "sight",
+"clan": "Rearguard",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "II",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Roader",
+"lv": "80",
+"aggro": "sight",
+"clan": "Roader",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "I",
+"area": "The Northern Plateau"
+},
+{
+"n": "4th Legion Satellite",
+"lv": "80",
+"aggro": "sight",
+"clan": "Satellite",
+"loot": [
+"Bozjan Cluster"
+],
+"rank": "III",
+"area": "The Western Plateau"
+},
+{
+"n": "4th-make Belias",
+"lv": "80",
+"x": 10.5,
+"y": 21.5,
+"clan": "| model-chara =",
+"race": "Transfigured"
+},
+{
+"n": "4th-make Famfrit",
+"lv": "80",
+"x": 25.5,
+"y": 14.3,
+"clan": "| model-chara = 2197"
+},
+{
+"n": "4th-make Hashmal",
+"lv": "80",
+"x": 28.0,
+"y": 29.7,
+"clan": "| model-chara =",
+"race": "Transfigured"
+},
+{
+"n": "4th-make Shemhazai",
+"lv": "80",
+"x": 20.3,
+"y": 37.5,
+"clan": "| model-chara =",
+"race": "Transfigured"
+},
+{
+"n": "Aglaophotis",
+"lv": "80",
+"x": 8.8,
+"y": 30.6,
+"aggro": "sight",
+"clan": "Rafflesia",
+"loot": [
+"Forgotten Fragment of Artistry"
+],
+"rank": "★",
+"area": "The Western Plateau"
+},
+{
+"n": "Alkonost (boss)",
+"lv": "80",
+"x": 11.9,
+"y": 7.7
+},
+{
+"n": "Anancus",
+"lv": "80",
+"x": 24.3,
+"y": 28.8,
+"aggro": "sight",
+"clan": "Primelephas",
+"loot": [
+"Forgotten Fragment of History"
+],
+"rank": "★",
+"area": "The Southern Plateau"
+},
+{
+"n": "Ayida",
+"lv": "80",
+"x": 17.5,
+"y": 9.9,
+"clan": "Alte Roite"
+},
+{
+"n": "Blackburn",
+"lv": "80",
+"x": 16.7,
+"y": 16.9,
+"clan": "Blackburn"
+},
+{
+"n": "Clarricle the Resplendent",
+"lv": "80",
+"x": 14.6,
+"y": 10.4,
+"clan": "Wildwood",
+"race": "Elezen"
+},
+{
+"n": "Clibanarius",
+"lv": "★",
+"x": 6.5,
+"y": 37.3,
+"aggro": "sight",
+"clan": "Cavalry",
+"race": "Forgekin"
+},
+{
+"n": "Delta Gabriel Kai",
+"lv": "80",
+"x": 16.7,
+"y": 16.9,
+"clan": "Gabriel"
+},
+{
+"n": "Delta Gabriel Plus",
+"lv": "80",
+"x": 8.1,
+"y": 24.0,
+"clan": "Gabriel"
+},
+{
+"n": "Dyunbu the Accursed",
+"lv": "80",
+"x": 20.3,
+"y": 37.5,
+"clan": "Miqo'te"
+},
+{
+"n": "Earth Eater",
+"lv": "80",
+"x": 12.7,
+"y": 32.4,
+"aggro": "sight",
+"clan": "Muud Suud",
+"loot": [
+"Forgotten Fragment of Artistry"
+],
+"rank": "★",
+"area": "The Western Plateau"
+},
+{
+"n": "Flameborne Zirnitra",
+"lv": "80",
+"x": 31.5,
+"y": 37.5,
+"clan": "Sanuwa",
+"race": "Scalekin"
+},
+{
+"n": "Gabriel Plus",
+"lv": "80",
+"x": 28.1,
+"y": 29.3,
+"clan": "Gabriel"
+},
+{
+"n": "Gilbrisbert the Puppetmaster",
+"lv": "80",
+"x": 25.5,
+"y": 14.3
+},
+{
+"n": "Glyptodon",
+"lv": "80",
+"x": 12.0,
+"y": 15.5,
+"aggro": "sight",
+"clan": "Armadillo",
+"loot": [
+"Forgotten Fragment of Inspiration"
+],
+"rank": "★",
+"area": "The Northern Plateau"
+},
+{
+"n": "Graven Familiar",
+"lv": "80",
+"x": 20.4,
+"y": 16.6,
+"clan": "Dhara",
+"race": "Elemental"
+},
+{
+"n": "Hanbi",
+"lv": "80",
+"x": 13.7,
+"y": 26.1,
+"clan": "Pazuzu",
+"race": "Voidsent"
+},
+{
+"n": "Hedetet (Zadnor)",
+"lv": "80",
+"x": 17.1,
+"y": 32.1
+},
+{
+"n": "Hernais the Tenacious",
+"lv": "80",
+"x": 20.3,
+"y": 37.5,
+"clan": "Hyur",
+"race": "Ashkin"
+},
+{
+"n": "Hrodvitnir",
+"lv": "80",
+"x": 4.9,
+"y": 25.3,
+"clan": "Hoarhound",
+"race": "Beastkin"
+},
+{
+"n": "Hypertuned Dabog",
+"lv": "80",
+"x": 26.5,
+"y": 35.7,
+"clan": "Hypertuned",
+"race": "Forgekin"
+},
+{
+"n": "Ice Sprite",
+"rank": "IV",
+"area": "The Southern Plateau",
+"spawn": "Blizzards"
+},
+{
+"n": "Imperial Dead",
+"lv": "80",
+"x": 13.6,
+"y": 15.3,
+"aggro": "sight",
+"clan": "Zombie",
+"loot": [
+"Forgotten Fragment of Inspiration"
+],
+"rank": "III",
+"area": "The Northern Plateau",
+"spawn": "Night"
+},
+{
+"n": "Kampe",
+"lv": "80",
+"x": 15.3,
+"y": 13.1,
+"clan": "Magitek Scorpion"
+},
+{
+"n": "Lightning Sprite",
+"rank": "II",
+"area": "The Southern Plateau",
+"spawn": "Thunder"
+},
+{
+"n": "Lord Ochu",
+"lv": "80",
+"x": 4.0,
+"y": 20.8,
+"aggro": "sight",
+"clan": "Chichu",
+"loot": [
+"Forgotten Fragment of Artistry"
+],
+"rank": "★",
+"area": "The Western Plateau"
+},
+{
+"n": "Lyon",
+"lv": "80",
+"clan": "Highlander",
+"race": "Hyur",
+"loot": [
+"Bozjan Coin",
+"Field Notes on Lyon",
+"Life and Death (Zodiac Age Version) Orchestrion Roll",
+"Bozjan Runner's Secrets (Head Gear)",
+"Bozjan Runner's Secrets (Body Gear)",
+"Bozjan Runner's Secrets (Hand Gear)"
+]
+},
+{
+"n": "Molten Scorpion",
+"lv": "80",
+"x": 19.3,
+"y": 18.9,
+"aggro": "sight",
+"clan": "Lava Scorpion",
+"loot": [
+"Forgotten Fragment of Inspiration"
+],
+"rank": "★",
+"area": "The Northern Plateau"
+},
+{
+"n": "Pagaga of the Pride",
+"lv": "80",
+"x": 24.1,
+"y": 37.5,
+"aggro": "magic",
+"clan": "Plainsfolk",
+"race": "Lalafell"
+},
+{
+"n": "Red Chocobo",
+"lv": "80",
+"x": 20.4,
+"y": 16.6,
+"aggro": "sight",
+"clan": "Chocobo",
+"loot": [
+"Forgotten Fragment of Awakening"
+]
+},
+{
+"n": "Stormborne Zinitra",
+"lv": "80",
+"x": 31.5,
+"y": 37.5,
+"clan": "Sanuwa",
+"race": "Scalekin"
+},
+{
+"n": "Stratogryph",
+"lv": "80",
+"x": 16.8,
+"y": 39.0,
+"aggro": "sight",
+"clan": "Griffin",
+"loot": [
+"Forgotten Fragment of History"
+],
+"rank": "★",
+"area": "The Southern Plateau"
+},
+{
+"n": "Vapula",
+"lv": "★",
+"x": 20.6,
+"y": 10.9,
+"aggro": "sight",
+"clan": "Manticore",
+"loot": [
+"Forgotten Fragment of Inspiration"
+],
+"rank": "★",
+"area": "The Northern Plateau"
+},
+{
+"n": "Vinegaroon Executioner",
+"lv": "80",
+"x": 32.1,
+"y": 30.8,
+"aggro": "sight",
+"clan": "Vinegaroon",
+"loot": [
+"Forgotten Fragment of History"
+],
+"rank": "★",
+"area": "The Southern Plateau"
+},
+{
+"n": "Water Sprite",
+"rank": "III",
+"area": "The Southern Plateau",
+"spawn": "Rain"
+},
+{
+"n": "Waveborne Zinitra",
+"lv": "80",
+"x": 31.5,
+"y": 37.5,
+"clan": "Sanuwa",
+"race": "Scalekin"
+},
+{
+"n": "Wind Sprite",
+"rank": "V",
+"area": "The Southern Plateau",
+"spawn": "Wind"
+},
+{
+"n": "Zadnor Abaddon",
+"lv": "80",
+"x": 13.6,
+"y": 26.2,
+"aggro": "sight",
+"clan": "Gigantoad",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "II",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Banshee",
+"lv": "80",
+"x": 5.2,
+"y": 29.6,
+"aggro": "sight",
+"clan": "Banshee",
+"loot": [
+"Forgotten Fragment of Care"
+],
+"rank": "III",
+"area": "The Western Plateau",
+"spawn": "Night"
+},
+{
+"n": "Zadnor Beetle",
+"aggro": "sight",
+"clan": "Scarab",
+"race": "Vilekin",
+"loot": [
+"Forgotten Fragment of Rage"
+],
+"rank": "I",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Bhoot",
+"lv": "V",
+"spawn": "Night",
+"x": 25.5,
+"y": 38.8,
+"aggro": "sight",
+"clan": "Bhoot",
+"loot": [
+"Forgotten Fragment of Preparation"
+],
+"rank": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Cliffmole",
+"lv": "80",
+"x": 10.3,
+"y": 12.4,
+"aggro": "sight",
+"clan": "Cliffmole",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "I",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Coeurl",
+"lv": "80",
+"x": 5.8,
+"y": 20.9,
+"aggro": "sight",
+"clan": "Coeurl",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "IV",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Crawler",
+"lv": "80",
+"x": 10.3,
+"y": 36.0,
+"aggro": "sight",
+"clan": "Eruca",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "I",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Decotitus",
+"lv": "80",
+"x": 20.1,
+"y": 14.2,
+"aggro": "sight",
+"clan": "Decotitus",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "IV",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Dhalmel",
+"lv": "80",
+"x": 19.0,
+"y": 33.8,
+"aggro": "sight",
+"clan": "Dhalmel",
+"loot": [
+"Forgotten Fragment of Rage",
+"Forgotten Fragment of Ferocity"
+],
+"rank": "III",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Dullahan",
+"lv": "V",
+"spawn": "Night",
+"x": 20.2,
+"y": 37.5,
+"aggro": "sight",
+"clan": "Dullahan",
+"loot": [
+"Forgotten Fragment of Preparation"
+],
+"rank": "V",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Exoray",
+"lv": "80",
+"x": 12.9,
+"y": 29.3,
+"aggro": "sight",
+"clan": "Mythrilcap",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "II",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Gagana",
+"lv": "80",
+"x": 24.9,
+"y": 12.6,
+"aggro": "sight",
+"clan": "Gagana",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "V",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Gaur",
+"lv": "80",
+"x": 27.3,
+"y": 35.6,
+"aggro": "sight",
+"clan": "Dzo",
+"loot": [
+"Forgotten Fragment of Rage"
+],
+"rank": "II",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Golem",
+"lv": "80",
+"x": 22.2,
+"y": 15.7,
+"aggro": "sight",
+"clan": "Marolith",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "V",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Gourmand",
+"lv": "80",
+"x": 10.4,
+"y": 21.3,
+"aggro": "sight",
+"clan": "Rotting Goobbue",
+"loot": [
+"Forgotten Fragment of Care"
+],
+"rank": "V",
+"area": "The Western Plateau",
+"spawn": "Night"
+},
+{
+"n": "Zadnor Grizzly",
+"lv": "80",
+"x": 6.2,
+"y": 31.3,
+"aggro": "sight",
+"clan": "Cordyceps",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "III",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Harpy",
+"lv": "80",
+"x": 17.3,
+"y": 13.5,
+"aggro": "sight",
+"clan": "Wood Rail",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "IV",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Haunt",
+"lv": "80",
+"x": 25.5,
+"y": 17.5,
+"aggro": "sight",
+"clan": "Haunt",
+"loot": [
+"Forgotten Fragment of Inspiration"
+],
+"rank": "V",
+"area": "The Northern Plateau",
+"spawn": "Night"
+},
+{
+"n": "Zadnor Hippogryph",
+"lv": "80",
+"x": 30.2,
+"y": 33.6,
+"aggro": "sight",
+"clan": "Hippogryph",
+"loot": [
+"Forgotten Fragment of Ferocity"
+],
+"rank": "I",
+"area": "The Southern Plateau"
+},
+{
+"n": "Zadnor Leshy",
+"lv": "80",
+"x": 5.8,
+"y": 20.9,
+"aggro": "sight",
+"clan": "Leshy",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "IV",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Lycanthrope",
+"lv": "80",
+"x": 18.3,
+"y": 18.1,
+"aggro": "sight",
+"clan": "Gnoll",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "IV",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Raptor",
+"lv": "80",
+"x": 17.1,
+"y": 10.2,
+"aggro": "sight",
+"clan": "Raptor",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "II",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Sasquatch",
+"lv": "80",
+"x": 6.8,
+"y": 25.8,
+"aggro": "sight",
+"clan": "Sasquatch",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "IV",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Stoneshell",
+"lv": "80",
+"x": 11.0,
+"y": 33.3,
+"aggro": "sight",
+"clan": "Crab",
+"loot": [
+"Forgotten Fragment of Moonlight"
+],
+"rank": "I",
+"area": "The Western Plateau"
+},
+{
+"n": "Zadnor Wamoura",
+"lv": "80",
+"x": 22.9,
+"y": 14.3,
+"aggro": "sight",
+"clan": "Wamoura",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "III",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Wamouracampa",
+"lv": "80",
+"x": 8.1,
+"y": 12.5,
+"aggro": "sight",
+"clan": "Wamouracampa",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "I",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Wivre",
+"lv": "80",
+"x": 21.0,
+"y": 18.5,
+"aggro": "sight",
+"clan": "Wivre",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "V",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Yamaa",
+"lv": "80",
+"x": 15.3,
+"y": 13.4,
+"aggro": "sight",
+"clan": "Aldgoat",
+"loot": [
+"Forgotten Fragment of Desperation"
+],
+"rank": "II",
+"area": "The Northern Plateau"
+},
+{
+"n": "Zadnor Ziz",
+"lv": "II",
+"x": 27.9,
+"y": 33.8,
+"aggro": "sight",
+"clan": "Ziz",
+"loot": [
+"Forgotten Fragment of Ferocity"
+],
+"rank": "II",
+"area": "The Southern Plateau"
 }
 ],
 "The Occult Crescent: South Horn": [
@@ -2111,12 +4643,14 @@
 {
 "n": "Black Chocobo (Occult Crescent)",
 "lv": "100",
-"weak": "Lightning"
+"weak": "Lightning",
+"clan": "Chocobo"
 },
 {
 "n": "Black Star (Occult Crescent)",
 "lv": "100",
-"weak": "Lightning"
+"weak": "Lightning",
+"clan": "Chocobo"
 },
 {
 "n": "Cloister Demon",
@@ -2175,7 +4709,10 @@
 "lv": "16",
 "x": 32,
 "y": 32,
-"weak": "Wind"
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Blackguard",
+"race": "Voidsent"
 },
 {
 "n": "Crescent Blood Demon",
@@ -2190,7 +4727,10 @@
 "x": 30.8,
 "y": 6.7,
 "spawn": "Clear Skies",
-"weak": "Ice"
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Bomb",
+"race": "Voidsent"
 },
 {
 "n": "Crescent Brachiosaur",
@@ -2273,7 +4813,9 @@
 "y": 12.6,
 "spawn": "Clouds",
 "aggro": "Spell",
-"weak": "Wind"
+"weak": "Wind",
+"clan": "Dhruva",
+"race": "Elemental"
 },
 {
 "n": "Crescent Diplocaulus",
@@ -2311,7 +4853,10 @@
 "lv": "5",
 "x": 36,
 "y": 20,
-"weak": "Lightning"
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Enchanted Fan",
+"race": "Soulkin"
 },
 {
 "n": "Crescent Flame",
@@ -2341,7 +4886,9 @@
 "n": "Crescent Fool",
 "lv": "20-28",
 "spawn": "Illusory Disturbances",
-"aggro": "Proximity"
+"aggro": "Proximity",
+"clan": "Fool",
+"race": "Voidsent"
 },
 {
 "n": "Crescent Foper",
@@ -2372,7 +4919,9 @@
 "x": 13,
 "y": 21,
 "spawn": "Night",
-"aggro": "Sight"
+"aggro": "Sight",
+"clan": "Geshunpest",
+"race": "Ashkin"
 },
 {
 "n": "Crescent Ghost",
@@ -2478,7 +5027,9 @@
 "y": 12,
 "spawn": "Atmospheric Phantasms",
 "aggro": "Proximity",
-"weak": "Lightning"
+"weak": "Lightning",
+"clan": "Mimic",
+"race": "Voidsent"
 },
 {
 "n": "Crescent Monk",
@@ -2494,7 +5045,9 @@
 "y": 12.5,
 "spawn": "Rain",
 "aggro": "Sight",
-"weak": "Fire"
+"weak": "Fire",
+"clan": "Mousse",
+"race": "Voidsent"
 },
 {
 "n": "Crescent Panther",
@@ -2605,7 +5158,9 @@
 "x": 9,
 "y": 37,
 "aggro": "Sight",
-"weak": "Ice"
+"weak": "Ice",
+"clan": "Sanuwa",
+"race": "Scalekin"
 },
 {
 "n": "Cry of Havoc",
@@ -2620,7 +5175,9 @@
 {
 "n": "Death Claw (Occult Crescent)",
 "lv": "100",
-"weak": "Ice"
+"weak": "Ice",
+"clan": "Spartoi",
+"race": "Ashkin"
 },
 {
 "n": "Dehumidifier",
@@ -2641,6 +5198,12 @@
 "n": "Gilded Headstone",
 "lv": "100",
 "weak": "Lightning"
+},
+{
+"n": "Happy Bunny",
+"lv": "-",
+"clan": "Happy Bunny",
+"race": "Elemental"
 },
 {
 "n": "Havoc",
@@ -2754,7 +5317,12 @@
 },
 {
 "n": "Sanguine Recluse",
-"lv": "100"
+"lv": "100",
+"x": 13.6,
+"y": 4.5,
+"loot": [
+"Sanguinite"
+]
 },
 {
 "n": "Sisyphus (Occult Crescent)",
@@ -2772,340 +5340,1247 @@
 "weak": "Lightning"
 }
 ],
-"Zadnor": [
+"The Occult Crescent: North Horn": [
 {
-"n": "Zadnor Beetle",
-"lv": "I",
-"area": "The Southern Plateau"
+"n": "Abductor",
+"weak": "Lightning"
 },
 {
-"n": "Zadnor Hippogryph",
-"lv": "I",
-"area": "The Southern Plateau"
+"n": "Abductor's Plume",
+"lv": "| alt-level-type ="
 },
 {
-"n": "4th Legion Nimrod",
-"lv": "I",
-"area": "The Southern Plateau"
+"n": "Accursed Orb",
+"lv": "| alt-level-type ="
 },
 {
-"n": "Zadnor Ziz",
-"lv": "II",
-"area": "The Southern Plateau"
+"n": "Alabaster Blade",
+"lv": "100",
+"weak": "Lightning"
 },
 {
-"n": "Zadnor Gaur",
-"lv": "II",
-"area": "The Southern Plateau"
+"n": "Alabaster Golem",
+"lv": "| alt-level-type =",
+"clan": "Golem",
+"race": "Soulkin"
 },
 {
-"n": "4th Legion Infantry",
-"lv": "II",
-"area": "The Southern Plateau"
+"n": "Algol",
+"lv": "0",
+"weak": "Fire"
 },
 {
-"n": "Lightning Sprite",
-"lv": "II",
-"area": "The Southern Plateau",
-"spawn": "Thunder"
+"n": "Arachne Daughter",
+"lv": "| alt-level-type =",
+"clan": "Diremite",
+"race": "Vilekin"
 },
 {
-"n": "Zadnor Dhalmel",
-"lv": "III",
-"area": "The Southern Plateau"
+"n": "Arbatel",
+"lv": "0",
+"weak": "Fire"
 },
 {
-"n": "Zadnor Bhoot",
-"lv": "III",
-"area": "The Southern Plateau",
-"spawn": "Night"
+"n": "Arch Kelpie",
+"lv": "0",
+"weak": "Lightning"
 },
 {
-"n": "4th Legion Gunship",
-"lv": "III",
-"area": "The Southern Plateau"
+"n": "Atlas Carbuncle",
+"lv": "0",
+"weak": "Ice"
 },
 {
-"n": "4th Legion Hexadrone",
-"lv": "III",
-"area": "The Southern Plateau"
+"n": "Bird of the Crescent",
+"lv": "41",
+"x": 9,
+"y": 39,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Bird of Paradise",
+"race": "Cloudkin"
 },
 {
-"n": "Water Sprite",
-"lv": "III",
-"area": "The Southern Plateau",
-"spawn": "Rain"
+"n": "Biting Wind"
 },
 {
-"n": "Ice Sprite",
-"lv": "IV",
-"area": "The Southern Plateau",
-"spawn": "Blizzards"
+"n": "Blue Head",
+"lv": "0",
+"weak": "Fire"
 },
 {
-"n": "Zadnor Dullahan",
-"lv": "V",
-"area": "The Southern Plateau",
-"spawn": "Night"
+"n": "Charmed Ice",
+"lv": "| alt-level-type ="
 },
 {
-"n": "Wind Sprite",
-"lv": "V",
-"area": "The Southern Plateau",
-"spawn": "Wind"
+"n": "Charmed Lightning",
+"lv": "| alt-level-type ="
 },
 {
-"n": "Vinegaroon Executioner",
-"lv": "★",
-"area": "The Southern Plateau"
+"n": "Claret Dragon",
+"lv": "0",
+"weak": "Fire"
 },
 {
-"n": "Anancus",
-"lv": "★",
-"area": "The Southern Plateau"
+"n": "Conjured Calofisteri",
+"lv": "0",
+"weak": "Wind"
 },
 {
-"n": "Stratogryph",
-"lv": "★",
-"area": "The Southern Plateau"
+"n": "Crescent Accursed",
+"lv": "44",
+"x": 39,
+"y": 4,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Accursed",
+"race": "Transfigured"
 },
 {
-"n": "Zadnor Crawler",
-"lv": "I",
-"area": "The Western Plateau"
+"n": "Crescent Adamantoise",
+"lv": "35",
+"x": 9.1,
+"y": 21.6,
+"aggro": "sight",
+"clan": "Adamantoise"
 },
 {
-"n": "Zadnor Stoneshell",
-"lv": "I",
-"area": "The Western Plateau"
+"n": "Crescent Anila",
+"lv": "32",
+"x": 16,
+"y": 37,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Anila",
+"race": "Elemental"
 },
 {
-"n": "4th Legion Death Machine",
-"lv": "I",
-"area": "The Western Plateau"
+"n": "Crescent Ankou",
+"lv": "23-36",
+"spawn": "Night",
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Ankou",
+"race": "Ashkin"
 },
 {
-"n": "Zadnor Exoray",
-"lv": "II",
-"area": "The Western Plateau"
+"n": "Crescent Arachne",
+"lv": "0",
+"weak": "Ice"
 },
 {
-"n": "Zadnor Abaddon",
-"lv": "II",
-"area": "The Western Plateau"
+"n": "Crescent Arioch",
+"lv": "45",
+"x": 7,
+"y": 8,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Arioch",
+"race": "Voidsent"
 },
 {
-"n": "4th Legion Armored Weapon",
-"lv": "II",
-"area": "The Western Plateau"
+"n": "Crescent Banemite",
+"lv": "38",
+"x": 12,
+"y": 6,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Diremite",
+"race": "Vilekin"
 },
 {
-"n": "Wind Sprite",
-"lv": "II",
-"area": "The Western Plateau",
-"spawn": "Wind"
+"n": "Crescent Belladonna",
+"lv": "27",
+"x": 20,
+"y": 8,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Belladonna",
+"race": "Seedkin"
 },
 {
-"n": "Zadnor Grizzly",
-"lv": "III",
-"area": "The Western Plateau"
+"n": "Crescent Bibliotaph",
+"lv": "22",
+"x": 38,
+"y": 31,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Bibliotaph",
+"race": "Soulkin"
 },
 {
-"n": "Zadnor Banshee",
-"lv": "III",
-"area": "The Western Plateau",
-"spawn": "Night"
+"n": "Crescent Bicephalus",
+"lv": "25-31",
+"spawn": "Night",
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Bicephalic Corse",
+"race": "Ashkin"
 },
 {
-"n": "4th Legion Satellite",
-"lv": "III",
-"area": "The Western Plateau"
+"n": "Crescent Big Horn",
+"lv": "34",
+"x": 6,
+"y": 27,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Dzo",
+"race": "Beastkin"
 },
 {
-"n": "4th Legion Colossus",
-"lv": "III",
-"area": "The Western Plateau"
+"n": "Crescent Bile",
+"lv": "43",
+"x": 33,
+"y": 8,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Flan",
+"race": "Voidsent"
 },
 {
-"n": "Ice Sprite",
-"lv": "III",
-"area": "The Western Plateau",
-"spawn": "Blizzards"
+"n": "Crescent Blackguard",
+"lv": "39",
+"x": 20,
+"y": 20,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Blackguard",
+"race": "Voidsent"
 },
 {
-"n": "Zadnor Sasquatch",
-"lv": "IV",
-"area": "The Western Plateau"
+"n": "Crescent Bomb",
+"lv": "25-48",
+"spawn": "Clear Skies",
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Bomb"
 },
 {
-"n": "Zadnor Coeurl",
-"lv": "IV",
-"area": "The Western Plateau"
+"n": "Crescent Bombadeel",
+"lv": "48",
+"x": 27,
+"y": 22,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Bombadeel",
+"race": "Voidsent"
 },
 {
-"n": "Zadnor Leshy",
-"lv": "IV",
-"area": "The Western Plateau"
+"n": "Crescent Carrier",
+"lv": "46",
+"x": 10,
+"y": 4,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "| class =",
+"race": "Transfigured"
 },
 {
-"n": "Lightning Sprite",
-"lv": "IV",
-"area": "The Western Plateau",
-"spawn": "Thunder"
+"n": "Crescent Cingulata",
+"lv": "22",
+"x": 29,
+"y": 35,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Armadillo",
+"race": "Beastkin"
 },
 {
-"n": "Zadnor Gourmand",
-"lv": "V",
-"area": "The Western Plateau",
-"spawn": "Night"
+"n": "Crescent Cliffkite",
+"lv": "20",
+"x": 36,
+"y": 39,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Kukulkan",
+"race": "Soulkin"
 },
 {
-"n": "Water Sprite",
-"lv": "V",
-"area": "The Western Plateau",
-"spawn": "Rain"
+"n": "Crescent Coeurl",
+"lv": "32",
+"x": 15,
+"y": 39,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Coeurl",
+"race": "Beastkin"
 },
 {
-"n": "Earth Eater",
-"lv": "★",
-"area": "The Western Plateau"
+"n": "Crescent Craklaw",
+"lv": "36",
+"x": 14,
+"y": 19,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Craklaw",
+"race": "Wavekin"
 },
 {
-"n": "Aglaophotis",
-"lv": "★",
-"area": "The Western Plateau"
+"n": "Crescent Dhara",
+"lv": "21",
+"x": 36,
+"y": 36,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Dhara",
+"race": "Elemental"
 },
 {
-"n": "Lord Ochu",
-"lv": "★",
-"area": "The Western Plateau"
+"n": "Crescent Dhruva",
+"lv": "25-48",
+"spawn": "Clouds",
+"aggro": "Spell",
+"weak": "Wind",
+"clan": "Dhruva"
 },
 {
-"n": "Zadnor Wamouracampa",
-"lv": "I",
-"area": "The Northern Plateau"
+"n": "Crescent Elftoad",
+"lv": "30",
+"x": 22,
+"y": 36,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Gigantoad",
+"race": "Wavekin"
 },
 {
-"n": "Zadnor Cliffmole",
-"lv": "I",
-"area": "The Northern Plateau"
+"n": "Crescent Fan",
+"x": 11,
+"y": 26,
+"weak": "Lightning",
+"lv": "| alt-level-type =",
+"aggro": "sight",
+"clan": "Enchanted Fan",
+"race": "Soulkin"
 },
 {
-"n": "4th Legion Roader",
-"lv": "I",
-"area": "The Northern Plateau"
+"n": "Crescent Flame",
+"lv": "42",
+"x": 5,
+"y": 36,
+"aggro": "Spell",
+"weak": "Wind"
 },
 {
-"n": "Zadnor Yamaa",
-"lv": "II",
-"area": "The Northern Plateau"
+"n": "Crescent Fool",
+"lv": "44-48",
+"spawn": "Illusory Disturbances",
+"aggro": "Proximity",
+"clan": "Fool",
+"race": "Voidsent"
 },
 {
-"n": "Zadnor Raptor",
-"lv": "II",
-"area": "The Northern Plateau"
+"n": "Crescent Gargoyle",
+"lv": "40",
+"x": 18,
+"y": 22,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Gargoyle",
+"race": "Voidsent"
 },
 {
-"n": "4th Legion Rearguard",
-"lv": "II",
-"area": "The Northern Plateau"
+"n": "Crescent Gazellehawk",
+"lv": "42",
+"x": 9,
+"y": 39,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Tarantula Hawk",
+"race": "Vilekin"
 },
 {
-"n": "Water Sprite",
-"lv": "II",
-"area": "The Northern Plateau",
-"spawn": "Rain"
+"n": "Crescent Geshunpest",
+"lv": "39-48",
+"spawn": "Night",
+"aggro": "Sight",
+"weak": "Wind",
+"clan": "Geshunpest"
 },
 {
-"n": "Zadnor Wamoura",
-"lv": "III",
-"area": "The Northern Plateau"
+"n": "Crescent Glutton",
+"lv": "28-44",
+"spawn": "Night",
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Glutton",
+"race": "Ashkin"
 },
 {
-"n": "Imperial Dead",
-"lv": "III",
-"area": "The Northern Plateau",
-"spawn": "Night"
+"n": "Crescent Gremlin",
+"lv": "36",
+"x": 7,
+"y": 13,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Gremlin",
+"race": "Voidsent"
 },
 {
-"n": "4th Legion Cavalry",
-"lv": "III",
-"area": "The Northern Plateau"
+"n": "Crescent Gusion",
+"lv": "47",
+"x": 23,
+"y": 25,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Lion",
+"race": "Voidsent"
 },
 {
-"n": "4th Legion Helldiver",
-"lv": "III",
-"area": "The Northern Plateau"
+"n": "Crescent Harpeia",
+"lv": "33",
+"x": 9,
+"y": 29,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Harpeia",
+"race": "Cloudkin"
 },
 {
-"n": "Lightning Sprite",
-"lv": "III",
-"area": "The Northern Plateau",
-"spawn": "Thunder"
+"n": "Crescent Haunt",
+"lv": "43",
+"x": 33,
+"y": 5,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Haunt",
+"race": "Ashkin"
 },
 {
-"n": "Zadnor Harpy",
-"lv": "IV",
-"area": "The Northern Plateau"
+"n": "Crescent Hellhound",
+"lv": "39",
+"x": 23,
+"y": 18,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Hellhound",
+"race": "Voidsent"
 },
 {
-"n": "Zadnor Lycanthrope",
-"lv": "IV",
-"area": "The Northern Plateau"
+"n": "Crescent Huwasi",
+"lv": "29",
+"x": 34,
+"y": 10,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Huwasi",
+"race": "Soulkin"
 },
 {
-"n": "Zadnor Decotitus",
-"lv": "IV",
-"area": "The Northern Plateau"
+"n": "Crescent Jester",
+"lv": "48",
+"x": 24,
+"y": 23,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Jester",
+"race": "Voidsent"
 },
 {
-"n": "Wind Sprite",
-"lv": "IV",
-"area": "The Northern Plateau",
-"spawn": "Wind"
+"n": "Crescent Kaluk",
+"lv": "33",
+"x": 8,
+"y": 32,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Kaluk",
+"race": "Seedkin"
 },
 {
-"n": "Zadnor Wivre",
-"lv": "V",
-"area": "The Northern Plateau"
+"n": "Crescent Kargas",
+"lv": "31",
+"x": 15,
+"y": 33,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Griffin",
+"race": "Cloudkin"
 },
 {
-"n": "Zadnor Golem",
-"lv": "V",
-"area": "The Northern Plateau"
+"n": "Crescent Lorelei",
+"lv": "28",
+"x": 39,
+"y": 22,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Lorelei",
+"race": "Ashkin"
 },
 {
-"n": "Zadnor Gagana",
-"lv": "V",
-"area": "The Northern Plateau"
+"n": "Crescent Medusa",
+"lv": "30",
+"x": 22,
+"y": 30,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Anemone",
+"race": "Wavekin"
 },
 {
-"n": "Zadnor Haunt",
-"lv": "V",
-"area": "The Northern Plateau",
-"spawn": "Night"
+"n": "Crescent Melia",
+"lv": "26",
+"x": 23,
+"y": 10,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Treant",
+"race": "Seedkin"
 },
 {
-"n": "Ice Sprite",
-"lv": "V",
-"area": "The Northern Plateau",
-"spawn": "Blizzards"
+"n": "Crescent Mimic",
+"lv": "25-48",
+"spawn": "Atmospheric Phantasms",
+"aggro": "Proximity",
+"weak": "Lightning",
+"clan": "Mimic"
 },
 {
-"n": "Glyptodon",
-"lv": "★",
-"area": "The Northern Plateau"
+"n": "Crescent Moss Fungus",
+"lv": "38",
+"x": 13,
+"y": 8,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Mythrilcap",
+"race": "Seedkin"
 },
 {
-"n": "Molten Scorpion",
-"lv": "★",
-"area": "The Northern Plateau"
+"n": "Crescent Mousse",
+"lv": "25-48",
+"spawn": "Rain",
+"weak": "Fire",
+"x": 27.58,
+"y": 31.94,
+"aggro": "sight",
+"clan": "Mousse",
+"race": "Voidsent"
 },
 {
-"n": "Vapula",
-"lv": "★",
-"area": "The Northern Plateau"
+"n": "Crescent Nanka",
+"lv": "44",
+"x": 37,
+"y": 7,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Ninki Nanka",
+"race": "Wavekin"
+},
+{
+"n": "Crescent Necrodium",
+"lv": "32-42",
+"spawn": "Night",
+"aggro": "Proximity",
+"weak": "Wind",
+"clan": "Necrodium",
+"race": "Ashkin"
+},
+{
+"n": "Crescent Oiseau Rare",
+"lv": "45",
+"x": 5,
+"y": 10,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Imp",
+"race": "Voidsent"
+},
+{
+"n": "Crescent Onion",
+"lv": "24",
+"x": 36,
+"y": 21,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Mandragora",
+"race": "Seedkin"
+},
+{
+"n": "Crescent Opken",
+"lv": "25",
+"x": 24,
+"y": 14,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Opken",
+"race": "Spoken"
+},
+{
+"n": "Crescent Parthenope",
+"lv": "40",
+"x": 15,
+"y": 23,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Parthenope",
+"race": "Voidsent"
+},
+{
+"n": "Crescent Ratel",
+"lv": "35",
+"x": 5,
+"y": 21,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Miacid",
+"race": "Beastkin"
+},
+{
+"n": "Crescent Regolith",
+"lv": "36",
+"x": 12,
+"y": 15,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Regolith",
+"race": "Soulkin"
+},
+{
+"n": "Crescent Rock",
+"lv": "36",
+"x": 14,
+"y": 15,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Living Rock",
+"race": "Soulkin"
+},
+{
+"n": "Crescent Rot-eyes",
+"lv": "37",
+"x": 8,
+"y": 11,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Hecteyes",
+"race": "Voidsent"
+},
+{
+"n": "Crescent Rothound",
+"lv": "20-22",
+"spawn": "Night",
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Zombie Hound",
+"race": "Ashkin"
+},
+{
+"n": "Crescent Salt Swallow",
+"lv": "28",
+"x": 34,
+"y": 15,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Sea Swallow",
+"race": "Wavekin"
+},
+{
+"n": "Crescent Sand Serpent",
+"lv": "31",
+"x": 17,
+"y": 31,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Sea Serpent",
+"race": "Wavekin"
+},
+{
+"n": "Crescent Sapria",
+"lv": "26",
+"x": 24,
+"y": 12,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Rafflesia",
+"race": "Seedkin"
+},
+{
+"n": "Crescent Skatene",
+"lv": "37-46",
+"spawn": "Night",
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Skatene",
+"race": "Cloudkin"
+},
+{
+"n": "Crescent Soblyn",
+"lv": "25",
+"x": 29,
+"y": 12,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Coblyn",
+"race": "Soulkin"
+},
+{
+"n": "Crescent Stoneshell",
+"lv": "29",
+"x": 31,
+"y": 8,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Crab",
+"race": "Wavekin"
+},
+{
+"n": "Crescent Succubus",
+"lv": "47",
+"x": 21,
+"y": 27,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Succubus",
+"race": "Voidsent"
+},
+{
+"n": "Crescent Tomato",
+"lv": "24",
+"x": 36,
+"y": 21,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Mandragora",
+"race": "Seedkin"
+},
+{
+"n": "Crescent Urolith",
+"lv": "21",
+"x": 33,
+"y": 36,
+"weak": "Lightning",
+"aggro": "sight",
+"clan": "Urolith",
+"race": "Soulkin"
+},
+{
+"n": "Crescent Vinegaroon",
+"lv": "24",
+"x": 32,
+"y": 23,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Vinegaroon",
+"race": "Scalekin"
+},
+{
+"n": "Crescent Wamoura",
+"lv": "46",
+"x": 5,
+"y": 4,
+"weak": "Ice",
+"clan": "Wamoura",
+"race": "Vilekin"
+},
+{
+"n": "Crescent Weapon",
+"lv": "20",
+"x": 35,
+"y": 39,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Evil Weapon",
+"race": "Soulkin"
+},
+{
+"n": "Crescent Woolback",
+"lv": "34",
+"x": 7,
+"y": 24,
+"weak": "Fire",
+"aggro": "sight",
+"clan": "Io",
+"race": "Beastkin"
+},
+{
+"n": "Crescent Worm",
+"lv": "23",
+"x": 32,
+"y": 30,
+"weak": "Ice",
+"aggro": "sight",
+"clan": "Worm",
+"race": "Vilekin"
+},
+{
+"n": "Crescent Wraith",
+"lv": "27",
+"x": 19,
+"y": 5,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Wraith",
+"race": "Ashkin"
+},
+{
+"n": "Crescent Zirnitra",
+"lv": "42",
+"x": 4,
+"y": 36,
+"weak": "Ice",
+"clan": "Sanuwa",
+"race": "Scalekin"
+},
+{
+"n": "Crescent Zu",
+"lv": "23",
+"x": 30,
+"y": 29,
+"weak": "Wind",
+"aggro": "sight",
+"clan": "Zu",
+"race": "Cloudkin"
+},
+{
+"n": "Cresceregina",
+"lv": "0",
+"weak": "Fire"
+},
+{
+"n": "Crimson Gremlin",
+"lv": "0",
+"weak": "Ice"
+},
+{
+"n": "Dancing Sword",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Defective Lamia",
+"lv": "| alt-level-type =",
+"clan": "Golem",
+"race": "Soulkin"
+},
+{
+"n": "Demi-Medusa",
+"lv": "0",
+"weak": "Ice"
+},
+{
+"n": "Elm Gigas",
+"lv": "0",
+"weak": "Lightning"
+},
+{
+"n": "Evil-seer",
+"lv": "0",
+"weak": "Fire"
+},
+{
+"n": "Flare Sphere",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Foretold Phenomenon",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Fulmipotent Orb",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Glacipotent Orb",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Greater Fan",
+"weak": "Lightning"
+},
+{
+"n": "Green Head",
+"weak": "Wind"
+},
+{
+"n": "Happy Bunny",
+"lv": "-",
+"clan": "Happy Bunny",
+"race": "Elemental"
+},
+{
+"n": "Hermetic Recluse",
+"weak": "Wind",
+"lv": "-",
+"x": 32.41,
+"y": 36.23,
+"loot": [
+"Arcane Amulet",
+"Duck-billed Porter Whistle"
+]
+},
+{
+"n": "Holy Lance",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Iambe",
+"weak": "Fire",
+"lv": "100",
+"x": 18.1,
+"y": 11.5
+},
+{
+"n": "Light Aether",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Long-dead Explorer",
+"lv": "| alt-level-type =",
+"clan": "Zombie",
+"race": "Ashkin"
+},
+{
+"n": "Long-dead Pirate",
+"lv": "| alt-level-type =",
+"clan": "Specter",
+"race": "Ashkin"
+},
+{
+"n": "Machetaur",
+"weak": "Fire"
+},
+{
+"n": "Metamorph",
+"lv": "0",
+"weak": "Wind"
+},
+{
+"n": "Necrohaze",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Page 16"
+},
+{
+"n": "Page 512"
+},
+{
+"n": "Page 64",
+"lv": "0"
+},
+{
+"n": "Page 8"
+},
+{
+"n": "Pallkeeper",
+"lv": "| alt-level-type =",
+"clan": "Dogu",
+"race": "Soulkin"
+},
+{
+"n": "Pallmagia",
+"lv": "0",
+"weak": "Fire"
+},
+{
+"n": "Patient Kuribu",
+"lv": "0",
+"weak": "Wind"
+},
+{
+"n": "Pelekys",
+"lv": "0",
+"weak": "Fire"
+},
+{
+"n": "Phantom Hydra",
+"lv": "0",
+"weak": "Ice"
+},
+{
+"n": "Phantom Necromancer (Boss)",
+"lv": "0",
+"weak": "Wind",
+"clan": "| elemental-weakness = Wind",
+"race": "Ashkin"
+},
+{
+"n": "Regnant Chimera",
+"lv": "0",
+"weak": "Wind"
+},
+{
+"n": "Ruin Hound",
+"lv": "0",
+"weak": "Fire"
+},
+{
+"n": "Scale-smasher",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Sensual Sandy",
+"lv": "0",
+"weak": "Fire"
+},
+{
+"n": "Severing Head",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Storm Generator",
+"weak": "Lightning",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Stormcaller",
+"lv": "100",
+"weak": "Fire",
+"x": 4.4,
+"y": 31.1
+},
+{
+"n": "Summoned Bird",
+"weak": "Wind",
+"lv": "| alt-level-type =",
+"clan": "Bird of Paradise",
+"race": "Cloudkin"
+},
+{
+"n": "Summoned Bomb",
+"weak": "Ice",
+"lv": "| alt-level-type =",
+"clan": "Bomb",
+"race": "Voidsent"
+},
+{
+"n": "Sword Dancer",
+"weak": "Lightning"
+},
+{
+"n": "Tiny Apprentice",
+"lv": "| alt-level-type =",
+"clan": "| class =",
+"race": "Soulkin"
+},
+{
+"n": "Tiny Mage",
+"lv": "0",
+"weak": "Lightning"
+},
+{
+"n": "Topaz Stone",
+"lv": "0"
+},
+{
+"n": "Tower Armor",
+"weak": "Lightning",
+"lv": "| alt-level-type =",
+"clan": "Evil Armor",
+"race": "Soulkin"
+},
+{
+"n": "Tower Barmuu",
+"weak": "Lightning",
+"lv": "| alt-level-type =",
+"clan": "Barmuu",
+"race": "Soulkin"
+},
+{
+"n": "Tower Catoblepas",
+"weak": "Fire",
+"lv": "| alt-level-type =",
+"clan": "Catoblepas",
+"race": "Beastkin"
+},
+{
+"n": "Tower Crusader",
+"weak": "Lightning"
+},
+{
+"n": "Tower Curseclock",
+"weak": "Lightning",
+"lv": "| alt-level-type =",
+"race": "| clan = Forgekin"
+},
+{
+"n": "Tower Humbaba",
+"weak": "Ice",
+"lv": "| alt-level-type =",
+"clan": "Muud Suud",
+"race": "Voidsent"
+},
+{
+"n": "Tower Idol (Magic)",
+"weak": "Lightning",
+"lv": "| alt-level-type =",
+"clan": "Mana Idol",
+"race": "Soulkin"
+},
+{
+"n": "Tower Mantis",
+"weak": "Ice",
+"lv": "| alt-level-type =",
+"clan": "Mantis",
+"race": "Vilekin"
+},
+{
+"n": "Tower Pot",
+"weak": "Lightning",
+"lv": "| alt-level-type =",
+"clan": "Mana Pot",
+"race": "Soulkin"
+},
+{
+"n": "Tower Purbol",
+"weak": "Fire",
+"lv": "| alt-level-type =",
+"clan": "Morbol",
+"race": "Seedkin"
+},
+{
+"n": "Tower Purbol Hip",
+"weak": "Fire",
+"lv": "| alt-level-type =",
+"clan": "Morbol",
+"race": "Seedkin"
+},
+{
+"n": "Tower Slime",
+"weak": "Ice",
+"lv": "| alt-level-type =",
+"clan": "Slime",
+"race": "Ashkin"
+},
+{
+"n": "Towerhander",
+"weak": "Wind",
+"lv": "| alt-level-type =",
+"clan": "Endymion",
+"race": "Cloudkin"
+},
+{
+"n": "Transcribed Index",
+"lv": "| alt-level-type ="
+},
+{
+"n": "Two-headed Aevis"
+},
+{
+"n": "Winsome Seed",
+"lv": "| alt-level-type ="
 }
+]
+},
+"fragments": {
+"Forgotten Fragment of Artistry": [
+"Aglaophotis (Zadnor)",
+"Earth Eater (Zadnor)",
+"Lord Ochu (Zadnor)"
+],
+"Forgotten Fragment of Awakening": [
+"Bozjan Antlion (Bozjan Southern Front)",
+"Bozjan Bandersnatch (Bozjan Southern Front)",
+"Bozjan Biast (Bozjan Southern Front)",
+"Bozjan Doblyn (Bozjan Southern Front)",
+"Bozjan Sabotender (Bozjan Southern Front)",
+"Bozjan Taipan (Bozjan Southern Front)",
+"Bozjan Tormentor (Bozjan Southern Front)",
+"Bozjan Worm (Bozjan Southern Front)",
+"Red Chocobo (Bozjan Southern Front)",
+"Red Chocobo (Zadnor)"
+],
+"Forgotten Fragment of Care": [
+"Bozjan Dullahan (Bozjan Southern Front)",
+"Bozjan Wight (Bozjan Southern Front)",
+"Zadnor Banshee (Zadnor)",
+"Zadnor Gourmand (Zadnor)"
+],
+"Forgotten Fragment of Caution": [
+"Fern Flower (Bozjan Southern Front)",
+"Ink Claw (Bozjan Southern Front)",
+"Tideborn Angel (Bozjan Southern Front)"
+],
+"Forgotten Fragment of Compassion": [
+"Bozjan Anzu (Bozjan Southern Front)",
+"Bozjan Doll (Bozjan Southern Front)",
+"Bozjan Elasmoth (Bozjan Southern Front)",
+"Bozjan Elbst (Bozjan Southern Front)",
+"Bozjan Goobbue (Bozjan Southern Front)",
+"Bozjan Monitor (Bozjan Southern Front)",
+"Bozjan Ochu (Bozjan Southern Front)",
+"Bozjan Phobosuchus (Bozjan Southern Front)",
+"Bozjan Ranunculus (Bozjan Southern Front)",
+"Bozjan Screamer (Bozjan Southern Front)",
+"Bozjan Snake (Bozjan Southern Front)",
+"Bozjan Wadjet (Bozjan Southern Front)"
+],
+"Forgotten Fragment of Cunning": [
+"Sartauvoir (Bozjan Southern Front)"
+],
+"Forgotten Fragment of Desperation": [
+"Zadnor Cliffmole (Zadnor)",
+"Zadnor Decotitus (Zadnor)",
+"Zadnor Gagana (Zadnor)",
+"Zadnor Golem (Zadnor)",
+"Zadnor Harpy (Zadnor)",
+"Zadnor Lycanthrope (Zadnor)",
+"Zadnor Raptor (Zadnor)",
+"Zadnor Wamoura (Zadnor)",
+"Zadnor Wamouracampa (Zadnor)",
+"Zadnor Wivre (Zadnor)",
+"Zadnor Yamaa (Zadnor)"
+],
+"Forgotten Fragment of Ferocity": [
+"Zadnor Dhalmel (Zadnor)",
+"Zadnor Hippogryph (Zadnor)",
+"Zadnor Ziz (Zadnor)"
+],
+"Forgotten Fragment of Heroism": [
+"Sartauvoir (Bozjan Southern Front)"
+],
+"Forgotten Fragment of History": [
+"Anancus (Zadnor)",
+"Stratogryph (Zadnor)",
+"Vinegaroon Executioner (Zadnor)"
+],
+"Forgotten Fragment of Ingenuity": [
+"Psoglav (Bozjan Southern Front)",
+"Smok (Bozjan Southern Front)",
+"Viy (Bozjan Southern Front)"
+],
+"Forgotten Fragment of Inspiration": [
+"Glyptodon (Zadnor)",
+"Imperial Dead (Zadnor)",
+"Molten Scorpion (Zadnor)",
+"Vapula (Zadnor)",
+"Zadnor Haunt (Zadnor)"
+],
+"Forgotten Fragment of Moonlight": [
+"Zadnor Abaddon (Zadnor)",
+"Zadnor Coeurl (Zadnor)",
+"Zadnor Crawler (Zadnor)",
+"Zadnor Exoray (Zadnor)",
+"Zadnor Grizzly (Zadnor)",
+"Zadnor Leshy (Zadnor)",
+"Zadnor Sasquatch (Zadnor)",
+"Zadnor Stoneshell (Zadnor)"
+],
+"Forgotten Fragment of Preparation": [
+"Bozjan Geshunpest (Bozjan Southern Front)",
+"Bozjan Wraith (Bozjan Southern Front)",
+"Zadnor Bhoot (Zadnor)",
+"Zadnor Dullahan (Zadnor)"
+],
+"Forgotten Fragment of Rage": [
+"Zadnor Beetle (Zadnor)",
+"Zadnor Dhalmel (Zadnor)",
+"Zadnor Gaur (Zadnor)"
+],
+"Forgotten Fragment of Revelation": [
+"Sartauvoir (Bozjan Southern Front)"
+],
+"Forgotten Fragment of Skill": [
+"Bozjan Korrigan (Bozjan Southern Front)",
+"Bozjan Matamata (Bozjan Southern Front)",
+"Bozjan Mudpuppy (Bozjan Southern Front)",
+"Bozjan Nepenthes (Bozjan Southern Front)",
+"Bozjan Orobon (Bozjan Southern Front)"
+],
+"Forgotten Fragment of Violence": [
+"Bird of Barathrum (Bozjan Southern Front)",
+"Bozjan Gravekeeper (Bozjan Southern Front)",
+"Bozjan Rider (Bozjan Southern Front)",
+"Clingy Clare (Bozjan Southern Front)",
+"Patty (Bozjan Southern Front)"
 ]
 }
 }

@@ -43,7 +43,11 @@ ft_name = lambda x: (FTI.get(str(x)) or {}).get("name_en") or ITEM.get(i(x), "")
 FSRC, SPOTS = json.load(open(os.path.join(TC, "fishing-sources.json"))), {s["id"]: s for s in json.load(open(os.path.join(TC, "fishing-spots.json")))}
 TUG, HOOK = {1: "medium", 2: "heavy", 3: "light"}, {1: "Precision", 2: "Powerful"}
 WNAME = {k: clean(r["Name"]) for k, r in sheet("Weather").items()}
-WID = {norm(v): k for k, v in WNAME.items() if v}
+WID = {}
+for k_ in sorted(WNAME):  # the first (ordinary) weather of each name
+    if WNAME[k_]: WID.setdefault(norm(WNAME[k_]), k_)
+FSP, TTY = sheet("FishingSpot"), sheet("TerritoryType")
+spot_zone = lambda sid: PLACE.get(i(TTY.get(i(FSP.get(i(sid), {}).get("TerritoryType")), {}).get("PlaceName")), "")
 big = []
 for f in D("big-fish.json")["fish"]:
     k = keys_by_name.get(norm(f["n"]))
@@ -58,7 +62,7 @@ for f in D("big-fish.json")["fish"]:
     if sp:
         row["spot"] = PLACE.get(i(sp.get("placeId")), "")
         if sp.get("coords"): row["xy"] = [round(sp["coords"]["x"], 1), round(sp["coords"]["y"], 1)]
-        if not row.get("z"): row["z"] = PLACE.get(i(sp.get("zoneId")), "")
+        if not row.get("z"): row["z"] = spot_zone(src.get("spot")) or PLACE.get(i(sp.get("zoneId")), "")
     if src.get("tug") in TUG: row["tug"] = TUG[src["tug"]]
     if src.get("hookset") in HOOK: row["hook"] = HOOK[src["hookset"]]
     path = [ft_name(x) for x in ft.get("bestCatchPath") or []]
@@ -68,13 +72,18 @@ for f in D("big-fish.json")["fish"]:
     if ft.get("fishEyes") is True: row["eyes"] = 1
     if ft.get("folklore"): row["folk"] = ((FT.get("FOLKLORE", {}).get(str(ft["folklore"])) or {}).get("book_en") or "")
     wk = f.get("wiki") or {}
-    if wk and not c:  # newest fish: the wiki's facts give the window
+    if wk and not c:  # the fish-tracker data gives no window (no limit, or newest fish): the wiki's table row does
         a, b = wk.get("time-start"), wk.get("time-end")
         ws = [WID.get(norm(x)) for x in (wk.get("weather-current") or "").split(",") if WID.get(norm(x))]
         pws = [WID.get(norm(x)) for x in (wk.get("weather-previous") or "").split(",") if WID.get(norm(x))]
-        if a or ws or pws:
-            row.update({"a": float(a or 0), "b": float(b or 24), "w": ws, "pw": pws})
+        if a is not None or ws or pws:
+            row.update({"a": float(a or 0), "b": float(24 if b in (None, 0) and not a else (b or 24)), "w": ws, "pw": pws})
+        if wk.get("zone") and not row.get("z"): row["z"] = wk["zone"]
         if wk.get("spot"): row["spot"] = wk["spot"]
+        if wk.get("xy") and not row.get("xy"): row["xy"] = wk["xy"]
+        if wk.get("req") and not row.get("pred"): row["req"] = wk["req"]
+    if "a" not in row and ft:  # in the fish-tracker data without any time or weather: no limit
+        row.update({"a": 0.0, "b": 24.0, "w": [], "pw": []})
         if wk.get("bait") and not row.get("bait"): row["bait"] = [wk["bait"].title()]
         if wk.get("lure"): row["lure"] = wk["lure"].split(";")[0].title() + " lure"
     if not row.get("z") and row.get("spot"):  # zone from the fishing hole's place
@@ -119,7 +128,8 @@ FM = D("field-monsters.json")["zones"]
 MON = json.load(open(os.path.join(TC, "monsters.json")))
 BN = {k: clean(r.get("Singular")) for k, r in sheet("BNpcName").items()}
 WEATHER_ZONE = {"Eureka Anemos": "Eureka Anemos", "Eureka Pagos": "Eureka Pagos", "Eureka Pyros": "Eureka Pyros", "Eureka Hydatos": "Eureka Hydatos",
-                "The Bozjan Southern Front": "The Bozjan Southern Front", "Zadnor": "Zadnor", "The Occult Crescent: South Horn": "South Horn"}
+                "The Bozjan Southern Front": "Bozjan Southern Front", "Zadnor": "Zadnor", "The Occult Crescent: South Horn": "South Horn",
+                "The Occult Crescent: North Horn": "North Horn"}
 for z, wz in WEATHER_ZONE.items():  # add every monster Teamcraft places there that the wiki does not list
     have = {norm(m["n"]) for m in FM.get(z, [])}
     for bid, m in MON.items():
@@ -130,7 +140,7 @@ for z, wz in WEATHER_ZONE.items():  # add every monster Teamcraft places there t
                 have.add(norm(nm)); break
 NOTE = sheet("ContentsNote")
 chal = [[k, clean(r["Name"]), clean(r["Description"]).split("※")[0].strip()] for k, r in sorted(NOTE.items()) if i(r.get("ContentType")) == 13 and clean(r.get("Name"))]
-ORDER = ["Eureka Anemos", "Eureka Pagos", "Eureka Pyros", "Eureka Hydatos", "The Bozjan Southern Front", "Zadnor", "The Occult Crescent: South Horn"]
+ORDER = ["Eureka Anemos", "Eureka Pagos", "Eureka Pyros", "Eureka Hydatos", "The Bozjan Southern Front", "Zadnor", "The Occult Crescent: South Horn", "The Occult Crescent: North Horn"]
 FM = {z: FM[z] for z in ORDER if z in FM}
 out["field"] = {"zones": FM, "weatherZone": WEATHER_ZONE, "challenge": chal,
                 "events": D("field-events.json")["events"]}

@@ -154,6 +154,7 @@
       if (f.bait) how.push('Bait: ' + f.bait.join(' → '));
       if (f.tug || f.hook) how.push([f.tug ? f.tug + ' bite' : '', f.hook ? f.hook + ' Hookset' : ''].filter(Boolean).join(', '));
       if (f.pred) how.push('Intuition: catch ' + f.pred.map(function (p) { return p[1] + '× ' + p[0]; }).join(', ') + ' first');
+      if (f.req) how.push(f.req);
       if (f.lure) how.push(f.lure);
       if (f.eyes) how.push('Fish Eyes works');
       if (f.folk) how.push('Needs ' + f.folk);
@@ -245,7 +246,7 @@
 
   // ---- Field monsters (Eureka, Bozja, the Occult Crescent)
   var ELEMENT_SETS = [['', 'All'], ['Ice|Lightning', 'Ice or lightning'], ['Fire|Earth', 'Fire or earth'], ['Water|Wind', 'Water or wind'], ['sprite', 'Sprites'], ['ashkin', 'Ashkin (night)']];
-  function isNight(zone, now) { var h = etHours(now); return /Occult|South Horn/.test(zone) ? (h >= 22 || h < 4) : (h >= 18 || h < 6); }
+  function isNight(zone, now) { var h = etHours(now); return /Occult|Horn/.test(zone) ? (h >= 22 || h < 4) : (h >= 18 || h < 6); }
   function spawnNow(spawn, wzone, now) {
     if (!spawn) return null;
     var s = spawn.toLowerCase();
@@ -287,7 +288,8 @@
     }).join('');
     var table = '<div class="fm-head"><span>Monster</span><span>Level</span><span>Where</span><span>' + (occult ? 'Weak to' : 'Element') + '</span><span>Spawns</span></div>' + mons.map(function (m) {
       var live = m.spawn ? spawnNow(m.spawn, wz, now) : null;
-      return '<div class="fm-row' + (live ? ' now' : '') + '"><span><b>' + esc(m.n) + '</b>' + (m.area ? ' <span class="dim">' + esc(m.area) + '</span>' : '') + '</span><span>' + esc(m.lv || '') + '</span><span>' + (m.x != null ? '(' + m.x + ', ' + m.y + ')' : '') + '</span><span>' + esc(occult ? (m.weak || '') : (m.el || '')) + '</span><span>' + esc(m.spawn || 'always') + (live ? ' <b class="up">now</b>' : '') + (m.aggro ? ' <span class="dim">· aggro: ' + esc(m.aggro) + '</span>' : '') + '</span></div>';
+      var drops = (m.loot || []).filter(function (l) { return /Fragment|Cluster|Memory|Lockbox|Logogram|Crystal/.test(l); });
+      return '<div class="fm-row' + (live ? ' now' : '') + '"><span><b>' + esc(m.n) + '</b>' + (m.area ? ' <span class="dim">' + esc(m.area) + '</span>' : '') + (m.clan ? ' <span class="dim">· ' + esc(m.clan) + '</span>' : '') + (drops.length ? '<br><span class="dim">Drops: ' + esc(drops.join(', ')) + '</span>' : '') + '</span><span>' + esc(m.rank || m.lv || '') + '</span><span>' + (m.x != null ? '(' + m.x + ', ' + m.y + ')' : '') + '</span><span>' + esc(occult ? (m.weak || '') : (m.el || '')) + '</span><span>' + esc(m.spawn || 'always') + (m.rule ? ' <span class="dim" title="Not documented for this monster; Zadnor documents this rule for the same kind of monster">(usual rule)</span>' : '') + (live ? ' <b class="up">now</b>' : '') + (m.aggro ? ' <span class="dim">· aggro: ' + esc(m.aggro) + '</span>' : '') + '</span></div>';
     }).join('');
     $('#page').innerHTML = liveHead('Field Monsters', 'Where every monster of Eureka, Bozja and the Occult Crescent is, its level and element (Eureka) or weakness (Occult Crescent), and which only appear in certain weather or at night: those turn the accent colour while they are out. Use the element filter for the Eureka challenge log.', '') + tabs + filt + chalHtml +
       (nms ? '<h3 class="lv-h">Notorious monsters and events</h3>' + nms : '') + '<h3 class="lv-h">Monsters <span class="dim">(' + mons.length + ')</span></h3>' + table;

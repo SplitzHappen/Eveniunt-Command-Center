@@ -999,6 +999,7 @@ for sp in SPOTS.values():
     nm = PLACE.get(i(sp.get("placeId")), "")
     if nm: FSPOT_BY_NAME.setdefault(norm(nm), sp)
 SRC_LABEL = lambda src: "How to get it: " + "; ".join(src)
+FIELD_FRAG = json.load(open(os.path.join(T, "data", "field-monsters.json"), encoding="utf-8")).get("fragments", {})
 def fallback(sid, g, e):
     d = e.get("d") or ""
     bits = patchless(d)
@@ -1072,8 +1073,10 @@ def fallback(sid, g, e):
         return ["Buy from " + who.replace(";", " in", 1) + ((" for " + " · ".join(bits[1:])) if len(bits) > 1 else ""), "Use it to see that region's legendary gathering or fishing spots"]
     if sid == "lostactions":
         fr = ITEM_BY_NAME.get(norm(bits[0])) if bits else None
+        fm_ = FIELD_FRAG.get(bits[0]) if bits else None
         where = [x for x in (item_sources(fr, 3) if fr else []) if not x.startswith("Sold by")]
-        return ["Comes from the " + (bits[0] if bits else "forgotten fragment") + ": take it to the Resistance quartermaster or appraiser at the Bozjan Southern Front or Zadnor to turn it into this action"] + [("The fragment: " + x[0].lower() + x[1:]) for x in where[:2]]
+        return ["Comes from the " + (bits[0] if bits else "forgotten fragment") + ": take it to the Resistance quartermaster or appraiser at the Bozjan Southern Front or Zadnor to turn it into this action"] + \
+               ([("The fragment drops from " + ", ".join(fm_[:6]) + (" and more" if len(fm_) > 6 else ""))] if fm_ else []) + [("The fragment: " + x[0].lower() + x[1:]) for x in where[:2]]
     if sid == "porters": return ["Talk to the chocobokeep at " + e["n"] + (" in " + bits[0] if bits else "") + " to register this porter stop"]
     if sid == "sharedfate": return [e["n"] + ((" (Shared FATE rank " + raw[0] + ")") if raw else ""), "Ranks rise as you complete FATEs in that zone; check them in the Shared FATE window, and spend the rewards with the zone's FATE vendor (gemstone trader)"]
     if sid == "eurekalevel": return ["Reach elemental level " + e["n"] + " in " + (bits[0] if bits else "Eureka") + " by defeating monsters and notorious monsters there"]
@@ -1213,7 +1216,7 @@ EXP_NAMES = data["meta"]["expansions"]
 WR = sheet("WeatherRate")
 WNAME = {k: clean(r.get("Name")) for k, r in sheet("Weather").items()}
 TTS = sheet("TerritoryType")
-USE_REGION = {41: "Eureka", 48: "Bozja", 61: "Occult Crescent", 60: "Cosmic Exploration", 49: "Island Sanctuary", 26: "The Diadem", 47: "The Diadem", 21: "Ishgard Restoration"}
+USE_REGION = {13: "Housing districts", 41: "Eureka", 48: "Bozja", 61: "Occult Crescent", 60: "Cosmic Exploration", 49: "Island Sanctuary", 26: "The Diadem", 47: "The Diadem", 21: "Ishgard Restoration"}
 WEATHER, REGIONS, ZONE_EX, used_w = {}, collections.OrderedDict(), {}, set()
 for k, r in TTS.items():
     use, wr = i(r.get("TerritoryIntendedUse")), i(r.get("WeatherRate"))
