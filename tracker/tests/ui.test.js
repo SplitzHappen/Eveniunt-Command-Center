@@ -58,6 +58,8 @@ test('first run: choose 1 to 8 characters, names shown as columns with their pro
   await page.waitForSelector('.er');
   const heads = await page.$$eval('#lh .c', (els) => els.map((e) => e.getAttribute('title').split(':')[0]));
   assert.deepEqual(heads, NAMES);
+  // opened from disk there is no shell to go back to: no Command Center link and no hand-over notice (gate 1D)
+  assert.equal(await page.$('a[data-cc-back]'), null); assert.equal(await page.$('[data-handover]'), null);
   assert.equal(await page.locator('#lh .c .pc').count(), 8);
   assert.deepEqual(errors, []);
   assert.deepEqual(external.filter((u) => !/ffxivcollect|google/.test(u)), [], 'no unexpected network requests');
@@ -253,7 +255,7 @@ test('transfer code round trip through the interface', async () => {
   await page.locator('.er:not(.x) .tk[data-c="c2"]').first().click();
   await page.click('[data-act=settings]'); await page.click('[data-tab=data]');
   await page.click('#make-code');
-  await page.waitForFunction(() => document.querySelector('#code').value.startsWith('EVT1-'));
+  await page.waitForFunction(() => document.querySelector('#code').value.startsWith('EVT2-'));
   const code = await page.inputValue('#code');
   const p2 = await open({ setup: false });
   await setup(p2.page, 1);
@@ -362,11 +364,22 @@ test('hosted site over HTTP: installable, works offline after the first visit', 
   await page.waitForSelector('#dlg[open]', { timeout: 30000 });
   await setup(page, 2);
   assert.ok(await page.evaluate(() => !!document.querySelector('link[rel=manifest]')));
+  // gate 1D: the way back to the Command Center (the site root) and the one-time hand-over notice, since this page was
+  // not opened from the shell; "Got it" records it on the device for both apps and the notice stays away
+  const root = base.replace(/tracker\/$/, ''); // the site root, where the shell lives
+  assert.equal(await page.getAttribute('a[data-cc-back]', 'href'), root, 'the header link points at the shell');
+  assert.match(await page.textContent('[data-handover]'), /The Tracker is now part of the Eveniunt Command Center[\s\S]*same save/);
+  assert.equal(await page.getAttribute('[data-handover] a.btn', 'href'), root);
+  await page.click('[data-handover-ok]');
+  assert.equal(await page.$('[data-handover]'), null);
+  assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem('eveniunt-command-center-device')).handoverSeen > 0));
   await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 20000 }).catch(async () => { await page.reload(); await page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 20000 }); });
   await ctx.setOffline(true);
   await page.reload();
   await page.waitForSelector('.ov-table', { timeout: 20000 });
   assert.equal(await page.evaluate(() => window.__tracker.ST.chars.length), 2, 'offline reload keeps the characters');
+  assert.equal(await page.$('[data-handover]'), null, 'seen once, not shown again');
+  assert.equal(await page.getAttribute('a[data-cc-back]', 'href'), root, 'the way back stays');
   const coop = await page.evaluate(() => self.crossOriginIsolated);
   assert.equal(coop, false, 'no cross-origin isolation (Google sign-in needs popups)');
   assert.deepEqual(errors, []);
@@ -434,13 +447,14 @@ test('first run cannot be dismissed by clicking outside the window (the page wou
 
 test('saved data that cannot be read is offered for download, not overwritten', async () => {
   const { ctx, page } = await open({ n: 1 });
-  await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-tracker', 1); r.onsuccess = () => { const t = r.result.transaction('state', 'readwrite'); t.objectStore('state').put({ v: 1, chars: 'broken' }, 'main'); t.oncomplete = res; }; }));
+  // since gate 1C the data lives in the Command Center's one save: damage the Tracker's section there
+  await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-command-center', 1); r.onsuccess = () => { const t = r.result.transaction('save', 'readwrite'); const s = t.objectStore('save'); const g = s.get('main'); g.onsuccess = () => { const d = g.result; d.modules.tracker.ticks = 'broken'; s.put(d, 'main'); }; t.oncomplete = res; }; }));
   await page.reload();
   await page.waitForSelector('#dl-bad');
   assert.match(await page.textContent('#dlg'), /could not be read/);
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#dl-bad')]);
   assert.match(await fs.promises.readFile(await dl.path(), 'utf8'), /broken/);
-  const kept = await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-tracker', 1); r.onsuccess = () => { const q = r.result.transaction('state').objectStore('state').getAllKeys(); q.onsuccess = () => res(q.result); }; }));
+  const kept = await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-command-center', 1); r.onsuccess = () => { const q = r.result.transaction('save').objectStore('save').getAllKeys(); q.onsuccess = () => res(q.result); }; }));
   assert.ok(kept.some((k) => String(k).startsWith('main-unreadable-')), 'a rescue copy is kept');
   await page.click('#go-on');
   await page.waitForSelector('#nchars');
@@ -692,5 +706,46 @@ test('Hunts, Market Board, Housing and News: windows from kills, spawn maps, pri
   assert.match(await page.textContent('#page'), /hosted tracker/);
   assert.deepEqual([...new Set(external)].sort(), ['paissadb.zhu.codes', 'universalis.app']);
   assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('gate 1C: an existing save is copied into the one save (IndexedDB), the old save stays untouched, and the way back works', async () => {
+  const { ctx, page, errors, external } = await open({ setup: false });
+  // today's save, as the version before gate 1C kept it: IndexedDB eveniunt-tracker → state → main
+  const oldJson = await page.evaluate(() => new Promise((res) => {
+    const ET = window.ET, keys = window.__tracker.IDX.sections.flatMap((s) => ET.sectionKeys(s));
+    const st = ET.newState(['Alba', 'Brio', 'Cara', 'Dax', 'Eli', 'Fen', 'Gia', 'Hal']);
+    st.chars.forEach((c, n) => { c.lodestone = String(20000000 + n); c.gc = (n % 3) + 1; c.cls = ['gla', 'pgl', 'mrd', 'lnc', 'arc', 'cnj', 'thm', 'acn'][n]; for (let i = n; i < keys.length; i += 4) st.ticks[c.id][keys[i]] = 1; st.excl[c.id][keys[n + 7]] = 1; });
+    const r = indexedDB.open('eveniunt-tracker', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('state');
+    r.onsuccess = () => { const t = r.result.transaction('state', 'readwrite'); t.objectStore('state').put(st, 'main'); t.objectStore('state').put('r-old', 'main-rev'); t.oncomplete = () => { r.result.close(); res(JSON.stringify(st)); }; };
+  }));
+  await page.reload();
+  await page.waitForSelector('.ov-table');
+  // expected: the old save after the Tracker's usual start-up step (ticks under an old entry id or on another class
+  // route move to the current entry), which runs on every load, before and after gate 1C alike
+  const same = () => page.evaluate((j) => { const o = window.ET.validateState(JSON.parse(j)); window.ET.migrateAliases(window.__tracker.IDX, o); return window.ET.compareTracker(o, window.__tracker.ST); }, oldJson);
+  const got = await page.evaluate(() => ({ moved: window.__tracker.ST.moved.tracker, ticks: Object.values(window.__tracker.ST.ticks).reduce((n, t) => n + Object.keys(t).length, 0) }));
+  assert.equal(await same(), null, 'all 8 characters arrive exactly (characters, ticks, marks, levels, choices, settings)');
+  assert.ok(got.ticks > 8000, got.ticks + ' ticks');
+  assert.equal(got.moved.from, 'indexeddb'); assert.equal(got.moved.check.chars, 8);
+  const readOld = () => page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-tracker'); r.onsuccess = () => { const s = r.result.transaction('state').objectStore('state'); const a = s.get('main'), b = s.get('main-rev'), k = s.getAllKeys(); a.transaction.oncomplete = () => { r.result.close(); res({ main: JSON.stringify(a.result), rev: b.result, keys: k.result }); }; }; }));
+  const old1 = await readOld();
+  assert.equal(old1.main, oldJson, 'the old save is untouched'); assert.equal(old1.rev, 'r-old'); assert.deepEqual(old1.keys.sort(), ['main', 'main-rev']);
+  // the panel offers the way back; a new tick, then going back, restores the save from before the move
+  await go(page, 'minions');
+  await page.locator('.er:not(.x) .tk[data-c="c1"]:not(.on)').first().click();
+  await page.click('[data-act=settings]'); await page.click('[data-tab=data]');
+  assert.match(await page.textContent('#dlg'), /Your shared save[\s\S]*8 characters/);
+  await Promise.all([page.waitForEvent('load'), page.click('#move-back')]);
+  await page.waitForFunction(() => window.__tracker && window.__tracker.ST && !document.getElementById('boot')); // reopens on the list it was on
+  assert.equal(await same(), null, 'back to the save from before the move');
+  await page.click('[data-act=settings]'); await page.click('[data-tab=data]');
+  await page.click('#move-ok');
+  await page.waitForFunction(() => window.__tracker.ST.moved.tracker.confirmed && /You confirmed it/.test(document.querySelector('#dlg').textContent)); // shown once saved
+  assert.equal((await readOld()).main, oldJson, 'still untouched');
+  // characters with a Lodestone number start the usual online refresh, which this test blocks: that is the only error
+  assert.deepEqual(errors.filter((e) => !/net::ERR_FAILED/.test(e)), []);
+  assert.ok(external.every((u) => /ffxivcollect\.com/.test(u)), external.join(' '));
   await ctx.close();
 });

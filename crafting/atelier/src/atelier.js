@@ -11,7 +11,9 @@
   var CS = window.CS, A = CS.A, COND = CS.COND;
   var B = null;           // main-thread Raphael bridge instance
   var WASM_MODULE = null; // compiled module, shared with the solver worker
-  var STORE = 'eveniunt-atelier-v1';
+  var STORE = 'eveniunt-atelier-v1';          // everything, before gate 1C: read once, copied, then left untouched
+  var DEVICE = 'eveniunt-atelier-device-v2';  // this device only: language, look, layout, the recipe on screen, history
+  var CC = window.CC || null;                 // the Command Center's one save (shared characters and module sections)
   var LOCALES = [['en', 'English'], ['de', 'Deutsch'], ['fr', 'Français'], ['jp', '日本語'], ['cn', '简体中文'], ['kr', '한국어'], ['tw', '繁體中文']];
   var ABBR = { BasicSynthesis: 'BS', CarefulSynthesis: 'CS', Groundwork: 'GW', PrudentSynthesis: 'PS', IntensiveSynthesis: 'IS', RapidSynthesis: 'RS',
     MuscleMemory: 'MM', DelicateSynthesis: 'DS', BasicTouch: 'BT', StandardTouch: 'ST', AdvancedTouch: 'AT', PrudentTouch: 'PT', PreparatoryTouch: 'PREP',
@@ -38,13 +40,146 @@
   // ── storage (works when blocked: in-memory fallback) ──────────────────────
   var mem = {};
   var canStore = (function () { try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return true; } catch (e) { return false; } })();
-  function load() { try { if (canStore) return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { /* ignore */ } return mem[STORE] || null; }
+  function lsGet(k) { try { if (canStore) return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { /* ignore */ } return mem[k] || null; }
+  // first opening of this version on a device: the per-device fields come from the old key (which is not written again)
+  function load() { return lsGet(DEVICE) || lsGet(STORE); }
+  // Crafter stats, food, medicine, the cosmic tool, saved macros and the macro, solver and guide settings are shared
+  // (the one save, written shortly after a change); everything else stays on this device.
   function persist() {
-    var d = { locale: S.locale, theme: S.theme, layout: S.layout, job: S.job, stats: S.stats, cosmicTool: S.cosmicTool, food: S.food, potion: S.potion,
-      mode: S.mode, activeJobOnly: S.activeJobOnly, zone: S.zone, recipeId: S.recipeId, custom: S.custom, target: S.target, solver: S.solver,
-      macro: S.macro, saved: S.saved, history: S.history, savedCfg: S.savedCfg, guideMs: S.guideMs, condModel: S.condModel, mmSecPerStep: S.mmSecPerStep, look: S.look };
-    try { if (canStore) { localStorage.setItem(STORE, JSON.stringify(d)); return; } } catch (e) { canStore = false; }
-    mem[STORE] = d;
+    var d = { locale: S.locale, theme: S.theme, layout: S.layout, job: S.job, mode: S.mode, activeJobOnly: S.activeJobOnly, zone: S.zone, recipeId: S.recipeId,
+      custom: S.custom, history: S.history, look: S.look, char: S.char };
+    try { if (canStore) localStorage.setItem(DEVICE, JSON.stringify(d)); else mem[DEVICE] = d; } catch (e) { canStore = false; mem[DEVICE] = d; }
+    scheduleShared();
+  }
+
+  // ── the one save: one crafter profile per character (gate 1C, the owner's answer B) ──
+  // SH.section: { v, chars: { c1: profile, ... }, unassigned: profile | null, saved: { id: macro }, prefs: {...} }, where a
+  // profile is { stats: { j0..j7 }, food, potion, cosmicTool }. unassigned holds today's single set until the owner says
+  // whose it is. SH.rev and SH.base: the stamp and section last read or written (a later save merges against them).
+  var SH = { rev: null, base: null, chars: [], section: null, ready: false, timer: null, movedNow: null, asked: false, problem: null };
+  function emptySection() { return { v: 1, chars: {}, unassigned: null, saved: {}, prefs: {} }; }
+  function profileFromS() { var st = {}; S.stats.forEach(function (x, j) { st['j' + j] = Object.assign({}, x); }); return { stats: st, food: S.food || null, potion: S.potion || null, cosmicTool: !!S.cosmicTool }; }
+  function applyProfile(p) {
+    S.stats = [0, 1, 2, 3, 4, 5, 6, 7].map(function (j) { return Object.assign(defaultStats(), p && p.stats && p.stats['j' + j] ? p.stats['j' + j] : {}); });
+    S.food = p ? p.food || null : null; S.potion = p ? p.potion || null : null; S.cosmicTool = p ? p.cosmicTool !== false : true;
+  }
+  function hasChar(id) { return SH.chars.some(function (c) { return c.id === id; }); }
+  // which profile is in use: a character id, or null for the set not yet given to a character
+  function activeKey() {
+    if (S.char && hasChar(S.char)) return S.char;
+    if (SH.section && SH.section.unassigned) return null;
+    return SH.chars.length ? SH.chars[0].id : null;
+  }
+  function charName(id) { var c = SH.chars.filter(function (x) { return x.id === id; })[0]; return c ? c.name : id; }
+  function savedArray(obj) { return Object.keys(obj || {}).sort().reverse().map(function (k) { return obj[k]; }); }
+  function sectionFromS() {
+    var sec = JSON.parse(JSON.stringify(SH.section || emptySection()));
+    var k = activeKey();
+    if (k) sec.chars[k] = profileFromS(); else sec.unassigned = profileFromS();
+    sec.saved = {}; S.saved.forEach(function (m) { if (m && m.id) sec.saved[m.id] = m; });
+    sec.prefs = { macro: S.macro, savedCfg: S.savedCfg, guideMs: S.guideMs, condModel: S.condModel, mmSecPerStep: S.mmSecPerStep, solver: S.solver, target: S.target };
+    return sec;
+  }
+  function applySection(sec) {
+    SH.section = sec || emptySection();
+    S.char = activeKey();
+    applyProfile(S.char ? SH.section.chars[S.char] || null : SH.section.unassigned);
+    S.saved = savedArray(SH.section.saved);
+    var pr = SH.section.prefs || {};
+    ['guideMs', 'condModel', 'mmSecPerStep'].forEach(function (k) { if (pr[k] !== undefined) S[k] = pr[k]; });
+    ['macro', 'solver', 'savedCfg'].forEach(function (k) { if (pr[k]) Object.assign(S[k], pr[k]); });
+    if (pr.target) S.target = pr.target;
+  }
+  // today's single set, saved macros and settings, from the key used before gate 1C (read only)
+  function sectionFromOld(d) {
+    var sec = emptySection();
+    if (!d) return sec;
+    if (Array.isArray(d.stats) && d.stats.length === 8) {
+      var st = {}; d.stats.forEach(function (x, j) { st['j' + j] = Object.assign(defaultStats(), x); });
+      sec.unassigned = { stats: st, food: d.food || null, potion: d.potion || null, cosmicTool: d.cosmicTool !== false };
+    }
+    (Array.isArray(d.saved) ? d.saved : []).forEach(function (m, i) { if (m && typeof m === 'object') { var id = m.id || ('m' + String(i).padStart(4, '0')); sec.saved[id] = Object.assign({}, m, { id: id }); } });
+    ['macro', 'savedCfg', 'guideMs', 'condModel', 'mmSecPerStep', 'solver', 'target'].forEach(function (k) { if (d[k] !== undefined && d[k] !== null) sec.prefs[k] = d[k]; });
+    return sec;
+  }
+  function loadShared() {
+    if (!CC) { applySection(sectionFromOld(lsGet(STORE))); return Promise.resolve(); }
+    return CC.read().then(function (r) {
+      var doc = CC.emptyDoc();
+      if (r.raw != null) {
+        try { doc = CC.checkDoc(r.raw); } catch (e) { SH.problem = e.message; applySection(sectionFromOld(lsGet(STORE))); return; } // never written over
+      }
+      SH.rev = r.rev; SH.chars = doc.chars;
+      var write = false;
+      if (doc.moved.atelier && doc.modules.atelier) { SH.base = JSON.parse(JSON.stringify(doc.modules.atelier)); applySection(doc.modules.atelier); }
+      else {
+        // first opening on this device: the old key's stats, macros and settings are copied in; the old key stays as it is
+        var old = lsGet(STORE);
+        SH.base = doc.modules.atelier ? JSON.parse(JSON.stringify(doc.modules.atelier)) : null;
+        SH.movedNow = { at: Date.now(), from: old ? STORE : null };
+        applySection(sectionFromOld(old));
+        write = true;
+      }
+      SH.ready = true;
+      if (write) return writeShared();
+    }).catch(function (e) { SH.problem = e.message; });
+  }
+  function scheduleShared() { if (!SH.ready) return; clearTimeout(SH.timer); SH.timer = setTimeout(writeShared, 300); }
+  function writeShared() {
+    clearTimeout(SH.timer); SH.timer = null;
+    if (!CC || !SH.ready || SH.problem) return Promise.resolve();
+    var sec = sectionFromS();
+    var own = SH.movedNow ? { moved: SH.movedNow } : null;
+    return CC.writeSection('atelier', sec, { rev: SH.rev, base: SH.base }, own).then(function (r) {
+      SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.section = r.section; SH.movedNow = null; SH.chars = r.doc.chars;
+      if (r.merged) S.saved = savedArray(r.section.saved); // macros saved in another window are kept here too
+    }).catch(function (e) { toast('Crafter stats could not be saved on this device: ' + e.message); });
+  }
+  // another page (the Tracker, another Atelier window) saved: take its characters and section, unless a change made
+  // here is still waiting (its save merges with theirs)
+  function reloadShared() {
+    if (!CC || SH.timer || !SH.ready) return;
+    CC.read().then(function (r) {
+      var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
+      if (SH.timer) return;
+      var before = JSON.stringify([SH.chars, SH.section]);
+      SH.rev = r.rev; SH.chars = doc.chars;
+      if (doc.modules.atelier) { SH.base = JSON.parse(JSON.stringify(doc.modules.atelier)); SH.section = doc.modules.atelier; }
+      if (JSON.stringify([SH.chars, SH.section]) === before) return;
+      applySection(SH.section); renderAll(); askOwner();
+    });
+  }
+  if (CC) CC.onChange(reloadShared);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && SH.timer) writeShared(); });
+  window.addEventListener('pagehide', function () { if (SH.timer) writeShared(); });
+  // the owner's choice, asked once per opening until answered: whose are today's stats?
+  function askOwner() {
+    if (SH.asked || !SH.section || !SH.section.unassigned || !SH.chars.length) return;
+    SH.asked = true;
+    dialog('<h3>Whose crafter stats are these?</h3><p class="help">The Atelier now keeps crafter stats, food and medicine for each character, so you can switch between them. The stats you had saved belong to:</p>' +
+      '<div class="row" style="flex-wrap:wrap;gap:8px">' + SH.chars.map(function (c) { return '<button class="btn" data-d="own:' + esc(c.id) + '">' + esc(c.name) + '</button>'; }).join('') + '</div>' +
+      '<p class="help">Every other character starts from the usual starting stats.</p><div class="row"><button class="btn ghost" data-d="close">Not now</button></div>', function (v, d) {
+      if (v.indexOf('own:') !== 0) return;
+      var cid = v.slice(4); if (!hasChar(cid)) return;
+      var p = activeKey() === null ? profileFromS() : SH.section.unassigned;
+      SH.section.chars[cid] = p; SH.section.unassigned = null; S.char = cid; applyProfile(p);
+      d.close(); persist(); S.result = null; renderAll(); toast('Crafter stats saved for ' + charName(cid));
+    });
+  }
+  // the switcher: keep this character's stats, load the other's (a character without stats starts from the defaults)
+  function switchChar(cid) {
+    var cur = activeKey();
+    if (cur === null) SH.section.unassigned = profileFromS(); else SH.section.chars[cur] = profileFromS();
+    S.char = cid || null;
+    applyProfile(cid ? SH.section.chars[cid] || null : SH.section.unassigned);
+    persist(); S.result = null; renderCrafter(); renderRotation();
+  }
+  function switcherHtml() {
+    if (!SH.chars.length) return '<p class="help crafter-who-help">Set up your characters in the Tracker to keep crafter stats for each of them.</p>';
+    var k = activeKey();
+    var opts = SH.chars.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === k ? ' selected' : '') + '>' + esc(c.name) + '</option>'; });
+    if (SH.section && SH.section.unassigned) opts.push('<option value=""' + (k === null ? ' selected' : '') + '>Stats not yet given to a character</option>');
+    return '<label class="field crafter-who"><span class="label">Crafter</span><select id="crafter-char" class="inp">' + opts.join('') + '</select></label>';
   }
 
   // ── state ────────────────────────────────────────────────────────────────
@@ -58,19 +193,18 @@
     macro: { splitMacro: true, includeDelay: true, extraDelay: 0, notificationEnabled: false, defaultNotification: true, notificationSound: 1,
       customNotificationFormat: '/echo Macro #{index} finished <se.1>', differentLastNotification: false, customLastNotificationFormat: '/echo Craft finished <se.2>',
       avoidSingleActionMacro: false, introEnabled: false, defaultIntro: true, customIntroFormat: '/mlock' },
-    saved: [], history: [], savedCfg: { loadFromSaved: true, op: 'rotation', maxHistory: 50 },
+    saved: [], history: [], savedCfg: { loadFromSaved: true, op: 'rotation', maxHistory: 50 }, char: null,
     guideMs: 500, condModel: 'teamcraft', mmSecPerStep: 3,
     pane: 'recipe', solving: null, result: null, guide: null
   };
   (function restore() {
     var d = load();
     if (!d) return;
-    ['locale', 'theme', 'layout', 'job', 'cosmicTool', 'food', 'potion', 'mode', 'activeJobOnly', 'zone', 'recipeId', 'target', 'guideMs', 'condModel', 'mmSecPerStep']
+    // this device's fields (the shared ones arrive from the one save before the first render: loadShared)
+    ['locale', 'theme', 'layout', 'job', 'mode', 'activeJobOnly', 'zone', 'recipeId', 'char']
       .forEach(function (k) { if (d[k] !== undefined) S[k] = d[k]; });
-    if (Array.isArray(d.stats) && d.stats.length === 8) S.stats = d.stats.map(function (x) { return Object.assign(defaultStats(), x); });
-    ['custom', 'solver', 'macro', 'savedCfg'].forEach(function (k) { if (d[k]) Object.assign(S[k], d[k]); });
+    if (d.custom) Object.assign(S.custom, d.custom);
     if (S.theme === 'celadon') S.theme = 'light'; if (S.theme === 'jade') S.theme = 'dark';
-    if (Array.isArray(d.saved)) S.saved = d.saved;
     if (Array.isArray(d.history)) S.history = d.history;
   })();
 
@@ -609,6 +743,7 @@
     var eff = effective(st, S.food, S.potion);
     var h = paneHead('II', t('Crafter stats'), '<button class="btn sm ghost" data-act="copy-cfg" title="' + esc(t('🗐 Copy crafter config')) + '">⧉</button><button class="btn sm ghost" data-act="paste-cfg" title="' + esc(t('📋 Paste config here to load')) + '">⇩</button>');
     h += '<div class="pane-body crafter-body"><div class="cf-a">';
+    h += switcherHtml();
     h += '<div class="jobs" role="group" aria-label="' + esc(t('Job')) + '">' + JOBS.map(function (j, i) { return '<button data-act="job" data-v="' + i + '" class="' + (i === S.job ? 'on' : '') + '">' + esc(j) + '</button>'; }).join('') + '</div>';
     var nf = function (lbl, k, min, max) { return '<label class="field"><span class="label">' + esc(lbl) + '</span><input type="number" inputmode="numeric" data-stat="' + k + '" min="' + min + '" max="' + max + '" value="' + st[k] + '"></label>'; };
     h += '<div class="grid4">' + nf(t('Craftsmanship'), 'craftsmanship', 1, 9999) + nf(t('Control'), 'control', 1, 9999) + nf('CP', 'cp', 1, 2000) + nf(t('Job level'), 'level', 1, 100) + '</div>';
@@ -1158,6 +1293,7 @@
     if (el.closest('dialog') || el.closest('#guide')) return;
     if (el.id === 'activejob') { S.activeJobOnly = el.checked; persist(); renderResults(); }
     else if (el.id === 'zone') { S.zone = +el.value; persist(); renderResults(); }
+    else if (el.id === 'crafter-char') switchChar(el.value);
     else if (el.id === 'iqv') { S.iqValue = clampInt(el.value, 0, 65535, 0); configChanged(); }
     else if (el.dataset.stat) { var lim = { level: [1, 100], craftsmanship: [1, 9999], control: [1, 9999], cp: [1, 2000] }[el.dataset.stat]; stats()[el.dataset.stat] = clampInt(el.value, lim[0], lim[1], stats()[el.dataset.stat]); configChanged(); }
     else if (el.dataset.flag) { stats()[el.dataset.flag] = el.checked; configChanged(); }
@@ -1390,6 +1526,7 @@
   // ── boot ─────────────────────────────────────────────────────────────────
   var WASM_BYTES = null;
   function b64(s) { var bin = atob(s), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u; }
+  var sharedReady = loadShared();
   (function boot() {
     applyTheme();
     try {
@@ -1400,26 +1537,57 @@
         return window.__raphael({ module_or_path: mod });
       }).then(function () {
         B = window.__raphael;
+        return sharedReady;
+      }).then(function () {
         loadLocaleData();
         if (S.recipeId) selectRecipe(S.recipeId);
         startSolverWorker();
         renderAll();
         $('#boot').remove();
+        askOwner();
       }).catch(function (err) { $('#boot').innerHTML = '<p style="max-width:40ch;padding:20px">The solver could not start in this browser: ' + esc(err.message || err) + '</p>'; });
     } catch (err) { $('#boot').innerHTML = '<p style="padding:20px">The solver could not start: ' + esc(err.message) + '</p>'; }
   })();
+  // The one-time hand-over notice (gate 1D, blueprint rule 5), for an Atelier installed or bookmarked on its own: shown on
+  // the hosted page when it was not opened from the shell, until the owner has seen it ("Got it") or the Command Center is
+  // installed on this device. One record for both apps, on this device only: eveniunt-command-center-device.
+  var CC_DEVICE = 'eveniunt-command-center-device'; // declared before pwa() below runs, which reads it at start-up
+  function ccDevice() { try { return JSON.parse(localStorage.getItem(CC_DEVICE) || '{}') || {}; } catch (e) { return {}; } }
+  function handover(home, name) {
+    var d = ccDevice(), ref = document.referrer || '';
+    var fromShell = ref.indexOf(home) === 0 && ref.slice(home.length).indexOf('/') < 0;
+    if (d.installed || d.handoverSeen || fromShell) return;
+    // on an iPhone or iPad every app installed on the home screen keeps its own copy of the browser's storage
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var el = document.createElement('aside'); el.className = 'handover'; el.setAttribute('role', 'note'); el.setAttribute('data-handover', '1');
+    el.innerHTML = '<p><b>The ' + esc(name) + ' is now part of the Eveniunt Command Center:</b> one installable app for the Tracker, the Atelier and the modules to come. ' +
+      'It reads the same save as this page, so nothing needs to move, and this icon keeps working.' +
+      (ios ? ' On this device, each installed app keeps its own copy of the save: before you remove an icon, move your data with a transfer code, a backup or cloud sync.' : '') +
+      '</p><p class="handover-acts"><a class="btn sm" href="' + esc(home) + '">Open the Command Center</a><button type="button" class="btn sm ghost" data-handover-ok="1">Got it</button></p>';
+    el.querySelector('[data-handover-ok]').addEventListener('click', function () {
+      el.remove();
+      try { var n = ccDevice(); n.handoverSeen = Date.now(); localStorage.setItem(CC_DEVICE, JSON.stringify(n)); } catch (e) { /* private window: shown again next time */ }
+    });
+    var mast = document.querySelector('.mast'); if (mast) mast.insertAdjacentElement('afterend', el);
+  }
   // ── installable app (hosted only; the single offline file is unchanged) ──
   (function pwa() {
     if (!HOSTED || !('serviceWorker' in navigator)) return;
     var link = document.createElement('link'); link.rel = 'manifest'; link.href = 'manifest.webmanifest'; document.head.appendChild(link);
     var tc = document.createElement('meta'); tc.name = 'theme-color'; tc.content = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() || '#0f2234'; document.head.appendChild(tc);
     navigator.serviceWorker.register('sw.js').then(function () {
-      // the first visit is not yet cross-origin isolated (the service worker adds the headers): reload once it takes control
-      if (!self.crossOriginIsolated) {
-        var once = false; try { once = sessionStorage.getItem('atelier-coi-reload') === '1'; } catch (e) { /* ignore */ }
-        if (!once) navigator.serviceWorker.addEventListener('controllerchange', function () { try { sessionStorage.setItem('atelier-coi-reload', '1'); } catch (e) { /* ignore */ } location.reload(); });
-        if (!once && navigator.serviceWorker.controller) { try { sessionStorage.setItem('atelier-coi-reload', '1'); } catch (e) { /* ignore */ } location.reload(); }
-      }
+      // The first visit is not yet cross-origin isolated (this worker adds the headers), so the page reloads once, but only
+      // once its OWN worker controls it (gate 1A finding F1, gate 1D). A site-wide worker that takes the page first, such as
+      // the Command Center's at the site root, must not spend the one reload, or the page would stay on one core until the
+      // next visit. A page that arrives isolated (the root worker isolates atelier/ since gate 1B) needs no reload at all.
+      if (self.crossOriginIsolated) return;
+      var once = false; try { once = sessionStorage.getItem('atelier-coi-reload') === '1'; } catch (e) { /* ignore */ }
+      if (once) return;
+      var own = new URL('sw.js', location.href).href;
+      var mine = function () { var c = navigator.serviceWorker.controller; return !!c && c.scriptURL === own; };
+      var go = function () { try { sessionStorage.setItem('atelier-coi-reload', '1'); } catch (e) { /* ignore */ } location.reload(); };
+      if (mine()) return go();
+      navigator.serviceWorker.addEventListener('controllerchange', function () { if (mine()) go(); });
     }).catch(function () { /* offline install unavailable; the page still works */ });
     var deferred = null, btn = document.createElement('button');
     btn.className = 'btn sm install-btn hidden'; btn.textContent = '⤓ Install app'; btn.setAttribute('data-install', '1');
@@ -1427,6 +1595,13 @@
     window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; btn.classList.remove('hidden'); });
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Atelier installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
+    // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. A plain link, first
+    // among the header tools; on narrow screens only the house sign shows.
+    var home = new URL('../', location.href).href;
+    var back = document.createElement('a'); back.className = 'btn sm ghost cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Eveniunt Command Center: home');
+    back.innerHTML = '<span aria-hidden="true">\u2302</span><span class="cc-txt">Command Center</span>';
+    if (tools) tools.insertBefore(back, tools.firstChild);
+    handover(home, 'Atelier');
   })();
-  window.__atelier = { S: S, threads: function () { return CORES; }, iconUrl: iconUrl, enName: function (k) { return EN_NAME[k]; }, solveNow: solveNow, openGuide: openGuide, guideReport: guideReport, call: function () { return call.apply(null, arguments); } };
+  window.__atelier = { SH: SH, switchChar: switchChar, flush: writeShared, S: S, threads: function () { return CORES; }, iconUrl: iconUrl, enName: function (k) { return EN_NAME[k]; }, solveNow: solveNow, openGuide: openGuide, guideReport: guideReport, call: function () { return call.apply(null, arguments); } };
 })();

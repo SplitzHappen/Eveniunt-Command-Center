@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign-in stand-in</title>
+</head>
+<body>
+<!-- Gate 1A prototype: stands in for Google's sign-in popup. Like Google's, it hands the result back by posting a
+     message to window.opener; if the opener link has been cut (cross-origin isolation on the opening page), it
+     cannot, and says so. It never asks for or holds a real credential. -->
+<p id="s">…</p>
+<script>
+  var hasOpener = !!window.opener;
+  document.title = hasOpener ? 'opener:yes' : 'opener:no';
+  document.getElementById('s').textContent = hasOpener ? 'window.opener is present: result sent back.' : 'window.opener is null: the result cannot be sent back.';
+  if (hasOpener) window.opener.postMessage({ type: 'cc-signin', token: 'stand-in-token' }, '*');
+  window.__signin = { hasOpener: hasOpener };
+  if (!/[?&]stay=1/.test(location.search)) setTimeout(function () { window.close(); }, 300);
+</script>
+</body>
+</html>

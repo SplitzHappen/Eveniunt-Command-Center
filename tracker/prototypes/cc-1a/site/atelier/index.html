@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CC-1A Atelier (stand-in)</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 24px; max-width: 60ch; }
+  code { background: #eee; padding: 0 4px; }
+  a.btn, button { display: inline-block; margin: 4px 4px 4px 0; padding: 6px 12px; }
+</style>
+</head>
+<body>
+<!-- Gate 1A prototype: the Atelier as its own top-level page of the app, made cross-origin isolated by a service
+     worker (GitHub Pages cannot send the headers), running a 4-thread WebAssembly worker pool on shared memory.
+     Opened as a file it must fall back to one thread without errors. Not real app code; see ../../RESULTS.md. -->
+<h1>Atelier (stand-in)</h1>
+<p>Cross-origin isolated: <code id="iso">?</code> · threads: <code id="threads">…</code></p>
+<p id="pool">Starting the worker pool…</p>
+<p>Shared save: <code id="shared">…</code></p>
+<p><a class="btn" id="to-shell" href="../">Back to the shell</a> <button id="signin">Sign in from here (should fail)</button></p>
+<p id="signin-result"></p>
+<script src="../shared.js"></script>
+<script src="atelier.js"></script>
+</body>
+</html>

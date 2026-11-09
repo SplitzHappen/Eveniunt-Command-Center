@@ -58,10 +58,11 @@
 
   // Returns { id, modifiedTime } of the written file. Google accepts at most 5 MB in one such request: a larger copy
   // is refused here with a plain message instead of Google's bare error (backup files and transfer codes still work).
+  // The limit is counted in bytes as sent (UTF-8), not in characters, so names in non-Latin letters count fully.
   ET.DRIVE_MAX_BYTES = 5 * 1024 * 1024 - 64 * 1024;
   async function upload(f, token, fileId, doc) {
     const body = JSON.stringify(doc);
-    if (body.length > ET.DRIVE_MAX_BYTES) throw Object.assign(new Error('The cloud copy has grown past the 5 MB that cloud sync can send in one go, so nothing was sent. Use backup files or a transfer code until the tracker is updated.'), { code: 'too-large' });
+    if (globalThis.CC.byteLength(body) > ET.DRIVE_MAX_BYTES) throw Object.assign(new Error('The cloud copy has grown past the 5 MB that cloud sync can send in one go, even compressed, so nothing was sent. Use backup files or a transfer code until the app is updated.'), { code: 'too-large' });
     if (fileId) {
       const r = await call(f, token, UPLOAD + '/' + fileId + '?uploadType=media&fields=id,modifiedTime', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
       let j = null; try { j = await r.json(); } catch (e) { j = null; }
@@ -75,11 +76,29 @@
     return { id: j.id, modifiedTime: j.modifiedTime || null };
   }
 
-  // Step 1: read the cloud copy and merge. Returns { done: true } when nothing needs the owner,
-  // or { conflicts, result, fileId } for the "which one is right?" prompt.
-  // The cloud copy carries the app tag and state version, so a copy written by a newer version is never merged by an
-  // older one (it would read the unknown parts as deletions).
-  const cloudDoc = (st) => Object.assign({ app: 'eveniunt-completionist-tracker', v: ET.STATE_VERSION }, ET.portable(st));
+  // The cloud copy (gate 1C, finding F2): the shareable part of the one save, every module's section, compressed.
+  // A full 8-character save is 8.4 MB as plain text, past the 5 MB limit; compressed it is about 1.4 MB.
+  // It keeps the app tag and file name and carries version 2, so a tracker from before gate 1C, which knows only
+  // version 1, refuses it with "saved by a newer version" instead of misreading it (or calling it damaged).
+  // A plain version 1 copy, written by a device not yet updated, is still read.
+  const TAG = 'eveniunt-completionist-tracker', FORMAT = 'deflate-raw+base64';
+  ET.CLOUD_VERSION = 2;
+  const cloudDoc = async (st) => {
+    const save = ET.saveDoc(st);
+    return { app: TAG, v: ET.CLOUD_VERSION, format: FORMAT, data: await globalThis.CC.pack(JSON.stringify({ app: globalThis.CC.APP, v: globalThis.CC.VERSION, chars: save.chars, modules: save.modules })) };
+  };
+  ET.cloudDoc = cloudDoc;
+  // The cloud copy as read, in the portable form the merge uses (null when it cannot be read).
+  ET.readCloud = async function (doc) {
+    if (doc && typeof doc.v === 'number' && doc.v > ET.CLOUD_VERSION) throw new Error('The cloud copy was saved by a newer version of the app. Reload this page to update, then sync again.');
+    if (!doc || doc.app !== TAG || doc.v !== 2) return doc;
+    if (doc.format !== FORMAT || typeof doc.data !== 'string') return null;
+    let inner;
+    try { inner = JSON.parse(await globalThis.CC.unpack(doc.data, 64 * 1024 * 1024)); } catch (e) { return null; }
+    if (!inner || inner.app !== globalThis.CC.APP || !Number.isInteger(inner.v)) return null;
+    if (inner.v > globalThis.CC.VERSION) throw new Error('The cloud copy was saved by a newer version of the app. Reload this page to update, then sync again.');
+    return Object.assign({ app: TAG, v: 1 }, ET.fromSaveDoc(inner));
+  };
   const looksValid = (doc) => {
     if (!doc || doc.app !== 'eveniunt-completionist-tracker' || !Number.isInteger(doc.v) || doc.v < 1 || doc.v > ET.STATE_VERSION || !Array.isArray(doc.chars) || !doc.chars.length || doc.chars.length > ET.MAX_CHARS || !doc.ticks || typeof doc.ticks !== 'object' || Array.isArray(doc.ticks)) return false;
     const ids = new Set();
@@ -100,14 +119,14 @@
     const file = await findFile(f, token);
     const local = ET.portable(st);
     if (!file) {
-      const w = await upload(f, token, null, cloudDoc(st));
+      const w = await upload(f, token, null, await cloudDoc(st));
       st.sync.drive = { fileId: w.id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(local)) };
       return { done: true, created: true };
     }
     const r = await call(f, token, DRIVE + '/' + file.id + '?alt=media');
     let remote = null;
     try { remote = await r.json(); } catch (e) { remote = null; }
-    if (remote && typeof remote.v === 'number' && remote.v > ET.STATE_VERSION) throw new Error('The cloud copy was saved by a newer version of the tracker. Reload this page to update, then sync again.');
+    remote = await ET.readCloud(remote);
     if (!looksValid(remote)) throw Object.assign(new Error('The cloud copy is damaged or not a tracker copy, so nothing was merged and this device kept its data.'), { code: 'damaged', fileId: file.id });
     const base = st.sync.drive && st.sync.drive.fileId === file.id ? st.sync.drive.base : null;
     const result = ET.threeWay(base, local, remote);
@@ -142,7 +161,7 @@
     const before = JSON.parse(JSON.stringify(ET.portable(st)));
     const candidate = ET.applyMerge(JSON.parse(JSON.stringify(st)), pending.result, choices);
     const doc = JSON.parse(JSON.stringify(ET.portable(candidate)));
-    const w = await upload(f, token, pending.fileId, cloudDoc(candidate));
+    const w = await upload(f, token, pending.fileId, await cloudDoc(candidate));
     // apply the merged copy here; anything changed on this device since step 1 is kept on top of it
     ET.applyMerge(st, ET.threeWay(before, ET.portable(st), doc), {});
     st.sync.drive = { fileId: w.id, at: new Date().toISOString(), base: doc };
@@ -158,7 +177,7 @@
   // Replace the cloud copy with this device's data (used only when the owner chooses it, e.g. after a damaged copy).
   ET.driveOverwrite = async function (st, token, fileId, fetchImpl) {
     const f = fetchImpl || globalThis.fetch;
-    const w = await upload(f, token, fileId || null, cloudDoc(st));
+    const w = await upload(f, token, fileId || null, await cloudDoc(st));
     st.sync.drive = { fileId: w.id, at: new Date().toISOString(), base: JSON.parse(JSON.stringify(ET.portable(st))) };
   };
 })();

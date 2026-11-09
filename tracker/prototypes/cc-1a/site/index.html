@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CC-1A shell (stand-in)</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 24px; max-width: 60ch; }
+  code { background: #eee; padding: 0 4px; }
+  button, a.btn { display: inline-block; margin: 4px 4px 4px 0; padding: 6px 12px; }
+</style>
+</head>
+<body>
+<!-- Gate 1A prototype: the Command Center shell. Not cross-origin isolated, so Google's sign-in popup keeps
+     window.opener. Nothing here is real app code; see ../RESULTS.md. -->
+<h1>Command Center shell (stand-in)</h1>
+<p>Cross-origin isolated: <code id="iso">?</code></p>
+<p>
+  <button id="signin-same">Sign in (stand-in, same origin)</button>
+  <button id="signin-other">Sign in (Google-style, other origin)</button>
+</p>
+<p id="signin-result">Not signed in.</p>
+<p><a class="btn" id="to-atelier" href="atelier/">Open the Atelier</a></p>
+<p>Shared save: <code id="shared">…</code></p>
+<script src="shared.js"></script>
+<script src="shell.js"></script>
+</body>
+</html>

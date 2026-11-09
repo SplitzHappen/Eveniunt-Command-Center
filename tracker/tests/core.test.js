@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const fs = require('fs');
-for (const f of ['model', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'links', 'storage']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+for (const f of ['save', 'model', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'links', 'storage']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
 globalThis.ET.DRIVE_SETTLE_MS = 0; // the cloud re-check after writing waits a moment in the app; not in tests
 const ET = globalThis.ET;
 
@@ -105,7 +105,7 @@ test('transfer code: full 8-character state fits in a short code and decodes exa
   const back = await ET.readTransferCode(code);
   assert.deepStrictEqual(back.ticks, st.ticks);
   assert.deepStrictEqual(back.avail, st.avail);
-  assert.ok(code.startsWith('EVT1-'));
+  assert.ok(code.startsWith('EVT2-'));
   assert.ok(code.length < 200000, 'code length ' + code.length);
   await assert.rejects(ET.readTransferCode(code.slice(0, 40)));
   await assert.rejects(ET.readTransferCode('hello'));
@@ -488,7 +488,7 @@ test('cloud sync: a damaged cloud copy never wipes this device', async () => {
   await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
   assert.strictEqual(Object.keys(st.ticks.c1).length, 5);
   await ET.driveOverwrite(st, 'tok', 'f1', d.f);
-  assert.strictEqual(Object.keys(d.files.f1.ticks.c1).length, 5);
+  assert.strictEqual(Object.keys((await ET.readCloud(d.files.f1)).ticks.c1).length, 5);
 });
 
 test('cloud sync: a large removal from the other device is held for confirmation', async () => {
@@ -523,18 +523,18 @@ test('cloud sync: if another device writes between reading and writing, nothing 
   ET.setTick(b, 'c1', k, true);
   await ET.driveSync(b, 'tok', d.f); // meanwhile B syncs again
   await assert.rejects(ET.driveFinish(a, 'tok', r, {}, d.f), (e) => e.code === 'changed');
-  assert.ok(d.files.f1.ticks.c1[k], "B's newer tick is still in the cloud");
+  assert.ok((await ET.readCloud(d.files.f1)).ticks.c1[k], "B's newer tick is still in the cloud");
 });
 
 test('cloud sync: the merged copy is validated (a cloud file with an odd character is refused; odd keys are ignored)', async () => {
   const d = fakeDrive();
   const st = ET.newState(['A']);
   await ET.driveSync(st, 'tok', d.f);
-  const bad = JSON.parse(JSON.stringify(d.files.f1));
+  const bad = JSON.parse(JSON.stringify(await ET.readCloud(d.files.f1)));
   bad.chars.push({ id: '__proto__', name: 'x' }); bad.ticks.__proto__ = { 'mounts:1': 1 };
   d.touch('f1', bad);
   await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
-  const doc = JSON.parse(JSON.stringify(d.files.f1));
+  const doc = JSON.parse(JSON.stringify(await ET.readCloud(d.files.f1)));
   doc.chars.pop(); doc.ticks.c1 = { 'mounts:1': 1, '<b>': 1 };
   d.touch('f1', doc);
   await ET.driveSync(st, 'tok', d.f);
@@ -549,7 +549,7 @@ test('cloud sync: a copy missing a character\'s ticks, or of another app, is ref
   const keys = ET.sectionKeys(idx.sections.find((s) => s.id === 'mounts')).slice(0, 10);
   keys.forEach((k) => ET.setTick(st, 'c1', k, true));
   await ET.driveSync(st, 'tok', d.f);
-  const noMap = JSON.parse(JSON.stringify(d.files.f1)); delete noMap.ticks.c1;
+  const noMap = JSON.parse(JSON.stringify(await ET.readCloud(d.files.f1))); delete noMap.ticks.c1;
   d.touch('f1', noMap);
   await assert.rejects(ET.driveSync(st, 'tok', d.f), (e) => e.code === 'damaged');
   d.touch('f1', Object.assign({}, JSON.parse(JSON.stringify(st.sync.drive.base)), { app: 'something-else', v: 1 }));
@@ -579,7 +579,7 @@ test('cloud sync: a failed upload leaves this device unchanged; ticks made durin
   assert.ok(a.ticks.c1[k1] && a.ticks.c1[k2]);
   ET.setTick(a, 'c1', k3, true);
   await ET.driveSync(a, 'tok', d.f);
-  assert.ok(d.files.f1.ticks.c1[k2] && d.files.f1.ticks.c1[k3], 'the tick made during the upload reaches the cloud on the next sync');
+  assert.ok((await ET.readCloud(d.files.f1)).ticks.c1[k2] && (await ET.readCloud(d.files.f1)).ticks.c1[k3], 'the tick made during the upload reaches the cloud on the next sync');
 });
 
 test('cloud sync: two devices writing at the same moment end with both devices\' ticks', async () => {
@@ -592,7 +592,7 @@ test('cloud sync: two devices writing at the same moment end with both devices\'
   ET.setTick(a, 'c1', ka, true); ET.setTick(b, 'c1', kb, true);
   // B read the cloud copy and passed its check before A wrote; A uploads, and right after A's upload lands, B's upload
   // (made from the older copy, so without A's tick) overwrites it. Drive has no "write only if unchanged".
-  const before = JSON.parse(JSON.stringify(d.files.f1));
+  const before = JSON.parse(JSON.stringify(await ET.readCloud(d.files.f1)));
   d.hooks.afterPatch = () => {
     const merged = ET.applyMerge(JSON.parse(JSON.stringify(b)), ET.threeWay(b.sync.drive.base, ET.portable(b), before), {});
     const docB = Object.assign({ app: 'eveniunt-completionist-tracker', v: ET.STATE_VERSION }, JSON.parse(JSON.stringify(ET.portable(merged))));
@@ -600,10 +600,10 @@ test('cloud sync: two devices writing at the same moment end with both devices\'
     b.sync.drive.base = JSON.parse(JSON.stringify(ET.portable(merged)));
   };
   await assert.rejects(ET.driveSync(a, 'tok', d.f), (e) => e.code === 'changed', 'A notices the later write');
-  assert.ok(!d.files.f1.ticks.c1[ka] && d.files.f1.ticks.c1[kb], "for a moment the cloud lacks A's tick");
+  assert.ok(!(await ET.readCloud(d.files.f1)).ticks.c1[ka] && (await ET.readCloud(d.files.f1)).ticks.c1[kb], "for a moment the cloud lacks A's tick");
   await ET.driveSync(a, 'tok', d.f); // the automatic second sync
   await ET.driveSync(b, 'tok', d.f);
-  assert.ok(d.files.f1.ticks.c1[ka] && d.files.f1.ticks.c1[kb], 'the cloud copy has both ticks');
+  assert.ok((await ET.readCloud(d.files.f1)).ticks.c1[ka] && (await ET.readCloud(d.files.f1)).ticks.c1[kb], 'the cloud copy has both ticks');
   assert.ok(a.ticks.c1[kb] && b.ticks.c1[ka], 'and so do both devices');
 });
 
@@ -986,4 +986,196 @@ test('live data: hunts (windows, spawn points, world boss FATEs), worlds, and th
   assert.equal(ET.fcCollectionOf('leves-dt'), 'leves'); assert.equal(ET.fcCollectionOf('ttnpcs'), 'npcs');
   const tt = idx.sections.find((s) => s.id === 'ttnpcs');
   assert.ok(tt.groups.reduce((a, g) => a + g.keys.filter((k) => idx.byKey.get(k).e.fc).length, 0) >= 120, 'Triple Triad opponents carry their FFXIV Collect id');
+});
+
+// ── gate 1C: the one save ────────────────────────────────────────────────────────────────────────────────────────────
+// Node has no IndexedDB, so these run on the localStorage fallback (a shim); the browser checks cover IndexedDB.
+const CC = globalThis.CC;
+function useStorage() {
+  const m = new Map();
+  globalThis.localStorage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), get length() { return m.size; }, key: (i) => [...m.keys()][i] };
+  CC.resetMemory(); ET.moveProblem = null; ET.saveDisabled = false; ET.justMoved = false; ET.loadProblem = null;
+  return m;
+}
+// 8 characters with every field filled: ticks, "does not apply" marks, levels, starting class or city, Grand Company,
+// Lodestone number, plus availability choices and changed settings
+function fullState() {
+  const st = ET.newState(['Alba Eveniunt', 'Brio Eveniunt', 'Cara Eveniunt', 'Dax Eveniunt', 'Eli Eveniunt', 'Fen Eveniunt', 'Gia Eveniunt', 'Hal Eveniunt']);
+  const all = [...idx.byKey.keys()];
+  const cls = ['gla', 'pgl', 'mrd', 'lnc', 'arc', 'cnj', 'thm', 'acn'];
+  st.chars.forEach((c, n) => {
+    c.lodestone = String(10000000 + n); c.gc = (n % 3) + 1;
+    if (n === 7) { c.cls = null; c.city = 'uld'; } else c.cls = cls[n];
+    for (let i = n; i < all.length; i += 3) st.ticks[c.id][all[i]] = 1;
+    for (let i = n; i < all.length; i += 97) st.excl[c.id][all[i]] = 1;
+    st.vals[c.id][all[n]] = 50 + n;
+  });
+  ET.setAvailability(st, all[3], 'ok'); ET.setAvailability(st, all[4], 'x');
+  st.settings.countLimited = true; st.settings.links = false;
+  return ET.validateState(st);
+}
+const MODS = {
+  atelier: { chars: { c1: { stats: { j0: { level: 100, craftsmanship: 5000, control: 4900, cp: 650 } }, food: { id: 44, hq: true }, potion: null, cosmicTool: true } }, saved: { s1: { id: 's1', name: 'Macro one', actions: ['MuscleMemory'] } }, prefs: { guideMs: 400 } },
+  lists: { lists: { l1: { name: 'Gear', items: { 123: { qty: 2, have: 1 } } } } },
+  submersibles: { fcs: { f1: { world: 'Dynamis', name: 'Free company', chars: ['c1'], subs: { s1: { name: 'Sub one', rank: 50 } } } } },
+};
+
+test('one save: an 8-character save is copied in, every field matches, the old save is untouched, and it is copied once', async () => {
+  const ls = useStorage();
+  const st = fullState();
+  const oldText = JSON.stringify(st);
+  ls.set('eveniunt-tracker-state', oldText); ls.set('eveniunt-tracker-state-rev', 'r0');
+  const loaded = await ET.loadState();
+  assert.strictEqual(ET.justMoved, true);
+  assert.strictEqual(ET.compareTracker(st, loaded), null, 'every character matches');
+  loaded.chars.forEach((c, i) => assert.deepStrictEqual([c.name, c.lodestone, c.cls, c.city || null, c.gc], [st.chars[i].name, st.chars[i].lodestone, st.chars[i].cls, st.chars[i].city || null, st.chars[i].gc]));
+  assert.strictEqual(ls.get('eveniunt-tracker-state'), oldText, 'the old save is byte for byte the same');
+  assert.strictEqual(ls.get('eveniunt-tracker-state-rev'), 'r0');
+  const doc = JSON.parse(ls.get(CC.LS));
+  assert.strictEqual(doc.app, 'eveniunt-command-center');
+  assert.deepStrictEqual(Object.keys(doc.modules), ['tracker']);
+  assert.strictEqual(doc.moved.tracker.from, 'localstorage');
+  assert.strictEqual(doc.moved.tracker.check.chars, 8);
+  assert.strictEqual(doc.moved.tracker.check.ticks, Object.values(st.ticks).reduce((n, t) => n + Object.keys(t).length, 0));
+  // a later change to the old save (an old window left open) is not copied again
+  const k = Object.keys(st.ticks.c1)[0]; const changed = JSON.parse(oldText); delete changed.ticks.c1[k];
+  ls.set('eveniunt-tracker-state', JSON.stringify(changed));
+  ET.justMoved = false;
+  const again = await ET.loadState();
+  assert.strictEqual(ET.justMoved, false);
+  assert.ok(again.ticks.c1[k], 'the one save is used, not the old one');
+});
+
+test('one save: running the move twice is safe, and a second window that loads at the same time does not copy again', async () => {
+  const ls = useStorage();
+  ls.set('eveniunt-tracker-state', JSON.stringify(fullState()));
+  const [a, b] = await Promise.all([ET.loadState(), ET.loadState()]);
+  assert.strictEqual(ET.compareTracker(a, b), null);
+  const doc = JSON.parse(ls.get(CC.LS));
+  const at = doc.moved.tracker.at;
+  await ET.loadState();
+  assert.strictEqual(JSON.parse(ls.get(CC.LS)).moved.tracker.at, at, 'the move record is not rewritten');
+});
+
+test('one save: the way back restores the save from before the move (after keeping a copy); erase keeps the old save', async () => {
+  const ls = useStorage();
+  const st = fullState();
+  ls.set('eveniunt-tracker-state', JSON.stringify(st));
+  const loaded = await ET.loadState();
+  const k = [...idx.byKey.keys()].find((x) => !loaded.ticks.c2[x]);
+  ET.setTick(loaded, 'c2', k, true);
+  await ET.saveState(loaded, true);
+  const diff = await ET.oldSaveDiff(loaded);
+  assert.strictEqual(diff.n, 1, 'one tick differs from the save before the move');
+  await ET.goBack();
+  assert.strictEqual((await CC.extras('main-before-goback-')).length, 1, 'a copy of the current save was kept first');
+  const back = await ET.loadState();
+  assert.strictEqual(ET.compareTracker(st, back), null);
+  assert.ok(back.moved.tracker.wentBack);
+  ET.confirmMove(back); await ET.saveState(back, true);
+  assert.ok(JSON.parse(ls.get(CC.LS)).moved.tracker.confirmed);
+  await ET.clearState();
+  assert.strictEqual(await ET.loadState(), null, 'erased');
+  assert.ok(ls.get('eveniunt-tracker-state'), 'the save from before the move is still kept');
+  assert.strictEqual(await ET.loadState(), null, 'and is not copied back in after erasing');
+  await ET.saveState(ET.newState(['New']), true);
+  assert.strictEqual(JSON.parse(ls.get(CC.LS)).moved.tracker.from, 'localstorage', 'starting again keeps the move record, so the way back stays offered');
+});
+
+test('one save: a Tracker save after an Atelier save keeps the Atelier\'s change, and the reverse', async () => {
+  const ls = useStorage();
+  ls.set('eveniunt-tracker-state', JSON.stringify(ET.newState(['A', 'B'])));
+  const st = await ET.loadState();
+  // the Atelier writes its section, knowing nothing of the Tracker's latest
+  const r1 = await CC.read();
+  await CC.writeSection('atelier', MODS.atelier, { rev: r1.rev, base: null }, { moved: { at: 1, from: null } });
+  const k = [...idx.byKey.keys()][0];
+  ET.setTick(st, 'c1', k, true);
+  let merged = null; ET.onSaveMerged = (m) => { merged = m; };
+  await ET.saveState(st, true);
+  ET.onSaveMerged = null;
+  const doc = JSON.parse(ls.get(CC.LS));
+  assert.ok(doc.modules.tracker.ticks.c1[k], 'the tick is saved');
+  assert.strictEqual(doc.modules.atelier.chars.c1.stats.j0.craftsmanship, 5000, "the Atelier's stats are kept");
+  assert.strictEqual(doc.moved.atelier.at, 1, "the Atelier's move record is kept");
+  assert.ok(merged && merged.modules.atelier, 'the Tracker window takes in the Atelier section');
+  // the Atelier, with an older copy, writes again: the Tracker's tick stays
+  await CC.writeSection('atelier', Object.assign({}, MODS.atelier, { prefs: { guideMs: 700 } }), { rev: r1.rev, base: MODS.atelier });
+  const doc2 = JSON.parse(ls.get(CC.LS));
+  assert.ok(doc2.modules.tracker.ticks.c1[k]);
+  assert.strictEqual(doc2.modules.atelier.prefs.guideMs, 700);
+});
+
+test('one save: a save written by a newer version is never overwritten', async () => {
+  const ls = useStorage();
+  ls.set(CC.LS, JSON.stringify({ app: 'eveniunt-command-center', v: 99, chars: [], modules: {} }));
+  assert.strictEqual(await ET.loadState(), null);
+  assert.ok(ET.loadProblem && /newer/.test(ET.loadProblem.message));
+  const ok = await ET.saveState(ET.newState(['A']), true);
+  assert.strictEqual(ok, false);
+  assert.strictEqual(JSON.parse(ls.get(CC.LS)).v, 99);
+});
+
+test('module sections (Lists, Submersibles, Atelier) survive a backup file, a transfer code and a two-device cloud sync', async () => {
+  const st = ET.newState(['A', 'B']); st.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(st);
+  const want = CC.checkModules(MODS);
+  const file = JSON.parse(ET.exportFile(st));
+  assert.strictEqual(file.app, 'eveniunt-command-center');
+  assert.deepStrictEqual(Object.keys(file.save.modules).sort(), ['atelier', 'lists', 'submersibles', 'tracker']);
+  assert.deepStrictEqual(ET.importFile(ET.exportFile(st)).modules, want, 'backup file');
+  assert.deepStrictEqual((await ET.readTransferCode(await ET.makeTransferCode(st))).modules, want, 'transfer code');
+  // two devices: the PC has the module data; the phone starts empty, takes it, adds a submarine; the PC takes that
+  const d = fakeDrive();
+  await ET.driveSync(st, 'tok', d.f);
+  assert.strictEqual(d.files.f1.v, 2); assert.strictEqual(d.files.f1.format, 'deflate-raw+base64'); assert.strictEqual(d.files.f1.ticks, undefined, 'stored compressed');
+  const phone = ET.newState(['A', 'B']); phone.modules = {};
+  await ET.driveSync(phone, 'tok', d.f);
+  assert.deepStrictEqual(phone.modules, want, 'the phone has every section');
+  phone.modules.submersibles.fcs.f1.subs.s2 = { name: 'Sub two', rank: 1 };
+  phone.modules.lists.lists.l2 = { name: 'Food', items: {} };
+  await ET.driveSync(phone, 'tok', d.f);
+  await ET.driveSync(st, 'tok', d.f);
+  assert.strictEqual(st.modules.submersibles.fcs.f1.subs.s2.name, 'Sub two');
+  assert.strictEqual(st.modules.lists.lists.l2.name, 'Food');
+  assert.strictEqual(st.modules.atelier.chars.c1.stats.j0.craftsmanship, 5000);
+  assert.deepStrictEqual((await ET.readCloud(d.files.f1)).modules, st.modules);
+});
+
+test('old formats still load: backups and EVT1 codes from before gate 1C, and a v1 cloud copy, leave the module sections alone', async () => {
+  const st = ET.newState(['A']); const k = [...idx.byKey.keys()][5]; ET.setTick(st, 'c1', k, true);
+  const oldFile = JSON.stringify({ app: 'eveniunt-completionist-tracker', saved: 'x', state: Object.assign({ v: 1 }, ET.portable(st)) });
+  const fromOld = ET.importFile(oldFile);
+  assert.ok(fromOld.ticks.c1[k]); assert.strictEqual(fromOld.modules, undefined, 'an old backup speaks only for the Tracker');
+  const doc = { c: [['c1', 'A', '', '', 0]], t: { c1: { [k.split(':')[0]]: k.split(':')[1] } }, a: {}, s: {}, e: {}, v: {} };
+  const evt1 = 'EVT1-' + require('zlib').deflateRawSync(Buffer.from(JSON.stringify(doc))).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const fromCode = await ET.readTransferCode(evt1);
+  assert.ok(fromCode.ticks.c1[k]); assert.strictEqual(fromCode.modules, undefined);
+  await assert.rejects(ET.readTransferCode('EVT9-abc'), /newer version/);
+  // a device not yet updated writes a v1 plain copy (no sections): this device keeps its sections and takes the tick
+  const d = fakeDrive();
+  const pc = ET.newState(['A']); pc.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(pc);
+  await ET.driveSync(pc, 'tok', d.f);
+  const v1 = Object.assign({ app: 'eveniunt-completionist-tracker', v: 1 }, JSON.parse(JSON.stringify(ET.portable(pc))));
+  delete v1.modules; v1.ticks.c1[k] = 1;
+  d.touch('f1', v1);
+  const r = await ET.driveSync(pc, 'tok', d.f);
+  assert.strictEqual(r.done, true);
+  assert.ok(pc.ticks.c1[k], 'the tick from the old device arrives');
+  assert.deepStrictEqual(pc.modules, CC.checkModules(MODS), 'and no section is lost');
+  assert.strictEqual(d.files.f1.v, 2, 'the cloud copy is written back in the new format');
+});
+
+test('the cloud copy is compressed and marked version 2: a tracker from before gate 1C refuses it; the size is checked in bytes', async () => {
+  const d = fakeDrive();
+  const st = fullState(); st.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(st);
+  await ET.driveSync(st, 'tok', d.f);
+  const f1 = d.files.f1, plainSize = JSON.stringify(Object.assign({ app: 'x', v: 1 }, ET.portable(st))).length;
+  const sent = CC.byteLength(JSON.stringify(f1));
+  assert.ok(sent < plainSize / 3, 'compressed: ' + sent + ' bytes against ' + plainSize + ' as plain text');
+  // the old version's check, unchanged: "if (remote.v > STATE_VERSION) throw 'saved by a newer version'"
+  assert.ok(typeof f1.v === 'number' && f1.v > 1);
+  assert.strictEqual(CC.byteLength('é'), 2);
+  const keep = ET.DRIVE_MAX_BYTES;
+  ET.DRIVE_MAX_BYTES = sent - 1;
+  try { await assert.rejects(ET.driveOverwrite(st, 'tok', 'f1', d.f), (e) => e.code === 'too-large'); } finally { ET.DRIVE_MAX_BYTES = keep; }
 });

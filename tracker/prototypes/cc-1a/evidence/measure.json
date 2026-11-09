@@ -1,0 +1,211 @@
+{
+  "date": "2026-11-09T04:53:10.407Z",
+  "node": "v22.23.4",
+  "singleFile": {
+    "today": {
+      "trackerBytes": 8102350,
+      "atelierBytes": 8986407,
+      "bothBytes": 17088757,
+      "trackerMB": 8.102,
+      "atelierMB": 8.986,
+      "bothMB": 17.089
+    },
+    "fonts": {
+      "tracker": 607296,
+      "atelier": 607388,
+      "onceForBoth": 754224,
+      "sharedFiles": 20,
+      "totalFiles": 36
+    },
+    "blocks": [
+      {
+        "app": "tracker",
+        "id": "style",
+        "todayBytes": 660715,
+        "allInOneBytes": 53419,
+        "how": "styles without fonts (fonts counted once below)"
+      },
+      {
+        "app": "tracker",
+        "id": "tracker-data",
+        "todayBytes": 4372600,
+        "allInOneBytes": 1023480,
+        "how": "JSON data, compressed (deflate) + base64, unpacked when the module opens"
+      },
+      {
+        "app": "tracker",
+        "id": "desktop-map",
+        "todayBytes": 560928,
+        "allInOneBytes": 29068,
+        "how": "JSON data, compressed (deflate) + base64, unpacked when the module opens"
+      },
+      {
+        "app": "tracker",
+        "id": "links-data",
+        "todayBytes": 372999,
+        "allInOneBytes": 114476,
+        "how": "JSON data, compressed (deflate) + base64, unpacked when the module opens"
+      },
+      {
+        "app": "tracker",
+        "id": "info-data",
+        "todayBytes": 1487300,
+        "allInOneBytes": 1487300,
+        "how": "already compressed + base64 today: unchanged"
+      },
+      {
+        "app": "tracker",
+        "id": "cond-data",
+        "todayBytes": 43758,
+        "allInOneBytes": 10176,
+        "how": "JSON data, compressed (deflate) + base64, unpacked when the module opens"
+      },
+      {
+        "app": "tracker",
+        "id": "live-data",
+        "todayBytes": 299172,
+        "allInOneBytes": 79052,
+        "how": "JSON data, compressed (deflate) + base64, unpacked when the module opens"
+      },
+      {
+        "app": "tracker",
+        "id": "core",
+        "todayBytes": 79418,
+        "allInOneBytes": 79418,
+        "how": "code: unchanged (shared core code would be counted once)"
+      },
+      {
+        "app": "tracker",
+        "id": "app",
+        "todayBytes": 222704,
+        "allInOneBytes": 222704,
+        "how": "code: unchanged (shared core code would be counted once)"
+      },
+      {
+        "app": "atelier",
+        "id": "style",
+        "todayBytes": 660343,
+        "allInOneBytes": 52955,
+        "how": "styles without fonts (fonts counted once below)"
+      },
+      {
+        "app": "atelier",
+        "id": "atelier-data",
+        "todayBytes": 283158,
+        "allInOneBytes": 83052,
+        "how": "JSON data, compressed (deflate) + base64, unpacked when the module opens"
+      },
+      {
+        "app": "atelier",
+        "id": "icons",
+        "todayBytes": 1127765,
+        "allInOneBytes": 1127765,
+        "how": "WebP images as base64 (already compressed): unchanged"
+      },
+      {
+        "app": "atelier",
+        "id": "raphael-glue",
+        "todayBytes": 20938,
+        "allInOneBytes": 20938,
+        "how": "code: unchanged (shared core code would be counted once)"
+      },
+      {
+        "app": "atelier",
+        "id": "raphael-wasm",
+        "todayBytes": 6724048,
+        "allInOneBytes": 1886716,
+        "how": "solver WebAssembly (base64 today), compressed + base64"
+      },
+      {
+        "app": "atelier",
+        "id": "engine",
+        "todayBytes": 49699,
+        "allInOneBytes": 49699,
+        "how": "code: unchanged (shared core code would be counted once)"
+      },
+      {
+        "app": "atelier",
+        "id": "app",
+        "todayBytes": 118072,
+        "allInOneBytes": 118072,
+        "how": "code: unchanged (shared core code would be counted once)"
+      }
+    ],
+    "allInOne": {
+      "bytes": 7192514,
+      "MB": 7.193,
+      "withShellAllowanceMB": 7.493,
+      "shellAllowanceBytes": 300000,
+      "savingVsTwoFilesMB": 9.596
+    },
+    "unpackMsOnThisMachine": {
+      "trackerModule": 11.9,
+      "atelierModule": 11.5
+    }
+  },
+  "save": {
+    "driveLimitBytes": 5177344,
+    "driveLimitMB": 5.177,
+    "trackerEntries": 48652,
+    "levelEntries": 75,
+    "characters": 8,
+    "cases": [
+      {
+        "label": "Tracker only, 8 characters, every entry ticked, every level at 9999 (worst real case today)",
+        "cloudCopyBytes": 8415057,
+        "cloudCopyMB": 8.415,
+        "shareOfLimit": 1.625,
+        "fits": false,
+        "compressedBytes": 1039845,
+        "compressedBase64Bytes": 1386460,
+        "compressedShareOfLimit": 0.268
+      },
+      {
+        "label": "Tracker only, theoretical upper bound (also every entry excluded and every availability overridden)",
+        "cloudCopyBytes": 18014784,
+        "cloudCopyMB": 18.015,
+        "shareOfLimit": 3.48,
+        "fits": false,
+        "compressedBytes": 2209405,
+        "compressedBase64Bytes": 2945876,
+        "compressedShareOfLimit": 0.569
+      },
+      {
+        "label": "Worst real tracker case + sample modules (50 lists x 200 items, 8 free companies x 4 submarines x 1 year of voyages, Atelier 500 history + 100 saved macros)",
+        "cloudCopyBytes": 13099375,
+        "cloudCopyMB": 13.099,
+        "shareOfLimit": 2.53,
+        "fits": false,
+        "compressedBytes": 1121101,
+        "compressedBase64Bytes": 1494804,
+        "compressedShareOfLimit": 0.289
+      },
+      {
+        "label": "Worst real tracker case + large modules (200 lists x 300 items, 3 years of voyages, Atelier 500 history + 200 saved)",
+        "cloudCopyBytes": 23598986,
+        "cloudCopyMB": 23.599,
+        "shareOfLimit": 4.558,
+        "fits": false,
+        "compressedBytes": 1261842,
+        "compressedBase64Bytes": 1682456,
+        "compressedShareOfLimit": 0.325
+      }
+    ],
+    "sampleModuleBytes": {
+      "lists": 679532,
+      "submersibles": 3522345,
+      "atelier": 482393
+    },
+    "largeModuleBytes": {
+      "lists": 4067583,
+      "submersibles": 10553705,
+      "atelier": 562593
+    },
+    "otherCopies": {
+      "backupFileBytes": 8415102,
+      "transferCodeChars": 126613,
+      "onDeviceStateWithSyncBaseBytes": 16830030
+    },
+    "note": "gdrive.js compares body.length (UTF-16 code units) with the limit, not bytes; names with non-Latin letters make the real upload larger than the figure it checks."
+  }
+}

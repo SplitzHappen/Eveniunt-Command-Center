@@ -334,3 +334,12 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 .hn-chip { font: 600 10px/1 var(--f-body); width: 30px; padding: 4px 0; border-radius: 3px; border: 1px solid transparent; cursor: pointer; color: var(--ink); background: color-mix(in srgb, var(--ink) 9%, transparent); }
 .hn-chip.closed { background: #6b7280; color: #fff; } .hn-chip.open { background: #16a34a; color: #fff; } .hn-chip.capped { background: #2563eb; color: #fff; }
 .hn-chip.sel { outline: 2px solid var(--seal); outline-offset: 1px; } .hn-sel { margin-top: 4px; }
+
+/* gate 1D: the way back to the Command Center, and the one-time hand-over notice (hosted pages only) */
+.cc-back { text-decoration: none; white-space: nowrap; gap: 4px; }
+.cc-back:hover { text-decoration: underline; }
+@media (max-width: 520px) { .cc-back .cc-txt { display: none; } .cc-back { padding-left: 6px; padding-right: 6px; } }
+.handover { margin: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); padding: 10px 14px; border: 1px solid var(--rule); border-left: 3px solid var(--seal); background: var(--paper-2); color: var(--ink); font: 400 14px/1.5 var(--f-body); }
+.handover p { margin: 0; }
+.handover .handover-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.handover a.btn { text-decoration: none; }

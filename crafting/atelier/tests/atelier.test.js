@@ -4,6 +4,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
+const fs = require('fs');
+const http = require('http');
 const { chromium } = require('playwright');
 const A = path.join(__dirname, '..');
 const URL = 'file://' + path.join(A, 'dist', 'eveniunt-atelier.html');
@@ -43,6 +45,8 @@ test('opens offline: no external requests, no errors, engine + data embedded', a
   const info = await page.evaluate(() => ({ scripts: [...document.scripts].filter(s => s.src).length, links: document.querySelectorAll('link[href]').length,
     experts: window.__atelier.call('expert_recipe_count'), recipes: window.__atelier.call('search_recipes', '', 'en', -1, 100000).length }));
   assert.equal(info.scripts, 0); assert.equal(info.links, 0);
+  // opened from disk there is no shell to go back to: no Command Center link and no hand-over notice (gate 1D)
+  assert.equal(await page.$('a[data-cc-back]'), null); assert.equal(await page.$('[data-handover]'), null);
   assert.equal(info.experts, 544);
   assert.ok(info.recipes > 13000, `${info.recipes} recipes`);
   assert.deepEqual(errors, []); assert.deepEqual(external, []);
@@ -378,4 +382,109 @@ test('App: installable (manifest + service worker), becomes cross-origin isolate
     assert.ok(await page.locator('#results .item').count() > 100, 'works offline');
     assert.deepEqual(errors, []);
   } finally { await ctx.close(); server.close(); }
+});
+
+test('gate 1C: today\'s stats move into the one save by copying; asked once whose they are; the switcher keeps each character\'s stats', async () => {
+  const { ctx, page, errors } = await open();
+  const OLD = { stats: [0, 1, 2, 3, 4, 5, 6, 7].map((j) => ({ level: 100, craftsmanship: 5555 + j, control: 5000, cp: 600, manipulation: true })), food: { id: 44091, hq: true }, potion: null, cosmicTool: false,
+    saved: [{ id: 's1', name: 'Kept macro', actions: ['MuscleMemory'], job: 0 }], guideMs: 300, history: [], locale: 'en' };
+  // the save as the Tracker leaves it: two characters, no Atelier section yet; plus the Atelier's key from before gate 1C
+  await page.evaluate((old) => new Promise((res) => {
+    localStorage.clear(); localStorage.setItem('eveniunt-atelier-v1', JSON.stringify(old));
+    const del = indexedDB.deleteDatabase('eveniunt-command-center');
+    del.onsuccess = () => { const r = indexedDB.open('eveniunt-command-center', 1); r.onupgradeneeded = () => r.result.createObjectStore('save'); r.onsuccess = () => {
+      const t = r.result.transaction('save', 'readwrite');
+      t.objectStore('save').put({ app: 'eveniunt-command-center', v: 1, updated: 1, chars: [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }], modules: { tracker: { ticks: { c1: { 'mounts:1': 1 }, c2: {} } } }, device: {}, moved: { tracker: { at: 1, from: 'indexeddb' } } }, 'main');
+      t.objectStore('save').put('r1', 'main-rev'); t.oncomplete = () => { r.result.close(); res(); }; }; };
+  }), OLD);
+  const oldText = await page.evaluate(() => localStorage.getItem('eveniunt-atelier-v1'));
+  await page.reload();
+  await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier);
+  await page.waitForSelector('#dlg[open]');
+  assert.match(await page.textContent('#dlg'), /Whose crafter stats are these\?[\s\S]*Alba[\s\S]*Brio/);
+  await page.click('[data-d="own:c1"]');
+  const A = () => page.evaluate(() => ({ char: window.__atelier.S.char, cr: window.__atelier.S.stats.map((s) => s.craftsmanship), food: window.__atelier.S.food, saved: window.__atelier.S.saved.length }));
+  let s = await A();
+  assert.deepEqual([s.char, s.cr[0], s.cr[7], s.food && s.food.id, s.saved], ['c1', 5555, 5562, 44091, 1]);
+  // Brio starts from the defaults; set one stat there
+  await page.selectOption('#crafter-char', 'c2');
+  s = await A(); assert.deepEqual([s.char, s.cr[0], s.food], ['c2', 4900, null]);
+  await page.fill('[data-stat=craftsmanship]', '4321'); await page.dispatchEvent('[data-stat=craftsmanship]', 'change');
+  await page.selectOption('#crafter-char', 'c1');
+  assert.equal((await A()).cr[0], 5555, "Alba's stats come back");
+  await page.selectOption('#crafter-char', 'c2');
+  assert.equal((await A()).cr[0], 4321, "and Brio's");
+  await page.evaluate(() => window.__atelier.flush());
+  // after a reload: no question, both characters' stats kept, the old key untouched, the Tracker's section untouched
+  await page.reload();
+  await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier);
+  assert.equal(await page.evaluate(() => document.querySelector('#dlg').open), false, 'asked only until answered');
+  s = await A(); assert.deepEqual([s.char, s.cr[0], s.saved], ['c2', 4321, 1]);
+  const doc = await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-command-center'); r.onsuccess = () => { const g = r.result.transaction('save').objectStore('save').get('main'); g.onsuccess = () => { r.result.close(); res(g.result); }; }; }));
+  assert.equal(doc.modules.atelier.chars.c1.stats.j0.craftsmanship, 5555);
+  assert.equal(doc.modules.atelier.chars.c2.stats.j0.craftsmanship, 4321);
+  assert.equal(doc.modules.atelier.unassigned, null);
+  assert.equal(doc.modules.atelier.saved.s1.name, 'Kept macro');
+  assert.equal(doc.modules.atelier.prefs.guideMs, 300);
+  assert.deepEqual(doc.modules.tracker, { ticks: { c1: { 'mounts:1': 1 }, c2: {} } }, "the Tracker's section is left as it was");
+  assert.equal(doc.moved.atelier.from, 'eveniunt-atelier-v1');
+  assert.equal(await page.evaluate(() => localStorage.getItem('eveniunt-atelier-v1')), oldText, 'the old key is byte for byte the same');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('gate 1C: "Not now" asks again next time; with no characters the Atelier works as before, with one set', async () => {
+  const { ctx, page, errors } = await open();
+  assert.match(await page.textContent('#pane-crafter'), /Set up your characters in the Tracker/);
+  await page.fill('[data-stat=control]', '4777'); await page.dispatchEvent('[data-stat=control]', 'change');
+  await page.evaluate(() => window.__atelier.flush());
+  // characters appear (set up in the Tracker): the question comes, "Not now" keeps the set, the next opening asks again
+  await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-command-center'); r.onsuccess = () => { const t = r.result.transaction('save', 'readwrite'), s = t.objectStore('save'); const g = s.get('main'); g.onsuccess = () => { const d = g.result; d.chars = [{ id: 'c1', name: 'Alba' }]; s.put(d, 'main'); s.put('r9', 'main-rev'); }; t.oncomplete = () => { r.result.close(); res(); }; }; }));
+  await page.reload(); await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier);
+  await page.waitForSelector('#dlg[open]');
+  await page.click('#dlg [data-d=close]');
+  assert.equal(await page.evaluate(() => window.__atelier.S.stats[window.__atelier.S.job].control), 4777);
+  await page.reload(); await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier);
+  await page.waitForSelector('#dlg[open]');
+  assert.match(await page.textContent('#dlg'), /Whose crafter stats/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('gate 1D, hosted site over HTTP: the first visit reloads once under the Atelier\'s own worker and ends isolated on more than one thread; the way back and the hand-over notice', async () => {
+  const SITE = path.join(A, 'site');
+  const server = http.createServer((req, res) => {
+    const u = decodeURIComponent(req.url.split('?')[0]).replace(/^\/atelier\//, '/');
+    let f = path.join(SITE, u.endsWith('/') ? u + 'index.html' : u);
+    if (!f.startsWith(SITE) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+    const type = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm', '.png': 'image/png', '.webmanifest': 'application/manifest+json' }[path.extname(f)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': type }); fs.createReadStream(f).pipe(res);
+  });
+  await new Promise((r) => server.listen(0, r)); server.unref(); // a failed assertion must not keep the test process alive
+  const base = `http://localhost:${server.address().port}/atelier/`, root = base.replace(/atelier\/$/, ''); // the site root, where the shell lives
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage(); const errors = [], navs = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('framenavigated', (f) => { if (f === page.mainFrame()) navs.push(f.url()); });
+  await page.goto(base);
+  // the server sends no isolation headers; the Atelier's worker adds them, and the page reloads itself once under it
+  await page.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 });
+  await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier, null, { timeout: 60000 });
+  await page.waitForFunction(() => window.__atelier.threads() > 1, null, { timeout: 30000 });
+  const st = await page.evaluate(() => ({ threads: window.__atelier.threads(), controller: navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL, mark: sessionStorage.getItem('atelier-coi-reload') }));
+  assert.ok(st.threads > 1, st.threads + ' threads'); assert.equal(st.controller, base + 'sw.js', 'its own worker'); assert.equal(st.mark, '1');
+  assert.equal(navs.length, 2, 'the arrival and one reload');
+  // the way back and the one-time notice (not opened from the shell); "Got it" records it on the device
+  assert.equal(await page.getAttribute('a[data-cc-back]', 'href'), root);
+  assert.match(await page.textContent('[data-handover]'), /The Atelier is now part of the Eveniunt Command Center[\s\S]*same save/);
+  await page.click('[data-handover-ok]');
+  assert.equal(await page.$('[data-handover]'), null);
+  assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem('eveniunt-command-center-device')).handoverSeen > 0));
+  await page.reload();
+  await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier, null, { timeout: 60000 });
+  assert.equal(await page.evaluate(() => self.crossOriginIsolated), true, 'still isolated');
+  assert.equal(await page.$('[data-handover]'), null, 'seen once, not shown again');
+  assert.equal(await page.getAttribute('a[data-cc-back]', 'href'), root, 'the way back stays');
+  assert.deepEqual(errors, []);
+  await ctx.close(); server.close();
 });

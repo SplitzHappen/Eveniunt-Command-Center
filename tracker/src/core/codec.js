@@ -2,23 +2,49 @@
 (function () {
   'use strict';
   const ET = (globalThis.ET = globalThis.ET || {});
-  const FILE_TAG = 'eveniunt-completionist-tracker';
-  const CODE_PREFIX = 'EVT1-';
+  const FILE_TAG = 'eveniunt-completionist-tracker'; // backups written before gate 1C (still read)
+  const SAVE_TAG = 'eveniunt-command-center', BACKUP_V = 1;
+  const CODE_PREFIX = 'EVT2-', OLD_CODE_PREFIX = 'EVT1-';
+  const plain = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
 
-  // The portable part of the state: what moves between devices. Sync bookkeeping stays local.
-  ET.portable = (st) => ({ chars: st.chars.map((c) => ({ id: c.id, name: c.name, lodestone: c.lodestone || null, cls: c.cls || null, city: c.cls ? null : (c.city || null), gc: c.gc || null })), ticks: st.ticks, vals: st.vals || {}, excl: st.excl || {}, avail: st.avail, settings: st.settings });
+  // The portable part of the state: what moves between devices. Sync bookkeeping and the move record stay local.
+  // modules: the other modules' sections of the one save (left out when this state does not know them).
+  ET.portable = (st) => {
+    const p = { chars: st.chars.map((c) => ({ id: c.id, name: c.name, lodestone: c.lodestone || null, cls: c.cls || null, city: c.cls ? null : (c.city || null), gc: c.gc || null })), ticks: st.ticks, vals: st.vals || {}, excl: st.excl || {}, avail: st.avail, settings: st.settings };
+    if (st.modules !== undefined) p.modules = st.modules;
+    return p;
+  };
+  // The shareable part of the one save, one section per module: { chars, modules: { tracker, atelier, ... } }.
+  ET.saveDoc = (st) => {
+    const p = ET.portable(st);
+    return { chars: p.chars, modules: Object.assign({}, p.modules || {}, { tracker: { ticks: p.ticks, excl: p.excl, vals: p.vals, avail: p.avail, settings: p.settings } }) };
+  };
+  // ... and back to the portable form (the Tracker's section unpacked, the other sections checked)
+  ET.fromSaveDoc = (save) => {
+    const s = plain(save) ? save : {};
+    const t = plain(s.modules) && plain(s.modules.tracker) ? s.modules.tracker : {};
+    return { chars: s.chars, ticks: t.ticks || {}, excl: t.excl || {}, vals: t.vals || {}, avail: t.avail || {}, settings: t.settings || {}, modules: globalThis.CC ? globalThis.CC.checkModules(s.modules) : {} };
+  };
 
   ET.exportFile = function (st) {
-    return JSON.stringify({ app: FILE_TAG, saved: new Date().toISOString(), state: Object.assign({ v: st.v }, ET.portable(st)) }, null, 0);
+    return JSON.stringify({ app: SAVE_TAG, kind: 'backup', v: BACKUP_V, saved: new Date().toISOString(), save: ET.saveDoc(st) }, null, 0);
   };
 
   ET.importFile = function (text) {
     let doc;
     try { doc = JSON.parse(text); } catch (e) { throw new Error('This file is not a tracker backup (not JSON).'); }
+    // sync bookkeeping (cloud file id and merge base, online-refresh lists) and the move record are this device's own
+    // and never travel in a file: a crafted file must not plant a merge base or a cloud file id
+    const local = { sync: { fc: {}, drive: null, backupAt: null }, moved: {}, updated: Date.now() };
+    if (doc && doc.app === SAVE_TAG && doc.kind === 'backup') {
+      if (!Number.isInteger(doc.v) || doc.v < 1) throw new Error('This file is not a tracker backup.');
+      if (doc.v > BACKUP_V) throw new Error('This backup was saved by a newer version of the app. Reload the page to update, then load it again.');
+      return ET.validateState(Object.assign({ v: ET.STATE_VERSION }, ET.fromSaveDoc(doc.save), local));
+    }
     if (!doc || doc.app !== FILE_TAG || !doc.state) throw new Error('This file is not a tracker backup.');
-    // sync bookkeeping (cloud file id and merge base, online-refresh lists) is this device's own and never travels
-    // in a file: a crafted file must not plant a merge base or a cloud file id
-    const st = Object.assign({}, doc.state, { sync: { fc: {}, drive: null, backupAt: null }, updated: Date.now() });
+    // a backup from before gate 1C speaks only for the Tracker: the other modules' sections stay as they are here
+    const st = Object.assign({}, doc.state, local);
+    delete st.modules;
     return ET.validateState(st);
   };
 
@@ -86,6 +112,7 @@
     const p = ET.portable(st);
     const doc = { c: p.chars.map((c) => [c.id, c.name, c.lodestone || '', c.cls || (c.city ? 'city:' + c.city : ''), c.gc || 0]), t: {}, a: p.avail, s: p.settings };
     doc.e = {}; doc.v = st.vals || {};
+    if (p.modules !== undefined) doc.m = p.modules; // the other modules' sections (EVT2)
     for (const c of p.chars) { doc.t[c.id] = packTicks(st.ticks[c.id] || {}); doc.e[c.id] = packTicks((st.excl || {})[c.id] || {}); }
     const raw = new TextEncoder().encode(JSON.stringify(doc));
     return CODE_PREFIX + b64u(await pipe(raw, new CompressionStream('deflate-raw')));
@@ -93,12 +120,13 @@
 
   ET.readTransferCode = async function (code) {
     const s = String(code || '').replace(/\s+/g, '');
-    if (!s.startsWith(CODE_PREFIX)) throw new Error('This is not a tracker transfer code.');
+    const prefix = s.startsWith(CODE_PREFIX) ? CODE_PREFIX : s.startsWith(OLD_CODE_PREFIX) ? OLD_CODE_PREFIX : null;
+    if (!prefix) throw new Error(/^EVT\d+-/.test(s) ? 'This transfer code was made by a newer version of the app. Reload the page to update, then load it again.' : 'This is not a tracker transfer code.');
     if (s.length > CODE_MAX) throw new Error('This transfer code is far too long to be a tracker code.');
     const damaged = () => new Error('This transfer code is incomplete or damaged. Copy it again in full.');
     let doc;
     try {
-      const raw = await pipe(unb64u(s.slice(CODE_PREFIX.length)), new DecompressionStream('deflate-raw'), DOC_MAX);
+      const raw = await pipe(unb64u(s.slice(prefix.length)), new DecompressionStream('deflate-raw'), DOC_MAX);
       doc = JSON.parse(new TextDecoder().decode(raw));
     } catch (e) {
       throw damaged();
@@ -112,8 +140,11 @@
       avail: doc.a || {},
       settings: doc.s || {},
       sync: { fc: {}, drive: null },
+      moved: {},
       updated: Date.now(),
     };
+    // EVT2 carries the other modules' sections; an EVT1 code speaks only for the Tracker (they stay as they are here)
+    if (prefix === CODE_PREFIX) st.modules = plain(doc.m) ? doc.m : {};
     st.excl = {}; st.vals = doc.v || {};
     const own = (o, k) => (o && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : null);
     for (const c of st.chars) { st.ticks[c.id] = unpackTicks(own(doc.t, c.id)); st.excl[c.id] = unpackTicks(own(doc.e, c.id)); }

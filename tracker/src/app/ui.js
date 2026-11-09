@@ -896,10 +896,25 @@
     var fl = $('#fill-links', d); if (fl) fl.onclick = fillLinksDialog;
     var cl = $('#clear-avail', d); if (cl) cl.onclick = function () { if (!confirm('Return every entry to its built-in mark?')) return; ST.avail = {}; ST.updated = Date.now(); save(); render(); openSettings('count'); };
   }
+  // The one save (gate 1C): where the data lives, and, until the owner confirms, the way back to the save from before
+  // the move (which stays on this device, unchanged, in any case).
+  function sharedSaveHtml() {
+    var mv = (ST.moved && ST.moved.tracker) || null;
+    var h = '<h4>Your shared save</h4>';
+    if (!mv) return h + '<p class="help">Your data is kept in the Command Center’s shared save on this device, which the Atelier and the coming modules also use.</p>';
+    var when = mv.at ? new Date(mv.at).toLocaleDateString() : '';
+    var copied = mv.from === 'indexeddb' || mv.from === 'localstorage';
+    if (!copied) return h + '<p class="help">Your data is kept in the Command Center’s shared save on this device, which the Atelier and the coming modules also use.</p>';
+    var c = mv.check || {};
+    var checked = c.same ? ' The copy was checked: ' + (c.chars || 0) + ' characters and ' + (c.ticks || 0).toLocaleString() + ' ticks, with every mark, level, starting class, Grand Company and Lodestone number, match.' : '';
+    if (mv.confirmed) return h + '<p class="help">On ' + esc(when) + ', your tracker data was copied into the Command Center’s shared save, which the Atelier and the coming modules also use. You confirmed it on ' + esc(new Date(mv.confirmed).toLocaleDateString()) + '. Your save from before the move is still kept on this device.</p>';
+    return h + '<p class="help">' + (mv.wentBack ? 'On ' + esc(new Date(mv.wentBack).toLocaleDateString()) + ', you went back to your save from before the move.' : 'On ' + esc(when) + ', your tracker data was copied into the Command Center’s shared save, which the Atelier and the coming modules also use.') + checked + ' Your save from before the move is kept unchanged on this device.</p>' +
+      '<div class="row"><button type="button" class="btn sm" id="move-ok">It looks right</button><button type="button" class="btn sm ghost" id="move-back">Go back to my save from before the move</button></div>';
+  }
   function dataTab() {
-    return '<h4>Import from the FFXIV Completionist desktop app</h4><p class="help">Choose one or more character files saved by the desktop app (JSON). You then pick which column each file goes into. Ticks and its “X” marks (does not apply to that character) are imported; anything that cannot be placed exactly is listed so you can do it by hand.</p>' +
+    return sharedSaveHtml() + '<h4>Import from the FFXIV Completionist desktop app</h4><p class="help">Choose one or more character files saved by the desktop app (JSON). You then pick which column each file goes into. Ticks and its “X” marks (does not apply to that character) are imported; anything that cannot be placed exactly is listed so you can do it by hand.</p>' +
       '<div class="row"><input type="file" id="desk-files" accept=".json,application/json" multiple></div>' +
-      '<h4>Backup file</h4><p class="help">Everything in one file: characters, ticks, “does not apply” marks and your ✕ choices.</p>' +
+      '<h4>Backup file</h4><p class="help">Everything in one file: characters, ticks, “does not apply” marks and your ✕ choices, plus the Atelier’s crafter stats and saved macros.</p>' +
       '<div class="row"><button type="button" class="btn sm" id="save-backup">Save a backup file</button><label class="btn sm ghost">Load a backup file<input type="file" id="load-file" accept=".json,application/json" hidden></label></div>' +
       '<h4>Transfer code</h4><p class="help">A pasteable code with everything in it, to move to another device without files.</p>' +
       '<div class="row"><button type="button" class="btn sm" id="make-code">Make a transfer code</button></div><textarea class="inp code" id="code" rows="4" placeholder="Paste a transfer code here to load it"></textarea>' +
@@ -907,6 +922,15 @@
       '<h4>Start over</h4><div class="row"><button type="button" class="btn sm ghost" id="wipe">Erase everything on this device</button></div>';
   }
   function bindData(d) {
+    var ok = $('#move-ok', d), back = $('#move-back', d);
+    if (ok) ok.onclick = function () { ET.confirmMove(ST); ET.saveState(ST, true).then(function () { toast('Thank you. Your save from before the move stays kept on this device.'); openSettings('data'); }); };
+    if (back) back.onclick = function () {
+      ET.oldSaveDiff(ST).then(function (diff) {
+        if (!diff) { toast('The save from before the move is no longer on this device.'); return; }
+        if (!confirm('Go back to your save from before the move? ' + (diff.n ? diff.n.toLocaleString() + ' ticks, marks or levels differ from it, and those changes would be undone. ' : 'It matches what you have now. ') + 'A copy of your current data is kept on this device first. The Atelier’s stats and macros stay as they are.')) return;
+        return ET.goBack().then(function () { location.reload(); });
+      }).catch(function (err) { toast(err.message); });
+    };
     $('#save-backup', d).onclick = function () { download('eveniunt-tracker-backup-' + new Date().toISOString().slice(0, 10) + '.json', ET.exportFile(ST)); markBackedUp(); toast('Backup saved'); };
     $('#load-file', d).onchange = function (e) {
       var f = e.target.files[0]; if (!f) return;
@@ -930,13 +954,17 @@
       var files = Array.prototype.slice.call(e.target.files);
       Promise.all(files.map(function (f) { return f.text().then(function (t) { return { name: f.name, doc: JSON.parse(t) }; }); })).then(deskImport).catch(function () { toast('One of those files is not a desktop-app save'); });
     };
-    $('#wipe', d).onclick = function () { if (!confirm('Erase all characters and ticks on this device? Save a backup first if unsure.')) return; ET.clearState().then(function () { location.reload(); }); };
+    $('#wipe', d).onclick = function () { if (!confirm('Erase all characters and ticks on this device? Save a backup first if unsure. (Your save from before the move to the shared save, and the Atelier’s macros, stay kept.)')) return; ET.clearState().then(function () { location.reload(); }); };
   }
   // A loaded backup or transfer code replaces this device's data. The cloud-sync base is forgotten (the file id is
   // kept), so the next sync merges the two copies and asks about differences, instead of reading everything the
   // loaded copy lacks as deletions to send to the other devices.
   function adoptLoaded(st) {
     st.sync = { fc: {}, drive: ST.sync.drive ? { fileId: ST.sync.drive.fileId, at: ST.sync.drive.at, base: null } : null, backupAt: ST.sync.backupAt };
+    // the other modules' sections: a section the file or code carries replaces this device's; one it does not carry
+    // (an old backup or EVT1 code, or a module never used there) stays as it is here
+    st.modules = Object.assign({}, ST.modules || {}, st.modules || {});
+    st.moved = ST.moved;
     ST = st; ET.migrateAliases(IDX, ST); ET.saveState(ST, true); render();
   }
   function markBackedUp() { ST.sync.backupAt = Date.now(); ET.saveState(ST); }
@@ -1187,12 +1215,45 @@
     });
   }
   applyTheme();
+  function moveProblemDialog() {
+    openDialog('<h3>Your save could not be moved safely</h3><p class="help">This version keeps your data in the Command Center’s shared save. Copying your save there did not match exactly (' + esc(ET.moveProblem.what) + '), so nothing more is saved on this device for now. Your save from before the move is unchanged. Save a backup file now, then reload the page; if this message comes back, send the backup to the site owner.</p>' +
+      '<div class="row"><button type="button" class="btn" id="mp-backup">Save a backup file</button><button type="button" class="btn ghost" id="mp-close">Continue</button></div>', function (d) {
+      $('#mp-backup', d).onclick = function () { download('eveniunt-tracker-backup-' + new Date().toISOString().slice(0, 10) + '.json', ET.exportFile(ST)); };
+      $('#mp-close', d).onclick = function () { closeDialog(); };
+    });
+  }
   ET.loadState().then(function (st) {
-    if (st) { ST = st; if (ET.migrateAliases(IDX, ST)) save(); afterBoot(); }
+    if (st) {
+      ST = st; if (ET.migrateAliases(IDX, ST)) save(); afterBoot();
+      if (ET.moveProblem) moveProblemDialog();
+      else if (ET.justMoved) toast('Your data now lives in the Command Center’s shared save. Your old save is kept (Settings → Import and backup).');
+    }
     else { var b = $('#boot'); if (b) b.remove(); if (ET.loadProblem) loadProblemDialog(); else setupDialog(); }
   });
   window.addEventListener('online', function () { if (ST) refreshOnline(false); });
 
+  // The one-time hand-over notice (gate 1D, blueprint rule 5), for a Tracker installed or bookmarked on its own: shown on
+  // the hosted page when it was not opened from the shell, until the owner has seen it ("Got it") or the Command Center is
+  // installed on this device. One record for both apps, on this device only: eveniunt-command-center-device.
+  var CC_DEVICE = 'eveniunt-command-center-device'; // declared before pwa() below runs, which reads it at start-up
+  function ccDevice() { try { return JSON.parse(localStorage.getItem(CC_DEVICE) || '{}') || {}; } catch (e) { return {}; } }
+  function handover(home, name) {
+    var d = ccDevice(), ref = document.referrer || '';
+    var fromShell = ref.indexOf(home) === 0 && ref.slice(home.length).indexOf('/') < 0;
+    if (d.installed || d.handoverSeen || fromShell) return;
+    // on an iPhone or iPad every app installed on the home screen keeps its own copy of the browser's storage
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var el = document.createElement('aside'); el.className = 'handover'; el.setAttribute('role', 'note'); el.setAttribute('data-handover', '1');
+    el.innerHTML = '<p><b>The ' + esc(name) + ' is now part of the Eveniunt Command Center:</b> one installable app for the Tracker, the Atelier and the modules to come. ' +
+      'It reads the same save as this page, so nothing needs to move, and this icon keeps working.' +
+      (ios ? ' On this device, each installed app keeps its own copy of the save: before you remove an icon, move your data with a transfer code, a backup or cloud sync.' : '') +
+      '</p><p class="handover-acts"><a class="btn sm" href="' + esc(home) + '">Open the Command Center</a><button type="button" class="btn sm ghost" data-handover-ok="1">Got it</button></p>';
+    el.querySelector('[data-handover-ok]').addEventListener('click', function () {
+      el.remove();
+      try { var n = ccDevice(); n.handoverSeen = Date.now(); localStorage.setItem(CC_DEVICE, JSON.stringify(n)); } catch (e) { /* private window: shown again next time */ }
+    });
+    var mast = document.querySelector('.mast'); if (mast) mast.insertAdjacentElement('afterend', el);
+  }
   // ── installable app (hosted only) ──
   (function pwa() {
     if (!HOSTED || !('serviceWorker' in navigator)) return;
@@ -1205,6 +1266,13 @@
     window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; btn.classList.remove('hidden'); });
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
+    // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. A plain link, first
+    // among the header tools; on narrow screens only the house sign shows.
+    var home = new URL('../', location.href).href;
+    var back = document.createElement('a'); back.className = 'btn sm ghost cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Eveniunt Command Center: home');
+    back.innerHTML = '<span aria-hidden="true">\u2302</span><span class="cc-txt">Command Center</span>';
+    if (tools) tools.insertBefore(back, tools.firstChild);
+    handover(home, 'Tracker');
   })();
 /*{{LIVE}}*/
   window.__tracker = { openAll: function () { SEC.get(UI.sec).groups.forEach(function (g, gi) { OPENG.add(UI.sec + '#' + gi); }); renderLedger(); }, get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };

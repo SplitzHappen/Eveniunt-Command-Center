@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-09",
+  "browser": "firefox",
+  "playwright": "1.63.0",
+  "node": "v22.23.4",
+  "passed": 0,
+  "total": 0,
+  "notRun": [
+    "all checks: engine not installed in this session: browserType.launch: Executable doesn't exist at /opt/pw-browsers/firefox-1543/firefox/firefox"
+  ],
+  "results": []
+}

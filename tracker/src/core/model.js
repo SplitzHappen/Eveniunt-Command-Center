@@ -103,6 +103,14 @@
     const fc = {};
     if (plain(sync.fc)) for (const id of ids) if (plain(sync.fc[id])) fc[id] = sync.fc[id];
     st.sync = { fc, drive: plain(sync.drive) ? sync.drive : null, backupAt: typeof sync.backupAt === 'number' ? sync.backupAt : null };
+    // the other modules' sections of the one save (gate 1C), checked by src/core/save.js; left out when a copy does
+    // not carry them (an old backup, an EVT1 code, a v1 cloud copy), so they are kept as they are on this device
+    if (st.modules !== undefined) st.modules = globalThis.CC ? globalThis.CC.checkModules(st.modules) : {};
+    else delete st.modules;
+    // this device's record of moving the Tracker's save into the one save (never travels in a file or the cloud)
+    const mv = plain(st.moved) && plain(st.moved.tracker) ? st.moved.tracker : null;
+    st.moved = mv ? { tracker: { at: typeof mv.at === 'number' ? mv.at : 0, from: typeof mv.from === 'string' ? mv.from.slice(0, 20) : null, check: plain(mv.check) ? mv.check : null,
+      confirmed: typeof mv.confirmed === 'number' ? mv.confirmed : null, wentBack: typeof mv.wentBack === 'number' ? mv.wentBack : null } } : {};
     if (typeof st.updated !== 'number') st.updated = Date.now();
     return st;
   };

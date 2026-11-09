@@ -25,10 +25,17 @@
       if (c.gc) m.set('g|' + c.id, String(c.gc));
     }
     for (const [k, v] of Object.entries(obj(p.settings))) if (SETTINGS.includes(k)) m.set('s|' + k, String(v === true));
+    // the other modules' sections of the one save (gate 1C): one key per unit, 'm|' + its path
+    if (globalThis.CC && p.modules) globalThis.CC.flatModules(p.modules, m);
     return m;
   }
 
   ET.threeWay = function (base, local, remote) {
+    // A copy that does not carry the other modules' sections (an old cloud copy written before gate 1C) cannot have
+    // changed them: it is read as agreeing with the last sync (or with the other side), never as deleting them.
+    const fill = (x, from) => (x && typeof x === 'object' && x.modules === undefined && from && from.modules !== undefined ? Object.assign({}, x, { modules: from.modules }) : x);
+    local = fill(local, base || remote);
+    remote = fill(remote, base || local);
     const B = flat(base), L = flat(local), R = flat(remote);
     const keys = new Set([...B.keys(), ...L.keys(), ...R.keys()]);
     const merged = new Map();
@@ -58,7 +65,9 @@
     const vals = {};
     const avail = {};
     const settings = Object.assign({}, st.settings);
+    const units = new Map();
     for (const [k, v] of m) {
+      if (k.startsWith('m|')) { units.set(k, v); continue; }
       const [kind, a, ...rest] = k.split('|');
       if (kind === 't') {
         if (!chars.has(a)) chars.set(a, { id: a, name: a, lodestone: null });
@@ -82,14 +91,16 @@
     for (const c of ordered) { st.ticks[c.id] = ticks[c.id] || {}; st.excl[c.id] = excl[c.id] || {}; st.vals[c.id] = vals[c.id] || {}; }
     st.avail = avail;
     st.settings = settings;
+    if (globalThis.CC && (units.size || st.modules !== undefined)) st.modules = globalThis.CC.unflatModules(units);
     st.updated = Date.now();
     return ET.validateState(st);
   };
 
   // Plain-language description of a conflict, for the "which one is right?" prompt.
   ET.describeConflict = function (c, idx, st) {
-    const [kind, a, ...rest] = c.id.split('|');
     const who = (id) => (st.chars.find((x) => x.id === id) || { name: id }).name;
+    if (c.id.startsWith('m|') && globalThis.CC) return globalThis.CC.describeUnit(c.id, c.local, c.remote, who);
+    const [kind, a, ...rest] = c.id.split('|');
     const what = (k) => { const h = idx && idx.byKey.get(k); return h ? h.e.n + ' (' + h.s.t + ')' : k; };
     if (kind === 't') return { who: who(a), what: what(rest.join('|')), local: c.local ? 'ticked' : 'not ticked', remote: c.remote ? 'ticked' : 'not ticked' };
     if (kind === 'v') return { who: who(a), what: what(rest.join('|')), local: c.local == null ? '(none)' : 'level ' + c.local, remote: c.remote == null ? '(none)' : 'level ' + c.remote };

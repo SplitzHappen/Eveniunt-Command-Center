@@ -1,4 +1,5 @@
-# Publishes the Command Center website to GitHub Pages on every push to main (free on public repositories).
+# Publishes the Eveniunt Command Center (the app at the root, the Tracker at /tracker/, the Atelier at /atelier/, the Cosmic
+# guides at /cosmic/) to GitHub Pages on every push to main (free on public repositories), and every hour for fresh lists.
 name: Deploy to GitHub Pages
 on:
   push:
@@ -25,12 +26,19 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p _site/atelier _site/cosmic _site/tracker
-          cp web/index.html _site/index.html
-          cp -r web/assets _site/assets
+          # the Eveniunt Command Center app at the root (its own service worker, manifest and icons)
+          cp -r tracker/command-center/site/. _site/
+          # the modules at their own addresses, each a complete installable app under its own service worker
           cp -r crafting/atelier/site/. _site/atelier/
           cp -r tracker/site/. _site/tracker/
+          # the Cosmic Exploration guides, one offline page per destination
           cp crafting/dist/cosmic-*.html _site/cosmic/
           touch _site/.nojekyll
+          # the root must be the Command Center and every module must be in place, or the publish stops here
+          grep -q 'Eveniunt Command Center' _site/index.html
+          test -f _site/sw.js && test -f _site/manifest.webmanifest && test -f _site/icons/icon-512.png
+          test -f _site/tracker/index.html && test -f _site/tracker/sw.js && test -f _site/atelier/index.html && test -f _site/atelier/sw.js
+          test -f _site/cosmic/cosmic-sinus-ardorum.html
       - name: Fresh events list for the Tracker (Xenoveritas' FFXIV timers, which follow the Lodestone)
         run: curl -fsS --max-time 30 https://www.xenoveritas.org/static/ffxiv/timers.json -o _site/tracker/timers.json || echo "events list not refreshed; the Tracker uses its built-in copy"
       - name: Lodestone news and topics for the Tracker (official Atom feeds; the browser cannot read them from another site)

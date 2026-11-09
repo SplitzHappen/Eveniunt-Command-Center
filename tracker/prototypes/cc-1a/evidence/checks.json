@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "browser": "Chromium 153.0.8010.12",
+    "playwright": "1.63.0",
+    "node": "v22.23.4",
+    "date": "2026-11-09T04:55:32.991Z",
+    "base": "http://localhost:8417/"
+  },
+  "results": [
+    {
+      "id": "R1-signin",
+      "required": true,
+      "title": "The shell is not isolated; its sign-in popup (Google-style, other origin, and same origin) keeps window.opener and returns a message",
+      "result": "passed",
+      "evidence": {
+        "shellCrossOriginIsolated": false,
+        "serviceWorker": "http://localhost:8417/sw.js",
+        "otherOrigin": {
+          "popupOrigin": "http://127.0.0.1:8417",
+          "popupHasOpener": true,
+          "shellGotMessage": true,
+          "token": "stand-in-token",
+          "reason": null
+        },
+        "sameOrigin": {
+          "popupOrigin": "http://localhost:8417",
+          "popupHasOpener": true,
+          "shellGotMessage": true,
+          "token": "stand-in-token",
+          "reason": null
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "X4-installable",
+      "required": false,
+      "title": "The shell passes Chromium's installability check (manifest, icons, service worker)",
+      "result": "passed",
+      "evidence": {
+        "installabilityErrors": []
+      }
+    },
+    {
+      "id": "R2-atelier-4-threads",
+      "required": true,
+      "title": "The Atelier page reports crossOriginIsolated === true and runs 4 threads on shared WebAssembly memory (exact atomic total), by every way in",
+      "result": "passed",
+      "evidence": {
+        "directColdVisit": {
+          "threads": 4,
+          "counter": 1000000,
+          "expected": 1000000,
+          "arrived": 4,
+          "wallMs": 74,
+          "spans": [
+            [
+              1794200133244.935,
+              1794200133302.78
+            ],
+            [
+              1794200133244.965,
+              1794200133294.62
+            ],
+            [
+              1794200133244.8,
+              1794200133302.7
+            ],
+            [
+              1794200133245.085,
+              1794200133288.32
+            ]
+          ],
+          "mode": "multi",
+          "timing": {
+            "oneWorkerMs": 56,
+            "fourWorkersMs": 75,
+            "speedup": 2.99
+          },
+          "isolated": true,
+          "hardwareConcurrency": 4,
+          "reloadedOnce": true,
+          "controller": "http://localhost:8417/atelier/sw.js",
+          "errors": [],
+          "pageErrors": []
+        },
+        "fromShellOneWorker": {
+          "threads": 4,
+          "counter": 1000000,
+          "expected": 1000000,
+          "arrived": 4,
+          "wallMs": 75,
+          "spans": [
+            [
+              1794200133635.7751,
+              1794200133687.59
+            ],
+            [
+              1794200133636.0051,
+              1794200133687.78
+            ],
+            [
+              1794200133635.55,
+              1794200133670.1401
+            ],
+            [
+              1794200133635.53,
+              1794200133683.525
+            ]
+          ],
+          "mode": "multi",
+          "timing": {
+            "oneWorkerMs": 56,
+            "fourWorkersMs": 65,
+            "speedup": 3.45
+          },
+          "isolated": true,
+          "hardwareConcurrency": 4,
+          "reloadedOnce": false,
+          "controller": "http://localhost:8417/atelier/sw.js",
+          "errors": [],
+          "pageErrors": []
+        },
+        "fromShellNaiveRootWorkerFixedStartup": {
+          "threads": 4,
+          "counter": 1000000,
+          "expected": 1000000,
+          "arrived": 4,
+          "wallMs": 87,
+          "spans": [
+            [
+              1794200134106.3948,
+              1794200134176.99
+            ],
+            [
+              1794200134106.31,
+              1794200134162.86
+            ],
+            [
+              1794200134106.305,
+              1794200134177.025
+            ],
+            [
+              1794200134106.26,
+              1794200134136.7
+            ]
+          ],
+          "mode": "multi",
+          "timing": {
+            "oneWorkerMs": 57,
+            "fourWorkersMs": 66,
+            "speedup": 3.45
+          },
+          "isolated": true,
+          "hardwareConcurrency": 4,
+          "reloadedOnce": true,
+          "controller": "http://localhost:8417/atelier/sw.js",
+          "errors": [],
+          "pageErrors": []
+        }
+      }
+    },
+    {
+      "id": "X5-today-startup-under-root-worker",
+      "required": false,
+      "title": "Today's Atelier start-up rule, unchanged, reaches 4 threads on the first visit under a root worker that does not isolate atelier/",
+      "result": "failed",
+      "evidence": {
+        "firstVisit": {
+          "isolated": false,
+          "threads": 1,
+          "reloadedOnce": true,
+          "controller": "http://localhost:8417/atelier/sw.js",
+          "reason": "not cross-origin isolated"
+        },
+        "nextVisit": {
+          "isolated": true,
+          "threads": 4,
+          "reloadedOnce": false,
+          "controller": "http://localhost:8417/atelier/sw.js",
+          "reason": null
+        },
+        "pageErrors": []
+      }
+    },
+    {
+      "id": "R3-round-trip",
+      "required": true,
+      "title": "Shell -> Atelier -> shell (by link and by Back) keeps the shared save in IndexedDB and localStorage; the shell is still not isolated and sign-in still works after the trip",
+      "result": "passed",
+      "evidence": {
+        "marker": "m-35iemfa7oxf",
+        "atelierIsolated": true,
+        "atelierThreads": 4,
+        "seenInAtelier": {
+          "idb": {
+            "marker": "m-35iemfa7oxf",
+            "chars": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H"
+            ],
+            "updated": 1794200135067
+          },
+          "ls": {
+            "marker": "m-35iemfa7oxf",
+            "chars": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H"
+            ],
+            "updated": 1794200135067
+          }
+        },
+        "backInShell": {
+          "idb": {
+            "marker": "m-35iemfa7oxf",
+            "chars": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H"
+            ],
+            "atelier": {
+              "job": 3,
+              "stats": {
+                "craftsmanship": 5200
+              }
+            },
+            "updated": 1794200135452
+          },
+          "ls": {
+            "marker": "m-35iemfa7oxf",
+            "chars": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F",
+              "G",
+              "H"
+            ],
+            "atelier": {
+              "job": 3,
+              "stats": {
+                "craftsmanship": 5200
+              }
+            },
+            "updated": 1794200135452
+          }
+        },
+        "shellIsolatedAfter": false,
+        "signInAfter": {
+          "popupOrigin": "http://127.0.0.1:8417",
+          "popupHasOpener": true,
+          "shellGotMessage": true,
+          "token": "stand-in-token",
+          "reason": null
+        },
+        "afterBackMarker": "after-back",
+        "errors": []
+      }
+    },
+    {
+      "id": "X3-offline",
+      "required": false,
+      "title": "Offline, after one visit: the shell opens, and the Atelier still opens isolated with 4 threads",
+      "result": "passed",
+      "evidence": {
+        "shell": {
+          "isolated": false,
+          "title": "CC-1A shell (stand-in)"
+        },
+        "atelier": {
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://localhost:8417/atelier/sw.js",
+          "error": null
+        }
+      }
+    },
+    {
+      "id": "X1-negative-control",
+      "required": false,
+      "title": "Control: the same popup opened from the isolated Atelier page loses window.opener and no message returns (so sign-in must stay in the shell)",
+      "result": "passed",
+      "evidence": {
+        "atelierIsolated": true,
+        "popupHasOpener": false,
+        "atelierGotMessage": false,
+        "reason": "no message within 3 s",
+        "openerSawPopupClosed": true
+      }
+    },
+    {
+      "id": "X2-broadcast",
+      "required": false,
+      "title": "With the shell and the Atelier open in two tabs, each hears the other's saves (BroadcastChannel, which the tracker uses to stop two windows overwriting each other)",
+      "result": "passed",
+      "evidence": {
+        "shellHeard": [
+          {
+            "from": "atelier",
+            "updated": 1
+          }
+        ],
+        "atelierHeard": [
+          {
+            "from": "shell",
+            "updated": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "R4-file-fallback",
+      "required": true,
+      "title": "Opened as a file, the Atelier page falls back to 1 thread without errors",
+      "result": "passed",
+      "evidence": {
+        "threads": 1,
+        "counter": 250000,
+        "expected": 250000,
+        "wallMs": 14,
+        "mode": "single",
+        "reason": "opened as a file",
+        "isolated": false,
+        "hardwareConcurrency": 4,
+        "reloadedOnce": false,
+        "controller": null,
+        "errors": [],
+        "url": "file://<cc-1a>/site/atelier/index.html",
+        "pageErrors": []
+      }
+    }
+  ]
+}

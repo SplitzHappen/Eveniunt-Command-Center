@@ -519,3 +519,16 @@ input[type=range] { accent-color: var(--seal); width: 180px; }
 
 .install-btn { background: var(--seal); color: var(--on-seal); border-color: var(--seal); }
 .install-btn:hover { background: var(--seal); filter: brightness(1.08); color: var(--on-seal); }
+/* character switcher (gate 1C) */
+.crafter-who { max-width: 360px; }
+.crafter-who-help { margin: 0; }
+dialog .help, .crafter-who-help { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+
+/* gate 1D: the way back to the Command Center, and the one-time hand-over notice (hosted pages only) */
+.cc-back { text-decoration: none; white-space: nowrap; gap: 4px; }
+.cc-back:hover { text-decoration: underline; }
+@media (max-width: 520px) { .cc-back .cc-txt { display: none; } .cc-back { padding-left: 6px; padding-right: 6px; } }
+.handover { margin: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); padding: 10px 14px; border: 1px solid var(--rule); border-left: 3px solid var(--seal); background: var(--paper-2); color: var(--ink); font: 400 14px/1.5 var(--f-body); }
+.handover p { margin: 0; }
+.handover .handover-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.handover a.btn { text-decoration: none; }

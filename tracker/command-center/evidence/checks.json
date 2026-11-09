@@ -1,0 +1,633 @@
+{
+  "date": "2026-11-09",
+  "browser": "chromium 153.0.8010.12",
+  "playwright": "1.63.0",
+  "node": "v22.23.4",
+  "passed": 20,
+  "total": 20,
+  "notRun": [],
+  "results": [
+    {
+      "id": "C1",
+      "title": "The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it",
+      "pass": true,
+      "detail": {
+        "first": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier"
+          ],
+          "cards": 2,
+          "title": "Eveniunt Command Center"
+        },
+        "again": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier"
+          ],
+          "cards": 2,
+          "title": "Eveniunt Command Center"
+        },
+        "errors": [],
+        "external": []
+      }
+    },
+    {
+      "id": "C2",
+      "title": "The Atelier opened from the shell is isolated, runs more than one thread and solves, with no extra reload and no hand-over notice",
+      "pass": true,
+      "detail": {
+        "atelierOnArrival": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        },
+        "navigationsToAtelier": 1,
+        "handover": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": false,
+          "device": null
+        },
+        "solve": {
+          "error": null,
+          "quality": 19710,
+          "steps": 34,
+          "seconds": 18.4,
+          "threads": 4,
+          "wantQuality": 19710
+        },
+        "afterOwnWorkerTookOver": {
+          "isolated": true,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        }
+      }
+    },
+    {
+      "id": "C2b",
+      "title": "Back from the Atelier returns to the shell, which is still not isolated",
+      "pass": true,
+      "detail": {
+        "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+        "isolated": false,
+        "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+        "modules": [
+          "Home",
+          "Tracker",
+          "Atelier"
+        ],
+        "cards": 2,
+        "title": "Eveniunt Command Center"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "The Tracker opened from the shell works (not isolated, characters set up, overview shown), with the way back and no hand-over notice",
+      "pass": true,
+      "detail": {
+        "tracker": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "handover": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": false,
+          "device": null
+        }
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open",
+      "pass": true,
+      "detail": {
+        "shell": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier"
+          ],
+          "cards": 2,
+          "title": "Eveniunt Command Center"
+        },
+        "tracker": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "atelier": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        }
+      }
+    },
+    {
+      "id": "C2-4 errors",
+      "title": "No page or console errors in that profile",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "id": "C5",
+      "title": "Offline, a module never opened shows a short note with a way back to the shell",
+      "pass": true,
+      "detail": {
+        "note": {
+          "h1": "You are offline",
+          "back": true
+        },
+        "shellAfter": "http://127.0.0.1:8418/Eveniunt-Command-Center/"
+      }
+    },
+    {
+      "id": "C6a",
+      "title": "Today's Atelier opened directly: isolated with more than one thread after exactly one reload under its own worker, and offline",
+      "pass": true,
+      "detail": {
+        "online": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js",
+          "pageLoads": 2,
+          "reloadMark": "1"
+        },
+        "offline": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        }
+      }
+    },
+    {
+      "id": "C6b",
+      "title": "Today's Tracker opened directly: works, and offline with its save",
+      "pass": true,
+      "detail": {
+        "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+        "isolated": false,
+        "overview": true,
+        "chars": 2,
+        "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+      }
+    },
+    {
+      "id": "C6 errors",
+      "title": "No page or console errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "id": "C7",
+      "title": "With both apps already installed, adding the shell leaves each app under its own worker, Atelier isolated and multi-thread, each with the way back",
+      "pass": true,
+      "detail": {
+        "registrations": [
+          "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/"
+        ],
+        "atelier": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        },
+        "tracker": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "waysBack": {
+          "atelier": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tracker": "http://127.0.0.1:8418/Eveniunt-Command-Center/"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C8",
+      "title": "The shell is installable as an app",
+      "pass": true,
+      "detail": {
+        "installabilityErrors": []
+      }
+    },
+    {
+      "id": "C9",
+      "title": "Phone width (390 px): no sideways scrolling in the shell or in the Tracker with its header link and hand-over notice",
+      "pass": true,
+      "detail": {
+        "shell": {
+          "scroll": 390,
+          "client": 390
+        },
+        "tracker": {
+          "scroll": 390,
+          "client": 390,
+          "back": true,
+          "textHidden": true,
+          "notice": true
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "title": "The test site serves both apps' current builds byte for byte, with no isolation headers from the server",
+      "pass": true,
+      "detail": {
+        "served": [
+          {
+            "file": "/Eveniunt-Command-Center/tracker/index.html",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/tracker/sw.js",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/tracker/manifest.webmanifest",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/atelier/index.html",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/atelier/sw.js",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/atelier/manifest.webmanifest",
+            "same": true,
+            "isolationHeaders": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "C11",
+      "title": "One save for the shell and both modules: the Tracker copies its save in, the Atelier asks once and keeps each character's stats (still isolated, multi-thread), the shell shows the characters, the old data is untouched",
+      "pass": true,
+      "detail": {
+        "tracker": {
+          "chars": [
+            "Alba",
+            "Brio"
+          ],
+          "ticks": 2,
+          "moved": {
+            "at": 1794240033270,
+            "from": "indexeddb",
+            "check": {
+              "chars": 2,
+              "ticks": 3,
+              "excl": 1,
+              "vals": 0,
+              "avail": 0,
+              "same": true
+            },
+            "confirmed": null,
+            "wentBack": null
+          }
+        },
+        "atelier": {
+          "isolated": true,
+          "threads": 4,
+          "alba": 5555,
+          "brio": 4900
+        },
+        "shell": [
+          "Alba",
+          "Brio"
+        ],
+        "oldDataUntouched": true,
+        "save": {
+          "chars": [
+            "Alba",
+            "Brio"
+          ],
+          "modules": [
+            "atelier",
+            "tracker"
+          ],
+          "moved": [
+            "tracker",
+            "atelier"
+          ]
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C12",
+      "title": "Apps installed before the shell keep working offline after it arrives (own workers, save kept, Atelier isolated and multi-thread), show the way back and the hand-over notice; \"Got it\" or installing the Command Center ends the notice in both, and the link stays",
+      "pass": true,
+      "detail": {
+        "offline": {
+          "tracker": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+            "isolated": false,
+            "overview": true,
+            "chars": 2,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js",
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": true,
+            "device": null
+          },
+          "atelier": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+            "isolated": true,
+            "threads": 4,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js",
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": true,
+            "device": null
+          }
+        },
+        "gotIt": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": false,
+          "device": {
+            "handoverSeen": 1794240036977
+          }
+        },
+        "afterGotIt": {
+          "tracker": {
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "handoverSeen": 1794240036977
+            }
+          },
+          "atelier": {
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "handoverSeen": 1794240036977
+            }
+          }
+        },
+        "recordCleared": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": true,
+          "device": null
+        },
+        "afterInstall": {
+          "tracker": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+            "isolated": false,
+            "overview": true,
+            "chars": 2,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js",
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "installed": 1794240038435
+            }
+          },
+          "atelier": {
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "installed": 1794240038435
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C13",
+      "title": "Under a site-wide worker that does not isolate atelier/, the Atelier's first visit still ends isolated with more than one thread, under its own worker, after exactly one reload; a second tab needs none",
+      "pass": true,
+      "detail": {
+        "rootWorkerProbe": {
+          "status": 200,
+          "coep": null,
+          "coop": null
+        },
+        "arrival": {
+          "url": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/sw.js"
+        },
+        "afterOwnWorker": {
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/sw.js",
+          "reloadMark": "1"
+        },
+        "navigationsToAtelier": 2,
+        "secondTab": {
+          "url": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/sw.js",
+          "navigations": 1
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C14",
+      "title": "The header link brings the owner back to the shell from the Tracker and from the Atelier, also from an Atelier opened directly with the shell never visited; the shell is not isolated each time",
+      "pass": true,
+      "detail": {
+        "fromTracker": {
+          "link": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "shell": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "isolated": false,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+            "modules": [
+              "Home",
+              "Tracker",
+              "Atelier"
+            ],
+            "cards": 2,
+            "title": "Eveniunt Command Center"
+          }
+        },
+        "fromAtelier": {
+          "link": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "shell": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "isolated": false,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+            "modules": [
+              "Home",
+              "Tracker",
+              "Atelier"
+            ],
+            "cards": 2,
+            "title": "Eveniunt Command Center"
+          }
+        },
+        "fromAtelierOpenedDirectly": {
+          "link": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "shell": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "isolated": false,
+            "controller": null,
+            "modules": [
+              "Home",
+              "Tracker",
+              "Atelier"
+            ],
+            "cards": 2,
+            "title": "Eveniunt Command Center"
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C15",
+      "title": "The shell has its own icons and manifest (gate 1E), different from the Tracker's and the Atelier's, and the browser can load every one",
+      "pass": true,
+      "detail": {
+        "distinct": [
+          {
+            "icon": "icon-192.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          },
+          {
+            "icon": "icon-512.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          },
+          {
+            "icon": "icon-maskable-512.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          },
+          {
+            "icon": "apple-touch-icon.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          }
+        ],
+        "manifest": {
+          "name": "Eveniunt Command Center",
+          "icons": [
+            "icons/icon-192.png",
+            "icons/icon-512.png",
+            "icons/icon-maskable-512.png"
+          ]
+        },
+        "served": [
+          {
+            "src": "icons/icon-192.png",
+            "status": 200,
+            "type": "image/png"
+          },
+          {
+            "src": "icons/icon-512.png",
+            "status": 200,
+            "type": "image/png"
+          },
+          {
+            "src": "icons/icon-maskable-512.png",
+            "status": 200,
+            "type": "image/png"
+          }
+        ],
+        "head": {
+          "icon": "http://127.0.0.1:8418/Eveniunt-Command-Center/icons/icon-192.png",
+          "apple": "http://127.0.0.1:8418/Eveniunt-Command-Center/icons/apple-touch-icon.png",
+          "manifest": "http://127.0.0.1:8418/Eveniunt-Command-Center/manifest.webmanifest"
+        }
+      }
+    },
+    {
+      "id": "C16",
+      "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
+      "pass": true,
+      "detail": {
+        "scratch": "/tmp/cc-publish-vaMC5m",
+        "publish": [
+          "70M\t/tmp/cc-publish-vaMC5m",
+          "234"
+        ],
+        "freshLists": {
+          "workflowWrites": true,
+          "trackerWorkerServes": true
+        },
+        "files": {
+          "root": true,
+          "tracker": true,
+          "atelier": true,
+          "cosmic": true,
+          "oldFrontPageGone": true,
+          "privateRecordsAbsent": true
+        },
+        "workerFiles": {
+          "count": 10,
+          "missing": []
+        },
+        "shell": {
+          "url": "http://127.0.0.1:8420/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8420/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier"
+          ],
+          "cards": 2,
+          "title": "Eveniunt Command Center"
+        },
+        "links": {
+          "local": 12,
+          "outside": 2,
+          "broken": []
+        },
+        "cosmic": {
+          "url": "http://127.0.0.1:8420/Eveniunt-Command-Center/cosmic/cosmic-sinus-ardorum.html",
+          "title": "Cosmic Solver – Sinus Ardorum"
+        },
+        "tracker": {
+          "url": "http://127.0.0.1:8420/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8420/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "errors": []
+      }
+    }
+  ]
+}

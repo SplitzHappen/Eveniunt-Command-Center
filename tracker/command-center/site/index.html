@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eveniunt Command Center</title>
+<meta name="description" content="Eveniunt Command Center: the Tracker and the Atelier for Final Fantasy XIV in one installable app.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f2234">
+<link rel="stylesheet" href="shell.css">
+<script>
+  // Follow the Tracker's light / dark choice (read only; gate 1C brings one shared appearance setting).
+  try { var t = (JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).theme; if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) { /* private window */ }
+</script>
+</head>
+<body>
+<header class="mast">
+  <a class="brand" href="./" aria-label="Eveniunt Command Center, home">
+    <span class="brand-top">Eveniunt</span>
+    <span class="brand-name">Command Center</span>
+  </a>
+  <nav class="switcher" aria-label="Modules">
+    <a href="./" data-module="home" aria-current="page">Home</a>
+    <a href="tracker/" data-module="tracker">Tracker</a>
+    <a href="atelier/" data-module="atelier">Atelier</a>
+  </nav>
+  <span class="status" id="status" role="status" aria-live="polite"></span>
+</header>
+
+<main id="home">
+  <section class="intro">
+    <h1>Welcome back</h1>
+    <p>Pick a module. The Tracker and the Atelier open exactly as you know them; the <b>Command Center</b> link in their header brings you back here.</p>
+  </section>
+
+  <section class="save" id="save" aria-label="Your save" hidden></section>
+
+  <section class="modules" aria-label="Available modules">
+    <a class="card" href="tracker/" data-module="tracker">
+      <span class="card-kicker">Module</span>
+      <span class="card-title">Tracker</span>
+      <span class="card-text">Completion lists for up to eight characters side by side, plus the Live boards: timers, dailies, hunts, weather, market board and more.</span>
+      <span class="card-go">Open the Tracker →</span>
+    </a>
+    <a class="card" href="atelier/" data-module="atelier">
+      <span class="card-kicker">Module</span>
+      <span class="card-title">Atelier</span>
+      <span class="card-text">Crafting solver: recipe search, crafter stats, solver, simulator, macros and a step-by-step guide. Opens as its own page so it can use every processor core.</span>
+      <span class="card-go">Open the Atelier →</span>
+    </a>
+  </section>
+
+  <section class="cosmic" aria-label="Cosmic Exploration guides">
+    <h2>Cosmic Exploration</h2>
+    <p class="muted">The Atelier's step-by-step mission guides, one offline page per destination.</p>
+    <p class="links">
+      <a class="btn" href="cosmic/cosmic-sinus-ardorum.html">Sinus Ardorum</a>
+      <a class="btn" href="cosmic/cosmic-phaenna.html">Phaenna</a>
+      <a class="btn" href="cosmic/cosmic-oizys.html">Oizys</a>
+      <a class="btn" href="cosmic/cosmic-auxesia.html">Auxesia</a>
+    </p>
+  </section>
+
+  <section class="coming" aria-label="Coming modules">
+    <h2>Coming next</h2>
+    <p class="muted">In the order you chose. They appear here as each one ships.</p>
+    <ol class="coming-list">
+      <li><b>Submersibles</b> <span>free company submarines, voyages and return times</span></li>
+      <li><b>Lists</b> <span>crafting planner with totals of what to gather, buy or craft</span></li>
+      <li><b>Market</b> <span>prices, estimated profit and a shopping list split by world</span></li>
+      <li><b>Gathering</b> <span>timed nodes, fish windows, alarms and routes</span></li>
+      <li><b>Currencies &amp; Collectables</b>, <b>Levequests</b>, <b>Ventures &amp; Voyages</b></li>
+      <li><b>Gear</b>, <b>Treasure Maps</b>, desynthesis</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Prefer a single file? Download the <a href="tracker/index.html" download="eveniunt-tracker.html">Tracker</a> or the <a href="atelier/index.html" download="eveniunt-atelier.html">Atelier</a> and open it from your computer; each works offline on its own.</p>
+  <p>Open source under the Apache License 2.0: <a href="https://github.com/SplitzHappen/Eveniunt-Command-Center">source and credits</a>. Solver by <a href="https://github.com/KonaeAkira/raphael-rs">Raphael</a> (Apache 2.0). Tracker data from xivapi/ffxiv-datamining, FFXIV Teamcraft (MIT), FFXIV Collect and the FFXIV 100% Completion Checklist team.</p>
+  <p>FINAL FANTASY XIV © SQUARE ENIX CO., LTD. Game data and names belong to their owners. A free, non-commercial fan project, not affiliated with Square Enix. This app reads nothing from the game.</p>
+</footer>
+<script src="save.js"></script>
+<script src="shell.js"></script>
+</body>
+</html>

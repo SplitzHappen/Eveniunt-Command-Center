@@ -4,6 +4,10 @@ A growing collection of free, offline tools for **Final Fantasy XIV**, built for
 
 **Website:** https://splitzhappen.github.io/Eveniunt-Command-Center/
 
+## The app
+
+**Eveniunt Command Center** is one installable app at the website's root: a home screen with the modules below (the Tracker and the Atelier today, more to come), one save shared by every module, and an **Install app** button in its header (on a phone, **Add to Home screen**). Each module opens as its own page at its own address, so the Tracker and the Atelier keep working exactly as before, installed or not, online or offline.
+
 ## Tools
 
 ### Eveniunt Atelier: crafting solver
@@ -32,11 +36,11 @@ Step-by-step guides for Cosmic Exploration missions: Sinus Ardorum, Phaenna, Oiz
 
 | Path | Contents |
 | --- | --- |
-| `web/` | The Command Center front page |
+| `tracker/command-center/site/` | The Eveniunt Command Center app (the website's root): shell, site-wide service worker, manifest and icons; source and checks in `tracker/command-center/` |
 | `crafting/atelier/` | Eveniunt Atelier: source (`src/`, `bridge/`, `tools/`, `tests/`, `data/`), the built offline file (`dist/`) and the installable app (`site/`) |
 | `tracker/` | Eveniunt Tracker: source (`src/`, `tools/`, `tests/`, `data/`), the built offline file (`dist/`) and the installable app (`site/`); see `tracker/README.md` |
 | `crafting/src`, `crafting/tools`, `crafting/tests`, `crafting/docs` | The Cosmic Exploration solver and the shared step-by-step engine (`crafting/src/engine/`) |
-| `.github/workflows/pages.yml` | Publishes the website to GitHub Pages |
+| `.github/workflows/pages.yml` | Publishes the website to GitHub Pages on every push and every hour (fresh events list and Lodestone news for the Tracker) |
 
 Build and test steps: `crafting/atelier/README.md` and `crafting/README.md`.
 

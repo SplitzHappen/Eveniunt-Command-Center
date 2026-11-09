@@ -12,7 +12,7 @@ Build `dist/eveniunt-atelier.html` (6.96 MB). Raphael commit `723b17e`. Date 202
 | Crafter config in Raphael's RON format | Pastes in and copies out |
 | Coverage | 13,892 recipes, 544 expert recipes, all stellar missions, 100 foods and 24 medicines, 7 languages (data and Raphael's UI strings) |
 
-## Automated tests (`tests/atelier.test.js`, 11/11 pass; Chromium from `file://`, every non-local request aborted)
+## Automated tests (`tests/atelier.test.js`, 14/14 pass on 2026-11-09, 11 on 2026-11-06; Chromium from `file://` with every non-local request aborted, plus one hosted test over HTTP)
 
 1. Opens offline: no external scripts, stylesheets or requests; no console errors.
 2. Solver parity (above).
@@ -21,6 +21,8 @@ Build `dist/eveniunt-atelier.html` (6.96 MB). Raphael commit `723b17e`. Date 202
 5. The same expert at level-80 stats → guide banner, macro flagged "not recommended", the food and medicine check finishes, the guide answers keys, and undo restores the exact state.
 6. Solve history survives a reload, and identical parameters load instantly; a Raphael RON config pastes in; Japanese produces Japanese macros.
 7. Stellar mission search, a custom recipe solve, no sideways scroll at 390 px, and it works with browser storage blocked.
+8. Command Center gate 1C (two tests): the one save, the character switcher and the one-time question; "Not now" asks again; with no characters, one set as before.
+9. Command Center gate 1D (hosted site over HTTP): the first visit reloads exactly once, under the Atelier's own worker, and ends cross-origin isolated on more than one thread; the **⌂ Command Center** link points at the site root; the hand-over notice shows, **Got it** records it on the device and it stays away after a reload; the file opened from disk has neither. The site-wide cases (a root worker that does not isolate `atelier/`, offline with the shell present, the way back) are checks C12 to C14 of `projects/eveniunt-completionist-tracker/command-center/check.js`.
 8. With an empty search, all eight jobs list every recipe Raphael has (no duplicates), and the first page matches the game's crafting-log order. Each job's 198 Cosmic recipes carry a class badge. Stellar missions list all 198 mission recipes across the four planets, in class order within each planet. Icons differ by job where the game's do. The HQ-material prompt shows in both panes until **Use all HQ** sets them, then switches to a confirmation.
 
 Test 4 also checks that every action card shows an icon and that the step graph is drawn at full size (at least 180 px tall).
