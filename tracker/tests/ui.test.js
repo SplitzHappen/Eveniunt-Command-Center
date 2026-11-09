@@ -386,6 +386,82 @@ test('hosted site over HTTP: installable, works offline after the first visit', 
   await ctx.close(); server.close();
 });
 
+test('hosted site: cloud sync signs in once through Microsoft and the helper, then syncs by itself; sign-out and an ended sign-in ask for one tap (gate 1E)', async () => {
+  const SITE = path.join(T, 'site');
+  const { create } = require('./standins.js');
+  let standins = null;
+  const server = http.createServer(async (req, res) => {
+    if (standins && await standins.handle(req, res)) return;
+    const u = decodeURIComponent(req.url.split('?')[0]).replace(/^\/tracker\//, '/');
+    let f = path.join(SITE, u.endsWith('/') ? u + 'index.html' : u);
+    if (!f.startsWith(SITE) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+    const type = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.webmanifest': 'application/manifest+json' }[path.extname(f)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' }); fs.createReadStream(f).pipe(res);
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const origin = `http://127.0.0.1:${server.address().port}`; standins = create(origin);
+  const base = origin + '/tracker/';
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage(); const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('dialog', (d) => d.accept());
+  await ctx.route((u) => !u.href.startsWith(origin), (r) => r.abort());
+  try {
+  await page.goto(base);
+  await page.waitForSelector('#dlg[open]', { timeout: 30000 });
+  await setup(page, 1);
+  const k = await page.evaluate(() => { const s = window.__tracker.IDX.sections.find((x) => x.id === 'mounts'); return ET.sectionKeys(s)[0]; });
+  await page.evaluate((key) => { ET.setTick(window.__tracker.ST, 'c1', key, true); ET.saveState(window.__tracker.ST, true); }, k);
+  // not signed in: the panel says so and offers Microsoft's sign-in; nothing has reached the helper or OneDrive
+  await page.evaluate(() => window.__tracker.openSettings('cloud'));
+  await page.waitForSelector('#sync-in');
+  assert.match(await page.textContent('#dlg'), /This device is not signed in/);
+  assert.equal(standins.kv.size, 0); assert.equal(standins.state.files.f1, undefined);
+  // one tap: Microsoft's sign-in page (the stand-in answers at once), back through oauth.html, the helper, then a sync
+  await page.click('#sync-in');
+  await page.waitForFunction(() => /Synced \d/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+  assert.equal(page.url(), base, 'back on the Tracker after the round trip');
+  assert.equal(standins.kv.size, 1, 'the helper holds one device');
+  assert.ok(standins.state.files.f1, 'the cloud copy was created');
+  const device = await page.evaluate(() => JSON.parse(localStorage.getItem('eveniunt-cloud-device')).device);
+  assert.match(device, /^[0-9a-f]{64}$/);
+  assert.ok(!JSON.stringify(await page.evaluate(() => ET.exportFile(window.__tracker.ST))).includes(device), 'the device handle is never in a backup');
+  assert.ok(!(await page.evaluate(async () => (await CC.read()).raw ? JSON.stringify((await CC.read()).raw) : '')).includes(device), 'nor in the one save');
+  // a new sitting: the tab's key is gone, the device is known; the Tracker syncs by itself with no page change
+  await page.evaluate(() => sessionStorage.clear());
+  const grantsBefore = standins.state.log.length;
+  await page.reload(); await page.waitForSelector('.ov-table');
+  await page.waitForFunction(() => /Synced \d/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+  assert.equal(page.url(), base);
+  assert.deepEqual(standins.state.log.slice(grantsBefore), ['refresh_token'], 'one quiet renewal through the helper, no sign-in page');
+  await page.evaluate(() => window.__tracker.openSettings('cloud'));
+  assert.match(await page.textContent('#dlg'), /This device is signed in[\s\S]*syncs by itself/);
+  // the other device changed the copy: the next automatic sync takes the change
+  const other = JSON.parse(JSON.stringify(await page.evaluate(() => ET.portable(window.__tracker.ST))));
+  await page.evaluate(() => window.__tracker.closeDialog());
+  other.chars[0].name = 'Renamed elsewhere'; other.updated = Date.now() + 5;
+  standins.state.files.f1 = Object.assign({ app: 'eveniunt-completionist-tracker', v: 1 }, other); standins.state.etag.f1 = 'e-other';
+  await page.evaluate(() => window.__tracker.syncCloud(true));
+  await page.waitForFunction(() => window.__tracker.ST.chars[0].name === 'Renamed elsewhere', null, { timeout: 30000 });
+  // the sign-in ended on Microsoft's side (revoked): the helper forgets the device and the Tracker asks for one tap
+  standins.state.revoked = true;
+  await page.evaluate(() => sessionStorage.clear());
+  await page.reload(); await page.waitForSelector('.ov-table');
+  await page.waitForFunction(() => /tap to sign in/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+  assert.equal(await page.evaluate(() => localStorage.getItem('eveniunt-cloud-device')), null, 'the device record is gone');
+  assert.equal(standins.kv.size, 0);
+  // signing in again works; signing out on this device forgets it at the helper and nothing syncs until the next tap
+  standins.state.revoked = false;
+  await page.evaluate(() => window.__tracker.openSettings('cloud')); await page.click('#sync-in');
+  await page.waitForFunction(() => /Synced \d/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+  assert.equal(standins.kv.size, 1);
+  await page.evaluate(() => window.__tracker.openSettings('cloud')); await page.click('#sync-out');
+  await page.waitForFunction(() => /Signed out on this device/.test(((document.querySelector('#sync-state') || {}).textContent || '')));
+  assert.equal(standins.kv.size, 0);
+  assert.deepEqual(errors, []);
+  } finally { await ctx.close(); server.close(); }
+});
+
 test('starting class greys out the other cities’ opening quests; Grand Company the other companies’ quests', async () => {
   const { ctx, page, errors } = await open({ setup: false });
   await page.selectOption('#nchars', '3');

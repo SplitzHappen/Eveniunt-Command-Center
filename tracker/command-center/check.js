@@ -1,5 +1,6 @@
 'use strict';
-// Browser checks for the Command Center shell (gates 1B to 1E; blueprint section 5; gate 1A finding F1; rules 5 and 10).
+// Browser checks for the Command Center shell (gates 1B to 1E; blueprint section 5; gate 1A finding F1; rules 5 and 10;
+// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19).
 // Serves the published layout with serve.js (no isolation headers, like GitHub Pages), drives a browser through
 // Playwright, and writes evidence/checks*.json plus screenshots. Every request to another site is blocked.
 // Run: node command-center/build.js && node command-center/check.js
@@ -18,8 +19,8 @@ const engine = playwright[BROWSER];
 const CC = __dirname, T = path.join(CC, '..');
 const ATELIER_SRC = path.join(T, '..', 'ffxiv-cosmic-crafting-solver', 'atelier');
 const FIX = require(path.join(ATELIER_SRC, 'tests', 'fixtures', 'raphael-cli.json'));
-const PORT = Number(process.env.PORT) || 8418, PORT2 = PORT + 1, PORT3 = PORT + 2;
-const ROOT = 'http://127.0.0.1:' + PORT + BASE, ROOT2 = 'http://127.0.0.1:' + PORT2 + BASE, ROOT3 = 'http://127.0.0.1:' + PORT3 + BASE;
+const PORT = Number(process.env.PORT) || 8418, PORT2 = PORT + 1, PORT3 = PORT + 2, PORT4 = PORT + 3;
+const ROOT = 'http://127.0.0.1:' + PORT + BASE, ROOT2 = 'http://127.0.0.1:' + PORT2 + BASE, ROOT3 = 'http://127.0.0.1:' + PORT3 + BASE, ROOT4 = 'http://127.0.0.1:' + PORT4 + BASE;
 const DEVICE_KEY = 'eveniunt-command-center-device';
 const results = [];
 let browser;
@@ -37,7 +38,7 @@ async function context(opts = {}) {
   const errors = [], external = [];
   await ctx.route('**/*', (r) => {
     const u = r.request().url();
-    if (u.startsWith('http://127.0.0.1:' + PORT + '/') || u.startsWith('http://127.0.0.1:' + PORT2 + '/') || u.startsWith('http://127.0.0.1:' + PORT3 + '/') || /^(blob|data):/.test(u)) return r.continue();
+    if (u.startsWith('http://127.0.0.1:' + PORT + '/') || u.startsWith('http://127.0.0.1:' + PORT2 + '/') || u.startsWith('http://127.0.0.1:' + PORT3 + '/') || u.startsWith('http://127.0.0.1:' + PORT4 + '/') || /^(blob|data):/.test(u)) return r.continue();
     external.push(u); return r.abort();
   });
   ctx.on('page', (p) => watch(p, errors));
@@ -530,6 +531,73 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 2 && detail.shell.controller === ROOT3 + 'sw.js' &&
         detail.links.broken.length === 0 && /Sinus Ardorum/.test(detail.cosmic.title) && detail.tracker.overview && detail.tracker.controller === ROOT3 + 'tracker/sw.js' && detail.errors.length === 0;
       record('C16', 'The published layout (gate 1E): the publish script and the Pages workflow\'s own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it', ok, detail);
+    }
+
+    // ── C17 to C19 gate 1E: cloud sync through OneDrive and the sync helper, against stand-ins for Microsoft's sign-in,
+    //    the helper (the real helper/worker.js, in this process) and OneDrive (tests/standins.js) ──
+    {
+      const server4 = await start(PORT4, { standins: true });
+      const st = server4.standins;
+      const syncText = () => ((document.querySelector('#sync-state') || {}).textContent || '');
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      await page.goto(ROOT4); await shellControlled(page);
+      await page.click('.switcher a[data-module="tracker"]'); await trackerSetup(page); await waitOwnWorker(page, 'tracker');
+      // C17: the first sign-in on a device, from the Tracker opened through the shell
+      const before = { devices: st.kv.size, file: !!st.state.files.f1 };
+      await page.evaluate(() => window.__tracker.openSettings('cloud'));
+      const panelBefore = await page.textContent('#dlg');
+      page.__navs.length = 0;
+      await page.click('#sync-in');
+      await page.waitForFunction(() => /Synced \d/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+      const after = { url: page.url(), devices: st.kv.size, file: !!st.state.files.f1, grants: st.state.log.slice(), navs: page.__navs.slice(), status: await page.evaluate(syncText),
+        device: await page.evaluate(() => (JSON.parse(localStorage.getItem('eveniunt-cloud-device') || '{}') || {}).device || null) };
+      const leaks = await page.evaluate(async (dev) => { const file = ET.exportFile(window.__tracker.ST); const code = await ET.makeTransferCode(window.__tracker.ST); const raw = JSON.stringify((await CC.read()).raw || {}); return { backup: file.includes(dev), code: code.includes(dev), save: raw.includes(dev) }; }, after.device);
+      const cloudCopy = JSON.stringify(st.state.files.f1 || {});
+      record('C17', 'First sign-in on a device: one tap takes the Tracker to Microsoft\'s sign-in and back through oauth.html, the helper keeps the device, the cloud copy is created and the status line says Synced; the device handle is in no backup, transfer code, save or cloud copy',
+        before.devices === 0 && !before.file && /not signed in/.test(panelBefore) && after.url === ROOT4 + 'tracker/' && after.devices === 1 && after.file && after.grants.join() === 'authorization_code' &&
+        after.navs.some((u) => u.includes('/tracker/oauth.html?code=')) && /^[0-9a-f]{64}$/.test(after.device || '') && /Synced \d/.test(after.status) &&
+        !leaks.backup && !leaks.code && !leaks.save && !cloudCopy.includes(after.device) && real(errors).length === 0,
+        { before, after: Object.assign({}, after, { device: after.device ? after.device.slice(0, 8) + '…' : null }), leaks, errors: real(errors) });
+      // C18: a new sitting on the same device: the tab's key is gone; the Tracker gets a fresh key from the helper and syncs by itself, with no sign-in page
+      await page.evaluate(() => sessionStorage.clear());
+      const grants0 = st.state.log.length; page.__navs.length = 0;
+      await page.reload(); await page.waitForSelector('.ov-table');
+      await page.waitForFunction(() => /Synced \d/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+      await page.evaluate(() => window.__tracker.openSettings('cloud'));
+      const panelSigned = await page.textContent('#dlg');
+      await page.evaluate(() => window.__tracker.closeDialog());
+      // the other device changed the copy meanwhile: the next sync takes the change, and OneDrive's "write only if unchanged" is honoured
+      const other = JSON.parse(JSON.stringify(await page.evaluate(() => ET.portable(window.__tracker.ST))));
+      other.chars[1].name = 'Brio renamed elsewhere';
+      st.state.files.f1 = Object.assign({ app: 'eveniunt-completionist-tracker', v: 1 }, other); st.state.etag.f1 = 'e-other';
+      await page.evaluate(() => window.__tracker.syncCloud(true));
+      await page.waitForFunction(() => window.__tracker.ST.chars[1].name === 'Brio renamed elsewhere', null, { timeout: 30000 });
+      const quiet = { grants: st.state.log.slice(grants0), navs: page.__navs.slice(), panel: panelSigned.slice(0, 400), renamed: await page.evaluate(() => window.__tracker.ST.chars[1].name), etagAfter: st.state.etag.f1 };
+      record('C18', 'A new sitting on a signed-in device: no sign-in page, one quiet renewal through the helper, the status line says Synced, the panel says the device syncs by itself; a change made on another device arrives on the next sync',
+        quiet.grants.join() === 'refresh_token,refresh_token' || quiet.grants.join() === 'refresh_token' ? (quiet.navs.filter((u) => u.includes('/login/')).length === 0 && /This device is signed in/.test(panelSigned) && /syncs by itself/.test(panelSigned) && quiet.renamed === 'Brio renamed elsewhere' && quiet.etagAfter !== 'e-other' && real(errors).length === 0) : false,
+        Object.assign(quiet, { errors: real(errors) }));
+      // C19: the sign-in ended (revoked in the Microsoft account, or the helper forgot the device): one tap is asked for, nothing else happens by itself
+      st.state.revoked = true;
+      await page.evaluate(() => sessionStorage.clear());
+      await page.reload(); await page.waitForSelector('.ov-table');
+      await page.waitForFunction(() => /tap to sign in/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+      const ended = { status: await page.evaluate(syncText), devices: st.kv.size, deviceRecord: await page.evaluate(() => localStorage.getItem('eveniunt-cloud-device')), file: !!st.state.files.f1 };
+      await page.evaluate(() => window.__tracker.openSettings('cloud'));
+      const endedPanel = await page.textContent('#dlg'); ended.panel = endedPanel.slice(0, 400); ended.notSignedIn = /not signed in/.test(endedPanel); ended.offersSignIn = !!(await page.$('#sync-in'));
+      await page.evaluate(() => window.__tracker.closeDialog());
+      // and the tap works again; signing out on the device forgets it at the helper
+      st.state.revoked = false;
+      await page.evaluate(() => window.__tracker.openSettings('cloud')); await page.click('#sync-in');
+      await page.waitForFunction(() => /Synced \d/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 30000 });
+      ended.signedInAgain = st.kv.size === 1;
+      await page.evaluate(() => window.__tracker.openSettings('cloud')); await page.click('#sync-out');
+      await page.waitForFunction(() => /Signed out on this device/.test(((document.querySelector('#sync-state') || {}).textContent || '')), null, { timeout: 10000 });
+      ended.afterSignOut = { devices: st.kv.size, status: await page.evaluate(syncText) };
+      record('C19', 'An ended sign-in asks for one tap and nothing else: the status line says so, the device record is gone, the cloud copy is untouched, the panel offers the sign-in; the tap works again, and signing out forgets the device at the helper',
+        /tap to sign in/.test(ended.status) && ended.devices === 0 && ended.deviceRecord === null && ended.file && ended.notSignedIn && ended.offersSignIn && ended.signedInAgain && ended.afterSignOut.devices === 0 && /Signed out/.test(ended.afterSignOut.status) && real(errors).length === 0,
+        Object.assign(ended, { errors: real(errors) }));
+      await ctx.close(); server4.close();
     }
   } finally {
     await browser.close(); server.close();

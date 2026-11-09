@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eveniunt Tracker: signing in</title>
+<meta name="robots" content="noindex">
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:46ch;margin:12vh auto;padding:0 16px;color:#111;background:#f5f6f4}</style>
+</head>
+<body>
+<p id="msg">Signing in… returning to the Tracker.</p>
+<script>
+// The return address of the OneDrive sign-in (gate 1E). Microsoft sends the browser here with the answer in the
+// address; this page records it for the Tracker (this tab only) and goes back to the Tracker, which finishes the
+// sign-in through the sync helper. Nothing here is a key: the code is single-use and worthless without the helper.
+(function () {
+  var q = new URLSearchParams(location.search);
+  var ret = { code: q.get('code'), state: q.get('state'), error: q.get('error'), error_description: q.get('error_description'), at: Date.now() };
+  try { sessionStorage.setItem('eveniunt-cloud-return', JSON.stringify(ret)); }
+  catch (e) { document.getElementById('msg').textContent = 'This browser blocks the storage the sign-in needs (a private window?). Open the Tracker in an ordinary window and try again.'; return; }
+  location.replace('./');
+})();
+</script>
+</body>
+</html>

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 'use strict';
 // Build the hosted, installable Tracker into site/ (deployed to GitHub Pages at /tracker/ by the public repository).
-// Inputs: dist/eveniunt-tracker.html (tools/build.js), site-src/sw.js, site-src/icons/ (tools/make-icons.js).
+// Inputs: dist/eveniunt-tracker.html (tools/build.js), site-src/sw.js, site-src/oauth.html, site-src/sync-config.json (optional), site-src/icons/ (tools/make-icons.js).
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const T = path.join(__dirname, '..'), OUT = path.join(T, 'site');
 const cp = (from, to) => { fs.mkdirSync(path.dirname(path.join(OUT, to)), { recursive: true }); fs.copyFileSync(from, path.join(OUT, to)); };
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
 cp(path.join(T, 'dist', 'eveniunt-tracker.html'), 'index.html');
+cp(path.join(T, 'site-src', 'oauth.html'), 'oauth.html'); // the return address of the OneDrive sign-in (gate 1E)
+// cloud sync set-up (client id, helper address): committed by the owner's set-up, absent until then (cloud sync then says it is not set up)
+if (fs.existsSync(path.join(T, 'site-src', 'sync-config.json'))) cp(path.join(T, 'site-src', 'sync-config.json'), 'sync-config.json');
 for (const f of fs.readdirSync(path.join(T, 'site-src', 'icons'))) cp(path.join(T, 'site-src', 'icons', f), 'icons/' + f);
 fs.writeFileSync(path.join(OUT, 'manifest.webmanifest'), JSON.stringify({
   name: 'Eveniunt Tracker', short_name: 'Tracker', id: './', start_url: './', scope: './', display: 'standalone',

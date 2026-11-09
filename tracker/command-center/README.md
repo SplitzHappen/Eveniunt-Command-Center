@@ -2,16 +2,16 @@
 
 Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, sections 4a (rules 1, 5 and 10), 4b (finding F1), 4c (F5, F6) and 5 (gates 1B to 1E). Cards: `.ai/planning/CARD-phase-1C.md`, `.ai/planning/CARD-phase-1D.md`, `.ai/planning/CARD-phase-1E.md`.
 
-## Gate 1E: the root app on the public site (round 1 built; sign-in waits for the owner's answer)
+## Gate 1E: the root app on the public site, and sign-in once per device
 
 Card: `.ai/planning/CARD-phase-1E.md`. Release note for the owner's phone check: `.ai/planning/RELEASE-NOTE-gate-1E.md`.
 
 - **Its own icon.** `make-icons.js` draws the Command Center's icons (the letters **CC**, the gauge full, the shared Limit Break mark and colours) into `src/icons/`, and `build.js` uses them instead of the Tracker's. Check C15 proves they differ from both apps' icons and that the browser loads every one the manifest names.
 - **The root of the public site is the shell.** The publish script (`projects/ffxiv-cosmic-crafting-solver/tools/publish-public.sh`) and the Pages workflow (`.../public/.github/workflows/pages.yml`) put `command-center/site/` at the root of the site, the Atelier at `atelier/`, the Tracker at `tracker/`, the Cosmic guides at `cosmic/`, and keep the hourly refresh of the Tracker's events list and Lodestone news (rule 10). The old static front page is gone; the shell's home screen now carries the Cosmic Exploration links, the two offline-file downloads and the licence and credits line. The workflow stops the publish unless the root is the Command Center and every module is in place. Check C16 runs the real publish script into a scratch clone and the workflow's own assemble commands, then opens the result in a browser (shell under its worker, every home-page link answers, a Cosmic page opens, the Tracker opens and comes under its own worker).
-- **Sign-in that works everywhere (round 2).** Designed in the card's section 3 and put to the owner as one question with a recommended default; nothing of it is built until the owner answers. Until then the Tracker's sign-in on the site is today's (one tap per opening).
+- **Sign-in once per device (round 2, owner's answer `sign-in: B (OneDrive)`).** Cloud sync moves from Google Drive to the owner's OneDrive (`src/core/cloud.js`, the app's own folder, "write only if unchanged" with eTags) and a small free helper of the owner's (`helper/worker.js`, a Cloudflare Worker; set-up in `helper/README.md`) keeps each device's sign-in alive: Settings → Cloud sync → **Sign in with Microsoft** once, through `tracker/oauth.html`, then the device syncs by itself on every browser and installed app, with the result stated plainly in the status line and the panel. Checks C17 to C19 run the whole flow against stand-ins (`tests/standins.js`: Microsoft's sign-in, the real helper in-process, OneDrive); the real sign-in is the owner's check on the published site. The Tracker's site is republished only once the owner's two set-up values are in `site-src/sync-config.json`, so the published Tracker keeps today's sign-in until then.
 - **The owner's phone check** (Safari; finding F5: each installed app on an iPhone or iPad keeps its own copy of the save) is in the card's section 5 and the release note.
 
-**Checks:** 20 of 20 in Chromium (`evidence/checks.json`; C1 to C16 with their error checks). Firefox and WebKit: still not installed in the session, recorded as not run (`evidence/checks-firefox.json`, `checks-webkit.json`).
+**Checks:** 23 of 23 in Chromium (`evidence/checks.json`; C1 to C19 with their error checks). Firefox and WebKit: still not installed in the session, recorded as not run (`evidence/checks-firefox.json`, `checks-webkit.json`).
 
 ## Gate 1D: today's installed apps and offline use keep working through the move
 
@@ -100,18 +100,21 @@ Chromium 153.0.8010.12 (headless), Playwright 1.63.0, Node v22.23.4. Every reque
 | **C13** The Atelier's reload rule under a root worker that does not isolate `atelier/` (gate 1D, F1) | Passed | a second test site whose root worker controls every page and sends `atelier/` without isolation headers (probe: no COOP or COEP header); from its shell, the Atelier's first visit ends isolated on 4 threads under its own worker after exactly 2 page loads (the arrival and one reload), with the reload mark set; a second tab arrives isolated with 1 page load |
 | **C14** The way back (gate 1D) | Passed | shell → Tracker → link → shell; shell → Atelier → link → shell; Atelier opened directly (shell never visited) → link → shell; the shell is not isolated and shows both module cards each time |
 | **C15** The shell's own icons and manifest (gate 1E) | Passed | four icons present, each different from the Tracker's and the Atelier's; the manifest names three, the browser loads each (200, PNG); page icon, Apple icon and manifest links point at the shell's files |
+| **C17** First sign-in on a device (gate 1E) | Passed | from the Tracker opened through the shell: one tap, the stand-in Microsoft, back through `oauth.html` with a code, the helper keeps one device, the cloud copy is created, "Synced HH:MM"; the device handle appears in no backup, transfer code, save or cloud copy |
+| **C18** A new sitting on a signed-in device (gate 1E) | Passed | tab storage cleared and reloaded: no sign-in page, one quiet renewal through the helper, "Synced"; the panel says the device is signed in and syncs by itself; a rename made on another device arrives on the next sync and the copy's eTag moves on |
+| **C19** An ended sign-in (gate 1E) | Passed | the sign-in revoked at Microsoft: the status line says "tap to sign in", the device record is gone, the cloud copy untouched, the panel offers the sign-in; the tap works again; **Sign out on this device** forgets the device at the helper |
 | **C16** The published layout (gate 1E, rule 10) | Passed | publish script into a scratch clone (234 files, privacy check clean); the workflow's own assemble commands; root, Tracker and Atelier byte for byte the committed builds; four Cosmic pages; old front page and private records absent; all 10 files of the shell's worker present; fresh-list paths written by the job and served by the Tracker's worker; in the browser: shell under `sw.js`, 12 local links all answer, the Sinus Ardorum page opens, the Tracker opens from the root under `tracker/sw.js`, no errors |
 | C2-4 errors, C6 errors | Passed | no page or console errors |
 
-The two existing test suites still pass: `node tests/core.test.js` 61 of 61, `node tests/ui.test.js` 28 of 28 (gate 1D: the hosted test also checks the header link, the notice, **Got it** and its record; the file opened from disk has neither). The Atelier's suite: 14 of 14 (one new hosted test: one reload under its own worker, isolated on more than one thread, the link and the notice).
+The test suites pass: `node --test tests/core.test.js` 61 of 61 (the sync logic now against a stand-in OneDrive with eTags), `node --test tests/helper.test.js` 5 of 5 (the helper), `node --test tests/ui.test.js` 29 of 29 (gate 1E: one new hosted test runs the whole sign-in flow). The Atelier's suite: 14 of 14.
 
 ## What this does not prove
 
 - **Firefox and Safari.** Only Chromium is installed in the session, in gate 1D as in gate 1B: Playwright's Firefox and WebKit are not present and may not be installed here, so `check.js` records them as not run (`evidence/checks-firefox.json`, `evidence/checks-webkit.json`). Safari on an iPhone, which rule 5 names, is a different build again: the owner checks it on the phone when gate 1E publishes, with the hand-over notice's warning about each installed app's own copy of the save in mind.
-- **Real Google sign-in.** Google cannot be reached from the session; the sign-in design of gate 1E (card, section 3) is checked against a stand-in service in round 2, and the real sign-in is the owner's check on the published site. Cloud sync stays in the Tracker (gate 1C correction); moving it into the shell waits for a later step.
+- **The real Microsoft sign-in, the real helper and the real OneDrive.** None can be reached from the session; checks C17 to C19 run against stand-ins (the real helper code in-process). The owner's first sign-in on the published site is the live check. Cloud sync stays in the Tracker (gate 1C correction); moving it into the shell waits for a later step.
 - **The live site.** github.io is not reachable from the session; the publish is verified by the deployment run and by check C16's rebuild of the published layout, not by opening the live page.
 
 ## Left for later gates
 
-- **Gate 1E round 2:** the sign-in design the owner chooses (card, section 3), its checks C17 to C19 and tests, the republish, the Ship Request.
+- **Gate 1E's republish** waits for the owner's two set-up values (`helper/README.md`), sent with `ship`.
 - **After gate 1E:** the new Continuity project registered in `PROJECTS.md` (decision D2) in its own small pull request.

@@ -41,7 +41,7 @@ const SOLUTION_NINE = "    ['electrope-skyline', \"Electrope Skyline\", ['#e3ebf
 const lookPlus = look.replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION_NINE + '\n  ];\n  var ACCENTS');
 if (lookPlus === look || (lookPlus.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('could not add the Solution Nine theme');
 
-const core = ['save', 'model', 'storage', 'codec', 'merge', 'ffxivcollect', 'gdrive', 'importer', 'links'].map((f) => read(path.join(T, 'src', 'core', f + '.js'))).join('\n');
+const core = ['save', 'model', 'storage', 'codec', 'merge', 'ffxivcollect', 'cloud', 'importer', 'links'].map((f) => read(path.join(T, 'src', 'core', f + '.js'))).join('\n');
 const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => lookPlus).replace('/*{{LIVE}}*/', () => read(path.join(T, 'src', 'app', 'live.js')));
 const css = read(path.join(T, 'src', 'app', 'shared.css')) + '\n' + read(path.join(T, 'src', 'app', 'tracker.css'));
 const data = read(path.join(T, 'data', 'tracker-data.json')).replace(/</g, '\\u003c');

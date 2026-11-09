@@ -1,9 +1,10 @@
 // Eveniunt Tracker — service worker: works offline after the first visit.
 // Unlike the Atelier's worker it adds no cross-origin isolation headers: the Tracker needs no shared memory, and those
-// headers would block Google's sign-in window used by cloud sync. Cache name carries the build id; a new build replaces it.
+// headers would block the sign-in pages cloud sync uses. Cache name carries the build id; a new build replaces it.
 const BUILD = '__BUILD__';
 const CACHE = 'eveniunt-tracker-' + BUILD;
 const FILES = __FILES__;
+const OWN = new Set(FILES.map((f) => new URL(f, self.registration.scope).pathname));
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
 });
@@ -13,9 +14,15 @@ self.addEventListener('activate', (e) => {
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return; // Google, FFXIV Collect: straight to the network
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return; // OneDrive, the sync helper, FFXIV Collect: straight to the network
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
+    const pathname = new URL(req.url).pathname;
+    // the sign-in return page (gate 1E) and the set-up file are never answered with the app page: network, then the saved copy
+    if (/\/(oauth\.html|sync-config\.json)$/.test(pathname)) {
+      try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok) { cache.put(req, r.clone()); return r; } } catch (err) { /* offline */ }
+      return (await cache.match(req, { ignoreSearch: true })) || new Response('', { status: 504 });
+    }
     if (req.mode === 'navigate') { // network first for the page (fresh when online), cache when offline or slow
       const key = new URL('./', self.registration.scope).href;
       const cached = (await cache.match(key)) || (await cache.match('index.html'));
@@ -28,11 +35,14 @@ self.addEventListener('fetch', (e) => {
       try { return await Promise.race([net, slow]); } catch (err) { return cached; }
     }
     // the lists the public site refreshes every 6 hours (events, Lodestone news): network first, saved copy offline
-    if (/\/(timers\.json|news\.xml|topics\.xml)$/.test(new URL(req.url).pathname)) {
+    if (/\/(timers\.json|news\.xml|topics\.xml)$/.test(pathname)) {
       try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok) { cache.put(req, r.clone()); return r; } } catch (err) { /* offline */ }
       const saved = await cache.match(req, { ignoreSearch: true });
       return saved || new Response('', { status: 504 });
     }
+    // only the app's own files are kept offline; anything else on this site (for example the test stand-ins for the
+    // cloud services) goes straight to the network and is never served from an old copy
+    if (!OWN.has(pathname)) return fetch(req);
     const hit = await cache.match(req, { ignoreSearch: true });
     if (hit) return hit;
     const net = await fetch(req);

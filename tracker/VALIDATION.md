@@ -57,8 +57,8 @@ Findings and fixes are recorded in `.ai/DECISIONS.md` (entry of 2026-11-08, "Red
 ## Known limits
 
 - After-7.45 additions not made: 3 Triple Triad opponents without a name in the game data and the North Horn aether shards (not identifiable from reachable data); tick those by hand.
-- Not verifiable from the build session: Google sign-in live (the consent screen's publishing status decides who can sign in), press-and-hold on a real phone, and Safari's storage clearing (the persistence request and reminder are in place).
-- The online refresh and Google sign-in can only be tried live from the hosted app; FFXIV Collect's API was checked live from the build session (browser reads allowed), Google sign-in was not reachable there.
+- Not verifiable from the build session: the live Microsoft sign-in and the live helper (gate 1E: checked against stand-ins for Microsoft, the helper and OneDrive; the owner's first real sign-in is the live check), press-and-hold on a real phone, and Safari's storage clearing (the persistence request and reminder are in place).
+- The online refresh and the cloud sign-in can only be tried live from the hosted app; FFXIV Collect's API was checked live from the build session (browser reads allowed); Microsoft's sign-in and OneDrive were not reachable there.
 - Time-limited marks come from community data: “time-limited” does not distinguish an event that never returns from one that recurs, so those entries say “Time-limited only” rather than “gone”.
 - In-game icons are not included (not in the reachable data); the design uses type and the theme colours instead.
 

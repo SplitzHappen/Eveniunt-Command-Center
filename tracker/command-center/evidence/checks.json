@@ -3,8 +3,8 @@
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
-  "passed": 20,
-  "total": 20,
+  "passed": 23,
+  "total": 23,
   "notRun": [],
   "results": [
     {
@@ -61,7 +61,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 18.4,
+          "seconds": 17,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -303,7 +303,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794240033270,
+            "at": 1794255677738,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -375,7 +375,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794240036977
+            "handoverSeen": 1794255681433
           }
         },
         "afterGotIt": {
@@ -383,14 +383,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794240036977
+              "handoverSeen": 1794255681433
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794240036977
+              "handoverSeen": 1794255681433
             }
           }
         },
@@ -409,14 +409,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794240038435
+              "installed": 1794255682852
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794240038435
+              "installed": 1794255682852
             }
           }
         },
@@ -577,10 +577,10 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-vaMC5m",
+        "scratch": "/tmp/cc-publish-5kwEmP",
         "publish": [
-          "70M\t/tmp/cc-publish-vaMC5m",
-          "234"
+          "70M\t/tmp/cc-publish-5kwEmP",
+          "244"
         ],
         "freshLists": {
           "workflowWrites": true,
@@ -625,6 +625,74 @@
           "overview": true,
           "chars": 2,
           "controller": "http://127.0.0.1:8420/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C17",
+      "title": "First sign-in on a device: one tap takes the Tracker to Microsoft's sign-in and back through oauth.html, the helper keeps the device, the cloud copy is created and the status line says Synced; the device handle is in no backup, transfer code, save or cloud copy",
+      "pass": true,
+      "detail": {
+        "before": {
+          "devices": 0,
+          "file": false
+        },
+        "after": {
+          "url": "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/",
+          "devices": 1,
+          "file": true,
+          "grants": [
+            "authorization_code"
+          ],
+          "navs": [
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=51948aPzsTieIFrecinIFQ",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
+          ],
+          "status": "Synced 08:21 PM",
+          "device": "d0ed1287…"
+        },
+        "leaks": {
+          "backup": false,
+          "code": false,
+          "save": false
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C18",
+      "title": "A new sitting on a signed-in device: no sign-in page, one quiet renewal through the helper, the status line says Synced, the panel says the device syncs by itself; a change made on another device arrives on the next sync",
+      "pass": true,
+      "detail": {
+        "grants": [
+          "refresh_token"
+        ],
+        "navs": [
+          "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
+        ],
+        "panel": "SettingsCharactersCountingImport and backupOnline refreshCloud syncAppearanceAboutKeeps a private copy in your own OneDrive (the app’s own folder, which is all this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else. On an iPhone or iPad, each installed app signs in separately once.Th",
+        "renamed": "Brio renamed elsewhere",
+        "etagAfter": "e3",
+        "errors": []
+      }
+    },
+    {
+      "id": "C19",
+      "title": "An ended sign-in asks for one tap and nothing else: the status line says so, the device record is gone, the cloud copy is untouched, the panel offers the sign-in; the tap works again, and signing out forgets the device at the helper",
+      "pass": true,
+      "detail": {
+        "status": "Cloud sync: this device’s sign-in has ended; tap to sign in again (Settings → Cloud sync)",
+        "devices": 0,
+        "deviceRecord": null,
+        "file": true,
+        "panel": "SettingsCharactersCountingImport and backupOnline refreshCloud syncAppearanceAboutKeeps a private copy in your own OneDrive (the app’s own folder, which is all this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else. On an iPhone or iPad, each installed app signs in separately once.Th",
+        "notSignedIn": true,
+        "offersSignIn": true,
+        "signedInAgain": true,
+        "afterSignOut": {
+          "devices": 0,
+          "status": "Signed out on this device: nothing syncs here until you sign in again (Settings → Cloud sync)"
         },
         "errors": []
       }

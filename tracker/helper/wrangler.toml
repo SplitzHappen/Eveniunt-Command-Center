@@ -1,0 +1,16 @@
+# Eveniunt Command Center sync helper: Cloudflare Worker, free plan. See helper/README.md for the owner's set-up.
+name = "eveniunt-sync-helper"
+main = "entry.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+MS_CLIENT_ID = "PASTE-THE-APPLICATION-CLIENT-ID-HERE"
+ALLOWED_ORIGINS = "https://splitzhappen.github.io"
+# AUTHORITY = "https://login.microsoftonline.com/consumers/oauth2/v2.0"   # the default: personal Microsoft accounts
+
+# the device records (long-lived sign-ins): create with `wrangler kv namespace create DEVICES` and paste the id
+[[kv_namespaces]]
+binding = "DEVICES"
+id = "PASTE-THE-KV-NAMESPACE-ID-HERE"
+
+# the client secret is never written here: `wrangler secret put MS_CLIENT_SECRET`

@@ -610,7 +610,7 @@
     save();
   }
   var dirty = false;
-  function save() { ET.saveState(ST); dirty = true; queueDriveSync(); }
+  function save() { ET.saveState(ST); dirty = true; queueCloudSync(); }
 
   // ── a character's box: left click marks it done, right click (or a long press on a touch screen) marks it as not
   // applying to that character; any click on a box that is already marked returns it to unmarked (and counted) ──
@@ -1093,64 +1093,95 @@
     draw();
   }
 
-  // ── cloud sync (Google Drive app-data folder) ──
-  var DRIVE = { token: null, at: 0, busy: false, asking: false, timer: null };
+  // ── cloud sync (the owner's OneDrive, through the sync helper; gate 1E, owner decision "sign-in: B (OneDrive)") ──
+  // Sign in once per device: Microsoft's sign-in page, a return to oauth.html, then the helper keeps this device's
+  // sign-in alive and hands the page an hour's key whenever it needs one. Nothing is asked again on that device.
+  var CLOUD = { cfg: null, ready: null, busy: false, asking: false, timer: null, declined: null, last: null };
+  function cloudReady() { return CLOUD.ready || (CLOUD.ready = ET.cloudConfig().then(function (c) { CLOUD.cfg = c; return c; })); }
   function cloudTab() {
-    var s = ST.sync.drive;
-    var ok = HOSTED && location.origin === 'https://splitzhappen.github.io';
-    return '<p class="help">Keeps a private copy in your own Google Drive (a hidden app folder only this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else.</p>' +
-      (ok ? '' : '<p class="help"><b>Cloud sync works in the installed app at splitzhappen.github.io/Eveniunt-Command-Center/tracker/.</b> In this copy, use backup files or a transfer code.</p>') +
-      '<p class="help">' + (s ? 'Last sync: ' + esc(new Date(s.at).toLocaleString()) : 'Not synced yet.') + (DRIVE.token ? ' Signed in: changes sync automatically while this page stays open.' : s ? ' <b>Not signed in on this device right now: nothing is syncing until you sign in below.</b> Sign-in lasts about an hour and is needed again each time the tracker is opened.' : '') + '</p>' +
-      '<div class="row"><button type="button" class="btn sm" id="sync-now"' + (ok ? '' : ' disabled') + '>' + (DRIVE.token ? 'Sync now' : 'Sign in with Google and sync') + '</button></div>';
+    var s = ST.sync.drive, cs = ET.cloudState(), ok = HOSTED && CLOUD.cfg;
+    var what = !ok ? '<p class="help"><b>Cloud sync works in the hosted app at splitzhappen.github.io/Eveniunt-Command-Center/tracker/.</b> In this copy, use backup files or a transfer code.</p>'
+      : cs.device ? '<p class="help"><b>This device is signed in' + (cs.since ? ' since ' + esc(new Date(cs.since).toLocaleDateString()) : '') + ':</b> it syncs by itself when the Tracker opens, when it comes back to the front, and after every change, with nothing to tap. ' + (s ? 'Last sync: ' + esc(new Date(s.at).toLocaleString()) + '.' : 'Not synced yet.') + (CLOUD.last ? ' ' + esc(CLOUD.last) : '') + '</p>'
+      : '<p class="help"><b>This device is not signed in.</b> Signing in opens Microsoft’s sign-in page once; after that this device syncs by itself for good (until you sign out here or in your Microsoft account). ' + (s ? 'It synced before (last: ' + esc(new Date(s.at).toLocaleString()) + ').' : '') + '</p>';
+    return '<p class="help">Keeps a private copy in your own OneDrive (the app’s own folder, which is all this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else. On an iPhone or iPad, each installed app signs in separately once.</p>' + what +
+      '<div class="row">' + (cs.device ? '<button type="button" class="btn sm" id="sync-now">Sync now</button><button type="button" class="btn sm ghost" id="sync-out">Sign out on this device</button>' : '<button type="button" class="btn sm" id="sync-in"' + (ok ? '' : ' disabled') + '>Sign in with Microsoft</button>') + '</div>';
   }
-  function bindCloud(d) { var b = $('#sync-now', d); if (b) b.onclick = function () { closeDialog(); syncDrive(true); }; }
-  function syncDrive(interactive, retried) {
-    if (DRIVE.busy || DRIVE.asking) return Promise.resolve();
-    var fresh = DRIVE.token && Date.now() - DRIVE.at < 50 * 60 * 1000;
-    var get = fresh ? Promise.resolve(DRIVE.token) : interactive ? ET.driveSignIn(ET.GDRIVE_CLIENT_ID).then(function (t) { DRIVE.token = t; DRIVE.at = Date.now(); return t; }) : Promise.reject(new Error('not signed in'));
-    var synced = function (msg) { ET.migrateAliases(IDX, ST); ST.sync.backupAt = Date.now(); ET.saveState(ST, true); render(); setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); if (msg) toast(msg); };
+  function bindCloud(d) {
+    var b = $('#sync-now', d); if (b) b.onclick = function () { closeDialog(); syncCloud(true); };
+    var i = $('#sync-in', d); if (i) i.onclick = function () { if (!CLOUD.cfg) return; closeDialog(); ET.saveState(ST, true); setSyncState('Going to Microsoft’s sign-in page…'); ET.cloudBegin(CLOUD.cfg); };
+    var o = $('#sync-out', d); if (o) o.onclick = function () { closeDialog(); ET.cloudForget(CLOUD.cfg).then(function () { CLOUD.last = null; setSyncState('Signed out on this device: nothing syncs here until you sign in again (Settings → Cloud sync)', null, true); }); };
+  }
+  function cloudIdle() {
+    // what the status line says when nothing is happening: said plainly, as the card asks
+    var cs = ET.cloudState();
+    if (!cs.device && ST.sync.drive) setSyncState('Cloud sync: tap to sign in (Settings → Cloud sync)', 'This device synced before but is not signed in now. One sign-in here, then it syncs by itself.', true);
+    else if (!cs.device && !$('#sync-state').textContent) return;
+  }
+  // interactive: the owner pressed Sync now or has just signed in; otherwise the automatic sync, which asks nothing new
+  function syncCloud(interactive, retried) {
+    if (CLOUD.busy || CLOUD.asking) return Promise.resolve();
+    if (!HOSTED) return Promise.resolve();
+    var synced = function (msg) { ET.migrateAliases(IDX, ST); ST.sync.backupAt = Date.now(); ET.saveState(ST, true); render(); CLOUD.last = 'Synced at ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' by itself.'; setSyncState('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 'Signed in on this device: cloud sync runs by itself.'); if (msg) toast(msg); };
     var failed = function (err, tok) {
       ET.saveState(ST); // a finished step may already have combined copies here: keep it
-      if (err && err.code === 401) DRIVE.token = null;
-      if (err && err.code === 'changed' && !retried) { DRIVE.busy = false; return syncDrive(interactive, true); }
+      if (err && err.code === 401 && !retried) { CLOUD.busy = false; return ET.cloudToken(CLOUD.cfg, null, true).then(function () { return syncCloud(interactive, true); }, function (e) { return failed(e); }); }
+      if (err && err.code === 'changed' && !retried) { CLOUD.busy = false; return syncCloud(interactive, true); }
       if (err && err.code === 'damaged' && interactive && tok && confirm(err.message + ' Replace the cloud copy with this device’s data?')) {
-        return ET.driveOverwrite(ST, tok, err.fileId).then(function () { synced('Cloud copy replaced with this device’s data'); });
+        return ET.cloudOverwrite(ST, tok, null, CLOUD.cfg).then(function () { synced('Cloud copy replaced with this device’s data'); });
       }
-      if (interactive || (err && err.message !== 'not signed in')) setSyncState('Cloud sync: ' + (err.message || err));
-      else if (ST.sync.drive) setSyncState('Cloud sync paused: sign in again (Settings → Cloud sync)'); // the hour-long sign-in ran out
+      if (err && err.code === 'not-signed-in') { cloudIdle(); return; }
+      if (err && err.code === 'signed-out') { setSyncState('Cloud sync: this device’s sign-in has ended; tap to sign in again (Settings → Cloud sync)', err.message, true); return; }
+      if (err && err.code === 'offline') { setSyncState('Cloud sync waits for a connection', err.message); return; }
+      setSyncState('Cloud sync: ' + (err.message || err), null, true);
     };
-    DRIVE.busy = true; setSyncState('Syncing with Google Drive…');
+    CLOUD.busy = true;
     var tokNow = null;
-    return get.then(function (tok) {
+    return cloudReady().then(function (cfg) {
+      if (!cfg) throw Object.assign(new Error('Cloud sync is not set up on this site yet.'), { code: 'not-set-up' });
+      return ET.cloudToken(cfg);
+    }).then(function (tok) {
       tokNow = tok;
-      return ET.driveSync(ST, tok).then(function (r) {
+      setSyncState('Syncing with OneDrive…');
+      return ET.cloudSync(ST, tok, null, CLOUD.cfg).then(function (r) {
         if (r.done) { synced(interactive ? (r.created ? 'Cloud copy created' : 'Synced') : ''); return; }
         var finish = function (choices) {
-          DRIVE.asking = false; DRIVE.busy = true;
-          return ET.driveFinish(ST, tok, r, choices).then(function () { synced('Synced'); }).catch(function (err) { return failed(err, tok); }).then(function () { DRIVE.busy = false; });
+          CLOUD.asking = false; CLOUD.busy = true;
+          return ET.cloudFinish(ST, tok, r, choices, null, CLOUD.cfg).then(function () { synced('Synced'); }).catch(function (err) { return failed(err, tok); }).then(function () { CLOUD.busy = false; });
         };
-        // A large removal coming from the other device is confirmed first (it could be a mistake made there).
         // A removal coming from the other device is confirmed first (it could be a mistake made there); once declined,
         // the same cloud copy is not asked about again by the automatic syncs (only "Sync now" asks again)
-        if (r.loss && !interactive && DRIVE.declined === r.modifiedTime) { setSyncState('Cloud sync paused: the other device’s removals wait for you (Settings → Cloud sync → Sync now)'); return; }
+        if (r.loss && !interactive && CLOUD.declined === r.eTag) { setSyncState('Cloud sync paused: the other device’s removals wait for you (Settings → Cloud sync → Sync now)', null, true); return; }
         if (r.loss && !confirm('The other device’s copy would remove ' + r.loss.toLocaleString() + ' tick' + (r.loss === 1 ? '' : 's') + ' from this device (removed there since the last sync). Apply that? Choose Cancel to keep this device unchanged and not sync now.')) {
-          DRIVE.declined = r.modifiedTime; setSyncState('Cloud sync paused: nothing was changed'); return;
+          CLOUD.declined = r.eTag; setSyncState('Cloud sync paused: nothing was changed', null, true); return;
         }
-        if (!r.conflicts.length) { DRIVE.busy = false; return finish({}); }
+        if (!r.conflicts.length) { CLOUD.busy = false; return finish({}); }
         var items = r.conflicts.map(function (c) { var x = ET.describeConflict(c, IDX, ST); return { id: c.id, who: x.who, what: x.what, local: x.local, remote: x.remote }; });
-        DRIVE.asking = true;
-        whenDialogFree(function () { conflictDialog('Your devices disagree', 'These entries were changed differently on another device. Choose which one is right.', 'Other device', items, finish, function () { DRIVE.asking = false; setSyncState('Cloud sync waiting for your choices'); }); });
+        CLOUD.asking = true;
+        whenDialogFree(function () { conflictDialog('Your devices disagree', 'These entries were changed differently on another device. Choose which one is right.', 'Other device', items, finish, function () { CLOUD.asking = false; setSyncState('Cloud sync waiting for your choices', null, true); }); });
       });
-    }).catch(function (err) { return failed(err, tokNow); }).then(function () { DRIVE.busy = false; });
+    }).catch(function (err) { return failed(err, tokNow); }).then(function () { CLOUD.busy = false; });
   }
-  function queueDriveSync() {
-    if (!DRIVE.token) { if (ST.sync.drive && !$('#sync-state').textContent) setSyncState('Cloud sync is off until you sign in (Settings → Cloud sync)'); return; }
-    clearTimeout(DRIVE.timer); DRIVE.timer = setTimeout(function () { syncDrive(false); }, 15000);
+  function queueCloudSync() {
+    if (!HOSTED || !ET.cloudState().device) { cloudIdle(); return; }
+    clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(function () { syncCloud(false); }, 15000);
+  }
+  // At start-up: finish a sign-in that oauth.html brought back, or sync quietly on a device signed in before.
+  function cloudAtStart() {
+    if (!HOSTED) return;
+    cloudReady().then(function (cfg) {
+      if (!cfg) { cloudIdle(); return; }
+      if (ET.cloudState().pending) {
+        setSyncState('Finishing the sign-in…');
+        return ET.cloudComplete(cfg).then(function () { toast('Signed in: this device now syncs by itself'); return syncCloud(true); }, function (err) { setSyncState('Cloud sync: ' + err.message, null, true); });
+      }
+      if (ET.cloudState().device) return syncCloud(false);
+      cloudIdle();
+    });
   }
   document.addEventListener('visibilitychange', function () {
     if (!ST) return;
-    if (document.visibilityState === 'hidden') { if (ET.hasPendingSave()) ET.saveState(ST, true); if (DRIVE.token) syncDrive(false); }
-    else checkOtherTab();
+    if (document.visibilityState === 'hidden') { if (ET.hasPendingSave()) ET.saveState(ST, true); if (HOSTED && ET.cloudState().device) syncCloud(false); }
+    else { checkOtherTab(); if (HOSTED && ET.cloudState().device && !ET.cloudState().key) syncCloud(false); } // back to the front after the hour: a fresh key, quietly
   });
   // Closing the tab or switching apps on a phone right after a tick: write it now rather than after the short delay.
   window.addEventListener('pagehide', function () { if (ST && ET.hasPendingSave()) ET.saveState(ST, true); });
@@ -1195,8 +1226,7 @@
     if (navigator.onLine) setTimeout(function () { refreshOnline(false); }, 1500);
     ET.requestPersistence();
     backupReminder();
-    // a device that synced before is not syncing now: sign-in is per visit, so say so instead of looking synced
-    if (ST.sync.drive && !DRIVE.token && !$('#sync-state').textContent) setSyncState('Cloud sync is off until you sign in (Settings → Cloud sync)');
+    cloudAtStart(); // finish a sign-in brought back by oauth.html, or sync quietly on a device signed in before
   }
   // Browsers can clear a website's saved data (Safari after weeks without a visit, any browser when storage runs
   // low), so a gentle reminder appears when there are ticks and no backup, transfer code or cloud sync for 30 days.
@@ -1275,5 +1305,5 @@
     handover(home, 'Tracker');
   })();
 /*{{LIVE}}*/
-  window.__tracker = { openAll: function () { SEC.get(UI.sec).groups.forEach(function (g, gi) { OPENG.add(UI.sec + '#' + gi); }); renderLedger(); }, get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
+  window.__tracker = { openSettings: openSettings, closeDialog: closeDialog, syncCloud: syncCloud, openAll: function () { SEC.get(UI.sec).groups.forEach(function (g, gi) { OPENG.add(UI.sec + '#' + gi); }); renderLedger(); }, get ST() { return ST; }, get UI() { return UI; }, IDX: IDX, MENUS: MENUS, setView: setView, render: render, S: S };
 })();
