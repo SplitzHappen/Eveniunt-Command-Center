@@ -110,7 +110,8 @@
     // this device's record of moving the Tracker's save into the one save (never travels in a file or the cloud)
     const mv = plain(st.moved) && plain(st.moved.tracker) ? st.moved.tracker : null;
     st.moved = mv ? { tracker: { at: typeof mv.at === 'number' ? mv.at : 0, from: typeof mv.from === 'string' ? mv.from.slice(0, 20) : null, check: plain(mv.check) ? mv.check : null,
-      confirmed: typeof mv.confirmed === 'number' ? mv.confirmed : null, wentBack: typeof mv.wentBack === 'number' ? mv.wentBack : null } } : {};
+      confirmed: typeof mv.confirmed === 'number' ? mv.confirmed : null, wentBack: typeof mv.wentBack === 'number' ? mv.wentBack : null,
+      oldSeen: typeof mv.oldSeen === 'number' ? mv.oldSeen : null } } : {};
     if (typeof st.updated !== 'number') st.updated = Date.now();
     return st;
   };

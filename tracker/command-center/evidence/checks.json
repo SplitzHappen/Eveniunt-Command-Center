@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-09",
+  "date": "2026-11-10",
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
@@ -61,7 +61,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 17,
+          "seconds": 24.2,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -303,7 +303,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794255677738,
+            "at": 1794270026899,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -314,7 +314,8 @@
               "same": true
             },
             "confirmed": null,
-            "wentBack": null
+            "wentBack": null,
+            "oldSeen": null
           }
         },
         "atelier": {
@@ -375,7 +376,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794255681433
+            "handoverSeen": 1794270031126
           }
         },
         "afterGotIt": {
@@ -383,14 +384,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794255681433
+              "handoverSeen": 1794270031126
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794255681433
+              "handoverSeen": 1794270031126
             }
           }
         },
@@ -409,14 +410,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794255682852
+              "installed": 1794270032986
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794255682852
+              "installed": 1794270032986
             }
           }
         },
@@ -577,9 +578,9 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-5kwEmP",
+        "scratch": "/tmp/cc-publish-8SG6lA",
         "publish": [
-          "70M\t/tmp/cc-publish-5kwEmP",
+          "70M\t/tmp/cc-publish-8SG6lA",
           "244"
         ],
         "freshLists": {
@@ -646,11 +647,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=51948aPzsTieIFrecinIFQ",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=AOFT0wOZbV_piT8kX-5_FQ",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 08:21 PM",
-          "device": "d0ed1287…"
+          "status": "Synced 12:20 AM",
+          "device": "a6f0b784…"
         },
         "leaks": {
           "backup": false,

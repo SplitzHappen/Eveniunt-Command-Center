@@ -1257,6 +1257,7 @@
       ST = st; if (ET.migrateAliases(IDX, ST)) save(); afterBoot();
       if (ET.moveProblem) moveProblemDialog();
       else if (ET.justMoved) toast('Your data now lives in the Command Center’s shared save. Your old save is kept (Settings → Import and backup).');
+      else if (ET.caughtUp) toast('Brought in what an older Tracker window saved after the update. Your old save is kept (Settings → Import and backup).');
     }
     else { var b = $('#boot'); if (b) b.remove(); if (ET.loadProblem) loadProblemDialog(); else setupDialog(); }
   });

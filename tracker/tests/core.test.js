@@ -1013,13 +1013,72 @@ test('one save: an 8-character save is copied in, every field matches, the old s
   assert.strictEqual(doc.moved.tracker.from, 'localstorage');
   assert.strictEqual(doc.moved.tracker.check.chars, 8);
   assert.strictEqual(doc.moved.tracker.check.ticks, Object.values(st.ticks).reduce((n, t) => n + Object.keys(t).length, 0));
-  // a later change to the old save (an old window left open) is not copied again
-  const k = Object.keys(st.ticks.c1)[0]; const changed = JSON.parse(oldText); delete changed.ticks.c1[k];
-  ls.set('eveniunt-tracker-state', JSON.stringify(changed));
-  ET.justMoved = false;
+  // the old save left as it was is not copied again (only later work by an old window is brought in; see below)
+  ET.justMoved = false; ET.caughtUp = false;
   const again = await ET.loadState();
   assert.strictEqual(ET.justMoved, false);
-  assert.ok(again.ticks.c1[k], 'the one save is used, not the old one');
+  assert.strictEqual(ET.caughtUp, false);
+  assert.strictEqual(ET.compareTracker(st, again), null, 'the one save is used');
+});
+
+// The owner's case (2026-11-10): the new version opened first on a blank save and moved it; a Tracker tab from before
+// the update, still open in the same browser, went on saving to the old place, so its characters never arrived.
+test('catch-up: an old window\'s work after the move reaches a still-blank one save on the next load', async () => {
+  const ls = useStorage();
+  ls.set('eveniunt-tracker-state', JSON.stringify(ET.newState(['Character 1', 'Character 2'])));
+  const first = await ET.loadState();
+  assert.ok(ET.untouched(first), 'moved blank');
+  const at = JSON.parse(ls.get(CC.LS)).moved.tracker.at;
+  // the old window saves real characters and ticks after the move
+  const real = fullState(); real.updated = at + 1000;
+  ls.set('eveniunt-tracker-state', JSON.stringify(real));
+  ET.caughtUp = false;
+  const next = await ET.loadState();
+  assert.strictEqual(ET.caughtUp, true);
+  assert.strictEqual(ET.compareTracker(real, next), null, 'every character, tick and setting arrived');
+  const doc = JSON.parse(ls.get(CC.LS));
+  assert.strictEqual(doc.moved.tracker.oldSeen, real.updated);
+  assert.strictEqual(doc.moved.tracker.at, at, 'the move record is kept');
+  assert.strictEqual(doc.chars.length, 8);
+  // brought in once: the next load uses the one save, and a change made here is not undone
+  const k = Object.keys(next.ticks.c1)[0]; ET.setTick(next, 'c1', k, false); await ET.saveState(next, true);
+  ET.caughtUp = false;
+  const third = await ET.loadState();
+  assert.strictEqual(ET.caughtUp, false);
+  assert.ok(!third.ticks.c1[k], 'the tick removed after the catch-up stays removed');
+  assert.strictEqual(ls.get('eveniunt-tracker-state'), JSON.stringify(real), 'the old save is never written');
+});
+
+test('catch-up: into a save already in use, the old window\'s work is merged; placeholder names give way, real ones stay', async () => {
+  const ls = useStorage();
+  ls.set('eveniunt-tracker-state', JSON.stringify(ET.newState(['Character 1', 'Character 2'])));
+  const cur = await ET.loadState();
+  const keys = [...idx.byKey.keys()];
+  ET.renameCharacter(cur, 'c2', 'Brio Here'); ET.setTick(cur, 'c2', keys[0], true);
+  await ET.saveState(cur, true);
+  const at = JSON.parse(ls.get(CC.LS)).moved.tracker.at;
+  const old = ET.newState(['Alba There', 'Brio There']); ET.setTick(old, 'c1', keys[1], true); old.updated = at + 1000;
+  ls.set('eveniunt-tracker-state', JSON.stringify(old));
+  const next = await ET.loadState();
+  assert.strictEqual(ET.caughtUp, true);
+  assert.deepStrictEqual(next.chars.map((c) => c.name), ['Alba There', 'Brio Here']);
+  assert.ok(next.ticks.c1[keys[1]], 'the old window\'s tick arrived');
+  assert.ok(next.ticks.c2[keys[0]], 'the tick made here stays');
+});
+
+test('catch-up: an old save that only claims a stamp on reading is never brought in, and an erase stays erased', async () => {
+  const ls = useStorage();
+  const st = fullState(); const raw = JSON.parse(JSON.stringify(st)); delete raw.updated;
+  ls.set('eveniunt-tracker-state', JSON.stringify(ET.newState(['Character 1'])));
+  await ET.loadState();
+  ls.set('eveniunt-tracker-state', JSON.stringify(raw));
+  ET.caughtUp = false;
+  const next = await ET.loadState();
+  assert.strictEqual(ET.caughtUp, false, 'no stored stamp: not brought in');
+  assert.ok(ET.untouched(next));
+  await ET.clearState();
+  ET.caughtUp = false;
+  assert.strictEqual(await ET.loadState(), null, 'erased stays erased');
 });
 
 test('one save: running the move twice is safe, and a second window that loads at the same time does not copy again', async () => {

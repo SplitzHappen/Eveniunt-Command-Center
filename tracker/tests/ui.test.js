@@ -785,6 +785,34 @@ test('Hunts, Market Board, Housing and News: windows from kills, spawn maps, pri
   await ctx.close();
 });
 
+// The owner's case (2026-11-10): this version opened first on a blank save and moved it; a Tracker tab from before the
+// update, open in the same browser, then saved real characters to the old place. The next load brings them in.
+test('catch-up: what an old Tracker tab saved after the move arrives on the next load (IndexedDB), once', async () => {
+  const { ctx, page, errors } = await open({ setup: false });
+  const putOld = (names, later) => page.evaluate(([n, l]) => new Promise((res) => {
+    const ET = window.ET, keys = window.__tracker.IDX.sections.flatMap((s) => ET.sectionKeys(s));
+    const st = ET.newState(n);
+    if (l) { st.chars.forEach((c, i) => { for (let k = i; k < 400; k += 5) st.ticks[c.id][keys[k]] = 1; }); st.updated = Date.now() + 1000; }
+    const r = indexedDB.open('eveniunt-tracker', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('state');
+    r.onsuccess = () => { const t = r.result.transaction('state', 'readwrite'); t.objectStore('state').put(st, 'main'); t.oncomplete = () => { r.result.close(); res(JSON.stringify(st)); }; };
+  }), [names, later]);
+  await putOld(['Character 1', 'Character 2', 'Character 3'], false);
+  await page.reload(); await page.waitForSelector('.ov-table');
+  assert.deepEqual(await page.evaluate(() => window.__tracker.ST.chars.map((c) => c.name)), ['Character 1', 'Character 2', 'Character 3'], 'moved while still blank');
+  const oldJson = await putOld(['Alba', 'Brio'], true); // the old tab, still open, saves real characters
+  await page.reload(); await page.waitForSelector('.ov-table');
+  assert.deepEqual(await page.evaluate(() => window.__tracker.ST.chars.map((c) => c.name)), ['Alba', 'Brio']);
+  assert.equal(await page.evaluate((j) => window.ET.compareTracker(window.ET.validateState(JSON.parse(j)), window.__tracker.ST), oldJson), null, 'every tick arrived');
+  assert.match(await page.textContent('body'), /Brought in what an older Tracker window saved/);
+  // once: a tick removed now is still removed after the next load
+  const key = await page.evaluate(() => { const T = window.__tracker, k = Object.keys(T.ST.ticks.c1)[0]; window.ET.setTick(T.ST, 'c1', k, false); return window.ET.saveState(T.ST, true).then(() => k); });
+  await page.reload(); await page.waitForSelector('.ov-table');
+  assert.equal(await page.evaluate((k) => !!window.__tracker.ST.ticks.c1[k], key), false);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('gate 1C: an existing save is copied into the one save (IndexedDB), the old save stays untouched, and the way back works', async () => {
   const { ctx, page, errors, external } = await open({ setup: false });
   // today's save, as the version before gate 1C kept it: IndexedDB eveniunt-tracker → state → main

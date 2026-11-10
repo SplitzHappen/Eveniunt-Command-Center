@@ -21,6 +21,7 @@
   ET.moveProblem = null; // set when the copy into the one save did not match: { stage, what } (nothing more is saved)
   ET.saveDisabled = false;
   ET.justMoved = false;  // true right after this load copied the old save in
+  ET.caughtUp = false;   // true right after this load brought in what an older Tracker window saved after the move
 
   // ---------------------------------------------------------------- the one save <-> the Tracker's state
   ET.docFromState = function (st, keep) {
@@ -147,6 +148,49 @@
     return after;
   }
 
+  // Catching up with an older window. A Tracker page from before the move that is still open (or kept by a browser)
+  // goes on saving to the old place after this version has moved the save; that work used to be stranded, because the
+  // move runs once. Each time this version loads, what the old save gained after the move (or after the last catch-up,
+  // moved.tracker.oldSeen) is brought in: into a save that is still blank (placeholder names, nothing ticked) the old
+  // save is copied whole; otherwise the two are merged, the one save's value winning a clash except over a placeholder
+  // name. A tick removed only in the old window is not removed here (no common base is known). The old save itself is
+  // still never written or deleted.
+  const PLACEHOLDER = /^Character \d+$/;
+  const empty = (bags) => Object.values(bags || {}).every((o) => !o || !Object.keys(o).length);
+  ET.untouched = (st) => !st || ((st.chars || []).every((c) => PLACEHOLDER.test(c.name || '') && !c.lodestone && !c.cls && !c.city && !c.gc)
+    && empty(st.ticks) && empty(st.excl) && empty(st.vals) && !Object.keys(st.avail || {}).length);
+  // pure, for the tests: the Tracker's part of cur with the old save's later work brought in
+  ET.catchUpMerge = function (cur, old) {
+    if (ET.untouched(cur)) return ET.validateState(JSON.parse(JSON.stringify(Object.assign({}, old, { modules: undefined }))));
+    const res = ET.threeWay(null, ET.portable(cur), ET.portable(old));
+    const choices = {};
+    for (const c of res.conflicts) if (c.id.startsWith('n|') && PLACEHOLDER.test(c.local || '') && c.remote) choices[c.id] = 'remote';
+    const out = JSON.parse(JSON.stringify(cur));
+    ET.applyMerge(out, res, choices);
+    return ET.validateState(out);
+  };
+  async function catchUp(doc, st) {
+    const mv = doc.moved.tracker;
+    if (ET.saveDisabled) return null;
+    let old = null;
+    try { old = await ET.readOldSave(); } catch (e) { return null; }
+    if (!old || !old.st) return null;
+    const seen = typeof mv.oldSeen === 'number' ? mv.oldSeen : (typeof mv.at === 'number' ? mv.at : 0);
+    // the stamp as stored, never one filled in on reading (that would look new at every load)
+    let stored = null;
+    try { stored = JSON.parse(typeof old.raw === 'string' ? old.raw : JSON.stringify(old.raw)).updated; } catch (e) { stored = null; }
+    if (!(typeof stored === 'number' && stored > seen)) return null;
+    const next = ET.catchUpMerge(st, old.st);
+    next.modules = CC.others(doc.modules);
+    next.sync = st ? st.sync : next.sync;
+    next.moved = { tracker: Object.assign({}, mv, { oldSeen: stored }) };
+    next.updated = Date.now();
+    const v = ET.validateState(next);
+    if (!(await ET.saveState(v, true))) return null;
+    ET.caughtUp = true;
+    return v;
+  }
+
   // peek: read without making it this window's base (another window's save, which the interface may or may not take;
   // ET.acceptLoaded() makes the copy read last this window's base once it is taken). A peek never moves anything.
   let lastRead = null;
@@ -166,7 +210,8 @@
       lastRead = { rev: r.rev, base: docPortable(doc) };
       remember(lastRead.rev, lastRead.base);
       if (!st) carry = { modules: CC.others(doc.modules), moved: doc.moved.tracker }; // after an erase: the move record stays
-      return st;
+      const caught = await catchUp(doc, st);
+      return caught || st;
     }
     if (peek) return null;
     // not moved yet on this device: today's save, if there is one, is copied in
