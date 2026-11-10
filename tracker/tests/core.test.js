@@ -1214,3 +1214,23 @@ test('the cloud copy is compressed and marked version 2: a tracker from before g
   ET.CLOUD_MAX_BYTES = sent - 1;
   try { await assert.rejects(ET.cloudOverwrite(st, 'tok', d.f), (e) => e.code === 'too-large'); } finally { ET.CLOUD_MAX_BYTES = keep; }
 });
+
+// The owner's report (2026-11-10): after a phone that still had "Character 1–8" synced with the computer, the typed
+// names were gone while Lodestone numbers, Grand Companies and starting jobs stayed.
+test('merge: a placeholder name never replaces a typed one, in either direction, and is never a clash', () => {
+  const real = ET.newState(['Alba Eveniunt', 'Brio Eveniunt']); real.chars[0].lodestone = '123'; real.chars[0].gc = 2;
+  const fresh = ET.newState(['Character 1', 'Character 2']);
+  for (const [l, r] of [[real, fresh], [fresh, real]]) {
+    const res = ET.threeWay(null, ET.portable(l), ET.portable(r));
+    assert.deepStrictEqual(res.conflicts.filter((c) => c.id.startsWith('n|')), [], 'no name clash');
+    const out = ET.applyMerge(JSON.parse(JSON.stringify(l)), res, {});
+    assert.deepStrictEqual(out.chars.map((c) => c.name), ['Alba Eveniunt', 'Brio Eveniunt']);
+    assert.strictEqual(out.chars[0].lodestone, '123');
+  }
+  // after an earlier sync agreed on the real name, a device that comes back with a placeholder does not win either
+  const res = ET.threeWay(ET.portable(real), ET.portable(real), ET.portable(fresh));
+  assert.deepStrictEqual(ET.applyMerge(JSON.parse(JSON.stringify(real)), res, {}).chars.map((c) => c.name), ['Alba Eveniunt', 'Brio Eveniunt']);
+  // two different typed names are still the owner's call
+  const other = ET.newState(['Alba Two', 'Brio Eveniunt']);
+  assert.ok(ET.threeWay(null, ET.portable(real), ET.portable(other)).conflicts.some((c) => c.id === 'n|c1'));
+});

@@ -27,7 +27,7 @@
   if (['all', 'missing', 'done', 'unob'].indexOf(UI.filter) < 0) UI.filter = 'all';
   UI.q = ''; UI.find = ''; UI.mode = 'tick'; // the "does not apply" mode is for one sitting: a plain click always means done after a reload
   function persist() {
-    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode, showX: UI.showX, live: UI.live } })); } catch (e) { /* private window */ }
+    try { localStorage.setItem(PREF_KEY, JSON.stringify({ theme: S.theme, look: S.look, ui: { view: UI.view, sec: UI.sec, filter: UI.filter, folded: UI.folded, open: UI.open, mode: UI.mode, showX: UI.showX, live: UI.live, solo: UI.solo } })); } catch (e) { /* private window */ }
   }
   var toastTimer = null;
   function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.add('hidden'); }, 2600); }
@@ -491,9 +491,35 @@
     else if (UI.view === 'search' && UI.q) renderSearch();
     else renderHome();
     $('#page').style.setProperty('--n', ST.chars.length);
+    applySolo();
   }
+  // ── phone: one character at a time (owner's choice, 2026-11-10) ──
+  // On a narrow screen the columns of eight characters overlapped, so there a bar of the characters' names sits at the
+  // top and the lists show the chosen character's column only; one tap switches. The choice is kept on this device.
+  // Wider screens are unchanged.
+  var SOLO_MQ = window.matchMedia ? window.matchMedia('(max-width: 700px)') : null;
+  function soloOn() { return !!(SOLO_MQ && SOLO_MQ.matches && ST && ST.chars.length > 1); }
+  function soloId() { return ST.chars.some(function (c) { return c.id === UI.solo; }) ? UI.solo : ST.chars[0].id; }
+  function applySolo() {
+    var on = soloOn(), bar = $('#charbar');
+    document.body.classList.toggle('solo', on);
+    if (!bar) {
+      bar = document.createElement('nav'); bar.id = 'charbar'; bar.className = 'charbar'; bar.setAttribute('aria-label', 'Character');
+      $('#page').parentNode.insertBefore(bar, $('#page'));
+      bar.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('button[data-solo]'); if (!b || b.dataset.solo === soloId()) return;
+        UI.solo = b.dataset.solo; persist(); var y = window.scrollY; render(); window.scrollTo(0, y);
+      });
+    }
+    var id = soloId(), i = ST.chars.findIndex(function (c) { return c.id === id; });
+    bar.innerHTML = on ? ST.chars.map(function (c) { var me = c.id === id; return '<button type="button" data-solo="' + c.id + '" aria-pressed="' + me + '"' + (me ? ' class="on"' : '') + '>' + esc(c.name) + '</button>'; }).join('') : '';
+    var st = $('#solo-style');
+    if (!st) { st = document.createElement('style'); st.id = 'solo-style'; document.head.appendChild(st); }
+    st.textContent = on ? 'body.solo .lr > .c:not(:nth-child(' + (i + 2) + ')){display:none}' : '';
+  }
+  if (SOLO_MQ) { var soloChange = function () { if (ST) render(); }; if (SOLO_MQ.addEventListener) SOLO_MQ.addEventListener('change', soloChange); else if (SOLO_MQ.addListener) SOLO_MQ.addListener(soloChange); }
   function colWidth() {
-    var page = $('#page'), w = page ? page.clientWidth : window.innerWidth, n = ST.chars.length;
+    var page = $('#page'), w = page ? page.clientWidth : window.innerWidth, n = soloOn() ? 1 : ST.chars.length;
     var nameCol = w < 520 ? 120 : w < 860 ? 170 : 260;
     return Math.max(26, Math.min(96, Math.floor((w - nameCol) / n)));
   }

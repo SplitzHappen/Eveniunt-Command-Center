@@ -267,6 +267,40 @@ test('transfer code round trip through the interface', async () => {
   await ctx.close(); await p2.ctx.close();
 });
 
+// Owner's choice (2026-11-10): on a phone the eight columns overlapped; a bar of names at the top picks the one
+// character shown, with one tap, kept on the device. A wide screen keeps every column and shows no bar.
+test('phone: one character at a time, picked from the names bar at the top; the computer keeps every column', async () => {
+  const { ctx, page, errors } = await open({ context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 } });
+  const shown = () => page.evaluate(() => [...document.querySelectorAll('.lr.lh')[0].querySelectorAll('.c')].filter((c) => getComputedStyle(c).display !== 'none').map((c) => c.textContent));
+  assert.deepEqual(await page.locator('#charbar button').allTextContents(), NAMES, 'every character in the bar, full names');
+  assert.equal(await page.locator('#charbar button.on').textContent(), NAMES[0]);
+  await go(page, 'minions'); await page.waitForSelector('.er');
+  assert.equal((await shown()).length, 1, 'one column in the list');
+  assert.match((await shown())[0], /Alba/, 'its real name, not a number');
+  const visibleTicks = () => page.evaluate(() => [...document.querySelectorAll('.er .tk')].filter((b) => b.offsetParent !== null).map((b) => b.dataset.c));
+  assert.ok((await visibleTicks()).every((c) => c === 'c1'));
+  // a tap on a name switches, with no trip to Settings
+  await page.click('#charbar button:has-text("Cara Eveniunt")');
+  assert.equal(await page.locator('#charbar button.on').textContent(), 'Cara Eveniunt');
+  assert.ok((await visibleTicks()).every((c) => c === 'c3'));
+  const k = await page.locator('.er:not(.x) .tk[data-c="c3"]:not(.on)').first().getAttribute('data-k');
+  await page.locator('.er:not(.x) .tk[data-c="c3"][data-k="' + k + '"]').click();
+  assert.equal(await page.evaluate((key) => !!window.__tracker.ST.ticks.c3[key] && !window.__tracker.ST.ticks.c1[key], k), true, 'the tick lands on the chosen character');
+  // big enough to tap, nothing overlaps, no sideways scroll
+  const box = await page.locator('.er .tk[data-c="c3"]').first().boundingBox();
+  assert.ok(box.width >= 30 && box.height >= 30, JSON.stringify(box));
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth) <= 390);
+  // the choice is kept on the device
+  await page.reload(); await page.waitForSelector('#charbar button.on');
+  assert.equal(await page.locator('#charbar button.on').textContent(), 'Cara Eveniunt');
+  // a wide screen: no bar, every column
+  await page.setViewportSize({ width: 1440, height: 1000 }); await page.waitForTimeout(300);
+  assert.equal(await page.locator('#charbar button').count(), 0);
+  assert.equal(await page.evaluate(() => [...document.querySelector('.lr.lh').querySelectorAll('.c')].filter((c) => getComputedStyle(c).display !== 'none').length), 8);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('phone width: no sideways scroll on the overview, a long list or settings', async () => {
   const { ctx, page, errors } = await open({ context: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 } });
   const sw = () => page.evaluate(() => document.documentElement.scrollWidth);

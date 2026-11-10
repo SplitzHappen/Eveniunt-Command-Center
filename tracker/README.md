@@ -47,7 +47,7 @@ python3 -I tools/fetch-fishdata.py                                              
 python3 -I tools/info.py <datamining> <teamcraft libs/data/src/lib/json> <teamcraft json dir>   # data/info.json (the information window)
 python3 -I tools/fetch-ffxivcollect.py                                            # optional: refresh the FFXIV Collect snapshot
 FONT_DIR=<node_modules/@fontsource> node tools/build.js                           # dist/eveniunt-tracker.html
-FONT_DIR=<node_modules/@fontsource> node tools/make-icons.js                      # icons only
+python3 -I command-center/make-archivist-icons.py                                 # the icons of all three apps (the Archivist; replaces make-icons.js since 2026-11-10)
 node tools/build-site.js                                                          # site/ (installable app, scope /tracker/)
 node --test tests/core.test.js                                                    # core logic
 node --test tests/ui.test.js                                                      # browser tests (Playwright + Chromium)

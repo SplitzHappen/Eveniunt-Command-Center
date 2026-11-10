@@ -30,6 +30,8 @@
     return m;
   }
 
+  ET.isPlaceholderName = (n) => /^Character \d+$/.test(String(n || ''));
+
   ET.threeWay = function (base, local, remote) {
     // A copy that does not carry the other modules' sections (an old cloud copy written before gate 1C) cannot have
     // changed them: it is read as agreeing with the last sync (or with the other side), never as deleting them.
@@ -43,6 +45,12 @@
     for (const k of keys) {
       const b = B.get(k), l = L.get(k), r = R.get(k);
       if (l === r) { if (l !== undefined) merged.set(k, l); continue; }
+      // a placeholder name ("Character 3", what a new device starts with) never replaces a real one, and is never
+      // put to the owner as a clash: two devices meeting for the first time used to wipe typed names (2026-11-10)
+      if (k.startsWith('n|')) {
+        const lr = l !== undefined && !ET.isPlaceholderName(l), rr = r !== undefined && !ET.isPlaceholderName(r);
+        if (lr !== rr) { merged.set(k, lr ? l : r); continue; }
+      }
       if (l === b) { if (r !== undefined) merged.set(k, r); continue; }
       if (r === b) { if (l !== undefined) merged.set(k, l); continue; }
       conflicts.push({ id: k, local: l === undefined ? null : l, remote: r === undefined ? null : r });

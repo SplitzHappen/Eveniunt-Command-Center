@@ -61,7 +61,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 24.2,
+          "seconds": 21.3,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -303,7 +303,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794270026899,
+            "at": 1794275856955,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -376,7 +376,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794270031126
+            "handoverSeen": 1794275861266
           }
         },
         "afterGotIt": {
@@ -384,14 +384,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794270031126
+              "handoverSeen": 1794275861266
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794270031126
+              "handoverSeen": 1794275861266
             }
           }
         },
@@ -410,14 +410,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794270032986
+              "installed": 1794275863039
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794270032986
+              "installed": 1794275863039
             }
           }
         },
@@ -578,10 +578,10 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-8SG6lA",
+        "scratch": "/tmp/cc-publish-qXW0JV",
         "publish": [
-          "70M\t/tmp/cc-publish-8SG6lA",
-          "244"
+          "74M\t/tmp/cc-publish-qXW0JV",
+          "246"
         ],
         "freshLists": {
           "workflowWrites": true,
@@ -647,11 +647,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=AOFT0wOZbV_piT8kX-5_FQ",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=_c1I3B2GhlogJ9UHaOstyA",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 12:20 AM",
-          "device": "a6f0b784…"
+          "status": "Synced 01:57 AM",
+          "device": "ec9dfca1…"
         },
         "leaks": {
           "backup": false,

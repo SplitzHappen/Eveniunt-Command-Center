@@ -164,7 +164,7 @@
     if (ET.untouched(cur)) return ET.validateState(JSON.parse(JSON.stringify(Object.assign({}, old, { modules: undefined }))));
     const res = ET.threeWay(null, ET.portable(cur), ET.portable(old));
     const choices = {};
-    for (const c of res.conflicts) if (c.id.startsWith('n|') && PLACEHOLDER.test(c.local || '') && c.remote) choices[c.id] = 'remote';
+    // placeholder names give way inside ET.threeWay itself
     const out = JSON.parse(JSON.stringify(cur));
     ET.applyMerge(out, res, choices);
     return ET.validateState(out);

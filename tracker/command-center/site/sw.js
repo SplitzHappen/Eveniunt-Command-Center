@@ -13,7 +13,7 @@
 // - Requests to other sites (Google, FFXIV Collect, Universalis) and any other path on this site go straight to
 //   the network, untouched.
 // The cache name carries the build id; a new build replaces the old cache.
-const BUILD = '1b3091efc5ac';
+const BUILD = '20f619116034';
 const CACHE = 'eveniunt-cc-' + BUILD;
 const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest","save.js","shell.css","shell.js"];
 const SCOPE = new URL('./', self.location).href;

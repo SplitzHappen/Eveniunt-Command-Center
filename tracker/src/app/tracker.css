@@ -343,3 +343,13 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 .handover p { margin: 0; }
 .handover .handover-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .handover a.btn { text-decoration: none; }
+
+/* ── phone: one character at a time, picked from the bar at the top (owner's choice, 2026-11-10) ── */
+.charbar { display: none; }
+body.solo .charbar { display: flex; gap: 6px; overflow-x: auto; position: sticky; top: 0; z-index: 30; background: var(--paper); padding: 8px 2px; border-bottom: 1px solid var(--rule); scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+body.solo .charbar::-webkit-scrollbar { display: none; }
+body.solo .charbar button { flex: 0 0 auto; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper-2); color: var(--ink); font: 600 14px var(--f-body); cursor: pointer; white-space: nowrap; }
+body.solo .charbar button.on { background: var(--seal); border-color: var(--seal); color: var(--on-seal); }
+body.solo .lr { grid-template-columns: minmax(0, 1fr) var(--cw) !important; }
+body.solo .tk i { width: 22px; height: 22px; }
+body.solo .lr > .c { min-height: 44px; }

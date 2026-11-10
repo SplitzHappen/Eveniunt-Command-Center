@@ -1,7 +1,7 @@
 // Eveniunt Atelier — service worker: offline app + cross-origin isolation for multi-core solving.
 // GitHub Pages cannot send COOP/COEP headers, so this worker adds them to every same-origin response
 // (the same technique as coi-serviceworker). Cache name carries the build id; a new build replaces the old cache.
-const BUILD = '2932fde52480';
+const BUILD = 'd393d51ed39b';
 const CACHE = 'eveniunt-atelier-' + BUILD;
 const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest","mt/atelier_bridge.js","mt/atelier_bridge_bg.wasm","mt/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.no-bundler.js","mt/solver-worker.js"];
 self.addEventListener('install', (e) => {
