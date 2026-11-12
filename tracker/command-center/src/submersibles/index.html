@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Submersibles · Eveniunt Command Center</title>
+<meta name="description" content="Eveniunt Command Center: free company submarines, voyages and return times for Final Fantasy XIV.">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f2234">
+<link rel="stylesheet" href="../shell.css">
+<link rel="stylesheet" href="subs.css">
+<script>
+  // Follow the Tracker's light / dark choice (read only), as the shell does.
+  try { var t = (JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).theme; if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) { /* private window */ }
+</script>
+</head>
+<body class="subs-page">
+<header class="mast">
+  <a class="cc-back" href="../" aria-label="Back to the Eveniunt Command Center">⌂ <span class="cc-txt">Command Center</span></a>
+  <span class="brand"><span class="brand-top">Eveniunt</span><span class="brand-name">Submersibles</span></span>
+  <nav class="switcher" aria-label="Modules">
+    <a href="../" data-module="home">Home</a>
+    <a href="../tracker/" data-module="tracker">Tracker</a>
+    <a href="../atelier/" data-module="atelier">Atelier</a>
+    <a href="./" data-module="submersibles" aria-current="page">Submersibles</a>
+  </nav>
+  <span class="status" id="status" role="status" aria-live="polite"></span>
+</header>
+
+<div class="subs-layout">
+  <nav class="tabs" aria-label="Submersibles">
+    <button type="button" data-tab="board"><span class="ico" aria-hidden="true">▦</span>Board</button>
+    <button type="button" data-tab="log"><span class="ico" aria-hidden="true">✎</span>Log</button>
+    <button type="button" data-tab="map"><span class="ico" aria-hidden="true">◎</span>Map</button>
+    <button type="button" data-tab="earn"><span class="ico" aria-hidden="true">◈</span>Earnings</button>
+    <button type="button" data-tab="setup"><span class="ico" aria-hidden="true">⚙</span>Setup</button>
+  </nav>
+  <main class="subs-main" id="view" aria-live="polite"><p class="muted">Opening your fleet…</p></main>
+</div>
+
+<dialog id="sheet" class="sheet" aria-label="Submarine"></dialog>
+
+<footer class="foot subs-foot">
+  <details class="credits"><summary>Credits and sources</summary><div id="credits-body"></div></details>
+  <p>Sector, part and rank data from the game (xivapi/ffxiv-datamining); part names via FFXIV Teamcraft (MIT); the unlock order from Submarine Tracker (MIT). Return times are worked out with the travel-time formula from Submarine Tracker (MIT). This app reads nothing from the game: you enter what it shows.</p>
+  <p>FINAL FANTASY XIV © SQUARE ENIX CO., LTD. Game data and names belong to their owners. A free, non-commercial fan project, not affiliated with Square Enix.</p>
+</footer>
+<script src="../save.js"></script>
+<script src="data.js"></script>
+<script src="fleet.js"></script>
+<script src="advisor.js"></script>
+<script src="subs.js"></script>
+</body>
+</html>

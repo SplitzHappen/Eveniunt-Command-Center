@@ -80,3 +80,11 @@ h2 { font: 600 20px/1.2 var(--f-serif); margin: 0 0 4px; }
 .save[hidden] { display: none; }
 .chars { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 10px 0 0; padding: 0; }
 .chars li { padding: 3px 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); font-size: 14px; }
+
+/* Submersibles alerts (step S2): a banner when a sub comes back while the shell or the module page is open (fleet.js) */
+.fleet-banners { position: fixed; z-index: 20; top: 10px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 20px)); display: grid; gap: 6px; }
+.fleet-banner { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--slip); border: 1px solid var(--ok); border-left-width: 5px; border-radius: var(--r); box-shadow: var(--shadow); font-size: 14px; }
+.fleet-banner-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--ok); }
+.fleet-banner-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fleet-banner-go { flex: none; font-weight: 600; color: var(--seal); }
+.fleet-banner-x { flex: none; font: inherit; font-size: 20px; line-height: 1; background: none; border: 0; color: var(--ink-3); cursor: pointer; padding: 0 4px; }

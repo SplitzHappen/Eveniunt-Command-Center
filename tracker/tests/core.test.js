@@ -993,7 +993,16 @@ function fullState() {
 const MODS = {
   atelier: { chars: { c1: { stats: { j0: { level: 100, craftsmanship: 5000, control: 4900, cp: 650 } }, food: { id: 44, hq: true }, potion: null, cosmicTool: true } }, saved: { s1: { id: 's1', name: 'Macro one', actions: ['MuscleMemory'] } }, prefs: { guideMs: 400 } },
   lists: { lists: { l1: { name: 'Gear', items: { 123: { qty: 2, have: 1 } } } } },
-  submersibles: { fcs: { f1: { world: 'Dynamis', name: 'Free company', chars: ['c1'], subs: { s1: { name: 'Sub one', rank: 50 } } } } },
+  // design 7.1: free companies, submarines and trips side by side, each its own merge unit (invented names)
+  submersibles: {
+    fcs: { f1: { name: 'Alpha Company', world: 'Maduin', charId: 'c1', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] } },
+    subs: {
+      s1: { fcId: 'f1', slot: 1, name: 'Sub One', rank: 50, expIntoRank: 1200, parts: [3, 4, 1, 2], voyage: { sentAt: 1762800000000, route: [1, 2], returnAt: 1762897920000, calcAt: 1762897900000, gameSaid: '1d 3h 12m' } },
+      s2: { fcId: 'f1', slot: 2, name: 'Sub Two', rank: 12, parts: [3, 4, 1, 2], voyage: null },
+    },
+    trips: { 's2-1762700000000': { s: 's2', t: 1762700000000, r: [1], back: 1762750000000, calc: 1762750000000, said: '13h 53m', items: [], newSectors: [] } },
+    settings: { prefs: { sort: 'fc' } },
+  },
 };
 
 test('one save: an 8-character save is copied in, every field matches, the old save is untouched, and it is copied once', async () => {
@@ -1166,14 +1175,209 @@ test('module sections (Lists, Submersibles, Atelier) survive a backup file, a tr
   const phone = ET.newState(['A', 'B']); phone.modules = {};
   await ET.cloudSync(phone, 'tok', d.f);
   assert.deepStrictEqual(phone.modules, want, 'the phone has every section');
-  phone.modules.submersibles.fcs.f1.subs.s2 = { name: 'Sub two', rank: 1 };
+  phone.modules.submersibles.subs.s3 = { fcId: 'f1', slot: 3, name: 'Sub Three', rank: 1, voyage: null };
   phone.modules.lists.lists.l2 = { name: 'Food', items: {} };
   await ET.cloudSync(phone, 'tok', d.f);
   await ET.cloudSync(st, 'tok', d.f);
-  assert.strictEqual(st.modules.submersibles.fcs.f1.subs.s2.name, 'Sub two');
+  assert.strictEqual(st.modules.submersibles.subs.s3.name, 'Sub Three');
+  assert.strictEqual(st.modules.submersibles.subs.s1.voyage.gameSaid, '1d 3h 12m', 'the sample FC, sub and trip arrive whole');
+  assert.strictEqual(st.modules.submersibles.trips['s2-1762700000000'].back, 1762750000000);
   assert.strictEqual(st.modules.lists.lists.l2.name, 'Food');
   assert.strictEqual(st.modules.atelier.chars.c1.stats.j0.craftsmanship, 5000);
   assert.deepStrictEqual((await ET.readCloud(d.files.f1)).modules, st.modules);
+});
+
+// ── step S2: the Submersibles section's checker and merge (design 7.1, 7.3; blueprint rules 3 and 11) ───────────────
+test('Submersibles checker: the sample in the design\'s shape is kept exactly; the id lists match data/submarines.json', () => {
+  assert.deepStrictEqual(CC.checkModules({ submersibles: MODS.submersibles }).submersibles, MODS.submersibles, 'nothing in a good section is changed');
+  const sd = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const sectorIds = sd.sectors.map((x) => x.id);
+  assert.strictEqual(sectorIds.length, 143);
+  for (let n = 0; n <= CC.SUB_SECTOR_MAX + 1; n++) assert.strictEqual(CC.isSubSector(n), sectorIds.includes(n), 'sector ' + n);
+  assert.strictEqual(CC.SUB_PART_SLOTS, sd.parts.slice().sort((a, b) => a.id - b.id).map((x) => String(x.slot)).join(''), 'part id → slot');
+  assert.strictEqual(CC.SUB_PART_SLOTS.length, sd.parts.length);
+});
+
+test('Submersibles checker: bad fields and entries are dropped, never repaired; limits hold; unknown fields go', () => {
+  const long = 'x'.repeat(60);
+  const out = CC.checkModules({ submersibles: {
+    fcs: {
+      f1: { name: '  Alpha \n Company  ', world: 'Maduin', charId: 'c9', order: 2, unlockedSlots: 5, discovered: [1, 31, 999, 2, 2, '3', 149], secret: 1 },
+      f2: { name: long }, f3: 'not an object', f4: { charId: null, unlockedSlots: 4 },
+    },
+    subs: {
+      s1: { fcId: 'f1', slot: 1, name: long, rank: 146, expIntoRank: -1, parts: [3, 4, 1, 2], voyage: { sentAt: 'soon', returnAt: 1762897920000, calcAt: -5, route: [1, 2, 3, 4, 5, 6, 7, 52], gameSaid: long }, colour: 'red' },
+      s2: { fcId: 'f1', slot: 2, rank: 0, parts: [1, 2, 3, 4] },          // parts in the wrong slots
+      s3: { fcId: 'f1', slot: 3, rank: 50.5, parts: [3, 4, 1, 999] },     // a part that does not exist
+      s4: { fcId: 'f1', slot: 4, voyage: { sentAt: 1, route: [1] } },     // a voyage with no return time
+      s5: { slot: 1, name: 'Nowhere' }, s6: { fcId: 'f1', slot: 0 }, s7: { fcId: 'f 1', slot: 1 },
+    },
+    trips: {
+      't-ok': { s: 's1', t: 10, r: [1, 2], back: 20, calc: 'x', said: long, items: [[5665, 3], [0, 1], [10, 0], ['x', 1], [12220, 2, 9]], newSectors: [3, 31], rankAfter: 51 },
+      't-bad': { s: 's1' }, 't-bad2': { t: 10 },
+    },
+    settings: { prefs: { sort: 'nonsense', grouping: 'fleet', quietHours: { from: 1320, to: 420 }, window: { from: 2000, to: 1 }, priceWorld: 'Maduin', theme: 'dark' }, other: { x: 1 } },
+    extra: { a: 1 },
+  } }).submersibles;
+  assert.deepStrictEqual(Object.keys(out), ['fcs', 'subs', 'trips', 'settings'], 'only the four parts of the section');
+  assert.deepStrictEqual(out.fcs.f1, { name: 'Alpha Company', world: 'Maduin', order: 2, discovered: [1, 2, 149] }, 'bad character, slots, sectors and the unknown field dropped');
+  assert.strictEqual(out.fcs.f2.name.length, 40, 'FC names capped at 40');
+  assert.ok(!('f3' in out.fcs));
+  assert.deepStrictEqual(out.fcs.f4, { charId: null, unlockedSlots: 4 });
+  assert.deepStrictEqual(out.subs.s1, { fcId: 'f1', slot: 1, name: 'x'.repeat(20), parts: [3, 4, 1, 2], voyage: { route: [1, 2, 3, 4, 5], returnAt: 1762897920000, gameSaid: 'x'.repeat(40) } });
+  assert.deepStrictEqual(out.subs.s2, { fcId: 'f1', slot: 2, voyage: null }, 'rank 0 and parts in the wrong slots dropped');
+  assert.deepStrictEqual(out.subs.s3, { fcId: 'f1', slot: 3, voyage: null }, 'a fractional rank and an unknown part dropped');
+  assert.deepStrictEqual(out.subs.s4, { fcId: 'f1', slot: 4, voyage: null });
+  assert.deepStrictEqual(Object.keys(out.subs).sort(), ['s1', 's2', 's3', 's4'], 'subs with no free company or slot are dropped');
+  assert.deepStrictEqual(out.trips, { 't-ok': { s: 's1', t: 10, r: [1, 2], back: 20, said: 'x'.repeat(40), items: [[5665, 3]], newSectors: [3], rankAfter: 51 } });
+  assert.deepStrictEqual(out.settings, { prefs: { grouping: 'fleet', quietHours: { from: 1320, to: 420 }, priceWorld: 'Maduin' } });
+});
+
+test('Submersibles checker: trips are never dropped to save space (15,000 trips, about a year for 32 subs)', () => {
+  const trips = {};
+  for (let i = 0; i < 15000; i++) trips['s' + (i % 32) + '-' + (1762000000000 + i * 60000)] = { s: 's' + (i % 32), t: 1762000000000 + i * 60000, r: [1, 2], back: 1762000000000 + i * 60000 + 9e7, items: [[5665, 2], [12220, 1]], newSectors: [] };
+  const out = CC.checkModules({ submersibles: { trips } }).submersibles;
+  assert.strictEqual(Object.keys(out.trips).length, 15000);
+  const merged = CC.mergeModules({}, { submersibles: { trips } }, {}).submersibles;
+  assert.strictEqual(Object.keys(merged.trips).length, 15000, 'and none is lost in a merge');
+});
+
+test('Submersibles: two devices each log a different trip and send a different sub; both arrive, no clash', async () => {
+  const pc = ET.newState(['A', 'B']); pc.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(pc);
+  const d = fakeGraph();
+  await ET.cloudSync(pc, 'tok', d.f);
+  const phone = ET.newState(['A', 'B']); phone.modules = {};
+  await ET.cloudSync(phone, 'tok', d.f);
+  assert.deepStrictEqual(phone.modules.submersibles, MODS.submersibles);
+  // the PC: sub 1 came back; its trip is logged and it is sent again
+  const pcSub = pc.modules.submersibles;
+  pcSub.trips['s1-1762800000000'] = { s: 's1', t: 1762800000000, r: [1, 2], back: 1762897920000, items: [], newSectors: [] };
+  pcSub.subs.s1.voyage = { sentAt: 1762898000000, route: [2], returnAt: 1762950000000, gameSaid: '14:26' };
+  // the phone: sub 2 had come back earlier; its trip is logged and it is sent
+  const phSub = phone.modules.submersibles;
+  phSub.trips['s2-1762750000000'] = { s: 's2', t: 1762750000000, r: [3], back: 1762790000000, items: [], newSectors: [] };
+  phSub.subs.s2.voyage = { sentAt: 1762898100000, route: [1, 3], returnAt: 1762960000000, gameSaid: '17:12' };
+  const r1 = await ET.cloudSync(phone, 'tok', d.f);
+  const r2 = await ET.cloudSync(pc, 'tok', d.f);
+  const r3 = await ET.cloudSync(phone, 'tok', d.f);
+  for (const r of [r1, r2, r3]) assert.ok(r.done === true && !(r.conflicts || []).length, 'no clash: ' + JSON.stringify(r.conflicts || []));
+  for (const st of [pc, phone]) {
+    const s = st.modules.submersibles;
+    assert.deepStrictEqual(Object.keys(s.trips).sort(), ['s1-1762800000000', 's2-1762700000000', 's2-1762750000000']);
+    assert.strictEqual(s.subs.s1.voyage.gameSaid, '14:26');
+    assert.strictEqual(s.subs.s2.voyage.gameSaid, '17:12');
+    assert.strictEqual(s.fcs.f1.name, 'Alpha Company');
+  }
+  assert.deepStrictEqual(pc.modules, phone.modules);
+  // the same through the one save on one device: two pages write different units with stale stamps; both are kept
+  useStorage();
+  const first = await CC.writeSection('submersibles', MODS.submersibles, null);
+  const base = JSON.parse(JSON.stringify(first.section));
+  const a = JSON.parse(JSON.stringify(base)); a.trips['s1-1'] = { s: 's1', t: 1, r: [], back: 2, items: [], newSectors: [] };
+  const b = JSON.parse(JSON.stringify(base)); b.subs.s2.voyage = { sentAt: 5, route: [], returnAt: 6, gameSaid: '1h' };
+  await CC.writeSection('submersibles', a, { rev: first.rev, base });
+  const w = await CC.writeSection('submersibles', b, { rev: first.rev, base });
+  assert.strictEqual(w.merged, true);
+  assert.ok(w.section.trips['s1-1'], 'the other page\'s trip is kept');
+  assert.strictEqual(w.section.subs.s2.voyage.gameSaid, '1h');
+  assert.strictEqual(CC.describeUnit('m|["submersibles","subs","s2"]', JSON.stringify({ name: 'Sub Two' }), null).what, 'Submersibles: submarine “Sub Two”');
+});
+
+test('Submersibles: typed game times, statuses and the calendar file (command-center/src/submersibles/fleet.js)', () => {
+  require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'fleet.js'));
+  const F = globalThis.FLEET, M = 60000, H = 60 * M;
+  for (const [t, ms] of [['1d 3h 12m', 27 * H + 12 * M], ['1d3h12m', 27 * H + 12 * M], ['27:45', 27 * H + 45 * M], ['3:05:10', 3 * H + 5 * M + 10000], ['45 min', 45 * M], ['2 hours 5 minutes', 2 * H + 5 * M], ['12h', 12 * H], [' 1D 2H ', 26 * H]]) assert.strictEqual(F.parseDuration(t), ms, t);
+  for (const t of ['', 'soon', '90', '12 mo', '1d 3h tomorrow', '25:61', '0m', '31d']) assert.strictEqual(F.parseDuration(t), null, 'not read: ' + JSON.stringify(t));
+  assert.strictEqual(F.parseBackAt('2026-11-12T21:40'), new Date(2026, 10, 12, 21, 40).getTime());
+  assert.strictEqual(F.parseBackAt('21:40'), null);
+  const fc = { unlockedSlots: 2 };
+  assert.strictEqual(F.status({ slot: 3, voyage: null }, fc, 0), 'locked');
+  assert.strictEqual(F.status({ slot: 1, voyage: null }, fc, 0), 'idle');
+  assert.strictEqual(F.status({ slot: 1, voyage: { returnAt: 10 } }, fc, 5), 'out');
+  assert.strictEqual(F.status({ slot: 2, voyage: { returnAt: 10 } }, fc, 10), 'back');
+  assert.strictEqual(F.fmtDur(2 * H + 4 * M + 59000, true), '2 h 5 min', 'time to go rounds up');
+  assert.strictEqual(F.fmtDur(2 * H + 4 * M + 59000), '2 h 4 min', 'time waited rounds down');
+  assert.strictEqual(F.fmtDur(27 * H + 12 * M), '1 d 3 h 12 min');
+  const at = Date.UTC(2026, 10, 12, 21, 40, 0);
+  const ics = F.ics({ title: 'Alpha, Co; · Sub One back', at, uid: 's1-' + at, note: 'typed', now: at - H });
+  const lines = ics.split('\r\n');
+  assert.ok(ics.endsWith('\r\n') && !/[^\r]\n/.test(ics), 'CRLF line ends');
+  assert.ok(lines.includes('DTSTART:20261112T214000Z') && lines.includes('DTEND:20261112T215500Z') && lines.includes('TRIGGER:PT0M'));
+  assert.ok(lines.includes('SUMMARY:Alpha\\, Co\\; · Sub One back'), 'commas and semicolons escaped');
+  assert.strictEqual(lines.filter((l) => l === 'BEGIN:VEVENT').length, 1);
+  assert.ok(lines.every((l) => Buffer.byteLength(l) <= 75), 'lines folded at 75 octets');
+  assert.strictEqual(F.fileName('Alpha Company · Sub One back'), 'alpha-company-sub-one-back.ics');
+  assert.strictEqual(F.tripId('sabc', 1762800000000.4), 'sabc-1762800000000');
+  assert.ok(CC.safeKey(F.tripId(F.newId('s'), Date.now())), 'trip ids are valid save keys');
+});
+
+test('Submersibles: worked-out voyages match the five hand-worked voyages to the second (advisor.js)', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'advisor.js'));
+  const A = globalThis.ADVISOR.init(SD);
+  const FX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'submarine-voyages.json'), 'utf8'));
+  for (const v of FX.voyages) {
+    const p = v.build.parts, st = A.stats(v.build.rank, [p.hull, p.stern, p.bow, p.bridge]);
+    assert.deepStrictEqual(st, v.stats, v.id + ' stats');
+    const ev = A.evalRoute(v.route, st), after = A.rankAfter(v.build.rank, v.build.expIntoRank, ev.exp);
+    assert.deepStrictEqual([ev.range, ev.reachable, ev.tanks, ev.exp, ev.seconds, after.rank, after.into],
+      [v.expected.rangeUsed, v.expected.reachable, v.expected.tanks, v.expected.exp, v.expected.voyageSeconds, v.expected.rankAfter, v.expected.expIntoRankAfter], v.id);
+    assert.strictEqual(new Date(Date.parse(v.sentAt) + ev.seconds * 1000).toISOString().replace('.000', ''), v.expected.returnAt, v.id + ' return time');
+  }
+  assert.strictEqual(A.stats(10, [3, 4, 1]), null, 'no stats without four parts');
+  assert.strictEqual(A.evalRoute([1, 32], A.stats(50, [3, 4, 1, 2])), null, 'a route stays in one sea');
+});
+
+// Players measuring the game on the official Square Enix forum ("Max Level Submersible Planner", posts 41 and 49,
+// 2020-08-22 and 2021-04-18) found, independently of Submarine Tracker: a fixed 12 hours per voyage; travel of
+// floor(distance x 39.9) minutes at speed 1; a survey of 61,600 minutes / speed for an 880-minute sector (70 per minute).
+test('Submersibles: the formula\'s numbers agree with what players measured in the game (official forum)', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD), Fm = SD.formula;
+  assert.strictEqual(Fm.fixedSeconds, 12 * 3600, 'fixed 12 hours');
+  assert.strictEqual(Fm.travelFactor / 100, 39.9, '39.9 minutes per unit of distance at speed 1');
+  assert.strictEqual(Fm.surveyFactor / 100, 70, '70 minutes per survey minute at speed 1');
+  const blue = SD.sectors.find((s) => s.id === 51); // the Blue Hole (T), 880 survey minutes
+  assert.strictEqual(blue.survey * Fm.surveyFactor / 100, 61600);
+  const st = (speed) => ({ surveillance: 0, retrieval: 0, speed, range: 999, favor: 0 });
+  const sea = SD.seas.find((x) => x.id === blue.sea), r = Math.hypot(sea.x - blue.x, sea.y - blue.y, sea.z - blue.z);
+  assert.strictEqual(A.evalRoute([51], st(1)).seconds, 43200 + Math.floor(r * 39.9 * 60) + 61600 * 60, 'speed 1: 12 h + travel + 61,600 minutes');
+  assert.strictEqual(A.evalRoute([51], st(70)).seconds, 43200 + Math.floor(r * 3990 / 7000 * 60) + Math.floor(61600 / 70 * 60), 'speed 70: the survey is 61,600 / 70 minutes');
+});
+
+test('Submersibles advisor: the owner\'s order (unlock all four subs, discover every sector, farm gil), parts only at the end', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD);
+  const shark = [3, 4, 1, 2], all = SD.sectors.map((s) => s.id);
+  // missing rank or parts: no guess
+  assert.ok(A.advise({ sub: { rank: 5, parts: null }, fc: { unlockedSlots: 1, discovered: [1, 2] } }).blocked);
+  // step 1, the slot-2 sector (Deep-sea Site J) not yet found: survey the discovered sector that reveals the next one on the way
+  const a1 = A.advise({ sub: { rank: 1, parts: shark }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1 });
+  assert.strictEqual(a1.step, 1); assert.ok(a1.plan.route.includes(2), 'B reveals E, on the way to J'); assert.match(a1.plan.why, /slot 2/);
+  // step 1, J discovered and the rank allows it: a route that surveys J, the quickest one
+  const a2 = A.advise({ sub: { rank: 25, parts: shark }, fc: { unlockedSlots: 1, discovered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }, slotsFilled: 1 });
+  assert.deepStrictEqual([a2.step, a2.plan.route], [1, [10]]);
+  // step 1, rank too low for the next sector on the way: level with the most experience per hour, and say why
+  const a3 = A.advise({ sub: { rank: 5, parts: shark }, fc: { unlockedSlots: 1, discovered: [1, 2, 3, 4, 5, 6] }, slotsFilled: 1 });
+  assert.strictEqual(a3.step, 1); assert.match(a3.plan.why, /levelling to rank 7/);
+  // a slot unlocked but empty: the note says the next slot only shows once it holds a sub
+  assert.match(A.advise({ sub: { rank: 25, parts: shark }, fc: { unlockedSlots: 2, discovered: [1, 2] }, slotsFilled: 1 }).note, /slot 2 holds a submarine/);
+  // step 2 once all four slots are unlocked: the route that reveals the most new sectors
+  const a4 = A.advise({ sub: { rank: 40, parts: shark }, fc: { unlockedSlots: 4, discovered: [1, 2, 3, 4, 5, 6] }, slotsFilled: 4 });
+  assert.strictEqual(a4.step, 2); assert.match(a4.plan.why, /reveal \d+ new sector/);
+  // sectors already on another sub's voyage are not counted again
+  const a5 = A.advise({ sub: { rank: 40, parts: shark }, fc: { unlockedSlots: 4, discovered: [1, 2, 3, 4, 5, 6] }, slotsFilled: 4, pending: a4.plan.route });
+  assert.notDeepStrictEqual(a5.plan.route, a4.plan.route);
+  for (const a of [a1, a2, a3, a4, a5]) assert.ok(!a.parts, 'no part advice before the gil step');
+  // step 3 with everything found: a reachable community gil route, and a part tip
+  const a6 = A.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 4 });
+  assert.strictEqual(a6.step, 3); assert.match(a6.plan.why, /community gil route/);
+  assert.ok(A.evalRoute(a6.plan.route, A.stats(145, [31, 24, 25, 34])).reachable);
+  assert.ok(a6.parts === null || /sooner \(calculated\)/.test(a6.parts.why));
+  const a7 = A.advise({ sub: { rank: 145, parts: shark }, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 4 });
+  assert.ok(a7.parts && a7.parts.gain >= 60, 'a weak build at the gil step gets a part tip');
+  // every suggestion is a valid, reachable route of 1 to 5 discovered sectors the rank allows
+  for (const a of [a1, a2, a3, a4, a5, a6, a7]) for (const x of [a.plan].concat(a.alts)) assert.ok(x.ev.reachable && x.route.length >= 1 && x.route.length <= 5);
 });
 
 test('old formats still load: backups and EVT1 codes from before gate 1C, and a v1 cloud copy, leave the module sections alone', async () => {

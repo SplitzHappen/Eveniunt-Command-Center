@@ -775,17 +775,31 @@ test('more live pages: dailies count and clear, S ranks, island planner, PvP ser
   await ctx.close();
 });
 
+// The board's windows depend on the clock: after an all-worlds maintenance every world starts a fresh window (for S
+// ranks 50 to 80 hours), so for days after one every world reads "closed". The page runs at a fixed time after every
+// maintenance in the built-in events list, past the longest after-maintenance cap and the 100-hour kill below, so the
+// test means the same on any day (it failed from 10 to 12 November 2026, after the 7.58 maintenance).
+function huntsTestTime() {
+  const timers = JSON.parse(fs.readFileSync(path.join(T, 'data', 'timers.json'), 'utf8')).timers || [];
+  const marks = JSON.parse(fs.readFileSync(path.join(T, 'data', 'live.json'), 'utf8')).hunts.marks;
+  const lastMaint = Math.max(0, ...timers.filter((t) => t.type === 'maintenance' && /all worlds/i.test(t.name) && t.end).map((t) => t.end));
+  const longestCap = Math.max(...marks.filter((m) => m.rs && m.rs.length > 2).map((m) => m.rs[3]));
+  return Math.max(lastMaint, Date.now() - 365 * 86400000) + (Math.max(longestCap, 100) + 24) * 3600000;
+}
+
 test('Hunts, Market Board, Housing and News: windows from kills, spawn maps, prices and plots; only the named sites are asked', async () => {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const NOW = huntsTestTime();
   const page = await ctx.newPage(); const errors = [], external = [];
+  await page.clock.setFixedTime(NOW);
   page.on('pageerror', (e) => errors.push(e.message)); page.on('dialog', (d) => d.accept('100'));
   await ctx.route('**/*', (r) => {
     const u = r.request().url();
     if (/^(file|blob|data):/.test(u)) return r.continue();
     external.push(u.split("/")[2]);
     const m = u.match(/universalis\.app\/api\/v2\/North-America\/([\d,]+)/);
-    if (m) return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ itemID: +m[1], lastUploadTime: Date.now(), regularSaleVelocity: 2, listings: [{ pricePerUnit: 1234, hq: false, worldName: 'Hyperion' }], recentHistory: [{ pricePerUnit: 1000 }] }) });
-    if (/paissadb\.zhu\.codes\/worlds\/411$/.test(u)) return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 411, name: 'Golem', num_open_plots: 1, districts: [{ id: 339, name: 'Mist', num_open_plots: 1, open_plots: [{ ward_number: 0, plot_number: 0, size: 2, price: 40000000, purchase_system: 5, lotto_phase: 1, lotto_entries: 2, last_updated_time: Date.now() / 1000 }] }] }) });
+    if (m) return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ itemID: +m[1], lastUploadTime: NOW, regularSaleVelocity: 2, listings: [{ pricePerUnit: 1234, hq: false, worldName: 'Hyperion' }], recentHistory: [{ pricePerUnit: 1000 }] }) });
+    if (/paissadb\.zhu\.codes\/worlds\/411$/.test(u)) return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 411, name: 'Golem', num_open_plots: 1, districts: [{ id: 339, name: 'Mist', num_open_plots: 1, open_plots: [{ ward_number: 0, plot_number: 0, size: 2, price: 40000000, purchase_system: 5, lotto_phase: 1, lotto_entries: 2, last_updated_time: NOW / 1000 }] }] }) });
     return r.abort();
   });
   await page.goto(URL); await page.waitForSelector('#dlg[open]'); await setup(page, 2);
@@ -795,11 +809,11 @@ test('Hunts, Market Board, Housing and News: windows from kills, spawn maps, pri
   assert.equal(await page.locator('.hn-row').first().locator('.hn-chip').count(), 32, 'every North American world');
   await page.click('[data-hkill="Ihnuxokiy"]');
   assert.equal(await page.locator('.hn-row').filter({ hasText: 'Ihnuxokiy' }).locator('.hn-chip.closed').count(), 1, 'the kill shows on its world only');
-  assert.match(await page.textContent('.hn-row.closed'), /Ihnuxokiy[\s\S]*Closed[\s\S]*opens in/);
+  assert.match(await page.locator('.hn-row').filter({ hasText: 'Ihnuxokiy' }).locator('.hn-sel').textContent(), /^Golem:[\s\S]*Closed[\s\S]*opens in[\s\S]*since the kill/, 'the chosen world shows the kill window');
   await page.click('[data-hkill-at="Sansheya"]'); // 100 minutes ago: still closed
   await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('eveniunt-tracker-hunts')); s.kills.Golem.Sansheya = Date.now() - 100 * 3600000; localStorage.setItem('eveniunt-tracker-hunts', JSON.stringify(s)); });
   await page.reload(); await page.waitForSelector('.lv-tabs');
-  assert.match(await page.textContent('.hn-row.open'), /Sansheya[\s\S]*Open[\s\S]*% through/, 'killed 100 h ago: window open (84 to 132 h)');
+  assert.match(await page.locator('.hn-row').filter({ hasText: 'Sansheya' }).locator('.hn-sel').textContent(), /^Golem:[\s\S]*Open[\s\S]*% through[\s\S]*since the kill/, 'killed 100 h ago: window open (84 to 132 h)');
   await page.click('[data-hmap="Sansheya"]');
   const before = await page.locator('.hn-map circle:not(.done)').count();
   await page.click('.hn-map circle >> nth=0');

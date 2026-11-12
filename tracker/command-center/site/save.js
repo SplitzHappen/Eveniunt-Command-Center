@@ -73,7 +73,58 @@
     if (plain(sec.prefs)) for (const k of PREFS) if (sec.prefs[k] !== undefined && sec.prefs[k] !== null) out.prefs[k] = sec.prefs[k];
     return out;
   }
-  const CHECK = { atelier: checkAtelier };
+  // The Submersibles section (design 7.1; step S2): free companies, submarines, trips and preferences, each one merge unit.
+  //   fcs:   { <fcId>:  { name, world, charId, order, unlockedSlots, discovered: [sectorIds] } }
+  //   subs:  { <subId>: { fcId, slot, name, rank, expIntoRank, parts: [hull, stern, bow, bridge], voyage: { sentAt, route, returnAt, calcAt, gameSaid } | null } }
+  //   trips: { <tripId>: { s, t, r, back, calc, said, items: [[itemId, qty]], newSectors, rankAfter } }
+  //   calcAt / calc: the worked-out return time, kept beside the game's typed time as evidence for the formula (design 3.2).
+  //   settings: { prefs: { sort, grouping, quietHours, window, priceWorld } }
+  // Only known fields with the right type are kept; a bad field or entry is dropped, never repaired by guessing. Trips are
+  // never dropped to save space (blueprint rule 11). Sector and part ids are the game's (data/submarines.json, pinned
+  // game data 44948e4c); tests/core.test.js checks these two lists against that file, so a new game patch updates both.
+  const SUB_SEA_STARTS = new Set([31, 52, 73, 94, 115, 136]); // each sea's starting point is not a sector
+  CC.SUB_SECTOR_MAX = 149;
+  CC.SUB_PART_SLOTS = '2301'.repeat(10); // part id n sits in slot SUB_PART_SLOTS[n - 1]: 0 hull, 1 stern, 2 bow, 3 bridge
+  const isSector = (n) => Number.isInteger(n) && n >= 1 && n <= CC.SUB_SECTOR_MAX && !SUB_SEA_STARTS.has(n);
+  CC.isSubSector = isSector;
+  const time = (v) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
+  const intIn = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : undefined);
+  const subName = (s, cap) => (typeof s === 'string' ? s.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, cap) : undefined);
+  const sectors = (a, max) => { if (!Array.isArray(a)) return undefined; const out = []; for (const n of a) if (isSector(n) && !out.includes(n)) out.push(n); return max ? out.slice(0, max) : out; };
+  const keep = (o) => { for (const k of Object.keys(o)) if (o[k] === undefined) delete o[k]; return o; };
+  const hhmm = (w) => (plain(w) && intIn(w.from, 0, 1439) !== undefined && intIn(w.to, 0, 1439) !== undefined ? { from: w.from, to: w.to } : undefined);
+  function subParts(p) {
+    if (!Array.isArray(p) || p.length !== 4) return undefined;
+    return p.every((id, i) => Number.isInteger(id) && id >= 1 && id <= CC.SUB_PART_SLOTS.length && CC.SUB_PART_SLOTS[id - 1] === String(i)) ? p.slice() : undefined;
+  }
+  function subVoyage(v) {
+    if (!plain(v) || time(v.returnAt) === undefined) return null;
+    return keep({ sentAt: time(v.sentAt), route: sectors(v.route, 5) || [], returnAt: v.returnAt, calcAt: time(v.calcAt), gameSaid: subName(v.gameSaid, 40) });
+  }
+  function checkSubmersibles(sec) {
+    const out = { fcs: {}, subs: {}, trips: {}, settings: {} };
+    if (plain(sec.fcs)) for (const [id, f] of Object.entries(sec.fcs)) {
+      if (!plain(f)) continue;
+      out.fcs[id] = keep({ name: subName(f.name, 40), world: subName(f.world, 32), charId: typeof f.charId === 'string' && /^c[1-8]$/.test(f.charId) ? f.charId : (f.charId === null ? null : undefined),
+        order: intIn(f.order, 0, 9999), unlockedSlots: intIn(f.unlockedSlots, 1, 4), discovered: sectors(f.discovered) });
+    }
+    if (plain(sec.subs)) for (const [id, s] of Object.entries(sec.subs)) {
+      if (!plain(s) || !safeKey(s.fcId) || intIn(s.slot, 1, 4) === undefined) continue; // a sub that belongs nowhere is not guessed
+      out.subs[id] = keep({ fcId: s.fcId, slot: s.slot, name: subName(s.name, 20), rank: intIn(s.rank, 1, 145), expIntoRank: intIn(s.expIntoRank, 0, 1e9),
+        parts: subParts(s.parts), voyage: subVoyage(s.voyage) });
+    }
+    if (plain(sec.trips)) for (const [id, t] of Object.entries(sec.trips)) {
+      if (!plain(t) || !safeKey(t.s) || time(t.t) === undefined) continue;
+      const items = Array.isArray(t.items) ? t.items.filter((x) => Array.isArray(x) && x.length === 2 && intIn(x[0], 1, 1e7) !== undefined && intIn(x[1], 1, 1e6) !== undefined).map((x) => [x[0], x[1]]) : [];
+      out.trips[id] = keep({ s: t.s, t: t.t, r: sectors(t.r, 5) || [], back: time(t.back), calc: time(t.calc), said: subName(t.said, 40), items, newSectors: sectors(t.newSectors) || [], rankAfter: intIn(t.rankAfter, 1, 145) });
+    }
+    const p = plain(sec.settings) && plain(sec.settings.prefs) ? sec.settings.prefs : null;
+    if (p) out.settings.prefs = keep({ sort: ['fc', 'time'].includes(p.sort) ? p.sort : undefined, grouping: ['sub', 'fc', 'fleet'].includes(p.grouping) ? p.grouping : undefined,
+      quietHours: hhmm(p.quietHours), window: hhmm(p.window), priceWorld: subName(p.priceWorld, 32) });
+    return out;
+  }
+  CC.checkSubmersibles = checkSubmersibles;
+  const CHECK = { atelier: checkAtelier, submersibles: checkSubmersibles };
   // Every section except the Tracker's (the Tracker checks its own).
   CC.checkModules = function (mods) {
     const out = {};
@@ -155,6 +206,10 @@
     else if (p[0] === 'atelier' && p[1] === 'unassigned') what = 'Atelier: crafter stats not yet given to a character';
     else if (p[0] === 'atelier' && p[1] === 'saved') { let n = ''; try { n = JSON.parse(local || remote || '{}').name || ''; } catch (e) { /* none */ } what = 'Atelier: saved macro' + (n ? ' “' + n + '”' : ''); }
     else if (p[0] === 'atelier' && p[1] === 'prefs') what = 'Atelier setting: ' + p[2];
+    else if (p[0] === 'submersibles' && ['fcs', 'subs', 'trips'].includes(p[1])) {
+      let n = ''; try { n = JSON.parse(local || remote || '{}').name || ''; } catch (e) { /* none */ }
+      what = 'Submersibles: ' + { fcs: 'free company', subs: 'submarine', trips: 'logged voyage' }[p[1]] + (n ? ' “' + n + '”' : '');
+    } else if (p[0] === 'submersibles' && p[1] === 'settings') what = 'Submersibles settings';
     return { who: '', what, local: local == null ? '(removed)' : 'the version on this device', remote: remote == null ? '(removed)' : 'the version on the other device' };
   };
 

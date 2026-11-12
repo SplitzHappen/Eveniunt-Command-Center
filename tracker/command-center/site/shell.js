@@ -1,5 +1,6 @@
-// Eveniunt Command Center shell (gates 1B to 1E): header, module switcher, home screen, the site-wide service worker,
-// the shared-save summary and the install record the apps' hand-over notice reads.
+// Eveniunt Command Center shell (gates 1B to 1E; Submersibles step S2): header, module switcher, home screen, the
+// site-wide service worker, the shared-save summary, the install record the apps' hand-over notice reads, and the
+// Submersibles return alerts.
 // The shell is deliberately NOT cross-origin isolated, so Google's sign-in window keeps working here (gate 1A, R1).
 // Today's Tracker and Atelier open as their own pages, unchanged; the Atelier needs its own isolated page for
 // multi-core solving (blueprint section 4a, rule 1).
@@ -57,5 +58,16 @@
   if (window.CC) CC.onChange(showSave);
   window.addEventListener('pageshow', function (e) { if (e.persisted) showSave(); });
 
-  window.__commandCenter = { version: 1, modules: ['tracker', 'atelier'], showSave: showSave, markInstalled: markInstalled };
+  // Submersibles alerts (step S2, blueprint rule 8): while the shell is open, a banner (and the sound, if turned on in the
+  // module) when a sub comes back. What came back while no page was open shows as Back in the module, with no banner.
+  var subsSec = null;
+  function readSubs() {
+    if (!window.CC) return Promise.resolve();
+    return CC.read().then(function (r) { try { subsSec = r.raw != null ? (CC.checkDoc(r.raw).modules.submersibles || null) : null; } catch (e) { subsSec = null; } }).catch(function () { subsSec = null; });
+  }
+  var alerts = null;
+  if (window.FLEET) readSubs().then(function () { alerts = FLEET.startAlerts({ section: function () { return subsSec; }, link: 'submersibles/' }); window.__commandCenter.alerts = alerts; });
+  if (window.CC) CC.onChange(readSubs);
+
+  window.__commandCenter = { version: 1, modules: ['tracker', 'atelier', 'submersibles'], showSave: showSave, markInstalled: markInstalled };
 })();

@@ -5,7 +5,7 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "description": "The Eveniunt Tracker and Atelier for Final Fantasy XIV in one installable app.",
+  "description": "The Eveniunt Tracker, Atelier and Submersibles for Final Fantasy XIV in one installable app.",
   "background_color": "#0f2234",
   "theme_color": "#0f2234",
   "categories": [

@@ -1,10 +1,10 @@
 {
-  "date": "2026-11-10",
+  "date": "2026-11-11",
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
-  "passed": 23,
-  "total": 23,
+  "passed": 30,
+  "total": 30,
   "notRun": [],
   "results": [
     {
@@ -19,9 +19,10 @@
           "modules": [
             "Home",
             "Tracker",
-            "Atelier"
+            "Atelier",
+            "Submersibles"
           ],
-          "cards": 2,
+          "cards": 3,
           "title": "Eveniunt Command Center"
         },
         "again": {
@@ -31,9 +32,10 @@
           "modules": [
             "Home",
             "Tracker",
-            "Atelier"
+            "Atelier",
+            "Submersibles"
           ],
-          "cards": 2,
+          "cards": 3,
           "title": "Eveniunt Command Center"
         },
         "errors": [],
@@ -61,7 +63,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 21.3,
+          "seconds": 23.2,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -82,9 +84,10 @@
         "modules": [
           "Home",
           "Tracker",
-          "Atelier"
+          "Atelier",
+          "Submersibles"
         ],
-        "cards": 2,
+        "cards": 3,
         "title": "Eveniunt Command Center"
       }
     },
@@ -119,9 +122,10 @@
           "modules": [
             "Home",
             "Tracker",
-            "Atelier"
+            "Atelier",
+            "Submersibles"
           ],
-          "cards": 2,
+          "cards": 3,
           "title": "Eveniunt Command Center"
         },
         "tracker": {
@@ -303,7 +307,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794275856955,
+            "at": 1794437578030,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -376,7 +380,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794275861266
+            "handoverSeen": 1794437583737
           }
         },
         "afterGotIt": {
@@ -384,14 +388,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794275861266
+              "handoverSeen": 1794437583737
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794275861266
+              "handoverSeen": 1794437583737
             }
           }
         },
@@ -410,14 +414,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794275863039
+              "installed": 1794437586063
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794275863039
+              "installed": 1794437586063
             }
           }
         },
@@ -471,9 +475,10 @@
             "modules": [
               "Home",
               "Tracker",
-              "Atelier"
+              "Atelier",
+              "Submersibles"
             ],
-            "cards": 2,
+            "cards": 3,
             "title": "Eveniunt Command Center"
           }
         },
@@ -486,9 +491,10 @@
             "modules": [
               "Home",
               "Tracker",
-              "Atelier"
+              "Atelier",
+              "Submersibles"
             ],
-            "cards": 2,
+            "cards": 3,
             "title": "Eveniunt Command Center"
           }
         },
@@ -501,9 +507,10 @@
             "modules": [
               "Home",
               "Tracker",
-              "Atelier"
+              "Atelier",
+              "Submersibles"
             ],
-            "cards": 2,
+            "cards": 3,
             "title": "Eveniunt Command Center"
           }
         },
@@ -578,10 +585,10 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-qXW0JV",
+        "scratch": "/tmp/cc-publish-py4VvN",
         "publish": [
-          "74M\t/tmp/cc-publish-qXW0JV",
-          "246"
+          "75M\t/tmp/cc-publish-py4VvN",
+          "264"
         ],
         "freshLists": {
           "workflowWrites": true,
@@ -596,7 +603,7 @@
           "privateRecordsAbsent": true
         },
         "workerFiles": {
-          "count": 10,
+          "count": 16,
           "missing": []
         },
         "shell": {
@@ -606,13 +613,14 @@
           "modules": [
             "Home",
             "Tracker",
-            "Atelier"
+            "Atelier",
+            "Submersibles"
           ],
-          "cards": 2,
+          "cards": 3,
           "title": "Eveniunt Command Center"
         },
         "links": {
-          "local": 12,
+          "local": 14,
           "outside": 2,
           "broken": []
         },
@@ -647,11 +655,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=_c1I3B2GhlogJ9UHaOstyA",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=W5pq7PNVGAxEpn___dqgFQ",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 01:57 AM",
-          "device": "ec9dfca1…"
+          "status": "Synced 10:53 PM",
+          "device": "c2f3d90e…"
         },
         "leaks": {
           "backup": false,
@@ -695,6 +703,388 @@
           "devices": 0,
           "status": "Signed out on this device: nothing syncs here until you sign in again (Settings → Cloud sync)"
         },
+        "errors": []
+      }
+    },
+    {
+      "id": "C20",
+      "title": "The Submersibles module opens from the shell (switcher and home card) and directly, is not isolated, comes under the shell's site-wide worker and works offline after one visit; its header leads back to the shell",
+      "pass": true,
+      "detail": {
+        "shell": {
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier",
+            "Submersibles"
+          ],
+          "cards": 3
+        },
+        "fromShell": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "backHome": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+        "offline": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "shellOffline": 3,
+        "direct": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "directOffline": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C21",
+      "title": "Guided setup of one free company with four subs, end to end: name, world, slots, names, ranks, parts, a voyage under way and the discovered sectors land in modules.submersibles in the design's shape; the board shows 1 Out and 3 Idle; the next-slot note names the sector and the source's notes; the free company is renamed afterwards with nothing else lost",
+      "pass": true,
+      "detail": {
+        "fcs": 1,
+        "fc": {
+          "name": "Alpha Company",
+          "world": "Maduin",
+          "charId": null,
+          "order": 0,
+          "unlockedSlots": 4,
+          "discovered": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ]
+        },
+        "subs": [
+          [
+            1,
+            "Sub One",
+            50,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ],
+          [
+            2,
+            "Sub Two",
+            40,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ],
+          [
+            3,
+            "Sub Three",
+            30,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ],
+          [
+            4,
+            "Sub Four",
+            12,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ]
+        ],
+        "oneVoyage": {
+          "sentAt": 1794506401230,
+          "route": [],
+          "returnAt": 1794604321230,
+          "gameSaid": "1d 3h 12m"
+        },
+        "board": [
+          "out",
+          "idle",
+          "idle",
+          "idle"
+        ],
+        "unlockNote": true,
+        "renamed": "Alpha Renamed",
+        "sameSubs": true,
+        "voyageKept": true
+      }
+    },
+    {
+      "id": "C22",
+      "title": "Send by tapping a route: the return time is worked out with no typing and matches the formula; with the page clock moved past it the sub shows Back with one banner; a reload shows Back with no second banner; one press on the board's suggested-route button sends it again (worked out, no sheet); \"Check against the game\" keeps the worked-out time beside the game's and shows the difference under Setup; \"Send all back\" sends each picked sub on its own suggested route (subs looking for new sectors split them) and logs the returned voyage; two game times entered in the same minute share one banner and keep the worked-out time beside them",
+      "pass": true,
+      "detail": {
+        "advice": "Suggested · step 2 of 3: Discover every sector (134 sectors still to find)Deep-sea Site: H → I → E Send on this route Change it firstCan reveal 4 new sectors (Deep-sea Site H, Deep-sea Site I, Deep-se",
+        "wantSecs": 54250,
+        "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
+        "afterQuick": {
+          "sentAt": 1794560717132,
+          "route": [
+            8,
+            9,
+            5
+          ],
+          "returnAt": 1794669095132,
+          "calcAt": 1794669095132
+        },
+        "checked": {
+          "sentAt": 1794560717132,
+          "route": [
+            8,
+            9,
+            5
+          ],
+          "returnAt": 1794669257781,
+          "calcAt": 1794669095132,
+          "gameSaid": "30h 9m"
+        },
+        "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
+        "sent": {
+          "sentAt": 1794506402764,
+          "route": [
+            1
+          ],
+          "returnAt": 1794560652764,
+          "calcAt": 1794560652764
+        },
+        "beforeBack": [],
+        "atBack": [
+          "Alpha Renamed · Sub Two is back (09:04)"
+        ],
+        "sentRow": "back",
+        "afterReload": [],
+        "reloadRow": "back",
+        "picked": [
+          "s9876l18b",
+          "s9hmhy7pa"
+        ],
+        "allOk": true,
+        "sentAll": [
+          {
+            "sentAt": 1794560718464,
+            "route": [
+              9,
+              7,
+              8
+            ],
+            "returnAt": 1794663240464,
+            "calcAt": 1794663240464
+          },
+          {
+            "sentAt": 1794560718464,
+            "route": [
+              7,
+              5,
+              3
+            ],
+            "returnAt": 1794657594464,
+            "calcAt": 1794657594464
+          }
+        ],
+        "trips": [
+          {
+            "s": "sokv0e0gy",
+            "t": 1794506402764,
+            "r": [
+              1
+            ],
+            "back": 1794560652764,
+            "calc": 1794560652764,
+            "items": [],
+            "newSectors": []
+          }
+        ],
+        "typed": [
+          {
+            "sentAt": 1794560718464,
+            "route": [
+              9,
+              7,
+              8
+            ],
+            "returnAt": 1794563465195,
+            "calcAt": 1794663240464,
+            "gameSaid": "45m"
+          },
+          {
+            "sentAt": 1794560718464,
+            "route": [
+              7,
+              5,
+              3
+            ],
+            "returnAt": 1794563465878,
+            "calcAt": 1794657594464,
+            "gameSaid": "45m"
+          }
+        ],
+        "grouped": [
+          "2 submarines are back (09:51): Alpha Renamed · Sub Three, Alpha Renamed · Sub Four"
+        ]
+      }
+    },
+    {
+      "id": "C23",
+      "title": "The calendar file of an Out sub is one event at the typed return time with a 0-minute alarm, titled \"<free company> · <sub> back\"",
+      "pass": true,
+      "detail": {
+        "file": "alpha-renamed-sub-one-back.ics",
+        "want": "20261113T211201Z",
+        "ics": [
+          "DTSTART:20261113T211201Z",
+          "SUMMARY:Alpha Renamed · Sub One back",
+          "TRIGGER:PT0M"
+        ]
+      }
+    },
+    {
+      "id": "C24",
+      "title": "Phone width (390 px): no sideways scrolling on the board, in the send sheet or in any setup step; the tab bar sits at the bottom",
+      "pass": true,
+      "detail": {
+        "board": 0,
+        "tabbar": {
+          "bottom": 844,
+          "height": 60,
+          "position": "fixed"
+        },
+        "sheet": 0,
+        "setupFc": 0,
+        "setupSub": 0,
+        "setupSectors": 0
+      }
+    },
+    {
+      "id": "C21-24 errors",
+      "title": "No page or console errors in that profile",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "id": "C25",
+      "title": "8 free companies x 4 subs fit on one screen at 1920 x 1080 (4 x 2 grid, every sub inside the window, no sideways scrolling), with Back, Out, Idle and Locked shown; a tablet (1024 px) shows two columns; sorting by return time puts Back first, then Out, then Idle",
+      "pass": true,
+      "detail": {
+        "fit": {
+          "fcs": 8,
+          "subs": 32,
+          "statuses": [
+            "back",
+            "idle",
+            "locked",
+            "out"
+          ],
+          "maxBottom": 1002,
+          "maxRight": 1895,
+          "columns": 4,
+          "sideways": 0,
+          "scrollY": 0
+        },
+        "tablet": {
+          "columns": 2,
+          "sideways": 0
+        },
+        "order": [
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle"
+        ],
         "errors": []
       }
     }

@@ -142,3 +142,44 @@ The import map (`data/desktop-map.json`) also reads the desktop app's Trust (`du
 - Read live in the browser, never stored: Universalis (market prices), PaissaDB (open plots); saved by the public site every 6 hours: the Lodestone news and topics feeds.
 - `data/guides.json`: guides written for the tracker from the Console Games Wiki (Ocean Fishing, GATEs, Lord of Verminion, Chocobo Racing).
 - `data/ffxivcollect/armoires.json`, `outfits.json`: FFXIV Collect snapshots (`tools/fetch-ffxivcollect.py armoires outfits`).
+
+## Submersibles (data/submarines.json; design step S1, 2026-11-11)
+
+`tools/submarines.py` fetches every input at a pinned commit and writes `data/submarines.json`. It stops, writing nothing, if a count differs from the design (143 sectors, 7 seas of 30, 20, 20, 20, 20, 20 and 13, 40 parts, 145 ranks, 1,829,558,717 experience from rank 1 to 145), if Teamcraft's parts differ from the game's, if the unlock table does not line up with the game's sector names, or if a source file no longer says what the tool expects. Each table in the file names its source and commit (`tables`). Ids are game row ids; nothing is typed by hand.
+
+| Table in the file | From | Version | Licence and notice |
+| --- | --- | --- | --- |
+| `seas` (7), `sectors` (143) | game sheets `SubmarineMap`, `SubmarineExploration` (starting points give each sea's origin) | `xivapi/ffxiv-datamining` @ `44948e4c` (7.57h1) | game data (notice below) |
+| `parts` (40), `classes` (10) | game sheets `SubmarinePart`, `Item` (names; class and slot names read from the part names); each part's item id from Teamcraft `submarine-parts.json`, whose stats must equal the game's | game @ `44948e4c`; `ffxiv-teamcraft/ffxiv-teamcraft` @ `70429e214dc952be23114df514a18223dc429449` | game data; Teamcraft: MIT, Copyright (c) 2017 Flavien Normand |
+| `ranks` (145), `statNames`, `reportLines`, `items` | game sheets `SubmarineRank`, `SubmarineSpecCategory`, `SubmarineExplorationLog`, `Item` | game @ `44948e4c` | game data |
+| `loot`: possible items per sector (1,085 item and sector pairs on 141 sectors, 356 items; no quantities, odds or quality) | Teamcraft `voyage-sources.json` (entries of type 1, submarines), its sector ids checked against Teamcraft `submarine-voyages.json` and the game's names | Teamcraft @ `70429e21` | MIT, Copyright (c) 2017 Flavien Normand |
+| `unlocks` (which sector reveals which, for all 143), `subSlots` (submarine slots 2 to 4), the sectors that open each next sea | Submarine Tracker `SubmarineTracker/Data/Unlocks.cs` | `Infiziert90/SubmarineTracker` @ `04c54d770f815cd416bbade1ac5b178b551a32b5` (2026-10-03; unlock data last updated 2026-05-10 for the 7.5 sectors) | MIT, Copyright (c) 2023 Infi <infiziert@protonmail.ch> |
+| `formula`: travel time and range | Submarine Tracker `SubmarineTracker/SubExplPretty.cs`, `SubmarineTracker/Data/Voyage.cs` | same commit | MIT, same notice |
+| `commonRoutes` (10 named routes) | Submarine Tracker `SubmarineTracker/Data/Voyage.cs` | same commit | MIT, same notice |
+
+**Game data notice:** Game data (c) SQUARE ENIX CO., LTD. FINAL FANTASY is a registered trademark of Square Enix Holdings Co., Ltd.
+
+**Community data notice (Teamcraft and Submarine Tracker, MIT licence):** "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND." Both notices are also carried inside `data/submarines.json` (`sources`).
+
+**How the unlock source was chosen (design 5.4).** Teamcraft's source tree at the pinned commit was searched first: it has no unlock order and no time formula (its voyage tracker reads return times and unlocked sectors from the game's own messages). Submarine Tracker, an open-source project under the MIT licence, holds both, kept up to date to the 7.5 sectors. No second licensed, machine-readable source was found; the others are spreadsheets, wiki pages and websites, which are not used (no scraping). So the unlock table rests on one community source. The tool checks that it covers every sector once and that, for the 141 sectors another sector reveals, both the sector's name and the revealing sector's name in it match the game's (the other two, A and B of the first sea, are open from the start). The source is a plugin for a third-party modding framework; only its published table and formula are read here, as text, and nothing from it is run. The app still never reads the game or automates it, and the owner's own ticks on the return sheet remain what counts for each Free Company. The source adds two facts the advisor will need: discovery is not certain on every visit, and a new submarine slot only shows once the previous slot holds a submarine.
+
+**The formula, in words** (label: **calculated, not yet confirmed**, until the owner's game times agree; design risk R1):
+- A route starts at its sea's starting point and visits 1 to 5 sectors of that sea in the order chosen.
+- Leg length: the straight-line distance between two points from their X, Y and Z positions.
+- Range used: for each leg, round down (leg length × 0.035) and add the destination's survey distance; add up the legs. Reachable if the total is no more than the build's range. There is no leg back.
+- Travel seconds of a leg: round down (leg length × 3990 ÷ (speed × 100) × 60). Survey seconds of a sector: round down (survey minutes × 7000 ÷ (speed × 100) × 60). Speed is the build's (four parts plus the rank's bonus), at least 1.
+- Voyage seconds: all travel and survey seconds plus a fixed 43,200 seconds (12 hours). Return time = send time + voyage seconds.
+- Five voyages worked out step by step: `tests/fixtures/submarine-voyages.json`, checked by `node --test tests/submarines.test.js`. As a plausibility check only, the "OJ" route at the top rank with a fast build gives 19 h 21 min, against the owner's "about every 19 hours".
+
+**Experience.** The game table gives each sector's base experience. Submarine Tracker (`SubmarineTracker/Data/Sectors.cs`) adds 25%, 50%, 75% or 100% per sector when its survey goes well, judged against surveillance, retrieval and favor thresholds that it took from a community spreadsheet with no stated licence. Those thresholds are not used (design question Q3 stays at its default: show no stat effect until a licensed source is pinned). By that source, base experience is the least a voyage gives, so the design's assumption A4 ("no hidden bonus") holds as a floor, and a rank worked out from it is a floor; the return sheet's rank check shows the real figure.
+
+**Loot details.** Teamcraft's list comes from its users' reports, so the newest sectors list few items: sectors L and M of the Northern Empty (148, 149) have none. Dropped, as Teamcraft's own build does: 18 entries without a sector, 257 repeats, and 1 entry pointing at the Northern Empty's starting point (row 136), which is not a sector. This corrects design section 5.1: the list covers **141** of the 143 sectors, not 142 (the 142nd id was that starting point).
+
+**Names.** Sector names are the game's; the italic markers around three ship names (*Discovery I*, *Headway*, *Windwalker*) are removed. The source names the route "Fight Club - OJ" as Deep-sea Site O, then J; which route the owner means by "OJ" is still the owner's to confirm (design Q1).
+
+Regenerate (needs raw.githubusercontent.com):
+
+```
+python3 -I tools/submarines.py --cache /tmp/submarines-cache
+node --test tests/submarines.test.js
+```

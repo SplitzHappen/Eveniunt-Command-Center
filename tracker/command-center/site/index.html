@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Eveniunt Command Center</title>
-<meta name="description" content="Eveniunt Command Center: the Tracker and the Atelier for Final Fantasy XIV in one installable app.">
+<meta name="description" content="Eveniunt Command Center: the Tracker, the Atelier and Submersibles for Final Fantasy XIV in one installable app.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -25,6 +25,7 @@
     <a href="./" data-module="home" aria-current="page">Home</a>
     <a href="tracker/" data-module="tracker">Tracker</a>
     <a href="atelier/" data-module="atelier">Atelier</a>
+    <a href="submersibles/" data-module="submersibles">Submersibles</a>
   </nav>
   <span class="status" id="status" role="status" aria-live="polite"></span>
 </header>
@@ -32,7 +33,7 @@
 <main id="home">
   <section class="intro">
     <h1>Welcome back</h1>
-    <p>Pick a module. The Tracker and the Atelier open exactly as you know them; the <b>Command Center</b> link in their header brings you back here.</p>
+    <p>Pick a module. The Tracker and the Atelier open exactly as you know them; the <b>Command Center</b> link in each module's header brings you back here.</p>
   </section>
 
   <section class="save" id="save" aria-label="Your save" hidden></section>
@@ -49,6 +50,12 @@
       <span class="card-title">Atelier</span>
       <span class="card-text">Crafting solver: recipe search, crafter stats, solver, simulator, macros and a step-by-step guide. Opens as its own page so it can use every processor core.</span>
       <span class="card-go">Open the Atelier →</span>
+    </a>
+    <a class="card" href="submersibles/" data-module="submersibles">
+      <span class="card-kicker">Module</span>
+      <span class="card-title">Submersibles</span>
+      <span class="card-text">Your free companies' submarines on one board: Back, Out, Idle or Locked with live countdowns, the return times you type from the game, alerts and calendar entries.</span>
+      <span class="card-go">Open Submersibles →</span>
     </a>
   </section>
 
@@ -67,7 +74,6 @@
     <h2>Coming next</h2>
     <p class="muted">In the order you chose. They appear here as each one ships.</p>
     <ol class="coming-list">
-      <li><b>Submersibles</b> <span>free company submarines, voyages and return times</span></li>
       <li><b>Lists</b> <span>crafting planner with totals of what to gather, buy or craft</span></li>
       <li><b>Market</b> <span>prices, estimated profit and a shopping list split by world</span></li>
       <li><b>Gathering</b> <span>timed nodes, fish windows, alarms and routes</span></li>
@@ -79,10 +85,11 @@
 
 <footer class="foot">
   <p>Prefer a single file? Download the <a href="tracker/index.html" download="eveniunt-tracker.html">Tracker</a> or the <a href="atelier/index.html" download="eveniunt-atelier.html">Atelier</a> and open it from your computer; each works offline on its own.</p>
-  <p>Open source under the Apache License 2.0: <a href="https://github.com/SplitzHappen/Eveniunt-Command-Center">source and credits</a>. Solver by <a href="https://github.com/KonaeAkira/raphael-rs">Raphael</a> (Apache 2.0). Tracker data from xivapi/ffxiv-datamining, FFXIV Teamcraft (MIT), FFXIV Collect and the FFXIV 100% Completion Checklist team.</p>
+  <p>Open source under the Apache License 2.0: <a href="https://github.com/SplitzHappen/Eveniunt-Command-Center">source and credits</a>. Solver by <a href="https://github.com/KonaeAkira/raphael-rs">Raphael</a> (Apache 2.0). Tracker data from xivapi/ffxiv-datamining, FFXIV Teamcraft (MIT), FFXIV Collect and the FFXIV 100% Completion Checklist team. Submersibles data from xivapi/ffxiv-datamining, FFXIV Teamcraft (MIT) and Submarine Tracker (MIT).</p>
   <p>FINAL FANTASY XIV © SQUARE ENIX CO., LTD. Game data and names belong to their owners. A free, non-commercial fan project, not affiliated with Square Enix. This app reads nothing from the game.</p>
 </footer>
 <script src="save.js"></script>
+<script src="submersibles/fleet.js"></script>
 <script src="shell.js"></script>
 </body>
 </html>

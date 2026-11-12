@@ -1,6 +1,6 @@
 'use strict';
 // Browser checks for the Command Center shell (gates 1B to 1E; blueprint section 5; gate 1A finding F1; rules 5 and 10;
-// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19).
+// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19; Submersibles step S2, C20 to C25).
 // Serves the published layout with serve.js (no isolation headers, like GitHub Pages), drives a browser through
 // Playwright, and writes evidence/checks*.json plus screenshots. Every request to another site is blocked.
 // Run: node command-center/build.js && node command-center/check.js
@@ -158,7 +158,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const again = await shellState(page);
       if (SHOT) await page.screenshot({ path: path.join(ev, 'shell-desktop.png') });
       const ok = first.isolated === false && again.isolated === false && again.controller === ROOT + 'sw.js' &&
-        JSON.stringify(again.modules) === '["Home","Tracker","Atelier"]' && again.cards === 2 && real(errors).length === 0;
+        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles"]' && again.cards === 3 && real(errors).length === 0;
       record('C1', 'The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it', ok, { first, again, errors: real(errors), external });
       await ctx.close();
     }
@@ -200,7 +200,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT + 'atelier/');
       const aOff = await atelierState(page);
       await ctx.setOffline(false);
-      record('C4', 'Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open', sOff.cards === 2 && tOff.overview && tOff.isolated === false && aOff.isolated === true && aOff.threads > 1,
+      record('C4', 'Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open', sOff.cards === 3 && tOff.overview && tOff.isolated === false && aOff.isolated === true && aOff.threads > 1,
         { shell: sOff, tracker: tOff, atelier: aOff });
       record('C2-4 errors', 'No page or console errors in that profile', real(errors).length === 0, real(errors));
       await ctx.close();
@@ -217,7 +217,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const note = await page.evaluate(() => ({ h1: document.querySelector('h1') && document.querySelector('h1').textContent, back: !!document.querySelector('a[href]') }));
       await page.click('a[href]'); await page.waitForSelector('.modules');
       const s = await shellState(page);
-      record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 2, { note, shellAfter: s.url });
+      record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 3, { note, shellAfter: s.url });
       await ctx.close();
     }
 
@@ -433,9 +433,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await p.waitForSelector('a[data-cc-back]');
       const dHand = await handoverState(p);
       await p.click('a[data-cc-back]'); await p.waitForSelector('.modules'); const s3 = await shellState(p);
-      const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 2 &&
-        aHand.back === ROOT && s2.url === ROOT && s2.isolated === false && s2.cards === 2 &&
-        dHand.back === ROOT && s3.url === ROOT && s3.isolated === false && s3.cards === 2 && real(errors).length === 0 && real(c2.errors).length === 0;
+      const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 3 &&
+        aHand.back === ROOT && s2.url === ROOT && s2.isolated === false && s2.cards === 3 &&
+        dHand.back === ROOT && s3.url === ROOT && s3.isolated === false && s3.cards === 3 && real(errors).length === 0 && real(c2.errors).length === 0;
       record('C14', 'The header link brings the owner back to the shell from the Tracker and from the Atelier, also from an Atelier opened directly with the shell never visited; the shell is not isolated each time',
         ok, { fromTracker: { link: tHand.back, shell: s1 }, fromAtelier: { link: aHand.back, shell: s2 }, fromAtelierOpenedDirectly: { link: dHand.back, shell: s3 }, errors: real(errors).concat(real(c2.errors)) });
       await c2.ctx.close();
@@ -528,7 +528,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       }
       const f = detail.files || {};
       const ok = !detail.error && f.root && f.tracker && f.atelier && f.cosmic && f.oldFrontPageGone && f.privateRecordsAbsent && detail.freshLists.workflowWrites && detail.freshLists.trackerWorkerServes &&
-        detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 2 && detail.shell.controller === ROOT3 + 'sw.js' &&
+        detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 3 && detail.shell.controller === ROOT3 + 'sw.js' &&
         detail.links.broken.length === 0 && /Sinus Ardorum/.test(detail.cosmic.title) && detail.tracker.overview && detail.tracker.controller === ROOT3 + 'tracker/sw.js' && detail.errors.length === 0;
       record('C16', 'The published layout (gate 1E): the publish script and the Pages workflow\'s own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it', ok, detail);
     }
@@ -598,6 +598,244 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         /tap to sign in/.test(ended.status) && ended.devices === 0 && ended.deviceRecord === null && ended.file && ended.notSignedIn && ended.offersSignIn && ended.signedInAgain && ended.afterSignOut.devices === 0 && /Signed out/.test(ended.afterSignOut.status) && real(errors).length === 0,
         Object.assign(ended, { errors: real(errors) }));
       await ctx.close(); server4.close();
+    }
+    // ── C20 to C25 Submersibles step S2: the module page in the shell's site, its setup, board, send, alerts, calendar
+    //    entries and layouts. Invented names only. The page clock (Playwright page.clock) moves time past a return. ──
+    {
+      const SUBS = ROOT + 'submersibles/';
+      const ready = (page) => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const subsState = (page) => page.evaluate(() => ({
+        url: location.href, isolated: self.crossOriginIsolated,
+        controller: navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL,
+        back: (document.querySelector('.cc-back') || {}).href || null,
+        tabs: [...document.querySelectorAll('.tabs [data-tab]')].map((b) => [...b.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim()),
+        subs: [...document.querySelectorAll('.sub[data-status]')].map((x) => x.dataset.status),
+        banners: [...document.querySelectorAll('.fleet-banner-text')].map((x) => x.textContent),
+        title: document.title
+      }));
+      const saved = (page) => page.evaluate(async () => { const r = await CC.read(); return r.raw ? CC.checkDoc(r.raw).modules.submersibles || null : null; });
+      const wroteOut = (page) => page.waitForFunction(() => window.__subs && window.__subs.state().ready && !document.querySelector('#sheet[open]'), null, { timeout: 10000 }).then(() => page.waitForTimeout(500));
+      // the guided setup of one free company with four submarines (one already on a voyage), end to end through the page
+      async function setupFc(page, name, opts = {}) {
+        await page.click('[data-act=new]');
+        await page.fill('[data-w="fc.name"]', name);
+        await page.selectOption('[data-w="fc.world"]', 'Maduin');
+        await page.click('[data-act=wnext]');
+        const subs = opts.subs || [['Sub One', 50], ['Sub Two', 40], ['Sub Three', 30], ['Sub Four', 12]];
+        for (let i = 0; i < subs.length; i++) {
+          if (i > 0) await page.check('[data-w=unlocked]');
+          await page.fill('[data-w=name]', subs[i][0]);
+          await page.fill('[data-w=rank]', String(subs[i][1])); await page.press('[data-w=rank]', 'Tab');
+          for (let j = 0; j < 4; j++) await page.selectOption(`select[data-w=part][data-j="${j}"]`, { index: 1 });
+          if (i === 0 && opts.voyage) { await page.check('input[name=voy0][value=in]'); await page.fill('[data-w=voyIn]', opts.voyage); }
+          await page.click('[data-act=wnext]');
+        }
+        // the sectors already discovered: tick seven more in the first sea
+        for (const id of opts.tick || [3, 4, 5, 6, 7, 8, 9]) await page.check(`input[data-w=disc][value="${id}"]`);
+        const unlockNote = await page.textContent('.wiz .note');
+        await page.click('[data-act=wsave]');
+        await page.waitForSelector('.fc');
+        await wroteOut(page);
+        return unlockNote;
+      }
+
+      // C20: opens from the shell and directly, not isolated, under the shell's site-wide worker, offline after one visit
+      {
+        const { ctx, errors, external } = await context();
+        const page = await ctx.newPage();
+        await page.goto(ROOT); await shellControlled(page);
+        const shell = await shellState(page);
+        await page.click('.switcher a[data-module="submersibles"]'); await ready(page);
+        const fromShell = await subsState(page);
+        await page.click('.cc-back'); await page.waitForSelector('.modules');
+        const backHome = await shellState(page);
+        await page.click('.modules a[data-module="submersibles"]'); await ready(page);
+        await ctx.setOffline(true);
+        await page.reload(); await ready(page);
+        const offline = await subsState(page);
+        await page.goto(ROOT); await page.waitForSelector('.modules');
+        const shellOffline = await shellState(page);
+        await ctx.setOffline(false); await ctx.close();
+        // directly, with the shell never visited: the module registers the site-wide worker itself
+        const c2 = await context();
+        const p2 = await c2.ctx.newPage();
+        await p2.goto(SUBS); await ready(p2); await shellControlled(p2);
+        const direct = await subsState(p2);
+        await c2.ctx.setOffline(true); await p2.reload(); await ready(p2);
+        const directOffline = await subsState(p2);
+        await c2.ctx.close();
+        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles"]' && shell.cards === 3 &&
+          fromShell.url === SUBS && fromShell.isolated === false && fromShell.controller === ROOT + 'sw.js' && fromShell.back === ROOT && fromShell.tabs.join() === 'Board,Log,Map,Earnings,Setup' &&
+          backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 3 &&
+          direct.isolated === false && direct.controller === ROOT + 'sw.js' && directOffline.tabs.length === 5 && directOffline.isolated === false &&
+          real(errors).length === 0 && real(c2.errors).length === 0 && external.length === 0;
+        record('C20', 'The Submersibles module opens from the shell (switcher and home card) and directly, is not isolated, comes under the shell\'s site-wide worker and works offline after one visit; its header leads back to the shell',
+          ok, { shell: { modules: shell.modules, cards: shell.cards }, fromShell, backHome: backHome.url, offline, shellOffline: shellOffline.cards, direct, directOffline, errors: real(errors).concat(real(c2.errors)) });
+      }
+
+      // C21 to C24 in one profile: setup, send, the clock moved past the return, reload, calendar file, phone width
+      {
+        const T0 = new Date('2026-11-12T18:00:00Z').getTime();
+        const { ctx, errors } = await context();
+        const page = await ctx.newPage();
+        await page.clock.install({ time: T0 });
+        await page.goto(SUBS); await ready(page);
+        // C21: one free company with four subs, end to end
+        const unlockNote = await setupFc(page, 'Alpha Company', { voyage: '1d 3h 12m' });
+        const board = await subsState(page);
+        const sec = await saved(page);
+        const fcId = Object.keys(sec.fcs)[0], fc = sec.fcs[fcId], subs = Object.values(sec.subs);
+        const one = subs.find((s) => s.name === 'Sub One');
+        // everything stays editable: rename the free company afterwards
+        await page.click('[data-tab=setup]'); await page.click(`[data-act=edit][data-fc="${fcId}"]`);
+        await page.fill('[data-w="fc.name"]', 'Alpha Renamed');
+        for (let i = 0; i < 6; i++) { if (await page.$('[data-act=wsave]')) break; await page.click('[data-act=wnext]'); }
+        await page.click('[data-act=wsave]'); await page.waitForSelector('.fc'); await wroteOut(page);
+        const afterEdit = await saved(page);
+        const c21 = {
+          fcs: Object.keys(sec.fcs).length, fc, subs: subs.map((s) => [s.slot, s.name, s.rank, s.parts]), oneVoyage: one && one.voyage,
+          board: board.subs, unlockNote: /Deep-sea Site J/.test(unlockNote) && /not certain/.test(unlockNote) && /community data/i.test(unlockNote),
+          renamed: afterEdit.fcs[fcId].name, sameSubs: JSON.stringify(Object.keys(afterEdit.subs).sort()) === JSON.stringify(Object.keys(sec.subs).sort()), voyageKept: afterEdit.subs[Object.keys(sec.subs).find((k) => sec.subs[k].name === 'Sub One')].voyage.returnAt === one.voyage.returnAt
+        };
+        record('C21', 'Guided setup of one free company with four subs, end to end: name, world, slots, names, ranks, parts, a voyage under way and the discovered sectors land in modules.submersibles in the design\'s shape; the board shows 1 Out and 3 Idle; the next-slot note names the sector and the source\'s notes; the free company is renamed afterwards with nothing else lost',
+          c21.fcs === 1 && fc.name === 'Alpha Company' && fc.world === 'Maduin' && fc.unlockedSlots === 4 && JSON.stringify(fc.discovered) === '[1,2,3,4,5,6,7,8,9]' && subs.length === 4 &&
+          subs.every((s) => s.fcId === fcId && Array.isArray(s.parts) && s.parts.length === 4) && one && one.voyage && one.voyage.returnAt - one.voyage.sentAt === (27 * 60 + 12) * 60000 && one.voyage.gameSaid === '1d 3h 12m' &&
+          board.subs.filter((x) => x === 'out').length === 1 && board.subs.filter((x) => x === 'idle').length === 3 && c21.unlockNote && c21.renamed === 'Alpha Renamed' && c21.sameSubs && c21.voyageKept,
+          c21);
+
+        // C22: send by tapping a route; the return time is worked out (no typing); the page clock moved past it shows Back
+        //      with one banner; a reload shows Back with no second banner; one press on the board\'s suggested-route button sends it again (worked out, no sheet); "Check against the game" keeps the worked-out time beside the game\'s and shows the difference under Setup; "Send all back" sends each sub on its suggested
+        //      route; two returns entered as the game's time in the same minute share one banner, the worked-out time kept
+        const sentId = await page.$eval('.sub[data-status=idle]', (el) => el.dataset.sub);
+        await page.click(`.sub[data-sub=\"${sentId}\"] .sub-top`);
+        const advice = await page.textContent('#sheet .advice');
+        await page.click('#sheet .sector[data-pick="1"]');
+        const calcText = await page.textContent('#sheet [data-picker]');
+        await page.click('#sheet [data-act=dosend]'); await wroteOut(page);
+        const wantSecs = await page.evaluate((id) => { const s = window.__subs.section().subs[id]; return ADVISOR.evalRoute([1], ADVISOR.stats(s.rank, s.parts)).seconds; }, sentId);
+        const sent = [sentId, (await saved(page)).subs[sentId]];
+        const beforeBack = await subsState(page);
+        await page.clock.fastForward((wantSecs + 60) * 1000);
+        await page.waitForFunction(() => document.querySelectorAll('.fleet-banner').length > 0, null, { timeout: 10000 });
+        await page.waitForTimeout(1200);
+        const atBack = await subsState(page);
+        const sentRow = await page.$eval(`.sub[data-sub="${sentId}"]`, (el) => el.dataset.status);
+        await page.reload(); await ready(page); await page.waitForTimeout(2500);
+        const afterReload = await subsState(page);
+        const reloadRow = await page.$eval(`.sub[data-sub="${sentId}"]`, (el) => el.dataset.status);
+        // one press: the board's suggested-route button sends the back sub at once, worked out, with no sheet
+        const quickLabel = await page.textContent(`.sub[data-sub="${sentId}"] .quick`);
+        await page.click(`.sub[data-sub="${sentId}"] .quick`); await wroteOut(page);
+        const afterQuick = (await saved(page)).subs[sentId].voyage;
+        const quickOk = !!afterQuick && afterQuick.sentAt > sent[1].voyage.returnAt && afterQuick.calcAt === afterQuick.returnAt && afterQuick.route.length >= 1 && /^Send ▸/.test(quickLabel) && !(await page.$('#sheet[open]'));
+        // the out card's "Check against the game": the game's time replaces the worked-out one, which is kept
+        await page.click(`.sub[data-sub="${sentId}"] .sub-top`); await page.click('#sheet .game-says summary');
+        const gameMin = Math.round((afterQuick.returnAt - (await page.evaluate(() => Date.now()))) / 60000) + 3;
+        await page.fill('#sheet input[name=tin]', Math.floor(gameMin / 60) + 'h ' + (gameMin % 60) + 'm'); await page.click('#sheet [data-act=check]'); await wroteOut(page);
+        const checked = (await saved(page)).subs[sentId].voyage;
+        const checkOk = checked.calcAt === afterQuick.calcAt && checked.returnAt !== checked.calcAt && !!checked.gameSaid;
+        await page.click('[data-tab=setup]'); const accuracy = await page.textContent('.accuracy'); await page.click('[data-tab=board]');
+        // send all back and idle subs: each on its suggested route with its own worked-out time
+        await page.click('[data-act=sendall]');
+        const picked = await page.$$eval('#sheet input[name=pick]:checked', (xs) => xs.map((x) => x.value));
+        await page.click('#sheet [data-act=dosendall]'); await wroteOut(page);
+        const afterAll = await saved(page);
+        const allOk = picked.every((id) => { const v = afterAll.subs[id].voyage; return v && v.route.length >= 1 && v.calcAt === v.returnAt && !v.gameSaid; });
+        // the game's time entered for two subs in the same minute: one shared banner; the worked-out time is kept beside it
+        const nowMs = await page.evaluate(() => Date.now());
+        await page.clock.fastForward(60000 - (nowMs % 60000) + 5000);
+        const two = picked.slice(0, 2);
+        for (const id of two) {
+          await page.click(`.sub[data-sub=\"${id}\"] .sub-top`); await page.click('#sheet [data-act=retime]');
+          await page.click('#sheet .game-says summary'); await page.fill('#sheet input[name=tin]', '45m');
+          await page.click('#sheet [data-act=dore]'); await wroteOut(page);
+        }
+        const typed = await saved(page);
+        await page.clock.fastForward('00:46:00');
+        await page.waitForFunction(() => document.querySelectorAll('.fleet-banner').length > 0, null, { timeout: 10000 });
+        await page.waitForTimeout(1200);
+        const grouped = await subsState(page);
+        const trips = Object.values(afterAll.trips);
+        record('C22', 'Send by tapping a route: the return time is worked out with no typing and matches the formula; with the page clock moved past it the sub shows Back with one banner; a reload shows Back with no second banner; one press on the board\'s suggested-route button sends it again (worked out, no sheet); "Check against the game" keeps the worked-out time beside the game\'s and shows the difference under Setup; "Send all back" sends each picked sub on its own suggested route (subs looking for new sectors split them) and logs the returned voyage; two game times entered in the same minute share one banner and keep the worked-out time beside them',
+          /Suggested · step [12] of 3/.test(advice) && /calculated, not yet confirmed/.test(calcText) && sent[1].voyage.returnAt - sent[1].voyage.sentAt === wantSecs * 1000 && sent[1].voyage.calcAt === sent[1].voyage.returnAt && !sent[1].voyage.gameSaid &&
+          beforeBack.banners.length === 0 && sentRow === 'back' && atBack.banners.length === 1 && /is back/.test(atBack.banners[0]) && reloadRow === 'back' && afterReload.banners.length === 0 &&
+          quickOk && checkOk && /\+[234] min/.test(accuracy) && picked.length === 2 && allOk && new Set(picked.map((id) => afterAll.subs[id].voyage.route.join())).size > 1 && trips.length === 1 && trips[0].back === sent[1].voyage.returnAt && trips[0].calc === sent[1].voyage.calcAt &&
+          two.every((id) => typed.subs[id].voyage.gameSaid === '45m' && typeof typed.subs[id].voyage.calcAt === 'number' && typed.subs[id].voyage.calcAt !== typed.subs[id].voyage.returnAt) &&
+          grouped.banners.length === 1 && /^2 submarines are back/.test(grouped.banners[0]),
+          { advice: advice.replace(/\s+/g, ' ').slice(0, 200), wantSecs, quickLabel, afterQuick, checked, accuracy: accuracy.replace(/\s+/g, ' ').slice(-160), sent: sent[1].voyage, beforeBack: beforeBack.banners, atBack: atBack.banners, sentRow, afterReload: afterReload.banners, reloadRow, picked, allOk, sentAll: picked.map((id) => afterAll.subs[id].voyage), trips, typed: two.map((id) => typed.subs[id].voyage), grouped: grouped.banners });
+
+        // C23: the calendar file for an Out sub: one event, the right time, a 0-minute alarm
+        const outId = Object.entries((await saved(page)).subs).find(([, s]) => s.voyage && s.voyage.returnAt > (T0 + 4 * 3600000))[0];
+        const outSub = (await saved(page)).subs[outId];
+        await page.click(`.sub[data-sub=\"${outId}\"] .sub-top`);
+        const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#sheet [data-act=ics]')]);
+        const ics = fs.readFileSync(await dl.path(), 'utf8');
+        await page.click('#sheet [data-act=close]');
+        const want = new Date(outSub.voyage.returnAt).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-board.png') });
+        record('C23', 'The calendar file of an Out sub is one event at the typed return time with a 0-minute alarm, titled "<free company> · <sub> back"',
+          (ics.match(/BEGIN:VEVENT/g) || []).length === 1 && ics.includes('DTSTART:' + want + '\r\n') && ics.includes('TRIGGER:PT0M') && ics.includes('SUMMARY:Alpha Renamed · ' + outSub.name + ' back') && /\.ics$/.test(dl.suggestedFilename()),
+          { file: dl.suggestedFilename(), want, ics: ics.split('\r\n').filter((l) => /^(DTSTART|SUMMARY|TRIGGER)/.test(l)) });
+
+        // C24: phone width (390 px): no sideways scrolling on the board, in the setup and in the send sheet; the bottom tab bar is there
+        const pp = await ctx.newPage();
+        await pp.setViewportSize({ width: 390, height: 844 });
+        await pp.goto(SUBS); await ready(pp);
+        const wide = () => pp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+        const phone = { board: await wide(), tabbar: await pp.$eval('.tabs', (el) => { const r = el.getBoundingClientRect(); return { bottom: Math.round(r.bottom), height: Math.round(r.height), position: getComputedStyle(el).position }; }) };
+        if (SHOT) await pp.screenshot({ path: path.join(ev, 'submersibles-phone.png'), fullPage: true });
+        await pp.click('.sub[data-sub] .sub-top'); phone.sheet = await wide(); await pp.click('#sheet [data-act=close]');
+        await pp.click('[data-tab=setup]'); await pp.click('[data-act=edit]'); phone.setupFc = await wide();
+        await pp.click('[data-act=wnext]'); phone.setupSub = await wide();
+        for (let i = 0; i < 6; i++) { if (await pp.$('[data-act=wsave]')) break; await pp.click('[data-act=wnext]'); }
+        phone.setupSectors = await wide();
+        record('C24', 'Phone width (390 px): no sideways scrolling on the board, in the send sheet or in any setup step; the tab bar sits at the bottom',
+          phone.board <= 0 && phone.sheet <= 0 && phone.setupFc <= 0 && phone.setupSub <= 0 && phone.setupSectors <= 0 && phone.tabbar.position === 'fixed' && phone.tabbar.bottom === 844,
+          phone);
+        record('C21-24 errors', 'No page or console errors in that profile', real(errors).length === 0, real(errors));
+        await ctx.close();
+      }
+
+      // C25: 8 free companies x 4 subs fit at 1920 x 1080 (computer, 4 x 2 grid) with every status shown; two columns on a tablet
+      {
+        const { ctx, errors } = await context({ viewport: { width: 1920, height: 1080 } });
+        const page = await ctx.newPage();
+        await page.goto(SUBS); await ready(page);
+        await page.evaluate(async () => {
+          const now = Date.now(), sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+          const names = ['Alpha', 'Bravo', 'Cedar', 'Delta', 'Ember', 'Fable', 'Garnet', 'Harbor'];
+          names.forEach((n, i) => {
+            sec.fcs['f' + i] = { name: n + ' Company', world: 'Maduin', order: i, unlockedSlots: i === 7 ? 3 : 4, discovered: [1, 2, 3] };
+            for (let s = 1; s <= 4; s++) {
+              const kind = (i + s) % 3, ret = kind === 0 ? now + (i * 4 + s) * 600000 : kind === 1 ? now - 600000 : null;
+              sec.subs['s' + i + s] = { fcId: 'f' + i, slot: s, name: 'Sub ' + n[0] + s, rank: 60 + s, parts: [3, 4, 1, 2], voyage: ret ? { sentAt: now - 3600000, route: [1, 2], returnAt: ret, gameSaid: '1h' } : null };
+            }
+          });
+          const r = await CC.read();
+          await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        });
+        await page.reload(); await ready(page);
+        const fit = await page.evaluate(() => {
+          const subs = [...document.querySelectorAll('.fc .sub[data-status]')];
+          const rects = subs.map((el) => el.getBoundingClientRect());
+          return { fcs: document.querySelectorAll('.fc').length, subs: subs.length, statuses: [...new Set(subs.map((x) => x.dataset.status))].sort(),
+            maxBottom: Math.round(Math.max(...rects.map((r) => r.bottom))), maxRight: Math.round(Math.max(...rects.map((r) => r.right))),
+            columns: new Set([...document.querySelectorAll('.fc')].map((el) => Math.round(el.getBoundingClientRect().left))).size, sideways: document.documentElement.scrollWidth - window.innerWidth, scrollY: window.scrollY };
+        });
+        if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-desktop.png') });
+        await page.setViewportSize({ width: 1024, height: 1366 });
+        const tablet = await page.evaluate(() => ({ columns: new Set([...document.querySelectorAll('.fc')].map((el) => Math.round(el.getBoundingClientRect().left))).size, sideways: document.documentElement.scrollWidth - window.innerWidth }));
+        // sorting by return time across the fleet: Back first (longest waiting), then Out by return time
+        await page.setViewportSize({ width: 1920, height: 1080 });
+        await page.click('[data-sort=time]'); await page.waitForSelector('.fc.wide');
+        const order = await page.$$eval('.fc.wide .sub', (xs) => xs.map((x) => x.dataset.status));
+        const sortedOk = order.indexOf('out') > order.lastIndexOf('back') && order.indexOf('idle') > order.lastIndexOf('out');
+        record('C25', '8 free companies x 4 subs fit on one screen at 1920 x 1080 (4 x 2 grid, every sub inside the window, no sideways scrolling), with Back, Out, Idle and Locked shown; a tablet (1024 px) shows two columns; sorting by return time puts Back first, then Out, then Idle',
+          fit.fcs === 8 && fit.subs === 32 && fit.maxBottom <= 1080 && fit.maxRight <= 1920 && fit.columns === 4 && fit.sideways <= 0 && JSON.stringify(fit.statuses) === '["back","idle","locked","out"]' &&
+          tablet.columns === 2 && tablet.sideways <= 0 && sortedOk && order.length === 31 && real(errors).length === 0,
+          { fit, tablet, order, errors: real(errors) });
+        await ctx.close();
+      }
     }
   } finally {
     await browser.close(); server.close();

@@ -10,6 +10,7 @@
 //   it, not here; this worker only covers an app's first visit, or the moments before its own worker takes over.
 // - Offline, an app's pages are served from that app's own offline copy (searched across all caches), so nothing
 //   is stored twice. A module never opened on this device shows a short note instead of a browser error.
+// - Module pages inside the shell's own site (Submersibles, step S2) are kept and served like the shell: not isolated.
 // - Requests to other sites (Google, FFXIV Collect, Universalis) and any other path on this site go straight to
 //   the network, untouched.
 // The cache name carries the build id; a new build replaces the old cache.
@@ -20,6 +21,9 @@ const SCOPE = new URL('./', self.location).href;
 const ATELIER = SCOPE + 'atelier/';
 const TRACKER = SCOPE + 'tracker/';
 const SHELL = new Set(FILES.map((f) => new URL(f, SCOPE).href));
+// Module pages that live inside the shell's own site, not isolated (Submersibles, step S2): kept for offline use with the
+// shell's files, opened network first like the shell's page.
+const PAGES = ['submersibles/'].map((p) => SCOPE + p);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -60,11 +64,13 @@ async function app(req, appScope, name, iso) {
 }
 
 // A shell page: network first with the saved copy after 4 s or offline; other shell files from the cache.
-async function shell(req) {
+// page: the folder of the page (the shell's root, or a module page such as submersibles/).
+async function shell(req, page) {
   const cache = await caches.open(CACHE);
   if (req.mode === 'navigate') {
-    const cached = (await cache.match(SCOPE)) || (await cache.match(SCOPE + 'index.html'));
-    const net = fetch(req).then((r) => { if (r.ok) cache.put(SCOPE, r.clone()); return r; });
+    page = page || SCOPE;
+    const cached = (await cache.match(page)) || (await cache.match(page + 'index.html'));
+    const net = fetch(req).then((r) => { if (r.ok) cache.put(page, r.clone()); return r; });
     if (!cached) return net;
     net.catch(() => {});
     const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 4000));
@@ -85,6 +91,8 @@ self.addEventListener('fetch', (e) => {
   const href = url.origin + url.pathname;
   if (href.startsWith(ATELIER)) return e.respondWith(app(req, ATELIER, 'Atelier', true));
   if (href.startsWith(TRACKER)) return e.respondWith(app(req, TRACKER, 'Tracker', false));
+  const page = PAGES.find((p) => href === p || href === p + 'index.html');
+  if (page) return e.respondWith(shell(req, page));
   if (SHELL.has(href) || href === SCOPE + 'index.html') return e.respondWith(shell(req));
   // anything else on the site: untouched
 });
