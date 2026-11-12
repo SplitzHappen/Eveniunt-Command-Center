@@ -39,9 +39,16 @@ fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive:
   fs.writeFileSync(path.join(OUT, 'look.js'), "// Built by command-center/build.js: the Tracker's appearance (the Atelier's module, as tools/build.js uses it), read\n" +
     "// from the Tracker's saved choice ('eveniunt-tracker-ui') so every page of the Command Center has the same theme.\n" +
     "(function () {\n  'use strict';\n  var PREF_KEY = 'eveniunt-tracker-ui';\n  function load() { try { return JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { return null; } }\n" +
-    "  var S = { theme: (load() || {}).theme || 'system', look: null };\n  function persist() { /* only the Tracker's Settings change the look */ }\n  function esc(s) { return String(s); }\n" +
+    "  var S = { theme: (load() || {}).theme || 'system', look: null };\n" +
+    "  // saves the theme and look next to the Tracker's other preferences (same key, the rest kept), so every page follows\n" +
+    "  function persist() { try { var d = load() || {}; d.theme = S.theme; d.look = S.look; localStorage.setItem(PREF_KEY, JSON.stringify(d)); } catch (e) { /* private window */ } }\n" +
+    "  function esc(s) { return String(s == null ? '' : s).replace(/[&<>\"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]; }); }\n" +
+    "  function $(sel, root) { return (root || document).querySelector(sel); }\n" +
+    "  function toast(msg) { var t = document.querySelector('[data-look-msg]'); if (t) t.textContent = msg; }\n" +
+    "  function clampInt(v, lo, hi, d) { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); }\n" +
+    "  function copyText(text, msg) { try { navigator.clipboard.writeText(text).then(function () { toast(msg || 'Copied'); }); } catch (e) { toast('Copy failed'); } }\n" +
     look + "\n  applyLook();\n  window.addEventListener('storage', function (e) { if (e.key === PREF_KEY) { var d = load() || {}; S.theme = d.theme || 'system'; if (d.look) S.look = Object.assign(S.look, d.look); applyLook(); } });\n" +
-    "  window.EVENIUNT_LOOK = { apply: function () { var d = load() || {}; S.theme = d.theme || 'system'; applyLook(); } };\n})();\n");
+    "  window.EVENIUNT_LOOK = { apply: function () { var d = load() || {}; S.theme = d.theme || 'system'; applyLook(); }, html: function () { return appearanceHtml(); }, bind: function (root) { bindAppearance(root); } };\n})();\n");
 }
 cp(path.join(T, 'src', 'app', 'shared.css'), 'shared.css');
 for (const f of ['index.html', 'shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);

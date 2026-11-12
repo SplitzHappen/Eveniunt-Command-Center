@@ -69,9 +69,11 @@
       '<label class="set-opt"><input type="radio" name="night" value="quiet" data-set="night"' + (night.night === 'quiet' ? ' checked' : '') + '> <b>Quiet hours</b> <span class="muted">alerts in these hours wait until they end</span></label>' +
       '<p class="row">From <input class="inp" type="time" data-set="qfrom" value="' + hhmm(q.from) + '"> to <input class="inp" type="time" data-set="qto" value="' + hhmm(q.to) + '"></p></fieldset>' +
       '<p class="muted small">Android and computers: Chrome, Edge or Firefox. iPhone and iPad: only from the Command Center added to the home screen (Apple\'s rule). Needs cloud sync signed in on that device.</p></section>' +
-      // appearance
-      '<section class="set-card"><h2>Appearance</h2><p class="row">' + [['', 'As the device'], ['light', 'Light'], ['dark', 'Dark']].map(function (t) { return '<label class="set-opt inline"><input type="radio" name="theme" value="' + t[0] + '" data-set="theme"' + (theme === t[0] ? ' checked' : '') + '> ' + t[1] + '</label>'; }).join('') + '</p><p class="muted small">The Tracker has more colour themes in its own Settings.</p></section>';
+      // appearance: the full panel the Tracker and the Atelier have (every theme, accent, colours, contrast, motion), saved
+      // for every page (owner request 2026-11-12: "the main menu settings needs to have everything theme related")
+      '<section class="set-card"><h2>Appearance</h2><p class="muted">For every page of the Command Center: the main menu, the Tracker, the Atelier and Submersibles.</p><div id="s-appearance" class="appearance">' + (window.EVENIUNT_LOOK ? window.EVENIUNT_LOOK.html() : '') + '</div><p class="muted small" data-look-msg></p></section>';
     pushStatus();
+    if (window.EVENIUNT_LOOK && box.querySelector('#s-appearance')) window.EVENIUNT_LOOK.bind(box);
   }
   function hhmm(n) { return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0'); }
   function minutes(v) { var m = /^(\d{2}):(\d{2})$/.exec(v || ''); return m ? +m[1] * 60 + +m[2] : null; }

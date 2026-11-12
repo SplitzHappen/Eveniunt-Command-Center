@@ -3,8 +3,8 @@
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
-  "passed": 32,
-  "total": 32,
+  "passed": 33,
+  "total": 33,
   "notRun": [
     "C26b: the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
   ],
@@ -67,7 +67,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 18.6,
+          "seconds": 17.5,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -313,7 +313,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794460717494,
+            "at": 1794463245703,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -386,7 +386,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794460722027
+            "handoverSeen": 1794463250059
           }
         },
         "afterGotIt": {
@@ -394,14 +394,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794460722027
+              "handoverSeen": 1794463250059
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794460722027
+              "handoverSeen": 1794463250059
             }
           }
         },
@@ -420,14 +420,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794460723946
+              "installed": 1794463251954
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794460723946
+              "installed": 1794463251954
             }
           }
         },
@@ -594,9 +594,9 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-3P0KPh",
+        "scratch": "/tmp/cc-publish-dvZYLm",
         "publish": [
-          "76M\t/tmp/cc-publish-3P0KPh",
+          "76M\t/tmp/cc-publish-dvZYLm",
           "305"
         ],
         "freshLists": {
@@ -665,11 +665,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=MI1ra5xqw8XlgZq2S0Kc7g",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=nwSJ9lxbGY-8xaYiEXws3A",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 05:18 AM",
-          "device": "ccd163dc…"
+          "status": "Synced 06:01 AM",
+          "device": "8acb87ce…"
         },
         "leaks": {
           "backup": false,
@@ -871,9 +871,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506401134,
+          "sentAt": 1794506401115,
           "route": [],
-          "returnAt": 1794604321134,
+          "returnAt": 1794604321115,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -897,24 +897,24 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560717085,
+          "sentAt": 1794560717080,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669095085,
-          "calcAt": 1794669095085
+          "returnAt": 1794669095080,
+          "calcAt": 1794669095080
         },
         "checked": {
-          "sentAt": 1794560717085,
+          "sentAt": 1794560717080,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257700,
-          "calcAt": 1794669095085,
+          "returnAt": 1794669257678,
+          "calcAt": 1794669095080,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
@@ -924,12 +924,12 @@
           10610
         ],
         "sent": {
-          "sentAt": 1794506402668,
+          "sentAt": 1794506402663,
           "route": [
             1
           ],
-          "returnAt": 1794560652668,
-          "calcAt": 1794560652668
+          "returnAt": 1794560652663,
+          "calcAt": 1794560652663
         },
         "beforeBack": [],
         "atBack": [
@@ -939,41 +939,41 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "sn71t8617",
-          "s9s04ut5a"
+          "sn9ugnh76",
+          "s5i6fj60m"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718401,
+            "sentAt": 1794560718363,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240401,
-            "calcAt": 1794663240401
+            "returnAt": 1794663240363,
+            "calcAt": 1794663240363
           },
           {
-            "sentAt": 1794560718401,
+            "sentAt": 1794560718363,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594401,
-            "calcAt": 1794657594401
+            "returnAt": 1794657594363,
+            "calcAt": 1794657594363
           }
         ],
         "trips": [
           {
-            "s": "sii0bup49",
-            "t": 1794506402668,
+            "s": "szmo6m9lu",
+            "t": 1794506402663,
             "r": [
               1
             ],
-            "back": 1794560652668,
-            "calc": 1794560652668,
+            "back": 1794560652663,
+            "calc": 1794560652663,
             "items": [],
             "newSectors": [],
             "rankAfter": 40,
@@ -982,25 +982,25 @@
         ],
         "typed": [
           {
-            "sentAt": 1794560718401,
+            "sentAt": 1794560718363,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794563465178,
-            "calcAt": 1794663240401,
+            "returnAt": 1794563465166,
+            "calcAt": 1794663240363,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718401,
+            "sentAt": 1794560718363,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794563465845,
-            "calcAt": 1794657594401,
+            "returnAt": 1794563465816,
+            "calcAt": 1794657594363,
             "gameSaid": "45m"
           }
         ],
@@ -1142,6 +1142,21 @@
       }
     },
     {
+      "id": "C28",
+      "title": "An app icon installed from the Tracker's page opens on the main menu and the Tracker still opens from there; the main Settings has the full appearance panel (21 themes), and a theme chosen there colours the main menu, Submersibles and the Tracker alike",
+      "pass": true,
+      "detail": {
+        "landed": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+        "trackerAfter": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+        "themes": 4,
+        "choices": 21,
+        "shellPaper": "#1e2836",
+        "subsPaper": "#1e2836",
+        "trackerPaper": "#1e2836",
+        "errors": []
+      }
+    },
+    {
       "id": "C26",
       "title": "Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper's status and the grouping now in force, and keeps a changed grouping in the save, resending the schedule; turning on, the test and the night rule are reached through the main Settings",
       "pass": true,
@@ -1157,7 +1172,7 @@
         ],
         "firstPanel": true,
         "duringWizard": true,
-        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 06:49.",
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 07:31.",
         "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
         "perSub": [
           "Alpha Company · Sub A1 is back",

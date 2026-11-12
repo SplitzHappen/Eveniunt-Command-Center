@@ -17,6 +17,16 @@
   var RAW = new Map(DATA.sections.map(function (s) { return [s.id, s]; }));
   var SEC = new Map(IDX.sections.map(function (s) { return [s.id, s]; }));
   var HOSTED = /^https?:/.test(location.protocol);
+  // An app icon installed from the Tracker's own page opens here; the app starts on the Command Center's main menu
+  // instead (owner report 2026-11-12: "app opens inside the tracker, not in the main menu"). Opened from the main menu
+  // (which marks this tab) or in a browser tab, the Tracker opens as usual.
+  (function () {
+    if (!HOSTED) return;
+    var installed = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    if (!installed) return;
+    try { if (sessionStorage.getItem('eveniunt-in-app')) return; sessionStorage.setItem('eveniunt-in-app', '1'); } catch (e) { return; }
+    location.replace(new URL('../', location.href).href);
+  })();
   var ST = null; // tracker state (characters, ticks, exclusions, availability choices)
 
   // ── preferences (appearance and view; per device) ──

@@ -871,6 +871,33 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close();
     }
 
+    // ── C28 (owner reports 2026-11-12): an app icon installed from the Tracker's page opens on the main menu, and the Tracker
+    //    still opens from there; the full appearance panel in the main Settings sets the theme of every page ──
+    {
+      const { ctx, errors } = await context();
+      await ctx.addInitScript(() => { const mm = window.matchMedia.bind(window); window.matchMedia = (q) => (/display-mode: standalone/.test(q) ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} } : mm(q)); });
+      const page = await ctx.newPage();
+      await page.goto(ROOT + 'tracker/'); await page.waitForURL(ROOT, { timeout: 20000 }).catch(() => {});
+      const landed = page.url();
+      await page.click('.switcher a[data-module="tracker"]'); await page.waitForTimeout(2500);
+      const trackerAfter = page.url();
+      // the theme, chosen in the main Settings
+      await page.goto(ROOT + '#settings'); await page.waitForSelector('#s-appearance .look-card');
+      const themes = await page.$$eval('#s-appearance [data-look=toggle]', (b) => b.length);
+      await page.click('#s-appearance [data-look=toggle][data-v="shared:theme"]');
+      const choices = await page.$$eval('#s-appearance [data-look=theme]', (b) => b.length);
+      await page.click('#s-appearance [data-look=theme][data-v="ishgard-hoarfrost"]'); await page.click('#s-appearance [data-look=mode][data-v=dark]');
+      const shellPaper = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
+      await page.goto(ROOT + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]');
+      const subsPaper = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
+      await page.goto(ROOT + 'tracker/'); await page.waitForTimeout(2500);
+      const trackerPaper = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
+      const ok = landed === ROOT && trackerAfter.startsWith(ROOT + 'tracker/') && themes >= 3 && choices === 21 && shellPaper === '#1e2836' && subsPaper === shellPaper && trackerPaper === shellPaper && real(errors).length === 0;
+      record('C28', 'An app icon installed from the Tracker\'s page opens on the main menu and the Tracker still opens from there; the main Settings has the full appearance panel (21 themes), and a theme chosen there colours the main menu, Submersibles and the Tracker alike',
+        ok, { landed, trackerAfter, themes, choices, shellPaper, subsPaper, trackerPaper, errors: real(errors) });
+      await ctx.close();
+    }
+
     // ── C26 Submersibles step S7: phone notifications. The page works out the alerts (automatic grouping by stage), sends
     //    the schedule to the owner's helper (the real helper/worker.js, in-process with the stand-ins) and keeps the
     //    choices in the save. The browser's own push service cannot be reached from the session, so turning a device on

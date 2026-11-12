@@ -7,6 +7,7 @@
 (function () {
   'use strict';
   var HOSTED = /^https?:$/.test(location.protocol);
+  try { sessionStorage.setItem('eveniunt-in-app', '1'); } catch (e) { /* private window */ } // the Tracker then opens as usual from here
   var status = document.getElementById('status');
   function show() {
     if (!status) return;

@@ -5,8 +5,13 @@
   var PREF_KEY = 'eveniunt-tracker-ui';
   function load() { try { return JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { return null; } }
   var S = { theme: (load() || {}).theme || 'system', look: null };
-  function persist() { /* only the Tracker's Settings change the look */ }
-  function esc(s) { return String(s); }
+  // saves the theme and look next to the Tracker's other preferences (same key, the rest kept), so every page follows
+  function persist() { try { var d = load() || {}; d.theme = S.theme; d.look = S.look; localStorage.setItem(PREF_KEY, JSON.stringify(d)); } catch (e) { /* private window */ } }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function toast(msg) { var t = document.querySelector('[data-look-msg]'); if (t) t.textContent = msg; }
+  function clampInt(v, lo, hi, d) { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); }
+  function copyText(text, msg) { try { navigator.clipboard.writeText(text).then(function () { toast(msg || 'Copied'); }); } catch (e) { toast('Copy failed'); } }
   // ── appearance (laid out like ChatGPT's Appearance settings) ──
   // Mode: System / Light / Dark. Theme: the 20 FFXIV themes. Accent, Background and Foreground can be overridden (HEX or RGB).
   // Advanced: UI and code font size, reduce motion, separate light and dark modes, contrast.
@@ -199,5 +204,5 @@
 
   applyLook();
   window.addEventListener('storage', function (e) { if (e.key === PREF_KEY) { var d = load() || {}; S.theme = d.theme || 'system'; if (d.look) S.look = Object.assign(S.look, d.look); applyLook(); } });
-  window.EVENIUNT_LOOK = { apply: function () { var d = load() || {}; S.theme = d.theme || 'system'; applyLook(); } };
+  window.EVENIUNT_LOOK = { apply: function () { var d = load() || {}; S.theme = d.theme || 'system'; applyLook(); }, html: function () { return appearanceHtml(); }, bind: function (root) { bindAppearance(root); } };
 })();
