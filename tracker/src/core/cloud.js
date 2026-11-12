@@ -24,7 +24,7 @@
     if (cfgPromise) return cfgPromise;
     const f = fetchImpl || globalThis.fetch;
     if (typeof location === 'undefined' || !/^https?:$/.test(location.protocol) || !f) return (cfgPromise = Promise.resolve(null));
-    cfgPromise = f(new URL('sync-config.json', location.href).href, { cache: 'no-cache' }).then(async (r) => {
+    cfgPromise = f(new URL('sync-config.json', ET.CLOUD_BASE || location.href).href, { cache: 'no-cache' }).then(async (r) => {
       if (!r.ok) return null;
       const c = await r.json();
       if (!c || typeof c.clientId !== 'string' || typeof c.helper !== 'string' || !/^https?:\/\//.test(c.helper)) return null;
@@ -45,7 +45,9 @@
     const d = readJson('local', DEVICE_KEY), k = readJson('session', SESSION_KEY);
     return { device: !!(d && d.device), since: d && d.at ? d.at : null, key: !!(k && k.token && k.exp > Date.now() + 60 * 1000), pending: !!readJson('session', RETURN_KEY) };
   };
-  ET.cloudReturnAddress = function () { return new URL('oauth.html', location.href).href; };
+  // ET.CLOUD_BASE: the Tracker's folder, set by a page outside it (the Command Center's Settings, 2026-11-12) so the set-up
+  // file and Microsoft's registered return address (tracker/oauth.html) are the same from every page
+  ET.cloudReturnAddress = function () { return new URL('oauth.html', ET.CLOUD_BASE || location.href).href; };
 
   // Step 1 of the first sign-in on a device: leave for Microsoft's sign-in page. The page reloads at oauth.html, which
   // records the answer and comes back here; ET.cloudComplete finishes.
@@ -53,6 +55,7 @@
     const verifier = random(48), state = random(16);
     const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
     writeJson('session', PKCE_KEY, { verifier, state, at: Date.now() });
+    writeJson('session', 'eveniunt-cloud-back', ET.CLOUD_BASE ? location.href.split('#')[0] + '#settings' : null); // oauth.html returns there
     const q = new URLSearchParams({ client_id: cfg.clientId, response_type: 'code', redirect_uri: ET.cloudReturnAddress(), response_mode: 'query', scope: SCOPES,
       state, code_challenge: challenge, code_challenge_method: 'S256', prompt: 'select_account' });
     location.assign(cfg.authority + '/authorize?' + q.toString());

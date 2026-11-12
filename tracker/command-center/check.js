@@ -158,7 +158,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const again = await shellState(page);
       if (SHOT) await page.screenshot({ path: path.join(ev, 'shell-desktop.png') });
       const ok = first.isolated === false && again.isolated === false && again.controller === ROOT + 'sw.js' &&
-        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles"]' && again.cards === 3 && real(errors).length === 0;
+        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && again.cards === 3 && real(errors).length === 0;
       record('C1', 'The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it', ok, { first, again, errors: real(errors), external });
       await ctx.close();
     }
@@ -664,7 +664,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await c2.ctx.setOffline(true); await p2.reload(); await ready(p2);
         const directOffline = await subsState(p2);
         await c2.ctx.close();
-        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles"]' && shell.cards === 3 &&
+        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && shell.cards === 3 &&
           fromShell.url === SUBS && fromShell.isolated === false && fromShell.controller === ROOT + 'sw.js' && fromShell.back === ROOT && fromShell.tabs.join() === 'Board,Log,Map,Earnings,Setup' &&
           backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 3 &&
           direct.isolated === false && direct.controller === ROOT + 'sw.js' && directOffline.tabs.length === 5 && directOffline.isolated === false &&
@@ -841,6 +841,35 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await ctx.close();
       }
     }
+    // ── C27 the main Settings (owner request 2026-11-12): characters and their free companies, the night rule; the Tracker
+    //    opens with those characters (no first-run window) and Submersibles shows the free company ──
+    {
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      await page.goto(ROOT + '#settings'); await page.waitForFunction(() => window.__settings, null, { timeout: 10000 });
+      await page.evaluate(() => window.__settings.ready());
+      const visible = await page.evaluate(() => !document.getElementById('settings').hidden && document.getElementById('home').hidden);
+      await page.click('#settings [data-act=first]'); await page.waitForSelector('#settings [data-set=name][data-id=c1]');
+      await page.selectOption('#settings [data-set=count]', '2'); await page.waitForSelector('#settings [data-set=name][data-id=c2]');
+      await page.fill('#settings [data-set=name][data-id=c1]', 'Alba Test'); await page.dispatchEvent('#settings [data-set=name][data-id=c1]', 'change'); await page.waitForTimeout(600);
+      await page.fill('#settings [data-set=fc][data-id=c1]', 'Alpha Company'); await page.dispatchEvent('#settings [data-set=fc][data-id=c1]', 'change'); await page.waitForTimeout(600);
+      await page.check('#settings input[name=night][value=quiet]'); await page.waitForTimeout(600);
+      const doc = await page.evaluate(async () => CC.checkDoc((await CC.read()).raw));
+      const fcs = Object.values((doc.modules.submersibles || {}).fcs || {});
+      await page.click('.switcher a[data-module="tracker"]'); await page.waitForFunction(() => window.__tracker || document.querySelector('#page .ledger, #page table, #page .home'), null, { timeout: 30000 }).catch(() => {});
+      await page.waitForTimeout(1500);
+      const trackerDialog = await page.$eval('#dlg', (d) => d.open);
+      await page.waitForFunction(() => window.__tracker && window.__tracker.ST, null, { timeout: 30000 }).catch(() => {});
+      const trackerText = await page.evaluate(() => window.__tracker && window.__tracker.ST ? window.__tracker.ST.chars.map((c) => c.name).join(',') : '');
+      await page.goto(ROOT + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]');
+      const subsFc = await page.textContent('.fc-head h3').catch(() => null);
+      const ok = visible && JSON.stringify(doc.chars.map((c) => c.name)) === '["Alba Test","Character 2"]' && fcs.length === 1 && fcs[0].name === 'Alpha Company' && fcs[0].charId === 'c1' &&
+        doc.modules.settings && doc.modules.settings.notify && doc.modules.settings.notify.night === 'quiet' && trackerDialog === false && /Alba Test/.test(trackerText) && subsFc === 'Alpha Company' && real(errors).length === 0;
+      record('C27', 'The main Settings (owner request): opened from the main menu; characters and a character\'s free company typed there reach the Tracker (no first-run window) and Submersibles; the night rule is kept for every module',
+        ok, { visible, chars: doc.chars.map((c) => c.name), fcs, notify: doc.modules.settings && doc.modules.settings.notify, trackerDialog, trackerText, subsFc, errors: real(errors) });
+      await ctx.close();
+    }
+
     // ── C26 Submersibles step S7: phone notifications. The page works out the alerts (automatic grouping by stage), sends
     //    the schedule to the owner's helper (the real helper/worker.js, in-process with the stand-ins) and keeps the
     //    choices in the save. The browser's own push service cannot be reached from the session, so turning a device on
@@ -877,19 +906,20 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const nowLine = await page.textContent('.notify fieldset > p.hint');
       // the panel heads the Setup tab, also while the guided setup is open (owner report 2026-11-12)
       const firstPanel = await page.$eval('#view > section', (el) => el.classList.contains('notify'));
+      const settingsLink = await page.$eval('.notify a[href="../#settings"]', (a) => a.textContent).catch(() => '');
       await page.click('[data-act=new]'); const duringWizard = !!(await page.$('.notify')) && !!(await page.$('.wiz')); await page.click('[data-act=wcancel]');
       // change the grouping to one alert per submarine, and the night rule to quiet hours: kept in the save, schedule resent
       st.kv.delete('push:sched');
       await page.check('input[name=grouping][value=sub]'); await page.waitForTimeout(400);
       const perSub = await sched();
-      await page.check('input[name=night][value=quiet]'); await page.fill('input[name=qfrom]', '01:00'); await page.dispatchEvent('input[name=qfrom]', 'change'); await page.waitForTimeout(700);
+      await page.waitForTimeout(700);
       const prefs = await page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles.settings.prefs; });
       const titles = (s) => s ? s.alerts.map((a) => a.title) : null;
       const ok = !!first && JSON.stringify(stages) === '["unlock","gil"]' &&
         JSON.stringify(titles(first)) === JSON.stringify(['Alpha Company · Sub A1 is back', 'Alpha Company · Sub A2 is back', 'Bravo Company: 4 subs back']) &&
         /Off for this device/.test(status) && /3 alerts scheduled/.test(status) && /Alpha Company: per submarine \(still unlocking\)/.test(nowLine) && /Bravo Company: per free company \(farming gil\)/.test(nowLine) &&
-        !!perSub && perSub.alerts.length === 6 && firstPanel && duringWizard && prefs.grouping === 'sub' && prefs.night === 'quiet' && prefs.quietHours && prefs.quietHours.from === 60 && real(errors).length === 0;
-      record('C26', 'Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper\'s status and the grouping now in force, and keeps a changed grouping and quiet hours in the save, resending the schedule',
+        !!perSub && perSub.alerts.length === 6 && firstPanel && duringWizard && prefs.grouping === 'sub' && /Settings/.test(settingsLink) && real(errors).length === 0;
+      record('C26', 'Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper\'s status and the grouping now in force, and keeps a changed grouping in the save, resending the schedule; turning on, the test and the night rule are reached through the main Settings',
         ok, { stages, first: titles(first), firstPanel, duringWizard, status, nowLine, perSub: titles(perSub), prefs, errors: real(errors) });
       skip('C26b', 'Turning a device on and a real push delivery', 'the browser\'s push service (run by the browser maker) cannot be reached from the session; the helper\'s encryption and signature are checked by tests/helper.test.js, and the owner\'s "Send a test" button checks a real delivery');
       await ctx.close(); server5.close();

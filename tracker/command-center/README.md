@@ -2,6 +2,10 @@
 
 Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, sections 4a (rules 1, 5 and 10), 4b (finding F1), 4c (F5, F6) and 5 (gates 1B to 1E). Cards: `.ai/planning/CARD-phase-1C.md`, `.ai/planning/CARD-phase-1D.md`, `.ai/planning/CARD-phase-1E.md`.
 
+## The main Settings (2026-11-12, owner requests)
+
+`src/settings.js`, ⚙ Settings in the main menu (`#settings`): characters and each character's free company (into Submersibles), cloud sync (sign-in through `tracker/oauth.html` and back, sync of every module on opening), backups, notifications for every module (on or off per device, test, night rule in `modules.settings.notify`), appearance. It runs the Tracker's core code, copied to `site/core/` by `build.js`. Scripts and styles load network first so installed apps pick up updates. Check C27.
+
 ## Submersibles step S7: phone notifications (2026-11-12)
 
 Card: `.ai/planning/CARD-S7-submersibles-push.md`. `src/submersibles/push.js` works out the alerts (Automatic grouping by stage, or per submarine, per free company, whole fleet; a sub more than 30 minutes before its group gets its own; Always alert or Quiet hours) and sends the schedule to the owner's helper (`helper/worker.js`, `/push/*` and a minute timer; set-up in `helper/README.md` section 4). The shell's worker shows each push and opens the board on a tap. Check C26; C26b (a real delivery) not run in the session.

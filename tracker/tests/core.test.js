@@ -1432,6 +1432,11 @@ test('Submersibles notifications: automatic grouping by stage, stragglers, the t
   assert.deepStrictEqual(CC.checkModules({ submersibles: { settings: { prefs: { grouping: 'auto', night: 'quiet', quietHours: { from: 1320, to: 480 } } } } }).submersibles.settings.prefs, { grouping: 'auto', night: 'quiet', quietHours: { from: 1320, to: 480 } });
 });
 
+test('the Command Center\'s own settings section: the night rule kept, anything else dropped', () => {
+  assert.deepStrictEqual(CC.checkModules({ settings: { notify: { night: 'quiet', quietHours: { from: 1320, to: 480 }, extra: 1 }, other: 2 } }).settings, { notify: { night: 'quiet', quietHours: { from: 1320, to: 480 } } });
+  assert.deepStrictEqual(CC.checkModules({ settings: { notify: { night: 'loud', quietHours: { from: 9999, to: 1 } } } }).settings, { notify: {} });
+});
+
 test('old formats still load: backups and EVT1 codes from before gate 1C, and a v1 cloud copy, leave the module sections alone', async () => {
   const st = ET.newState(['A']); const k = [...idx.byKey.keys()][5]; ET.setTick(st, 'c1', k, true);
   const oldFile = JSON.stringify({ app: 'eveniunt-completionist-tracker', saved: 'x', state: Object.assign({ v: 1 }, ET.portable(st)) });

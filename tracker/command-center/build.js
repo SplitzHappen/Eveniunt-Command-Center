@@ -9,7 +9,9 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto'), zl
 const CC = __dirname, T = path.join(CC, '..'), SRC = path.join(CC, 'src'), OUT = path.join(CC, 'site');
 const cp = (from, to) => { fs.mkdirSync(path.dirname(path.join(OUT, to)), { recursive: true }); fs.copyFileSync(from, path.join(OUT, to)); };
 fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
-for (const f of ['index.html', 'shell.css', 'shell.js']) cp(path.join(SRC, f), f);
+for (const f of ['index.html', 'shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);
+// the main Settings (2026-11-12) runs the Tracker's own core code for characters, cloud sync and backups
+for (const f of ['model', 'codec', 'merge', 'cloud', 'storage']) cp(path.join(T, 'src', 'core', f + '.js'), 'core/' + f + '.js');
 cp(path.join(T, 'src', 'core', 'save.js'), 'save.js'); // the one save, shared with the Tracker and the Atelier (gate 1C)
 for (const f of fs.readdirSync(path.join(SRC, 'icons'))) cp(path.join(SRC, 'icons', f), 'icons/' + f);
 // The Submersibles module page (step S2): its page, script and styles, the shared alerts script, and data.js with a copy

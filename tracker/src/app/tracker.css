@@ -353,3 +353,9 @@ body.solo .charbar button.on { background: var(--seal); border-color: var(--seal
 body.solo .lr { grid-template-columns: minmax(0, 1fr) var(--cw) !important; }
 body.solo .tk i { width: 22px; height: 22px; }
 body.solo .lr > .c { min-height: 44px; }
+
+/* the close button of a window, and the page shown when the first-run window is closed (owner request 2026-11-12) */
+.dlg-x { position: absolute; top: 8px; right: 10px; font: inherit; font-size: 24px; line-height: 1; border: 0; background: none; color: var(--ink-3, #888); cursor: pointer; padding: 4px 8px; }
+.dlg-x:hover { color: var(--ink, inherit); }
+#dlg { position: fixed; }
+.empty-start { max-width: 60ch; margin: 10vh auto; padding: 0 16px; }

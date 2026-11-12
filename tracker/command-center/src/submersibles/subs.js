@@ -53,7 +53,7 @@
       if (r.raw != null) {
         try { doc = CC.checkDoc(r.raw); } catch (e) { SH.problem = e.message; return; } // unreadable or newer: never written over
       }
-      SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || 0;
+      SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || 0; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || null;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
       SH.ready = true;
@@ -64,7 +64,7 @@
     clearTimeout(SH.timer); SH.timer = null;
     if (!SH.ready || SH.problem) return Promise.resolve();
     return CC.writeSection('submersibles', S, { rev: SH.rev, base: SH.base }).then(function (r) {
-      SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now();
+      SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now(); SH.notify = (r.doc.modules.settings && r.doc.modules.settings.notify) || SH.notify;
       if (r.merged) { setSection(r.section); render(); }
       setStatus('');
       pushSync();
@@ -78,7 +78,7 @@
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
       if (SH.timer) return;
       var before = JSON.stringify([SH.chars, S]);
-      SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated;
+      SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || SH.notify;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
       if (JSON.stringify([SH.chars, S]) !== before && !W) render();
@@ -204,7 +204,7 @@
     if (advice.some(function (a) { return a.blocked || a.step < 3; })) return 'unlock';
     return list.every(function (k) { return S.subs[k].rank === 145; }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
   }
-  function prefs() { return S.settings.prefs || {}; }
+  function prefs() { return Object.assign({}, S.settings.prefs || {}, SH.notify || {}); } // the night rule comes from the main Settings
   var pushTimer = null;
   function pushSync() {
     if (!PUSH || !PUSH.device()) return;
@@ -216,23 +216,18 @@
   function minutes(v) { var m = /^(\d{2}):(\d{2})$/.exec(v || ''); return m ? +m[1] * 60 + +m[2] : null; }
   function hhmm(n) { return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0'); }
   function notifyHtml() {
-    var p = prefs(), g = p.grouping || 'auto', q = p.quietHours || { from: 22 * 60, to: 8 * 60 }, night = p.night || 'always';
+    var p = prefs(), g = p.grouping || 'auto';
     var modes = PUSH.modes(S, p, stageOf), WHY = { sub: 'per submarine (still unlocking)', fc: 'per free company (farming gil)', fleet: 'whole fleet (everything at the top)' };
     var auto = fcList().map(function (f) { return esc(f.fc.name || 'Unnamed') + ': ' + (g === 'auto' ? WHY[modes[f.id]] : PUSH.GROUPINGS[modes[f.id]].toLowerCase()); }).join(' · ');
-    var opt = function (name, val, label, help) { return '<label class="opt notify-opt"><input type="radio" name="' + name + '" value="' + val + '" data-pref="' + name + '"' + ((name === 'grouping' ? g : night) === val ? ' checked' : '') + '> <span><b>' + esc(label) + '</b>' + (help ? '<br><span class="hint">' + help + '</span>' : '') + '</span></label>'; };
-    return '<section class="panel notify"><h2>Phone notifications</h2><p class="muted">Your phone or computer is told when subs are back, even with the app closed. They come through your own sync helper, which keeps only the alert times, short labels and this device\'s notification address.</p>' +
-      '<p data-push-status class="push-status">Checking…</p>' +
-      '<p class="row"><button type="button" class="btn primary" data-act="push-on">Turn on for this device</button><button type="button" class="btn" data-act="push-test">Send a test</button><button type="button" class="btn ghost" data-act="push-off">Turn off for this device</button></p>' +
-      '<fieldset><legend>How alerts are grouped</legend>' +
-      opt('grouping', 'auto', 'Automatic (recommended)', 'The app decides for each free company: one alert per submarine while it is still unlocking subs and sectors, one per free company once it farms gil; one for the whole fleet once every free company farms gil with every sub at rank 145 and no better part to fit.') +
-      opt('grouping', 'sub', 'Per submarine', 'One alert for each sub that comes back.') +
-      opt('grouping', 'fc', 'Per free company', 'One alert when the last sub of a free company is back.') +
-      opt('grouping', 'fleet', 'Whole fleet', 'One alert when the last sub of the fleet is back.') +
-      '<p class="hint">Now: ' + (auto || 'no free company yet') + '. In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.</p></fieldset>' +
-      '<fieldset><legend>At night</legend>' + opt('night', 'always', 'Always alert', 'Alerts come whenever a sub is back.') +
-      opt('night', 'quiet', 'Quiet hours', 'Alerts that fall in these hours wait until they end; the board still shows the subs as Back.') +
-      '<p class="row quiet-hours">From <input class="inp" type="time" name="qfrom" data-pref="qfrom" value="' + hhmm(q.from) + '"> to <input class="inp" type="time" name="qto" data-pref="qto" value="' + hhmm(q.to) + '"></p></fieldset>' +
-      '<p class="hint">Works on Android and on computers in Chrome, Edge or Firefox. On an iPhone or iPad, only from the Command Center added to the home screen (Apple\'s rule), turned on there once. Each device is turned on separately, and needs cloud sync signed in once (Tracker, Settings, Cloud sync). Calendar entries keep working either way.</p></section>';
+    var opt = function (val, label, help) { return '<label class="opt notify-opt"><input type="radio" name="grouping" value="' + val + '" data-pref="grouping"' + (g === val ? ' checked' : '') + '> <span><b>' + esc(label) + '</b>' + (help ? '<br><span class="hint">' + help + '</span>' : '') + '</span></label>'; };
+    return '<section class="panel notify"><h2>Submarine notifications</h2>' +
+      '<p class="push-status" data-push-status>Checking…</p><p class="hint">Turning notifications on or off for a device, the test and the night rule are in the Command Center\'s <a href="../#settings">⚙ Settings</a>. The choice below is kept even while notifications are off.</p>' +
+      '<fieldset><legend>How submarine alerts are grouped</legend>' +
+      opt('auto', 'Automatic (recommended)', 'For each free company: one alert per submarine while it is still unlocking subs and sectors, one per free company once it farms gil; one for the whole fleet once every free company farms gil with every sub at rank 145 and no better part to fit.') +
+      opt('sub', 'Per submarine', 'One alert for each sub that comes back.') +
+      opt('fc', 'Per free company', 'One alert when the last sub of a free company is back.') +
+      opt('fleet', 'Whole fleet', 'One alert when the last sub of the fleet is back.') +
+      '<p class="hint">Now: ' + (auto || 'no free company yet') + '. In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.</p></fieldset></section>';
   }
   // the notifications panel heads the Setup tab, also while the guided setup is open (owner report 2026-11-12: it was
   // easy to miss below the free companies); a fault inside it shows as a message instead of hiding the panel
@@ -243,7 +238,7 @@
     var el = $('[data-push-status]'); if (!el) return;
     if (msg) { el.textContent = msg; return; }
     if (!PUSH.supported()) { el.textContent = 'This browser cannot receive web notifications here. On an iPhone or iPad, open the Command Center from the home screen.'; return; }
-    if (!PUSH.device()) { el.textContent = 'Not available yet on this device: sign in for cloud sync once in the Tracker (Settings, Cloud sync), then come back here.'; return; }
+    if (!PUSH.device()) { el.textContent = 'Notifications are off on this device: turn them on in ⚙ Settings (Command Center), after signing in for cloud sync there.'; return; }
     PUSH.call('/push/status').then(function (r) {
       el.textContent = (r.on ? 'On for this device.' : 'Off for this device.') + ' ' + r.devices + ' device' + (r.devices === 1 ? '' : 's') + ' turned on. ' + (r.count ? r.count + ' alert' + (r.count === 1 ? '' : 's') + ' scheduled, next ' + F.fmtClock(r.next) + '.' : 'Nothing scheduled.');
     }).catch(function (e) { el.textContent = e.code === 'push_not_set_up' ? 'Your helper does not do notifications yet: the one-time set-up in helper/README.md, section 4, turns them on.' : 'The helper could not be asked: ' + e.message; });
@@ -404,6 +399,8 @@
     var first = dlg.querySelector('input:not([type=radio]), select'); if (first) first.focus();
   }
   function closeSheet() { if (dlg && dlg.open) dlg.close(); }
+  // a tap outside the window closes it (owner request 2026-11-12)
+  document.addEventListener('click', function (e) { var d = document.getElementById('sheet'); if (d && d.open && e.target === d) d.close(); });
   function timeFields(prefix, mode, val) {
     return '<div class="seg wide" role="radiogroup" aria-label="How to give the return time"><label><input type="radio" name="' + prefix + 'mode" value="in"' + (mode !== 'at' ? ' checked' : '') + '> Back in</label><label><input type="radio" name="' + prefix + 'mode" value="at"' + (mode === 'at' ? ' checked' : '') + '> Back at</label></div>' +
       '<div data-mode="in"' + (mode === 'at' ? ' hidden' : '') + '><input class="inp big" name="' + prefix + 'in" value="' + esc(mode !== 'at' ? val || '' : '') + '" placeholder="1d 3h 12m or 27:45" autocomplete="off" aria-label="Time left, as the game shows"></div>' +

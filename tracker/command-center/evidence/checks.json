@@ -3,8 +3,8 @@
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
-  "passed": 31,
-  "total": 31,
+  "passed": 32,
+  "total": 32,
   "notRun": [
     "C26b: the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
   ],
@@ -22,7 +22,8 @@
             "Home",
             "Tracker",
             "Atelier",
-            "Submersibles"
+            "Submersibles",
+            "⚙ Settings"
           ],
           "cards": 3,
           "title": "Eveniunt Command Center"
@@ -35,7 +36,8 @@
             "Home",
             "Tracker",
             "Atelier",
-            "Submersibles"
+            "Submersibles",
+            "⚙ Settings"
           ],
           "cards": 3,
           "title": "Eveniunt Command Center"
@@ -65,7 +67,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 16.3,
+          "seconds": 18.3,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -87,7 +89,8 @@
           "Home",
           "Tracker",
           "Atelier",
-          "Submersibles"
+          "Submersibles",
+          "⚙ Settings"
         ],
         "cards": 3,
         "title": "Eveniunt Command Center"
@@ -125,7 +128,8 @@
             "Home",
             "Tracker",
             "Atelier",
-            "Submersibles"
+            "Submersibles",
+            "⚙ Settings"
           ],
           "cards": 3,
           "title": "Eveniunt Command Center"
@@ -309,7 +313,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794457285935,
+            "at": 1794459247315,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -382,7 +386,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794457289772
+            "handoverSeen": 1794459251684
           }
         },
         "afterGotIt": {
@@ -390,14 +394,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794457289772
+              "handoverSeen": 1794459251684
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794457289772
+              "handoverSeen": 1794459251684
             }
           }
         },
@@ -416,14 +420,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794457291443
+              "installed": 1794459253412
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794457291443
+              "installed": 1794459253412
             }
           }
         },
@@ -478,7 +482,8 @@
               "Home",
               "Tracker",
               "Atelier",
-              "Submersibles"
+              "Submersibles",
+              "⚙ Settings"
             ],
             "cards": 3,
             "title": "Eveniunt Command Center"
@@ -494,7 +499,8 @@
               "Home",
               "Tracker",
               "Atelier",
-              "Submersibles"
+              "Submersibles",
+              "⚙ Settings"
             ],
             "cards": 3,
             "title": "Eveniunt Command Center"
@@ -510,7 +516,8 @@
               "Home",
               "Tracker",
               "Atelier",
-              "Submersibles"
+              "Submersibles",
+              "⚙ Settings"
             ],
             "cards": 3,
             "title": "Eveniunt Command Center"
@@ -587,10 +594,10 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-f56kjq",
+        "scratch": "/tmp/cc-publish-vtQCd8",
         "publish": [
-          "75M\t/tmp/cc-publish-f56kjq",
-          "267"
+          "75M\t/tmp/cc-publish-vtQCd8",
+          "274"
         ],
         "freshLists": {
           "workflowWrites": true,
@@ -605,7 +612,7 @@
           "privateRecordsAbsent": true
         },
         "workerFiles": {
-          "count": 17,
+          "count": 23,
           "missing": []
         },
         "shell": {
@@ -616,13 +623,14 @@
             "Home",
             "Tracker",
             "Atelier",
-            "Submersibles"
+            "Submersibles",
+            "⚙ Settings"
           ],
           "cards": 3,
           "title": "Eveniunt Command Center"
         },
         "links": {
-          "local": 14,
+          "local": 15,
           "outside": 2,
           "broken": []
         },
@@ -657,11 +665,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=9vS0GA8UbDzlT-zVJCG02Q",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=fPi7DNbbUS_obTxzP31z3Q",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 04:21 AM",
-          "device": "204f944b…"
+          "status": "Synced 04:54 AM",
+          "device": "ec60df86…"
         },
         "leaks": {
           "backup": false,
@@ -718,7 +726,8 @@
             "Home",
             "Tracker",
             "Atelier",
-            "Submersibles"
+            "Submersibles",
+            "⚙ Settings"
           ],
           "cards": 3
         },
@@ -862,9 +871,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506400989,
+          "sentAt": 1794506401110,
           "route": [],
-          "returnAt": 1794604320989,
+          "returnAt": 1794604321110,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -888,24 +897,24 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560716789,
+          "sentAt": 1794560717045,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669094789,
-          "calcAt": 1794669094789
+          "returnAt": 1794669095045,
+          "calcAt": 1794669095045
         },
         "checked": {
-          "sentAt": 1794560716789,
+          "sentAt": 1794560717045,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257405,
-          "calcAt": 1794669094789,
+          "returnAt": 1794669257679,
+          "calcAt": 1794669095045,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
@@ -915,12 +924,12 @@
           10610
         ],
         "sent": {
-          "sentAt": 1794506402438,
+          "sentAt": 1794506402662,
           "route": [
             1
           ],
-          "returnAt": 1794560652438,
-          "calcAt": 1794560652438
+          "returnAt": 1794560652662,
+          "calcAt": 1794560652662
         },
         "beforeBack": [],
         "atBack": [
@@ -930,41 +939,41 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "sy8vjfh0s",
-          "smsew8mw9"
+          "s8y6gi6ij",
+          "sqkw1cwg7"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718073,
+            "sentAt": 1794560718378,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240073,
-            "calcAt": 1794663240073
+            "returnAt": 1794663240378,
+            "calcAt": 1794663240378
           },
           {
-            "sentAt": 1794560718073,
+            "sentAt": 1794560718378,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594073,
-            "calcAt": 1794657594073
+            "returnAt": 1794657594378,
+            "calcAt": 1794657594378
           }
         ],
         "trips": [
           {
-            "s": "smfwqzjqf",
-            "t": 1794506402438,
+            "s": "szv62c97k",
+            "t": 1794506402662,
             "r": [
               1
             ],
-            "back": 1794560652438,
-            "calc": 1794560652438,
+            "back": 1794560652662,
+            "calc": 1794560652662,
             "items": [],
             "newSectors": [],
             "rankAfter": 40,
@@ -973,25 +982,25 @@
         ],
         "typed": [
           {
-            "sentAt": 1794560718073,
+            "sentAt": 1794560718378,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794563465148,
-            "calcAt": 1794663240073,
+            "returnAt": 1794563465151,
+            "calcAt": 1794663240378,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718073,
+            "sentAt": 1794560718378,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794563465781,
-            "calcAt": 1794657594073,
+            "returnAt": 1794563465799,
+            "calcAt": 1794657594378,
             "gameSaid": "45m"
           }
         ],
@@ -1006,9 +1015,9 @@
       "pass": true,
       "detail": {
         "file": "alpha-renamed-sub-one-back.ics",
-        "want": "20261113T211200Z",
+        "want": "20261113T211201Z",
         "ics": [
-          "DTSTART:20261113T211200Z",
+          "DTSTART:20261113T211201Z",
           "SUMMARY:Alpha Renamed · Sub One back",
           "TRIGGER:PT0M"
         ]
@@ -1098,8 +1107,43 @@
       }
     },
     {
+      "id": "C27",
+      "title": "The main Settings (owner request): opened from the main menu; characters and a character's free company typed there reach the Tracker (no first-run window) and Submersibles; the night rule is kept for every module",
+      "pass": true,
+      "detail": {
+        "visible": true,
+        "chars": [
+          "Alba Test",
+          "Character 2"
+        ],
+        "fcs": [
+          {
+            "name": "Alpha Company",
+            "charId": "c1",
+            "order": 0,
+            "unlockedSlots": 1,
+            "discovered": [
+              1,
+              2
+            ]
+          }
+        ],
+        "notify": {
+          "night": "quiet",
+          "quietHours": {
+            "from": 1320,
+            "to": 480
+          }
+        },
+        "trackerDialog": false,
+        "trackerText": "Alba Test,Character 2",
+        "subsFc": "Alpha Company",
+        "errors": []
+      }
+    },
+    {
       "id": "C26",
-      "title": "Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper's status and the grouping now in force, and keeps a changed grouping and quiet hours in the save, resending the schedule",
+      "title": "Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper's status and the grouping now in force, and keeps a changed grouping in the save, resending the schedule; turning on, the test and the night rule are reached through the main Settings",
       "pass": true,
       "detail": {
         "stages": [
@@ -1113,7 +1157,7 @@
         ],
         "firstPanel": true,
         "duringWizard": true,
-        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 05:51.",
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 06:24.",
         "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
         "perSub": [
           "Alpha Company · Sub A1 is back",
@@ -1124,12 +1168,7 @@
           "Bravo Company · Sub B4 is back"
         ],
         "prefs": {
-          "grouping": "sub",
-          "night": "quiet",
-          "quietHours": {
-            "from": 60,
-            "to": 480
-          }
+          "grouping": "sub"
         },
         "errors": []
       }

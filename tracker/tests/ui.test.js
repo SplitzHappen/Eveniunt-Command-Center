@@ -547,11 +547,17 @@ test('red team: a crafted backup loaded through the page runs no script and adds
   await ctx.close();
 });
 
-test('first run cannot be dismissed by clicking outside the window (the page would be empty)', async () => {
+// owner request 2026-11-12 (replaces the earlier red-team rule that the first-run window could not be dismissed):
+// a tap outside closes it, and the page then offers the way back to the set-up
+test('first run: a tap outside closes the window; the page offers to set up characters, which reopens it', async () => {
   const { ctx, page } = await open({ setup: false });
   await page.mouse.click(5, 5);
+  await page.waitForFunction(() => !document.getElementById('dlg').open);
+  assert.match(await page.textContent('#page'), /No characters yet/);
+  await page.click('#start-setup');
+  await page.waitForSelector('#nchars');
   await page.keyboard.press('Escape');
-  assert.ok(await page.locator('#dlg[open]').count());
+  await page.waitForSelector('#start-setup');
   await ctx.close();
 });
 

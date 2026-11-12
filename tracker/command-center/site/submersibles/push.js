@@ -16,6 +16,9 @@
 (function () {
   'use strict';
   var P = (globalThis.PUSH = globalThis.PUSH || {});
+  // addresses relative to this script (submersibles/push.js), so it works from the Command Center's Settings too
+  var HERE = (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) || (typeof location !== 'undefined' ? location.href : 'http://x/submersibles/');
+  P.ROOT = new URL('../', HERE).href;
   var MIN = 60000, STRAGGLER = 30 * MIN;
   P.GROUPINGS = { auto: 'Automatic', sub: 'Per submarine', fc: 'Per free company', fleet: 'Whole fleet' };
 
@@ -71,7 +74,7 @@
   // ------------------------------------------------------------------ the helper (browser only)
   P.config = function () {
     if (P._cfg) return P._cfg;
-    P._cfg = fetch('../tracker/sync-config.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; })
+    P._cfg = fetch(P.ROOT + 'tracker/sync-config.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; })
       .then(function (c) { return c && typeof c.helper === 'string' && /^https?:\/\//.test(c.helper) ? c.helper.replace(/\/$/, '') : null; }).catch(function () { return null; });
     return P._cfg;
   };
@@ -79,14 +82,14 @@
   P.call = function (path, body) {
     return P.config().then(function (h) {
       if (!h) throw Object.assign(new Error('Cloud sync is not set up on this site, so the helper is not known.'), { code: 'no-helper' });
-      if (path !== '/push/key' && !P.device()) throw Object.assign(new Error('This app is not signed in for cloud sync yet. Open the Tracker (Command Center, Tracker), Settings, Cloud sync, Sign in with Microsoft; then come back and tap Turn on for this device. On an iPhone, the home-screen app signs in separately from Safari.'), { code: 'no-device' });
+      if (path !== '/push/key' && !P.device()) throw Object.assign(new Error('This app is not signed in for cloud sync yet: Command Center, Settings, Cloud sync, Sign in with Microsoft; then tap Turn on for this device. On an iPhone, the home-screen app signs in separately from Safari.'), { code: 'no-device' });
       return fetch(h + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ device: P.device() }, body || {})) })
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Object.assign(new Error('The helper refused "' + path.replace('/push/', '') + '" (' + r.status + '): ' + (j.message || 'no reason given') + '.'), { code: j.error || 'helper', status: r.status }); return j; }); });
     });
   };
   P.supported = function () { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; };
   function keyBytes(b64) { var s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b64.length + 3) % 4)), b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; }
-  P.registration = function () { return navigator.serviceWorker.getRegistration('../').then(function (r) { return r || navigator.serviceWorker.ready; }); };
+  P.registration = function () { return navigator.serviceWorker.getRegistration(P.ROOT).then(function (r) { return r || navigator.serviceWorker.ready; }); };
   // Turn notifications on for this device: permission, the browser's push address, then the helper.
   P.enable = function () {
     if (!P.supported()) return Promise.reject(new Error('This browser cannot receive web notifications. On an iPhone or iPad, add the Command Center to the home screen and open it from there.'));

@@ -791,9 +791,19 @@
   // Automatic prompts (online-refresh differences, cloud-sync conflicts) wait until the window is free, so one never
   // replaces another that is still open (or a settings page the owner is using).
   function whenDialogFree(fn) { if (!dlg.open) return fn(); dlg.addEventListener('close', function once() { dlg.removeEventListener('close', once); setTimeout(function () { whenDialogFree(fn); }, 0); }); }
-  // Before any data exists (first run, or unreadable data) the dialog must not be dismissed: the page would be empty.
-  dlg.addEventListener('click', function (e) { if (e.target === dlg && ST) closeDialog(); if (e.target.closest('[data-close]')) closeDialog(); });
-  dlg.addEventListener('cancel', function (e) { if (!ST) e.preventDefault(); });
+  // A tap outside the window closes it (owner request 2026-11-12). Before any characters exist (first run), closing it
+  // leaves a short page with the way back to the set-up, so the owner is never stuck in the window. Unreadable saved
+  // data still keeps its window: the rescue download must be seen first.
+  dlg.addEventListener('click', function (e) { if (e.target === dlg && (ST || !ET.loadProblem)) closeDialog(); if (e.target.closest('[data-close]')) closeDialog(); });
+  dlg.addEventListener('cancel', function (e) { if (!ST && ET.loadProblem) e.preventDefault(); });
+  dlg.addEventListener('close', function () { if (!ST && !ET.loadProblem) noCharsPage(); });
+  function noCharsPage() {
+    var b = $('#boot'); if (b) b.remove();
+    var pg = $('#page'); if (!pg || ST) return;
+    pg.innerHTML = '<section class="empty-start"><h2>No characters yet</h2><p class="help">Add your characters to start tracking: here, or in the Command Center’s Settings (⌂ Command Center, then Settings), where you can also add each character’s free company.</p>' +
+      '<p class="row"><button type="button" class="btn" id="start-setup">Set up characters</button><a class="btn ghost" href="../#settings">Open the Command Center’s Settings</a></p></section>';
+    $('#start-setup').onclick = function () { setupDialog(); };
+  }
 
   function classSelect(attr, id, cur) {
     var groups = { lim: [], gri: [], uld: [] };
@@ -806,14 +816,14 @@
     return '<select class="inp" ' + attr + '="' + id + '" aria-label="Grand Company"><option value="">Not yet</option>' + [1, 2, 3].map(function (g) { return '<option value="' + g + '"' + (Number(cur) === g ? ' selected' : '') + '>' + esc(ET.GCS[g]) + '</option>'; }).join('') + '</select>';
   }
   function setupDialog() {
-    var n = 8, rowsState = [];
+    var n = 1, rowsState = [];
     var draw = function () {
       var rows = '<div class="ch head"><span></span><span>Name</span><span>Starting class</span><span>Grand Company</span></div>';
       for (var i = 0; i < n; i++) {
         var r = rowsState[i] || {};
         rows += '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-name="' + i + '" placeholder="Character ' + (i + 1) + '" value="' + esc(r.name || '') + '" aria-label="Character ' + (i + 1) + ' name">' + classSelect('data-cls', i, r.cls) + gcSelect('data-gcs', i, r.gc) + '</div>';
       }
-      openDialog('<h3>Welcome to the Eveniunt Tracker</h3><p class="help">Track up to eight characters side by side. For each one, the starting class decides which city’s opening quests apply (the other two cities’ quests are greyed out), and the Grand Company does the same for company quests. You can change all of this later in Settings.</p>' +
+      openDialog('<button type="button" class="dlg-x" data-close aria-label="Close">×</button><h3>Welcome to the Eveniunt Tracker</h3><p class="help">Track up to eight characters side by side. The starting class decides which city’s opening quests apply, the Grand Company which company quests. You can change all of this later in Settings.</p>' +
         '<div class="row"><label class="help" for="nchars">How many characters</label><select id="nchars" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === n ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
         '<div class="chars setup" style="margin-top:10px">' + rows + '</div>' +
         '<div class="row" style="margin-top:16px"><button type="button" class="btn" id="go">Start tracking</button><button type="button" class="btn ghost" id="load-backup">Load a backup or import saves instead</button></div>', function (d) {
@@ -1253,6 +1263,7 @@
     ET.requestPersistence();
     backupReminder();
     cloudAtStart(); // finish a sign-in brought back by oauth.html, or sync quietly on a device signed in before
+    if (location.hash === '#settings') { history.replaceState(null, '', location.pathname + location.search); openSettings('data'); } // from the Command Center's Settings
   }
   // Browsers can clear a website's saved data (Safari after weeks without a visit, any browser when storage runs
   // low), so a gentle reminder appears when there are ticks and no backup, transfer code or cloud sync for 30 days.

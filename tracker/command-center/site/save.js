@@ -125,7 +125,16 @@
     return out;
   }
   CC.checkSubmersibles = checkSubmersibles;
-  const CHECK = { atelier: checkAtelier, submersibles: checkSubmersibles };
+  // The Command Center's own settings (2026-11-12): settings every module uses, such as notifications at night.
+  //   settings: { notify: { night: 'always' | 'quiet', quietHours: { from, to } } }
+  function checkSettings(sec) {
+    const out = {};
+    const n = plain(sec.notify) ? sec.notify : null;
+    if (n) out.notify = keep({ night: ['always', 'quiet'].includes(n.night) ? n.night : undefined, quietHours: hhmm(n.quietHours) });
+    return out;
+  }
+  CC.checkSettings = checkSettings;
+  const CHECK = { atelier: checkAtelier, submersibles: checkSubmersibles, settings: checkSettings };
   // Every section except the Tracker's (the Tracker checks its own).
   CC.checkModules = function (mods) {
     const out = {};
@@ -198,7 +207,7 @@
     return CC.unflatModules(m);
   };
   // A plain-language label for a unit, for the "which one is right?" prompt.
-  const LABEL = { atelier: 'Atelier', lists: 'Lists', submersibles: 'Submersibles' };
+  const LABEL = { atelier: 'Atelier', lists: 'Lists', submersibles: 'Submersibles', settings: 'Settings' };
   CC.describeUnit = function (id, local, remote, nameOf) {
     let p = []; try { p = JSON.parse(id.slice(2)); } catch (e) { /* shown as is */ }
     const mod = LABEL[p[0]] || p[0];

@@ -26,6 +26,7 @@
     <a href="tracker/" data-module="tracker">Tracker</a>
     <a href="atelier/" data-module="atelier">Atelier</a>
     <a href="submersibles/" data-module="submersibles">Submersibles</a>
+    <a href="#settings" data-module="settings">⚙ Settings</a>
   </nav>
   <span class="status" id="status" role="status" aria-live="polite"></span>
 </header>
@@ -83,13 +84,22 @@
   </section>
 </main>
 
+<main id="settings" class="settings" hidden aria-label="Settings"></main>
+
 <footer class="foot">
   <p>Prefer a single file? Download the <a href="tracker/index.html" download="eveniunt-tracker.html">Tracker</a> or the <a href="atelier/index.html" download="eveniunt-atelier.html">Atelier</a> and open it from your computer; each works offline on its own.</p>
   <p>Open source under the Apache License 2.0: <a href="https://github.com/SplitzHappen/Eveniunt-Command-Center">source and credits</a>. Solver by <a href="https://github.com/KonaeAkira/raphael-rs">Raphael</a> (Apache 2.0). Tracker data from xivapi/ffxiv-datamining, FFXIV Teamcraft (MIT), FFXIV Collect and the FFXIV 100% Completion Checklist team. Submersibles data from xivapi/ffxiv-datamining, FFXIV Teamcraft (MIT) and Submarine Tracker (MIT).</p>
   <p>FINAL FANTASY XIV © SQUARE ENIX CO., LTD. Game data and names belong to their owners. A free, non-commercial fan project, not affiliated with Square Enix. This app reads nothing from the game.</p>
 </footer>
 <script src="save.js"></script>
+<script src="core/model.js"></script>
+<script src="core/codec.js"></script>
+<script src="core/merge.js"></script>
+<script src="core/cloud.js"></script>
+<script src="core/storage.js"></script>
 <script src="submersibles/fleet.js"></script>
+<script src="submersibles/push.js"></script>
 <script src="shell.js"></script>
+<script src="settings.js"></script>
 </body>
 </html>
