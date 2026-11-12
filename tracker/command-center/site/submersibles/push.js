@@ -79,6 +79,7 @@
   P.call = function (path, body) {
     return P.config().then(function (h) {
       if (!h) throw Object.assign(new Error('Cloud sync is not set up on this site, so the helper is not known.'), { code: 'no-helper' });
+      if (path !== '/push/key' && !P.device()) throw Object.assign(new Error('This app is not signed in for cloud sync yet. Open the Tracker (Command Center, Tracker), Settings, Cloud sync, Sign in with Microsoft; then come back and tap Turn on for this device. On an iPhone, the home-screen app signs in separately from Safari.'), { code: 'no-device' });
       return fetch(h + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ device: P.device() }, body || {})) })
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Object.assign(new Error('The helper refused "' + path.replace('/push/', '') + '" (' + r.status + '): ' + (j.message || 'no reason given') + '.'), { code: j.error || 'helper', status: r.status }); return j; }); });
     });

@@ -65,7 +65,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 17.8,
+          "seconds": 16.3,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -309,7 +309,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794456604260,
+            "at": 1794457285935,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -382,7 +382,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794456608471
+            "handoverSeen": 1794457289772
           }
         },
         "afterGotIt": {
@@ -390,14 +390,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794456608471
+              "handoverSeen": 1794457289772
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794456608471
+              "handoverSeen": 1794457289772
             }
           }
         },
@@ -416,14 +416,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794456610080
+              "installed": 1794457291443
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794456610080
+              "installed": 1794457291443
             }
           }
         },
@@ -587,9 +587,9 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-FEgTHH",
+        "scratch": "/tmp/cc-publish-f56kjq",
         "publish": [
-          "75M\t/tmp/cc-publish-FEgTHH",
+          "75M\t/tmp/cc-publish-f56kjq",
           "267"
         ],
         "freshLists": {
@@ -657,11 +657,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=eO3mnIY_xhZ6sRwS-TK7Vg",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=9vS0GA8UbDzlT-zVJCG02Q",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 04:10 AM",
-          "device": "3c7156d7…"
+          "status": "Synced 04:21 AM",
+          "device": "204f944b…"
         },
         "leaks": {
           "backup": false,
@@ -862,9 +862,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506400931,
+          "sentAt": 1794506400989,
           "route": [],
-          "returnAt": 1794604320931,
+          "returnAt": 1794604320989,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -888,24 +888,24 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560716782,
+          "sentAt": 1794560716789,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669094782,
-          "calcAt": 1794669094782
+          "returnAt": 1794669094789,
+          "calcAt": 1794669094789
         },
         "checked": {
-          "sentAt": 1794560716782,
+          "sentAt": 1794560716789,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257380,
-          "calcAt": 1794669094782,
+          "returnAt": 1794669257405,
+          "calcAt": 1794669094789,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
@@ -915,12 +915,12 @@
           10610
         ],
         "sent": {
-          "sentAt": 1794506402430,
+          "sentAt": 1794506402438,
           "route": [
             1
           ],
-          "returnAt": 1794560652430,
-          "calcAt": 1794560652430
+          "returnAt": 1794560652438,
+          "calcAt": 1794560652438
         },
         "beforeBack": [],
         "atBack": [
@@ -930,41 +930,41 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "sdd0yxfvv",
-          "s4074s2gs"
+          "sy8vjfh0s",
+          "smsew8mw9"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718081,
+            "sentAt": 1794560718073,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240081,
-            "calcAt": 1794663240081
+            "returnAt": 1794663240073,
+            "calcAt": 1794663240073
           },
           {
-            "sentAt": 1794560718081,
+            "sentAt": 1794560718073,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594081,
-            "calcAt": 1794657594081
+            "returnAt": 1794657594073,
+            "calcAt": 1794657594073
           }
         ],
         "trips": [
           {
-            "s": "sy7kwy5mf",
-            "t": 1794506402430,
+            "s": "smfwqzjqf",
+            "t": 1794506402438,
             "r": [
               1
             ],
-            "back": 1794560652430,
-            "calc": 1794560652430,
+            "back": 1794560652438,
+            "calc": 1794560652438,
             "items": [],
             "newSectors": [],
             "rankAfter": 40,
@@ -973,25 +973,25 @@
         ],
         "typed": [
           {
-            "sentAt": 1794560718081,
+            "sentAt": 1794560718073,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794563465151,
-            "calcAt": 1794663240081,
+            "returnAt": 1794563465148,
+            "calcAt": 1794663240073,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718081,
+            "sentAt": 1794560718073,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794563465784,
-            "calcAt": 1794657594081,
+            "returnAt": 1794563465781,
+            "calcAt": 1794657594073,
             "gameSaid": "45m"
           }
         ],
@@ -1113,7 +1113,7 @@
         ],
         "firstPanel": true,
         "duringWizard": true,
-        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 05:40.",
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 05:51.",
         "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
         "perSub": [
           "Alpha Company · Sub A1 is back",
