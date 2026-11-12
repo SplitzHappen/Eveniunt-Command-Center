@@ -15,7 +15,11 @@
   window.addEventListener('online', show); window.addEventListener('offline', show); show();
 
   if (HOSTED && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(function () { /* the page still works without offline support */ });
+    navigator.serviceWorker.register('sw.js').then(function (reg) {
+      // look for a newer version on every opening and when the installed app comes back to the screen
+      reg.update().catch(function () { /* offline */ });
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reg.update().catch(function () { /* offline */ }); });
+    }).catch(function () { /* the page still works without offline support */ });
   }
 
   // Install button, shown only when the browser offers installation.

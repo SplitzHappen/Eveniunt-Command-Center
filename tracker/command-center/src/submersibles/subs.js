@@ -105,7 +105,7 @@
     var main = $('#view');
     if (SH.problem) { main.innerHTML = '<div class="note bad"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.</div>'; return; }
     if (UI.tab === 'board') main.innerHTML = boardHtml();
-    else if (UI.tab === 'setup') { main.innerHTML = W ? wizardHtml() : setupHtml(); if (!W) { measureSize(); pushStatus(); } }
+    else if (UI.tab === 'setup') { main.innerHTML = safeNotify() + (W ? wizardHtml() : setupHtml()); if (!W) measureSize(); pushStatus(); }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
@@ -234,6 +234,11 @@
       '<p class="row quiet-hours">From <input class="inp" type="time" name="qfrom" data-pref="qfrom" value="' + hhmm(q.from) + '"> to <input class="inp" type="time" name="qto" data-pref="qto" value="' + hhmm(q.to) + '"></p></fieldset>' +
       '<p class="hint">Works on Android and on computers in Chrome, Edge or Firefox. On an iPhone or iPad, only from the Command Center added to the home screen (Apple\'s rule), turned on there once. Each device is turned on separately, and needs cloud sync signed in once (Tracker, Settings, Cloud sync). Calendar entries keep working either way.</p></section>';
   }
+  // the notifications panel heads the Setup tab, also while the guided setup is open (owner report 2026-11-12: it was
+  // easy to miss below the free companies); a fault inside it shows as a message instead of hiding the panel
+  function safeNotify() {
+    try { return notifyHtml(); } catch (e) { return '<section class="panel notify"><h2>Phone notifications</h2><p class="hint bad">This panel could not be shown: ' + esc(e.message) + '. Close the app fully and open it again; if it stays, send this message.</p></section>'; }
+  }
   function pushStatus(msg) {
     var el = $('[data-push-status]'); if (!el) return;
     if (msg) { el.textContent = msg; return; }
@@ -266,7 +271,7 @@
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
           '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span></li>';
       }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
-      notifyHtml() + accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><p class="muted" data-size>Measuring…</p></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
+      accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><p class="muted" data-size>Measuring…</p></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
@@ -751,7 +756,21 @@
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && SH.timer) write(); else if (document.visibilityState === 'visible') { reload(); tick(); } });
   window.addEventListener('pagehide', function () { if (SH.timer) write(); });
-  if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function () { /* works without offline support */ });
+  if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../sw.js', { scope: '../' }).then(function (reg) {
+      // look for a newer version on every opening and whenever the app comes back to the screen (installed apps on a
+      // phone stay in memory for days); a new version takes over and the page reloads once, outside the guided setup
+      reg.update().catch(function () { /* offline */ });
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reg.update().catch(function () { /* offline */ }); });
+    }).catch(function () { /* works without offline support */ });
+    var hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController) { hadController = true; return; } // the first worker taking over is not an update
+      if (W || (dlg && dlg.open) || SH.timer) return; // never in the middle of something; the next opening picks it up
+      try { if (sessionStorage.getItem('eveniunt-subs-reloaded')) return; sessionStorage.setItem('eveniunt-subs-reloaded', '1'); } catch (e) { return; }
+      location.reload();
+    });
+  }
 
   Promise.all([loadData(), loadSave()]).then(function () {
     credits(); render();

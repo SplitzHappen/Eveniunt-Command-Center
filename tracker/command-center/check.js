@@ -875,6 +875,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.waitForFunction(() => /scheduled|Nothing scheduled/.test((document.querySelector('[data-push-status]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
       const status = await page.textContent('[data-push-status]');
       const nowLine = await page.textContent('.notify fieldset > p.hint');
+      // the panel heads the Setup tab, also while the guided setup is open (owner report 2026-11-12)
+      const firstPanel = await page.$eval('#view > section', (el) => el.classList.contains('notify'));
+      await page.click('[data-act=new]'); const duringWizard = !!(await page.$('.notify')) && !!(await page.$('.wiz')); await page.click('[data-act=wcancel]');
       // change the grouping to one alert per submarine, and the night rule to quiet hours: kept in the save, schedule resent
       st.kv.delete('push:sched');
       await page.check('input[name=grouping][value=sub]'); await page.waitForTimeout(400);
@@ -885,9 +888,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ok = !!first && JSON.stringify(stages) === '["unlock","gil"]' &&
         JSON.stringify(titles(first)) === JSON.stringify(['Alpha Company · Sub A1 is back', 'Alpha Company · Sub A2 is back', 'Bravo Company: 4 subs back']) &&
         /Off for this device/.test(status) && /3 alerts scheduled/.test(status) && /Alpha Company: per submarine \(still unlocking\)/.test(nowLine) && /Bravo Company: per free company \(farming gil\)/.test(nowLine) &&
-        !!perSub && perSub.alerts.length === 6 && prefs.grouping === 'sub' && prefs.night === 'quiet' && prefs.quietHours && prefs.quietHours.from === 60 && real(errors).length === 0;
+        !!perSub && perSub.alerts.length === 6 && firstPanel && duringWizard && prefs.grouping === 'sub' && prefs.night === 'quiet' && prefs.quietHours && prefs.quietHours.from === 60 && real(errors).length === 0;
       record('C26', 'Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper\'s status and the grouping now in force, and keeps a changed grouping and quiet hours in the save, resending the schedule',
-        ok, { stages, first: titles(first), status, nowLine, perSub: titles(perSub), prefs, errors: real(errors) });
+        ok, { stages, first: titles(first), firstPanel, duringWizard, status, nowLine, perSub: titles(perSub), prefs, errors: real(errors) });
       skip('C26b', 'Turning a device on and a real push delivery', 'the browser\'s push service (run by the browser maker) cannot be reached from the session; the helper\'s encryption and signature are checked by tests/helper.test.js, and the owner\'s "Send a test" button checks a real delivery');
       await ctx.close(); server5.close();
     }

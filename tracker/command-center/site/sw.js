@@ -14,7 +14,7 @@
 // - Requests to other sites (Google, FFXIV Collect, Universalis) and any other path on this site go straight to
 //   the network, untouched.
 // The cache name carries the build id; a new build replaces the old cache.
-const BUILD = '139bfe023deb';
+const BUILD = '61a30a3dfa31';
 const CACHE = 'eveniunt-cc-' + BUILD;
 const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest","save.js","shell.css","shell.js","submersibles/advisor.js","submersibles/data.js","submersibles/fleet.js","submersibles/index.html","submersibles/push.js","submersibles/subs.css","submersibles/subs.js"];
 const SCOPE = new URL('./', self.location).href;
@@ -76,11 +76,15 @@ async function shell(req, page) {
     const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 4000));
     try { return await Promise.race([net, slow]); } catch (err) { return cached; }
   }
+  // other shell files (scripts, styles, data): network first, so an installed app never keeps running old code after an
+  // update (owner report 2026-11-12: the iPhone home-screen app kept an old Submersibles script); the saved copy after
+  // 4 s or offline
   const hit = await cache.match(req, { ignoreSearch: true });
-  if (hit) return hit;
-  const net = await fetch(req);
-  if (net.ok) cache.put(req, net.clone());
-  return net;
+  const net = fetch(req).then((r) => { if (r.ok) cache.put(req, r.clone()); return r; });
+  if (!hit) return net;
+  net.catch(() => {});
+  const slow = new Promise((resolve) => setTimeout(() => resolve(hit), 4000));
+  try { const r = await Promise.race([net, slow]); return r && r.ok ? r : hit; } catch (err) { return hit; }
 }
 
 self.addEventListener('fetch', (e) => {
