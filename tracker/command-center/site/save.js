@@ -79,7 +79,7 @@
   //   trips: { <tripId>: { s, t, r, back, calc, said, items: [[itemId, qty]], newSectors, rankAfter, rankCalc } }
   //   rankCalc: the least rank worked out on return; rankAfter: the rank kept (the owner's correction when the game showed more).
   //   calcAt / calc: the worked-out return time, kept beside the game's typed time as evidence for the formula (design 3.2).
-  //   settings: { prefs: { sort, grouping, quietHours, window, priceWorld } }
+  //   settings: { prefs: { sort, grouping (auto, sub, fc, fleet), night (always, quiet), quietHours, window, priceWorld } }
   // Only known fields with the right type are kept; a bad field or entry is dropped, never repaired by guessing. Trips are
   // never dropped to save space (blueprint rule 11). Sector and part ids are the game's (data/submarines.json, pinned
   // game data 44948e4c); tests/core.test.js checks these two lists against that file, so a new game patch updates both.
@@ -120,7 +120,7 @@
       out.trips[id] = keep({ s: t.s, t: t.t, r: sectors(t.r, 5) || [], back: time(t.back), calc: time(t.calc), said: subName(t.said, 40), items, newSectors: sectors(t.newSectors) || [], rankAfter: intIn(t.rankAfter, 1, 145), rankCalc: intIn(t.rankCalc, 1, 145) });
     }
     const p = plain(sec.settings) && plain(sec.settings.prefs) ? sec.settings.prefs : null;
-    if (p) out.settings.prefs = keep({ sort: ['fc', 'time'].includes(p.sort) ? p.sort : undefined, grouping: ['sub', 'fc', 'fleet'].includes(p.grouping) ? p.grouping : undefined,
+    if (p) out.settings.prefs = keep({ sort: ['fc', 'time'].includes(p.sort) ? p.sort : undefined, grouping: ['auto', 'sub', 'fc', 'fleet'].includes(p.grouping) ? p.grouping : undefined, night: ['always', 'quiet'].includes(p.night) ? p.night : undefined,
       quietHours: hhmm(p.quietHours), window: hhmm(p.window), priceWorld: subName(p.priceWorld, 32) });
     return out;
   }

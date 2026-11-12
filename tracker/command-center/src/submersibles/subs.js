@@ -8,7 +8,7 @@
 // CC.read, as the Atelier does; backups, transfer codes and cloud sync carry it. Nothing is read from the game.
 (function () {
   'use strict';
-  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR;
+  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -53,7 +53,7 @@
       if (r.raw != null) {
         try { doc = CC.checkDoc(r.raw); } catch (e) { SH.problem = e.message; return; } // unreadable or newer: never written over
       }
-      SH.rev = r.rev; SH.chars = doc.chars;
+      SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || 0;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
       SH.ready = true;
@@ -64,9 +64,10 @@
     clearTimeout(SH.timer); SH.timer = null;
     if (!SH.ready || SH.problem) return Promise.resolve();
     return CC.writeSection('submersibles', S, { rev: SH.rev, base: SH.base }).then(function (r) {
-      SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars;
+      SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now();
       if (r.merged) { setSection(r.section); render(); }
       setStatus('');
+      pushSync();
     }).catch(function (e) { setStatus('Not saved on this device: ' + e.message); });
   }
   // another page (the Tracker after a cloud sync, another window) saved: take its section, unless a change made here
@@ -77,10 +78,11 @@
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
       if (SH.timer) return;
       var before = JSON.stringify([SH.chars, S]);
-      SH.rev = r.rev; SH.chars = doc.chars;
+      SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
       if (JSON.stringify([SH.chars, S]) !== before && !W) render();
+      pushSync();
     });
   }
   function setStatus(t) { var el = $('#status'); if (el) el.textContent = t; }
@@ -103,7 +105,7 @@
     var main = $('#view');
     if (SH.problem) { main.innerHTML = '<div class="note bad"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.</div>'; return; }
     if (UI.tab === 'board') main.innerHTML = boardHtml();
-    else if (UI.tab === 'setup') { main.innerHTML = W ? wizardHtml() : setupHtml(); if (!W) measureSize(); }
+    else if (UI.tab === 'setup') { main.innerHTML = W ? wizardHtml() : setupHtml(); if (!W) { measureSize(); pushStatus(); } }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
@@ -192,6 +194,56 @@
         return '<tr><td>' + esc(r.sub ? r.sub.name || 'Sub ' + r.sub.slot : 'removed sub') + '</td><td>' + esc(F.fmtClock(r.calc)) + '</td><td>' + esc(F.fmtClock(r.back)) + ' <span class="muted">(' + esc(r.said) + ')</span></td><td class="' + (Math.abs(d) <= 60 ? 'ok' : 'bad') + '">' + (Math.abs(d) <= 60 ? 'agrees' : (d > 0 ? '+' : '') + Math.round(d / 60) + ' min') + '</td></tr>';
       }).join('') + '</tbody></table>' : '<p class="hint">No checks yet.</p>') + '</section>';
   }
+  // ------------------------------------------------------------------ phone notifications (step S7)
+  // where each free company stands in the owner's order: still unlocking (subs or sectors, levelling included), farming
+  // gil, or finished (gil step, every sub at the top rank and no better part to fit)
+  function stageOf(fcId) {
+    var fc = S.fcs[fcId], list = Object.keys(S.subs).filter(function (k) { return S.subs[k].fcId === fcId && S.subs[k].slot <= (fc.unlockedSlots || 1); });
+    if (!fc || !list.length) return 'unlock';
+    var advice = list.map(function (k) { return ADV.advise({ sub: S.subs[k], fc: fc, slotsFilled: list.length }); });
+    if (advice.some(function (a) { return a.blocked || a.step < 3; })) return 'unlock';
+    return list.every(function (k) { return S.subs[k].rank === 145; }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
+  }
+  function prefs() { return S.settings.prefs || {}; }
+  var pushTimer = null;
+  function pushSync() {
+    if (!PUSH || !PUSH.device()) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(function () {
+      PUSH.sync(PUSH.alerts(S, prefs(), stageOf, Date.now()), SH.updated || 0).then(function (r) { if (r) PUSH.last = r; pushStatus(); }).catch(function (e) { PUSH.lastError = e; pushStatus(); });
+    }, 1500);
+  }
+  function minutes(v) { var m = /^(\d{2}):(\d{2})$/.exec(v || ''); return m ? +m[1] * 60 + +m[2] : null; }
+  function hhmm(n) { return String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0'); }
+  function notifyHtml() {
+    var p = prefs(), g = p.grouping || 'auto', q = p.quietHours || { from: 22 * 60, to: 8 * 60 }, night = p.night || 'always';
+    var modes = PUSH.modes(S, p, stageOf), WHY = { sub: 'per submarine (still unlocking)', fc: 'per free company (farming gil)', fleet: 'whole fleet (everything at the top)' };
+    var auto = fcList().map(function (f) { return esc(f.fc.name || 'Unnamed') + ': ' + (g === 'auto' ? WHY[modes[f.id]] : PUSH.GROUPINGS[modes[f.id]].toLowerCase()); }).join(' · ');
+    var opt = function (name, val, label, help) { return '<label class="opt notify-opt"><input type="radio" name="' + name + '" value="' + val + '" data-pref="' + name + '"' + ((name === 'grouping' ? g : night) === val ? ' checked' : '') + '> <span><b>' + esc(label) + '</b>' + (help ? '<br><span class="hint">' + help + '</span>' : '') + '</span></label>'; };
+    return '<section class="panel notify"><h2>Phone notifications</h2><p class="muted">Your phone or computer is told when subs are back, even with the app closed. They come through your own sync helper, which keeps only the alert times, short labels and this device\'s notification address.</p>' +
+      '<p data-push-status class="push-status">Checking…</p>' +
+      '<p class="row"><button type="button" class="btn primary" data-act="push-on">Turn on for this device</button><button type="button" class="btn" data-act="push-test">Send a test</button><button type="button" class="btn ghost" data-act="push-off">Turn off for this device</button></p>' +
+      '<fieldset><legend>How alerts are grouped</legend>' +
+      opt('grouping', 'auto', 'Automatic (recommended)', 'The app decides for each free company: one alert per submarine while it is still unlocking subs and sectors, one per free company once it farms gil; one for the whole fleet once every free company farms gil with every sub at rank 145 and no better part to fit.') +
+      opt('grouping', 'sub', 'Per submarine', 'One alert for each sub that comes back.') +
+      opt('grouping', 'fc', 'Per free company', 'One alert when the last sub of a free company is back.') +
+      opt('grouping', 'fleet', 'Whole fleet', 'One alert when the last sub of the fleet is back.') +
+      '<p class="hint">Now: ' + (auto || 'no free company yet') + '. In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.</p></fieldset>' +
+      '<fieldset><legend>At night</legend>' + opt('night', 'always', 'Always alert', 'Alerts come whenever a sub is back.') +
+      opt('night', 'quiet', 'Quiet hours', 'Alerts that fall in these hours wait until they end; the board still shows the subs as Back.') +
+      '<p class="row quiet-hours">From <input class="inp" type="time" name="qfrom" data-pref="qfrom" value="' + hhmm(q.from) + '"> to <input class="inp" type="time" name="qto" data-pref="qto" value="' + hhmm(q.to) + '"></p></fieldset>' +
+      '<p class="hint">Works on Android and on computers in Chrome, Edge or Firefox. On an iPhone or iPad, only from the Command Center added to the home screen (Apple\'s rule), turned on there once. Each device is turned on separately, and needs cloud sync signed in once (Tracker, Settings, Cloud sync). Calendar entries keep working either way.</p></section>';
+  }
+  function pushStatus(msg) {
+    var el = $('[data-push-status]'); if (!el) return;
+    if (msg) { el.textContent = msg; return; }
+    if (!PUSH.supported()) { el.textContent = 'This browser cannot receive web notifications here. On an iPhone or iPad, open the Command Center from the home screen.'; return; }
+    if (!PUSH.device()) { el.textContent = 'Not available yet on this device: sign in for cloud sync once in the Tracker (Settings, Cloud sync), then come back here.'; return; }
+    PUSH.call('/push/status').then(function (r) {
+      el.textContent = (r.on ? 'On for this device.' : 'Off for this device.') + ' ' + r.devices + ' device' + (r.devices === 1 ? '' : 's') + ' turned on. ' + (r.count ? r.count + ' alert' + (r.count === 1 ? '' : 's') + ' scheduled, next ' + F.fmtClock(r.next) + '.' : 'Nothing scheduled.');
+    }).catch(function (e) { el.textContent = e.code === 'push_not_set_up' ? 'Your helper does not do notifications yet: the one-time set-up in helper/README.md, section 4, turns them on.' : 'The helper could not be asked: ' + e.message; });
+  }
+
   // the history size meter (design 7.3): the save's compressed size against the cloud copy's 4 MB limit
   var CLOUD_LIMIT = 4 * 1024 * 1024 - 64 * 1024; // as src/core/cloud.js
   function measureSize() {
@@ -214,7 +266,7 @@
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
           '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span></li>';
       }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
-      accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><p class="muted" data-size>Measuring…</p></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
+      notifyHtml() + accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><p class="muted" data-size>Measuring…</p></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
@@ -616,6 +668,9 @@
       }
       case 'pickclear': PICK.route = []; redrawPicker(); break;
       case 'quick': quickSend(b.dataset.sub, readRankFix(form)); break;
+      case 'push-on': pushStatus('Turning on…'); PUSH.enable().then(function () { try { sessionStorage.removeItem('eveniunt-subs-push'); } catch (e) { /* none */ } pushSync(); pushStatus(); }).catch(function (e) { pushStatus(e.message); }); break;
+      case 'push-off': PUSH.disable().then(function () { pushStatus(); }).catch(function (e) { pushStatus(e.message); }); break;
+      case 'push-test': PUSH.call('/push/test').then(function () { pushStatus('Test sent: it should arrive within a few seconds.'); }).catch(function (e) { pushStatus(e.message); }); break;
       case 'check': {
         var cs = S.subs[b.dataset.sub], game = readTime(form, 't');
         if (!cs || !cs.voyage) break;
@@ -635,6 +690,13 @@
       previewTime($('#sheet form'), 't');
       if (/^t(in|at|mode)$/.test(t.name)) redrawPicker();
       return;
+    }
+    if (t.dataset.pref && e.type === 'change') {
+      var pr = Object.assign({}, S.settings.prefs || {});
+      if (t.dataset.pref === 'grouping') pr.grouping = t.value;
+      else if (t.dataset.pref === 'night') pr.night = t.value;
+      else { var q = Object.assign({ from: 22 * 60, to: 8 * 60 }, pr.quietHours || {}), m = minutes(t.value); if (m == null) return; q[t.dataset.pref === 'qfrom' ? 'from' : 'to'] = m; pr.quietHours = q; }
+      S.settings.prefs = pr; schedule(); return;
     }
     if (!W || !t.dataset.w) return;
     var key = t.dataset.w, st = steps(), step = st[Math.min(W.step, st.length - 1)], s = /^sub/.test(step) ? W.subs[+step.slice(3) - 1] : null;
@@ -694,10 +756,11 @@
   Promise.all([loadData(), loadSave()]).then(function () {
     credits(); render();
     window.__subs.alerts = F.startAlerts({ section: function () { return SH.ready ? S : null; }, link: null });
+    pushSync();
     setInterval(tick, 1000);
     document.documentElement.dataset.ready = '1';
   }).catch(function (e) {
     $('#view').innerHTML = '<div class="note bad"><b>The Submersibles data could not be opened on this browser.</b> ' + esc(e.message || e) + '</div>';
   });
-  window.__subs = { section: function () { return S; }, write: write, startWizard: startWizard, state: function () { return { ready: SH.ready, problem: SH.problem, rev: SH.rev }; } };
+  window.__subs = { stageOf: function (id) { return stageOf(id); }, section: function () { return S; }, write: write, startWizard: startWizard, state: function () { return { ready: SH.ready, problem: SH.problem, rev: SH.rev }; } };
 })();

@@ -305,3 +305,8 @@ Owner request: add candidates A to D from the Command Center sweep, and everythi
 
 - **Tests:** core 74/74 (1 new: the rank and experience after each of the five hand-worked voyages, no change without a route, the top rank holds, the checker keeps the rank evidence); submarines 15/15; helper 5/5; browser 31/31; Command Center checks 30/30 in Chromium (C22 now also checks the rank moving on by the route's base experience when a voyage is logged, the trip's rank evidence, and the size meter). Atelier not run (not touched); Firefox and WebKit not installed.
 - **Not tested here:** survey bonuses (the app counts only the base experience, so a rank can be higher in the game; the owner enters it).
+
+## Submersibles step S7 — phone notifications (2026-11-12)
+
+- **Tests:** core 75/75 (1 new: automatic grouping by stage, stragglers, the fixed groupings, quiet hours across midnight and in the day, the checker's new preferences); helper 7/7 (2 new: the push key, only signed-in devices, the schedule's newest-save rule, the minute timer merging alerts of one minute and deleting what it sent, expired addresses forgotten; every message decrypted by an independent reader per RFC 8291 and its VAPID signature verified); submarines 15/15; browser 31/31; Command Center checks 31/31 in Chromium, 1 not run (C26: the page sends the automatic schedule to the real helper code in-process, shows its status and the grouping in force, keeps changed choices; C26b, a real delivery, needs a browser push service the session cannot reach).
+- **Not tested here:** a real push to a phone (the owner's "Send a test" after set-up); Safari on iPhone (home-screen app only, by Apple's rule); Cloudflare's live timer.

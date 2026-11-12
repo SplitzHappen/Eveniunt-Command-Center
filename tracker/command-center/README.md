@@ -2,6 +2,10 @@
 
 Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, sections 4a (rules 1, 5 and 10), 4b (finding F1), 4c (F5, F6) and 5 (gates 1B to 1E). Cards: `.ai/planning/CARD-phase-1C.md`, `.ai/planning/CARD-phase-1D.md`, `.ai/planning/CARD-phase-1E.md`.
 
+## Submersibles step S7: phone notifications (2026-11-12)
+
+Card: `.ai/planning/CARD-S7-submersibles-push.md`. `src/submersibles/push.js` works out the alerts (Automatic grouping by stage, or per submarine, per free company, whole fleet; a sub more than 30 minutes before its group gets its own; Always alert or Quiet hours) and sends the schedule to the owner's helper (`helper/worker.js`, `/push/*` and a minute timer; set-up in `helper/README.md` section 4). The shell's worker shows each push and opens the board on a tap. Check C26; C26b (a real delivery) not run in the session.
+
 ## Submersibles step S3 (rest): rank after a voyage, size meter (2026-11-12)
 
 Card: `.ai/planning/CARD-S3-submersibles-rank.md`. Logging a voyage moves the sub's rank and experience on by the route's base experience ("at least"); the Back sheet takes the game's rank if higher and keeps both (`trip.rankCalc`, `trip.rankAfter`); suggestions and the one-press button for a Back sub use the rank after its voyage; Setup shows the save's compressed size against the 4 MB cloud limit. Check C22 covers both.

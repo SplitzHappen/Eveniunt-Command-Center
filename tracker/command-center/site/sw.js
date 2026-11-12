@@ -14,9 +14,9 @@
 // - Requests to other sites (Google, FFXIV Collect, Universalis) and any other path on this site go straight to
 //   the network, untouched.
 // The cache name carries the build id; a new build replaces the old cache.
-const BUILD = 'b45d0371e9e2';
+const BUILD = '139bfe023deb';
 const CACHE = 'eveniunt-cc-' + BUILD;
-const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest","save.js","shell.css","shell.js","submersibles/advisor.js","submersibles/data.js","submersibles/fleet.js","submersibles/index.html","submersibles/subs.css","submersibles/subs.js"];
+const FILES = ["./","icons/apple-touch-icon.png","icons/icon-192.png","icons/icon-512.png","icons/icon-maskable-512.png","index.html","manifest.webmanifest","save.js","shell.css","shell.js","submersibles/advisor.js","submersibles/data.js","submersibles/fleet.js","submersibles/index.html","submersibles/push.js","submersibles/subs.css","submersibles/subs.js"];
 const SCOPE = new URL('./', self.location).href;
 const ATELIER = SCOPE + 'atelier/';
 const TRACKER = SCOPE + 'tracker/';
@@ -95,4 +95,20 @@ self.addEventListener('fetch', (e) => {
   if (page) return e.respondWith(shell(req, page));
   if (SHELL.has(href) || href === SCOPE + 'index.html') return e.respondWith(shell(req));
   // anything else on the site: untouched
+});
+
+// Phone notifications (Submersibles step S7): the owner's helper sends a standard web push when a submarine is due back;
+// this worker shows it, and a tap opens the Submersibles board.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Eveniunt Command Center', { body: d.body || '', tag: d.tag || 'subs', icon: SCOPE + 'icons/icon-192.png', badge: SCOPE + 'icons/icon-192.png', data: { url: SCOPE + 'submersibles/' } }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || SCOPE + 'submersibles/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    const open = list.find((c) => c.url.startsWith(SCOPE + 'submersibles/'));
+    return open ? open.focus() : self.clients.openWindow(url);
+  }));
 });

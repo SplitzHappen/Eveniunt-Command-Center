@@ -96,3 +96,19 @@ self.addEventListener('fetch', (e) => {
   if (SHELL.has(href) || href === SCOPE + 'index.html') return e.respondWith(shell(req));
   // anything else on the site: untouched
 });
+
+// Phone notifications (Submersibles step S7): the owner's helper sends a standard web push when a submarine is due back;
+// this worker shows it, and a tap opens the Submersibles board.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Eveniunt Command Center', { body: d.body || '', tag: d.tag || 'subs', icon: SCOPE + 'icons/icon-192.png', badge: SCOPE + 'icons/icon-192.png', data: { url: SCOPE + 'submersibles/' } }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || SCOPE + 'submersibles/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    const open = list.find((c) => c.url.startsWith(SCOPE + 'submersibles/'));
+    return open ? open.focus() : self.clients.openWindow(url);
+  }));
+});

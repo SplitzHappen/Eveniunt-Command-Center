@@ -1,6 +1,6 @@
 'use strict';
 // Browser checks for the Command Center shell (gates 1B to 1E; blueprint section 5; gate 1A finding F1; rules 5 and 10;
-// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19; Submersibles step S2, C20 to C25).
+// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19; Submersibles step S2, C20 to C25; phone notifications, C26).
 // Serves the published layout with serve.js (no isolation headers, like GitHub Pages), drives a browser through
 // Playwright, and writes evidence/checks*.json plus screenshots. Every request to another site is blocked.
 // Run: node command-center/build.js && node command-center/check.js
@@ -19,8 +19,8 @@ const engine = playwright[BROWSER];
 const CC = __dirname, T = path.join(CC, '..');
 const ATELIER_SRC = path.join(T, '..', 'ffxiv-cosmic-crafting-solver', 'atelier');
 const FIX = require(path.join(ATELIER_SRC, 'tests', 'fixtures', 'raphael-cli.json'));
-const PORT = Number(process.env.PORT) || 8418, PORT2 = PORT + 1, PORT3 = PORT + 2, PORT4 = PORT + 3;
-const ROOT = 'http://127.0.0.1:' + PORT + BASE, ROOT2 = 'http://127.0.0.1:' + PORT2 + BASE, ROOT3 = 'http://127.0.0.1:' + PORT3 + BASE, ROOT4 = 'http://127.0.0.1:' + PORT4 + BASE;
+const PORT = Number(process.env.PORT) || 8418, PORT2 = PORT + 1, PORT3 = PORT + 2, PORT4 = PORT + 3, PORT5 = PORT + 4;
+const ROOT = 'http://127.0.0.1:' + PORT + BASE, ROOT2 = 'http://127.0.0.1:' + PORT2 + BASE, ROOT3 = 'http://127.0.0.1:' + PORT3 + BASE, ROOT4 = 'http://127.0.0.1:' + PORT4 + BASE, ROOT5 = 'http://127.0.0.1:' + PORT5 + BASE;
 const DEVICE_KEY = 'eveniunt-command-center-device';
 const results = [];
 let browser;
@@ -38,7 +38,7 @@ async function context(opts = {}) {
   const errors = [], external = [];
   await ctx.route('**/*', (r) => {
     const u = r.request().url();
-    if (u.startsWith('http://127.0.0.1:' + PORT + '/') || u.startsWith('http://127.0.0.1:' + PORT2 + '/') || u.startsWith('http://127.0.0.1:' + PORT3 + '/') || u.startsWith('http://127.0.0.1:' + PORT4 + '/') || /^(blob|data):/.test(u)) return r.continue();
+    if (u.startsWith('http://127.0.0.1:' + PORT + '/') || u.startsWith('http://127.0.0.1:' + PORT2 + '/') || u.startsWith('http://127.0.0.1:' + PORT3 + '/') || u.startsWith('http://127.0.0.1:' + PORT4 + '/') || u.startsWith('http://127.0.0.1:' + PORT5 + '/') || /^(blob|data):/.test(u)) return r.continue();
     external.push(u); return r.abort();
   });
   ctx.on('page', (p) => watch(p, errors));
@@ -841,6 +841,57 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await ctx.close();
       }
     }
+    // ── C26 Submersibles step S7: phone notifications. The page works out the alerts (automatic grouping by stage), sends
+    //    the schedule to the owner's helper (the real helper/worker.js, in-process with the stand-ins) and keeps the
+    //    choices in the save. The browser's own push service cannot be reached from the session, so turning a device on
+    //    and a real delivery are checked by tests/helper.test.js (encryption and signature) and by the owner's test button.
+    {
+      const server5 = await start(PORT5, { standins: true });
+      const st = server5.standins;
+      const k = await crypto.webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+      const jwk = await crypto.webcrypto.subtle.exportKey('jwk', k.privateKey);
+      st.env.VAPID_JWK = JSON.stringify({ kty: 'EC', crv: 'P-256', d: jwk.d, x: jwk.x, y: jwk.y }); st.env.VAPID_SUBJECT = 'https://site.test/';
+      const device = 'd'.repeat(64); st.kv.set(device, JSON.stringify({ rt: 'rt-test', at: 1, used: 1 }));
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const SUBS5 = ROOT5 + 'submersibles/';
+      await page.goto(SUBS5); await page.waitForSelector('html[data-ready="1"]');
+      const allSectors = JSON.parse(fs.readFileSync(path.join(T, 'data', 'submarines.json'), 'utf8')).sectors.map((x) => x.id);
+      await page.evaluate(async ({ device, all }) => {
+        localStorage.setItem('eveniunt-cloud-device', JSON.stringify({ device, at: 1 }));
+        const now = Date.now(), M = 60000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fa = { name: 'Alpha Company', unlockedSlots: 2, order: 0, discovered: [1, 2] };                 // still unlocking
+        sec.fcs.fb = { name: 'Bravo Company', unlockedSlots: 4, order: 1, discovered: all };                    // farming gil (a better part exists, so not finished)
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 5, parts: [3, 4, 1, 2], voyage: { sentAt: now, route: [1], returnAt: now + 90 * M } };
+        sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub A2', rank: 5, parts: [3, 4, 1, 2], voyage: { sentAt: now, route: [2], returnAt: now + 95 * M } };
+        for (let i = 1; i <= 4; i++) sec.subs['b' + i] = { fcId: 'fb', slot: i, name: 'Sub B' + i, rank: 145, parts: [3, 4, 1, 2], voyage: { sentAt: now, route: [15, 10], returnAt: now + (600 + i) * M } };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, { device, all: allSectors });
+      await page.reload(); await page.waitForSelector('html[data-ready="1"]');
+      const sched = async () => { for (let i = 0; i < 40; i++) { const raw = st.kv.get('push:sched'); if (raw) return JSON.parse(raw); await page.waitForTimeout(250); } return null; };
+      const first = await sched();
+      const stages = await page.evaluate(() => [window.__subs.stageOf('fa'), window.__subs.stageOf('fb')]);
+      await page.click('[data-tab=setup]');
+      await page.waitForFunction(() => /scheduled|Nothing scheduled/.test((document.querySelector('[data-push-status]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+      const status = await page.textContent('[data-push-status]');
+      const nowLine = await page.textContent('.notify fieldset > p.hint');
+      // change the grouping to one alert per submarine, and the night rule to quiet hours: kept in the save, schedule resent
+      st.kv.delete('push:sched');
+      await page.check('input[name=grouping][value=sub]'); await page.waitForTimeout(400);
+      const perSub = await sched();
+      await page.check('input[name=night][value=quiet]'); await page.fill('input[name=qfrom]', '01:00'); await page.dispatchEvent('input[name=qfrom]', 'change'); await page.waitForTimeout(700);
+      const prefs = await page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles.settings.prefs; });
+      const titles = (s) => s ? s.alerts.map((a) => a.title) : null;
+      const ok = !!first && JSON.stringify(stages) === '["unlock","gil"]' &&
+        JSON.stringify(titles(first)) === JSON.stringify(['Alpha Company · Sub A1 is back', 'Alpha Company · Sub A2 is back', 'Bravo Company: 4 subs back']) &&
+        /Off for this device/.test(status) && /3 alerts scheduled/.test(status) && /Alpha Company: per submarine \(still unlocking\)/.test(nowLine) && /Bravo Company: per free company \(farming gil\)/.test(nowLine) &&
+        !!perSub && perSub.alerts.length === 6 && prefs.grouping === 'sub' && prefs.night === 'quiet' && prefs.quietHours && prefs.quietHours.from === 60 && real(errors).length === 0;
+      record('C26', 'Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper\'s status and the grouping now in force, and keeps a changed grouping and quiet hours in the save, resending the schedule',
+        ok, { stages, first: titles(first), status, nowLine, perSub: titles(perSub), prefs, errors: real(errors) });
+      skip('C26b', 'Turning a device on and a real push delivery', 'the browser\'s push service (run by the browser maker) cannot be reached from the session; the helper\'s encryption and signature are checked by tests/helper.test.js, and the owner\'s "Send a test" button checks a real delivery');
+      await ctx.close(); server5.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }

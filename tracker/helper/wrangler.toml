@@ -6,6 +6,7 @@ compatibility_date = "2026-10-01"
 [vars]
 MS_CLIENT_ID = "PASTE-THE-APPLICATION-CLIENT-ID-HERE"
 ALLOWED_ORIGINS = "https://splitzhappen.github.io"
+VAPID_SUBJECT = "https://splitzhappen.github.io/Eveniunt-Command-Center/"   # phone notifications (README section 4)
 # AUTHORITY = "https://login.microsoftonline.com/consumers/oauth2/v2.0"   # the default: personal Microsoft accounts
 
 # the device records (long-lived sign-ins): create with `wrangler kv namespace create DEVICES` and paste the id
@@ -14,3 +15,8 @@ binding = "DEVICES"
 id = "PASTE-THE-KV-NAMESPACE-ID-HERE"
 
 # the client secret is never written here: `wrangler secret put MS_CLIENT_SECRET`
+# phone notifications (README section 4): the push signing key is never written here: `wrangler secret put VAPID_JWK`
+
+# the once-a-minute timer that sends the alerts that are due
+[triggers]
+crons = ["* * * * *"]

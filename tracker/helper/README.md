@@ -71,6 +71,44 @@ ship: clientId 11111111-2222-3333-4444-555555555555, helper https://eveniunt-syn
 
 The session writes them into `site-src/sync-config.json`, rebuilds the Tracker's site files, publishes, and merges. Then, on each device, open the Tracker, Settings → Cloud sync → **Sign in with Microsoft**: one sign-in, and that device syncs by itself from then on.
 
+## 4. Phone notifications (Submersibles, once, about 15 minutes)
+
+The helper can also tell your devices when submarines are back, even with the app closed. It keeps only the alert times, short labels ("Alpha Company · Sub One is back") and each device's notification address. You do this once, in the same folder as section 2.
+
+1. Get the new helper files: download `worker.js`, `entry.js` and `make-push-key.js` from `tracker/helper/` in the public repository and put them in your helper folder, replacing the old `worker.js` and `entry.js`. Keep your own `wrangler.toml` (it has your ids).
+2. Make the notification signing key on your computer and give it to the helper as a secret. The first command prints one long line starting with `{"kty":"EC"`; copy it, run the second command and paste the line when it asks for the value:
+
+   ```bash
+   node make-push-key.js
+   ```
+
+   ```bash
+   wrangler secret put VAPID_JWK
+   ```
+
+   The key exists only on your computer's screen and, encrypted, on Cloudflare. Do not paste it anywhere else.
+3. Open your `wrangler.toml` and add these lines: the first under `[vars]` (next to `ALLOWED_ORIGINS`), the other two at the end of the file:
+
+   ```toml
+   VAPID_SUBJECT = "https://splitzhappen.github.io/Eveniunt-Command-Center/"
+   ```
+
+   ```toml
+   [triggers]
+   crons = ["* * * * *"]
+   ```
+
+   The second part is a timer that runs the helper once a minute to send what is due.
+4. Deploy again:
+
+   ```bash
+   wrangler deploy
+   ```
+
+5. On each device that should be told: open the Command Center → **Submersibles** → **Setup** → **Phone notifications** → **Turn on for this device**, allow notifications, then **Send a test**. The device needs cloud sync signed in once (Tracker, Settings, Cloud sync). On an iPhone or iPad, do this from the Command Center added to the home screen.
+
+Free plan: the timer reads the schedule once a minute (about 1,440 reads a day of the 100,000 allowed) and writes only when something changed or was sent (well under the 1,000 writes a day allowed, even with 32 subs sent separately twice a day). If Cloudflare ever refuses, the app's own alerts and calendar entries keep working.
+
 ## What to expect afterwards
 
 - A device that signed in never asks again, unless you sign out on it (Settings → Cloud sync), remove the app from your Microsoft account (account.microsoft.com → Privacy → Apps and services), or the device's browser storage is cleared. Then it asks for one tap.
@@ -83,5 +121,6 @@ The session writes them into `site-src/sync-config.json`, rebuilds the Tracker's
 |---|---|
 | `worker.js` | The helper itself (also run by the tests in Node) |
 | `entry.js` | Cloudflare's entry point, which loads `worker.js` |
-| `wrangler.toml` | The helper's settings: name, the application ID, the allowed origin, the device store |
+| `wrangler.toml` | The helper's settings: name, the application ID, the allowed origin, the device store, the notification timer |
+| `make-push-key.js` | Makes the signing key for phone notifications (section 4), on your computer |
 | `../tests/helper.test.js` | Its tests, against a stand-in Microsoft |

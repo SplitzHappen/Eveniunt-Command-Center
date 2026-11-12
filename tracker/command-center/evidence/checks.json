@@ -3,9 +3,11 @@
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
-  "passed": 30,
-  "total": 30,
-  "notRun": [],
+  "passed": 31,
+  "total": 31,
+  "notRun": [
+    "C26b: the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
+  ],
   "results": [
     {
       "id": "C1",
@@ -63,7 +65,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 17.3,
+          "seconds": 17.9,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -307,7 +309,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794450321450,
+            "at": 1794452917675,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -380,7 +382,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794450325403
+            "handoverSeen": 1794452921957
           }
         },
         "afterGotIt": {
@@ -388,14 +390,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794450325403
+              "handoverSeen": 1794452921957
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794450325403
+              "handoverSeen": 1794452921957
             }
           }
         },
@@ -414,14 +416,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794450326985
+              "installed": 1794452923595
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794450326985
+              "installed": 1794452923595
             }
           }
         },
@@ -585,10 +587,10 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-Smdm0H",
+        "scratch": "/tmp/cc-publish-2o8Hfi",
         "publish": [
-          "75M\t/tmp/cc-publish-Smdm0H",
-          "264"
+          "75M\t/tmp/cc-publish-2o8Hfi",
+          "267"
         ],
         "freshLists": {
           "workflowWrites": true,
@@ -603,7 +605,7 @@
           "privateRecordsAbsent": true
         },
         "workerFiles": {
-          "count": 16,
+          "count": 17,
           "missing": []
         },
         "shell": {
@@ -655,11 +657,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=v8ETgUfcxp4MOIsDqN9VJg",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=gu73kmkqNcOH9nZdnXFBaA",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 02:25 AM",
-          "device": "9bd1138e…"
+          "status": "Synced 03:08 AM",
+          "device": "0904909f…"
         },
         "leaks": {
           "backup": false,
@@ -860,9 +862,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506400938,
+          "sentAt": 1794506401014,
           "route": [],
-          "returnAt": 1794604320938,
+          "returnAt": 1794604321014,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -886,24 +888,24 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560716722,
+          "sentAt": 1794560716796,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669094722,
-          "calcAt": 1794669094722
+          "returnAt": 1794669094796,
+          "calcAt": 1794669094796
         },
         "checked": {
-          "sentAt": 1794560716722,
+          "sentAt": 1794560716796,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257320,
-          "calcAt": 1794669094722,
+          "returnAt": 1794669257414,
+          "calcAt": 1794669094796,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
@@ -913,12 +915,12 @@
           10610
         ],
         "sent": {
-          "sentAt": 1794506402388,
+          "sentAt": 1794506402463,
           "route": [
             1
           ],
-          "returnAt": 1794560652388,
-          "calcAt": 1794560652388
+          "returnAt": 1794560652463,
+          "calcAt": 1794560652463
         },
         "beforeBack": [],
         "atBack": [
@@ -928,41 +930,41 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "sbm7jjm10",
-          "scu4hm67x"
+          "sbpymnkvb",
+          "si73sw994"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718021,
+            "sentAt": 1794560718113,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240021,
-            "calcAt": 1794663240021
+            "returnAt": 1794663240113,
+            "calcAt": 1794663240113
           },
           {
-            "sentAt": 1794560718021,
+            "sentAt": 1794560718113,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594021,
-            "calcAt": 1794657594021
+            "returnAt": 1794657594113,
+            "calcAt": 1794657594113
           }
         ],
         "trips": [
           {
-            "s": "so3ab66b6",
-            "t": 1794506402388,
+            "s": "se3kw93hg",
+            "t": 1794506402463,
             "r": [
               1
             ],
-            "back": 1794560652388,
-            "calc": 1794560652388,
+            "back": 1794560652463,
+            "calc": 1794560652463,
             "items": [],
             "newSectors": [],
             "rankAfter": 40,
@@ -971,25 +973,25 @@
         ],
         "typed": [
           {
-            "sentAt": 1794560718021,
+            "sentAt": 1794560718113,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794563465151,
-            "calcAt": 1794663240021,
+            "returnAt": 1794563465147,
+            "calcAt": 1794663240113,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718021,
+            "sentAt": 1794560718113,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794563465784,
-            "calcAt": 1794657594021,
+            "returnAt": 1794563465798,
+            "calcAt": 1794657594113,
             "gameSaid": "45m"
           }
         ],
@@ -1004,9 +1006,9 @@
       "pass": true,
       "detail": {
         "file": "alpha-renamed-sub-one-back.ics",
-        "want": "20261113T211200Z",
+        "want": "20261113T211201Z",
         "ics": [
-          "DTSTART:20261113T211200Z",
+          "DTSTART:20261113T211201Z",
           "SUMMARY:Alpha Renamed · Sub One back",
           "TRIGGER:PT0M"
         ]
@@ -1094,6 +1096,47 @@
         ],
         "errors": []
       }
+    },
+    {
+      "id": "C26",
+      "title": "Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper's status and the grouping now in force, and keeps a changed grouping and quiet hours in the save, resending the schedule",
+      "pass": true,
+      "detail": {
+        "stages": [
+          "unlock",
+          "gil"
+        ],
+        "first": [
+          "Alpha Company · Sub A1 is back",
+          "Alpha Company · Sub A2 is back",
+          "Bravo Company: 4 subs back"
+        ],
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 04:39.",
+        "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
+        "perSub": [
+          "Alpha Company · Sub A1 is back",
+          "Alpha Company · Sub A2 is back",
+          "Bravo Company · Sub B1 is back",
+          "Bravo Company · Sub B2 is back",
+          "Bravo Company · Sub B3 is back",
+          "Bravo Company · Sub B4 is back"
+        ],
+        "prefs": {
+          "grouping": "sub",
+          "night": "quiet",
+          "quietHours": {
+            "from": 60,
+            "to": 480
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C26b",
+      "title": "Turning a device on and a real push delivery",
+      "pass": null,
+      "notRun": "the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
     }
   ]
 }

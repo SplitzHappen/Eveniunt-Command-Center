@@ -166,3 +166,8 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .rankbox { margin: 6px 0; font-size: 14px; }
 .rankbox p { margin: 4px 0; }
 .rankfix { max-width: 260px; }
+
+.notify-opt { align-items: flex-start; }
+.notify-opt input { margin-top: 4px; }
+.push-status { font-weight: 600; }
+.quiet-hours .inp { width: auto; }

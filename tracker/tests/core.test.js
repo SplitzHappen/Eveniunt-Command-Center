@@ -1394,6 +1394,44 @@ test('Submersibles advisor: the owner\'s order (unlock all four subs, discover e
   for (const a of [a1, a2, a3, a4, a5, a6, a7]) for (const x of [a.plan].concat(a.alts)) assert.ok(x.ev.reachable && x.route.length >= 1 && x.route.length <= 5);
 });
 
+test('Submersibles notifications: automatic grouping by stage, stragglers, the three fixed groupings, quiet hours (push.js)', () => {
+  require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'push.js'));
+  const P = globalThis.PUSH, M = 60000, now = new Date(2026, 10, 12, 12, 0).getTime();
+  const sec = { fcs: { a: { name: 'Alpha', unlockedSlots: 4 }, b: { name: 'Bravo', unlockedSlots: 4 } }, subs: {}, trips: {}, settings: {} };
+  const add = (id, fc, slot, inMin) => { sec.subs[id] = { fcId: fc, slot, name: 'Sub ' + id, voyage: inMin == null ? null : { returnAt: now + inMin * M, route: [1] } }; };
+  add('a1', 'a', 1, 60); add('a2', 'a', 2, 75); add('a3', 'a', 3, null); add('a4', 'a', 4, 200);
+  add('b1', 'b', 1, 600); add('b2', 'b', 2, 601); add('b3', 'b', 3, 602); add('b4', 'b', 4, 500);
+  const stage = { a: 'unlock', b: 'gil' };
+  // automatic: Alpha (unlocking) per sub; Bravo (gil) one alert for 3 subs, its straggler b4 (100 minutes early) on its own
+  const auto = P.alerts(sec, {}, (id) => stage[id], now);
+  assert.deepStrictEqual(P.modes(sec, {}, (id) => stage[id]), { a: 'sub', b: 'fc' });
+  assert.deepStrictEqual(auto.map((x) => x.title), ['Alpha · Sub a1 is back', 'Alpha · Sub a2 is back', 'Alpha · Sub a4 is back', 'Bravo · Sub b4 is back', 'Bravo: 3 subs back']);
+  assert.strictEqual(auto[4].at, now + 602 * M); assert.strictEqual(auto[4].body, 'Sub b1, Sub b2, Sub b3');
+  // automatic, every free company finished: one alert for the whole fleet (stragglers on their own)
+  const fin = P.alerts(sec, { grouping: 'auto' }, () => 'final', now);
+  assert.deepStrictEqual(P.modes(sec, {}, () => 'final'), { a: 'fleet', b: 'fleet' });
+  assert.strictEqual(fin[fin.length - 1].title, 'Fleet back: 3 submarines');
+  assert.strictEqual(fin.length, 1 + 4, 'the four subs more than 30 minutes before the last (a1, a2, a4, b4) each get their own');
+  // a fixed choice wins over the stage
+  assert.strictEqual(P.alerts(sec, { grouping: 'sub' }, () => 'final', now).length, 7);
+  assert.deepStrictEqual(P.alerts(sec, { grouping: 'fc' }, () => 'unlock', now).map((x) => x.title).filter((t) => /subs back/.test(t)), ['Bravo: 3 subs back'], 'Alpha\'s subs are each more than 30 minutes apart, so each has its own');
+  // a locked slot, a voyage already back and no voyage give no alert
+  sec.fcs.a.unlockedSlots = 3; const noA4 = P.alerts(sec, { grouping: 'sub' }, () => 'unlock', now); sec.fcs.a.unlockedSlots = 4;
+  assert.ok(!noA4.some((x) => /a4/.test(x.title)));
+  assert.strictEqual(P.alerts(sec, { grouping: 'sub' }, () => 'unlock', now + 1000 * M).length, 0);
+  // quiet hours 22:00 to 08:00: an alert at 23:40 waits until 08:00 next day; "always" does not
+  const night = { fcs: { a: { name: 'Alpha', unlockedSlots: 1 } }, subs: { n: { fcId: 'a', slot: 1, name: 'Night', voyage: { returnAt: new Date(2026, 10, 12, 23, 40).getTime() } } }, trips: {}, settings: {} };
+  const q = P.alerts(night, { grouping: 'sub', night: 'quiet', quietHours: { from: 22 * 60, to: 8 * 60 } }, () => 'unlock', now);
+  assert.strictEqual(q[0].at, new Date(2026, 10, 13, 8, 0).getTime()); assert.match(q[0].body, /back at 23:40, held for your quiet hours/);
+  const a = P.alerts(night, { grouping: 'sub', night: 'always', quietHours: { from: 22 * 60, to: 8 * 60 } }, () => 'unlock', now);
+  assert.strictEqual(a[0].at, new Date(2026, 10, 12, 23, 40).getTime());
+  // a daytime quiet window (13:00 to 15:00) and an alert outside it
+  const day = P.alerts(night, { night: 'quiet', grouping: 'sub', quietHours: { from: 13 * 60, to: 15 * 60 } }, () => 'unlock', now);
+  assert.strictEqual(day[0].at, new Date(2026, 10, 12, 23, 40).getTime());
+  // the checker keeps the new preferences
+  assert.deepStrictEqual(CC.checkModules({ submersibles: { settings: { prefs: { grouping: 'auto', night: 'quiet', quietHours: { from: 1320, to: 480 } } } } }).submersibles.settings.prefs, { grouping: 'auto', night: 'quiet', quietHours: { from: 1320, to: 480 } });
+});
+
 test('old formats still load: backups and EVT1 codes from before gate 1C, and a v1 cloud copy, leave the module sections alone', async () => {
   const st = ET.newState(['A']); const k = [...idx.byKey.keys()][5]; ET.setTick(st, 'c1', k, true);
   const oldFile = JSON.stringify({ app: 'eveniunt-completionist-tracker', saved: 'x', state: Object.assign({ v: 1 }, ET.portable(st)) });
