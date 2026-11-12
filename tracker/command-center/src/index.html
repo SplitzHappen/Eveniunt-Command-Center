@@ -9,6 +9,8 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#0f2234">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="shared.css">
 <link rel="stylesheet" href="shell.css">
 <script>
   // Follow the Tracker's light / dark choice (read only; gate 1C brings one shared appearance setting).
@@ -16,12 +18,10 @@
 </script>
 </head>
 <body>
-<header class="mast">
-  <a class="brand" href="./" aria-label="Eveniunt Command Center, home">
-    <span class="brand-top">Eveniunt</span>
-    <span class="brand-name">Command Center</span>
-  </a>
-  <nav class="switcher" aria-label="Modules">
+<script src="look.js"></script>
+<header class="mast cc-mast">
+  <a class="wordmark lb-mark" href="./" aria-label="Eveniunt Command Center, home"><span class="lb-top">Eveniunt</span><span class="lb-word">Command Center</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
+  <nav class="switcher" aria-label="Main menu">
     <a href="./" data-module="home" aria-current="page">Home</a>
     <a href="tracker/" data-module="tracker">Tracker</a>
     <a href="atelier/" data-module="atelier">Atelier</a>
@@ -31,56 +31,56 @@
   <span class="status" id="status" role="status" aria-live="polite"></span>
 </header>
 
-<main id="home">
-  <section class="intro">
-    <h1>Welcome back</h1>
-    <p>Pick a module. The Tracker and the Atelier open exactly as you know them; the <b>Command Center</b> link in each module's header brings you back here.</p>
+<main id="home" class="cc-home">
+  <section class="cc-hero">
+    <div>
+      <p class="cc-kicker">Your free companies, crafts and completion, on one desk</p>
+      <h1 class="cc-title">Welcome back<span id="hello-name"></span></h1>
+      <p class="muted" id="hello-line">Pick up where you left off. Everything below shares one save, on every device you sign in on.</p>
+    </div>
+    <section class="save" id="save" aria-label="Your characters" hidden></section>
   </section>
 
-  <section class="save" id="save" aria-label="Your save" hidden></section>
-
-  <section class="modules" aria-label="Available modules">
+  <section class="modules" aria-label="Modules">
     <a class="card" href="tracker/" data-module="tracker">
-      <span class="card-kicker">Module</span>
+      <svg class="card-glyph" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="6" width="30" height="36" rx="2"/><path d="M15 17l3 3 6-6M15 29l3 3 6-6M28 17h6M28 29h6"/></svg>
+      <span class="card-kicker">Completion</span>
       <span class="card-title">Tracker</span>
-      <span class="card-text">Completion lists for up to eight characters side by side, plus the Live boards: timers, dailies, hunts, weather, market board and more.</span>
-      <span class="card-go">Open the Tracker →</span>
-    </a>
-    <a class="card" href="atelier/" data-module="atelier">
-      <span class="card-kicker">Module</span>
-      <span class="card-title">Atelier</span>
-      <span class="card-text">Crafting solver: recipe search, crafter stats, solver, simulator, macros and a step-by-step guide. Opens as its own page so it can use every processor core.</span>
-      <span class="card-go">Open the Atelier →</span>
+      <span class="card-text">Every list for up to eight characters side by side, and the Live boards: timers, dailies, hunts, weather, market.</span>
+      <span class="card-live" data-live="tracker"></span>
+      <span class="card-go">Open the Tracker</span>
     </a>
     <a class="card" href="submersibles/" data-module="submersibles">
-      <span class="card-kicker">Module</span>
+      <svg class="card-glyph" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 28c0-5 6-9 16-9h6c8 0 14 4 14 9s-6 9-14 9H22C12 37 6 33 6 28z"/><path d="M20 19v-6h8v6M24 13V8"/><circle cx="18" cy="28" r="2"/><circle cx="26" cy="28" r="2"/><circle cx="34" cy="28" r="2"/></svg>
+      <span class="card-kicker">Free company</span>
       <span class="card-title">Submersibles</span>
-      <span class="card-text">Your free companies' submarines on one board: Back, Out, Idle or Locked with live countdowns, the return times you type from the game, alerts and calendar entries.</span>
-      <span class="card-go">Open Submersibles →</span>
+      <span class="card-text">Your whole fleet on one board: worked-out return times, routes in your order, alerts and calendar entries.</span>
+      <span class="card-live" data-live="submersibles"></span>
+      <span class="card-go">Open Submersibles</span>
+    </a>
+    <a class="card" href="atelier/" data-module="atelier">
+      <svg class="card-glyph" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 38l16-16M22 12l6-6 14 14-6 6zM24 14l10 10"/><path d="M8 40l4-4"/></svg>
+      <span class="card-kicker">Crafting</span>
+      <span class="card-title">Atelier</span>
+      <span class="card-text">Recipe search, crafter stats, solver, simulator and macros. Opens on its own page to use every processor core.</span>
+      <span class="card-live" data-live="atelier"></span>
+      <span class="card-go">Open the Atelier</span>
     </a>
   </section>
 
   <section class="cosmic" aria-label="Cosmic Exploration guides">
     <h2>Cosmic Exploration</h2>
-    <p class="muted">The Atelier's step-by-step mission guides, one offline page per destination.</p>
     <p class="links">
-      <a class="btn" href="cosmic/cosmic-sinus-ardorum.html">Sinus Ardorum</a>
-      <a class="btn" href="cosmic/cosmic-phaenna.html">Phaenna</a>
-      <a class="btn" href="cosmic/cosmic-oizys.html">Oizys</a>
-      <a class="btn" href="cosmic/cosmic-auxesia.html">Auxesia</a>
+      <a class="btn sm" href="cosmic/cosmic-sinus-ardorum.html">Sinus Ardorum</a>
+      <a class="btn sm" href="cosmic/cosmic-phaenna.html">Phaenna</a>
+      <a class="btn sm" href="cosmic/cosmic-oizys.html">Oizys</a>
+      <a class="btn sm" href="cosmic/cosmic-auxesia.html">Auxesia</a>
     </p>
   </section>
 
-  <section class="coming" aria-label="Coming modules">
-    <h2>Coming next</h2>
-    <p class="muted">In the order you chose. They appear here as each one ships.</p>
-    <ol class="coming-list">
-      <li><b>Lists</b> <span>crafting planner with totals of what to gather, buy or craft</span></li>
-      <li><b>Market</b> <span>prices, estimated profit and a shopping list split by world</span></li>
-      <li><b>Gathering</b> <span>timed nodes, fish windows, alarms and routes</span></li>
-      <li><b>Currencies &amp; Collectables</b>, <b>Levequests</b>, <b>Ventures &amp; Voyages</b></li>
-      <li><b>Gear</b>, <b>Treasure Maps</b>, desynthesis</li>
-    </ol>
+  <section class="coming" aria-label="On the way">
+    <h2>On the way</h2>
+    <p class="muted coming-line"><b>Lists</b> crafting planner · <b>Market</b> prices and shopping · <b>Gathering</b> timed nodes and fish · <b>Currencies</b>, <b>Levequests</b>, <b>Ventures</b> · <b>Gear</b>, <b>Treasure maps</b></p>
   </section>
 </main>
 

@@ -5,9 +5,9 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --back: #4fd18b; --out: #7d93ff; --idle: #f0b347; --locked: #6f757e; --back-bg: rgba(79, 209, 139, .12); --out-bg: rgba(125, 147, 255, .1); --idle-bg: rgba(240, 179, 71, .12); } }
 :root[data-theme="dark"] { --back: #4fd18b; --out: #7d93ff; --idle: #f0b347; --locked: #6f757e; --back-bg: rgba(79, 209, 139, .12); --out-bg: rgba(125, 147, 255, .1); --idle-bg: rgba(240, 179, 71, .12); }
 
-.subs-page .mast { gap: 10px 20px; padding-top: 8px; padding-bottom: 8px; }
-.cc-back { text-decoration: none; white-space: nowrap; padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--r); background: var(--slip); font-weight: 600; }
-.cc-back:hover { border-color: var(--seal); color: var(--seal); }
+.subs-mast { max-width: none; padding-top: 12px; padding-bottom: 10px; align-items: center; }
+.subs-mast .lb-word { font-size: 44px; }
+@media (max-width: 700px) { .subs-mast .lb-word { font-size: 30px; } .subs-mast .lb-top { font-size: 9px; } }
 .subs-layout { flex: 1; display: grid; grid-template-columns: 92px minmax(0, 1fr); width: 100%; }
 .tabs { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; border-right: 1px solid var(--rule); background: var(--paper-2); }
 .tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; font: inherit; font-size: 12px; padding: 8px 4px; border: 1px solid transparent; border-radius: var(--r); background: none; color: var(--ink-2); cursor: pointer; }

@@ -280,13 +280,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await pp.goto(ROOT); await pp.waitForSelector('.modules');
       const w = await pp.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
       if (SHOT) await pp.screenshot({ path: path.join(ev, 'shell-phone.png'), fullPage: true });
-      // gate 1D: the apps at phone width keep the header link (sign only) and show the notice without sideways scrolling
+      // gate 1D: the apps at phone width keep the header link and show the notice without sideways scrolling; since
+      // 2026-11-12 the link reads "Main menu" at every width (owner request)
       await pp.goto(ROOT + 'tracker/'); await trackerSetup(pp);
       const tw = await pp.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
-        back: !!document.querySelector('a[data-cc-back]'), textHidden: getComputedStyle(document.querySelector('a[data-cc-back] .cc-txt')).display === 'none', notice: !!document.querySelector('[data-handover]') }));
+        back: !!document.querySelector('a[data-cc-back]'), labelShown: getComputedStyle(document.querySelector('a[data-cc-back] .cc-txt')).display !== 'none' && /Main menu/.test(document.querySelector('a[data-cc-back]').textContent), notice: !!document.querySelector('[data-handover]') }));
       if (SHOT) await pp.screenshot({ path: path.join(ev, 'tracker-phone-handover.png') });
       record('C9', 'Phone width (390 px): no sideways scrolling in the shell or in the Tracker with its header link and hand-over notice',
-        w.scroll <= w.client && tw.scroll <= tw.client && tw.back && tw.textHidden && tw.notice, { shell: w, tracker: tw });
+        w.scroll <= w.client && tw.scroll <= tw.client && tw.back && tw.labelShown && tw.notice, { shell: w, tracker: tw });
       await ph.ctx.close();
     }
 

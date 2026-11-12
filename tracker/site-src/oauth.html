@@ -18,8 +18,10 @@
   var ret = { code: q.get('code'), state: q.get('state'), error: q.get('error'), error_description: q.get('error_description'), at: Date.now() };
   try { sessionStorage.setItem('eveniunt-cloud-return', JSON.stringify(ret)); }
   catch (e) { document.getElementById('msg').textContent = 'This browser blocks the storage the sign-in needs (a private window?). Open the Tracker in an ordinary window and try again.'; return; }
-  // back where the sign-in started: the Tracker, or the Command Center's Settings (same site only)
-  var back = './';
+  // back where the sign-in started (same site only); if that is unknown (an installed phone app can lose it on the way
+  // to Microsoft), the Command Center's Settings, which finish any sign-in (owner report 2026-11-12: it "opens inside the
+  // tracker instead of in the main menu")
+  var back = '../#settings';
   try { var b = JSON.parse(sessionStorage.getItem('eveniunt-cloud-back') || 'null'); sessionStorage.removeItem('eveniunt-cloud-back'); if (b && new URL(b).origin === location.origin) back = b; } catch (e) { /* the Tracker */ }
   location.replace(back);
 })();

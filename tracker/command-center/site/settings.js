@@ -44,18 +44,19 @@
     var cs = ET.cloudState();
     box.innerHTML = '<h1>Settings</h1><p class="muted">For the whole Command Center. The Tracker\'s own Settings change the same save.</p>' +
       (last ? '<p class="set-msg" role="status">' + esc(last) + '</p>' : '') +
-      // characters and free companies
-      '<section class="set-card"><h2>Characters and free companies</h2><p class="muted">The characters every module shares. The free company you type here appears in Submersibles, ready for its submarines. Starting class and Grand Company are in the Tracker\'s Settings.</p>' +
-      '<label class="set-row">How many characters <select class="inp" data-set="count">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === Math.max(n, 1) ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></label>' +
-      (n ? '<div class="set-chars"><span class="h">Character</span><span class="h">Free company</span>' + chars.map(function (c) {
-        var f = fcOf(c.id);
-        return '<input class="inp" data-set="name" data-id="' + esc(c.id) + '" value="' + esc(c.name) + '" maxlength="40" aria-label="Character name">' +
-          '<input class="inp" data-set="fc" data-id="' + esc(c.id) + '" value="' + esc(f ? f.fc.name || '' : '') + '" maxlength="40" placeholder="none" aria-label="Free company of ' + esc(c.name) + '">';
-      }).join('') + '</div>' : '<p><button type="button" class="btn" data-act="first">Add my first character</button></p>') + '</section>' +
       // cloud sync
       '<section class="set-card"><h2>Cloud sync</h2><p class="muted">A private copy in your own OneDrive keeps every device the same: characters, Tracker ticks, Submersibles and the rest. Sign in once per device (on an iPhone, the home-screen app and Safari each once); after that it syncs by itself.</p>' +
       '<p class="set-status">' + (!HOSTED ? 'Works on the published site only.' : !CFG ? 'Cloud sync is not set up on this site.' : cs.device ? 'This device is signed in' + (cs.since ? ' since ' + esc(new Date(cs.since).toLocaleDateString()) : '') + '.' + (ST && ST.sync && ST.sync.drive ? ' Last sync ' + esc(new Date(ST.sync.drive.at).toLocaleString()) + '.' : '') : 'This device is not signed in.') + '</p>' +
       '<p class="row">' + (cs.device ? '<button type="button" class="btn" data-act="sync">Sync now</button><button type="button" class="btn ghost" data-act="signout">Sign out on this device</button>' : '<button type="button" class="btn primary" data-act="signin"' + (HOSTED && CFG ? '' : ' disabled') + '>Sign in with Microsoft</button>') + '</p></section>' +
+      // characters and free companies
+      '<section class="set-card"><h2>Characters and free companies</h2><p class="muted">The characters every module shares. The free company you type here appears in Submersibles, ready for its submarines. Starting class and Grand Company are in the Tracker\'s Settings.</p>' +
+      '<label class="set-row">How many characters <select class="inp" data-set="count">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === Math.max(n, 1) ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></label>' +
+      (n ? '<div class="set-chars">' + chars.map(function (c, i) {
+        var f = fcOf(c.id), placeholder = /^Character \d$/.test(c.name);
+        return '<div class="set-char"><span class="set-num">' + (i + 1) + '</span>' +
+          '<label class="set-lab">Character name<input class="inp" data-set="name" data-id="' + esc(c.id) + '" value="' + esc(placeholder ? '' : c.name) + '" maxlength="40" placeholder="Character ' + (i + 1) + ': type the name"></label>' +
+          '<label class="set-lab">Free company<input class="inp" data-set="fc" data-id="' + esc(c.id) + '" value="' + esc(f ? f.fc.name || '' : '') + '" maxlength="40" placeholder="Its free company (optional)"></label></div>';
+      }).join('') + '</div>' : '<p><button type="button" class="btn" data-act="first">Add my first character</button></p>') + '</section>' +
       // backups
       '<section class="set-card"><h2>Backups</h2><p class="muted">A file or a code with your whole save, for another device or safekeeping. Loading one, and importing desktop-app saves, is in the Tracker\'s Settings (Import and backup).</p>' +
       '<p class="row"><button type="button" class="btn" data-act="backup"' + (ST ? '' : ' disabled') + '>Save a backup file</button><button type="button" class="btn" data-act="code"' + (ST ? '' : ' disabled') + '>Make a transfer code</button><a class="btn ghost" href="tracker/#settings">Open the Tracker\'s Settings</a></p><div data-code></div></section>' +
@@ -91,7 +92,7 @@
   }
   function onChange(e) {
     var t = e.target, k = t.dataset && t.dataset.set; if (!k) return;
-    if (k === 'name' && ST) { ET.renameCharacter(ST, t.dataset.id, t.value); saveChars().then(function () { say('Saved.'); }); }
+    if (k === 'name' && ST) { ET.renameCharacter(ST, t.dataset.id, t.value.trim() || 'Character ' + (ST.chars.findIndex(function (c) { return c.id === t.dataset.id; }) + 1)); saveChars().then(function () { say('Saved.'); }); }
     else if (k === 'fc') setFc(t.dataset.id, t.value).then(function () { say('Saved: the free company is in Submersibles.'); });
     else if (k === 'count') {
       var n = +t.value;
@@ -174,5 +175,6 @@
   window.addEventListener('hashchange', route);
   route();
   var ready = start();
-  window.__settings = { ready: function () { return ready; }, state: function () { return ST; }, render: render };
+  function signIn() { ready.then(function () { if (CFG) { if (ST) ET.saveState(ST, true); ET.cloudBegin(CFG); } else { location.hash = '#settings'; } }); }
+  window.__settings = { ready: function () { return ready; }, state: function () { return ST; }, render: render, signIn: signIn };
 })();

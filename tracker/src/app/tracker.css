@@ -336,9 +336,7 @@ select.inp, input.inp, textarea.inp, .field select { font-family: var(--f-body);
 .hn-chip.sel { outline: 2px solid var(--seal); outline-offset: 1px; } .hn-sel { margin-top: 4px; }
 
 /* gate 1D: the way back to the Command Center, and the one-time hand-over notice (hosted pages only) */
-.cc-back { text-decoration: none; white-space: nowrap; gap: 4px; }
-.cc-back:hover { text-decoration: underline; }
-@media (max-width: 520px) { .cc-back .cc-txt { display: none; } .cc-back { padding-left: 6px; padding-right: 6px; } }
+
 .handover { margin: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); padding: 10px 14px; border: 1px solid var(--rule); border-left: 3px solid var(--seal); background: var(--paper-2); color: var(--ink); font: 400 14px/1.5 var(--f-body); }
 .handover p { margin: 0; }
 .handover .handover-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
@@ -359,3 +357,10 @@ body.solo .lr > .c { min-height: 44px; }
 .dlg-x:hover { color: var(--ink, inherit); }
 #dlg { position: fixed; }
 .empty-start { max-width: 60ch; margin: 10vh auto; padding: 0 16px; }
+
+/* the way back to the main menu (owner request 2026-11-12: clearly labelled, not small, a better icon) */
+.cc-menu-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px 6px 10px; border: 2px solid var(--seal); background: var(--slip); color: var(--ink);
+  font: 700 14px/1 var(--f-body); letter-spacing: .02em; text-decoration: none; white-space: nowrap; box-shadow: var(--shadow); }
+.cc-menu-link:hover { background: var(--seal); color: var(--on-seal); }
+.cc-menu-link .mm-ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cc-menu-link:hover .mm-ico { stroke: var(--on-seal); }

@@ -55,7 +55,7 @@
     const verifier = random(48), state = random(16);
     const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
     writeJson('session', PKCE_KEY, { verifier, state, at: Date.now() });
-    writeJson('session', 'eveniunt-cloud-back', ET.CLOUD_BASE ? location.href.split('#')[0] + '#settings' : null); // oauth.html returns there
+    writeJson('session', 'eveniunt-cloud-back', location.href.split('#')[0] + (ET.CLOUD_BASE ? '#settings' : '')); // oauth.html returns where the sign-in started
     const q = new URLSearchParams({ client_id: cfg.clientId, response_type: 'code', redirect_uri: ET.cloudReturnAddress(), response_mode: 'query', scope: SCOPES,
       state, code_challenge: challenge, code_challenge_method: 'S256', prompt: 'select_account' });
     location.assign(cfg.authority + '/authorize?' + q.toString());

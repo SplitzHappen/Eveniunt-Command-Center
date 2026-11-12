@@ -551,8 +551,10 @@ test('red team: a crafted backup loaded through the page runs no script and adds
 // a tap outside closes it, and the page then offers the way back to the set-up
 test('first run: a tap outside closes the window; the page offers to set up characters, which reopens it', async () => {
   const { ctx, page } = await open({ setup: false });
+  await page.waitForSelector('#nchars'); // the window must be open before the tap outside
   await page.mouse.click(5, 5);
   await page.waitForFunction(() => !document.getElementById('dlg').open);
+  await page.waitForSelector('#start-setup'); // drawn when the window's close event arrives
   assert.match(await page.textContent('#page'), /No characters yet/);
   await page.click('#start-setup');
   await page.waitForSelector('#nchars');

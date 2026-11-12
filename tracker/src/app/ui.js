@@ -823,7 +823,7 @@
         var r = rowsState[i] || {};
         rows += '<div class="ch"><b>' + (i + 1) + '</b><input class="inp" data-name="' + i + '" placeholder="Character ' + (i + 1) + '" value="' + esc(r.name || '') + '" aria-label="Character ' + (i + 1) + ' name">' + classSelect('data-cls', i, r.cls) + gcSelect('data-gcs', i, r.gc) + '</div>';
       }
-      openDialog('<button type="button" class="dlg-x" data-close aria-label="Close">×</button><h3>Welcome to the Eveniunt Tracker</h3><p class="help">Track up to eight characters side by side. The starting class decides which city’s opening quests apply, the Grand Company which company quests. You can change all of this later in Settings.</p>' +
+      openDialog('<button type="button" class="dlg-x" data-close aria-label="Close">×</button><h3>Welcome to the Eveniunt Tracker</h3><p class="help"><b>Already use it on another device?</b> <a href="../#settings">Sign in to cloud sync</a> in the Command Center\u2019s Settings and your characters arrive by themselves. Otherwise, add them here.</p><p class="help">Track up to eight characters side by side. The starting class decides which city’s opening quests apply, the Grand Company which company quests. You can change all of this later in Settings.</p>' +
         '<div class="row"><label class="help" for="nchars">How many characters</label><select id="nchars" class="inp" style="width:auto">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (k) { return '<option' + (k === n ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
         '<div class="chars setup" style="margin-top:10px">' + rows + '</div>' +
         '<div class="row" style="margin-top:16px"><button type="button" class="btn" id="go">Start tracking</button><button type="button" class="btn ghost" id="load-backup">Load a backup or import saves instead</button></div>', function (d) {
@@ -1335,10 +1335,10 @@
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
     // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. A plain link, first
-    // among the header tools; on narrow screens only the house sign shows.
+    // among the header tools, labelled "Main menu" at every width (owner request 2026-11-12).
     var home = new URL('../', location.href).href;
-    var back = document.createElement('a'); back.className = 'btn sm ghost cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Eveniunt Command Center: home');
-    back.innerHTML = '<span aria-hidden="true">\u2302</span><span class="cc-txt">Command Center</span>';
+    var back = document.createElement('a'); back.className = 'cc-menu-link cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Back to the Command Center main menu');
+    back.innerHTML = '<svg class="mm-ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 10l4 6"/><rect x="10" y="4" width="3.5" height="3.5" rx=".6"/><rect x="15" y="4" width="3.5" height="3.5" rx=".6"/><rect x="10" y="10" width="3.5" height="3.5" rx=".6"/><rect x="15" y="10" width="3.5" height="3.5" rx=".6"/></svg><span class="cc-txt">Main menu</span>';
     if (tools) tools.insertBefore(back, tools.firstChild);
     handover(home, 'Tracker');
   })();

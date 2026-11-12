@@ -9,6 +9,8 @@
 <link rel="icon" href="../icons/icon-192.png">
 <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <meta name="theme-color" content="#0f2234">
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../shared.css">
 <link rel="stylesheet" href="../shell.css">
 <link rel="stylesheet" href="subs.css">
 <script>
@@ -17,10 +19,11 @@
 </script>
 </head>
 <body class="subs-page">
-<header class="mast">
-  <a class="cc-back" href="../" aria-label="Back to the Eveniunt Command Center">⌂ <span class="cc-txt">Command Center</span></a>
-  <span class="brand"><span class="brand-top">Eveniunt</span><span class="brand-name">Submersibles</span></span>
-  <nav class="switcher" aria-label="Modules">
+<script src="../look.js"></script>
+<header class="mast cc-mast subs-mast">
+  <a class="cc-menu-link cc-back" href="../" aria-label="Back to the Command Center main menu"><svg class="mm-ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 10l4 6"/><rect x="10" y="4" width="3.5" height="3.5" rx=".6"/><rect x="15" y="4" width="3.5" height="3.5" rx=".6"/><rect x="10" y="10" width="3.5" height="3.5" rx=".6"/><rect x="15" y="10" width="3.5" height="3.5" rx=".6"/></svg><span>Main menu</span></a>
+  <a class="wordmark lb-mark" href="./" aria-label="Submersibles"><span class="lb-top">Eveniunt</span><span class="lb-word">Submersibles</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
+  <nav class="switcher" aria-label="Main menu">
     <a href="../" data-module="home">Home</a>
     <a href="../tracker/" data-module="tracker">Tracker</a>
     <a href="../atelier/" data-module="atelier">Atelier</a>
