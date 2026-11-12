@@ -76,7 +76,8 @@
   // The Submersibles section (design 7.1; step S2): free companies, submarines, trips and preferences, each one merge unit.
   //   fcs:   { <fcId>:  { name, world, charId, order, unlockedSlots, discovered: [sectorIds] } }
   //   subs:  { <subId>: { fcId, slot, name, rank, expIntoRank, parts: [hull, stern, bow, bridge], voyage: { sentAt, route, returnAt, calcAt, gameSaid } | null } }
-  //   trips: { <tripId>: { s, t, r, back, calc, said, items: [[itemId, qty]], newSectors, rankAfter } }
+  //   trips: { <tripId>: { s, t, r, back, calc, said, items: [[itemId, qty]], newSectors, rankAfter, rankCalc } }
+  //   rankCalc: the least rank worked out on return; rankAfter: the rank kept (the owner's correction when the game showed more).
   //   calcAt / calc: the worked-out return time, kept beside the game's typed time as evidence for the formula (design 3.2).
   //   settings: { prefs: { sort, grouping, quietHours, window, priceWorld } }
   // Only known fields with the right type are kept; a bad field or entry is dropped, never repaired by guessing. Trips are
@@ -116,7 +117,7 @@
     if (plain(sec.trips)) for (const [id, t] of Object.entries(sec.trips)) {
       if (!plain(t) || !safeKey(t.s) || time(t.t) === undefined) continue;
       const items = Array.isArray(t.items) ? t.items.filter((x) => Array.isArray(x) && x.length === 2 && intIn(x[0], 1, 1e7) !== undefined && intIn(x[1], 1, 1e6) !== undefined).map((x) => [x[0], x[1]]) : [];
-      out.trips[id] = keep({ s: t.s, t: t.t, r: sectors(t.r, 5) || [], back: time(t.back), calc: time(t.calc), said: subName(t.said, 40), items, newSectors: sectors(t.newSectors) || [], rankAfter: intIn(t.rankAfter, 1, 145) });
+      out.trips[id] = keep({ s: t.s, t: t.t, r: sectors(t.r, 5) || [], back: time(t.back), calc: time(t.calc), said: subName(t.said, 40), items, newSectors: sectors(t.newSectors) || [], rankAfter: intIn(t.rankAfter, 1, 145), rankCalc: intIn(t.rankCalc, 1, 145) });
     }
     const p = plain(sec.settings) && plain(sec.settings.prefs) ? sec.settings.prefs : null;
     if (p) out.settings.prefs = keep({ sort: ['fc', 'time'].includes(p.sort) ? p.sort : undefined, grouping: ['sub', 'fc', 'fleet'].includes(p.grouping) ? p.grouping : undefined,

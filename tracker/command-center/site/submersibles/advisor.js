@@ -56,6 +56,15 @@
     return { rank: r, into: e };
   };
 
+  // The rank and experience a sub reaches when a voyage on this route ends: base experience only, so "at least"
+  // (formula.experienceNote). null without a route or a rank.
+  A.afterVoyage = function (sub, route) {
+    if (!sub || !RANK[sub.rank] || !route || !route.length) return null;
+    var exp = route.reduce(function (t, id) { return t + (SECTOR[id] ? SECTOR[id].exp : 0); }, 0);
+    var r = A.rankAfter(sub.rank, sub.expIntoRank || 0, exp);
+    return { exp: exp, rank: r.rank, into: r.into };
+  };
+
   // ------------------------------------------------------------------ unlocks (community data, Submarine Tracker)
   A.children = function (id) { return CHILD[id] || []; };
   // the chain of sectors from a discovered one down to the target: [discovered ancestor, ..., target]

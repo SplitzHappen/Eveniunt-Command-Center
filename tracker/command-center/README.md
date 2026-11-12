@@ -2,6 +2,10 @@
 
 Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, sections 4a (rules 1, 5 and 10), 4b (finding F1), 4c (F5, F6) and 5 (gates 1B to 1E). Cards: `.ai/planning/CARD-phase-1C.md`, `.ai/planning/CARD-phase-1D.md`, `.ai/planning/CARD-phase-1E.md`.
 
+## Submersibles step S3 (rest): rank after a voyage, size meter (2026-11-12)
+
+Card: `.ai/planning/CARD-S3-submersibles-rank.md`. Logging a voyage moves the sub's rank and experience on by the route's base experience ("at least"); the Back sheet takes the game's rank if higher and keeps both (`trip.rankCalc`, `trip.rankAfter`); suggestions and the one-press button for a Back sub use the rank after its voyage; Setup shows the save's compressed size against the 4 MB cloud limit. Check C22 covers both.
+
 ## Submersibles step S2: the fleet board and guided setup (2026-11-11)
 
 Card: `.ai/planning/CARD-S2-submersibles-board.md`. Design: `.ai/planning/SUBMERSIBLES_DESIGN.md` (sections 3.1, 3.2 send only, 3.6, 4, 6 in-app part, 7.1, 7.3).

@@ -734,7 +734,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.fill('#sheet input[name=tin]', Math.floor(gameMin / 60) + 'h ' + (gameMin % 60) + 'm'); await page.click('#sheet [data-act=check]'); await wroteOut(page);
         const checked = (await saved(page)).subs[sentId].voyage;
         const checkOk = checked.calcAt === afterQuick.calcAt && checked.returnAt !== checked.calcAt && !!checked.gameSaid;
-        await page.click('[data-tab=setup]'); const accuracy = await page.textContent('.accuracy'); await page.click('[data-tab=board]');
+        await page.click('[data-tab=setup]'); const accuracy = await page.textContent('.accuracy');
+        await page.waitForFunction(() => /MB of the 4 MB limit/.test((document.querySelector('[data-size]') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+        const sizeText = await page.textContent('[data-size]'); await page.click('[data-tab=board]');
+        // the rank moved on when the first voyage was logged (step S3): the base experience of its route, kept as evidence
+        const rankSub = (await saved(page)).subs[sentId];
         // send all back and idle subs: each on its suggested route with its own worked-out time
         await page.click('[data-act=sendall]');
         const picked = await page.$$eval('#sheet input[name=pick]:checked', (xs) => xs.map((x) => x.value));
@@ -759,10 +763,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         record('C22', 'Send by tapping a route: the return time is worked out with no typing and matches the formula; with the page clock moved past it the sub shows Back with one banner; a reload shows Back with no second banner; one press on the board\'s suggested-route button sends it again (worked out, no sheet); "Check against the game" keeps the worked-out time beside the game\'s and shows the difference under Setup; "Send all back" sends each picked sub on its own suggested route (subs looking for new sectors split them) and logs the returned voyage; two game times entered in the same minute share one banner and keep the worked-out time beside them',
           /Suggested · step [12] of 3/.test(advice) && /calculated, not yet confirmed/.test(calcText) && sent[1].voyage.returnAt - sent[1].voyage.sentAt === wantSecs * 1000 && sent[1].voyage.calcAt === sent[1].voyage.returnAt && !sent[1].voyage.gameSaid &&
           beforeBack.banners.length === 0 && sentRow === 'back' && atBack.banners.length === 1 && /is back/.test(atBack.banners[0]) && reloadRow === 'back' && afterReload.banners.length === 0 &&
-          quickOk && checkOk && /\+[234] min/.test(accuracy) && picked.length === 2 && allOk && new Set(picked.map((id) => afterAll.subs[id].voyage.route.join())).size > 1 && trips.length === 1 && trips[0].back === sent[1].voyage.returnAt && trips[0].calc === sent[1].voyage.calcAt &&
+          quickOk && checkOk && /\+[234] min/.test(accuracy) && /MB of the 4 MB limit/.test(sizeText) && rankSub.expIntoRank === 10610 && rankSub.rank === 40 && picked.length === 2 && allOk && new Set(picked.map((id) => afterAll.subs[id].voyage.route.join())).size > 1 && trips.length === 1 && trips[0].back === sent[1].voyage.returnAt && trips[0].calc === sent[1].voyage.calcAt && trips[0].rankCalc === 40 && trips[0].rankAfter === 40 &&
           two.every((id) => typed.subs[id].voyage.gameSaid === '45m' && typeof typed.subs[id].voyage.calcAt === 'number' && typed.subs[id].voyage.calcAt !== typed.subs[id].voyage.returnAt) &&
           grouped.banners.length === 1 && /^2 submarines are back/.test(grouped.banners[0]),
-          { advice: advice.replace(/\s+/g, ' ').slice(0, 200), wantSecs, quickLabel, afterQuick, checked, accuracy: accuracy.replace(/\s+/g, ' ').slice(-160), sent: sent[1].voyage, beforeBack: beforeBack.banners, atBack: atBack.banners, sentRow, afterReload: afterReload.banners, reloadRow, picked, allOk, sentAll: picked.map((id) => afterAll.subs[id].voyage), trips, typed: two.map((id) => typed.subs[id].voyage), grouped: grouped.banners });
+          { advice: advice.replace(/\s+/g, ' ').slice(0, 200), wantSecs, quickLabel, afterQuick, checked, accuracy: accuracy.replace(/\s+/g, ' ').slice(-160), sizeText, rank: rankSub && [rankSub.rank, rankSub.expIntoRank], sent: sent[1].voyage, beforeBack: beforeBack.banners, atBack: atBack.banners, sentRow, afterReload: afterReload.banners, reloadRow, picked, allOk, sentAll: picked.map((id) => afterAll.subs[id].voyage), trips, typed: two.map((id) => typed.subs[id].voyage), grouped: grouped.banners });
 
         // C23: the calendar file for an Out sub: one event, the right time, a 0-minute alarm
         const outId = Object.entries((await saved(page)).subs).find(([, s]) => s.voyage && s.voyage.returnAt > (T0 + 4 * 3600000))[0];

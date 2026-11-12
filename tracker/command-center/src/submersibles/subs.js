@@ -103,7 +103,7 @@
     var main = $('#view');
     if (SH.problem) { main.innerHTML = '<div class="note bad"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.</div>'; return; }
     if (UI.tab === 'board') main.innerHTML = boardHtml();
-    else if (UI.tab === 'setup') main.innerHTML = W ? wizardHtml() : setupHtml();
+    else if (UI.tab === 'setup') { main.innerHTML = W ? wizardHtml() : setupHtml(); if (!W) measureSize(); }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
@@ -126,7 +126,7 @@
   function subRow(x, now, withFc) {
     var s = x.sub, st = x.status, v = s.voyage, info = '';
     if (st === 'out') info = '<span class="when" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b> · ' + esc(F.fmtClock(v.returnAt, now)) + '</span>';
-    else if (st === 'back') info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back ' + esc(F.fmtClock(v.returnAt, now)) + '</span>';
+    else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back ' + esc(F.fmtClock(v.returnAt, now)) + (up && up.rank > s.rank ? ' · rank → ' + up.rank + '+' : '') + '</span>'; }
     else if (st === 'idle') info = '<span class="when">not sent</span>';
     var quick = '';
     if (st === 'back' || st === 'idle') { var a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
@@ -183,12 +183,28 @@
     Object.keys(S.trips).forEach(function (k) { var t = S.trips[k]; add(t.s, t.calc, t.back, t.said); });
     Object.keys(S.subs).forEach(function (k) { var v = S.subs[k].voyage; if (v) add(k, v.calcAt, v.returnAt, v.gameSaid); });
     rows.sort(function (a, b) { return b.back - a.back; });
-    return '<section class="panel accuracy"><h2>Accuracy of worked-out times</h2><p><span class="tag">' + esc(c.text) + '</span></p>' +
+    var rc = Object.keys(S.trips).map(function (k) { return S.trips[k]; }).filter(function (t) { return t.rankCalc && t.rankAfter; });
+    var rankLine = '<p class="hint">Ranks after a voyage: ' + rc.length + ' worked out' + (rc.length ? ', ' + rc.filter(function (t) { return t.rankAfter > t.rankCalc; }).length + ' corrected higher from the game (survey bonuses give extra experience; the app counts only the base)' : '') + '.</p>';
+    return '<section class="panel accuracy"><h2>Accuracy of worked-out times</h2><p><span class="tag">' + esc(c.text) + '</span></p>' + rankLine +
       '<p class="muted">The times use the community formula from Submarine Tracker; players measuring the game on the official forum found the same three numbers (12 hours per voyage, 39.9 minutes per unit of distance at speed 1, 70 minutes per survey minute at speed 1). To confirm it on your own fleet: after sending in the game, open the sub here and use <b>Check against the game</b>. After 10 checks within a minute, the label says confirmed.</p>' +
       (rows.length ? '<table class="acc"><thead><tr><th>Sub</th><th>Worked out</th><th>Game</th><th>Difference</th></tr></thead><tbody>' + rows.slice(0, 20).map(function (r) {
         var d = Math.round((r.back - r.calc) / 1000);
         return '<tr><td>' + esc(r.sub ? r.sub.name || 'Sub ' + r.sub.slot : 'removed sub') + '</td><td>' + esc(F.fmtClock(r.calc)) + '</td><td>' + esc(F.fmtClock(r.back)) + ' <span class="muted">(' + esc(r.said) + ')</span></td><td class="' + (Math.abs(d) <= 60 ? 'ok' : 'bad') + '">' + (Math.abs(d) <= 60 ? 'agrees' : (d > 0 ? '+' : '') + Math.round(d / 60) + ' min') + '</td></tr>';
       }).join('') + '</tbody></table>' : '<p class="hint">No checks yet.</p>') + '</section>';
+  }
+  // the history size meter (design 7.3): the save's compressed size against the cloud copy's 4 MB limit
+  var CLOUD_LIMIT = 4 * 1024 * 1024 - 64 * 1024; // as src/core/cloud.js
+  function measureSize() {
+    var el = $('[data-size]'); if (!el) return;
+    CC.read().then(function (r) {
+      if (r.raw == null) { el.textContent = 'Nothing saved yet.'; return null; }
+      var doc = CC.checkDoc(r.raw);
+      return CC.pack(JSON.stringify({ chars: doc.chars, modules: doc.modules })).then(function (z) {
+        var bytes = CC.byteLength(z), pct = Math.round(bytes / CLOUD_LIMIT * 1000) / 10, trips = Object.keys(S.trips).length;
+        el.innerHTML = 'Whole save, compressed as cloud sync sends it: <b>' + (bytes / 1024 / 1024).toFixed(2) + ' MB</b> of the 4 MB limit (' + pct + '%). ' + trips.toLocaleString('en') + ' logged voyage' + (trips === 1 ? '' : 's') + ' kept.' +
+          (pct >= 75 ? ' <b>Over 75%:</b> archiving the oldest years to a file will be offered with the return sheet (step S5); nothing is ever dropped.' : ' Every voyage is kept; at this size there is room for many years.');
+      });
+    }).catch(function (e) { el.textContent = 'Could not measure: ' + e.message; });
   }
   function setupHtml() {
     var fcs = fcList();
@@ -198,7 +214,7 @@
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
           '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span></li>';
       }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
-      accuracyHtml() + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
+      accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><p class="muted" data-size>Measuring…</p></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
@@ -367,6 +383,8 @@
   var ADVICE = {};
   function adviceFor(subId) {
     var s = S.subs[subId], fc = s && S.fcs[s.fcId]; if (!fc) return null;
+    // a sub that is back is planned at the rank its voyage brings it to, so the button sends what it shows
+    if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
     var key = JSON.stringify([s.rank, s.parts, fc.unlockedSlots, fc.discovered, pendingFor(subId), slotsFilled(s.fcId)]);
     if (ADVICE[subId] && ADVICE[subId].key === key) return ADVICE[subId].value;
     var v = ADV.advise({ sub: s, fc: fc, pending: pendingFor(subId), slotsFilled: slotsFilled(s.fcId) });
@@ -431,13 +449,22 @@
     if (game) v.gameSaid = game.gameSaid;
     return { voyage: v, differs: game && calcAt && Math.abs(game.returnAt - calcAt) > 60000 ? Math.round((game.returnAt - calcAt) / 60000) : 0 };
   }
-  function logTrip(subId) { // the voyage that ended becomes a trip (S5 fills in what came back), and the voyage is cleared
+  // the voyage that ended becomes a trip (S5 fills in what came back) and the voyage is cleared; the sub's rank and
+  // experience move on by the route's base experience ("at least"), or to the rank the owner says the game shows
+  function logTrip(subId, rankFix) {
     var s = S.subs[subId], v = s && s.voyage;
     if (!v) return;
     var t = v.sentAt || v.returnAt;
     var trip = { s: subId, t: t, r: (v.route || []).slice(), back: v.returnAt, items: [], newSectors: [] };
     if (v.calcAt) trip.calc = v.calcAt;
     if (v.gameSaid) trip.said = v.gameSaid;
+    var after = ADV.afterVoyage(s, v.route);
+    if (after) {
+      trip.rankCalc = after.rank;
+      if (rankFix && rankFix !== after.rank && rankFix >= s.rank && rankFix <= 145) { s.rank = rankFix; s.expIntoRank = 0; }
+      else { s.rank = after.rank; s.expIntoRank = after.into; }
+      trip.rankAfter = s.rank;
+    } else if (rankFix && rankFix >= (s.rank || 1) && rankFix <= 145) { s.rank = rankFix; s.expIntoRank = 0; trip.rankAfter = rankFix; }
     S.trips[F.tripId(subId, t)] = trip;
     s.voyage = null;
   }
@@ -461,12 +488,12 @@
     PICK = { id: id, route: retime && v ? (v.route || []).slice() : [], sea: null };
     var head = retime ? 'Change this voyage' : 'Send ' + (s.name || 'Sub ' + s.slot);
     sheet('<h2>' + esc(head) + ' <span class="muted">' + esc(fc.name || '') + ' · rank ' + (s.rank || '?') + ' · ' + partsCode(s.parts) + '</span></h2>' +
-      (st === 'back' && !retime ? '<p class="note">Back since ' + esc(F.fmtClock(v.returnAt, now)) + '. Sending again logs that voyage in the history (what it brought back is entered from step S5).</p>' : '') +
+      (st === 'back' && !retime ? '<p class="note">Back since ' + esc(F.fmtClock(v.returnAt, now)) + '. Sending again logs that voyage in the history (what it brought back is entered from step S5).</p>' + rankField(id) : '') +
       (retime ? '' : adviceHtml(id)) + '<div data-picker>' + pickerHtml() + '</div>' +
       '<details class="game-says"' + (!subStats(s) ? ' open' : '') + '><summary>The game says… <span class="muted">(optional: type the game\'s return time to check the worked-out one)</span></summary>' + timeFields('t', 'in', '') + '</details>' +
       '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="' + (retime ? 'dore' : 'dosend') + '" data-sub="' + esc(id) + '">' + (retime ? 'Save' : st === 'back' ? 'Send again' : 'Send') + '</button>' +
       (st === 'back' && !retime ? '<button type="button" class="btn" data-act="collect" data-sub="' + esc(id) + '">Collected, not sent</button>' : '') +
-      '<button type="button" class="btn ghost" data-act="close">Cancel</button></div><p class="hint">Rank is updated by hand in Setup for now; the sheet shows the least it reaches.</p>');
+      '<button type="button" class="btn ghost" data-act="close">Cancel</button></div><p class="hint">Rank moves on by itself when a voyage is logged (at least the base experience); if the game shows a higher rank, enter it above.</p>');
     previewTime($('#sheet form'), 't');
   }
   // suggestions for several subs sent together: each one counts the routes already given to the ones before it, so
@@ -475,6 +502,7 @@
     var taken = [], out = {};
     ids.forEach(function (id) {
       var s = S.subs[id], fc = S.fcs[s.fcId];
+      if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
       var a = ADV.advise({ sub: s, fc: fc, pending: pendingFor(id).concat(taken), slotsFilled: slotsFilled(s.fcId) });
       out[id] = a;
       if (a && a.plan) taken = taken.concat(a.plan.route);
@@ -482,14 +510,24 @@
     return out;
   }
   // one press: send this sub on its suggested route, with the worked-out return time
-  function quickSend(id) {
-    var a = adviceFor(id), s = S.subs[id], now = Date.now();
-    if (!a || !a.plan || !s) { openSub(id); return; }
-    if (s.voyage) logTrip(id);
+  function quickSend(id, rankFix) {
+    var s = S.subs[id], now = Date.now();
+    if (!s) return;
+    if (s.voyage && s.voyage.returnAt <= now) logTrip(id, rankFix); // the rank moves on first, so the suggestion fits it
+    var a = adviceFor(id);
+    if (!a || !a.plan) { schedule(); openSub(id); return; }
     s.voyage = { sentAt: now, route: a.plan.route.slice(), returnAt: now + a.plan.ev.seconds * 1000, calcAt: now + a.plan.ev.seconds * 1000 };
     closeSheet(); schedule();
     setStatus((s.name || 'Sub ' + s.slot) + ' sent: ' + ADV.routeText(a.plan.route) + ', back ' + F.fmtClock(s.voyage.returnAt, now) + '.');
   }
+  // after a voyage: the rank worked out ("at least"), and a field to put the rank the game shows if it is higher
+  function rankField(id) {
+    var s = S.subs[id], a = s.voyage && ADV.afterVoyage(s, s.voyage.route);
+    if (!a) return '<label class="field rankfix">Rank the game shows now <input class="inp" type="number" name="rankfix" min="' + (s.rank || 1) + '" max="145" value="' + (s.rank || '') + '" inputmode="numeric"></label>';
+    return '<div class="rankbox"><p>This voyage gave at least <b>' + a.exp.toLocaleString('en') + '</b> experience: rank <b>' + (a.rank > s.rank ? s.rank + ' → at least ' + a.rank : 'at least ' + a.rank + ' (no rank up)') + '</b>.</p>' +
+      '<label class="field rankfix">Rank the game shows, if higher <input class="inp" type="number" name="rankfix" min="' + a.rank + '" max="145" value="' + a.rank + '" inputmode="numeric"></label></div>';
+  }
+  function readRankFix(form) { var el = form && form.elements.rankfix; var n = el ? Math.round(+el.value) : 0; return Number.isInteger(n) && n >= 1 ? n : 0; }
   function sendAllSheet(fcId) {
     var fc = S.fcs[fcId], subs = subsOf(fcId), now = Date.now();
     var list = Object.keys(subs).map(function (k) { return subs[k]; }).filter(function (e) { var st = F.status(e.sub, fc, now); return st === 'back' || st === 'idle'; });
@@ -546,12 +584,12 @@
         var sentAt = act === 'dore' && s.voyage && s.voyage.sentAt ? s.voyage.sentAt : now;
         var plan = planVoyage(form, sentAt);
         if (plan.error) { sheetError(plan.error); break; }
-        if (act === 'send' || act === 'dosend') { if (s.voyage) logTrip(id); }
+        if (act === 'send' || act === 'dosend') { if (s.voyage) logTrip(id, readRankFix(form)); }
         s.voyage = plan.voyage;
         if (plan.differs) setStatus('The game\'s time differs from the worked-out one by ' + plan.differs + ' min; the game\'s time is used and kept as evidence.');
         closeSheet(); schedule(); break;
       }
-      case 'collect': logTrip(b.dataset.sub); closeSheet(); schedule(); break;
+      case 'collect': logTrip(b.dataset.sub, readRankFix(form)); closeSheet(); schedule(); break;
       case 'unsend': if (confirm('Remove this voyage? Nothing is logged for it.')) { S.subs[b.dataset.sub].voyage = null; closeSheet(); schedule(); } break;
       case 'retime': sendSheet(b.dataset.sub, true); break;
       case 'ics': { var sub = S.subs[b.dataset.sub], f = S.fcs[sub.fcId]; calendar((f.name || 'Free company') + ' · ' + (sub.name || 'Sub ' + sub.slot) + ' back', sub.voyage.returnAt, b.dataset.sub + '-' + sub.voyage.returnAt); break; }
@@ -565,19 +603,19 @@
       case 'dosendall': {
         var picks = $$('input[name=pick]:checked', form).map(function (x) { return x.value; }), t = readTime(form, 't');
         if (!picks.length) { sheetError('Pick at least one submarine.'); break; }
+        picks.forEach(function (pid) { var x = S.subs[pid]; if (x && x.voyage) logTrip(pid); }); // ranks move on first
         var plans = planAll(picks);
         var missing = picks.filter(function (pid) { var a = plans[pid]; return !(a && a.plan); });
         if (missing.length && !t) { sheetError('Some subs have no worked-out route: type the time the game shows for them.'); break; }
         picks.forEach(function (pid) {
           var x = S.subs[pid]; if (!x) return;
           var a = plans[pid];
-          if (x.voyage) logTrip(pid);
           x.voyage = a && a.plan ? { sentAt: now, route: a.plan.route.slice(), returnAt: now + a.plan.ev.seconds * 1000, calcAt: now + a.plan.ev.seconds * 1000 } : { sentAt: now, route: [], returnAt: t.returnAt, gameSaid: t.gameSaid };
         });
         closeSheet(); schedule(); break;
       }
       case 'pickclear': PICK.route = []; redrawPicker(); break;
-      case 'quick': quickSend(b.dataset.sub); break;
+      case 'quick': quickSend(b.dataset.sub, readRankFix(form)); break;
       case 'check': {
         var cs = S.subs[b.dataset.sub], game = readTime(form, 't');
         if (!cs || !cs.voyage) break;

@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11",
+  "date": "2026-11-12",
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
@@ -63,7 +63,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 23.2,
+          "seconds": 17.3,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -307,7 +307,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794437578030,
+            "at": 1794450321450,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -380,7 +380,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794437583737
+            "handoverSeen": 1794450325403
           }
         },
         "afterGotIt": {
@@ -388,14 +388,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794437583737
+              "handoverSeen": 1794450325403
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794437583737
+              "handoverSeen": 1794450325403
             }
           }
         },
@@ -414,14 +414,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794437586063
+              "installed": 1794450326985
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794437586063
+              "installed": 1794450326985
             }
           }
         },
@@ -585,9 +585,9 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-py4VvN",
+        "scratch": "/tmp/cc-publish-Smdm0H",
         "publish": [
-          "75M\t/tmp/cc-publish-py4VvN",
+          "75M\t/tmp/cc-publish-Smdm0H",
           "264"
         ],
         "freshLists": {
@@ -655,11 +655,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=W5pq7PNVGAxEpn___dqgFQ",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=v8ETgUfcxp4MOIsDqN9VJg",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 10:53 PM",
-          "device": "c2f3d90e…"
+          "status": "Synced 02:25 AM",
+          "device": "9bd1138e…"
         },
         "leaks": {
           "backup": false,
@@ -860,9 +860,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506401230,
+          "sentAt": 1794506400938,
           "route": [],
-          "returnAt": 1794604321230,
+          "returnAt": 1794604320938,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -886,34 +886,39 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560717132,
+          "sentAt": 1794560716722,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669095132,
-          "calcAt": 1794669095132
+          "returnAt": 1794669094722,
+          "calcAt": 1794669094722
         },
         "checked": {
-          "sentAt": 1794560717132,
+          "sentAt": 1794560716722,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257781,
-          "calcAt": 1794669095132,
+          "returnAt": 1794669257320,
+          "calcAt": 1794669094722,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
+        "sizeText": "Whole save, compressed as cloud sync sends it: 0.00 MB of the 4 MB limit (0%). 1 logged voyage kept. Every voyage is kept; at this size there is room for many years.",
+        "rank": [
+          40,
+          10610
+        ],
         "sent": {
-          "sentAt": 1794506402764,
+          "sentAt": 1794506402388,
           "route": [
             1
           ],
-          "returnAt": 1794560652764,
-          "calcAt": 1794560652764
+          "returnAt": 1794560652388,
+          "calcAt": 1794560652388
         },
         "beforeBack": [],
         "atBack": [
@@ -923,66 +928,68 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "s9876l18b",
-          "s9hmhy7pa"
+          "sbm7jjm10",
+          "scu4hm67x"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718464,
+            "sentAt": 1794560718021,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240464,
-            "calcAt": 1794663240464
+            "returnAt": 1794663240021,
+            "calcAt": 1794663240021
           },
           {
-            "sentAt": 1794560718464,
+            "sentAt": 1794560718021,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594464,
-            "calcAt": 1794657594464
+            "returnAt": 1794657594021,
+            "calcAt": 1794657594021
           }
         ],
         "trips": [
           {
-            "s": "sokv0e0gy",
-            "t": 1794506402764,
+            "s": "so3ab66b6",
+            "t": 1794506402388,
             "r": [
               1
             ],
-            "back": 1794560652764,
-            "calc": 1794560652764,
+            "back": 1794560652388,
+            "calc": 1794560652388,
             "items": [],
-            "newSectors": []
+            "newSectors": [],
+            "rankAfter": 40,
+            "rankCalc": 40
           }
         ],
         "typed": [
           {
-            "sentAt": 1794560718464,
+            "sentAt": 1794560718021,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794563465195,
-            "calcAt": 1794663240464,
+            "returnAt": 1794563465151,
+            "calcAt": 1794663240021,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718464,
+            "sentAt": 1794560718021,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794563465878,
-            "calcAt": 1794657594464,
+            "returnAt": 1794563465784,
+            "calcAt": 1794657594021,
             "gameSaid": "45m"
           }
         ],
@@ -997,9 +1004,9 @@
       "pass": true,
       "detail": {
         "file": "alpha-renamed-sub-one-back.ics",
-        "want": "20261113T211201Z",
+        "want": "20261113T211200Z",
         "ics": [
-          "DTSTART:20261113T211201Z",
+          "DTSTART:20261113T211200Z",
           "SUMMARY:Alpha Renamed · Sub One back",
           "TRIGGER:PT0M"
         ]
@@ -1042,7 +1049,7 @@
             "locked",
             "out"
           ],
-          "maxBottom": 1002,
+          "maxBottom": 854,
           "maxRight": 1895,
           "columns": 4,
           "sideways": 0,

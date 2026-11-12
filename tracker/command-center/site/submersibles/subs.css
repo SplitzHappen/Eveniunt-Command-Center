@@ -162,3 +162,7 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .acc .ok { color: var(--back); font-weight: 600; }
 .acc .bad { color: #c0392b; font-weight: 600; }
 @media (max-width: 700px) { .quick { margin: 4px 0 0; font-size: 14px; padding: 8px 10px; line-height: 1.3; width: 100%; } }
+
+.rankbox { margin: 6px 0; font-size: 14px; }
+.rankbox p { margin: 4px 0; }
+.rankfix { max-width: 260px; }

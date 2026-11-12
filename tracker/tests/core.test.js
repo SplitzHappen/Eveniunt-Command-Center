@@ -1345,6 +1345,20 @@ test('Submersibles: the formula\'s numbers agree with what players measured in t
   assert.strictEqual(A.evalRoute([51], st(70)).seconds, 43200 + Math.floor(r * 3990 / 7000 * 60) + Math.floor(61600 / 70 * 60), 'speed 70: the survey is 61,600 / 70 minutes');
 });
 
+test('Submersibles: rank after a voyage moves on by the base experience ("at least"); the checker keeps the rank evidence', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD);
+  const FX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'submarine-voyages.json'), 'utf8'));
+  for (const v of FX.voyages) {
+    const a = A.afterVoyage({ rank: v.build.rank, expIntoRank: v.build.expIntoRank }, v.route);
+    assert.deepStrictEqual([a.exp, a.rank, a.into], [v.expected.exp, v.expected.rankAfter, v.expected.expIntoRankAfter], v.id);
+  }
+  assert.strictEqual(A.afterVoyage({ rank: 10 }, []), null, 'no route, no rank change');
+  assert.strictEqual(A.afterVoyage({ rank: 145, expIntoRank: 5 }, [1]).rank, 145, 'stays at the top rank');
+  const out = CC.checkModules({ submersibles: { trips: { t1: { s: 's1', t: 1, rankAfter: 52, rankCalc: 51 }, t2: { s: 's1', t: 2, rankCalc: 146 } } } }).submersibles.trips;
+  assert.deepStrictEqual([out.t1.rankAfter, out.t1.rankCalc, out.t2.rankCalc], [52, 51, undefined]);
+});
+
 test('Submersibles advisor: the owner\'s order (unlock all four subs, discover every sector, farm gil), parts only at the end', () => {
   const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
   const A = globalThis.ADVISOR.init(SD);
