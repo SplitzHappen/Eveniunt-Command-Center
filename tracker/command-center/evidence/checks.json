@@ -3,8 +3,8 @@
   "browser": "chromium 153.0.8010.12",
   "playwright": "1.63.0",
   "node": "v22.23.4",
-  "passed": 33,
-  "total": 33,
+  "passed": 34,
+  "total": 34,
   "notRun": [
     "C26b: the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
   ],
@@ -67,7 +67,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 17.5,
+          "seconds": 18.6,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -313,7 +313,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794463245703,
+            "at": 1794466554139,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -386,7 +386,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794463250059
+            "handoverSeen": 1794466558922
           }
         },
         "afterGotIt": {
@@ -394,14 +394,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794463250059
+              "handoverSeen": 1794466558922
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794463250059
+              "handoverSeen": 1794466558922
             }
           }
         },
@@ -420,14 +420,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794463251954
+              "installed": 1794466560968
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794463251954
+              "installed": 1794466560968
             }
           }
         },
@@ -594,10 +594,10 @@
       "title": "The published layout (gate 1E): the publish script and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-dvZYLm",
+        "scratch": "/tmp/cc-publish-8x483r",
         "publish": [
-          "76M\t/tmp/cc-publish-dvZYLm",
-          "305"
+          "76M\t/tmp/cc-publish-8x483r",
+          "308"
         ],
         "freshLists": {
           "workflowWrites": true,
@@ -612,7 +612,7 @@
           "privateRecordsAbsent": true
         },
         "workerFiles": {
-          "count": 54,
+          "count": 55,
           "missing": []
         },
         "shell": {
@@ -665,11 +665,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=nwSJ9lxbGY-8xaYiEXws3A",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=Lvz4EMRwJZcgBxhNcVtzUQ",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 06:01 AM",
-          "device": "8acb87ce…"
+          "status": "Synced 06:56 AM",
+          "device": "7fcf9f9a…"
         },
         "leaks": {
           "backup": false,
@@ -871,9 +871,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506401115,
+          "sentAt": 1794506401104,
           "route": [],
-          "returnAt": 1794604321115,
+          "returnAt": 1794604321104,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -897,39 +897,39 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560717080,
+          "sentAt": 1794560717023,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669095080,
-          "calcAt": 1794669095080
+          "returnAt": 1794669095023,
+          "calcAt": 1794669095023
         },
         "checked": {
-          "sentAt": 1794560717080,
+          "sentAt": 1794560717023,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257678,
-          "calcAt": 1794669095080,
+          "returnAt": 1794669257654,
+          "calcAt": 1794669095023,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
-        "sizeText": "Whole save, compressed as cloud sync sends it: 0.00 MB of the 4 MB limit (0%). 1 logged voyage kept. Every voyage is kept; at this size there is room for many years.",
+        "sizeText": "Whole save, compressed as cloud sync sends it: 0.00 MB of the 4 MB limit (0%). 1 logged voyage kept. Every voyage is kept; at this size there is room for many years.Load an archive file",
         "rank": [
           40,
           10610
         ],
         "sent": {
-          "sentAt": 1794506402663,
+          "sentAt": 1794506402621,
           "route": [
             1
           ],
-          "returnAt": 1794560652663,
-          "calcAt": 1794560652663
+          "returnAt": 1794560652621,
+          "calcAt": 1794560652621
         },
         "beforeBack": [],
         "atBack": [
@@ -939,41 +939,41 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "sn9ugnh76",
-          "s5i6fj60m"
+          "s182e9gy5",
+          "sni02y238"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718363,
+            "sentAt": 1794560718355,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240363,
-            "calcAt": 1794663240363
+            "returnAt": 1794663240355,
+            "calcAt": 1794663240355
           },
           {
-            "sentAt": 1794560718363,
+            "sentAt": 1794560718355,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594363,
-            "calcAt": 1794657594363
+            "returnAt": 1794657594355,
+            "calcAt": 1794657594355
           }
         ],
         "trips": [
           {
-            "s": "szmo6m9lu",
-            "t": 1794506402663,
+            "s": "sgqblsqim",
+            "t": 1794506402621,
             "r": [
               1
             ],
-            "back": 1794560652663,
-            "calc": 1794560652663,
+            "back": 1794560652621,
+            "calc": 1794560652621,
             "items": [],
             "newSectors": [],
             "rankAfter": 40,
@@ -982,25 +982,25 @@
         ],
         "typed": [
           {
-            "sentAt": 1794560718363,
+            "sentAt": 1794560718355,
             "route": [
               9,
               7,
               8
             ],
             "returnAt": 1794563465166,
-            "calcAt": 1794663240363,
+            "calcAt": 1794663240355,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718363,
+            "sentAt": 1794560718355,
             "route": [
               7,
               5,
               3
             ],
             "returnAt": 1794563465816,
-            "calcAt": 1794657594363,
+            "calcAt": 1794657594355,
             "gameSaid": "45m"
           }
         ],
@@ -1172,7 +1172,7 @@
         ],
         "firstPanel": true,
         "duringWizard": true,
-        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 07:31.",
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 08:26.",
         "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
         "perSub": [
           "Alpha Company · Sub A1 is back",
@@ -1193,6 +1193,73 @@
       "title": "Turning a device on and a real push delivery",
       "pass": null,
       "notRun": "the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
+    },
+    {
+      "id": "C29",
+      "title": "What came back (step S5): a returned sub's send window keeps \"What came back\" folded until tapped, then lists the route's possible loot by sector with \"Repeat last\"; typed and tapped quantities, an item added by name and a new sector are kept with the trip and in the free company; the Log tab lists every voyage and reopens one to change it; Setup's archive downloads the oldest voyages to a file, removes them only on confirming and loads them back from the file; Earnings totals the log at market prices after the 5% tax (Universalis stand-in) or the merchant price, shows gil per hour by route with the trip count and exports the log as CSV; the window and the tab fit a phone; the route picker shows the sectors full width under the sea list (not squeezed by the shared appearance styles)",
+      "pass": true,
+      "detail": {
+        "closedAtFirst": true,
+        "pickerFull": true,
+        "archiveOk": true,
+        "arcCount": 1,
+        "afterArc": 10,
+        "afterLoad": 11,
+        "groups": [
+          "Deep-sea Site A · 12 possible items (community data)",
+          "Deep-sea Site B · 9 possible items (community data)"
+        ],
+        "firstRow": "Unaspected Crystal",
+        "repeat": true,
+        "trip": {
+          "s": "a1",
+          "t": 1794358605075,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794463005075,
+          "items": [
+            [
+              10099,
+              3
+            ],
+            [
+              12923,
+              2
+            ],
+            [
+              5,
+              1
+            ]
+          ],
+          "newSectors": [
+            3
+          ],
+          "rankAfter": 3,
+          "rankCalc": 3
+        },
+        "newSector": 3,
+        "slotLine": false,
+        "logRows": 11,
+        "keptQty": "3",
+        "edited": 4,
+        "asked": 1,
+        "earn": {
+          "cards": [
+            "13,300 gil",
+            "20,900 gil",
+            "43,700 gil",
+            "49,400 gil"
+          ],
+          "route": "Deep-sea Site: A → B164 gil10"
+        },
+        "want": 49400,
+        "csvHead": "sent,back,free company,submarine,route,item,quantity,value each (gil),priced by,rank after",
+        "wideEarn": false,
+        "wideSheet": false,
+        "errors": []
+      }
     }
   ]
 }

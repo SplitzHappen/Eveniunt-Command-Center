@@ -8,7 +8,7 @@
 // CC.read, as the Atelier does; backups, transfer codes and cloud sync carry it. Nothing is read from the game.
 (function () {
   'use strict';
-  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH;
+  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH, EARN = window.EARN;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -21,7 +21,7 @@
   function loadData() {
     var p = window.SUB_DATA ? Promise.resolve(window.SUB_DATA) : CC.unpack(window.SUB_DATA_PACKED).then(JSON.parse);
     return p.then(function (d) {
-      D = d; ADV.init(d);
+      D = d; ADV.init(d); EARN.init(d);
       d.sectors.forEach(function (s) { SECTOR[s.id] = s; });
       d.parts.forEach(function (x) { PART[x.id] = x; });
       d.classes.forEach(function (c) { CLASS[c.id] = c; });
@@ -97,8 +97,8 @@
   function charName(id) { var c = SH.chars.find(function (x) { return x.id === id; }); return c ? c.name : ''; }
 
   // ------------------------------------------------------------------ rendering
-  var TABS = [['board', 'Board', null], ['log', 'Log', 'Logging what each voyage brought back arrives in step S5 of the plan.'], ['map', 'Map', 'The seven sea maps and the route planner arrive in step S4.'],
-    ['earn', 'Earnings', 'Earnings and gil per hour from your own log arrive in step S5.'], ['setup', 'Setup', null]];
+  var TABS = [['board', 'Board', null], ['log', 'Log', null], ['map', 'Map', 'The seven sea maps and the route planner arrive in step S4.'],
+    ['earn', 'Earnings', null], ['setup', 'Setup', null]];
   function render() {
     if (!D) return;
     $$('.tabs [data-tab]').forEach(function (b) { b.setAttribute('aria-current', b.dataset.tab === UI.tab ? 'page' : 'false'); });
@@ -106,6 +106,8 @@
     if (SH.problem) { main.innerHTML = '<div class="note bad"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.</div>'; return; }
     if (UI.tab === 'board') main.innerHTML = boardHtml();
     else if (UI.tab === 'setup') { main.innerHTML = safeNotify() + (W ? wizardHtml() : setupHtml()); if (!W) measureSize(); pushStatus(); }
+    else if (UI.tab === 'log') { main.innerHTML = logHtml(); loadPrices(false); }
+    else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); loadPrices(false); }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
@@ -246,6 +248,7 @@
 
   // the history size meter (design 7.3): the save's compressed size against the cloud copy's 4 MB limit
   var CLOUD_LIMIT = 4 * 1024 * 1024 - 64 * 1024; // as src/core/cloud.js
+  var ARCHIVE_PCT = 75;
   function measureSize() {
     var el = $('[data-size]'); if (!el) return;
     CC.read().then(function (r) {
@@ -253,8 +256,9 @@
       var doc = CC.checkDoc(r.raw);
       return CC.pack(JSON.stringify({ chars: doc.chars, modules: doc.modules })).then(function (z) {
         var bytes = CC.byteLength(z), pct = Math.round(bytes / CLOUD_LIMIT * 1000) / 10, trips = Object.keys(S.trips).length;
-        el.innerHTML = 'Whole save, compressed as cloud sync sends it: <b>' + (bytes / 1024 / 1024).toFixed(2) + ' MB</b> of the 4 MB limit (' + pct + '%). ' + trips.toLocaleString('en') + ' logged voyage' + (trips === 1 ? '' : 's') + ' kept.' +
-          (pct >= 75 ? ' <b>Over 75%:</b> archiving the oldest years to a file will be offered with the return sheet (step S5); nothing is ever dropped.' : ' Every voyage is kept; at this size there is room for many years.');
+        el.innerHTML = '<p>Whole save, compressed as cloud sync sends it: <b>' + (bytes / 1024 / 1024).toFixed(2) + ' MB</b> of the 4 MB limit (' + pct + '%). ' + trips.toLocaleString('en') + ' logged voyage' + (trips === 1 ? '' : 's') + ' kept.' +
+          (pct >= ARCHIVE_PCT ? ' <b>Over 75%:</b> keep the save small by moving the oldest voyages to a file. The file is downloaded first; the voyages leave the save only after you confirm, and the file can be loaded back here at any time.</p><p class="row"><button type="button" class="btn sm" data-act="archive">Archive voyages back before 1 January ' + (new Date().getFullYear() - 1) + '</button>' : ' Every voyage is kept; at this size there is room for many years.</p><p class="row">') +
+          '<label class="btn sm ghost">Load an archive file<input type="file" accept=".json,application/json" data-archive-file hidden></label></p>';
       });
     }).catch(function (e) { el.textContent = 'Could not measure: ' + e.message; });
   }
@@ -266,7 +270,7 @@
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
           '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span></li>';
       }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
-      accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><p class="muted" data-size>Measuring…</p></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
+      accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><div class="muted" data-size>Measuring…</div></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
@@ -486,7 +490,7 @@
     else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out; until then, type the game\'s time below.</p>';
     else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
     else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
-    return '<div class="picker"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
+    return '<div class="route-pick"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
       '<div class="sectors">' + btns + '</div>' +
       '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + esc(ADV.routeText(PICK.route)) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' + calc + '</div>';
   }
@@ -503,13 +507,118 @@
     if (game) v.gameSaid = game.gameSaid;
     return { voyage: v, differs: game && calcAt && Math.abs(game.returnAt - calcAt) > 60000 ? Math.round((game.returnAt - calcAt) / 60000) : 0 };
   }
-  // the voyage that ended becomes a trip (S5 fills in what came back) and the voyage is cleared; the sub's rank and
+  // ------------------------------------------------------------------ what came back (step S5, design 3.3)
+  // The items the route can drop, grouped by sector, the ones logged most often on this route first, each with a
+  // quantity; "Repeat last" fills in the previous return of this route; any other item can be added by name. New sectors
+  // the report mentioned, and a new submarine slot, are ticked here and kept in the free company.
+  function lootHtml(subId, route, items, newSectors, open) {
+    var s = S.subs[subId], fc = S.fcs[s.fcId], disc = new Set(fc.discovered || []);
+    var qty = {}; (items || []).forEach(function (x) { qty[x[0]] = x[1]; });
+    var hist = EARN.history(S.trips, route), groups = EARN.routeLoot(route), listed = {};
+    var row = function (id) { listed[id] = 1; return '<div class="loot-row"><span class="loot-name">' + esc(EARN.name(id)) + (EARN.tradable(id) ? '' : ' <span class="tag">merchant only</span>') + '</span>' +
+      '<span class="qty"><button type="button" class="qbtn" data-q="-" data-item="' + id + '" aria-label="One less">−</button><input class="inp qinp" type="number" min="0" max="999999" inputmode="numeric" data-qty="' + id + '" value="' + (qty[id] || '') + '" placeholder="0" aria-label="' + esc(EARN.name(id)) + ' quantity"><button type="button" class="qbtn" data-q="+" data-item="' + id + '" aria-label="One more">+</button></span></div>'; };
+    var body = route && route.length ? groups.map(function (g) {
+      var list = g.items.slice().sort(function (a, b) { return (hist.count[b] || 0) - (hist.count[a] || 0) || EARN.name(a).localeCompare(EARN.name(b)); });
+      return '<div class="loot-group"><div class="loot-h">' + esc(ADV.sectorName(g.sector)) + ' <span class="muted">· ' + list.length + ' possible items (community data)</span></div>' + (list.length ? list.map(row).join('') : '<p class="hint">No loot list for this sector yet.</p>') + '</div>';
+    }).join('') : '<p class="hint">No route was recorded for this voyage, so add the items by name.</p>';
+    var extra = Object.keys(qty).map(Number).filter(function (id) { return !listed[id]; });
+    var reveal = []; (route || []).forEach(function (sid) { ADV.children(sid).forEach(function (c) { if (!disc.has(c) && reveal.indexOf(c) < 0) reveal.push(c); }); });
+    (newSectors || []).forEach(function (c) { if (reveal.indexOf(c) < 0) reveal.push(c); });
+    var slotSector = (D.subSlots.find(function (u) { return u.slot === (fc.unlockedSlots || 1) + 1; }) || {}).sector;
+    var slotTick = slotSector && (route || []).indexOf(slotSector) >= 0;
+    return '<details class="loot"' + (open ? ' open' : '') + '><summary>What came back <span class="muted">(optional: the quantities in the voyage report' + (open ? '' : '; can also be entered later in the Log tab') + ')</span></summary>' +
+      '<p class="row">' + (hist.last ? '<button type="button" class="btn sm" data-act="loot-repeat" data-items="' + esc(JSON.stringify(hist.last)) + '">Repeat last</button>' : '') + '<button type="button" class="btn sm ghost" data-act="loot-clear">Clear</button></p>' +
+      body + '<div class="loot-group" data-extra>' + (extra.length ? '<div class="loot-h">Other items</div>' + extra.map(row).join('') : '') + '</div>' +
+      '<label class="field">Add another item <input class="inp" list="all-items" data-add-item placeholder="type a name"></label>' +
+      (reveal.length || slotTick ? '<fieldset class="loot-new"><legend>Did the report say…</legend>' + reveal.map(function (c) { var x = D.sectors.find(function (z) { return z.id === c; }); return '<label class="opt"><input type="checkbox" data-new-sector="' + c + '"' + ((newSectors || []).indexOf(c) >= 0 ? ' checked' : '') + '> “' + esc(x ? x.name.replace(/\s*\([A-Z]\)$/, '') : '') + ' discovered!” <span class="muted">' + esc(ADV.sectorName(c)) + '</span></label>'; }).join('') +
+        (slotTick ? '<label class="opt"><input type="checkbox" data-new-slot> “Permission granted to register an additional submersible!” <span class="muted">slot ' + ((fc.unlockedSlots || 1) + 1) + '</span></label>' : '') + '</fieldset>' : '') +
+      '</details>';
+  }
+  function readLoot(form) {
+    if (!form) return null;
+    var items = [];
+    $$('[data-qty]', form).forEach(function (el) { var n = Math.round(+el.value); if (n > 0 && n <= 999999) items.push([+el.dataset.qty, n]); });
+    return { items: items, newSectors: $$('[data-new-sector]:checked', form).map(function (el) { return +el.dataset.newSector; }), slot: !!$('[data-new-slot]:checked', form) };
+  }
+  function applyFinds(fcId, loot) { // new sectors join the free company's discoveries; a new slot is unlocked
+    var fc = S.fcs[fcId]; if (!fc || !loot) return;
+    if (loot.newSectors.length) fc.discovered = Array.from(new Set((fc.discovered || []).concat(loot.newSectors))).sort(function (a, b) { return a - b; });
+    if (loot.slot && (fc.unlockedSlots || 1) < 4) fc.unlockedSlots = (fc.unlockedSlots || 1) + 1;
+  }
+  function addLootRow(form, id) {
+    var box = $('[data-extra]', form); if (!box) return;
+    if (!box.querySelector('.loot-h')) box.insertAdjacentHTML('afterbegin', '<div class="loot-h">Other items</div>');
+    box.insertAdjacentHTML('beforeend', '<div class="loot-row"><span class="loot-name">' + esc(EARN.name(id)) + '</span><span class="qty"><button type="button" class="qbtn" data-q="-" data-item="' + id + '" aria-label="One less">−</button><input class="inp qinp" type="number" min="0" max="999999" inputmode="numeric" data-qty="' + id + '" value="" placeholder="0"><button type="button" class="qbtn" data-q="+" data-item="' + id + '" aria-label="One more">+</button></span></div>');
+  }
+  function itemsDatalist() { return '<datalist id="all-items">' + Object.keys(D.items).map(function (id) { return '<option value="' + esc(D.items[id]) + '">'; }).join('') + '</datalist>'; }
+
+  // ------------------------------------------------------------------ the Log tab: every voyage, newest first
+  var LOGSHOW = 60;
+  function logHtml() {
+    var now = Date.now(), prices = PRICES.prices || {}, list = Object.keys(S.trips).map(function (k) { return { id: k, t: S.trips[k] }; }).sort(function (a, b) { return (b.t.back || b.t.t) - (a.t.back || a.t.t); });
+    if (!list.length) return '<section class="panel"><h2>Log</h2><p class="muted">Every voyage that ends ("Send again", "Collected" or the one-press send) is kept here. Tap one to enter what came back.</p></section>';
+    return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p><div class="log-list">' + list.slice(0, LOGSHOW).map(function (x) {
+      var t = x.t, sub = S.subs[t.s] || {}, fc = S.fcs[sub.fcId] || {}, v = EARN.tripValue(t, prices);
+      return '<button type="button" class="log-row" data-trip="' + esc(x.id) + '"><span class="log-when">' + esc(F.fmtClock(t.back || t.t, now)) + '</span><span class="log-who"><b>' + esc((fc.name || '?') + ' · ' + (sub.name || 'removed sub')) + '</b><span class="muted">' + esc(t.r && t.r.length ? ADV.routeText(t.r) : 'no route') + (t.rankAfter ? ' · rank ' + t.rankAfter : '') + '</span></span>' +
+        '<span class="log-what">' + (v.logged ? t.items.length + ' item' + (t.items.length === 1 ? '' : 's') + ' · <b>' + fmtGil(v.gil) + '</b>' + (v.unknown.length ? ' + unpriced' : '') : '<span class="muted">nothing logged · tap to add</span>') + '</span></button>';
+    }).join('') + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
+  }
+  function fmtGil(n) { return Math.round(n).toLocaleString('en') + ' gil'; }
+  function tripSheet(tripId) {
+    var t = S.trips[tripId], sub = S.subs[t.s]; if (!t) return;
+    if (!sub) { sheet('<h2>Voyage</h2><p class="hint">This submarine was removed; its voyage is kept in the history.</p><div class="sheet-actions"><button type="button" class="btn ghost" data-act="close">Close</button></div>'); return; }
+    var fc = S.fcs[sub.fcId] || {}, now = Date.now();
+    sheet('<h2>' + esc((sub.name || 'Sub') + ' · ' + (fc.name || '')) + '</h2><p class="muted">Back ' + esc(F.fmtClock(t.back || t.t, now)) + ' · ' + esc(t.r && t.r.length ? ADV.routeText(t.r) : 'no route recorded') + '</p>' +
+      lootHtml(t.s, t.r, t.items, t.newSectors, true) + itemsDatalist() +
+      '<div class="sheet-actions"><button type="button" class="btn primary" data-act="trip-save" data-trip="' + esc(tripId) + '">Save</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>');
+  }
+
+  // ------------------------------------------------------------------ the Earnings tab (design 3.5)
+  var PRICES = { scope: null, at: 0, prices: {}, busy: false, error: null };
+  function priceScope() { return (S.settings.prefs && S.settings.prefs.priceWorld) || sharedScope(); }
+  function sharedScope() { // the place the Tracker's live prices use, else the first free company's world
+    try { // the same rule as the Tracker's Market Board: one world, one data centre or (default) the region
+      var L = ((JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).ui || {}).live || {};
+      var region = Object.keys(WORLDS.dc || {}).find(function (r) { return (WORLDS.dc[r].dcs || []).indexOf(L.dc) >= 0; });
+      if (L.mscope === 'world' && L.world) return L.world;
+      if (L.dc) return L.mscope === 'dc' || !region ? L.dc : region.replace(/ /g, '-');
+    } catch (e) { /* none */ }
+    var fc = fcList()[0]; return (fc && fc.fc.world) || 'North-America';
+  }
+  function loggedIds() { var ids = {}; Object.keys(S.trips).forEach(function (k) { (S.trips[k].items || []).forEach(function (x) { ids[x[0]] = 1; }); }); return Object.keys(ids).map(Number); }
+  function loadPrices(force) {
+    var scope = priceScope(), ids = loggedIds();
+    if (!ids.length || PRICES.busy) return;
+    var c = EARN.cached(scope); if (c) { PRICES.scope = scope; PRICES.at = c.at; PRICES.prices = c.prices; }
+    if (!force && c && Date.now() - c.at < 3600000 && ids.every(function (id) { return !EARN.tradable(id) || id in c.prices; })) return;
+    PRICES.busy = true;
+    EARN.fetchPrices(scope, ids).then(function (r) { PRICES.scope = scope; PRICES.at = r.at; PRICES.prices = r.prices; PRICES.error = null; })
+      .catch(function (e) { PRICES.error = e.message || String(e); }).then(function () { PRICES.busy = false; if (UI.tab === 'earn' || UI.tab === 'log') render(); });
+  }
+  function earnHtml() {
+    var now = Date.now(), tot = EARN.totals(S, PRICES.prices || {}, now), scope = priceScope();
+    if (!tot.trips) return '<section class="panel"><h2>Earnings</h2><p class="muted">Earnings come from what you log in each returned voyage (Log tab, or the send window of a returned sub).</p></section>';
+    var routes = Object.keys(tot.byRoute).map(function (k) { return tot.byRoute[k]; }).sort(function (a, b) { return b.perHour - a.perHour; });
+    var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
+    var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
+    var src = PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : PRICES.error ? 'Universalis could not be reached (' + esc(PRICES.error) + '): merchant prices only' : 'no market prices yet';
+    return '<section class="panel wide-panel"><h2>Earnings</h2><p class="muted">Estimated value of what you logged: the better of the merchant price (game data) and the market price after the 5% tax (' + src + '). Not yet sold; market prices are community reports, never a promise. ' + tot.logged + ' of ' + tot.trips + ' voyages logged.</p>' +
+      '<div class="earn-cards">' + [['Today', tot.day], ['This week', tot.week], ['This month', tot.month], ['All time', tot.all]].map(function (x) { return '<div class="earn-card"><span>' + x[0] + '</span><b>' + fmtGil(x[1]) + '</b></div>'; }).join('') + '</div>' +
+      (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +
+      '<p class="row"><label class="field inline">Market prices from <select class="inp" data-pref="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' + dcs.map(function (d) { return '<option' + (S.settings.prefs && S.settings.prefs.priceWorld === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label><button type="button" class="btn sm" data-act="prices">Refresh prices</button><button type="button" class="btn sm" data-act="csv">Export the log (CSV)</button></p>' +
+      '<h3>Gil per hour by route <span class="muted">(from your own log)</span></h3>' + (routes.length ? '<table class="earn-t"><thead><tr><th>Route</th><th>Gil per hour</th><th>Trips</th></tr></thead><tbody>' + routes.map(function (r) { return '<tr><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + r.trips + (r.trips < 10 ? ' <span class="tag">not enough data</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="hint">Log what came back from voyages with a route to see this.</p>') +
+      '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
+      '<h3>Top items</h3><table class="earn-t"><thead><tr><th>Item</th><th>Quantity</th><th>Value</th><th>Priced by</th></tr></thead><tbody>' + items.map(function (x) { return '<tr><td>' + esc(EARN.name(x[0])) + '</td><td>' + x[1].qty.toLocaleString('en') + '</td><td>' + fmtGil(x[1].gil) + '</td><td>' + (x[1].how || 'unknown') + '</td></tr>'; }).join('') + '</tbody></table></section>';
+  }
+
+  // the voyage that ended becomes a trip (with what came back, if logged) and the voyage is cleared; the sub's rank and
   // experience move on by the route's base experience ("at least"), or to the rank the owner says the game shows
-  function logTrip(subId, rankFix) {
+  function logTrip(subId, rankFix, loot) {
     var s = S.subs[subId], v = s && s.voyage;
     if (!v) return;
     var t = v.sentAt || v.returnAt;
-    var trip = { s: subId, t: t, r: (v.route || []).slice(), back: v.returnAt, items: [], newSectors: [] };
+    var trip = { s: subId, t: t, r: (v.route || []).slice(), back: v.returnAt, items: loot ? loot.items : [], newSectors: loot ? loot.newSectors : [] };
+    applyFinds(s.fcId, loot);
     if (v.calcAt) trip.calc = v.calcAt;
     if (v.gameSaid) trip.said = v.gameSaid;
     var after = ADV.afterVoyage(s, v.route);
@@ -542,7 +651,7 @@
     PICK = { id: id, route: retime && v ? (v.route || []).slice() : [], sea: null };
     var head = retime ? 'Change this voyage' : 'Send ' + (s.name || 'Sub ' + s.slot);
     sheet('<h2>' + esc(head) + ' <span class="muted">' + esc(fc.name || '') + ' · rank ' + (s.rank || '?') + ' · ' + partsCode(s.parts) + '</span></h2>' +
-      (st === 'back' && !retime ? '<p class="note">Back since ' + esc(F.fmtClock(v.returnAt, now)) + '. Sending again logs that voyage in the history (what it brought back is entered from step S5).</p>' + rankField(id) : '') +
+      (st === 'back' && !retime ? '<p class="note">Back since ' + esc(F.fmtClock(v.returnAt, now)) + '. Sending again logs that voyage in the history, with what came back if you enter it here (or later, in the Log tab).</p>' + lootHtml(id, v.route, [], []) + itemsDatalist() + rankField(id) : '') +
       (retime ? '' : adviceHtml(id)) + '<div data-picker>' + pickerHtml() + '</div>' +
       '<details class="game-says"' + (!subStats(s) ? ' open' : '') + '><summary>The game says… <span class="muted">(optional: type the game\'s return time to check the worked-out one)</span></summary>' + timeFields('t', 'in', '') + '</details>' +
       '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="' + (retime ? 'dore' : 'dosend') + '" data-sub="' + esc(id) + '">' + (retime ? 'Save' : st === 'back' ? 'Send again' : 'Send') + '</button>' +
@@ -603,6 +712,10 @@
 
   // ------------------------------------------------------------------ events
   function onClick(e) {
+    var qb = e.target.closest('[data-q]');
+    if (qb) { var qi = $('[data-qty="' + qb.dataset.item + '"]', qb.closest('form') || document); if (qi) qi.value = Math.max(0, (Math.round(+qi.value) || 0) + (qb.dataset.q === '+' ? 1 : -1)) || ''; return; }
+    var tb = e.target.closest('[data-trip]:not([data-act])');
+    if (tb) { tripSheet(tb.dataset.trip); return; }
     var qk = e.target.closest('[data-quick]');
     if (qk) { quickSend(qk.dataset.quick); return; }
     var pk = e.target.closest('[data-pick], [data-use]');
@@ -638,12 +751,12 @@
         var sentAt = act === 'dore' && s.voyage && s.voyage.sentAt ? s.voyage.sentAt : now;
         var plan = planVoyage(form, sentAt);
         if (plan.error) { sheetError(plan.error); break; }
-        if (act === 'send' || act === 'dosend') { if (s.voyage) logTrip(id, readRankFix(form)); }
+        if (act === 'send' || act === 'dosend') { if (s.voyage) logTrip(id, readRankFix(form), readLoot(form)); }
         s.voyage = plan.voyage;
         if (plan.differs) setStatus('The game\'s time differs from the worked-out one by ' + plan.differs + ' min; the game\'s time is used and kept as evidence.');
         closeSheet(); schedule(); break;
       }
-      case 'collect': logTrip(b.dataset.sub, readRankFix(form)); closeSheet(); schedule(); break;
+      case 'collect': logTrip(b.dataset.sub, readRankFix(form), readLoot(form)); closeSheet(); schedule(); break;
       case 'unsend': if (confirm('Remove this voyage? Nothing is logged for it.')) { S.subs[b.dataset.sub].voyage = null; closeSheet(); schedule(); } break;
       case 'retime': sendSheet(b.dataset.sub, true); break;
       case 'ics': { var sub = S.subs[b.dataset.sub], f = S.fcs[sub.fcId]; calendar((f.name || 'Free company') + ' · ' + (sub.name || 'Sub ' + sub.slot) + ' back', sub.voyage.returnAt, b.dataset.sub + '-' + sub.voyage.returnAt); break; }
@@ -670,6 +783,25 @@
       }
       case 'pickclear': PICK.route = []; redrawPicker(); break;
       case 'quick': quickSend(b.dataset.sub, readRankFix(form)); break;
+      case 'loot-repeat': { var rep = JSON.parse(b.dataset.items || '[]'); $$('[data-qty]', form).forEach(function (el) { el.value = ''; }); rep.forEach(function (x) { var el = $('[data-qty="' + x[0] + '"]', form); if (!el) { addLootRow(form, x[0]); el = $('[data-qty="' + x[0] + '"]', form); } if (el) el.value = x[1]; }); break; }
+      case 'loot-clear': $$('[data-qty]', form).forEach(function (el) { el.value = ''; }); break;
+      case 'trip-save': {
+        var tr = S.trips[b.dataset.trip]; if (!tr) break;
+        var lo = readLoot(form); tr.items = lo.items; tr.newSectors = lo.newSectors;
+        var ts = S.subs[tr.s]; if (ts) applyFinds(ts.fcId, lo);
+        closeSheet(); schedule(); break;
+      }
+      case 'log-more': LOGSHOW += 100; render(); break;
+      case 'archive': {
+        var before = new Date(new Date().getFullYear() - 1, 0, 1).getTime(), arc = EARN.archive(S, before);
+        if (!arc.count) { setStatus('No voyages came back before that date.'); break; }
+        F.download('submersibles-archive-before-' + new Date(before).getFullYear() + '.json', JSON.stringify(arc), 'application/json');
+        if (!confirm('The file with ' + arc.count + ' voyage' + (arc.count === 1 ? '' : 's') + ' was downloaded. Keep it safe, then remove these voyages from the save? (Load the file back here to bring them back.)')) break;
+        Object.keys(arc.trips).forEach(function (k) { delete S.trips[k]; });
+        setStatus(arc.count + ' old voyages moved to the archive file.'); schedule(); break;
+      }
+      case 'prices': loadPrices(true); render(); break;
+      case 'csv': F.download('submersibles-log-' + new Date().toISOString().slice(0, 10) + '.csv', EARN.csv(S, PRICES.prices || {}, function (r) { return r && r.length ? ADV.routeText(r) : ''; }), 'text/csv;charset=utf-8'); break;
       case 'push-on': pushStatus('Turning on…'); PUSH.enable().then(function () { try { sessionStorage.removeItem('eveniunt-subs-push'); } catch (e) { /* none */ } pushSync(); pushStatus(); }).catch(function (e) { pushStatus(e.message); }); break;
       case 'push-off': PUSH.disable().then(function () { pushStatus(); }).catch(function (e) { pushStatus(e.message); }); break;
       case 'push-test': PUSH.call('/push/test').then(function () { pushStatus('Test sent: it should arrive within a few seconds.'); }).catch(function (e) { pushStatus(e.message); }); break;
@@ -688,11 +820,23 @@
   function onInput(e) {
     var t = e.target;
     if (t.closest('#sheet')) {
+      if (t.matches('[data-add-item]')) { // an item picked from the list joins "Other items" with a quantity of 1
+        var nm = t.value.trim().toLowerCase(), id = Object.keys(D.items).find(function (k) { return D.items[k].toLowerCase() === nm; });
+        if (id) { var f0 = t.closest('form'); if (!$('[data-qty="' + id + '"]', f0)) addLootRow(f0, +id); var q0 = $('[data-qty="' + id + '"]', f0); if (q0) { q0.value = q0.value || 1; q0.focus(); } t.value = ''; }
+        return;
+      }
+      if (t.matches('[data-qty], [data-new-sector], [data-new-slot]')) return;
       if (t.name === 'sea') { if (PICK && e.type === 'change') { PICK.sea = +t.value; if (PICK.route.length && SECTOR[PICK.route[0]].sea !== PICK.sea) PICK.route = []; redrawPicker(); } return; }
       previewTime($('#sheet form'), 't');
       if (/^t(in|at|mode)$/.test(t.name)) redrawPicker();
       return;
     }
+    if (t.matches('[data-archive-file]') && e.type === 'change' && t.files && t.files[0]) {
+      t.files[0].text().then(function (txt) { var n = EARN.restore(S, JSON.parse(txt)); setStatus(n ? n + ' voyage' + (n === 1 ? '' : 's') + ' loaded back from the archive.' : 'Every voyage in that file is already in the save.'); if (n) schedule(); })
+        .catch(function (err) { setStatus('Could not load that file: ' + (err.message || err)); });
+      t.value = ''; return;
+    }
+    if (t.dataset.pref === 'priceWorld' && e.type === 'change') { S.settings.prefs = Object.assign({}, S.settings.prefs || {}, { priceWorld: t.value || undefined }); if (!t.value) delete S.settings.prefs.priceWorld; schedule(); loadPrices(true); return; }
     if (t.dataset.pref && e.type === 'change') {
       var pr = Object.assign({}, S.settings.prefs || {});
       if (t.dataset.pref === 'grouping') pr.grouping = t.value;
@@ -749,7 +893,7 @@
   document.addEventListener('change', onInput);
   document.addEventListener('submit', function (e) { e.preventDefault(); });
   document.addEventListener('keydown', function (e) { var r = e.target; if ((e.key === 'Enter' || e.key === ' ') && r.classList && r.classList.contains('sub') && r.dataset.sub) { e.preventDefault(); openSub(r.dataset.sub); } });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.closest && e.target.closest('#sheet') && e.target.tagName === 'INPUT') { e.preventDefault(); var p = $('#sheet .btn.primary'); if (p) p.click(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.closest && e.target.closest('#sheet') && e.target.tagName === 'INPUT' && !e.target.matches('[data-add-item], [data-qty]')) { e.preventDefault(); var p = $('#sheet .btn.primary'); if (p) p.click(); } });
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && SH.timer) write(); else if (document.visibilityState === 'visible') { reload(); tick(); } });
   window.addEventListener('pagehide', function () { if (SH.timer) write(); });
@@ -778,5 +922,5 @@
   }).catch(function (e) {
     $('#view').innerHTML = '<div class="note bad"><b>The Submersibles data could not be opened on this browser.</b> ' + esc(e.message || e) + '</div>';
   });
-  window.__subs = { stageOf: function (id) { return stageOf(id); }, section: function () { return S; }, write: write, startWizard: startWizard, state: function () { return { ready: SH.ready, problem: SH.problem, rev: SH.rev }; } };
+  window.__subs = { stageOf: function (id) { return stageOf(id); }, section: function () { return S; }, itemName: function (id) { return EARN.name(id); }, archiveAt: function (pct) { ARCHIVE_PCT = pct; }, write: write, startWizard: startWizard, state: function () { return { ready: SH.ready, problem: SH.problem, rev: SH.rev }; } };
 })();

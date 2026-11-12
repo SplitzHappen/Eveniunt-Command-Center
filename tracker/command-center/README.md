@@ -1,10 +1,14 @@
-# Eveniunt Command Center: the shell (gates 1B to 1E) and the Submersibles module (step S2)
+# Eveniunt Command Center: the shell (gates 1B to 1E) and the Submersibles module (steps S2 to S7)
 
 Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, sections 4a (rules 1, 5 and 10), 4b (finding F1), 4c (F5, F6) and 5 (gates 1B to 1E). Cards: `.ai/planning/CARD-phase-1C.md`, `.ai/planning/CARD-phase-1D.md`, `.ai/planning/CARD-phase-1E.md`.
 
 ## The main Settings (2026-11-12, owner requests)
 
 `src/settings.js`, ⚙ Settings in the main menu (`#settings`): characters and each character's free company (into Submersibles), cloud sync (sign-in through `tracker/oauth.html` and back, sync of every module on opening), backups, notifications for every module (on or off per device, test, night rule in `modules.settings.notify`), appearance. It runs the Tracker's core code, copied to `site/core/` by `build.js`. Scripts and styles load network first so installed apps pick up updates. Check C27.
+
+## Submersibles step S5: what came back, the log and earnings (2026-11-12)
+
+`src/submersibles/earn.js` (plain script, also run by `tests/earn.test.js`): the route's possible loot, what each item is worth (better of the merchant price from game data and the Universalis average after the 5% tax, cached on the device for an hour), totals, gil per hour by route, the CSV, the archive file. In the page: "What came back" in a Back sub's send window (folded) and in the Log tab; the Earnings tab; Setup's archive at 75% of the size limit and "Load an archive file". Check C29; screenshots `evidence/submersibles-s5-*.png`.
 
 ## Submersibles step S7: phone notifications (2026-11-12)
 

@@ -40,8 +40,8 @@
 .strip-back b { font-size: 16px; }
 .strip-back.on { color: var(--back); font-weight: 600; }
 .strip-tools { margin-left: auto; display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; }
-.seg button, .seg label { font: inherit; font-size: 12px; padding: 4px 10px; background: var(--paper); border: 0; color: var(--ink-2); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.seg { display: inline-flex; gap: 0; border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; } /* reset the shared appearance styles of the same name */
+.seg button, .seg label { font: inherit; font-size: 12px; padding: 4px 10px; background: var(--paper); border: 0; color: var(--ink-2); cursor: pointer; box-shadow: none; font-style: normal; display: inline-flex; gap: 6px; align-items: center; }
 .seg button[aria-pressed="true"], .seg label:has(input:checked) { background: var(--seal); color: var(--on-seal); }
 .seg.wide { display: flex; margin: 4px 0 8px; }
 .seg.wide label { flex: 1; justify-content: center; padding: 8px; font-size: 14px; }
@@ -139,7 +139,7 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .advice-step { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); }
 .advice-route { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 15px; }
 .alts { margin: 4px 0; padding-left: 18px; font-size: 13px; }
-.picker { margin: 8px 0; }
+.route-pick { margin: 8px 0; } /* not ".picker": the shared appearance styles use that name for colour pickers */
 .sectors { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 6px 0; }
 .sector { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 0 8px; align-items: center; text-align: left; font: inherit; font-size: 12px; padding: 7px 8px; border: 1px solid var(--rule); border-radius: var(--r); background: var(--paper); color: var(--ink); cursor: pointer; min-height: 44px; }
 .sector b { grid-row: span 2; font-size: 18px; font-family: var(--f-serif); }
@@ -171,3 +171,33 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .notify-opt input { margin-top: 4px; }
 .push-status { font-weight: 600; }
 .quiet-hours .inp { width: auto; }
+
+/* what came back, the log and earnings (step S5) */
+.loot summary { cursor: pointer; font-weight: 700; margin: 10px 0 6px; }
+.loot-group { margin: 6px 0 10px; }
+.loot-h { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-2); margin: 8px 0 4px; }
+.loot-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px dashed var(--rule); }
+.loot-name { font-size: 14px; min-width: 0; }
+.qty { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.qbtn { width: 34px; height: 34px; font: 700 18px/1 var(--f-body); border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; }
+.qbtn:hover { border-color: var(--seal); }
+.qinp { width: 64px; text-align: right; padding: 5px 6px; }
+.loot-new { margin-top: 10px; }
+.wide-panel { max-width: 1100px; }
+.log-list { display: grid; gap: 4px; margin-top: 10px; }
+.log-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; align-items: center; text-align: left; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; }
+.log-row:hover { border-color: var(--seal); }
+.log-who { display: grid; min-width: 0; }
+.log-who .muted { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-when { color: var(--ink-2); font-size: 13px; }
+.earn-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 12px 0; }
+.earn-card { display: grid; gap: 4px; padding: 12px; background: var(--paper); border: 1px solid var(--rule); border-top: 3px solid var(--seal); }
+.earn-card span { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .05em; }
+.earn-card b { font: 900 24px/1 "Big Shoulders Display", sans-serif; }
+.earn-t { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 14px; }
+.earn-t th, .earn-t td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--rule); }
+.field.inline { display: inline-grid; }
+@media (max-width: 700px) { .log-row { grid-template-columns: 1fr; gap: 2px; } }
+.qinp { -moz-appearance: textfield; appearance: textfield; }
+.qinp::-webkit-inner-spin-button, .qinp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.loot-h .muted { text-transform: none; letter-spacing: 0; font-weight: 400; }

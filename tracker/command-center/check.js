@@ -1,6 +1,6 @@
 'use strict';
 // Browser checks for the Command Center shell (gates 1B to 1E; blueprint section 5; gate 1A finding F1; rules 5 and 10;
-// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19; Submersibles step S2, C20 to C25; phone notifications, C26).
+// gate 1E's cloud sync through OneDrive and the sync helper, C17 to C19; Submersibles step S2, C20 to C25; phone notifications, C26; the return log and earnings, C29).
 // Serves the published layout with serve.js (no isolation headers, like GitHub Pages), drives a browser through
 // Playwright, and writes evidence/checks*.json plus screenshots. Every request to another site is blocked.
 // Run: node command-center/build.js && node command-center/check.js
@@ -951,6 +951,94 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         ok, { stages, first: titles(first), firstPanel, duringWizard, status, nowLine, perSub: titles(perSub), prefs, errors: real(errors) });
       skip('C26b', 'Turning a device on and a real push delivery', 'the browser\'s push service (run by the browser maker) cannot be reached from the session; the helper\'s encryption and signature are checked by tests/helper.test.js, and the owner\'s "Send a test" button checks a real delivery');
       await ctx.close(); server5.close();
+    }
+
+    // ── C29 Submersibles step S5: what came back, the log and earnings. A returned sub's send window lists the route's
+    //    possible loot by sector; quantities, a new sector and the new-slot line are kept with the trip and in the free
+    //    company; the Log tab reopens the trip to change it; Earnings shows totals, gil per hour per route with the trip
+    //    count, and the CSV export. Universalis is answered by a stand-in (the session reaches no outside site).
+    {
+      const server6 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      let asked = 0;
+      await page.route('https://universalis.app/**', (r) => { asked++; const ids = new URL(r.request().url()).pathname.split('/').pop().split(','); const items = {}; ids.forEach((id) => { items[id] = { itemID: +id, averagePrice: 2000 }; }); r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) }); });
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const saved = () => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles; });
+      const wrote = () => page.waitForFunction(() => window.__subs && window.__subs.state().ready && !document.querySelector('#sheet[open]'), null, { timeout: 10000 }).then(() => page.waitForTimeout(600));
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async () => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: { prefs: { priceWorld: 'Aether' } } };
+        sec.fcs.fa = { name: 'Alpha Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2] };
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 1, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+        // nine earlier trips on the same route: with the one logged now, ten (enough data)
+        sec.trips['a1-old'] = { s: 'a1', t: new Date(2024, 4, 1).getTime(), r: [1], back: new Date(2024, 4, 1, 14).getTime(), items: [[10099, 1]], newSectors: [] }; // for the archive
+        for (let i = 1; i <= 9; i++) sec.trips['a1-' + i] = { s: 'a1', t: now - (40 + i * 30) * H, r: [1, 2], back: now - (40 + i * 30 - 29) * H, items: [[10099, 2]], newSectors: [] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready();
+      await page.click('.sub[data-sub="a1"] .sub-top');
+      await page.waitForSelector('#sheet .loot');
+      const closedAtFirst = !(await page.$eval('#sheet .loot', (d) => d.open)); await page.click('#sheet .loot summary');
+      const groups = await page.$$eval('#sheet .loot-group .loot-h', (xs) => xs.map((x) => x.textContent));
+      const firstRow = await page.$eval('#sheet .loot-row .loot-name', (el) => el.textContent);
+      const repeat = !!(await page.$('#sheet [data-act=loot-repeat]'));
+      const ids = await page.$$eval('#sheet [data-qty]', (xs) => xs.map((x) => +x.dataset.qty));
+      await page.fill(`#sheet [data-qty="${ids[0]}"]`, '3');
+      await page.click(`#sheet [data-q="+"][data-item="${ids[1]}"]`); await page.click(`#sheet [data-q="+"][data-item="${ids[1]}"]`);
+      // an item outside the route's list, picked by name
+      const otherName = await page.evaluate(() => window.__subs.itemName(5));
+      await page.fill('#sheet [data-add-item]', otherName); await page.dispatchEvent('#sheet [data-add-item]', 'change');
+      const newSector = await page.$eval('#sheet [data-new-sector]', (el) => +el.dataset.newSector).catch(() => null);
+      if (newSector) await page.check(`#sheet [data-new-sector="${newSector}"]`);
+      const slotLine = !!(await page.$('#sheet [data-new-slot]'));
+      const pickerFull = await page.evaluate(() => { const sel = document.querySelector('#sheet [name=sea]').getBoundingClientRect(), grid = document.querySelector('#sheet .sectors').getBoundingClientRect(); return grid.top >= sel.bottom - 1 && grid.width > 300; });
+      await page.click('#sheet .sector[data-pick="1"]');
+      await page.click('#sheet [data-act=dosend]'); await wrote();
+      const s1 = await saved();
+      const trip = Object.values(s1.trips).sort((a, b) => b.t - a.t)[0];
+      const tripId = Object.keys(s1.trips).find((k) => s1.trips[k] === trip);
+      const items = Object.fromEntries(trip.items);
+      const lootOk = trip.r.join() === '1,2' && items[ids[0]] === 3 && items[ids[1]] === 2 && items[5] === 1 && (!newSector || (trip.newSectors.includes(newSector) && s1.fcs.fa.discovered.includes(newSector)));
+      // the Log tab: the trip is there and can be changed
+      await page.click('[data-tab=log]');
+      const logRows = await page.$$eval('.log-row', (xs) => xs.length);
+      await page.click(`.log-row[data-trip="${tripId}"]`); await page.waitForSelector('#sheet .loot');
+      const keptQty = await page.inputValue(`#sheet [data-qty="${ids[0]}"]`);
+      await page.fill(`#sheet [data-qty="${ids[0]}"]`, '4'); await page.click('#sheet [data-act=trip-save]'); await wrote();
+      const edited = Object.fromEntries((await saved()).trips[tripId].items)[ids[0]];
+      // Earnings: totals, route gil per hour with ten trips, priced by market and merchant, the CSV
+      await page.click('[data-tab=earn]');
+      await page.waitForFunction(() => /Universalis, Aether/.test((document.querySelector('#view') || {}).textContent || ''), null, { timeout: 10000 }).catch(() => {});
+      const earn = await page.evaluate(() => ({ cards: [...document.querySelectorAll('.earn-card b')].map((x) => x.textContent), text: document.querySelector('#view').textContent, route: [...document.querySelectorAll('.earn-t')][0].querySelector('tbody tr').textContent }));
+      const want = await page.evaluate(() => { const p = {}; Object.keys(window.__subs.section().trips).forEach((k) => window.__subs.section().trips[k].items.forEach((x) => { p[x[0]] = 2000; })); return EARN.totals(window.__subs.section(), p, Date.now()).all; });
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act=csv]')]);
+      const csv = fs.readFileSync(await dl.path(), 'utf8');
+      // the archive (offered at 75% of the size limit; the threshold lowered for the check): file first, then removal on
+      // confirming; loading the file back restores the voyage
+      await page.evaluate(() => window.__subs.archiveAt(0));
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-act=archive]');
+      // (the confirm is accepted by the profile's dialog handler)
+      const [arcDl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act=archive]')]);
+      const arcFile = await arcDl.path(); const arc = JSON.parse(fs.readFileSync(arcFile, 'utf8'));
+      await page.waitForTimeout(800);
+      const afterArc = Object.keys((await saved()).trips);
+      await page.waitForSelector('[data-archive-file]', { state: 'attached' });
+      await page.setInputFiles('[data-archive-file]', arcFile); await page.waitForTimeout(1200);
+      const afterLoad = Object.keys((await saved()).trips);
+      const archiveOk = arc.count === 1 && !!arc.trips['a1-old'] && !afterArc.includes('a1-old') && afterArc.length === 10 && afterLoad.includes('a1-old') && afterLoad.length === 11;
+      // phone width: the loot window and the earnings fit
+      await page.setViewportSize({ width: 390, height: 844 });
+      const wideEarn = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      await page.click('[data-tab=log]'); await page.click(`.log-row[data-trip="${tripId}"]`); await page.waitForSelector('#sheet .loot');
+      const wideSheet = await page.evaluate(() => { const d = document.querySelector('#sheet'); return document.documentElement.scrollWidth > window.innerWidth + 1 || d.scrollWidth > d.clientWidth + 1; });
+      const ok = closedAtFirst && pickerFull && archiveOk && groups.length >= 2 && /possible items/.test(groups[0]) && !!firstRow && repeat && lootOk && slotLine === false &&
+        logRows === 11 && keptQty === '3' && edited === 4 && asked >= 1 &&
+        earn.cards[3] === Math.round(want).toLocaleString('en') + ' gil' && /5% tax/.test(earn.text) && /10/.test(earn.route) && !/not enough data/.test(earn.route) &&
+        csv.split('\r\n')[0].startsWith('sent,back,free company') && csv.includes('Alpha Company') && !wideEarn && !wideSheet && real(errors).length === 0;
+      record('C29', 'What came back (step S5): a returned sub\'s send window keeps "What came back" folded until tapped, then lists the route\'s possible loot by sector with "Repeat last"; typed and tapped quantities, an item added by name and a new sector are kept with the trip and in the free company; the Log tab lists every voyage and reopens one to change it; Setup\'s archive downloads the oldest voyages to a file, removes them only on confirming and loads them back from the file; Earnings totals the log at market prices after the 5% tax (Universalis stand-in) or the merchant price, shows gil per hour by route with the trip count and exports the log as CSV; the window and the tab fit a phone; the route picker shows the sectors full width under the sea list (not squeezed by the shared appearance styles)',
+        ok, { closedAtFirst, pickerFull, archiveOk, arcCount: arc.count, afterArc: afterArc.length, afterLoad: afterLoad.length, groups: groups.slice(0, 3), firstRow, repeat, trip, newSector, slotLine, logRows, keptQty, edited, asked, earn: { cards: earn.cards, route: earn.route }, want, csvHead: csv.split('\r\n')[0], wideEarn, wideSheet, errors: real(errors) });
+      await ctx.close(); server6.close();
     }
 
   } finally {

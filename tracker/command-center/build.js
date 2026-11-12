@@ -59,7 +59,7 @@ for (const f of fs.readdirSync(path.join(SRC, 'icons'))) cp(path.join(SRC, 'icon
 // The Submersibles module page (step S2): its page, script and styles, the shared alerts script, and data.js with a copy
 // of data/submarines.json (compressed inside the page when that is smaller; both sizes are printed) and the worlds list
 // of the shared place setting (data/live.json). It loads the one save from ../save.js.
-for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'advisor.js', 'push.js']) cp(path.join(SRC, 'submersibles', f), 'submersibles/' + f);
+for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'advisor.js', 'push.js', 'earn.js']) cp(path.join(SRC, 'submersibles', f), 'submersibles/' + f);
 {
   const json = JSON.stringify(JSON.parse(fs.readFileSync(path.join(T, 'data', 'submarines.json'), 'utf8')));
   const live = JSON.parse(fs.readFileSync(path.join(T, 'data', 'live.json'), 'utf8'));

@@ -235,6 +235,9 @@ for item in {it for _, it in pairs}:
     if item not in ITEM or not ITEM[item]["Name"]:
         stop("loot item %d has no name in the game's Item sheet" % item)
 items = {str(it): ITEM[it]["Name"] for it in sorted({it for _, it in pairs} | {p["item"] for p in parts})}
+# For earnings (step S5): what a merchant pays for one (Item.PriceLow) and whether it can go on the market board
+# (Item.IsUntradable). Salvage is sold to merchants at this fixed price; the rest is valued at market prices in the app.
+item_info = {k: [i(ITEM[int(k)]["PriceLow"]), 0 if ITEM[int(k)]["IsUntradable"] == "True" else 1] for k in items}
 sectors_without_loot = [sid for sid in sorted(SECTOR) if str(sid) not in loot]
 
 # ------------------------------------------------------------------ unlocks (Submarine Tracker, Data/Unlocks.cs)
@@ -397,6 +400,7 @@ out = {
         "statNames": {"source": "game", "commit": DM_COMMIT, "from": ["SubmarineSpecCategory"]},
         "reportLines": {"source": "game", "commit": DM_COMMIT, "from": ["SubmarineExplorationLog"]},
         "items": {"source": "game", "commit": DM_COMMIT, "from": ["Item"]},
+        "itemInfo": {"source": "game", "commit": DM_COMMIT, "from": ["Item (PriceLow, IsUntradable)"], "note": "[merchant price for one, 1 if it can be sold on the market board]"},
         "loot": {"source": "teamcraft", "commit": TC_COMMIT, "from": ["voyage-sources.json"],
                  "label": "possible items only: no quantities, odds or quality",
                  "note": "Reported by Teamcraft users, so the newest sectors may list few items or none."},
@@ -428,6 +432,7 @@ out = {
     "ranks": ranks,
     "reportLines": report_lines,
     "items": items,
+    "itemInfo": item_info,
     "loot": loot,
     "unlocks": unlocks,
     "subSlots": sub_slots,
