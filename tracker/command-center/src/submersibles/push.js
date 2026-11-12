@@ -80,7 +80,7 @@
     return P.config().then(function (h) {
       if (!h) throw Object.assign(new Error('Cloud sync is not set up on this site, so the helper is not known.'), { code: 'no-helper' });
       return fetch(h + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ device: P.device() }, body || {})) })
-        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Object.assign(new Error(j.message || 'The helper answered ' + r.status), { code: j.error || 'helper', status: r.status }); return j; }); });
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Object.assign(new Error('The helper refused "' + path.replace('/push/', '') + '" (' + r.status + '): ' + (j.message || 'no reason given') + '.'), { code: j.error || 'helper', status: r.status }); return j; }); });
     });
   };
   P.supported = function () { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; };
@@ -95,7 +95,13 @@
       return Promise.all([P.call('/push/key'), P.registration()]);
     }).then(function (x) {
       return x[1].pushManager.getSubscription().then(function (old) { return old || x[1].pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(x[0].key) }); });
-    }).then(function (sub) { return P.call('/push/subscribe', { subscription: sub.toJSON() }); });
+    }).then(function (sub) {
+      var j = sub && sub.toJSON ? sub.toJSON() : null;
+      // say exactly what the browser gave, without the address itself (owner report 2026-11-12: "bad request")
+      if (!j || typeof j.endpoint !== 'string' || !/^https:\/\//.test(j.endpoint)) throw new Error('The browser gave no usable notification address (' + (j && j.endpoint ? String(j.endpoint).split('/')[2] : 'none') + ').');
+      if (!j.keys || !j.keys.p256dh || !j.keys.auth) throw new Error('The browser gave a notification address on ' + j.endpoint.split('/')[2] + ' but no encryption keys.');
+      return P.call('/push/subscribe', { subscription: { endpoint: j.endpoint, keys: { p256dh: String(j.keys.p256dh), auth: String(j.keys.auth) } } });
+    });
   };
   P.disable = function () {
     return P.registration().then(function (r) { return r && r.pushManager.getSubscription(); }).then(function (s) { return s && s.unsubscribe(); })
