@@ -8,3 +8,5 @@ _site/
 .claude/agents/*.md
 .claude/agents/.plan
 .claude/agents/.tmp-*
+__pycache__/
+*.pyc
