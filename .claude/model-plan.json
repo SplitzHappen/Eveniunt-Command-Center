@@ -1,0 +1,4 @@
+{
+  "plan": "max",
+  "note": "The owner's entitlement: max = Fable is available, pro = it is not. A missing or invalid file means pro. CONTINUITY_MODEL_PLAN overrides it; a Sonnet or Haiku session lowers it to pro. See docs/model-tiers.md."
+}
