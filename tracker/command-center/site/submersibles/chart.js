@@ -59,7 +59,7 @@
     o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
     var path = [view.start].concat((route || []).filter(function (id) { return at[id]; }).map(function (id) { return at[id]; }));
     if (path.length > 1) o += '<polyline class="chart-route" aria-hidden="true" points="' + path.map(function (p) { return num(p.x) + ',' + num(p.y); }).join(' ') + '"/>';
-    o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><rect x="' + num(view.start.x - r) + '" y="' + num(view.start.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(view.start.x) + ' ' + num(view.start.y) + ')"/><text x="' + num(view.start.x) + '" y="' + num(view.start.y + r + fs * 1.1) + '" text-anchor="middle" font-size="' + num(fs) + '">Start</text></g>';
+    o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><rect x="' + num(view.start.x - r) + '" y="' + num(view.start.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(view.start.x) + ' ' + num(view.start.y) + ')"/><text x="' + num(view.start.x) + '" y="' + num(view.start.y + r * 1.5 + fs * 1.1) + '" text-anchor="middle" font-size="' + num(fs) + '">Start</text></g>';
     view.nodes.forEach(function (n) {
       var tags = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean);
       var label = n.name + ', rank ' + n.rank + ', ' + STATE[n.state] + (tags.length ? ', ' + tags.join(', ') : '');
@@ -69,8 +69,8 @@
       var idx = (route || []).indexOf(n.id);
       o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
         '<circle class="hit" r="' + num(r * 2.2) + '"/>' + shape +
-        '<text class="chart-letter" y="' + num(-r - fs * 0.25) + '" text-anchor="middle" font-size="' + num(fs) + '">' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
-        (tags.length ? '<text class="chart-tag" y="' + num(r + fs * 1.05) + '" text-anchor="middle" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
+        '<text class="chart-letter" y="' + num(-r * 2.2 - fs * 0.3) + '" text-anchor="middle" font-size="' + num(fs) + '">' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
+        (tags.length ? '<text class="chart-tag" y="' + num(r * 2.2 + fs * 0.85) + '" text-anchor="middle" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
     });
     return o + '</svg>';
   };

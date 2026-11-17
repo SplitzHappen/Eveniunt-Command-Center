@@ -291,6 +291,21 @@ test('chart: sector states, slot labels and sea-opening labels', () => {
   assert.equal(CH.view(1, []).nodes.find((n) => n.id === 30).opens, SEA.get(2).name);
   assert.equal(CH.view(99, []), null);
 });
+test('chart: the route is drawn in order from Start with numbers 1 to n; an empty route draws no line', () => {
+  const v = CH.view(1, [1, 2, 3, 10, 15]);
+  const route = [15, 10, 3];
+  const svg = CH.svg(v, route);
+  assert.equal(count(svg, '<polyline'), 1);
+  const pts = /<polyline[^>]*points="([^"]+)"/.exec(svg)[1].split(' ').map((p) => p.split(',').map(Number));
+  const want = [v.start].concat(route.map((id) => v.nodes.find((n) => n.id === id)));
+  assert.equal(pts.length, route.length + 1);
+  want.forEach((p, i) => { assert.ok(Math.abs(pts[i][0] - p.x) < 0.06 && Math.abs(pts[i][1] - p.y) < 0.06, 'point ' + i); });
+  route.forEach((id, i) => {
+    const node = new RegExp('data-sector="' + id + '"[\\s\\S]*?</g>').exec(svg)[0];
+    assert.ok(new RegExp('class="chart-letter"[^>]*>[^<]* ' + (i + 1) + '</text>').test(node), 'number ' + (i + 1));
+  });
+  for (const none of [undefined, null, []]) assert.equal(count(CH.svg(v, none), '<polyline'), 0);
+});
 test('chart: the SVG holds each sector once, names are escaped, the route is numbered', () => {
   for (const sea of D.seas) {
     const svg = CH.svg(CH.view(sea.id, [1]));

@@ -2810,6 +2810,73 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close().catch(() => {}); server13.close();
     }
 
+    // ── C84 Submersibles step S4-2: the route planner on the Map tab: figures equal ADVISOR.evalRoute for the chosen sub, a
+    //    sixth sector cannot be added, a sector above the sub's rank cannot be tapped, a community route button loads its
+    //    route, "Send ... on this route..." opens the send window with that route, Cancel leaves the stored section
+    //    byte-for-byte as before, and a sub that is Out has the button disabled.
+    {
+      const server14 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const saved = () => page.evaluate(async () => { const r = await CC.read(); return JSON.stringify(CC.checkDoc(r.raw).modules.submersibles); });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async () => {
+        const parts = [3, 4, 1, 2], now = Date.now();
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fl = { name: 'Lima Company', world: 'Gilgamesh', unlockedSlots: 2, order: 0, discovered: [1, 2, 3, 4, 5, 6, 7, 10, 15, 26] };
+        sec.subs.l1 = { fcId: 'fl', slot: 1, name: 'Sub L1', rank: 30, parts };
+        sec.subs.l2 = { fcId: 'fl', slot: 2, name: 'Sub L2', rank: 30, parts, voyage: { sentAt: now, route: [1], returnAt: now + 3600000 } };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready();
+      const before = await saved();
+      await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+      const tap = (id) => page.click('.chart-svg [data-sector="' + id + '"]');
+      const route = () => page.$eval('.planner .route-line', (el) => el.textContent);
+      const noSub = await page.$eval('.planner', (el) => el.textContent);
+      await page.selectOption('#map-sub', 'l1');
+      await tap(1); await tap(3);
+      const planned = await page.$eval('.planner', (el) => el.textContent);
+      const want = await page.evaluate(() => { const st = ADVISOR.stats(30, [3, 4, 1, 2]), ev = ADVISOR.evalRoute([1, 3], st); return { range: 'range ' + ev.range + ' of ' + ev.maxRange, tanks: ev.tanks + ' tank', route: ADVISOR.routeText([1, 3]), exp: ev.exp.toLocaleString('en') + ' exp', calc: 'calculated' }; });
+      const figuresOk = [want.range, want.tanks, want.exp, want.route, want.calc].every((x) => planned.includes(x));
+      const drawn = await page.evaluate(() => ({ line: document.querySelectorAll('.chart-svg .chart-route').length, pts: (document.querySelector('.chart-route') || { getAttribute: () => '' }).getAttribute('points').split(' ').length }));
+      await tap(3); const dropped = await route();
+      await tap(3);
+      for (const id of [2, 4, 5]) await tap(id);
+      const five = await route();
+      await tap(6); const afterSixth = await route();
+      await tap(26); const afterHigh = await route();
+      await page.click('[data-act=mapclear]');
+      const community = await page.$$eval('[data-map-use]', (bs) => bs.map((b) => ({ t: b.textContent, d: b.disabled })));
+      const okBtn = community.findIndex((b) => /OJ/.test(b.t) && !b.d), highBtn = community.find((b) => /JORZ/.test(b.t));
+      await page.click('[data-map-use]:not([disabled])');
+      const loaded = await route();
+      const loadedWant = await page.evaluate(() => ADVISOR.routeText([15, 10]));
+      if (SHOT) await (await page.$('.map-panel')).screenshot({ path: path.join(ev, 'submersibles-planner.png') });
+      await page.click('[data-map-send]');
+      await page.waitForSelector('#sheet [data-picker] .sector.on');
+      const sheetRoute = await page.$eval('#sheet [data-picker] .route-line', (el) => el.textContent);
+      const sheetOn = await page.$$eval('#sheet [data-picker] .sector.on', (els) => els.map((e) => e.textContent));
+      await page.click('#sheet [data-act=close]');
+      await page.waitForTimeout(800);
+      const afterCancel = await saved();
+      await page.selectOption('#map-sub', 'l2'); await tap(1);
+      const outBtn = await page.$eval('[data-map-send]', (b) => ({ disabled: b.disabled, text: b.parentElement.textContent }));
+      await page.waitForTimeout(800);
+      const afterAll = await saved();
+      const wideDesktop = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      await ctx.close();
+      const arrows = (s) => (s.match(/→/g) || []).length;
+      const ok = /Choose a submarine/.test(noSub) && figuresOk && drawn.line === 1 && drawn.pts === 3 && arrows(dropped) === 0 && /: A\b/.test(dropped) &&
+        arrows(five) === 4 && arrows(afterSixth) === 4 && !/\bF\b/.test(afterSixth) && arrows(afterHigh) === 4 && !/\bZ\b/.test(afterHigh) &&
+        okBtn >= 0 && highBtn && highBtn.d === true && loaded.includes(loadedWant) && sheetRoute.includes(loadedWant) && sheetOn.length === 2 &&
+        before === afterCancel && outBtn.disabled === true && /back/.test(outBtn.text) && before === afterAll && wideDesktop <= 0 && real(errors).length === 0;
+      record('C84', 'Route planner (step S4-2): choosing a sub and tapping two found sectors gives the figures ADVISOR.evalRoute gives for it, with the "calculated" label, and draws a numbered line; a sixth sector cannot be added and a sector above the sub\'s rank cannot be tapped into the route; a community route button loads its route (disabled when the rank or a sector is missing); "Send ... on this route..." opens the send window with that route selected; Cancel leaves the stored section byte-for-byte as before; a sub that is Out has the button disabled',
+        ok, { noSub: noSub.slice(0, 120), planned: planned.slice(0, 300), want, drawn, dropped, five, afterSixth, afterHigh, community, loaded, sheetRoute, sheetOn, same: before === afterCancel, outBtn, wideDesktop, errors: real(errors) });
+      await ctx.close().catch(() => {}); server14.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }

@@ -212,7 +212,7 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .chart-svg { display: block; width: 100%; height: auto; max-height: 80vh; }
 .chart-lines line { stroke: var(--ink-3); stroke-width: 1.5; opacity: .6; }
 .chart-route { fill: none; stroke: var(--seal); stroke-width: 3; }
-.chart-svg text { fill: var(--ink); font-family: inherit; }
+.chart-svg text { fill: var(--ink); font-family: inherit; paint-order: stroke fill; stroke: var(--paper); stroke-width: .3em; stroke-linejoin: round; }
 .chart-tag { fill: var(--ink-2); }
 .chart-start rect { fill: var(--ink); }
 .chart-node { cursor: pointer; }
@@ -225,3 +225,8 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .chart-key .key.found { color: var(--back); } .chart-key .key.next { color: var(--idle); } .chart-key .key.far { color: var(--locked); }
 .chart-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 14px; }
 .chart-facts dt { color: var(--ink-2); } .chart-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+/* The route planner (step S4-2) */
+.planner { margin: 8px 0; }
+.planner .route-line { margin: 6px 0; }
+.chart-wrap.planning .chart-node.over-rank { opacity: .45; cursor: not-allowed; }
+.chart-wrap.planning .chart-node.found:not(.over-rank) { cursor: copy; }

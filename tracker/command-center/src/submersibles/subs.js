@@ -625,6 +625,11 @@
     if (!m.fc || !S.fcs[m.fc]) m.fc = fcs.length ? fcs[0].id : null;
     if (!SEA[m.sea]) m.sea = D.seas[0].id;
     if (m.sector && (!SECTOR[m.sector] || SECTOR[m.sector].sea !== m.sea)) m.sector = null;
+    // the planner (step S4-2): the chosen sub must belong to the chosen free company; the route only holds found sectors of this sea
+    var sb = m.sub && S.subs[m.sub];
+    if (!sb || sb.fcId !== m.fc) { m.sub = null; m.route = []; }
+    var disc = new Set((S.fcs[m.fc] && S.fcs[m.fc].discovered) || []);
+    m.route = (Array.isArray(m.route) ? m.route : []).filter(function (id, i, a) { return SECTOR[id] && SECTOR[id].sea === m.sea && disc.has(id) && (!sb || !sb.rank || SECTOR[id].rank <= sb.rank) && a.indexOf(id) === i; }).slice(0, 5);
     return m;
   }
   function sectorDetails(id, fc) {
@@ -641,6 +646,38 @@
       '<dt>Reveals</dt><dd>' + (reveals.length ? reveals.join(', ') : 'nothing') + '</dd>' +
       '<dt>Possible items</dt><dd>' + (loot.length ? loot.join(', ') : 'no loot list for this sector yet') + '</dd></dl></section>';
   }
+  // the route planner: draws and works out a route; it never sends and writes nothing (the send window does that, on the owner's press)
+  function plannerHtml(fc, m) {
+    var subs = subsOf(m.fc), now = Date.now(), slots = Object.keys(subs).sort(function (a, b) { return a - b; });
+    var opts = '<option value="">No submarine chosen</option>' + slots.map(function (k) { return '<option value="' + esc(subs[k].id) + '"' + (subs[k].id === m.sub ? ' selected' : '') + '>' + esc(subs[k].sub.name || 'Sub ' + subs[k].sub.slot) + '</option>'; }).join('');
+    var o = '<div class="planner"><label class="field inline">Plan for <select id="map-sub" data-map-sub>' + opts + '</select></label>';
+    if (!slots.length) return o + '<p class="hint">This free company has no submarines entered yet (Setup).</p></div>';
+    if (!m.sub) return o + '<p class="hint">Choose a submarine to plan a route: tap found sectors in the order it should visit them (up to 5).</p></div>';
+    var s = S.subs[m.sub], st = subStats(s), route = m.route, ev = st && route.length ? ADV.evalRoute(route, st) : null, status = F.status(s, fc, now);
+    var common = (D.commonRoutes || []).filter(function (cr) { return cr.sea === m.sea; }).map(function (cr) {
+      var ok = cr.route.every(function (id) { return (fc.discovered || []).indexOf(id) >= 0 && (!s.rank || SECTOR[id].rank <= s.rank); });
+      return '<button type="button" class="btn sm" data-map-use="' + cr.route.join(',') + '"' + (ok ? '' : ' disabled title="Not every sector is found, or the rank is too low"') + '>' + esc(cr.name) + '</button>';
+    }).join('');
+    var calc;
+    if (!route.length) calc = '<p class="hint">Tap found sectors on the chart in the order the sub should visit them (up to 5; tap again to drop one). The time is worked out as you go.</p>';
+    else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out.</p>';
+    else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
+    else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
+    var name = s.name || 'Sub ' + s.slot, out = status === 'out' || status === 'locked';
+    return o + '<p class="route-line">Route: ' + (route.length ? '<b>' + esc(ADV.routeText(route)) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' +
+      (common ? '<p class="hint">Community routes in this sea: ' + common + '</p>' : '') + calc +
+      '<p><button type="button" class="btn primary" data-map-send="' + esc(m.sub) + '"' + (!route.length || out ? ' disabled' : '') + '>Send ' + esc(name) + ' on this route…</button>' +
+      (status === 'out' && s.voyage ? ' <span class="muted">Out: back ' + esc(F.fmtClock(s.voyage.returnAt, now)) + '</span>' : status === 'locked' ? ' <span class="muted">Not unlocked yet</span>' : '') + '</p>' +
+      '<p class="hint">Nothing is sent or saved here; the button opens the send window with this route.</p></div>';
+  }
+  // opens the existing send window with the planned route loaded (the send window does the sending)
+  function planSend(id) {
+    var m = mapState(), s = S.subs[id], fc = s && S.fcs[s.fcId]; if (!fc || !m.route.length) return;
+    var st = F.status(s, fc, Date.now()); if (st === 'out' || st === 'locked') return;
+    var route = m.route.slice();
+    sendSheet(id, false);
+    PICK.route = route; PICK.sea = SECTOR[route[0]].sea; redrawPicker();
+  }
   function mapHtml() {
     var fcs = fcList();
     if (!fcs.length) return boardHtml();
@@ -650,19 +687,25 @@
       var n = D.sectors.filter(function (s) { return s.sea === sea.id && disc.indexOf(s.id) >= 0; }).length;
       return '<button type="button" class="btn sm" data-map-sea="' + sea.id + '" aria-pressed="' + (sea.id === m.sea) + '">' + esc(sea.name) + ' <span class="muted">found ' + n + ' of ' + sea.sectors + '</span></button>';
     }).join('');
-    var view = CHART.view(m.sea, disc), nFound = view.nodes.filter(function (n) { return n.state === 'found'; }).length;
+    var ps = m.sub && S.subs[m.sub], view = CHART.view(m.sea, disc, ps && ps.rank ? ps.rank : null), nFound = view.nodes.filter(function (n) { return n.state === 'found'; }).length;
     return '<section class="panel wide-panel map-panel"><h2>Map</h2>' +
       '<label class="field inline">Free company <select id="map-fc" data-map-fc>' + opts + '</select></label>' +
       '<div class="map-seas" role="group" aria-label="Sea">' + seas + '</div>' +
       (disc.length ? '' : '<p class="note">Nothing is ticked as found for this free company yet. Tick the sectors in Setup (Edit the free company, sectors step) and they show here.</p>') +
       (nFound ? '' : '<p class="hint">This sea is not opened yet.</p>') +
-      '<div class="chart-wrap">' + CHART.svg(view, null) + '</div>' +
+      plannerHtml(fc, m) +
+      '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '">' + CHART.svg(view, m.sub ? m.route : null) + '</div>' +
       '<p class="hint chart-key"><span class="key found">●</span> found · <span class="key next">◆</span> can be revealed next · <span class="key far">▪</span> further away. Tap a sector for its details.</p>' +
       (m.sector ? sectorDetails(m.sector, fc) : '') +
       '<p class="hint">Drawn by this app from the game\'s position numbers; this is not the game\'s map picture. Depth is not drawn. Which sector reveals which is community data.</p></section>';
   }
   function mapPick(id) {
-    var m = mapState(); m.sector = m.sector === id ? null : id; keepUi(); render();
+    var m = mapState(), sb = m.sub && S.subs[m.sub], found = ((S.fcs[m.fc] || {}).discovered || []).indexOf(id) >= 0;
+    if (sb && found && SECTOR[id].sea === m.sea && (!sb.rank || SECTOR[id].rank <= sb.rank)) { // planner tap: add or drop
+      var at = m.route.indexOf(id);
+      if (at >= 0) m.route.splice(at, 1); else if (m.route.length < 5) m.route.push(id);
+    } else m.sector = m.sector === id ? null : id;
+    keepUi(); render();
     var n = $('#view [data-sector="' + id + '"]'); if (n && m.sector) n.focus();
   }
 
@@ -894,7 +937,13 @@
     var qk = e.target.closest('[data-quick]');
     if (qk) { quickSend(qk.dataset.quick); return; }
     var ms = e.target.closest('[data-map-sea]');
-    if (ms) { var m1 = mapState(); m1.sea = +ms.dataset.mapSea; m1.sector = null; keepUi(); render(); return; }
+    if (ms) { var m1 = mapState(); m1.sea = +ms.dataset.mapSea; m1.sector = null; m1.route = []; keepUi(); render(); return; }
+    var mu = e.target.closest('[data-map-use]');
+    if (mu && !mu.disabled) { var m3 = mapState(); m3.route = mu.dataset.mapUse.split(',').map(Number); keepUi(); render(); return; }
+    var mw = e.target.closest('[data-map-send]');
+    if (mw) { if (!mw.disabled) planSend(mw.dataset.mapSend); return; }
+    var mc = e.target.closest('[data-act=mapclear]');
+    if (mc) { var m4 = mapState(); m4.route = []; keepUi(); render(); return; }
     var mn = e.target.closest('#view [data-sector]');
     if (mn) { mapPick(+mn.dataset.sector); return; }
     var pk = e.target.closest('[data-pick], [data-use]');
@@ -999,7 +1048,8 @@
   }
   function onInput(e) {
     var t = e.target;
-    if (t.matches && t.matches('[data-map-fc]')) { var m2 = mapState(); m2.fc = t.value; m2.sector = null; keepUi(); render(); return; }
+    if (t.matches && t.matches('[data-map-fc]')) { var m2 = mapState(); m2.fc = t.value; m2.sector = null; m2.sub = null; m2.route = []; keepUi(); render(); return; }
+    if (t.matches && t.matches('[data-map-sub]')) { var m5 = mapState(); m5.sub = t.value || null; m5.route = []; keepUi(); render(); return; }
     if (t.closest('#sheet')) {
       if (t.matches('[data-add-item]')) { // an item picked from the list joins "Other items" with a quantity of 1
         var nm = t.value.trim().toLowerCase(), id = Object.keys(D.items).find(function (k) { return D.items[k].toLowerCase() === nm; });
