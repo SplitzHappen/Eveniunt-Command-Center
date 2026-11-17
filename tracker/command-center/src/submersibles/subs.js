@@ -52,14 +52,14 @@
   function recsRead(doc, rev) {
     var sec = doc.modules[RECS_NAME];
     RC.raw = sec ? JSON.parse(JSON.stringify(sec)) : null; RC.rev = rev; RC.choices = null;
-    // nothing stored means the defaults, so a first write from this page keeps what another device stored meanwhile for every field this page did not change
-    RC.base = sec ? JSON.parse(JSON.stringify(sec)) : { choices: window.RECS.defaults() };
+    // nothing stored: no base. A write holds only the fields stored or changed (RECS.store), so what another page stored meanwhile for any other field is kept
+    RC.base = sec ? JSON.parse(JSON.stringify(sec)) : null;
   }
   function recsNow() { if (RC.choices) return RC.choices; var c = window.RECS.check(RC.raw, D); if (D) RC.choices = c; return c; }
   function recsWrite() {
     RC.pending++;
     RC.chain = RC.chain.then(function () {
-      var snap = JSON.parse(JSON.stringify({ choices: recsNow() }));
+      var snap = JSON.parse(JSON.stringify(RC.raw)); // only the fields stored or changed (set by recsChange)
       return CC.writeSection(RECS_NAME, snap, { rev: RC.rev, base: RC.base }).then(function (r) {
         RC.rev = r.rev; RC.base = JSON.parse(JSON.stringify(r.section)); SH.updated = r.doc.updated || Date.now();
         if (r.merged && RC.pending === 1) { var was = JSON.stringify(recsNow()); RC.raw = JSON.parse(JSON.stringify(r.section)); RC.choices = null; if (JSON.stringify(recsNow()) !== was) redrawRecs(); }
@@ -268,7 +268,7 @@
     refreshLogged();
     var fc = S.fcs[fcId], list = Object.keys(S.subs).filter(function (k) { return S.subs[k].fcId === fcId && S.subs[k].slot <= (fc.unlockedSlots || 1); });
     if (!fc || !list.length) return 'unlock';
-    var advice = list.map(function (k) { return ADV.advise(Object.assign({ sub: S.subs[k], fc: fc, slotsFilled: list.length }, logInput(), { recs: recsNow() })); });
+    var advice = list.map(function (k) { return advised('stage', k, S.subs[k], fc, [], list.length); });
     if (advice.some(function (a) { return a.blocked || a.step < 3; })) return 'unlock';
     return list.every(function (k) { return S.subs[k].rank === 145; }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
   }
@@ -381,8 +381,8 @@
     var rows = c.order.map(function (k, i) {
       var name = R.LABEL[k];
       return '<li><span class="rec-name"><b>' + (i + 1) + '.</b> ' + esc(name) + '</span><span class="row">' +
-        '<button type="button" class="btn sm" data-rec="up-' + esc(k) + '" aria-label="' + esc('Move ' + name + ' up') + '"' + (i === 0 ? ' disabled' : '') + '>Move up</button>' +
-        '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move ' + name + ' down') + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>';
+        '<button type="button" class="btn sm" data-rec="up-' + esc(k) + '" aria-label="' + esc('Move up: ' + name) + '"' + (i === 0 ? ' disabled' : '') + '>Move up</button>' +
+        '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move down: ' + name) + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>';
     }).join('');
     return '<label class="opt big"><input type="checkbox" data-rec="fuel"' + (c.fuel ? ' checked' : '') + '> <span>Prioritise fuel efficiency</span></label>' +
       '<p class="rec-give"><label for="rec-give">To save fuel, give up at most <b>' + c.giveUp + '%</b> of the best result for my top priority</label><br>' +
@@ -412,13 +412,13 @@
       if (el) el.focus();
     }
   }
-  // one setting changed: normalise, store the whole choices through the section's own write, redraw only this panel
+  // one setting changed: normalise, store the fields already stored plus the changed ones through the section's own write, redraw only this panel
   function recsChange(mut, focus, live) {
     var c = JSON.parse(JSON.stringify(recsNow()));
     mut(c);
     var next = window.RECS.check({ choices: c }, D);
-    var same = JSON.stringify(next) === JSON.stringify(recsNow());
-    if (!same) { RC.raw = { choices: next }; RC.choices = next; }
+    var was = recsNow(), changed = window.RECS.changed(was, next), same = !changed.length;
+    if (!same) { RC.raw = window.RECS.store(RC.raw, next, changed); RC.choices = next; }
     RC.live = typeof live === 'function' ? live(recsNow()) : live || '';
     redrawRecs(focus);
     if (!same) recsWrite();
@@ -628,10 +628,15 @@
     var s = S.subs[subId], fc = s && S.fcs[s.fcId]; if (!fc) return null;
     // a sub that is back is planned at the rank its voyage brings it to, so the button sends what it shows
     if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
-    var key = JSON.stringify([s.rank, s.parts, fc.unlockedSlots, fc.discovered, pendingFor(subId), slotsFilled(s.fcId), LOGGED.sig, window.RECS.sig(recsNow())]);
-    if (ADVICE[subId] && ADVICE[subId].key === key) return ADVICE[subId].value;
-    var v = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(subId), slotsFilled: slotsFilled(s.fcId) }, logInput(), { recs: recsNow() }));
-    ADVICE[subId] = { key: key, value: v };
+    return advised('board', subId, s, fc, pendingFor(subId), slotsFilled(s.fcId));
+  }
+  // One advice per sub, kept while every input the advisor reads is unchanged (one entry per caller, so they do not push each other out).
+  function advised(tag, subId, s, fc, pending, slots) {
+    var key = JSON.stringify([s.rank, s.expIntoRank, s.parts, fc.unlockedSlots, fc.discovered, pending, slots, LOGGED.sig, window.RECS.sig(recsNow())]);
+    var slot = ADVICE[subId] = ADVICE[subId] || {};
+    if (slot[tag] && slot[tag].key === key) return slot[tag].value;
+    var v = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pending, slotsFilled: slots }, logInput(), { recs: recsNow() }));
+    slot[tag] = { key: key, value: v };
     return v;
   }
   // how far the worked-out times are confirmed: voyages and trips where the owner also entered the game's time
@@ -962,7 +967,7 @@
     ids.forEach(function (id) {
       var s = S.subs[id], fc = S.fcs[s.fcId];
       if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
-      var a = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(id).concat(taken), slotsFilled: slotsFilled(s.fcId) }, logInput(), { recs: recsNow() }));
+      var a = advised('plan', id, s, fc, pendingFor(id).concat(taken), slotsFilled(s.fcId));
       out[id] = a;
       if (a && a.plan) taken = taken.concat(a.plan.route);
     });

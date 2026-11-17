@@ -397,7 +397,8 @@ test('R1: constants, labels and defaults', () => {
   assert.equal(RECS.NAME, 'submersibles-recommendations');
   assert.equal(RECS.BAND, 0.05);
   assert.deepEqual([RECS.GIVE_UP, RECS.GIVE_MIN, RECS.GIVE_MAX, RECS.GIVE_STEP], [10, 5, 50, 5]);
-  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, false], [0, false], [0, false], [0, false], [0, false]] });
+  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, true], [0, false], [0, false], [0, false], [0, false]] });
+  assert.deepEqual(RECS.check({ choices: RECS.defaults() }), RECS.defaults(), 'what check returns for the defaults is the defaults');
 });
 
 test('R1: items holds each loot item once, by name then id', () => {
@@ -593,8 +594,8 @@ test('Submersibles advisor with settings (R2): the worked example of spec 4.8, f
   const run = (o) => ADV.advise(Object.assign({}, base, { recs: withRecs(o) }));
   const routes = (a) => [a.plan].concat(a.alts).map((x) => x.route.join('>'));
   const noFuel = run({}), fuel = run({ fuel: true, giveUp: 15 });
-  assert.deepEqual([noFuel.lead, noFuel.step, routes(noFuel)], ['U1', 1, ['2', '1>2', '1']]);
-  assert.deepEqual(routes(fuel), ['2', '1>2', '1'], 'fuel on: A > B enters the allowance, per tank B wins, same plan');
+  assert.deepEqual([noFuel.lead, noFuel.step, routes(noFuel)], ['U1', 1, ['2', '1>2']]); // route 1 does not survey B (score 0 for the lead): not offered
+  assert.deepEqual(routes(fuel), ['2', '1>2'], 'fuel on: A > B enters the allowance, per tank B wins, same plan');
   assert.equal(fuel.fuel, true); assert.equal(noFuel.fuel, false);
   const lvl = run({ order: ['level', 'unlock', 'gil', 'loot'] }), lvlFuel = run({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true, giveUp: 15 });
   assert.deepEqual([lvl.lead, lvl.plan.route], ['X', [1, 2]]);
@@ -771,6 +772,9 @@ test('Submersibles advisor reasons (R3): the worked example of spec 4.8, to the 
   assert.equal(run({}).plan.why, b);
   assert.equal(run({ fuel: true, giveUp: 15 }).plan.why, b + ' Fuel efficiency made no difference here.');
   assert.equal(run({ order: ['level', 'unlock', 'gil', 'loot'] }).plan.why, 'Most experience per hour within reach (at least 1,148 an hour).');
+  // other routes never say "most"; a plan that is not the best for the lead states its figure only
+  for (const a of [run({}), run({ order: ['level', 'unlock', 'gil', 'loot'] })]) for (const x of a.alts) assert.ok(!/\b[Mm]ost\b/.test(x.why), x.why);
+  assert.ok(run({ order: ['level', 'unlock', 'gil', 'loot'] }).alts.every((x) => /^At least [\d,]+ experience an hour\.$/.test(x.why)));
   assert.equal(run({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true, giveUp: 15 }).plan.why, 'Most experience per hour within reach (at least 1,148 an hour). Fuel efficiency made no difference here.');
   // every other route carries its own sentence, as plain text
   for (const a of [run({}), run({ order: ['level', 'unlock', 'gil', 'loot'] })]) for (const x of [a.plan].concat(a.alts)) assert.ok(typeof x.why === 'string' && x.why.length > 0 && !/[<>&]/.test(x.why));
@@ -898,6 +902,132 @@ test('Submersibles advisor blocked answer (R3): with settings it carries today\'
   assert.ok(cases.some((c) => ADV.advise(c).blocked), 'at least one case is blocked today');
   const t = ADV.advise(cases[0]);
   assert.deepEqual([t.step, t.stepName], [3, 'Farm gil']);
+});
+
+// ---------------------------------------------------------------- review fixes: stored fields, true reasons, other routes
+// What a page writes (RECS.store) and what the merges do with it, through the real merge code: the cloud merge (merge.js,
+// the "which one is right?" prompt) and the page-to-page merge of CC.writeSection.
+function recsFixture() {
+  for (const f of ['save', 'model', 'codec', 'merge']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+  const m = new Map();
+  globalThis.localStorage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), get length() { return m.size; }, key: (i) => [...m.keys()][i] };
+  globalThis.CC.resetMemory();
+  return { CC: globalThis.CC, ET: globalThis.ET, NAME: 'submersibles-recommendations' };
+}
+// one page's change: normalise, store only the fields already stored plus the changed one
+function recsEdit(raw, mut) {
+  const was = RECS.check(raw, D), c = JSON.parse(JSON.stringify(was));
+  mut(c);
+  const next = RECS.check({ choices: c }, D);
+  return RECS.store(raw, next, RECS.changed(was, next));
+}
+const OTHER_ORDER = ['gil', 'unlock', 'level', 'loot'];
+
+test('Review fix 1: check of the defaults is the defaults, so a first write from defaults sees no change in loot', () => {
+  assert.deepEqual(RECS.check({ choices: RECS.defaults() }, D), RECS.defaults());
+  assert.deepEqual(RECS.changed(RECS.check(null, D), RECS.defaults()), []);
+});
+
+test('Review fix 2: a write stores only the stored fields and the changed ones', () => {
+  const a = recsEdit(null, (c) => { c.order = OTHER_ORDER.slice(); });
+  assert.deepEqual(Object.keys(a.choices), ['order']);
+  const b = recsEdit(a, (c) => { c.fuel = true; });
+  assert.deepEqual(Object.keys(b.choices), ['fuel', 'order'], 'the stored one stays, the changed one is added');
+  assert.deepEqual(RECS.check(b, D), Object.assign(RECS.defaults(), { fuel: true, order: OTHER_ORDER }), 'check fills in the rest');
+  assert.deepEqual(recsEdit(null, (c) => { c.giveUp = 35; }).choices, { giveUp: 35 });
+  assert.deepEqual(RECS.store({ choices: { giveUp: 'x', order: ['a'] } }, RECS.defaults(), []).choices, { giveUp: 10, order: RECS.KEYS }, 'a bad stored field is stored normalised');
+});
+
+test('Review fix 2a: no section at the last sync, one device changes the order and the other the fuel switch: both kept, no clash', () => {
+  const { CC, ET, NAME } = recsFixture();
+  const doc = (sec) => ({ modules: sec ? { [NAME]: sec } : {} });
+  const base = doc(null);
+  const A = doc(recsEdit(null, (c) => { c.order = OTHER_ORDER.slice(); }));
+  const B = doc(recsEdit(null, (c) => { c.fuel = true; }));
+  const res = ET.threeWay(base, A, B);
+  assert.deepEqual(res.conflicts, [], JSON.stringify(res.conflicts));
+  const merged = CC.unflatModules(res.merged)[NAME];
+  assert.deepEqual(RECS.check(merged, D), Object.assign(RECS.defaults(), { fuel: true, order: OTHER_ORDER }));
+  // the other way round, too
+  assert.deepEqual(ET.threeWay(base, B, A).conflicts, []);
+  // the old write (all four fields) made this a clash
+  const whole = (mut) => { const c = RECS.defaults(); mut(c); return { choices: c }; };
+  const old = ET.threeWay(base, doc(whole((c) => { c.order = OTHER_ORDER.slice(); })), doc(whole((c) => { c.fuel = true; })));
+  assert.ok(old.conflicts.length > 0, 'the old whole-choices write raised a prompt although nothing clashed');
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('Review fix 2b: two pages on one device, the stale page\'s first write keeps the other page\'s change to a different field', async () => {
+  const { CC, NAME } = recsFixture();
+  const r0 = await CC.read();
+  // both pages read the save with no section
+  const first = recsEdit(null, (c) => { c.order = OTHER_ORDER.slice(); });
+  await CC.writeSection(NAME, first, { rev: r0.rev, base: null });
+  const second = recsEdit(null, (c) => { c.fuel = true; }); // the stale page: it never saw the order change
+  const w = await CC.writeSection(NAME, second, { rev: r0.rev, base: null });
+  assert.equal(w.merged, true);
+  const stored = CC.checkDoc((await CC.read()).raw).modules[NAME];
+  assert.deepEqual(RECS.check(stored, D), Object.assign(RECS.defaults(), { fuel: true, order: OTHER_ORDER }));
+  // a page that read a stored section writes with it as its base, and a change to a third field joins the other two
+  const third = recsEdit(stored, (c) => { c.giveUp = 30; });
+  await CC.writeSection(NAME, third, { rev: w.rev, base: stored });
+  assert.deepEqual(RECS.check(CC.checkDoc((await CC.read()).raw).modules[NAME], D), Object.assign(RECS.defaults(), { fuel: true, order: OTHER_ORDER, giveUp: 30 }));
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('Review fix 2c: the same field changed differently on both devices still raises the choice', () => {
+  const { CC, ET, NAME } = recsFixture();
+  const doc = (sec) => ({ modules: { [NAME]: sec } });
+  const base = recsEdit(null, (c) => { c.order = ['level', 'unlock', 'gil', 'loot']; });
+  const A = recsEdit(base, (c) => { c.order = OTHER_ORDER.slice(); }), B = recsEdit(base, (c) => { c.order = ['loot', 'gil', 'level', 'unlock']; });
+  const res = ET.threeWay(doc(base), doc(A), doc(B));
+  assert.deepEqual(res.conflicts.map((c) => c.id), ['m|' + JSON.stringify([NAME, 'choices', 'order'])]);
+  // and the same field with no section at the last sync
+  const res2 = ET.threeWay({ modules: {} }, doc(A), doc(B));
+  assert.deepEqual(res2.conflicts.map((c) => c.id), ['m|' + JSON.stringify([NAME, 'choices', 'order'])]);
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('Review fix 3: "most" only for the route with the best lead score; other routes and weaker plans state a figure', () => {
+  // fuel gives up some experience: the plan is not the best for the lead, so it never says "most"
+  const found = D.sectors.filter((s) => s.rank <= 5).map((s) => s.id).slice(0, 4);
+  const inp = { sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 1, discovered: found }, slotsFilled: 1 };
+  const f = ADV.advise(Object.assign({}, inp, { recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true, giveUp: 10 }) }));
+  assert.match(f.plan.why, /^At least [\d,]+ experience an hour\. Fuel efficiency: \d+ tanks? instead of \d+, for \d+% less experience per hour\.$/);
+  assert.ok(!/most/i.test(f.plan.why));
+  const noFuel = ADV.advise(Object.assign({}, inp, { recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'] }) }));
+  assert.match(noFuel.plan.why, /^At least [\d,]+ experience an hour\. Then Unlocking Routes: /, 'Unlocking, ranked second, chose a route that is not the quickest for experience');
+  for (const a of [f, noFuel]) for (const x of a.alts) assert.ok(!/most/i.test(x.why), x.why);
+  // unlocking: other routes say what they can reveal, without "most"
+  const found8 = D.sectors.filter((s) => s.rank <= 14).map((s) => s.id).slice(0, 8);
+  const u2 = ADV.advise({ sub: { rank: 14, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found8 }, slotsFilled: 4, recs: RECS.defaults() });
+  for (const x of u2.alts) assert.match(x.why, /^Can reveal \d+ new sectors? \(.+ lead to them\)\.$/);
+});
+
+test('Review fix 3: the Loot follow-on says stops and an hourly figure in plain words', () => {
+  const found = D.sectors.filter((s) => s.rank <= 5).map((s) => s.id).slice(0, 4);
+  const a = ADV.advise({ sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found }, slotsFilled: 4, recs: withRecs({ order: ['level', 'loot', 'unlock', 'gil'], loot: R3_LOOT(12586) }) });
+  assert.match(a.plan.why, / Then Loot Farming: \d+ stops? where a chosen item can drop \([\d.,]+ an hour\); possible items only \(community data\), drop odds are not known\.$/, a.plan.why);
+  assert.ok(!/sector and item chances/.test(a.plan.why));
+});
+
+test('Review fix 6a: no other route scores 0 for the lead', () => {
+  for (const o of [{}, { order: ['level', 'unlock', 'gil', 'loot'] }, { order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_NEAR.id) }]) {
+    const a = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs(o) }));
+    assert.ok(a.alts.every((x) => x.route.length > 0));
+    if (a.lead === 'U1') assert.ok(a.alts.every((x) => x.route.includes(2)), 'every other route surveys the sector on the way');
+    if (a.lead === 'L1') assert.ok(a.alts.every((x) => x.route.some((id) => (D.loot[id] || []).includes(R3_NEAR.id))));
+  }
+});
+
+test('Review fix 6b: a stage that the 5% band emptied does not claim no sector can serve it', () => {
+  const found = D.sectors.filter((s) => s.rank <= 5).map((s) => s.id).slice(0, 4);
+  const a = ADV.advise({ sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 1, discovered: found }, slotsFilled: 1, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true, giveUp: 10 }) });
+  assert.equal(a.lead, 'X');
+  assert.equal(a.skipped.find((x) => x.key === 'U1').reason, 'no route within 5% of the best for the priorities above serves it');
+  // a stage with nothing to give anywhere keeps its own reason
+  const top = ADV.advise(Object.assign({}, R3_FULL, { recs: RECS.defaults() }));
+  assert.equal(top.skipped.find((x) => x.key === 'U1').reason, 'every sector is found');
 });
 
 // ---------------------------------------------------------------- R4: the tuning tool and the shipped defaults

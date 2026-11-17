@@ -20,7 +20,7 @@
 
   R.defaults = function () {
     var loot = [];
-    for (var i = 0; i < R.PICKERS; i++) loot.push([0, false]);
+    for (var i = 0; i < R.PICKERS; i++) loot.push([0, i === 0]); // the first is always on, as R.check reads it
     return { fuel: false, giveUp: R.GIVE_UP, order: R.KEYS.slice(), loot: loot };
   };
 
@@ -63,6 +63,24 @@
       });
     }
     return out;
+  };
+
+  // The fields that differ between two settings objects, in the order of R.FIELDS.
+  R.FIELDS = ['fuel', 'giveUp', 'order', 'loot'];
+  R.changed = function (a, b) {
+    return R.FIELDS.filter(function (k) { return JSON.stringify(a && a[k]) !== JSON.stringify(b && b[k]); });
+  };
+
+  // What a write stores: only the fields already stored in raw plus the ones just changed, each taken from next (the
+  // normalised settings). A field nobody stored stays absent, so a merge never sees a change that was not made; R.check
+  // fills in the rest when reading.
+  R.store = function (raw, next, changed) {
+    var have = raw && typeof raw === 'object' && raw.choices && typeof raw.choices === 'object' && !Array.isArray(raw.choices) ? raw.choices : {};
+    var out = {};
+    R.FIELDS.forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(have, k) || (changed || []).indexOf(k) >= 0) out[k] = JSON.parse(JSON.stringify(next[k]));
+    });
+    return { choices: out };
   };
 
   // The chosen item ids: picker on and an item set, each once.

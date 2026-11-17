@@ -177,6 +177,20 @@ function render(R) {
   R.band.rows.forEach((r) => L.push('| ' + Math.round(r.band * 100) + '% | ' + f2(r.loss) + ' | ' + f2(r.gain) + ' |'));
   const b5 = R.band.rows.find((r) => r.band === 0.05);
   L.push('', 'Accepted at 5% when the second priority gains more than the first loses: ' + f2(b5.gain) + ' against ' + f2(b5.loss) + ', so ' + (R.bandOk ? 'accepted' : 'not accepted') + '.', '');
+  // what the numbers above do and do not show, with this run's own figures
+  const rows = R.table.slice(1), gap = (t) => t.E - t.L, last = rows[rows.length - 1];
+  const stop = R.knee === null ? null : R.table[R.knee], atChosen = R.chosen === null ? null : R.table.find((t) => t.g === R.chosen);
+  const later = stop ? rows.filter((t) => t.g > stop.g) : [], laterPay = later.filter((t) => t.pays);
+  const growing = rows.every((t, i) => i === 0 || gap(t) >= gap(rows[i - 1]) || t.g <= (stop ? stop.g : 0));
+  L.push('## What this does and does not show', '');
+  if (stop) {
+    L.push('- **' + (R.chosen === null ? 'The rule\'s first failing step' : R.chosen + '%') + ' is where the rule stops, not the best value.** It is the first allowance at which a 5-point step stops paying (the step to ' + stop.g + '%: gain ' + f2(stop.dE) + ' against cost ' + f2(stop.dL) + '). ' +
+      laterPay.length + ' of the ' + later.length + ' steps after it pay again, and the gap between E and L ' + (growing ? 'keeps growing' : 'does not fall steadily') + ': ' + (atChosen ? f2(gap(atChosen)) + ' at ' + atChosen.g + '%, ' : '') + f2(gap(last)) + ' at ' + last.g + '% (the ' + last.g + '% row: L ' + f2(last.L) + ', E ' + f2(last.E) + ', route changed in ' + last.changed + ' of ' + R.count + ' scenarios). The table does not show which allowance is best; the rule only picks the first point where the gain falls short of the cost.');
+  } else L.push('- No step failed to pay, so the table gives no stopping point.');
+  L.push('- **E and L are different units.** E is a gain in the amount per ceruleum tank; L is the share of the top priority\'s per-hour score given up. Comparing them (`E gain >= L cost`) puts a tank and an hour of that score on one scale, and the data gives no exchange rate between them, so "pays" is only the rule\'s word.');
+  L.push('- **The next-slot stage is never measured.** Every scenario has ' + SLOTS + ' slots unlocked, so the stage that looks for the sector granting the next submarine slot (U1) has nothing to do in any of them.');
+  L.push('- **The 95% per-tank filter was not tuned.** After the allowance, only routes within 95% of the best gain per tank stay (spec 4.4); that 95% is fixed, and no other value was tried.');
+  L.push('- **Gil and loot are left out.** The repository holds no voyage log and no item prices, so any gil figure would be invented; the data gives no drop odds for loot, so any loot figure would be invented too. The tables describe only experience and new sectors.', '');
   L.push('## What was left out, and why', '');
   L.push('- **Gil:** the repository holds no voyage log and none is made up, and there are no item prices; a gil figure would have to be invented.');
   L.push('- **Loot:** the data lists which items can drop in which sector but gives no drop odds; any odds would be invented.');

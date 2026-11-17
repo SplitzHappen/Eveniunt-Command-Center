@@ -67,6 +67,14 @@ Fuel off. The first priority is the scenario's lead (experience in a levelling s
 
 Accepted at 5% when the second priority gains more than the first loses: 5.10 against 0.77, so accepted.
 
+## What this does and does not show
+
+- **10% is where the rule stops, not the best value.** It is the first allowance at which a 5-point step stops paying (the step to 15%: gain 1.46 against cost 2.11). 7 of the 7 steps after it pay again, and the gap between E and L keeps growing: 16.58 at 10%, 34.14 at 50% (the 50% row: L 14.81, E 48.95, route changed in 75 of 122 scenarios). The table does not show which allowance is best; the rule only picks the first point where the gain falls short of the cost.
+- **E and L are different units.** E is a gain in the amount per ceruleum tank; L is the share of the top priority's per-hour score given up. Comparing them (`E gain >= L cost`) puts a tank and an hour of that score on one scale, and the data gives no exchange rate between them, so "pays" is only the rule's word.
+- **The next-slot stage is never measured.** Every scenario has 4 slots unlocked, so the stage that looks for the sector granting the next submarine slot (U1) has nothing to do in any of them.
+- **The 95% per-tank filter was not tuned.** After the allowance, only routes within 95% of the best gain per tank stay (spec 4.4); that 95% is fixed, and no other value was tried.
+- **Gil and loot are left out.** The repository holds no voyage log and no item prices, so any gil figure would be invented; the data gives no drop odds for loot, so any loot figure would be invented too. The tables describe only experience and new sectors.
+
 ## What was left out, and why
 
 - **Gil:** the repository holds no voyage log and none is made up, and there are no item prices; a gil figure would have to be invented.

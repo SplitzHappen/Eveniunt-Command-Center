@@ -167,7 +167,7 @@ voyage log and none is made up; loot is left out because there are no odds.
 - **Part advice** only at step 3, as today: lead Gil, the S6 rule (`gilTip`, else `partTip` when no ranked route);
   any other lead, `partTip` on the suggested route (minutes). A gil part tip never appears beside a non-gil plan.
 - **Reason text:** the lead's sentence (today's wording for U1, U3, X and G; U2: "Can reveal n new sectors (… lead to
-  them): the most per hour within reach."; Loot: "Can bring back k of your m chosen items (names); possible items
+  them)" and, only when the route's lead score equals the best among the candidates, ": the most per hour within reach."; otherwise the figure without "most" ("At least n experience an hour."); other routes never say "most"; Loot: "Can bring back k of your m chosen items (names); possible items
   only (community data), drop odds are not known."); then "Then <label>: <figure>." for at most two later stages
   that removed a route; then skipped objectives above the lead; then, with fuel on, "Fuel efficiency: t tanks instead
   of u, for p% less <lead figure>." or "Fuel efficiency made no difference here." (the same candidates decided with
@@ -226,9 +226,9 @@ merges as it does after any other page's save).
 | `fuel` | `true` or `false` | anything but `true` is off |
 | `giveUp` | whole number 5 to 50, multiple of 5 | `RECS.GIVE_UP` |
 | `order` | the four keys `unlock`, `level`, `gil`, `loot`, each once | the default order |
-| `loot` | five pairs `[itemId, on]`; 0 means none; the first is always on | unknown item or later duplicate counts as none; missing pairs are `[0, false]` |
+| `loot` | five pairs `[itemId, on]`; 0 means none; the first is always on | unknown item or later duplicate counts as none; missing pairs are `[0, false]`, the first `[0, true]` |
 
-- Nothing is written until the player changes a setting; then the whole `choices` is written, normalised.
+- Nothing is written until the player changes a setting; then `choices` holds only the fields already stored plus the one(s) just changed, each normalised (`RECS.store`). A field nobody stored stays absent, so a merge never sees a change that was not made; `RECS.check` fills in the rest when reading. A page that found no section has no merge base.
   `RECS.check` only reads: a bad stored value is never rewritten on its own.
 - **Why no `save.js` change (read in the source, not run):** `checkModules` passes a section without a checker
   through `clean()` and keeps it; `lists` is such a section today and `tracker/tests/core.test.js` covers its

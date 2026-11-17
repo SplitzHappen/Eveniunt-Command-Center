@@ -2926,7 +2926,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel]');
       const panel = () => page.evaluate(() => ({ order: [...document.querySelectorAll('.rec-rank .rec-name')].map((e) => e.textContent), fuel: document.querySelector('[data-rec=fuel]').checked,
         live: document.querySelector('[data-recs-live]').textContent, focus: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.rec) || null,
-        names: [...document.querySelectorAll('.rec-rank button')].map((b) => b.getAttribute('aria-label') + (b.disabled ? ' (off)' : '')) }));
+        names: [...document.querySelectorAll('.rec-rank button')].map((b) => b.getAttribute('aria-label') + (b.disabled ? ' (off)' : '')),
+        startsWithText: [...document.querySelectorAll('.rec-rank button')].every((b) => b.getAttribute('aria-label').startsWith(b.textContent.trim())) }));
       const first = await panel();
       await page.waitForTimeout(800);
       const untouched = await doc();
@@ -2950,11 +2951,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const after = await doc();
       await ctx.close();
       const want = ['1. Unlocking Routes', '2. Leveling Submersible Rank', '3. Gil Farming', '4. Loot Farming'];
-      const ok = first.order.join('|') === want.join('|') && first.fuel === false && first.names.includes('Move Unlocking Routes up (off)') && first.names.includes('Move Loot Farming down (off)') && first.names.includes('Move Gil Farming up') &&
+      const ok = first.order.join('|') === want.join('|') && first.fuel === false && first.names.includes('Move up: Unlocking Routes (off)') && first.names.includes('Move down: Loot Farming (off)') && first.names.includes('Move up: Gil Farming') && first.startsWithText === true &&
         untouched.recs === null &&
         one.order.join('|') === ['1. Unlocking Routes', '2. Gil Farming', '3. Leveling Submersible Rank', '4. Loot Farming'].join('|') && one.focus === 'up-gil' && one.live === 'Gil Farming is now 2 of 4' &&
         two.order[0] === '1. Gil Farming' && two.live === 'Gil Farming is now 1 of 4' && two.focus === 'down-gil' &&
-        stored.recs && stored.recs.choices.order.join() === 'gil,unlock,level,loot' && stored.recs.choices.fuel === false && stored.recs.choices.giveUp === 10 && stored.recs.choices.loot.length === 5 &&
+        stored.recs && stored.recs.choices.order.join() === 'gil,unlock,level,loot' && Object.keys(stored.recs.choices).join() === 'order' &&
         reloaded.order[0] === '1. Gil Farming' && reloaded.order.length === 4 &&
         boardDefault.includes('Deep-sea Site: B') && !boardDefault.includes('→') && boardGil.includes('Deep-sea Site: A → B') && boardGil.includes(sheetRoute) && /Suggested · Gil Farming/.test(sheetHead) &&
         after.subs === baseline && real(errors).length === 0;
@@ -2998,6 +2999,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const sliderOn = await B.$eval('[data-rec=giveUp]', (el) => el.disabled);
       const afterMerge = await stored(B);
       const orderOnB = await B.$$eval('.rec-rank .rec-name', (els) => els.map((e) => e.textContent));
+      // the page's own indicator of a failed or clashing save is the status line: nothing may be shown on either page
+      const statusA = await A.$eval('#status', (el) => el.textContent), statusB = await B.$eval('#status', (el) => el.textContent);
       await B.focus('[data-rec=giveUp]');
       for (let i = 0; i < 3; i++) await B.keyboard.press('ArrowRight');
       await B.waitForTimeout(800);
@@ -3011,16 +3014,22 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const reason = await B.$eval('#sheet .advice-route + .hint', (p) => p.textContent);
       const sheetHead = await B.$eval('#sheet .advice-step', (b) => b.textContent);
       await B.keyboard.press('Escape');
+      // the advice is kept while nothing it reads changes: the second stageOf makes no new advise call (so no new route evaluation)
+      const cache = await B.evaluate(() => {
+        let calls = 0; const orig = ADVISOR.advise; ADVISOR.advise = function () { calls++; return orig.apply(this, arguments); };
+        try { const one = window.__subs.stageOf('fb'), c1 = calls, two = window.__subs.stageOf('fb'); return { one, two, first: c1, second: calls - c1 }; } finally { ADVISOR.advise = orig; }
+      });
       await ctx.close();
       const ok = sliderOff.disabled === true && sliderOff.min === '5' && sliderOff.max === '50' && sliderOff.step === '5' && sliderOff.value === '10' && defaultBtnOff === true &&
-        afterA && afterA.order.join() === 'level,unlock,gil,loot' && afterA.fuel === false &&
+        afterA && afterA.order.join() === 'level,unlock,gil,loot' && Object.keys(afterA).join() === 'order' &&
         sliderOn === false && afterMerge && afterMerge.fuel === true && afterMerge.order.join() === 'level,unlock,gil,loot' && orderOnB[0] === '1. Leveling Submersible Rank' &&
         afterSlider && afterSlider.fuel === true && afterSlider.giveUp === 25 && afterSlider.order.join() === 'level,unlock,gil,loot' && shown === '25%' &&
         reloaded.fuel === true && reloaded.value === '25' && reloaded.disabled === false &&
         /Fuel efficiency: 1 tank instead of 4, for \d+% less experience per hour\./.test(reason) && /Suggested · Leveling Submersible Rank/.test(sheetHead) &&
-        prompts === 0 && real(errors).length === 0;
-      record('C86', 'Customizable Recommendations (R5): the slider (5 to 50, step 5) and "Use the default" are disabled until the fuel switch is on; the switch and the number are stored; a second page that changed another field from an older copy merges with no prompt and keeps the first page\'s order; on a seeded fleet where fuel changes the route the reason carries the fuel sentence',
-        ok, { sliderOff, defaultBtnOff, afterA, sliderOn, afterMerge, orderOnB, afterSlider, shown, reloaded, reason, sheetHead, prompts, errors: real(errors) });
+        afterMerge && afterMerge.fuel === true && afterMerge.order.join() === 'level,unlock,gil,loot' && statusA === '' && statusB === '' && prompts === 0 &&
+        cache.second === 0 && cache.one === cache.two && real(errors).length === 0;
+      record('C86', 'Customizable Recommendations (R5): the slider (5 to 50, step 5) and "Use the default" are disabled until the fuel switch is on; the switch and the number are stored; a second page that changed another field from an older copy merges with no prompt, shows no clash or save problem and keeps the first page\'s order in the stored section together with its own change; a second call of the notification stage logic with nothing changed makes no new advice call; on a seeded fleet where fuel changes the route the reason carries the fuel sentence',
+        ok, { sliderOff, defaultBtnOff, afterA, sliderOn, afterMerge, statusA, statusB, cache, orderOnB, afterSlider, shown, reloaded, reason, sheetHead, prompts, errors: real(errors) });
       await ctx.close().catch(() => {}); server16.close();
     }
 
@@ -3163,7 +3172,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.reload(); await ready();
       const far = await read();
       await ctx.close();
-      const ok = listing.length === 1 && reach.head.includes('Loot Farming') && reach.btn.includes(letterOf(listing[0])) && /drop odds are not known/.test(reach.sheet) && sea1.length === 2 &&
+      const ok = listing.length === 1 && reach.head.includes('Loot Farming') && reach.btn.includes(letterOf(listing[0])) && /drop odds are not known/.test(reach.sheet) && /Then Loot Farming: \d+ stops? where a chosen item can drop \([\d.,]+ an hour\)\./.test(reach.sheet) && !/item chances/.test(reach.sheet) && sea1.length === 2 &&
         /none of your chosen items can drop in a sector this sub can reach now/.test(far.sheet) && !/Loot Farming\)?$/.test(far.head.trim()) && real(errors).length === 0;
       record('C88', 'Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board button and the send window suggest a route whose sectors list that item and the reason says "drop odds are not known"; with an item no sector this sub can reach lists, the reason names that Loot Farming was skipped for that cause',
         ok, { listing, reach, far, errors: real(errors) });

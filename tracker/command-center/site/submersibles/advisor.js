@@ -329,10 +329,17 @@
     var by = { unlock: [U1, U2, U3], level: [X], gil: [G], loot: [L1, L2] };
     // spec 4.5: the cause named when a whole objective is skipped
     var causeOf = { unlock: !left ? 'every sector is found' : 'no sector this sub can visit now leads to what is left to unlock', level: 'this sub is at the top rank', gil: null, loot: lootReason };
+    var leadKey = null; // set once the choice is made: a stage ranked after it that still has routes over all candidates was emptied by the bands
+    var BAND_REASON = 'no route within ' + Math.round(R.BAND * 100) + '% of the best for the priorities above serves it';
     var fixSkipped = function (list) {
-      var gone = {};
+      var gone = {}, idx = function (k) { return stages.findIndex(function (s) { return s.key === k; }); };
+      var bandOnly = function (x) { var st = stages.find(function (s) { return s.key === x.key; }); return leadKey !== null && idx(x.key) > idx(leadKey) && !!x.reason && live(st.amount); };
       list.forEach(function (x) { gone[x.objective] = (gone[x.objective] || 0) + 1; });
-      return list.map(function (x) { return { key: x.key, objective: x.objective, reason: gone[x.objective] === by[x.objective].length && causeOf[x.objective] ? causeOf[x.objective] : x.reason }; });
+      return list.map(function (x) {
+        if (bandOnly(x)) return { key: x.key, objective: x.objective, reason: BAND_REASON };
+        var whole = gone[x.objective] === by[x.objective].length && causeOf[x.objective] && !by[x.objective].some(function (s) { return live(s.amount); });
+        return { key: x.key, objective: x.objective, reason: whole ? causeOf[x.objective] : x.reason };
+      });
     };
     var stages = [];
     order.forEach(function (k) { stages = stages.concat(by[k]); });
@@ -396,7 +403,8 @@
     }
     var all = Array.from(cands.values());
     var res = R.pick(all, stages, { fuel: fuel, giveUp: giveUp });
-    var lead = res.lead || 'G', leadStage = stages.find(function (s) { return s.key === lead; }), leadObj = leadStage.objective;
+    var lead = res.lead || 'G'; leadKey = lead;
+    var leadStage = stages.find(function (s) { return s.key === lead; }), leadObj = leadStage.objective;
     var plan = res.plan;
     // ---- the reasons (spec 4.7, 4.5): plain text, no HTML; names come from the data and the player's chosen items
     var enough = input.enough || 10, logged = input.logged || null, byKey = {};
@@ -426,21 +434,21 @@
     };
     var xph = function (x) { return x.ev.exp / hrs(x); };
     // the lead's sentence for a route
-    var leadWhy = function (key, x) {
+    var leadWhy = function (key, x, most) {
       if (key === 'U1') return visit === target ? 'Surveying ' + name(target) + ' can grant slot ' + (slots + 1) + ' (not certain on every visit).'
         : 'On the way to ' + name(target) + ', which grants slot ' + (slots + 1) + ': surveying ' + name(visit) + ' can reveal ' + name(chain[1]) + '.';
       if (key === 'U2') {
         var n = newOf(x.route);
-        return 'Can reveal ' + n + ' new sector' + (n === 1 ? '' : 's') + ' (' + x.route.filter(function (id) { return A.children(id).some(function (c) { return !disc.has(c); }); }).map(name).join(', ') + ' lead to them): the most per hour within reach.';
+        return 'Can reveal ' + n + ' new sector' + (n === 1 ? '' : 's') + ' (' + x.route.filter(function (id) { return A.children(id).some(function (c) { return !disc.has(c); }); }).map(name).join(', ') + ' lead to them)' + (most ? ': the most per hour within reach.' : '.');
       }
       if (key === 'U3' || key === 'X') {
         var tw = key === 'U3' ? towards() : null;
-        return 'Most experience per hour within reach (at least ' + fmt(xph(x)) + ' an hour)' + (tw ? ', ' + tw : '') + '.';
+        return (most ? 'Most experience per hour within reach (at least ' + fmt(xph(x)) + ' an hour)' : 'At least ' + fmt(xph(x)) + ' experience an hour') + (tw ? ', ' + tw : '') + '.';
       }
       if (key === 'G') {
         if (x.own) return 'From your own log: about ' + fmt(x.perTrip) + ' gil a voyage over ' + x.trips + ' logged voyages; this sub is back in ' + (Math.round(x.ev.seconds / 360) / 10) + ' hours, so about ' + fmt(x.perTrip / hrs(x)) + ' gil per hour.' + note;
         var have = byKey[x.route.join(',')], nl = have ? have.trips : (logged ? 0 : null);
-        return (x.label ? 'A community gil route ("' + x.label + '", Submarine Tracker)' : 'The route with the most sector stars per hour (game data)') +
+        return (x.label ? 'A community gil route ("' + x.label + '", Submarine Tracker)' : most ? 'The route with the most sector stars per hour (game data)' : 'A route with ' + one(stars(x.route) / hrs(x)) + ' sector stars an hour (game data)') +
           '. Your own gil per hour takes over once a route has ' + enough + ' logged voyages' + (nl ? ' (this one has ' + nl + ')' : '') + '; until then the stars are only a guide.';
       }
       var names = lootNames(x.route);
@@ -454,17 +462,20 @@
       if (key === 'G') return x.own ? 'about ' + fmt(x.perTrip / hrs(x)) + ' gil an hour' : one(stars(x.route) / hrs(x)) + ' sector stars an hour (only a guide)';
       var tail = leadObj === 'loot' ? '' : ' (' + LOOT_NOTE + ')';
       if (key === 'L1') return 'it covers ' + lootNames(x.route).length + ' of your ' + items.length + ' chosen item' + (items.length === 1 ? '' : 's') + tail;
-      return one(L2.amount(x) / hrs(x)) + ' sector and item chances an hour' + tail;
+      var stops = x.route.filter(function (id) { return lootAt(id).some(function (it) { return chosen[it]; }); }).length;
+      return stops + (stops === 1 ? ' stop' : ' stops') + ' where a chosen item can drop (' + one(stops / hrs(x)) + ' an hour)' + (leadObj === 'loot' ? '' : '; ' + LOOT_NOTE);
     };
     // the lead's score for a route, with the tier the lead itself used, and its name for the fuel sentence
     var leadFn = leadStage.prepare ? leadStage.prepare(all) : leadStage.amount;
     var leadScore = function (x) { var a = Number(leadFn(x)) || 0; return leadStage.rate ? a / hrs(x) : a; };
     var unit = lead === 'U1' ? 'slot chances per hour' : lead === 'U2' ? 'reveal chances per hour' : lead === 'U3' || lead === 'X' ? 'experience per hour' : lead === 'L1' ? 'chosen items covered'
       : lead === 'L2' ? 'item chances per hour' : (plan && plan.own ? 'gil per hour' : 'sector stars per hour');
+    var bestLead = all.reduce(function (m, x) { return Math.max(m, leadScore(x)); }, 0);
+    var isMost = function (x) { return leadScore(x) >= bestLead - 1e-9 * bestLead; }; // the route has the best lead score of all candidates
     var skippedKeys = {};
     res.skipped.forEach(function (x) { skippedKeys[x.key] = 1; });
     var fullWhy = function (x) {
-      var out = [leadWhy(lead, x)], done2 = 0;
+      var out = [leadWhy(lead, x, isMost(x))], done2 = 0;
       res.trace.forEach(function (t) {
         if (t.key === lead || t.after >= t.before || done2 >= 2 || !res.used.includes(t.key) || res.used.indexOf(t.key) < res.used.indexOf(lead)) return;
         done2++; out.push('Then ' + R.LABEL[t.objective] + ': ' + figure(t.key, x) + '.');
@@ -485,7 +496,7 @@
       return out.join(' ');
     };
     var shape = function (x, full) {
-      var o = { route: x.route, ev: x.ev, why: full ? fullWhy(x) : leadScore(x) > 0 ? leadWhy(lead, x) : 'Weaker for ' + R.LABEL[leadObj] + ' than the suggested route.' };
+      var o = { route: x.route, ev: x.ev, why: full ? fullWhy(x) : leadWhy(lead, x, false) };
       if (x.own) { o.own = true; o.trips = x.trips; o.perTrip = x.perTrip; }
       if (x.label) o.label = x.label;
       return o;
@@ -496,7 +507,11 @@
     out.label = R.LABEL[leadObj];
     if (step === 1 && (input.slotsFilled || 0) < slots) out.note = 'A new slot only shows once slot ' + slots + ' holds a submarine: register one there in the game when you can.';
     out.plan = shape(plan, true);
-    out.alts = res.others.map(function (x) { return shape(x, false); });
+    // other routes: the next two with other sectors, never one that scores 0 for the lead
+    var setKey = function (r) { return r.route.slice().sort(function (a, b) { return a - b; }).join(','); }, seen = {}, others = [];
+    seen[setKey(plan)] = 1;
+    res.routes.slice(1).forEach(function (x) { var k = setKey(x); if (others.length >= 2 || seen[k] || !(leadScore(x) > 0)) return; seen[k] = 1; others.push(x); });
+    out.alts = others.map(function (x) { return shape(x, false); });
     // part advice only at step 3: gil by the S6 rule when Gil leads, else the quickest-return swap for this route
     out.parts = null;
     if (step === 3) {
