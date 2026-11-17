@@ -2903,6 +2903,127 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close().catch(() => {}); server14.close();
     }
 
+    // ── C85 Customizable Recommendations (R5): the panel shows the default order and the switch off; with nothing changed the
+    //    save holds no new section; "Move up" by keyboard reorders, keeps focus and announces; the order survives a reload;
+    //    with Gil first a sub in an unlocking free company shows another route on the Board button and in the send window (the
+    //    same one); modules.submersibles is byte-for-byte unchanged.
+    {
+      const server15 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const doc = () => page.evaluate(async () => { const r = await CC.read(); const m = CC.checkDoc(r.raw).modules; return { subs: JSON.stringify(m.submersibles), recs: m['submersibles-recommendations'] === undefined ? null : m['submersibles-recommendations'] }; });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async () => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fa = { name: 'Alfa Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2] };
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 1, parts: [3, 4, 1, 2] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready();
+      const quick = async () => { await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="a1"]'); return page.$eval('.quick[data-quick="a1"]', (b) => b.textContent); };
+      const boardDefault = await quick();
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel]');
+      const panel = () => page.evaluate(() => ({ order: [...document.querySelectorAll('.rec-rank .rec-name')].map((e) => e.textContent), fuel: document.querySelector('[data-rec=fuel]').checked,
+        live: document.querySelector('[data-recs-live]').textContent, focus: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.rec) || null,
+        names: [...document.querySelectorAll('.rec-rank button')].map((b) => b.getAttribute('aria-label') + (b.disabled ? ' (off)' : '')) }));
+      const first = await panel();
+      await page.waitForTimeout(800);
+      const untouched = await doc();
+      const baseline = untouched.subs;
+      await page.focus('[data-rec="up-gil"]'); await page.keyboard.press('Enter');
+      const one = await panel();
+      await page.keyboard.press('Enter');
+      const two = await panel();
+      await page.waitForTimeout(800);
+      const stored = await doc();
+      if (SHOT) await (await page.$('[data-recs-panel]')).screenshot({ path: path.join(ev, 'submersibles-recommendations.png') });
+      await page.reload(); await ready();
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel]');
+      const reloaded = await panel();
+      const boardGil = await quick();
+      await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+      const sheetRoute = await page.$eval('#sheet .advice-route b', (b) => b.textContent);
+      const sheetHead = await page.$eval('#sheet .advice-step', (b) => b.textContent);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(800);
+      const after = await doc();
+      await ctx.close();
+      const want = ['1. Unlocking Routes', '2. Leveling Submersible Rank', '3. Gil Farming', '4. Loot Farming'];
+      const ok = first.order.join('|') === want.join('|') && first.fuel === false && first.names.includes('Move Unlocking Routes up (off)') && first.names.includes('Move Loot Farming down (off)') && first.names.includes('Move Gil Farming up') &&
+        untouched.recs === null &&
+        one.order.join('|') === ['1. Unlocking Routes', '2. Gil Farming', '3. Leveling Submersible Rank', '4. Loot Farming'].join('|') && one.focus === 'up-gil' && one.live === 'Gil Farming is now 2 of 4' &&
+        two.order[0] === '1. Gil Farming' && two.live === 'Gil Farming is now 1 of 4' && two.focus === 'down-gil' &&
+        stored.recs && stored.recs.choices.order.join() === 'gil,unlock,level,loot' && stored.recs.choices.fuel === false && stored.recs.choices.giveUp === 10 && stored.recs.choices.loot.length === 5 &&
+        reloaded.order[0] === '1. Gil Farming' && reloaded.order.length === 4 &&
+        boardDefault.includes('Deep-sea Site: B') && !boardDefault.includes('→') && boardGil.includes('Deep-sea Site: A → B') && boardGil.includes(sheetRoute) && /Suggested · Gil Farming/.test(sheetHead) &&
+        after.subs === baseline && real(errors).length === 0;
+      record('C85', 'Customizable Recommendations (R5): the Setup panel shows the default order and the fuel switch off; with nothing changed the save has no recommendations section; "Move up" by keyboard reorders, keeps focus and announces "Gil Farming is now 2 of 4"; the order survives a reload; with Gil first the Board button and the send window show the same route, different from the default one, under the header "Suggested · Gil Farming"; modules.submersibles is byte-for-byte unchanged',
+        ok, { first, one, two, reloaded: reloaded.order, stored: stored.recs, boardDefault, boardGil, sheetRoute, sheetHead, unchanged: after.subs === baseline, errors: real(errors) });
+      await ctx.close().catch(() => {}); server15.close();
+    }
+
+    // ── C86 Customizable Recommendations (R5): the slider is disabled until the switch is on; the switch and the number are stored;
+    //    on a seeded fleet where fuel changes the route the reason carries the fuel sentence; a second page that changed another
+    //    field merges with no prompt.
+    {
+      const server16 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const A = await ctx.newPage(), B = await ctx.newPage();
+      let prompts = 0;
+      for (const pg of [A, B]) pg.on('dialog', (d) => { prompts++; d.dismiss().catch(() => {}); });
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await A.goto(ROOT5 + 'submersibles/'); await ready(A);
+      await A.evaluate(async () => {
+        const parts = [3, 4, 1, 2], sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fb = { name: 'Bravo Company', world: 'Gilgamesh', unlockedSlots: 2, order: 0, discovered: [1, 2, 3, 4, 5, 6, 7, 10, 15, 18, 26] };
+        sec.subs.b1 = { fcId: 'fb', slot: 1, name: 'Sub B1', rank: 10, parts };
+        sec.subs.b2 = { fcId: 'fb', slot: 2, name: 'Sub B2', rank: 10, parts };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await A.reload(); await ready(A);
+      await B.goto(ROOT5 + 'submersibles/'); await ready(B);
+      for (const pg of [A, B]) { await pg.click('[data-tab=setup]'); await pg.waitForSelector('[data-recs-panel]'); }
+      const stored = (pg) => pg.evaluate(async () => { const r = await CC.read(); const m = CC.checkDoc(r.raw).modules['submersibles-recommendations']; return m ? m.choices : null; });
+      const sliderOff = await B.$eval('[data-rec=giveUp]', (el) => ({ disabled: el.disabled, value: el.value, min: el.min, max: el.max, step: el.step }));
+      const defaultBtnOff = await B.$eval('[data-rec=give-default]', (el) => el.disabled);
+      // B stops hearing A (same page id), so its next write really is a write from a stale copy
+      const aId = await A.evaluate(() => CC.PAGE_ID);
+      await B.evaluate((id) => { CC.PAGE_ID = id; }, aId);
+      await A.focus('[data-rec="up-level"]'); await A.keyboard.press('Enter'); // A changes the order: Leveling first
+      await A.waitForTimeout(800);
+      const afterA = await stored(A);
+      await B.check('[data-rec=fuel]'); // B changes the switch from its older copy
+      await B.waitForTimeout(800);
+      const sliderOn = await B.$eval('[data-rec=giveUp]', (el) => el.disabled);
+      const afterMerge = await stored(B);
+      const orderOnB = await B.$$eval('.rec-rank .rec-name', (els) => els.map((e) => e.textContent));
+      await B.focus('[data-rec=giveUp]');
+      for (let i = 0; i < 3; i++) await B.keyboard.press('ArrowRight');
+      await B.waitForTimeout(800);
+      const afterSlider = await stored(B);
+      const shown = await B.$eval('[data-rec-give-text]', (el) => el.textContent);
+      await B.reload(); await ready(B);
+      await B.click('[data-tab=setup]'); await B.waitForSelector('[data-recs-panel]');
+      const reloaded = await B.evaluate(() => ({ fuel: document.querySelector('[data-rec=fuel]').checked, value: document.querySelector('[data-rec=giveUp]').value, disabled: document.querySelector('[data-rec=giveUp]').disabled }));
+      await B.click('[data-tab=board]');
+      await B.click('.sub[data-sub="b1"] .sub-top'); await B.waitForSelector('#sheet .advice-route');
+      const reason = await B.$eval('#sheet .advice-route + .hint', (p) => p.textContent);
+      const sheetHead = await B.$eval('#sheet .advice-step', (b) => b.textContent);
+      await B.keyboard.press('Escape');
+      await ctx.close();
+      const ok = sliderOff.disabled === true && sliderOff.min === '5' && sliderOff.max === '50' && sliderOff.step === '5' && sliderOff.value === '10' && defaultBtnOff === true &&
+        afterA && afterA.order.join() === 'level,unlock,gil,loot' && afterA.fuel === false &&
+        sliderOn === false && afterMerge && afterMerge.fuel === true && afterMerge.order.join() === 'level,unlock,gil,loot' && orderOnB[0] === '1. Leveling Submersible Rank' &&
+        afterSlider && afterSlider.fuel === true && afterSlider.giveUp === 25 && afterSlider.order.join() === 'level,unlock,gil,loot' && shown === '25%' &&
+        reloaded.fuel === true && reloaded.value === '25' && reloaded.disabled === false &&
+        /Fuel efficiency: 1 tank instead of 4, for \d+% less experience per hour\./.test(reason) && /Suggested · Leveling Submersible Rank/.test(sheetHead) &&
+        prompts === 0 && real(errors).length === 0;
+      record('C86', 'Customizable Recommendations (R5): the slider (5 to 50, step 5) and "Use the default" are disabled until the fuel switch is on; the switch and the number are stored; a second page that changed another field from an older copy merges with no prompt and keeps the first page\'s order; on a seeded fleet where fuel changes the route the reason carries the fuel sentence',
+        ok, { sliderOff, defaultBtnOff, afterA, sliderOn, afterMerge, orderOnB, afterSlider, shown, reloaded, reason, sheetHead, prompts, errors: real(errors) });
+      await ctx.close().catch(() => {}); server16.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }

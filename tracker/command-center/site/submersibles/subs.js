@@ -8,6 +8,7 @@
 // CC.read, as the Atelier does; backups, transfer codes and cloud sync carry it. Nothing is read from the game.
 (function () {
   'use strict';
+  var RECS_NAME = window.RECS.NAME;
   var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH, EARN = window.EARN, CHART = window.CHART;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
@@ -45,6 +46,29 @@
   // ------------------------------------------------------------------ the one save
   var SH = { rev: null, base: null, ready: false, timer: null, problem: null, chars: [], editSeq: 0 };
   var S = { fcs: {}, subs: {}, trips: {}, settings: {} };
+  // The player's recommendation settings: a save section of their own (spec section 6), with its own { rev, base }. Nothing is
+  // written until a setting changes; RECS.check only reads, so a bad stored value is replaced here and never rewritten.
+  var RC = { raw: null, rev: null, base: null, choices: null, pending: 0, chain: Promise.resolve(), live: '', focus: null };
+  function recsRead(doc, rev) {
+    var sec = doc.modules[RECS_NAME];
+    RC.raw = sec ? JSON.parse(JSON.stringify(sec)) : null; RC.rev = rev; RC.choices = null;
+    // nothing stored means the defaults, so a first write from this page keeps what another device stored meanwhile for every field this page did not change
+    RC.base = sec ? JSON.parse(JSON.stringify(sec)) : { choices: window.RECS.defaults() };
+  }
+  function recsNow() { if (RC.choices) return RC.choices; var c = window.RECS.check(RC.raw, D); if (D) RC.choices = c; return c; }
+  function recsWrite() {
+    RC.pending++;
+    RC.chain = RC.chain.then(function () {
+      var snap = JSON.parse(JSON.stringify({ choices: recsNow() }));
+      return CC.writeSection(RECS_NAME, snap, { rev: RC.rev, base: RC.base }).then(function (r) {
+        RC.rev = r.rev; RC.base = JSON.parse(JSON.stringify(r.section)); SH.updated = r.doc.updated || Date.now();
+        if (r.merged && RC.pending === 1) { var was = JSON.stringify(recsNow()); RC.raw = JSON.parse(JSON.stringify(r.section)); RC.choices = null; if (JSON.stringify(recsNow()) !== was) redrawRecs(); }
+        pushSync();
+      });
+    }).catch(function (e) {
+      setStatus('Recommendation settings not saved on this device: ' + e.message);
+    }).then(function () { RC.pending--; });
+  }
   function emptySection() { return { fcs: {}, subs: {}, trips: {}, settings: {} }; }
   function setSection(sec) { S = sec ? JSON.parse(JSON.stringify(sec)) : emptySection(); ['fcs', 'subs', 'trips', 'settings'].forEach(function (k) { if (!S[k]) S[k] = {}; }); }
   function loadSave() {
@@ -56,6 +80,7 @@
       SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || 0; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || null;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
+      recsRead(doc, r.rev);
       SH.ready = true;
       return foldBare();
     }).catch(function (e) { SH.problem = e.message; });
@@ -110,12 +135,13 @@
     CC.read().then(function (r) {
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
       if (SH.timer) return;
-      var before = JSON.stringify([SH.chars, S]);
+      var before = JSON.stringify([SH.chars, S, recsNow()]);
       SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || SH.notify;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
+      if (!RC.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
-        if (JSON.stringify([SH.chars, S]) !== before && !W) render();
+        if (JSON.stringify([SH.chars, S, recsNow()]) !== before && !W) render();
         pushSync();
       });
     });
@@ -242,7 +268,7 @@
     refreshLogged();
     var fc = S.fcs[fcId], list = Object.keys(S.subs).filter(function (k) { return S.subs[k].fcId === fcId && S.subs[k].slot <= (fc.unlockedSlots || 1); });
     if (!fc || !list.length) return 'unlock';
-    var advice = list.map(function (k) { return ADV.advise(Object.assign({ sub: S.subs[k], fc: fc, slotsFilled: list.length }, logInput())); });
+    var advice = list.map(function (k) { return ADV.advise(Object.assign({ sub: S.subs[k], fc: fc, slotsFilled: list.length }, logInput(), { recs: recsNow() })); });
     if (advice.some(function (a) { return a.blocked || a.step < 3; })) return 'unlock';
     return list.every(function (k) { return S.subs[k].rank === 145; }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
   }
@@ -302,6 +328,61 @@
       });
     }).catch(function (e) { el.textContent = 'Could not measure: ' + e.message; });
   }
+  // ------------------------------------------------------------------ Customizable Recommendations (spec section 5, items 1 to 3 and 5)
+  function recsBodyHtml() {
+    var R = window.RECS, c = recsNow(), n = c.order.length;
+    var rows = c.order.map(function (k, i) {
+      var name = R.LABEL[k];
+      return '<li><span class="rec-name"><b>' + (i + 1) + '.</b> ' + esc(name) + '</span><span class="row">' +
+        '<button type="button" class="btn sm" data-rec="up-' + esc(k) + '" aria-label="' + esc('Move ' + name + ' up') + '"' + (i === 0 ? ' disabled' : '') + '>Move up</button>' +
+        '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move ' + name + ' down') + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>';
+    }).join('');
+    return '<label class="opt big"><input type="checkbox" data-rec="fuel"' + (c.fuel ? ' checked' : '') + '> <span>Prioritise fuel efficiency</span></label>' +
+      '<p class="rec-give"><label for="rec-give">To save fuel, give up at most <b>' + c.giveUp + '%</b> of the best result for my top priority</label><br>' +
+      '<input type="range" id="rec-give" data-rec="giveUp" min="' + R.GIVE_MIN + '" max="' + R.GIVE_MAX + '" step="' + R.GIVE_STEP + '" value="' + c.giveUp + '"' + (c.fuel ? '' : ' disabled') + '> ' +
+      '<span class="rec-give-text" data-rec-give-text>' + c.giveUp + '%</span> <button type="button" class="btn sm ghost" data-rec="give-default"' + (c.fuel ? '' : ' disabled') + '>Use the default (' + R.GIVE_UP + '%)</button></p>' +
+      '<h3>Ranking</h3><p class="hint">The first objective decides; the next ones choose only among routes within ' + Math.round(R.BAND * 100) + '% of the best for those above.</p>' +
+      '<ol class="rec-rank">' + rows + '</ol><p><button type="button" class="btn sm ghost" data-rec="order-default">Use the default order</button></p>';
+  }
+  function recsHtml() {
+    return '<section class="panel recs" data-recs-panel><h2>Customizable Recommendations</h2>' +
+      '<p class="muted">What the Board suggests for a submarine. Kept in the save, so it follows you to your other devices.</p>' +
+      '<div data-recs-body>' + recsBodyHtml() + '</div><p class="hint" role="status" aria-live="polite" data-recs-live></p>' +
+      '<details><summary>How the recommendation is decided</summary>' +
+      '<p class="hint">Your ranking decides in order. For the first objective the app finds the best route and keeps every route within ' + Math.round(window.RECS.BAND * 100) + '% of it; the next objective chooses among those, and so on. A route is never more than ' + Math.round(window.RECS.BAND * 100) + '% worse than the best for any objective above the one that chose it. An objective with nothing to offer here is skipped, and the reason is named when it ranks above the suggestion. Nothing is random: equal routes go to the quicker one, then the one with fewer tanks.</p>' +
+      '<p class="hint">With fuel efficiency on, the first objective may give up to the percentage you set; among those routes the one that brings the most per ceruleum tank wins. Fuel is counted in tanks, not in gil, because the price of a tank is not in the data.</p>' +
+      '<p class="hint">What each objective measures, and its limits. Unlocking Routes: new submarine slots, then sectors that can still be revealed (community data; a reveal is not certain on every visit), then experience towards a needed rank. Leveling Submersible Rank: the base experience a voyage gives per hour, a floor only, because surveillance, retrieval and favor are not modelled. Gil Farming: gil per hour from your own log once a route has 10 logged voyages, at the market prices seen on this device; otherwise community routes or sector stars, which are only a guide. Loot Farming: where a chosen item can possibly drop; no drop odds or quantities are known.</p>' +
+      '<p class="hint">In a sea with more than 8 sectors you can visit, the route is the best one found by a bounded search, not proven best.</p></details></section>';
+  }
+  function redrawRecs(focus) {
+    var body = $('[data-recs-body]'); if (!body) return;
+    body.innerHTML = recsBodyHtml();
+    var live = $('[data-recs-live]'); if (live && RC.live != null) live.textContent = RC.live;
+    if (focus) {
+      var el = $('[data-rec="' + focus + '"]', body);
+      if (el && el.disabled) { var li = el.closest('li'); el = li ? $('button:not([disabled])', li) : null; } // a button that just became disabled: its enabled neighbour
+      if (el) el.focus();
+    }
+  }
+  // one setting changed: normalise, store the whole choices through the section's own write, redraw only this panel
+  function recsChange(mut, focus, live) {
+    var c = JSON.parse(JSON.stringify(recsNow()));
+    mut(c);
+    var next = window.RECS.check({ choices: c }, D);
+    var same = JSON.stringify(next) === JSON.stringify(recsNow());
+    if (!same) { RC.raw = { choices: next }; RC.choices = next; }
+    RC.live = typeof live === 'function' ? live(recsNow()) : live || '';
+    redrawRecs(focus);
+    if (!same) recsWrite();
+  }
+  function onRecsClick(b) {
+    var R = window.RECS, v = b.dataset.rec, m = /^(up|down)-(.+)$/.exec(v);
+    if (m) {
+      recsChange(function (c) { var i = c.order.indexOf(m[2]), j = m[1] === 'up' ? i - 1 : i + 1; if (i < 0 || j < 0 || j >= c.order.length) return; c.order.splice(j, 0, c.order.splice(i, 1)[0]); }, v,
+        function (now) { return R.LABEL[m[2]] + ' is now ' + (now.order.indexOf(m[2]) + 1) + ' of ' + R.KEYS.length; });
+    } else if (v === 'order-default') recsChange(function (c) { c.order = R.KEYS.slice(); }, v, 'The default order is back.');
+    else if (v === 'give-default') recsChange(function (c) { c.giveUp = R.GIVE_UP; }, v, 'The allowance is back to ' + R.GIVE_UP + '%.');
+  }
   function setupHtml() {
     var fcs = fcList();
     return '<section class="panel"><h2>Free companies</h2><p class="muted">' + fcs.length + ' set up' + (fcs.length < MAX_SUGGESTED_FCS ? ' (room on the board for ' + MAX_SUGGESTED_FCS + ' side by side; more also work)' : '') + '. Everything stays editable: rename, change rank or parts, move a free company to another character.</p>' +
@@ -310,7 +391,7 @@
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
           '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span></li>';
       }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
-      accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><div class="muted" data-size>Measuring…</div></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
+      recsHtml() + accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><div class="muted" data-size>Measuring…</div></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
@@ -499,9 +580,9 @@
     var s = S.subs[subId], fc = s && S.fcs[s.fcId]; if (!fc) return null;
     // a sub that is back is planned at the rank its voyage brings it to, so the button sends what it shows
     if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
-    var key = JSON.stringify([s.rank, s.parts, fc.unlockedSlots, fc.discovered, pendingFor(subId), slotsFilled(s.fcId), LOGGED.sig]);
+    var key = JSON.stringify([s.rank, s.parts, fc.unlockedSlots, fc.discovered, pendingFor(subId), slotsFilled(s.fcId), LOGGED.sig, window.RECS.sig(recsNow())]);
     if (ADVICE[subId] && ADVICE[subId].key === key) return ADVICE[subId].value;
-    var v = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(subId), slotsFilled: slotsFilled(s.fcId) }, logInput()));
+    var v = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(subId), slotsFilled: slotsFilled(s.fcId) }, logInput(), { recs: recsNow() }));
     ADVICE[subId] = { key: key, value: v };
     return v;
   }
@@ -524,7 +605,7 @@
     if (!a) return '';
     if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p></div>';
     var alt = (a.alts || []).map(function (x, i) { return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' + (x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why) ? ' <span class="muted">' + esc(x.why.replace(/;.*$/, '')) + '</span>' : '') + '</li>'; }).join('');
-    return '<div class="advice"><p class="advice-step">Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName) + (a.goal ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
+    return '<div class="advice"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
       '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' +
       (alt ? '<details><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
@@ -833,7 +914,7 @@
     ids.forEach(function (id) {
       var s = S.subs[id], fc = S.fcs[s.fcId];
       if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
-      var a = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(id).concat(taken), slotsFilled: slotsFilled(s.fcId) }, logInput()));
+      var a = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(id).concat(taken), slotsFilled: slotsFilled(s.fcId) }, logInput(), { recs: recsNow() }));
       out[id] = a;
       if (a && a.plan) taken = taken.concat(a.plan.route);
     });
@@ -934,6 +1015,8 @@
 
   // ------------------------------------------------------------------ events
   function onClick(e) {
+    var rb = e.target.closest('button[data-rec]');
+    if (rb) { if (!rb.disabled) onRecsClick(rb); return; }
     var qb = e.target.closest('[data-q]');
     if (qb) { var qi = $('[data-qty="' + qb.dataset.item + '"]', qb.closest('form') || document); if (qi) qi.value = Math.max(0, (Math.round(+qi.value) || 0) + (qb.dataset.q === '+' ? 1 : -1)) || ''; return; }
     var tb = e.target.closest('[data-trip]:not([data-act])');
@@ -1052,6 +1135,13 @@
   }
   function onInput(e) {
     var t = e.target;
+    if (t.matches && t.matches('[data-rec]') && t.tagName === 'INPUT') {
+      if (t.dataset.rec === 'giveUp') {
+        var gt = $('[data-rec-give-text]'); if (gt) gt.textContent = t.value + '%'; // while dragging only the shown number moves
+        if (e.type === 'change') { var gv = +t.value; recsChange(function (c) { c.giveUp = gv; }, 'giveUp', 'The allowance is ' + gv + '%.'); }
+      } else if (t.dataset.rec === 'fuel' && e.type === 'change') { var fv = t.checked; recsChange(function (c) { c.fuel = fv; }, 'fuel', fv ? 'Fuel efficiency is on.' : 'Fuel efficiency is off.'); }
+      return;
+    }
     if (t.matches && t.matches('[data-map-fc]')) { var m2 = mapState(); m2.fc = t.value; m2.sector = null; m2.sub = null; m2.route = []; keepUi(); render(); return; }
     if (t.matches && t.matches('[data-map-sub]')) { var m5 = mapState(); m5.sub = t.value || null; m5.route = []; keepUi(); render(); return; }
     if (t.closest('#sheet')) {

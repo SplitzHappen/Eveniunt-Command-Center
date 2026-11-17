@@ -230,3 +230,14 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .planner .route-line { margin: 6px 0; }
 .chart-wrap.planning .chart-node.over-rank { opacity: .45; cursor: not-allowed; }
 .chart-wrap.planning .chart-node.found:not(.over-rank) { cursor: copy; }
+
+/* Customizable Recommendations (Setup) */
+.recs h3 { margin: 12px 0 4px; font-size: 15px; }
+.rec-give input[type="range"] { width: min(100%, 320px); vertical-align: middle; accent-color: var(--seal); }
+.rec-give .rec-give-text { display: inline-block; min-width: 3ch; font-weight: 600; }
+.rec-rank { list-style: none; margin: 6px 0; padding: 0; }
+.rec-rank li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--rule); }
+.rec-rank li:first-child { border-top: 0; }
+.recs .btn:focus-visible, .recs input:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
+.recs .btn[disabled] { opacity: .5; cursor: default; }
+.recs .btn.sm { min-height: 36px; }
