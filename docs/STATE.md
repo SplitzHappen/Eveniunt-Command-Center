@@ -16,7 +16,8 @@ Last updated: 2026-11-17.
 
 ## Built, waiting for the owner's `ship`
 
-Both on one pull request, not yet merged; spec in `docs/submersibles-s6-s4-spec.md`.
+All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.md` and
+`docs/submersibles-recommendations-spec.md`.
 
 - **Submersibles step S6: gil advice from the player's own log** (built 2026-11-17). Earnings ranks routes by gil per
   hour once a route has 10 logged voyages; the Board then advises routes from the log, using the prices cached on the
@@ -25,11 +26,17 @@ Both on one pull request, not yet merged; spec in `docs/submersibles-s6-s4-spec.
 - **Submersibles step S4: the sea map** (built 2026-11-17). The Map tab draws each of the seven seas from the sector
   positions in the data, and a route planner opens the send window with the planned route. The map saves nothing.
   Browser checks C82 and C84.
+- **Submersibles: Customizable Recommendations** (built 2026-11-17). A panel in Setup: a ranking of four priorities
+  (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming), a fuel-efficiency switch with a
+  tunable allowance (default 10%) and five loot pickers. The first priority that can be served leads; each lower one
+  chooses only among routes within 5% of the best for those above. The settings live in a save section of their own;
+  `save.js` is unchanged. How the defaults were chosen: `docs/submersibles-recommendations-tuning.md`. Browser checks
+  C85 to C88.
 
 ## Next
 
 1. The owner compares the Deep-sea Site chart with the game's map (one constant, `CHART.Y_DOWN`, flips it), then decides
-   whether steps S6 and S4 ship.
+   whether steps S6 and S4 and the Customizable Recommendations ship.
 2. The Submersibles design document is not in this repository; the owner adds it to `docs/` after a privacy check, and
    the S4 and S6 work is then checked against it.
 
@@ -44,4 +51,11 @@ Both on one pull request, not yet merged; spec in `docs/submersibles-s6-s4-spec.
 - The sea map is drawn by the app, not the game's pictures; its orientation is unverified until the owner's comparison.
 - Gil advice assumes a part swap brings back the same items; the effect of surveillance, retrieval and favor on loot is
   not modelled.
+- Loot Farming knows only where an item can drop, not how often; gil is known only for routes with 10 logged voyages.
+- With the default ranking, a submarine below the top rank in a free company that has found everything is levelled
+  before it farms gil, until the player moves Gil Farming up.
+- The default fuel allowance was tuned on unlocking and levelling only, with four-slot test submarines; 10% is the first
+  allowance at which a 5-point step stops paying, not the best value for every player.
+- The five loot pickers are one setting: two devices changing different pickers at once get the "which one is right?"
+  choice.
 - `check.js` check C26b (real push delivery) does not run in automated environments.
