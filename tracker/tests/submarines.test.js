@@ -396,8 +396,8 @@ test('R1: constants, labels and defaults', () => {
   assert.deepEqual(RECS.KEYS.map((k) => RECS.LABEL[k]), ['Unlocking Routes', 'Leveling Submersible Rank', 'Gil Farming', 'Loot Farming']);
   assert.equal(RECS.NAME, 'submersibles-recommendations');
   assert.equal(RECS.BAND, 0.05);
-  assert.deepEqual([RECS.GIVE_UP, RECS.GIVE_MIN, RECS.GIVE_MAX, RECS.GIVE_STEP], [15, 5, 50, 5]);
-  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 15, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, false], [0, false], [0, false], [0, false], [0, false]] });
+  assert.deepEqual([RECS.GIVE_UP, RECS.GIVE_MIN, RECS.GIVE_MAX, RECS.GIVE_STEP], [10, 5, 50, 5]);
+  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, false], [0, false], [0, false], [0, false], [0, false]] });
 });
 
 test('R1: items holds each loot item once, by name then id', () => {
@@ -522,7 +522,7 @@ test('R1: pick, fuel on: the allowance replaces the band for the top priority, t
   assert.equal(skippedTop.plan.id, 'F');
   assert.equal(skippedTop.lead, 'u');
   // the default allowance is the module's
-  assert.equal(RECS.pick(cands, [byAmount('u')], { fuel: true }).plan.id, 'F');
+  assert.equal(RECS.pick(cands, [byAmount('u')], { fuel: true, giveUp: 15 }).plan.id, 'F'); // the pick falls back to RECS.GIVE_UP; the 15 here keeps this case about the rule, not the shipped number
 });
 
 test('R1: pick, each tie-break in order: steps, scores, seconds, tanks, id', () => {
@@ -755,4 +755,26 @@ test('Submersibles advisor with settings (R2): rank 130, everything found, Level
   assert.ok(ADV.lastEvals > 0 && ADV.lastEvals <= 92000, 'evaluations ' + ADV.lastEvals);
   assert.equal(a.lead, 'X'); assert.ok(a.plan.ev.reachable);
   assert.ok(Date.now() - t0 < 5000, 'a few seconds at most');
+});
+
+// ---------------------------------------------------------------- R4: the tuning tool and the shipped defaults
+// tools/recs-tune.js builds the test fleet from the data only and applies the rule of spec 4.6; the tuning document is its text.
+const TUNE = require(path.join(__dirname, '..', 'tools', 'recs-tune.js'));
+let tuned = null;
+const tuning = () => (tuned = tuned || TUNE.run());
+test('R4: RECS.GIVE_UP equals the tuning rule\'s result, and the fleet is big enough', () => {
+  const t = tuning();
+  assert.ok(t.count >= 20, 'scenarios with the intended lead: ' + t.count);
+  assert.notEqual(t.chosen, null, t.verdict);
+  assert.equal(t.chosen, RECS.GIVE_UP);
+  assert.ok(RECS.GIVE_UP > RECS.BAND * 100 && RECS.GIVE_UP < RECS.GIVE_MAX, 'above the band and short of the top of the range');
+  assert.ok(t.table.slice(1).every((x) => x.g === 0 || Number.isFinite(x.L) && Number.isFinite(x.E)));
+});
+test('R4: the 5% band gains more on the second priority than it loses on the first', () => {
+  const b = tuning().band.rows.find((r) => r.band === 0.05);
+  assert.ok(b.gain > b.loss, 'gain ' + b.gain + ' loss ' + b.loss);
+});
+test('R4: the tuning document is the tool\'s output', () => {
+  const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'submersibles-recommendations-tuning.md'), 'utf8');
+  assert.equal(doc, TUNE.render(tuning()) + '\n', 'run: node tracker/tools/recs-tune.js --write');
 });
