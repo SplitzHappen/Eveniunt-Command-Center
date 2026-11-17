@@ -1,0 +1,116 @@
+{
+ "source": "raphael-cli 723b17e (native, release)",
+ "cases": [
+  {
+   "recipeId": 35829,
+   "stats": [
+    4900,
+    4800,
+    620
+   ],
+   "actions": [
+    "Reflect",
+    "DelicateSynthesis",
+    "Innovation",
+    "WasteNot",
+    "PreparatoryTouch",
+    "PreparatoryTouch",
+    "PreparatoryTouch",
+    "CarefulSynthesis",
+    "TrainedPerfection",
+    "GreatStrides",
+    "Innovation",
+    "PreparatoryTouch",
+    "DelicateSynthesis",
+    "GreatStrides",
+    "ByregotsBlessing",
+    "ImmaculateMend",
+    "Veneration",
+    "Groundwork",
+    "Groundwork",
+    "Groundwork",
+    "Groundwork"
+   ],
+   "progress": 6887,
+   "quality": 12022,
+   "durability": 0,
+   "steps": 21
+  },
+  {
+   "recipeId": 34415,
+   "stats": [
+    5800,
+    5600,
+    750
+   ],
+   "actions": [
+    "MuscleMemory",
+    "Manipulation",
+    "WasteNot2",
+    "Groundwork",
+    "Innovation",
+    "PreparatoryTouch",
+    "PreparatoryTouch",
+    "PreparatoryTouch",
+    "PreparatoryTouch",
+    "Innovation",
+    "PreparatoryTouch",
+    "GreatStrides",
+    "ByregotsBlessing",
+    "DelicateSynthesis"
+   ],
+   "progress": 4867,
+   "quality": 17437,
+   "durability": 0,
+   "steps": 14
+  },
+  {
+   "recipeId": 38200,
+   "stats": [
+    5800,
+    5600,
+    750
+   ],
+   "actions": [
+    "Reflect",
+    "TrainedPerfection",
+    "Innovation",
+    "PreparatoryTouch",
+    "BasicTouch",
+    "StandardTouch",
+    "AdvancedTouch",
+    "Innovation",
+    "PrudentTouch",
+    "BasicTouch",
+    "StandardTouch",
+    "AdvancedTouch",
+    "ImmaculateMend",
+    "Innovation",
+    "PrudentTouch",
+    "BasicTouch",
+    "StandardTouch",
+    "AdvancedTouch",
+    "Veneration",
+    "CarefulSynthesis",
+    "CarefulSynthesis",
+    "BasicSynthesis",
+    "BasicSynthesis",
+    "ImmaculateMend",
+    "Innovation",
+    "BasicTouch",
+    "StandardTouch",
+    "GreatStrides",
+    "ByregotsBlessing",
+    "Veneration",
+    "Groundwork",
+    "Groundwork",
+    "PrudentSynthesis",
+    "BasicSynthesis"
+   ],
+   "progress": 7481,
+   "quality": 19710,
+   "durability": 0,
+   "steps": 34
+  }
+ ]
+}

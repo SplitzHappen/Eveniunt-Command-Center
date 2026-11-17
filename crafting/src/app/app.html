@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="Offline step-by-step crafting assistant for Final Fantasy XIV Cosmic Exploration ({{PLANET}}). Manually operated; reads nothing from the game.">
+<style>{{CSS}}</style>
+</head>
+<body>
+<header class="top">
+  <h1>Cosmic Crafting Solver <span class="planet">· {{PLANET}} ({{PATCH}})</span></h1>
+  <button class="small ghost" id="btnHelp" aria-label="Help">Help</button>
+  <button class="small ghost" id="btnSettings" aria-label="Settings">Settings</button>
+</header>
+<main id="main">
+  <section class="card" id="setup"></section>
+  <section class="card hidden" id="craft"></section>
+</main>
+<dialog id="dlg"></dialog>
+<div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:16px">This tool needs JavaScript enabled. It works offline from this single file.</p></noscript>
+<script id="db" type="application/json">{{DB}}</script>
+<script id="engine">{{ENGINE}}</script>
+<script id="app">{{APP}}</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "eveniunt-command-center",
+  "private": true,
+  "description": "Eveniunt Command Center: build tools and checks (the apps themselves need no install)",
+  "license": "Apache-2.0",
+  "scripts": {
+    "restore": "node tracker/command-center/restore-build-inputs.js",
+    "build": "node tracker/command-center/restore-build-inputs.js --verify && cd tracker && node command-center/build.js",
+    "test:unit": "cd tracker && node tests/core.test.js && node tests/helper.test.js && node tests/submarines.test.js && node tests/earn.test.js && cd ../crafting && node --test tests/sim.test.js tests/solver.test.js",
+    "test:browser": "cd tracker && node --test tests/ui.test.js && cd ../crafting/atelier && node --test tests/atelier.test.js && cd .. && node --test tests/ui.test.js",
+    "check": "cd tracker && node command-center/check.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

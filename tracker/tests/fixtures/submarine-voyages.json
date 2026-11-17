@@ -1,0 +1,395 @@
+{
+ "_about": "Five voyages worked out step by step from data/submarines.json (design step S1, blueprint rule 7). Each voyage gives the build, the route, the expected figures and the working. Return times use the community formula in the data file's 'formula' table and stay labelled \"calculated, not yet confirmed\" until the owner's game times agree (design risk R1). Experience is the game table's base reward; the community source says high survey stats can raise it by 25% to 100% per sector, so the rank after is a floor (the data file's formula.experienceNote).",
+ "dataFile": "data/submarines.json",
+ "formulaLabel": "calculated, not yet confirmed",
+ "voyages": [
+  {
+   "id": "V1",
+   "title": "A new submarine's first voyage",
+   "build": {
+    "rank": 1,
+    "expIntoRank": 0,
+    "parts": {
+     "hull": 3,
+     "stern": 4,
+     "bow": 1,
+     "bridge": 2
+    },
+    "partNames": [
+     "Shark-class Pressure Hull",
+     "Shark-class Stern",
+     "Shark-class Bow",
+     "Shark-class Bridge"
+    ]
+   },
+   "stats": {
+    "surveillance": 30,
+    "retrieval": 110,
+    "speed": 110,
+    "range": 70,
+    "favor": 70
+   },
+   "route": [
+    1
+   ],
+   "routeNames": [
+    "the Ivory Shoals (A)"
+   ],
+   "sea": "Deep-sea Site",
+   "sentAt": "2026-11-12T20:00:00Z",
+   "expected": {
+    "rangeUsed": 16,
+    "reachable": true,
+    "tanks": 1,
+    "exp": 10610,
+    "rankAfter": 2,
+    "expIntoRankAfter": 4430,
+    "voyageSeconds": 54250,
+    "returnAt": "2026-11-13T11:04:10Z"
+   },
+   "working": [
+    "Surveillance: parts -10 + -30 + 50 + 20 = 30, rank 1 bonus 0, total 30.",
+    "Retrieval: parts 30 + 20 + 40 + 20 = 110, rank 1 bonus 0, total 110.",
+    "Speed: parts 20 + 60 + 10 + 20 = 110, rank 1 bonus 0, total 110.",
+    "Range: parts 40 + 30 + -20 + 20 = 70, rank 1 bonus 0, total 70.",
+    "Favor: parts 20 + 15 + 15 + 20 = 70, rank 1 bonus 0, total 70.",
+    "Leg 1: the Deep-sea Site starting point (483, 927, 0) to the Ivory Shoals (A) (640, 880, 100): differences 157, -47, 100; squares 24,649 + 2,209 + 10,000 = 36,858; length = square root = 191.9844.",
+    "Leg 1 range: 191.9844 x 0.035 = 6.7195, rounded down 6; plus survey distance 10 = 16.",
+    "Leg 1 travel: 191.9844 x 3990 / (110 x 100) x 60 = 4178.2781, rounded down 4,178 s.",
+    "Survey of A: 180 min x 7000 / (110 x 100) x 60 = 6872.7273, rounded down 6,872 s.",
+    "Range used: 16 against range 70: reachable.",
+    "Voyage: legs and surveys 11,050 s + fixed 43,200 s = 54,250 s = 15 h 04 min 10 s.",
+    "Tanks: 1 = 1.",
+    "Experience (base, from the game table): 10,610 = 10,610.",
+    "Rank walk: rank 1 with 0 already into the rank, plus 10,610 = 10,610.",
+    "Rank 1 needs 6,180 to reach 2: 10,610 - 6,180 = 4,430 left.",
+    "Rank after: 2, with 4,430 of 12,504 toward the next rank.",
+    "Return: sent 2026-11-12T20:00:00Z + 54,250 s = 2026-11-13T11:04:10Z."
+   ],
+   "notes": [
+    "The starting build every new submarine has (four Shark-class parts) and the first sector of the first sea."
+   ]
+  },
+  {
+   "id": "V2",
+   "title": "Toward the second submarine",
+   "build": {
+    "rank": 20,
+    "expIntoRank": 0,
+    "parts": {
+     "hull": 7,
+     "stern": 4,
+     "bow": 1,
+     "bridge": 6
+    },
+    "partNames": [
+     "Unkiu-class Pressure Hull",
+     "Shark-class Stern",
+     "Shark-class Bow",
+     "Unkiu-class Bridge"
+    ]
+   },
+   "stats": {
+    "surveillance": 60,
+    "retrieval": 75,
+    "speed": 95,
+    "range": 100,
+    "favor": 75
+   },
+   "route": [
+    5,
+    10
+   ],
+   "routeNames": [
+    "deep-sea site 3 (E)",
+    "unidentified derelict (J)"
+   ],
+   "sea": "Deep-sea Site",
+   "sentAt": "2026-11-13T08:30:00Z",
+   "expected": {
+    "rangeUsed": 53,
+    "reachable": true,
+    "tanks": 5,
+    "exp": 192870,
+    "rankAfter": 21,
+    "expIntoRankAfter": 43071,
+    "voyageSeconds": 99913,
+    "returnAt": "2026-11-14T12:15:13Z"
+   },
+   "working": [
+    "Surveillance: parts 15 + -30 + 50 + 25 = 60, rank 20 bonus 0, total 60.",
+    "Retrieval: parts 10 + 20 + 40 + 5 = 75, rank 20 bonus 0, total 75.",
+    "Speed: parts 0 + 60 + 10 + 25 = 95, rank 20 bonus 0, total 95.",
+    "Range: parts 60 + 30 + -20 + 30 = 100, rank 20 bonus 0, total 100.",
+    "Favor: parts 15 + 15 + 15 + 30 = 75, rank 20 bonus 0, total 75.",
+    "Leg 1: the Deep-sea Site starting point (483, 927, 0) to deep-sea site 3 (E) (650, 610, 200): differences 167, -317, 200; squares 27,889 + 100,489 + 40,000 = 168,378; length = square root = 410.3389.",
+    "Leg 1 range: 410.3389 x 0.035 = 14.3619, rounded down 14; plus survey distance 11 = 25.",
+    "Leg 1 travel: 410.3389 x 3990 / (95 x 100) x 60 = 10340.5399, rounded down 10,340 s.",
+    "Survey of E: 300 min x 7000 / (95 x 100) x 60 = 13263.1579, rounded down 13,263 s.",
+    "Leg 2: deep-sea site 3 (E) (650, 610, 200) to unidentified derelict (J) (900, 600, 600): differences 250, -10, 400; squares 62,500 + 100 + 160,000 = 222,600; length = square root = 471.8050.",
+    "Leg 2 range: 471.8050 x 0.035 = 16.5132, rounded down 16; plus survey distance 12 = 28.",
+    "Leg 2 travel: 471.8050 x 3990 / (95 x 100) x 60 = 11889.4871, rounded down 11,889 s.",
+    "Survey of J: 480 min x 7000 / (95 x 100) x 60 = 21221.0526, rounded down 21,221 s.",
+    "Range used: 53 against range 100: reachable.",
+    "Voyage: legs and surveys 56,713 s + fixed 43,200 s = 99,913 s = 27 h 45 min 13 s.",
+    "Tanks: 2 + 3 = 5.",
+    "Experience (base, from the game table): 46,660 + 146,210 = 192,870.",
+    "Rank walk: rank 20 with 0 already into the rank, plus 192,870 = 192,870.",
+    "Rank 20 needs 149,799 to reach 21: 192,870 - 149,799 = 43,071 left.",
+    "Rank after: 21, with 43,071 of 158,666 toward the next rank.",
+    "Return: sent 2026-11-13T08:30:00Z + 99,913 s = 2026-11-14T12:15:13Z."
+   ],
+   "notes": [
+    "Sector J (unidentified derelict) is the one whose survey grants the second submarine slot, by the community unlock table; E is the sector that reveals it."
+   ]
+  },
+  {
+   "id": "V3",
+   "title": "Five sectors in the Sea of Ash",
+   "build": {
+    "rank": 65,
+    "expIntoRank": 250000,
+    "parts": {
+     "hull": 27,
+     "stern": 28,
+     "bow": 25,
+     "bridge": 26
+    },
+    "partNames": [
+     "Modified Unkiu-class Pressure Hull",
+     "Modified Unkiu-class Stern",
+     "Modified Unkiu-class Bow",
+     "Modified Unkiu-class Bridge"
+    ]
+   },
+   "stats": {
+    "surveillance": 145,
+    "retrieval": 70,
+    "speed": 105,
+    "range": 150,
+    "favor": 130
+   },
+   "route": [
+    33,
+    32,
+    34,
+    44,
+    45
+   ],
+   "routeNames": [
+    "Wreckage of the Windwalker (B)",
+    "South Isle of Zozonan (A)",
+    "North Isle of Zozonan (C)",
+    "the Lone Glove (M)",
+    "Coldtoe Isle (N)"
+   ],
+   "sea": "Sea of Ash",
+   "sentAt": "2026-11-14T19:15:00Z",
+   "expected": {
+    "rangeUsed": 116,
+    "reachable": true,
+    "tanks": 30,
+    "exp": 2602860,
+    "rankAfter": 68,
+    "expIntoRankAfter": 178816,
+    "voyageSeconds": 195199,
+    "returnAt": "2026-11-17T01:28:19Z"
+   },
+   "working": [
+    "Surveillance: parts 20 + 20 + 65 + 30 = 135, rank 65 bonus 10, total 145.",
+    "Retrieval: parts 15 + 5 + 25 + 10 = 55, rank 65 bonus 15, total 70.",
+    "Speed: parts 5 + 35 + 25 + 30 = 95, rank 65 bonus 10, total 105.",
+    "Range: parts 65 + 45 + -10 + 35 = 135, rank 65 bonus 15, total 150.",
+    "Favor: parts 25 + 35 + 20 + 40 = 120, rank 65 bonus 10, total 130.",
+    "Leg 1: the Sea of Ash starting point (483, 927, 0) to Wreckage of the Windwalker (B) (150, 840, 100): differences -333, -87, 100; squares 110,889 + 7,569 + 10,000 = 128,458; length = square root = 358.4104.",
+    "Leg 1 range: 358.4104 x 0.035 = 12.5444, rounded down 12; plus survey distance 12 = 24.",
+    "Leg 1 travel: 358.4104 x 3990 / (105 x 100) x 60 = 8171.7566, rounded down 8,171 s.",
+    "Survey of B: 480 min x 7000 / (105 x 100) x 60 = 19200.0000, rounded down 19,200 s.",
+    "Leg 2: Wreckage of the Windwalker (B) (150, 840, 100) to South Isle of Zozonan (A) (290, 750, 100): differences 140, -90, 0; squares 19,600 + 8,100 + 0 = 27,700; length = square root = 166.4332.",
+    "Leg 2 range: 166.4332 x 0.035 = 5.8252, rounded down 5; plus survey distance 12 = 17.",
+    "Leg 2 travel: 166.4332 x 3990 / (105 x 100) x 60 = 3794.6763, rounded down 3,794 s.",
+    "Survey of A: 480 min x 7000 / (105 x 100) x 60 = 19200.0000, rounded down 19,200 s.",
+    "Leg 3: South Isle of Zozonan (A) (290, 750, 100) to North Isle of Zozonan (C) (280, 570, 100): differences -10, -180, 0; squares 100 + 32,400 + 0 = 32,500; length = square root = 180.2776.",
+    "Leg 3 range: 180.2776 x 0.035 = 6.3097, rounded down 6; plus survey distance 13 = 19.",
+    "Leg 3 travel: 180.2776 x 3990 / (105 x 100) x 60 = 4110.3285, rounded down 4,110 s.",
+    "Survey of C: 540 min x 7000 / (105 x 100) x 60 = 21600.0000, rounded down 21,600 s.",
+    "Leg 4: North Isle of Zozonan (C) (280, 570, 100) to the Lone Glove (M) (820, 550, 100): differences 540, -20, 0; squares 291,600 + 400 + 0 = 292,000; length = square root = 540.3702.",
+    "Leg 4 range: 540.3702 x 0.035 = 18.9130, rounded down 18; plus survey distance 16 = 34.",
+    "Leg 4 travel: 540.3702 x 3990 / (105 x 100) x 60 = 12320.4416, rounded down 12,320 s.",
+    "Survey of M: 720 min x 7000 / (105 x 100) x 60 = 28800.0000, rounded down 28,800 s.",
+    "Leg 5: the Lone Glove (M) (820, 550, 100) to Coldtoe Isle (N) (870, 400, 100): differences 50, -150, 0; squares 2,500 + 22,500 + 0 = 25,000; length = square root = 158.1139.",
+    "Leg 5 range: 158.1139 x 0.035 = 5.5340, rounded down 5; plus survey distance 17 = 22.",
+    "Leg 5 travel: 158.1139 x 3990 / (105 x 100) x 60 = 3604.9965, rounded down 3,604 s.",
+    "Survey of N: 780 min x 7000 / (105 x 100) x 60 = 31200.0000, rounded down 31,200 s.",
+    "Range used: 116 against range 150: reachable.",
+    "Voyage: legs and surveys 151,999 s + fixed 43,200 s = 195,199 s = 54 h 13 min 19 s.",
+    "Tanks: 6 + 6 + 6 + 6 + 6 = 30.",
+    "Experience (base, from the game table): 440,990 + 440,990 + 480,270 + 595,020 + 645,590 = 2,602,860.",
+    "Rank walk: rank 65 with 250,000 already into the rank, plus 2,602,860 = 2,852,860.",
+    "Rank 65 needs 840,559 to reach 66: 2,852,860 - 840,559 = 2,012,301 left.",
+    "Rank 66 needs 889,710 to reach 67: 2,012,301 - 889,710 = 1,122,591 left.",
+    "Rank 67 needs 943,775 to reach 68: 1,122,591 - 943,775 = 178,816 left.",
+    "Rank after: 68, with 178,816 of 1,003,248 toward the next rank.",
+    "Return: sent 2026-11-14T19:15:00Z + 195,199 s = 2026-11-17T01:28:19Z."
+   ],
+   "notes": [
+    "Five sectors, the most one voyage allows; the rank bonus is no longer zero from rank 51.",
+    "The route is the source's named route \"CryPTO - BACMN\".",
+    "Leg 5's travel time is 3,604.9965 seconds, a hair under a whole second, so it rounds down to 3,604; single precision, as the source computes, gives the same."
+   ]
+  },
+  {
+   "id": "V4",
+   "title": "The \"OJ\" route at the top rank",
+   "build": {
+    "rank": 145,
+    "expIntoRank": 0,
+    "parts": {
+     "hull": 31,
+     "stern": 24,
+     "bow": 25,
+     "bridge": 34
+    },
+    "partNames": [
+     "Modified Whale-class Pressure Hull",
+     "Modified Shark-class Stern",
+     "Modified Unkiu-class Bow",
+     "Modified Coelacanth-class Bridge"
+    ]
+   },
+   "stats": {
+    "surveillance": 200,
+    "retrieval": 265,
+    "speed": 270,
+    "range": 165,
+    "favor": 235
+   },
+   "route": [
+    15,
+    10
+   ],
+   "routeNames": [
+    "the Wreckage of Discovery I (O)",
+    "unidentified derelict (J)"
+   ],
+   "sea": "Deep-sea Site",
+   "sentAt": "2026-11-15T21:00:00Z",
+   "expected": {
+    "rangeUsed": 59,
+    "reachable": true,
+    "tanks": 9,
+    "exp": 377960,
+    "rankAfter": 145,
+    "expIntoRankAfter": 377960,
+    "voyageSeconds": 69694,
+    "returnAt": "2026-11-16T16:21:34Z"
+   },
+   "working": [
+    "Surveillance: parts -10 + -25 + 65 + 60 = 90, rank 145 bonus 110, total 200.",
+    "Retrieval: parts 55 + 25 + 25 + 20 = 125, rank 145 bonus 140, total 265.",
+    "Speed: parts 40 + 70 + 25 + 35 = 170, rank 145 bonus 100, total 270.",
+    "Range: parts 20 + 35 + -10 + -10 = 35, rank 145 bonus 130, total 165.",
+    "Favor: parts 30 + 25 + 20 + 55 = 130, rank 145 bonus 105, total 235.",
+    "Leg 1: the Deep-sea Site starting point (483, 927, 0) to the Wreckage of Discovery I (O) (630, 490, 500): differences 147, -437, 500; squares 21,609 + 190,969 + 250,000 = 462,578; length = square root = 680.1309.",
+    "Leg 1 range: 680.1309 x 0.035 = 23.8046, rounded down 23; plus survey distance 14 = 37.",
+    "Leg 1 travel: 680.1309 x 3990 / (270 x 100) x 60 = 6030.4937, rounded down 6,030 s.",
+    "Survey of O: 660 min x 7000 / (270 x 100) x 60 = 10266.6667, rounded down 10,266 s.",
+    "Leg 2: the Wreckage of Discovery I (O) (630, 490, 500) to unidentified derelict (J) (900, 600, 600): differences 270, 110, 100; squares 72,900 + 12,100 + 10,000 = 95,000; length = square root = 308.2207.",
+    "Leg 2 range: 308.2207 x 0.035 = 10.7877, rounded down 10; plus survey distance 12 = 22.",
+    "Leg 2 travel: 308.2207 x 3990 / (270 x 100) x 60 = 2732.8902, rounded down 2,732 s.",
+    "Survey of J: 480 min x 7000 / (270 x 100) x 60 = 7466.6667, rounded down 7,466 s.",
+    "Range used: 59 against range 165: reachable.",
+    "Voyage: legs and surveys 26,494 s + fixed 43,200 s = 69,694 s = 19 h 21 min 34 s.",
+    "Tanks: 6 + 3 = 9.",
+    "Experience (base, from the game table): 231,750 + 146,210 = 377,960.",
+    "Rank walk: rank 145 with 0 already into the rank, plus 377,960 = 377,960.",
+    "Rank after: 145, with 377,960 of 46,234,004 toward the next rank (145 is the top rank in the table).",
+    "Return: sent 2026-11-15T21:00:00Z + 69,694 s = 2026-11-16T16:21:34Z."
+   ],
+   "notes": [
+    "The source names this route \"Fight Club - OJ\" (Deep-sea Site O, then J). The owner said the OJ route takes about 19 hours at the top rank; this fast build gives 19 h 21 min. That fits, but it is not a confirmation of the formula.",
+    "Which sea the owner's \"OJ\" means is still the owner's to confirm (design question Q1)."
+   ]
+  },
+  {
+   "id": "V5",
+   "title": "Reaching the top rank in the Northern Empty",
+   "build": {
+    "rank": 144,
+    "expIntoRank": 100000000,
+    "parts": {
+     "hull": 27,
+     "stern": 28,
+     "bow": 37,
+     "bridge": 26
+    },
+    "partNames": [
+     "Modified Unkiu-class Pressure Hull",
+     "Modified Unkiu-class Stern",
+     "Modified Syldra-class Bow",
+     "Modified Unkiu-class Bridge"
+    ]
+   },
+   "stats": {
+    "surveillance": 223,
+    "retrieval": 199,
+    "speed": 158,
+    "range": 314,
+    "favor": 243
+   },
+   "route": [
+    146,
+    145,
+    147
+   ],
+   "routeNames": [
+    "the Puffin Assembly (J)",
+    "Axeblade Bight (I)",
+    "southern Aerslaent Plunge (K)"
+   ],
+   "sea": "The Northern Empty",
+   "sentAt": "2026-11-16T07:45:00Z",
+   "expected": {
+    "rangeUsed": 262,
+    "reachable": true,
+    "tanks": 18,
+    "exp": 48905702,
+    "rankAfter": 145,
+    "expIntoRankAfter": 36139844,
+    "voyageSeconds": 238188,
+    "returnAt": "2026-11-19T01:54:48Z"
+   },
+   "working": [
+    "Surveillance: parts 20 + 20 + 45 + 30 = 115, rank 144 bonus 108, total 223.",
+    "Retrieval: parts 15 + 5 + 30 + 10 = 60, rank 144 bonus 139, total 199.",
+    "Speed: parts 5 + 35 + -10 + 30 = 60, rank 144 bonus 98, total 158.",
+    "Range: parts 65 + 45 + 40 + 35 = 185, rank 144 bonus 129, total 314.",
+    "Favor: parts 25 + 35 + 40 + 40 = 140, rank 144 bonus 103, total 243.",
+    "Leg 1: the Northern Empty starting point (933, 940, 0) to the Puffin Assembly (J) (495, 156, 0): differences -438, -784, 0; squares 191,844 + 614,656 + 0 = 806,500; length = square root = 898.0535.",
+    "Leg 1 range: 898.0535 x 0.035 = 31.4319, rounded down 31; plus survey distance 59 = 90.",
+    "Leg 1 travel: 898.0535 x 3990 / (158 x 100) x 60 = 13607.2149, rounded down 13,607 s.",
+    "Survey of J: 1970 min x 7000 / (158 x 100) x 60 = 52367.0886, rounded down 52,367 s.",
+    "Leg 2: the Puffin Assembly (J) (495, 156, 0) to Axeblade Bight (I) (641, 313, 1000): differences 146, 157, 1000; squares 21,316 + 24,649 + 1,000,000 = 1,045,965; length = square root = 1022.7243.",
+    "Leg 2 range: 1022.7243 x 0.035 = 35.7954, rounded down 35; plus survey distance 59 = 94.",
+    "Leg 2 travel: 1022.7243 x 3990 / (158 x 100) x 60 = 15496.2151, rounded down 15,496 s.",
+    "Survey of I: 1960 min x 7000 / (158 x 100) x 60 = 52101.2658, rounded down 52,101 s.",
+    "Leg 3: Axeblade Bight (I) (641, 313, 1000) to southern Aerslaent Plunge (K) (400, 821, 1000): differences -241, 508, 0; squares 58,081 + 258,064 + 0 = 316,145; length = square root = 562.2677.",
+    "Leg 3 range: 562.2677 x 0.035 = 19.6794, rounded down 19; plus survey distance 59 = 78.",
+    "Leg 3 travel: 562.2677 x 3990 / (158 x 100) x 60 = 8519.4237, rounded down 8,519 s.",
+    "Survey of K: 1990 min x 7000 / (158 x 100) x 60 = 52898.7342, rounded down 52,898 s.",
+    "Range used: 262 against range 314: reachable.",
+    "Voyage: legs and surveys 194,988 s + fixed 43,200 s = 238,188 s = 66 h 09 min 48 s.",
+    "Tanks: 6 + 6 + 6 = 18.",
+    "Experience (base, from the game table): 16,298,588 + 15,901,061 + 16,706,053 = 48,905,702.",
+    "Rank walk: rank 144 with 100,000,000 already into the rank, plus 48,905,702 = 148,905,702.",
+    "Rank 144 needs 112,765,858 to reach 145: 148,905,702 - 112,765,858 = 36,139,844 left.",
+    "Rank after: 145, with 36,139,844 of 46,234,004 toward the next rank (145 is the top rank in the table).",
+    "Return: sent 2026-11-16T07:45:00Z + 238,188 s = 2026-11-19T01:54:48Z."
+   ],
+   "notes": [
+    "No five-sector route in the Northern Empty fits any submarine's range (each survey there uses 56 to 60 range), so this is a three-sector route with a long-range build.",
+    "Rank 144 to 145, the top rank."
+   ]
+  }
+ ]
+}

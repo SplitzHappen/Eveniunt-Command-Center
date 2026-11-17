@@ -1,0 +1,88 @@
+{
+"_about": "Ocean fishing: the voyage rotation is the game's own IKDRouteTable (144 voyages, Indigo and Ruby columns); a voyage leaves every 2 hours on the even UTC hour, and the voyage leaving at Unix time t (seconds) uses row ((t / 7200) + 40) mod 144. The offset was checked against the community schedule at ffxiv.oceanfishing.boats (its 144-voyage pattern matches the game table exactly at this offset for both routes). Each route's best targets (fabled fish and mission families) are facts from that site; stops, times of day and fish come from the game sheets.",
+"offset": 40,
+"period": 7200,
+"targets": {
+"1": [
+"Seadragons",
+"Coral Manta"
+],
+"2": [
+"Octopus"
+],
+"3": [
+"Sothis",
+"Elasmosaurus"
+],
+"4": [
+"Sothis",
+"Stonescale"
+],
+"5": [
+"Jellyfish"
+],
+"6": [
+"Sharks",
+"Coral Manta"
+],
+"7": [
+"Hafgufa",
+"Elasmosaurus"
+],
+"8": [
+"Mantas"
+],
+"9": [
+"Crabs",
+"Seafaring Toad"
+],
+"10": [
+"Hafgufa",
+"Placodus"
+],
+"11": [
+"Fugu",
+"Stonescale"
+],
+"12": [
+"Fugu",
+"Mantas"
+],
+"21": [
+"Prehistoric",
+"Akupara"
+],
+"15": [
+"Glass Dragon",
+"Jewel of Plum Spring"
+],
+"18": [
+"Squids",
+"Glass Dragon"
+],
+"19": [
+"Mantis",
+"Taniwha"
+],
+"13": [
+"Shellfish",
+"Shrimp"
+],
+"16": [
+"Shrimp",
+"Hells' Claw"
+],
+"20": [
+"Mantis",
+"Manasvin"
+],
+"14": [
+"Shellfish",
+"Taniwha"
+],
+"17": [
+"Squids",
+"Taniwha"
+]
+}
+}

@@ -1,0 +1,1229 @@
+{
+"_about": "Field operation events (Occult Crescent FATEs and critical engagements, Eureka notorious monsters): area, boss, elemental weakness, spot and spawn condition, from the Console Games Wiki's zone tables, read 2026-11-08; facts only.",
+"events": {
+"A Delicate Balance": {
+"area": "South Horn",
+"boss": "Dehumidifier",
+"weak": "Ice",
+"at": "( X: 14.1, Y: 34.5)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"A Prying Eye": {
+"area": "South Horn",
+"boss": "Observer",
+"weak": "Wind",
+"at": "( X: 20.1, Y: 32.7)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"An Unending Duty": {
+"area": "South Horn",
+"boss": "Sisyphus",
+"weak": "Fire",
+"at": "( X: 17, Y: 22.3)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Brain Drain": {
+"area": "South Horn",
+"boss": "Advanced Aevis",
+"weak": "Ice",
+"at": "( X: 20.6, Y: 15.1)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Fatal Allure": {
+"area": "South Horn",
+"boss": "Execrator",
+"weak": "Wind",
+"at": "( X: 22.9, Y: 27)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"King of the Crescent": {
+"area": "South Horn",
+"boss": "Ropross",
+"weak": "Fire",
+"at": "( X: 17, Y: 26.5)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Persistent Pots": {
+"area": "South Horn",
+"boss": "Crescent Garula",
+"weak": "Fire",
+"at": "( X: 25.6, Y: 17.1)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Pleading Pots": {
+"area": "South Horn",
+"boss": "Havoc",
+"weak": "Lightning",
+"at": "( X: 11.9, Y: 32)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Rough Waters": {
+"area": "South Horn",
+"boss": "Nammu",
+"weak": "Lightning",
+"at": "( X: 24.6, Y: 34.8)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Serving Darkness": {
+"area": "South Horn",
+"boss": "Lifereaper",
+"weak": "Fire",
+"at": "( X: 29.6, Y: 21)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Sworn to Soil": {
+"area": "South Horn",
+"boss": "Mad Mudarch",
+"weak": "Ice",
+"at": "( X: 9.5, Y: 27.9)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"The Golden Guardian": {
+"area": "South Horn",
+"boss": "Gilded Headstone",
+"weak": "Lightning",
+"at": "( X: 28.8, Y: 31.2)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"The Winged Terror": {
+"area": "South Horn",
+"boss": "Giant Bird",
+"weak": "Wind",
+"at": "( X: 10.4, Y: 9.7)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Calamity Bound": {
+"area": "South Horn",
+"boss": "Cloister Demon",
+"weak": "Ice",
+"at": "( X: 14.5, Y: 37.5)",
+"spawn": "Crescent Inkstain",
+"lv": "",
+"kind": "CE"
+},
+"Company of Stone": {
+"area": "South Horn",
+"boss": "Megaloknight",
+"weak": "",
+"at": "( X: 35, Y: 16.1)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Crawling Death": {
+"area": "South Horn",
+"boss": "Death Claw",
+"weak": "Ice",
+"at": "( X: 35.1, Y: 32.2)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Cursed Concern": {
+"area": "South Horn",
+"boss": "Trade Tortoise",
+"weak": "Ice",
+"at": "( X: 22.9, Y: 10.5)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Eternal Watch": {
+"area": "South Horn",
+"boss": "Repaired Lion",
+"weak": "Lightning",
+"at": "( X: 38.8, Y: 24.9)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Flame of Dusk": {
+"area": "South Horn",
+"boss": "Hinkypunk",
+"weak": "Wind",
+"at": "( X: 10.1, Y: 18.2)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"From Times Bygone": {
+"area": "South Horn",
+"boss": "Mythic Idol",
+"weak": "Lightning",
+"at": "( X: 5.5, Y: 26.4)",
+"spawn": "Crescent Byblos",
+"lv": "",
+"kind": "CE"
+},
+"Noise Complaint": {
+"area": "South Horn",
+"boss": "Neo Garula",
+"weak": "Fire",
+"at": "( X: 30.5, Y: 14.1)",
+"spawn": "Crescent Garula",
+"lv": "",
+"kind": "CE"
+},
+"On the Hunt": {
+"area": "South Horn",
+"boss": "Lion Rampant",
+"weak": "Lightning",
+"at": "( X: 34, Y: 20)",
+"spawn": "Crescent Fan",
+"lv": "",
+"kind": "CE"
+},
+"Scourge of the Mind": {
+"area": "South Horn",
+"boss": "Mysterious Mindflayer",
+"weak": "Fire",
+"at": "( X: 27.4, Y: 35.9)",
+"spawn": "Crescent Monk",
+"lv": "",
+"kind": "CE"
+},
+"Shark Attack": {
+"area": "South Horn",
+"boss": "Nymian Petalodus",
+"weak": "Lightning",
+"at": "( X: 19.1, Y: 4.5)",
+"spawn": "Crescent Petalodite",
+"lv": "",
+"kind": "CE"
+},
+"The Black Regiment": {
+"area": "South Horn",
+"boss": "Black Star",
+"weak": "Lightning",
+"at": "( X: 30.5, Y: 28.6)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"The Unbridled": {
+"area": "South Horn",
+"boss": "Crescent Berserker",
+"weak": "Fire",
+"at": "( X: 33.9, Y: 37.5)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Trial by Claw": {
+"area": "South Horn",
+"boss": "Crystal Dragon",
+"weak": "Wind",
+"at": "( X: 13, Y: 22.8)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"With Extreme Prejudice": {
+"area": "South Horn",
+"boss": "Command Urn",
+"weak": "Lightning",
+"at": "( X: 14.5, Y: 9.2)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"A Rotten Affair": {
+"area": "North Horn",
+"boss": "Patient Kuribu",
+"weak": "Wind, Lightning",
+"at": "( X: 12.5, Y: 5.4)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Allure of the Occult": {
+"area": "North Horn",
+"boss": "Sensual Sandy",
+"weak": "Fire",
+"at": "( X: 13.4, Y: 16.3)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Daylight Pottery": {
+"area": "North Horn",
+"boss": "Crimson Gremlin",
+"weak": "Ice",
+"at": "( X: 26.2, Y: 11.6)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Eye to Eye": {
+"area": "North Horn",
+"boss": "Evil-seer",
+"weak": "Fire",
+"at": "( X: 31.7, Y: 20.8)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Gale-force Encounter": {
+"area": "North Horn",
+"boss": "Stormcaller",
+"weak": "Fire",
+"at": "( X: 4.2, Y: 31)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"In a Pot of Bother": {
+"area": "North Horn",
+"boss": "Greater Fan",
+"weak": "Lightning",
+"at": "( X: 11, Y: 25.8)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Inconstant Gardener": {
+"area": "North Horn",
+"boss": "Iambe",
+"weak": "Fire",
+"at": "( X: 18, Y: 11.7)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Raging Thrall": {
+"area": "North Horn",
+"boss": "Machetaur",
+"weak": "Fire",
+"at": "( X: 35.8, Y: 25.7)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Scale Model": {
+"area": "North Horn",
+"boss": "Demi-Medusa",
+"weak": "Ice",
+"at": "( X: 8.2, Y: 20.1)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Shoreline Showdown": {
+"area": "North Horn",
+"boss": "Regnant Chimera",
+"weak": "Wind",
+"at": "( X: 23.3, Y: 30.8)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Territorial Dispute": {
+"area": "North Horn",
+"boss": "Ruin Hound",
+"weak": "Fire",
+"at": "( X: 19.6, Y: 38.7)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Thunderregnum": {
+"area": "North Horn",
+"boss": "Cresceregina",
+"weak": "Fire",
+"at": "( X: 24.2, Y: 7.3)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"Waved Away": {
+"area": "North Horn",
+"boss": "Arch Kelpie",
+"weak": "Lightning",
+"at": "( X: 28, Y: 16.4)",
+"spawn": "",
+"lv": "",
+"kind": "FATE"
+},
+"A Beast Unleashed": {
+"area": "North Horn",
+"boss": "Atlas Carbuncle",
+"weak": "Ice",
+"at": "( X: 26.1, Y: 28.6)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Accept No Imitators": {
+"area": "North Horn",
+"boss": "Metamorph",
+"weak": "Wind",
+"at": "( X: 31.4, Y: 15.2)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Ahead of the Competition": {
+"area": "North Horn",
+"boss": "Phantom Hydra",
+"weak": "Ice",
+"at": "( X: 19.8, Y: 31.1)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Appalling Behavior": {
+"area": "North Horn",
+"boss": "Pallmagia",
+"weak": "Fire",
+"at": "( X: 38.2, Y: 9.8)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Cursed Resurgence": {
+"area": "North Horn",
+"boss": "Claret Dragon",
+"weak": "Fire",
+"at": "( X: 7.7, Y: 24.5)",
+"spawn": "Crescent Big Horn",
+"lv": "",
+"kind": "CE"
+},
+"Dark Artistry": {
+"area": "North Horn",
+"boss": "Phantom Necromancer",
+"weak": "Wind",
+"at": "( X: 25.9, Y: 4.3)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Doubled Trouble": {
+"area": "North Horn",
+"boss": "Conjured Calofisteri",
+"weak": "Wind",
+"at": "( X: 17.2, Y: 20.2)",
+"spawn": "Crescent Blackguard",
+"lv": "",
+"kind": "CE"
+},
+"Familiar Tactics": {
+"area": "North Horn",
+"boss": "Elm Gigas",
+"weak": "Lightning",
+"at": "( X: 13.5, Y: 35.8)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Forbidden Folios": {
+"area": "North Horn",
+"boss": "Arbatel",
+"weak": "Fire",
+"at": "( X: 34.7, Y: 34.5)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Imbalanced Diet": {
+"area": "North Horn",
+"boss": "Algol",
+"weak": "Fire",
+"at": "( X: 36.7, Y: 21.4)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Lost on the Wind": {
+"area": "North Horn",
+"boss": "Abductor",
+"weak": "Lightning",
+"at": "( X: 18.4, Y: 4.3)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Many Mouths to Feed": {
+"area": "North Horn",
+"boss": "Pelekys",
+"weak": "Fire",
+"at": "( X: 4.1, Y: 10.3)",
+"spawn": "Crescent Wamoura",
+"lv": "",
+"kind": "CE"
+},
+"Quarried Away": {
+"area": "North Horn",
+"boss": "Alabaster Blade",
+"weak": "Lightning",
+"at": "( X: 12, Y: 8)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Tiny Terror": {
+"area": "North Horn",
+"boss": "Tiny Mage",
+"weak": "Lightning",
+"at": "( X: 24.3, Y: 35.6)",
+"spawn": "Automatic",
+"lv": "",
+"kind": "CE"
+},
+"Web of Terror": {
+"area": "North Horn",
+"boss": "Crescent Arachne",
+"weak": "Ice",
+"at": "( X: 24.9, Y: 18.8)",
+"spawn": "Crescent Hellhound",
+"lv": "",
+"kind": "CE"
+},
+"Unsafety Dance": {
+"area": "Eureka Anemos",
+"boss": "Sabotender Corrido",
+"weak": "",
+"at": "( X: 14.1, Y: 21.8)",
+"spawn": "Lv. 6 Flowering Sabotender",
+"lv": "1",
+"kind": "NM",
+"light": ""
+},
+"The Shadow over Anemos": {
+"area": "Eureka Anemos",
+"boss": "The Lord of Anemos",
+"weak": "",
+"at": "( X: 27.8, Y: 28.2)",
+"spawn": "Lv. 7 Sea Bishop",
+"lv": "2",
+"kind": "NM",
+"light": ""
+},
+"Teles House": {
+"area": "Eureka Anemos",
+"boss": "Teles",
+"weak": "",
+"at": "( X: 26, Y: 26.8)",
+"spawn": "Lv. 8 Anemos Harpeia",
+"lv": "3",
+"kind": "NM",
+"light": ""
+},
+"The Swarm Never Sets": {
+"area": "Eureka Anemos",
+"boss": "The Emperor of Anemos",
+"weak": "",
+"at": "( X: 17.2, Y: 23.9)",
+"spawn": "Lv. 9 Darner",
+"lv": "4",
+"kind": "NM",
+"light": ""
+},
+"One Missed Callisto": {
+"area": "Eureka Anemos",
+"boss": "Callisto",
+"weak": "",
+"at": "( X: 27.8, Y: 23.3)",
+"spawn": "Lv. 10 Val Bear",
+"lv": "5",
+"kind": "NM",
+"light": ""
+},
+"By Numbers": {
+"area": "Eureka Anemos",
+"boss": "Number",
+"weak": "",
+"at": "( X: 23.2, Y: 22.7)",
+"spawn": "Lv. 11 Pneumaflayer",
+"lv": "6",
+"kind": "NM",
+"light": ""
+},
+"Disinherit the Wind": {
+"area": "Eureka Anemos",
+"boss": "Jahannam",
+"weak": "",
+"at": "( X: 19.1, Y: 19.6)",
+"spawn": "Lv. 12 Typhoon Sprite",
+"lv": "7",
+"kind": "NM",
+"light": ""
+},
+"Prove Your Amemettle": {
+"area": "Eureka Anemos",
+"boss": "Amemet",
+"weak": "",
+"at": "( X: 14.7, Y: 15.9)",
+"spawn": "Lv. 13 Abraxas",
+"lv": "8",
+"kind": "NM",
+"light": ""
+},
+"Caym What May": {
+"area": "Eureka Anemos",
+"boss": "Caym",
+"weak": "",
+"at": "( X: 12.6, Y: 12.4)",
+"spawn": "Lv. 14 Stalker Ziz",
+"lv": "9",
+"kind": "NM",
+"light": ""
+},
+"The Killing of a Sacred Bombardier": {
+"area": "Eureka Anemos",
+"boss": "Bombadeel",
+"weak": "",
+"at": "( X: 28.5, Y: 20.5)",
+"spawn": "Lv. 15 Traveling Gourmand",
+"lv": "10",
+"kind": "NM",
+"light": ""
+},
+"Short Serket 2": {
+"area": "Eureka Anemos",
+"boss": "Serket",
+"weak": "",
+"at": "( X: 24, Y: 20)",
+"spawn": "Lv. 16 Khor Claw",
+"lv": "11",
+"kind": "NM",
+"light": ""
+},
+"Don't Judge Me, Morbol": {
+"area": "Eureka Anemos",
+"boss": "Judgmental Julika",
+"weak": "",
+"at": "( X: 22.2, Y: 14.9)",
+"spawn": "Lv. 17 Henbane",
+"lv": "12",
+"kind": "NM",
+"light": ""
+},
+"When You Ride Alone": {
+"area": "Eureka Anemos",
+"boss": "The White Rider",
+"weak": "",
+"at": "( X: 20, Y: 13.4)",
+"spawn": "Lv. 18 Duskfall Dullahan",
+"lv": "13",
+"kind": "NM",
+"light": ""
+},
+"Sing, Muse": {
+"area": "Eureka Anemos",
+"boss": "Polyphemus",
+"weak": "",
+"at": "( X: 26.2, Y: 15)",
+"spawn": "Lv. 19 Monoeye",
+"lv": "14",
+"kind": "NM",
+"light": ""
+},
+"Simurghasbord": {
+"area": "Eureka Anemos",
+"boss": "Simurgh's Strider",
+"weak": "",
+"at": "( X: 28.8, Y: 13.3)",
+"spawn": "Lv. 20 Old World Zu",
+"lv": "15",
+"kind": "NM",
+"light": ""
+},
+"To the Mat": {
+"area": "Eureka Anemos",
+"boss": "King Hazmat",
+"weak": "",
+"at": "( X: 35.2, Y: 19.7)",
+"spawn": "Lv. 21 Anemos Anala",
+"lv": "16",
+"kind": "NM",
+"light": ""
+},
+"Wine and Honey": {
+"area": "Eureka Anemos",
+"boss": "Fafnir",
+"weak": "",
+"at": "( X: 34.6, Y: 21.9)",
+"spawn": "Lv. 22 Fossil Dragon",
+"lv": "17",
+"kind": "NM",
+"light": ""
+},
+"I Amarok": {
+"area": "Eureka Anemos",
+"boss": "Amarok",
+"weak": "",
+"at": "( X: 8, Y: 18)",
+"spawn": "Lv. 23 Voidscale",
+"lv": "18",
+"kind": "NM",
+"light": ""
+},
+"Drama Lamashtu": {
+"area": "Eureka Anemos",
+"boss": "Lamashtu",
+"weak": "",
+"at": "( X: 8.2, Y: 25.3)",
+"spawn": "Lv. 24 Val Specter",
+"lv": "19",
+"kind": "NM",
+"light": ""
+},
+"Wail in the Willows": {
+"area": "Eureka Anemos",
+"boss": "Pazuzu",
+"weak": "",
+"at": "( X: 7.3, Y: 21.7)",
+"spawn": "Lv. 25 Shadow Wraith",
+"lv": "20",
+"kind": "NM",
+"light": ""
+},
+"Down the Rabbit Hole": {
+"area": "Eureka Pagos",
+"boss": "Elemental Conflict",
+"weak": "",
+"at": "( X: 18.2, Y: 26.9)",
+"spawn": "",
+"lv": "20",
+"kind": "NM",
+"light": "None (0%)"
+},
+"Eternity": {
+"area": "Eureka Pagos",
+"boss": "The Snow Queen",
+"weak": "",
+"at": "( X: 21, Y: 26)",
+"spawn": "Lv. 25 Yukinko",
+"lv": "20",
+"kind": "NM",
+"light": "Feeble (21%)"
+},
+"Cairn Blight 451": {
+"area": "Eureka Pagos",
+"boss": "Taxim",
+"weak": "",
+"at": "( X: 25, Y: 28)",
+"spawn": "Lv. 26 Demon of the Incunable",
+"lv": "21",
+"kind": "NM",
+"light": "Feeble (22%)"
+},
+"Ash the Magic Dragon": {
+"area": "Eureka Pagos",
+"boss": "Ash Dragon",
+"weak": "",
+"at": "( X: 29, Y: 30)",
+"spawn": "Lv. 27 Blood Demon",
+"lv": "22",
+"kind": "NM",
+"light": "Feeble (23.5%)"
+},
+"Conqueror Worm": {
+"area": "Eureka Pagos",
+"boss": "Glavoid",
+"weak": "",
+"at": "( X: 32, Y: 26)",
+"spawn": "Lv. 28 Val Worm",
+"lv": "23",
+"kind": "NM",
+"light": "Gentle (26%)"
+},
+"Melting Point": {
+"area": "Eureka Pagos",
+"boss": "Anapos",
+"weak": "",
+"at": "( X: 34, Y: 21)",
+"spawn": "Lv. 29 Snowmelt Sprite",
+"lv": "24",
+"kind": "NM",
+"light": "Gentle (28%)"
+},
+"The Wobbler in Darkness": {
+"area": "Eureka Pagos",
+"boss": "Hakutaku",
+"weak": "",
+"at": "( X: 28.5, Y: 22.4)",
+"spawn": "Lv. 30 Blubber Eyes",
+"lv": "25",
+"kind": "NM",
+"light": "Gentle (33%)"
+},
+"Does It Have to Be a Snowman": {
+"area": "Eureka Pagos",
+"boss": "King Igloo",
+"weak": "",
+"at": "( X: 17.4, Y: 16.2)",
+"spawn": "Lv. 31 Huwasi",
+"lv": "26",
+"kind": "NM",
+"light": "Gentle (35%)"
+},
+"Disorder in the Court": {
+"area": "Eureka Pagos",
+"boss": "Asag",
+"weak": "",
+"at": "( X: 10.5, Y: 10.5)",
+"spawn": "Lv. 32 Wandering Opken",
+"lv": "27",
+"kind": "NM",
+"light": "None (0%)"
+},
+"Cows for Concern": {
+"area": "Eureka Pagos",
+"boss": "Surabhi",
+"weak": "",
+"at": "( X: 10, Y: 18.2)",
+"spawn": "Lv. 33 Pagos Billygoat",
+"lv": "28",
+"kind": "NM",
+"light": "Gentle (34%)"
+},
+"Morte Arthro": {
+"area": "Eureka Pagos",
+"boss": "King Arthro",
+"weak": "",
+"at": "( X: 8.5, Y: 15.5)",
+"spawn": "Lv. 34 Val Snipper",
+"lv": "29",
+"kind": "NM",
+"light": "Gentle (36%)"
+},
+"Brothers": {
+"area": "Eureka Pagos",
+"boss": "Mindertaur , Eldertaur",
+"weak": "",
+"at": "( X: 14, Y: 18.5)",
+"spawn": "Lv. 35 Lab Minotaur",
+"lv": "30",
+"kind": "NM",
+"light": "Bright (50+%?)"
+},
+"Apocalypse Cow": {
+"area": "Eureka Pagos",
+"boss": "Holy Cow",
+"weak": "",
+"at": "( X: 26, Y: 17.1)",
+"spawn": "Lv. 36 Elder Buffalo",
+"lv": "31",
+"kind": "NM",
+"light": "Gentle (45%)"
+},
+"Curiouser and Curiouser": {
+"area": "Eureka Pagos",
+"boss": "Elemental Conflict",
+"weak": "",
+"at": "( X: 21.1, Y: 21.4)",
+"spawn": "",
+"lv": "31",
+"kind": "NM",
+"light": "None (0%)"
+},
+"Third Impact": {
+"area": "Eureka Pagos",
+"boss": "Hadhayosh",
+"weak": "",
+"at": "( X: 31.4, Y: 19)",
+"spawn": "Lv. 37 Lesser Void Dragon",
+"lv": "32",
+"kind": "NM",
+"light": "Bright (50%)"
+},
+"Eye of Horus": {
+"area": "Eureka Pagos",
+"boss": "Horus",
+"weak": "",
+"at": "( X: 25.5, Y: 20.2)",
+"spawn": "Lv. 38 Void Vouivre",
+"lv": "33",
+"kind": "NM",
+"light": "None (0%)"
+},
+"Eye Scream for Ice Cream": {
+"area": "Eureka Pagos",
+"boss": "Arch Angra Mainyu",
+"weak": "",
+"at": "( X: 24.4, Y: 25.3)",
+"spawn": "Lv. 39 Gawper",
+"lv": "34",
+"kind": "NM",
+"light": "Gentle (45%)"
+},
+"Louhi on Ice": {
+"area": "Eureka Pagos",
+"boss": "Louhi",
+"weak": "",
+"at": "( X: 35.7, Y: 18.7)",
+"spawn": "Lv. 40 Val Corpse",
+"lv": "35",
+"kind": "NM",
+"light": "Bright (50%)"
+},
+"Cassie and the Copycats": {
+"area": "Eureka Pagos",
+"boss": "Copycat Cassie",
+"weak": "",
+"at": "( X: 22, Y: 14.5)",
+"spawn": "Lv. 40 Ameretat",
+"lv": "35",
+"kind": "NM",
+"light": "None (0%)"
+},
+"Medias Res": {
+"area": "Eureka Pyros",
+"boss": "Leucosia",
+"weak": "",
+"at": "( X: 26.6, Y: 26.3)",
+"spawn": "Lv. 40 Pyros Bhoot",
+"lv": "35",
+"kind": "NM",
+"light": "Feeble (17%)"
+},
+"We're All Mad Here": {
+"area": "Eureka Pyros",
+"boss": "Elemental Conflict",
+"weak": "",
+"at": "( X: 24.2, Y: 26.3)",
+"spawn": "",
+"lv": "35",
+"kind": "NM",
+"light": "None (0%)"
+},
+"High Voltage": {
+"area": "Eureka Pyros",
+"boss": "Flauros",
+"weak": "",
+"at": "( X: 29.1, Y: 29.6)",
+"spawn": "Lv. 41 Thunderstorm Sprite",
+"lv": "36",
+"kind": "NM",
+"light": "Feeble (19%)"
+},
+"On the Nonexistent": {
+"area": "Eureka Pyros",
+"boss": "The Sophist",
+"weak": "",
+"at": "( X: 31.9, Y: 32)",
+"spawn": "Lv. 42 Pyros Apanda",
+"lv": "37",
+"kind": "NM",
+"light": "Feeble (17.7%)"
+},
+"Creepy Doll": {
+"area": "Eureka Pyros",
+"boss": "Graffiacane",
+"weak": "",
+"at": "( X: 23.7, Y: 37.3)",
+"spawn": "Lv. 43 Valking",
+"lv": "38",
+"kind": "NM",
+"light": "Feeble (19.13%)"
+},
+"Quiet, Please": {
+"area": "Eureka Pyros",
+"boss": "Askalaphos",
+"weak": "",
+"at": "( X: 19.3, Y: 28.1)",
+"spawn": "Lv. 44 Overdue Tome",
+"lv": "39",
+"kind": "NM",
+"light": "Bright (71%)"
+},
+"Up and Batym": {
+"area": "Eureka Pyros",
+"boss": "Grand Duke Batym",
+"weak": "",
+"at": "( X: 17.9, Y: 14.3)",
+"spawn": "Lv. 45 Dark Troubadour",
+"lv": "40",
+"kind": "NM",
+"light": "Feeble (19%)"
+},
+"Rondo Aetolus": {
+"area": "Eureka Pyros",
+"boss": "Aetolus",
+"weak": "",
+"at": "( X: 10.2, Y: 14)",
+"spawn": "Lv. 46 Islandhander",
+"lv": "41",
+"kind": "NM",
+"light": "Feeble (21%)"
+},
+"Scorchpion King": {
+"area": "Eureka Pyros",
+"boss": "Lesath",
+"weak": "",
+"at": "( X: 12.8, Y: 11.5)",
+"spawn": "Lv. 47 Bird Eater",
+"lv": "42",
+"kind": "NM",
+"light": "Feeble (23.67%)"
+},
+"Burning Hunger": {
+"area": "Eureka Pyros",
+"boss": "Eldthurs",
+"weak": "",
+"at": "( X: 15.4, Y: 6.6)",
+"spawn": "Lv. 48 Pyros Crab",
+"lv": "43",
+"kind": "NM",
+"light": "Feeble (21%)"
+},
+"Dry Iris": {
+"area": "Eureka Pyros",
+"boss": "Iris",
+"weak": "",
+"at": "( X: 21.5, Y: 11.9)",
+"spawn": "Lv. 49 Northern Swallow",
+"lv": "44",
+"kind": "NM",
+"light": "Feeble (23%)"
+},
+"Thirty Whacks": {
+"area": "Eureka Pyros",
+"boss": "Lamebrix Strikebocks",
+"weak": "",
+"at": "( X: 22, Y: 7.9)",
+"spawn": "Lv. 50 Illuminati Escapee",
+"lv": "45",
+"kind": "NM",
+"light": "Feeble (24.83%)"
+},
+"Uncommon Nonsense": {
+"area": "Eureka Pyros",
+"boss": "Elemental Conflict",
+"weak": "",
+"at": "( X: 24.9, Y: 10.9)",
+"spawn": "",
+"lv": "46",
+"kind": "NM",
+"light": "None (0%)"
+},
+"Put Up Your Dux": {
+"area": "Eureka Pyros",
+"boss": "Dux",
+"weak": "",
+"at": "( X: 27, Y: 9.1)",
+"spawn": "Lv. 51 Matanga Castaway",
+"lv": "46",
+"kind": "NM",
+"light": "Brilliant (104%)"
+},
+"You Do Know Jack": {
+"area": "Eureka Pyros",
+"boss": "The Weeping Willow , Lumber Jack",
+"weak": "",
+"at": "( X: 30, Y: 11.6)",
+"spawn": "Lv. 52 Pyros Treant",
+"lv": "47",
+"kind": "NM",
+"light": "Gentle (31.5%)"
+},
+"Mister Bright-eyes": {
+"area": "Eureka Pyros",
+"boss": "Glaukopis",
+"weak": "",
+"at": "( X: 31.6, Y: 14.9)",
+"spawn": "Lv. 53 Val Skatene",
+"lv": "48",
+"kind": "NM",
+"light": "Gentle (25%)"
+},
+"Haunter of the Dark": {
+"area": "Eureka Pyros",
+"boss": "Ying-Yang",
+"weak": "",
+"at": "( X: 11, Y: 34)",
+"spawn": "Lv. 54 Pyros Hecteyes",
+"lv": "49",
+"kind": "NM",
+"light": "Gentle (27.25%)"
+},
+"Lost Epic": {
+"area": "Eureka Pyros",
+"boss": "Penthesilea",
+"weak": "",
+"at": "( X: 35.5, Y: 6.1)",
+"spawn": "Lv. 55 Val Bloodglider",
+"lv": "50",
+"kind": "NM",
+"light": "Gentle (28%)"
+},
+"Heavens' Warg": {
+"area": "Eureka Pyros",
+"boss": "Skoll",
+"weak": "",
+"at": "( X: 23.9, Y: 30)",
+"spawn": "Lv. 55 Pyros Shuck",
+"lv": "50",
+"kind": "NM",
+"light": "Gentle (30.4%)"
+},
+"Drink Me": {
+"area": "Eureka Hydatos",
+"boss": "Elemental Conflict",
+"weak": "",
+"at": "( X: 13.8, Y: 21.6)",
+"spawn": "",
+"lv": "50",
+"kind": "NM",
+"light": ""
+},
+"I Ink, Therefore I Am": {
+"area": "Eureka Hydatos",
+"boss": "Khalamari",
+"weak": "",
+"at": "( X: 10.8, Y: 25.6)",
+"spawn": "Lv. 55 Xzomit",
+"lv": "50",
+"kind": "NM",
+"light": ""
+},
+"From Tusk till Dawn": {
+"area": "Eureka Hydatos",
+"boss": "Stegodon",
+"weak": "",
+"at": "( X: 10.4, Y: 17.2)",
+"spawn": "Lv. 56 Hydatos Primelephas",
+"lv": "51",
+"kind": "NM",
+"light": ""
+},
+"Bullheaded Berserker": {
+"area": "Eureka Hydatos",
+"boss": "Molech",
+"weak": "",
+"at": "( X: 8.1, Y: 21.8)",
+"spawn": "Lv. 57 Val Nullchu",
+"lv": "52",
+"kind": "NM",
+"light": ""
+},
+"Mad, Bad, and Fabulous to Know": {
+"area": "Eureka Hydatos",
+"boss": "Piasa",
+"weak": "",
+"at": "( X: 7.1, Y: 14.5)",
+"spawn": "Lv. 58 Vivid Gastornis",
+"lv": "53",
+"kind": "NM",
+"light": ""
+},
+"Fearful Symmetry": {
+"area": "Eureka Hydatos",
+"boss": "Frostmane",
+"weak": "",
+"at": "( X: 8.2, Y: 26.1)",
+"spawn": "Lv. 59 Northern Tiger",
+"lv": "54",
+"kind": "NM",
+"light": ""
+},
+"Crawling Chaos": {
+"area": "Eureka Hydatos",
+"boss": "Daphne",
+"weak": "",
+"at": "( X: 24.2, Y: 19)",
+"spawn": "Lv. 60 Dark Void Monk",
+"lv": "55",
+"kind": "NM",
+"light": ""
+},
+"Duty-free": {
+"area": "Eureka Hydatos",
+"boss": "King Goldemar",
+"weak": "",
+"at": "( X: 29.1, Y: 23)",
+"spawn": "Lv. 61 Hydatos Wraith",
+"lv": "56",
+"kind": "NM",
+"light": ""
+},
+"Leukewarm Reception": {
+"area": "Eureka Hydatos",
+"boss": "Leuke",
+"weak": "",
+"at": "( X: 37.4, Y: 26.4)",
+"spawn": "Lv. 62 Tigerhawk",
+"lv": "57",
+"kind": "NM",
+"light": ""
+},
+"Robber Barong": {
+"area": "Eureka Hydatos",
+"boss": "Barong",
+"weak": "",
+"at": "( X: 32.2, Y: 25.3)",
+"spawn": "Lv. 63 Laboratory Lion",
+"lv": "58",
+"kind": "NM",
+"light": ""
+},
+"Stone-cold Killer": {
+"area": "Eureka Hydatos",
+"boss": "Ceto",
+"weak": "",
+"at": "( X: 36.3, Y: 14)",
+"spawn": "Lv. 64 Hydatos Delphine",
+"lv": "59",
+"kind": "NM",
+"light": ""
+},
+"The Baldesion Arsenal: Expedition Support": {
+"area": "Eureka Hydatos",
+"boss": "Tristitia",
+"weak": "",
+"at": "( X: 18.7, Y: 28.4)",
+"spawn": "",
+"lv": "60",
+"kind": "NM",
+"light": ""
+},
+"I Don't Want to Believe": {
+"area": "Eureka Hydatos",
+"boss": "Ovni",
+"weak": "",
+"at": "( X: 26.3, Y: 29.2)",
+"spawn": "",
+"lv": "60",
+"kind": "NM",
+"light": ""
+},
+"Crystalline Provenance": {
+"area": "Eureka Hydatos",
+"boss": "Provenance Watcher",
+"weak": "",
+"at": "( X: 32.8, Y: 19.5)",
+"spawn": "Lv. 65 Crystal Claw",
+"lv": "60",
+"kind": "NM",
+"light": ""
+}
+}
+}

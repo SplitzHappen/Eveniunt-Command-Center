@@ -1,0 +1,25 @@
+sinus-ardorum P001 r36165 D -x0 [low] tgt 5760/5760 | static 97%±6 q8378 c100% 18st | heuristic 93%±9 q6658 c100% 16st | solver 100%±0 q6417 c100% 16.7st 11.5ms est1
+sinus-ardorum P004 r36170 D -x0 [low] tgt 600/600 | static 100%±0 q1585 c100% 21st | heuristic 100%±0 q971 c100% 18.8st | solver 100%±0 q770 c100% 16st 14.5ms est1
+sinus-ardorum P007 r36173 C -x0 [low] tgt 5210/7440 | static 100%±0 q8897 c100% 21st | heuristic 100%±0 q6201 c100% 13.6st | solver 100%±0 q5950 c100% 14.1st 10.3ms est1
+sinus-ardorum P010 r36179 C -x0 [low] tgt 14870/21240 | static 30%±16 q14661 c100% 21st | heuristic 30%±16 q14240 c100% 19.8st | solver 50%±18 q13504 c100% 25.3st 11.9ms est0.438
+sinus-ardorum P013 r36183 B MaterialMiraclex3 [low] tgt 8400/8400 | static 0%±0 q5069 c100% 17.2st | heuristic 7%±9 q4550 c100% 19.3st | solver 100%±0 q9515 c100% 18.7st 13.5ms est0.688
+sinus-ardorum P016 r36186 B MaterialMiraclex3 [low] tgt 9360/9360 | static 20%±14 q5995 c100% 15.9st | heuristic 100%±0 q9963 c100% 20.2st | solver 100%±0 q10280 c100% 24.2st 14.7ms est1
+sinus-ardorum P019 r36189 B -x0 [low] tgt 8400/8400 | static 0%±0 q2120 c100% 24st | heuristic 0%±0 q4103 c100% 27.8st | solver 10%±11 q4667 c100% 32.9st 18.2ms est0
+sinus-ardorum P021 r36192 A MaterialMiraclex3 [low] tgt 700/700 | static 0%±0 q1743 c0% 18st | heuristic 0%±0 q409 c0% 30st | solver 40%±18 q886 c43% 35.7st 20.8ms est0.063
+sinus-ardorum P037 r36209 A -x0 [low] tgt 8610/12300 | static 7%±9 q7236 c100% 22st | heuristic 17%±13 q6625 c100% 19.6st | solver 73%±16 q8932 c97% 29st 15.7ms est0.438
+sinus-ardorum P040 r36212 EX MaterialMiraclex2 [low] tgt 1100/1100 | static 0%±0 q2476 c0% 18.7st | heuristic 0%±0 q858 c0% 26.8st | solver 0%±0 q1316 c0% 27.6st 9.5ms est0
+sinus-ardorum P043 r36215 EX+ MaterialMiraclex2 [low] tgt 15390/17100 | static 0%±0 q1120 c100% 16.9st | heuristic 0%±0 q6134 c100% 27.3st | solver 7%±9 q6858 c100% 29.6st 21ms est0
+sinus-ardorum P046 r36218 EX+ -x0 [low] tgt 20880/23200 | static 0%±0 q14396 c100% 25st | heuristic 7%±9 q14921 c100% 22.8st | solver 17%±13 q15748 c100% 29.4st 12.3ms est0.188
+sinus-ardorum P054 r36672 EX -x0 [low] tgt 11800/11800 | static 3%±6 q6373 c100% 23st | heuristic 17%±13 q8751 c100% 22.6st | solver 20%±14 q8133 c100% 29.6st 13.8ms est0.25
+phaenna P057 r36951 D -x0 [low] tgt 4080/4080 | static 100%±0 q7398 c100% 16st | heuristic 100%±0 q5166 c100% 11.6st | solver 100%±0 q4659 c100% 10.9st 7.7ms est1
+phaenna P060 r36956 C -x0 [low] tgt 480/480 | static 100%±0 q2764 c100% 17st | heuristic 100%±0 q798 c100% 13.3st | solver 100%±0 q629 c100% 10.5st 9.3ms est1
+phaenna P063 r36960 C -x0 [low] tgt 3530/5040 | static 100%±0 q4911 c100% 21st | heuristic 73%±16 q3808 c100% 17.2st | solver 97%±6 q3956 c100% 18.8st 12.3ms est1
+phaenna P066 r36966 C -x0 [low] tgt 7820/11160 | static 100%±0 q11172 c100% 20st | heuristic 100%±0 q8851 c100% 15.1st | solver 97%±6 q8668 c100% 17.8st 10.8ms est1
+phaenna P069 r36969 B -x0 [low] tgt 10200/10200 | static 97%±6 q13986 c100% 18st | heuristic 100%±0 q11167 c100% 14.8st | solver 100%±0 q11353 c100% 17st 9ms est1
+phaenna P072 r36972 B MaterialMiraclex3 [low] tgt 6220/8880 | static 60%±18 q6497 c100% 11.6st | heuristic 100%±0 q7002 c100% 15.3st | solver 100%±0 q6957 c100% 14.1st 9.7ms est1
+phaenna P073 r36975 B MaterialMiraclex1 [low] tgt 960/960 | static 37%±17 q688 c100% 18.7st | heuristic 100%±0 q1338 c100% 16st | solver 100%±0 q1099 c100% 13.4st 12ms est1
+phaenna P077 r36978 A -x0 [low] tgt 10500/10500 | static 97%±6 q12528 c100% 24st | heuristic 93%±9 q11995 c100% 19.6st | solver 97%±6 q11535 c100% 22.9st 11.6ms est0.938
+phaenna P088 r36989 EX -x0 [low] tgt 18000/18000 | static 0%±0 q5556 c100% 26st | heuristic 0%±0 q7064 c100% 22.7st | solver 0%±0 q8188 c100% 25.9st 13.7ms est0
+phaenna P092 r36993 A -x0 [low] tgt 5180/7400 | static 97%±6 q7379 c100% 17st | heuristic 93%±9 q6008 c100% 17.8st | solver 100%±0 q5888 c100% 16.7st 11.5ms est1
+phaenna P095 r36996 EX MaterialMiraclex1 [low] tgt 13600/13600 | static 0%±0 q2673 c100% 16.8st | heuristic 3%±6 q9614 c100% 27.8st | solver 10%±11 q8339 c100% 28.6st 16.9ms est0.063
+done in 69.773s

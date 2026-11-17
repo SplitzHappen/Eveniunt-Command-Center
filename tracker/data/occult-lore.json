@@ -1,0 +1,245 @@
+{
+"_about": "How each Occult Crescent record is unlocked (quest, survey point, duty or FATE), from the Console Games Wiki's Occult Record table, read 2026-11-08; facts only.",
+"records": {
+"1": {
+"title": "Ketenramm Blaufystsyn",
+"unlocked": "One Last Hurrah"
+},
+"2": {
+"title": "The Phantom Village",
+"unlocked": "Survey Point, Phantom Village (6.1, 4.9)"
+},
+"3": {
+"title": "The Archive",
+"unlocked": "The Phantom Village"
+},
+"4": {
+"title": "Iris",
+"unlocked": "Unfamiliar Territory"
+},
+"5": {
+"title": "The Expedition Base Camp",
+"unlocked": "Survey Point, South Horn (38.6, 7.6)"
+},
+"6": {
+"title": "Phantom Jobs",
+"unlocked": "The Ancient Arts of War"
+},
+"7": {
+"title": "The Lost Citadel",
+"unlocked": "Survey Point, South Horn (31.4, 17.0)"
+},
+"8": {
+"title": "Trade Tortoise",
+"unlocked": "Notes dropped from Cursed Concern"
+},
+"9": {
+"title": "The Vanishing Slope",
+"unlocked": "Survey Point, South Horn (20.2, 12.2)"
+},
+"10": {
+"title": "Nymian Petalodus",
+"unlocked": "Notes dropped from Shark Attack"
+},
+"11": {
+"title": "Persistent Pot",
+"unlocked": "Notes dropped from Persistent Pots / Pleading Pots / Daylight Pottery / In a Pot of Bother"
+},
+"12": {
+"title": "Heathcliff",
+"unlocked": "Survey Point, South Horn (23.2, 21.5)"
+},
+"13": {
+"title": "The Fell Warren",
+"unlocked": "Survey Point, South Horn (10.2, 22.5)"
+},
+"14": {
+"title": "Mythic Idol",
+"unlocked": "Notes dropped from From Times Bygone"
+},
+"15": {
+"title": "The Shadowed City",
+"unlocked": "Survey Point, South Horn (24.2, 32.8)"
+},
+"16": {
+"title": "Black Chocobo",
+"unlocked": "Notes dropped from The Black Regiment"
+},
+"17": {
+"title": "Crescent Berserker",
+"unlocked": "Notes dropped from The Unbridled"
+},
+"18": {
+"title": "Eldergrowth",
+"unlocked": "Survey Point, South Horn (18.5, 33.8)"
+},
+"19": {
+"title": "The Abandoned Ascent",
+"unlocked": "Survey Point, South Horn (15.6, 29.5)"
+},
+"20": {
+"title": "Cloister Demon",
+"unlocked": "Notes dropped from Calamity Bound"
+},
+"21": {
+"title": "The Silent Streets",
+"unlocked": "Survey Point, South Horn (36.6, 33.7)"
+},
+"22": {
+"title": "The Ancient Stoneworks",
+"unlocked": "Survey Point, South Horn (36.0, 22.6)"
+},
+"23": {
+"title": "The Wanderer's Haven",
+"unlocked": "Survey Point, South Horn (3.8, 5.8)"
+},
+"24": {
+"title": "The Brazier",
+"unlocked": "Survey Point, South Horn (8.7, 35.9)"
+},
+"25": {
+"title": "The Island's Architect",
+"unlocked": "Past and Crescent"
+},
+"26": {
+"title": "Demon Tablet",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Demon Tablet in The Forked Tower: Blood, or buy them from the Expedition Antiquarian in North Horn"
+},
+"27": {
+"title": "Dead Stars",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Dead Stars in The Forked Tower: Blood, or buy them from the Expedition Antiquarian in North Horn"
+},
+"28": {
+"title": "Marble Dragon",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Marble Dragon in The Forked Tower: Blood, or buy them from the Expedition Antiquarian in North Horn"
+},
+"29": {
+"title": "Magitaur",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Magitaur in The Forked Tower: Blood, or buy them from the Expedition Antiquarian in North Horn"
+},
+"30": {
+"title": "The Secluded Stacks",
+"unlocked": "Survey Point, The Forked Tower: Blood, Secluded Stacks (20.2, 12.2) (final room of raid)"
+},
+"31": {
+"title": "North Horn Base Camp",
+"unlocked": "Survey Point, North Horn (39.1, 38.0)"
+},
+"32": {
+"title": "The Crown of Karnak",
+"unlocked": "Survey Point, North Horn (36.4, 32.2)"
+},
+"33": {
+"title": "Arbatel",
+"unlocked": "Notes dropped from Forbidden Folios"
+},
+"34": {
+"title": "Tiny Mage",
+"unlocked": "Notes dropped from Tiny Terror"
+},
+"35": {
+"title": "Algol",
+"unlocked": "Notes dropped from Imbalanced Diet"
+},
+"36": {
+"title": "Shadowdeep",
+"unlocked": "Survey Point, North Horn (27.6, 26.3)"
+},
+"37": {
+"title": "Labyrinth of the Damned",
+"unlocked": "Survey Point, North Horn (39.7, 22.6)"
+},
+"38": {
+"title": "Metamorph",
+"unlocked": "Notes dropped from Accept No Imitators"
+},
+"39": {
+"title": "Panoptical Pillar",
+"unlocked": "Survey Point, North Horn (27.0, 14.0)"
+},
+"40": {
+"title": "Sinking Sanctuary",
+"unlocked": "Survey Point, North Horn (40.0, 3.9)"
+},
+"41": {
+"title": "Pallmagia",
+"unlocked": "Notes dropped from Appalling Behavior"
+},
+"42": {
+"title": "Phantom Necromancer",
+"unlocked": "Notes dropped from Dark Artistry"
+},
+"43": {
+"title": "The Marrowood",
+"unlocked": "Survey Point, North Horn (17.5, 5.2)"
+},
+"44": {
+"title": "The Abductor",
+"unlocked": "Notes dropped from Lost on the Wind"
+},
+"45": {
+"title": "Suspended Masonry",
+"unlocked": "Survey Point, North Horn (11.1, 38.8)"
+},
+"46": {
+"title": "The Windward Watch",
+"unlocked": "Survey Point, North Horn (4.8, 36.4)"
+},
+"47": {
+"title": "Shrine of Spheres",
+"unlocked": "Survey Point, North Horn (3.3, 24.4)"
+},
+"48": {
+"title": "Claret Dragon",
+"unlocked": "Notes dropped from Cursed Resurgence"
+},
+"49": {
+"title": "Moldering Streets",
+"unlocked": "Survey Point, North Horn (7.4, 14.0)"
+},
+"50": {
+"title": "The Alabaster Blade",
+"unlocked": "Notes dropped from Quarried Away"
+},
+"51": {
+"title": "The Moldering Lake",
+"unlocked": "Survey Point, North Horn (4.1, 3.2)"
+},
+"52": {
+"title": "Unhallowed Hamlet",
+"unlocked": "Survey Point, North Horn (21.3, 19.7)"
+},
+"53": {
+"title": "Conjured Calofisteri",
+"unlocked": "Notes dropped from Doubled Trouble"
+},
+"54": {
+"title": "Dark Territory",
+"unlocked": "Survey Point, North Horn (22.7, 23.9)"
+},
+"55": {
+"title": "Two-headed Aevis",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Two-headed Aevis in The Forked Tower: Magic or The Forked Tower: Magic (Extreme)"
+},
+"56": {
+"title": "Sword Dancer",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Sword Dancer in The Forked Tower: Magic or The Forked Tower: Magic (Extreme)"
+},
+"57": {
+"title": "Necrophobia",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating Necrophobia in The Forked Tower: Magic or The Forked Tower: Magic (Extreme)"
+},
+"58": {
+"title": "The Index",
+"unlocked": "Notes obtained from a personal spoils coffer after defeating the Index in The Forked Tower: Magic or The Forked Tower: Magic (Extreme)"
+},
+"59": {
+"title": "The Archive",
+"unlocked": "Wisdom's End"
+},
+"60": {
+"title": "Concealed Collection",
+"unlocked": "Survey Point, The Forked Tower: Magic or The Forked Tower: Magic (Extreme), Concealed Collection (11.2, 10.9) (final room of raid)"
+}
+}
+}

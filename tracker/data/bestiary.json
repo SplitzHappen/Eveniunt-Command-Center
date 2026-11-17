@@ -1,0 +1,355 @@
+{
+"_about": "Master's Bestiary: which monster each beast is tamed from, where, at what level, and the Kornago gourd needed; from the Console Games Wiki's bestiary table, read 2026-11-08; facts only.",
+"beasts": {
+"Cu Sith": {
+"from": "",
+"where": "",
+"level": "1",
+"gourd": "Cu Sith Gourd from Strangers in the Wood",
+"class": "Beastkin"
+},
+"Squirrel": {
+"from": "Ground Squirrel",
+"where": "Central Shroud (24, 16)",
+"level": "1",
+"gourd": "—",
+"class": "Beastkin"
+},
+"Lamb": {
+"from": "Lost Lamb",
+"where": "Middle La Noscea (22, 26)",
+"level": "3",
+"gourd": "—",
+"class": "Beastkin"
+},
+"Pugil": {
+"from": "Pugil",
+"where": "Middle La Noscea (22, 22)",
+"level": "4",
+"gourd": "—",
+"class": "Wavekin"
+},
+"Opo-opo": {
+"from": "Opo-opo",
+"where": "North Shroud (27, 24)",
+"level": "5",
+"gourd": "—",
+"class": "Beastkin"
+},
+"Dodo": {
+"from": "Wild Dodo",
+"where": "Lower La Noscea (29, 21)",
+"level": "4",
+"gourd": "—",
+"class": "Cloudkin"
+},
+"Coblyn": {
+"from": "Rusty Coblyn",
+"where": "Western Thanalan (21, 26)",
+"level": "6",
+"gourd": "—",
+"class": "Soulkin"
+},
+"Diremite": {
+"from": "Diremite",
+"where": "Central Shroud (20, 19)",
+"level": "10",
+"gourd": "—",
+"class": "Vilekin"
+},
+"Megalocrab": {
+"from": "Megalocrab",
+"where": "Middle La Noscea (16, 14)",
+"level": "10",
+"gourd": "—",
+"class": "Wavekin"
+},
+"Wespe": {
+"from": "Huge Hornet",
+"where": "Central Thanalan (20, 27)",
+"level": "1",
+"gourd": "—",
+"class": "Vilekin"
+},
+"Vulture": {
+"from": "Nesting Buzzard",
+"where": "Western Thanalan (21, 25)",
+"level": "6",
+"gourd": "—",
+"class": "Cloudkin"
+},
+"Mandragora": {
+"from": "Tiny Mandragora",
+"where": "Middle La Noscea (23, 18)",
+"level": "5",
+"gourd": "—",
+"class": "Seedkin"
+},
+"Geshunpest": {
+"from": "Geshunpest",
+"where": "Central Shroud (19, 28)",
+"level": "14",
+"gourd": "—",
+"class": "Ashkin"
+},
+"Puk": {
+"from": "Puk Hatchling",
+"where": "Middle La Noscea (23, 19)",
+"level": "4",
+"gourd": "—",
+"class": "Scalekin"
+},
+"Crab": {
+"from": "Thickshell",
+"where": "Western Thanalan (15, 15)",
+"level": "13",
+"gourd": "Crab Gourd ; requires level 30 quest Into the Crucible",
+"class": "Wavekin"
+},
+"Mantis": {
+"from": "Killer Mantis",
+"where": "Western La Noscea (22, 23)",
+"level": "16",
+"gourd": "—",
+"class": "Vilekin"
+},
+"Slime": {
+"from": "Ichorous Ire",
+"where": "Copperbell Mines (second boss)",
+"level": "17",
+"gourd": "Slime Gourd ; requires level 30 quest Into the Crucible",
+"class": "Ashkin"
+},
+"Dullahan": {
+"from": "Doctore",
+"where": "Halatali (start of dungeon)",
+"level": "20",
+"gourd": "Dullahan Gourd ; requires level 30 quest Into the Crucible",
+"class": "Soulkin"
+},
+"Bat": {
+"from": "Cave Bat",
+"where": "Lower La Noscea (27, 16)",
+"level": "7",
+"gourd": "—",
+"class": "Cloudkin"
+},
+"Flying Trap": {
+"from": "Roselet",
+"where": "Central Shroud (23, 26)",
+"level": "10",
+"gourd": "—",
+"class": "Seedkin"
+},
+"Ziz": {
+"from": "Rothlyt Pelican",
+"where": "Western La Noscea (23, 24)",
+"level": "16",
+"gourd": "—",
+"class": "Scalekin"
+},
+"Sabotender": {
+"from": "Cactuar",
+"where": "Western Thanalan (28, 24)",
+"level": "3",
+"gourd": "—",
+"class": "Seedkin"
+},
+"Golem": {
+"from": "Sandstone Golem",
+"where": "Southern Thanalan (24, 12)",
+"level": "29",
+"gourd": "—",
+"class": "Soulkin"
+},
+"Apkallu": {
+"from": "Apkallu",
+"where": "Eastern La Noscea (27, 35)",
+"level": "30",
+"gourd": "—",
+"class": "Cloudkin"
+},
+"Adamantoise": {
+"from": "Giant Tortoise",
+"where": "Central Thanalan (24, 30)",
+"level": "12",
+"gourd": "—",
+"class": "Scalekin"
+},
+"Buffalo": {
+"from": "Wounded Aurochs",
+"where": "Middle La Noscea (18, 17)",
+"level": "8",
+"gourd": "—",
+"class": "Beastkin"
+},
+"Uragnite": {
+"from": "Scaphite",
+"where": "Western Thanalan (17, 14)",
+"level": "14",
+"gourd": "—",
+"class": "Wavekin"
+},
+"Worm": {
+"from": "Sandworm",
+"where": "Southern Thanalan (16, 34)",
+"level": "31",
+"gourd": "Worm Gourd ; requires level 30 quest Into the Crucible",
+"class": "Vilekin"
+},
+"Spriggan": {
+"from": "Spriggan Graverobber",
+"where": "Central Thanalan (17, 23)",
+"level": "7",
+"gourd": "—",
+"class": "Soulkin"
+},
+"Goobbue": {
+"from": "Mossless Goobbue",
+"where": "Lower La Noscea (25, 26)",
+"level": "12",
+"gourd": "—",
+"class": "Beastkin"
+},
+"Gigantoad": {
+"from": "Rivertoad",
+"where": "Lower La Noscea (25, 23)",
+"level": "4",
+"gourd": "—",
+"class": "Wavekin"
+},
+"Colibri": {
+"from": "Colibri",
+"where": "Eastern La Noscea (30, 25)",
+"level": "33",
+"gourd": "—",
+"class": "Cloudkin"
+},
+"Coeurl": {
+"from": "Master Coeurl",
+"where": "Upper La Noscea (9, 21)",
+"level": "24",
+"gourd": "—",
+"class": "Beastkin"
+},
+"Raptor": {
+"from": "Anole",
+"where": "Central Shroud (31, 21)",
+"level": "9",
+"gourd": "—",
+"class": "Scalekin"
+},
+"Drake": {
+"from": "Sundrake",
+"where": "Southern Thanalan (25, 38)",
+"level": "32",
+"gourd": "Drake Gourd ; requires level 30 quest Into the Crucible",
+"class": "Scalekin"
+},
+"Treant": {
+"from": "Treant Sapling",
+"where": "Central Shroud (27, 15)",
+"level": "12",
+"gourd": "—",
+"class": "Seedkin"
+},
+"Antling": {
+"from": "Myrmidon Princess",
+"where": "Cutter's Cry (first boss)",
+"level": "38",
+"gourd": "Antling Gourd ; requires level 40 quest Gobsmacked",
+"class": "Vilekin"
+},
+"Chimera": {
+"from": "Chimera",
+"where": "Cutter's Cry (final boss)",
+"level": "38",
+"gourd": "Chimera Gourd ; requires level 40 quest Gobsmacked",
+"class": "Beastkin"
+},
+"Morbol": {
+"from": "Stroper",
+"where": "Central Shroud (13, 22)",
+"level": "31",
+"gourd": "—",
+"class": "Seedkin"
+},
+"Ghost": {
+"from": "Bogy",
+"where": "Middle La Noscea (20, 19)",
+"level": "7",
+"gourd": "—",
+"class": "Ashkin"
+},
+"Salamander": {
+"from": "Black Eft",
+"where": "Central Shroud (26, 21)",
+"level": "6",
+"gourd": "—",
+"class": "Wavekin"
+},
+"Cobra": {
+"from": "Lake Cobra",
+"where": "Mor Dhona (25, 13)",
+"level": "45",
+"gourd": "—",
+"class": "Scalekin"
+},
+"Hydra": {
+"from": "Hydra",
+"where": "A Relic Reborn: The Hydra (trial boss)",
+"level": "50",
+"gourd": "Hydra Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Scalekin"
+},
+"Damselfly": {
+"from": "Gadfly",
+"where": "The Lost City of Amdapor (second section)",
+"level": "50",
+"gourd": "Damselfly Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Vilekin"
+},
+"Rotting Goobbue": {
+"from": "Decaying Gourmand",
+"where": "The Lost City of Amdapor (first boss)",
+"level": "50",
+"gourd": "Rotting Goobbue Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Ashkin"
+},
+"Zu": {
+"from": "Zu",
+"where": "Pharos Sirius (second boss)",
+"level": "50",
+"gourd": "Zu Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Cloudkin"
+},
+"Ice Golem": {
+"from": "Wandil",
+"where": "Snowcloak (first boss)",
+"level": "50",
+"gourd": "Ice Golem Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Soulkin"
+},
+"Karlabos": {
+"from": "Karlabos",
+"where": "Sastasha (Hard) (first boss)",
+"level": "50",
+"gourd": "Karlabos Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Wavekin"
+},
+"Rafflesia": {
+"from": "Rafflesia",
+"where": "The Second Coil of Bahamut - Turn 1 (final boss)",
+"level": "50",
+"gourd": "Rafflesia Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Seedkin"
+},
+"Behemoth": {
+"from": "King Behemoth",
+"where": "The Labyrinth of the Ancients (third boss)",
+"level": "50",
+"gourd": "Behemoth Gourd ; requires level 50 quest A Beastmaster's Path",
+"class": "Beastkin"
+}
+}
+}

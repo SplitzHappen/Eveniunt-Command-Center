@@ -1,0 +1,32 @@
+[package]
+name = "atelier-bridge"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+description = "Eveniunt Atelier: JSON bridge exposing the Raphael crafting solver (KonaeAkira/raphael-rs, Apache-2.0) to WebAssembly"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+raphael-sim = { git = "https://github.com/KonaeAkira/raphael-rs", rev = "723b17ea7d1a719bba212944ebd357fe36b4ac08", features = ["serde"] }
+raphael-solver = { git = "https://github.com/KonaeAkira/raphael-rs", rev = "723b17ea7d1a719bba212944ebd357fe36b4ac08", features = ["serde"] }
+raphael-data = { git = "https://github.com/KonaeAkira/raphael-rs", rev = "723b17ea7d1a719bba212944ebd357fe36b4ac08", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+strum = "0.27"
+wasm-bindgen = "=0.2.100"
+js-sys = "0.3"
+ron = "0.11"
+wasm-bindgen-rayon = { version = "1.3", features = ["no-bundler"], optional = true }
+
+[features]
+# Multi-core build for the hosted app (needs nightly, atomics and cross-origin isolation).
+threads = ["dep:wasm-bindgen-rayon"]
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+overflow-checks = false

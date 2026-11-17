@@ -1,0 +1,1461 @@
+{
+ "generated": "2026-11-06T06:20:20.514Z",
+ "options": {
+  "n": 30,
+  "rollouts": 400,
+  "minRollouts": 16,
+  "env": "teamcraft",
+  "mode": "reliable",
+  "policies": [
+   "static",
+   "heuristic",
+   "solver"
+  ]
+ },
+ "seconds": 69.773,
+ "rows": [
+  {
+   "scenario": {
+    "key": "P001||0",
+    "planet": "sinus-ardorum",
+    "profile": "P001",
+    "mission": 1,
+    "missionName": "Multi-purpose Fiberboard",
+    "recipe": 36165,
+    "rank": "D",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 5760,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 5760,
+   "progress": 4026,
+   "durability": 40,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 18,
+   "staticNormalQuality": 7019,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 8378,
+     "meanSteps": 18,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.9333333333333333,
+     "ci95": 0.08926232667235916,
+     "completionRate": 1,
+     "meanQuality": 6658,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 6417,
+     "meanSteps": 16.7,
+     "msPerDecision": 11.5,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P004||0",
+    "planet": "sinus-ardorum",
+    "profile": "P004",
+    "mission": 6,
+    "missionName": "General-purpose Bedding",
+    "recipe": 36170,
+    "rank": "D",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 600,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 600,
+   "progress": 12012,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 1385,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 1585,
+     "meanSteps": 21,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 971,
+     "meanSteps": 18.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 770,
+     "meanSteps": 16,
+     "msPerDecision": 14.5,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P007||0",
+    "planet": "sinus-ardorum",
+    "profile": "P007",
+    "mission": 9,
+    "missionName": "Worker's Weaving Tools",
+    "recipe": 36173,
+    "rank": "C",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 5210,
+    "lower": [
+     1490,
+     2980
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 7440,
+   "progress": 4620,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 7612,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 8897,
+     "meanSteps": 21,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 6201,
+     "meanSteps": 13.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 5950,
+     "meanSteps": 14.1,
+     "msPerDecision": 10.3,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P010||0",
+    "planet": "sinus-ardorum",
+    "profile": "P010",
+    "mission": 12,
+    "missionName": "Cosmoliner Supplies",
+    "recipe": 36179,
+    "rank": "C",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 14870,
+    "lower": [
+     4250,
+     8500
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 21240,
+   "progress": 924,
+   "durability": 60,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 12307,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.3,
+     "ci95": 0.1639853652006788,
+     "completionRate": 1,
+     "meanQuality": 14661,
+     "meanSteps": 21,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.3,
+     "ci95": 0.1639853652006788,
+     "completionRate": 1,
+     "meanQuality": 14240,
+     "meanSteps": 19.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.5,
+     "ci95": 0.17892270211835426,
+     "completionRate": 1,
+     "meanQuality": 13504,
+     "meanSteps": 25.3,
+     "msPerDecision": 11.9,
+     "meanFirstEstimate": 0.438
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P013|MaterialMiracle|3",
+    "planet": "sinus-ardorum",
+    "profile": "P013",
+    "mission": 15,
+    "missionName": "Thick Fiberboard",
+    "recipe": 36183,
+    "rank": "B",
+    "special": "MaterialMiracle",
+    "charges": 3
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 8400,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 8400,
+   "progress": 2310,
+   "durability": 20,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 22,
+   "staticNormalQuality": 6498,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 5069,
+     "meanSteps": 17.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.06666666666666667,
+     "ci95": 0.08926232667235917,
+     "completionRate": 1,
+     "meanQuality": 4550,
+     "meanSteps": 19.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 9515,
+     "meanSteps": 18.7,
+     "msPerDecision": 13.5,
+     "meanFirstEstimate": 0.688
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P016|MaterialMiracle|3",
+    "planet": "sinus-ardorum",
+    "profile": "P016",
+    "mission": 18,
+    "missionName": "Long-term Storage Paper",
+    "recipe": 36186,
+    "rank": "B",
+    "special": "MaterialMiracle",
+    "charges": 3
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 9360,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 9360,
+   "progress": 3498,
+   "durability": 45,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 22,
+   "staticNormalQuality": 8757,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.2,
+     "ci95": 0.14313816169468344,
+     "completionRate": 1,
+     "meanQuality": 5995,
+     "meanSteps": 15.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 9963,
+     "meanSteps": 20.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 10280,
+     "meanSteps": 24.2,
+     "msPerDecision": 14.7,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P019||0",
+    "planet": "sinus-ardorum",
+    "profile": "P019",
+    "mission": 20,
+    "missionName": "Test Material Gathering Tools",
+    "recipe": 36189,
+    "rank": "B",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 8400,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 8400,
+   "progress": 13926,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 2182,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 2120,
+     "meanSteps": 24,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 4103,
+     "meanSteps": 27.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.1,
+     "ci95": 0.10735362127101256,
+     "completionRate": 1,
+     "meanQuality": 4667,
+     "meanSteps": 32.9,
+     "msPerDecision": 18.2,
+     "meanFirstEstimate": 0
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P021|MaterialMiracle|3",
+    "planet": "sinus-ardorum",
+    "profile": "P021",
+    "mission": 22,
+    "missionName": "High-durability Fiberboard",
+    "recipe": 36192,
+    "rank": "A",
+    "special": "MaterialMiracle",
+    "charges": 3
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 700,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 700,
+   "progress": 23400,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 18,
+   "staticNormalQuality": 1542,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 0,
+     "meanQuality": 1743,
+     "meanSteps": 18,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 0,
+     "meanQuality": 409,
+     "meanSteps": 30,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.4,
+     "ci95": 0.17530772943598352,
+     "completionRate": 0.43333333333333335,
+     "meanQuality": 886,
+     "meanSteps": 35.7,
+     "msPerDecision": 20.8,
+     "meanFirstEstimate": 0.063
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P037||0",
+    "planet": "sinus-ardorum",
+    "profile": "P037",
+    "mission": 33,
+    "missionName": "Power Transmission Shafts I",
+    "recipe": 36209,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 8610,
+    "lower": [
+     4920,
+     6770
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 12300,
+   "progress": 6600,
+   "durability": 40,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 22,
+   "staticNormalQuality": 6485,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.06666666666666667,
+     "ci95": 0.08926232667235917,
+     "completionRate": 1,
+     "meanQuality": 7236,
+     "meanSteps": 22,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.16666666666666666,
+     "ci95": 0.13336110821819525,
+     "completionRate": 1,
+     "meanQuality": 6625,
+     "meanSteps": 19.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.7333333333333333,
+     "ci95": 0.15824519184082889,
+     "completionRate": 0.9666666666666667,
+     "meanQuality": 8932,
+     "meanSteps": 29,
+     "msPerDecision": 15.7,
+     "meanFirstEstimate": 0.438
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P040|MaterialMiracle|2",
+    "planet": "sinus-ardorum",
+    "profile": "P040",
+    "mission": 36,
+    "missionName": "EX: Specialized Materials II",
+    "recipe": 36212,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 2
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 1100,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 1100,
+   "progress": 19800,
+   "durability": 25,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 19,
+   "staticNormalQuality": 2206,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 0,
+     "meanQuality": 2476,
+     "meanSteps": 18.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 0,
+     "meanQuality": 858,
+     "meanSteps": 26.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 0,
+     "meanQuality": 1316,
+     "meanSteps": 27.6,
+     "msPerDecision": 9.5,
+     "meanFirstEstimate": 0
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P043|MaterialMiracle|2",
+    "planet": "sinus-ardorum",
+    "profile": "P043",
+    "mission": 39,
+    "missionName": "EX+: Rest Facility Furnishings",
+    "recipe": 36215,
+    "rank": "EX+",
+    "special": "MaterialMiracle",
+    "charges": 2
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 15390,
+    "lower": [
+     10260,
+     11970
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 17100,
+   "progress": 10600,
+   "durability": 50,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 4026,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 1120,
+     "meanSteps": 16.9,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 6134,
+     "meanSteps": 27.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.06666666666666667,
+     "ci95": 0.08926232667235917,
+     "completionRate": 1,
+     "meanQuality": 6858,
+     "meanSteps": 29.6,
+     "msPerDecision": 21,
+     "meanFirstEstimate": 0
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P046||0",
+    "planet": "sinus-ardorum",
+    "profile": "P046",
+    "mission": 42,
+    "missionName": "EX+: Rover Packing Materials",
+    "recipe": 36218,
+    "rank": "EX+",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 20880,
+    "lower": [
+     13920,
+     16240
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 23200,
+   "progress": 1500,
+   "durability": 75,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 25,
+   "staticNormalQuality": 12799,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 14396,
+     "meanSteps": 25,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.06666666666666667,
+     "ci95": 0.08926232667235917,
+     "completionRate": 1,
+     "meanQuality": 14921,
+     "meanSteps": 22.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.16666666666666666,
+     "ci95": 0.13336110821819525,
+     "completionRate": 1,
+     "meanQuality": 15748,
+     "meanSteps": 29.4,
+     "msPerDecision": 12.3,
+     "meanFirstEstimate": 0.188
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P054||0",
+    "planet": "sinus-ardorum",
+    "profile": "P054",
+    "mission": 508,
+    "missionName": "EX: Processed Aquatic Metals",
+    "recipe": 36672,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 11800,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 11800,
+   "progress": 7100,
+   "durability": 50,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 23,
+   "staticNormalQuality": 6046,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.03333333333333333,
+     "ci95": 0.06423521590967811,
+     "completionRate": 1,
+     "meanQuality": 6373,
+     "meanSteps": 23,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.16666666666666666,
+     "ci95": 0.13336110821819525,
+     "completionRate": 1,
+     "meanQuality": 8751,
+     "meanSteps": 22.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.2,
+     "ci95": 0.14313816169468344,
+     "completionRate": 1,
+     "meanQuality": 8133,
+     "meanSteps": 29.6,
+     "msPerDecision": 13.8,
+     "meanFirstEstimate": 0.25
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P057||0",
+    "planet": "phaenna",
+    "profile": "P057",
+    "mission": 546,
+    "missionName": "Improved Tents",
+    "recipe": 36951,
+    "rank": "D",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 4080,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 4080,
+   "progress": 2838,
+   "durability": 60,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 16,
+   "staticNormalQuality": 6240,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 7398,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 5166,
+     "meanSteps": 11.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 4659,
+     "meanSteps": 10.9,
+     "msPerDecision": 7.7,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P060||0",
+    "planet": "phaenna",
+    "profile": "P060",
+    "mission": 551,
+    "missionName": "Multi-purpose Glass Resupply",
+    "recipe": 36956,
+    "rank": "C",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 480,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 480,
+   "progress": 8250,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 17,
+   "staticNormalQuality": 2183,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 2764,
+     "meanSteps": 17,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 798,
+     "meanSteps": 13.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 629,
+     "meanSteps": 10.5,
+     "msPerDecision": 9.3,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P063||0",
+    "planet": "phaenna",
+    "profile": "P063",
+    "mission": 554,
+    "missionName": "Recycled Resource Utilization II",
+    "recipe": 36960,
+    "rank": "C",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 3530,
+    "lower": [
+     1010,
+     2020
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 5040,
+   "progress": 5478,
+   "durability": 25,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 21,
+   "staticNormalQuality": 4036,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 4911,
+     "meanSteps": 21,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.7333333333333333,
+     "ci95": 0.15824519184082889,
+     "completionRate": 1,
+     "meanQuality": 3808,
+     "meanSteps": 17.2,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 3956,
+     "meanSteps": 18.8,
+     "msPerDecision": 12.3,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P066||0",
+    "planet": "phaenna",
+    "profile": "P066",
+    "mission": 557,
+    "missionName": "Gleaner's Gear I",
+    "recipe": 36966,
+    "rank": "C",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 7820,
+    "lower": [
+     2240,
+     4470
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 11160,
+   "progress": 3498,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 20,
+   "staticNormalQuality": 9568,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 11172,
+     "meanSteps": 20,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 8851,
+     "meanSteps": 15.1,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 8668,
+     "meanSteps": 17.8,
+     "msPerDecision": 10.8,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P069||0",
+    "planet": "phaenna",
+    "profile": "P069",
+    "mission": 560,
+    "missionName": "Heatproof Tent Components",
+    "recipe": 36969,
+    "rank": "B",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 10200,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 10200,
+   "progress": 792,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 18,
+   "staticNormalQuality": 11544,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 13986,
+     "meanSteps": 18,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 11167,
+     "meanSteps": 14.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 11353,
+     "meanSteps": 17,
+     "msPerDecision": 9,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P072|MaterialMiracle|3",
+    "planet": "phaenna",
+    "profile": "P072",
+    "mission": 563,
+    "missionName": "Inorganic Durability Research",
+    "recipe": 36972,
+    "rank": "B",
+    "special": "MaterialMiracle",
+    "charges": 3
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 6220,
+    "lower": [
+     2670,
+     4440
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 8880,
+   "progress": 2244,
+   "durability": 70,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 16,
+   "staticNormalQuality": 9034,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.6,
+     "ci95": 0.17530772943598352,
+     "completionRate": 1,
+     "meanQuality": 6497,
+     "meanSteps": 11.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 7002,
+     "meanSteps": 15.3,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 6957,
+     "meanSteps": 14.1,
+     "msPerDecision": 9.7,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P073|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P073",
+    "mission": 565,
+    "missionName": "Habitat Bedding",
+    "recipe": 36975,
+    "rank": "B",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 960,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 960,
+   "progress": 7128,
+   "durability": 25,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 22,
+   "staticNormalQuality": 1573,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.36666666666666664,
+     "ci95": 0.17244369988384506,
+     "completionRate": 1,
+     "meanQuality": 688,
+     "meanSteps": 18.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 1338,
+     "meanSteps": 16,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 1099,
+     "meanSteps": 13.4,
+     "msPerDecision": 12,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P077||0",
+    "planet": "phaenna",
+    "profile": "P077",
+    "mission": 567,
+    "missionName": "Advanced Resource Experimentation II",
+    "recipe": 36978,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 10500,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 10500,
+   "progress": 4500,
+   "durability": 80,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 24,
+   "staticNormalQuality": 10721,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 12528,
+     "meanSteps": 24,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.9333333333333333,
+     "ci95": 0.08926232667235916,
+     "completionRate": 1,
+     "meanQuality": 11995,
+     "meanSteps": 19.6,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 11535,
+     "meanSteps": 22.9,
+     "msPerDecision": 11.6,
+     "meanFirstEstimate": 0.938
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P088||0",
+    "planet": "phaenna",
+    "profile": "P088",
+    "mission": 573,
+    "missionName": "EX: Versatile Packaging Materials",
+    "recipe": 36989,
+    "rank": "EX",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 18000,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 18000,
+   "progress": 8700,
+   "durability": 70,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 26,
+   "staticNormalQuality": 5869,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 5556,
+     "meanSteps": 26,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 7064,
+     "meanSteps": 22.7,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 8188,
+     "meanSteps": 25.9,
+     "msPerDecision": 13.7,
+     "meanFirstEstimate": 0
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P092||0",
+    "planet": "phaenna",
+    "profile": "P092",
+    "mission": 576,
+    "missionName": "Phaenna Exploration Equipment I",
+    "recipe": 36993,
+    "rank": "A",
+    "special": null,
+    "charges": 0
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 5180,
+    "lower": [
+     2960,
+     4070
+    ],
+    "label": "top tier"
+   },
+   "maxQuality": 7400,
+   "progress": 4900,
+   "durability": 40,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 17,
+   "staticNormalQuality": 5984,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0.9666666666666667,
+     "ci95": 0.0642352159096781,
+     "completionRate": 1,
+     "meanQuality": 7379,
+     "meanSteps": 17,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.9333333333333333,
+     "ci95": 0.08926232667235916,
+     "completionRate": 1,
+     "meanQuality": 6008,
+     "meanSteps": 17.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 1,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 5888,
+     "meanSteps": 16.7,
+     "msPerDecision": 11.5,
+     "meanFirstEstimate": 1
+    }
+   }
+  },
+  {
+   "scenario": {
+    "key": "P095|MaterialMiracle|1",
+    "planet": "phaenna",
+    "profile": "P095",
+    "mission": 579,
+    "missionName": "EX: Craftwork for the Forum II",
+    "recipe": 36996,
+    "rank": "EX",
+    "special": "MaterialMiracle",
+    "charges": 1
+   },
+   "stats": "low",
+   "env": "teamcraft",
+   "target": {
+    "target": 13600,
+    "lower": [],
+    "label": "max quality"
+   },
+   "maxQuality": 13600,
+   "progress": 7600,
+   "durability": 60,
+   "baseProgress": 250,
+   "baseQuality": 251,
+   "staticPlanLength": 27,
+   "staticNormalQuality": 6383,
+   "results": {
+    "static": {
+     "n": 30,
+     "successRate": 0,
+     "ci95": 0.000011316065276116665,
+     "completionRate": 1,
+     "meanQuality": 2673,
+     "meanSteps": 16.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "heuristic": {
+     "n": 30,
+     "successRate": 0.03333333333333333,
+     "ci95": 0.06423521590967811,
+     "completionRate": 1,
+     "meanQuality": 9614,
+     "meanSteps": 27.8,
+     "msPerDecision": 0,
+     "meanFirstEstimate": null
+    },
+    "solver": {
+     "n": 30,
+     "successRate": 0.1,
+     "ci95": 0.10735362127101256,
+     "completionRate": 1,
+     "meanQuality": 8339,
+     "meanSteps": 28.6,
+     "msPerDecision": 16.9,
+     "meanFirstEstimate": 0.063
+    }
+   }
+  }
+ ]
+}

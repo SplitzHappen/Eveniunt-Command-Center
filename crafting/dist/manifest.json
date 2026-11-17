@@ -1,0 +1,33 @@
+{
+ "build": "c3c20987c6bc",
+ "files": [
+  {
+   "file": "cosmic-sinus-ardorum.html",
+   "bytes": 665478,
+   "missions": 400,
+   "recipes": 520,
+   "sha256": "bd144cc725a20b214c60b92019a9e3002fbc6cba7e68f836c464449051329de9"
+  },
+  {
+   "file": "cosmic-phaenna.html",
+   "bytes": 612418,
+   "missions": 360,
+   "recipes": 480,
+   "sha256": "39f48aea97b147b2eb72ee8605dfc5fd8dbcabc764cbdff4b89c232007fc1706"
+  },
+  {
+   "file": "cosmic-oizys.html",
+   "bytes": 445422,
+   "missions": 240,
+   "recipes": 304,
+   "sha256": "07e2cb71293ccfaa01c60741f703059c19b46b4a469f86b8c7145963dd464d6f"
+  },
+  {
+   "file": "cosmic-auxesia.html",
+   "bytes": 446856,
+   "missions": 240,
+   "recipes": 280,
+   "sha256": "a35aad6b15a529f55725bbcb6f8537ab11913a121d26288d2c79dd9c5a5e9a89"
+  }
+ ]
+}

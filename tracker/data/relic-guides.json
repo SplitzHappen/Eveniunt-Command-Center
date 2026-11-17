@@ -1,0 +1,621 @@
+{
+ "_about": "Step-by-step relic weapon and tool guides, written for the tracker from facts on the Console Games Wiki relic pages (read 2026-11-08). The wiki publishes no licence, so nothing is copied; quest givers, duty unlocks and item sources are added from the game data and FFXIV Teamcraft when the window is built.",
+ "series": {
+  "zodiac": {
+   "title": "Zodiac weapons (A Realm Reborn)",
+   "stages": [
+    {
+     "il": 80,
+     "title": "Zodiac weapon (base)",
+     "lines": [
+      "First time only: talk to Nedrick Ironheart at Vesper Bay (Western Thanalan) for The Weaponsmith of Legend, which sends you to Gerolt in North Shroud",
+      "Then, once per job: Gerolt's quest A Relic Reborn asks for set enemy kills, a few level 50 dungeons and trials (easy unsynced) and a few items",
+      "You need Amdapor Keep unlocked, and a job-specific crafted weapon with two set materia melded (craft it or buy it on the market board)"
+     ],
+     "duties": [
+      "Amdapor Keep"
+     ]
+    },
+    {
+     "il": 90,
+     "title": "Zenith",
+     "lines": [
+      "No quest: hand the base weapon and 3 Thavnairian Mist to the furnace beside Gerolt in North Shroud",
+      "Thavnairian Mist is sold by Auriana in Mor Dhona for Allagan Tomestones of Poetics"
+     ]
+    },
+    {
+     "il": 100,
+     "name": "Atma",
+     "title": "Atma",
+     "lines": [
+      "First time only: the quest Up in Arms introduces Jalzahn, who does every upgrade from here",
+      "Collect the 12 Atmas: each has about a 20% chance to drop when you finish a FATE with the Zenith weapon equipped, one Atma per zone (La Noscea, Thanalan, the Black Shroud, Coerthas and Mor Dhona zones)"
+     ]
+    },
+    {
+     "il": 100,
+     "name": "Animus",
+     "title": "Animus",
+     "lines": [
+      "First time only: the quest Trials of the Braves introduces G'jusana in Mor Dhona",
+      "Buy and finish 9 Trials of the Braves books, one at a time (poetics each): each asks for set enemy kills, dungeons, FATEs and levequests with the Atma weapon equipped",
+      "The FATEs take longest: check the zones that hold the ones you need, or try another world"
+     ]
+    },
+    {
+     "il": 110,
+     "title": "Novus",
+     "lines": [
+      "First time only: Celestial Radiance and Star Light, Star Bright introduce Hubairtin in Central Thanalan",
+      "Buy 3 Superior Enchanted Ink (poetics) for a Sphere Scroll, then fill it with 75 Alexandrite and a lot of grade I to IV materia",
+      "Alexandrite: after the quests Treasures and Tribulations (Wineport) and One Man's Trash (North Shroud), buy Mysterious Maps from Auriana in Mor Dhona, decipher them and dig at the mark"
+     ]
+    },
+    {
+     "il": 115,
+     "title": "Nexus",
+     "lines": [
+      "First time only: the quest Mmmmmm, Soulglazed Relics; then Jalzahn soulglazes the Novus weapon (Paladins: sword and shield)",
+      "Fill it with light by finishing dungeons, trials, FATEs, treasure maps and PvP with it equipped; every 2 hours some duties give extra light",
+      "Fastest unsynced: The Final Coil of Bahamut - Turn 4 (kill before the add phase), The Bowl of Embers (Extreme), Thornmarch (Extreme)"
+     ],
+     "duties": [
+      "The Final Coil of Bahamut - Turn 4",
+      "The Bowl of Embers (Extreme)",
+      "Thornmarch (Extreme)"
+     ]
+    },
+    {
+     "il": 125,
+     "title": "Zodiac Braves",
+     "lines": [
+      "First time only: the quest Wherefore Art Thou, Zodiac; then four sub-quests (three in Mor Dhona, one in Central Thanalan), each giving a special material",
+      "They need dungeons, bought items and high-quality crafted items (recipes from Master Recipes books, or buy them)",
+      "Unlock these dungeons first: Hullbreaker Isle, The Tam-Tara Deepcroft (Hard), The Stone Vigil (Hard), Sastasha (Hard), The Sunken Temple of Qarn (Hard)"
+     ],
+     "duties": [
+      "Hullbreaker Isle",
+      "The Tam-Tara Deepcroft (Hard)",
+      "The Stone Vigil (Hard)",
+      "Sastasha (Hard)",
+      "The Sunken Temple of Qarn (Hard)"
+     ]
+    },
+    {
+     "il": 135,
+     "title": "Zodiac Zeta",
+     "lines": [
+      "First time only: the quest Rise and Shine introduces Remon in Swiftperch (Western La Noscea)",
+      "Buy the 12 mahatma from Remon (poetics), one at a time; awaken each by running duties with the weapon equipped",
+      "Same fast duties as Nexus, about 2 to 3 runs per mahatma: The Final Coil of Bahamut - Turn 4, The Bowl of Embers (Extreme), Thornmarch (Extreme), The Aurum Vale"
+     ],
+     "duties": [
+      "The Aurum Vale"
+     ]
+    }
+   ]
+  },
+  "anima": {
+   "title": "Anima weapons (Heavensward)",
+   "stages": [
+    {
+     "il": 170,
+     "title": "Animated",
+     "lines": [
+      "Needs level 60 and the Heavensward main story; first time only: the quest An Unexpected Proposal",
+      "Each weapon: the quest Soul without Life needs an Astral Nodule and an Umbral Nodule from Syndony in Mor Dhona (22, 5)",
+      "Nodules: farm FATEs in all six Heavensward zones for one crystal from each (about a one-in-three drop), or trade in a Zodiac Zeta weapon for both"
+     ]
+    },
+    {
+     "il": 200,
+     "title": "Awoken",
+     "lines": [
+      "Quest Toughening Up: clear 10 dungeons in order with the Animated weapon equipped when you leave (unsynced with an Unrestricted Party is fine)",
+      "Order: Snowcloak, Sastasha (Hard), The Sunken Temple of Qarn (Hard), talk to Ardashir, The Keeper of the Lake, The Wanderer's Palace (Hard), Amdapor Keep (Hard), talk to Ardashir, The Dusk Vigil, Sohm Al, The Aery, The Vault, talk to Ardashir"
+     ],
+     "duties": [
+      "Snowcloak",
+      "Sastasha (Hard)",
+      "The Sunken Temple of Qarn (Hard)",
+      "The Keeper of the Lake",
+      "The Wanderer's Palace (Hard)",
+      "Amdapor Keep (Hard)",
+      "The Dusk Vigil",
+      "Sohm Al",
+      "The Aery",
+      "The Vault"
+     ]
+    },
+    {
+     "il": 210,
+     "title": "Anima",
+     "lines": [
+      "Quest Coming into Its Own: 10 each of Unidentifiable Bone, Shell, Ore and Seeds (Sundry Splendors for poetics, tribal tokens, Alexander loot)",
+      "Plus 4 each of Adamantite Francesca, Titanium Alloy Mirror, Dispelling Arrow and Kingcake (craft, market board, or your Grand Company quartermaster for seals)"
+     ]
+    },
+    {
+     "il": 230,
+     "title": "Hyperconductive",
+     "lines": [
+      "Quest Finding Your Voice: buy 5 Aether Oil from Sundry Splendors (poetics) and hand them in"
+     ]
+    },
+    {
+     "il": 240,
+     "title": "Reconditioned",
+     "lines": [
+      "Quest A Dream Fulfilled: about 57 to 60 each of Umbrite (poetics) and Crystal Sand",
+      "Crystal Sand: trade with Ulan in Idyllshire; best deals are 5 Blue Crafters' or Gatherers' Scrip Tokens, or 5 Superior Enchanted Ink plus 5 Thavnairian Mist, for 2 sand"
+     ]
+    },
+    {
+     "il": 260,
+     "title": "Sharpened",
+     "lines": [
+      "Quest Future Proof: 50 Singing Clusters (Sundry Splendors for poetics; 1 from the daily Cut from a Different Cloth with the high-level dungeon roulette; 18 from the weekly Seeking Inspiration with three leveling roulettes)",
+      "Trade the clusters to Blamprest in Idyllshire, then take the result to Ardashir in Azys Lla"
+     ]
+    },
+    {
+     "il": 270,
+     "title": "Complete",
+     "lines": [
+      "Quest Born Again Anima: clear The Lost City of Amdapor (Hard), The Great Gubal Library (Hard) and Sohm Al (Hard) as the weapon's job (weapon only needs to be in your bags)",
+      "Then the main grind: build aetheric density with Heavensward FATEs, dungeons, trials and raids with the weapon equipped; Some Assembly Required follows"
+     ],
+     "duties": [
+      "The Lost City of Amdapor (Hard)",
+      "The Great Gubal Library (Hard)",
+      "Sohm Al (Hard)"
+     ]
+    },
+    {
+     "il": 275,
+     "title": "Lux",
+     "lines": [
+      "First time only: Body and Soul and Words of Wisdom; then each weapon: Best Friends Forever, plus 1 Archaic Enchanted Ink from Sundry Splendors",
+      "Clear 12 trials in four groups (groups in order, any order inside): 1) Bowl of Embers, Howling Eye, Navel (Hard); 2) Thornmarch, Whorleater, Striking Tree, Akh Afah (Hard); 3) Thok ast Thok, Limitless Blue (Hard); 4) Containment Bay S1T7, P1T6, Z1T9"
+     ],
+     "duties": [
+      "The Bowl of Embers (Hard)",
+      "The Howling Eye (Hard)",
+      "The Navel (Hard)",
+      "Thornmarch (Hard)",
+      "The Whorleater (Hard)",
+      "The Striking Tree (Hard)",
+      "Akh Afah Amphitheatre (Hard)",
+      "Thok ast Thok (Hard)",
+      "The Limitless Blue (Hard)",
+      "Containment Bay S1T7",
+      "Containment Bay P1T6",
+      "Containment Bay Z1T9"
+     ]
+    }
+   ]
+  },
+  "eurekan": {
+   "title": "Eurekan weapons (Stormblood)",
+   "stages": [
+    {
+     "name": "Antiquated",
+     "title": "Antiquated",
+     "lines": [
+      "Reward of your job's level 70 Stormblood job quest; lost ones can be bought back from a Calamity Salvager (try /isearch Antiquated first)"
+     ]
+    },
+    {
+     "name": "Anemos",
+     "title": "Anemos (+1, +2, then Anemos)",
+     "lines": [
+      "Needs the Stormblood main story and the quest And We Shall Call It Eureka; upgrades are done with Gerolt in Eureka Anemos",
+      "Protean Crystals: trade Anemos Crystals from notorious monsters to Gerolt (2 to 5 each); enemies at or above your elemental level also drop them",
+      "Final step: Pazuzu's Feathers, 3 per gold finish of the FATE Wail in the Willows (Pazuzu), or from the Expedition Birdwatcher for Protean Crystals; be on the weapon's job"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Anemos"
+     ]
+    },
+    {
+     "name": "Pagos",
+     "title": "Pagos (Pagos, Pagos +1)",
+     "lines": [
+      "Upgraded with Gerolt using Frosted Protean Crystals and Pagos Crystals from Eureka Pagos",
+      "Frosted Protean Crystals: fill the vitiated aether kettle (from Gerolt's level 25 Pagos quest) by killing notorious monsters and level-appropriate enemies in Eureka Pagos, then empty it at the Crystal Forge (6.0, 21.5); it holds 9 charges"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Pagos"
+     ]
+    },
+    {
+     "name": "Elemental",
+     "title": "Elemental (+1, +2)",
+     "lines": [
+      "Frosted Protean Crystals: fill the vitiated aether kettle (from Gerolt's level 25 Pagos quest) by killing notorious monsters and level-appropriate enemies in Eureka Pagos, then empty it at the Crystal Forge (6.0, 21.5); it holds 9 charges",
+      "Pagos Crystals come from notorious monsters in Eureka Pagos"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Pagos"
+     ]
+    },
+    {
+     "name": "Pyros",
+     "title": "Pyros",
+     "lines": [
+      "Pyros Crystals from notorious monsters in Eureka Pyros (higher level monsters give more)",
+      "Penthesilea's Flame: 3 per gold finish of the FATE Lost Epic (Penthesilea), or 50 Pyros Crystals each from the Expedition Birdwatcher",
+      "Smoldering Protean Crystals: kettle charges turned in at the Mark II Crystal Forge (22.3, 6.0)"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Pyros"
+     ]
+    },
+    {
+     "name": "Hydatos",
+     "title": "Hydatos (Hydatos, Hydatos +1)",
+     "lines": [
+      "Upgraded with Gerolt with Hydatos Crystals (50, then 100), which drop from notorious monsters in Eureka Hydatos; the higher the monster's level, the more it drops",
+      "The Baldesion Arsenal support FATE, while a run is open, is a good source"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Hydatos"
+     ]
+    },
+    {
+     "il": 400,
+     "title": "Base Eureka",
+     "lines": [
+      "Upgraded with Gerolt from the Hydatos +1 weapon with 100 more Hydatos Crystals (notorious monsters in Eureka Hydatos)",
+      "Next step: 100 Hydatos Crystals and 5 Crystalline Scales make the Eureka weapon"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Hydatos"
+     ]
+    },
+    {
+     "name": "Physeos",
+     "title": "Physeos",
+     "lines": [
+      "Same look as Eureka weapons, plus elemental bonus that only works in Eureka",
+      "Eureka Fragments drop only in The Baldesion Arsenal: a full clear gives 28, so about four successful runs per weapon"
+     ],
+     "duties": [
+      "The Baldesion Arsenal"
+     ]
+    },
+    {
+     "name": "Eureka",
+     "title": "Eureka",
+     "lines": [
+      "Final look and full stats: 100 Hydatos Crystals and 5 Crystalline Scales on the base Eureka weapon; stats can be customised",
+      "Hydatos Crystals: notorious monsters in Eureka Hydatos (the Baldesion Arsenal support FATE is a good source)",
+      "Crystalline Scales: 3 per gold finish of the FATE Crystalline Provenance (Provenance Watcher); not sold anywhere"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Hydatos"
+     ]
+    },
+    {
+     "name": "",
+     "title": "Anemos path (base, +1, +2)",
+     "lines": [
+      "Needs the Stormblood main story and the quest And We Shall Call It Eureka; Gerolt in Eureka Anemos does these upgrades",
+      "Protean Crystals: trade Anemos Crystals from notorious monsters to Gerolt (2 to 5 each); enemies at or above your elemental level also drop them"
+     ],
+     "duties": [
+      "The Forbidden Land, Eureka Anemos"
+     ]
+    }
+   ]
+  },
+  "resistance": {
+   "title": "Resistance weapons (Shadowbringers)",
+   "stages": [
+    {
+     "il": 485,
+     "title": "Resistance",
+     "lines": [
+      "Needs level 80, the Shadowbringers main story and the side quest The City of Lost Angels",
+      "First weapon: Zlatan in Gangos, quests Hail to the Queen, Path to the Past, The Bozja Incident and Fire in the Forge",
+      "Each further weapon: the quest Resistance Is (Not) Futile with 4 Thavnairian Scalepowder (Auriana in Revenant's Toll, Hismena in Idyllshire or Sundry Splendors, poetics)"
+     ]
+    },
+    {
+     "il": 500,
+     "name": "Augmented",
+     "title": "Augmented Resistance",
+     "lines": [
+      "Needs the main story quest Vows of Virtue, Deeds of Cruelty and the side quests Where Eagles Nest and A Sober Proposal",
+      "Quest For Want of a Memory: 20 each of Tortured, Sorrowful and Harrowing Memory of the Dying, from skirmishes, critical engagements and enemies on the Bozjan Southern Front"
+     ],
+     "duties": [
+      "The Bozjan Southern Front"
+     ]
+    },
+    {
+     "il": 500,
+     "name": "Recollection",
+     "title": "Recollection",
+     "lines": [
+      "Quest The Will to Resist: 6 Bitter Memory of the Dying from the Bozjan Southern Front; you can be on any job",
+      "Tip: keep For Want of a Memory active on another job to progress two weapons at once"
+     ]
+    },
+    {
+     "il": 510,
+     "title": "Law's Order",
+     "lines": [
+      "First: resistance rank 10, clear Castrum Lacus Litore, then the side quests A Sign of What's to Come, Fit for a Queen and In the Queen's Image (a solo duty and the Delubrum Reginae raid)",
+      "Quest Change of Arms: 15 Loathsome Memory of the Dying; Castrum Lacus Litore is the best source"
+     ],
+     "duties": [
+      "Delubrum Reginae"
+     ]
+    },
+    {
+     "il": 515,
+     "title": "Augmented Law's Order",
+     "lines": [
+      "First time only: The Resistance Remembers, 18 Haunting and 18 Vexatious Memory of the Dying",
+      "Each weapon: A New Path of Resistance, 15 Timeworn Artifacts; Delubrum Reginae is by far the best source; you choose the stats on turn-in"
+     ],
+     "duties": [
+      "Delubrum Reginae"
+     ]
+    },
+    {
+     "il": 535,
+     "title": "Blade's",
+     "lines": [
+      "First time only: after A New Playing Field (Zadnor) and one Augmented Law's Order weapon, What Dreams Are Made Of, then Spare Parts (30 Compact Axle, 30 Compact Spring), Tell Me a Story (30 of each A Day in the Life book) and A Fond Memory",
+      "Each weapon: the quest Irresistible, 15 Raw Emotions; choose stats on turn-in. Regana also sells a replica and a matte replica"
+     ]
+    }
+   ]
+  },
+  "manderville": {
+   "title": "Manderville weapons (Endwalker)",
+   "stages": [
+    {
+     "il": 615,
+     "title": "Manderville",
+     "lines": [
+      "Needs level 90, the Endwalker main story and the Hildibrand quests from The Rise and Fall of Gentlemen to The Imperfect Gentleman (quick if you skip cutscenes; the Kugane Ohashi trial can be done unsynced)",
+      "First weapon: the House Manderville Manservant in Radz-at-Han, side quest Make It a Manderville; later ones: Make Another Manderville",
+      "Hand over 3 Manderium Meteorites from Jubrunnah in Radz-at-Han (12.2, 10.9) for poetics"
+     ]
+    },
+    {
+     "il": 630,
+     "title": "Amazing Manderville",
+     "lines": [
+      "Needs the Hildibrand quest Generational Bonding; then The Next Mander-level with 3 Complementary Chondrites from Jubrunnah (poetics)"
+     ]
+    },
+    {
+     "il": 645,
+     "title": "Majestic Manderville",
+     "lines": [
+      "Needs the Hildibrand quest Not from Around Here (first time: Well-oiled); then In Need of Adjustment with 3 Amplifying Achondrites from Jubrunnah (poetics)"
+     ]
+    },
+    {
+     "il": 665,
+     "title": "Mandervillous",
+     "lines": [
+      "Needs the Hildibrand quest Gentlemen at Heart (first time: A Spirited Reforging); then Positively Mandervillous with 3 Cosmic Crystallites from Jubrunnah (poetics)"
+     ]
+    }
+   ]
+  },
+  "phantom": {
+   "title": "Phantom weapons (Dawntrail)",
+   "stages": [
+    {
+     "name": "Penumbrae",
+     "title": "Penumbrae",
+     "lines": [
+      "Needs level 100, the Dawntrail main story and the Occult Crescent quests up to Unfamiliar Territory",
+      "First weapon: Lydirceil in the Phantom Village, quests Arcane Artistry then Forging the Phantasmal; it needs 3 each of six demiatma (FATEs and critical engagements in South Horn, or FATEs in Dawntrail zones)",
+      "Each further weapon: buy 3 Arcanite from Ermina in the Phantom Village (1,500 uncapped tomestones in all) and trade them to Dodokkuli"
+     ]
+    },
+    {
+     "name": "Umbrae",
+     "title": "Umbrae",
+     "lines": [
+      "First time only: Lydirceil's Keeping the Old Ways Alive, Aether, Aether, Everywhere and Wrought by Hands Phantasmal; the first asks for five items, partly bought in Tuliyollal and Yak T'el",
+      "Each weapon: 3 Waxing Arcanite (1,500 uncapped tomestones) plus the Penumbrae weapon to Dodokkuli. Replicas are free from the Expedition Metallurgist"
+     ]
+    },
+    {
+     "name": "Obscurum",
+     "title": "Obscurum",
+     "lines": [
+      "First time only: Timeworn Techniques, In Pursuit of Perfection and A Phantom Reborn; the first needs items such as Umbral Clay (Goplu, Tuliyollal) and an Aspected Aetheroconductor (crafted at level 100, Master Recipes XII, or market board)",
+      "Each weapon: 3 Waning Arcanite (1,500 uncapped tomestones) plus the Umbrae weapon to Dodokkuli"
+     ]
+    },
+    {
+     "name": "Eclipticum",
+     "title": "Eclipticum",
+     "lines": [
+      "First time only: Under No Illusion, Phantoms to Fillet and A Phantom Unveiled; the first needs items such as a Monarch Whetstone (Goplu, Tuliyollal) and an Ancestral Alloy Ingot (crafted at level 100, or market board)",
+      "Each weapon: 3 Ecliptic Arcanite (1,500 uncapped tomestones) plus the Obscurum weapon to Dodokkuli"
+     ]
+    },
+    {
+     "name": "Occultum",
+     "title": "Occultum",
+     "lines": [
+      "First time only: Final Phantasm: fill a Knowledge Crystal with martial memories in eight categories (for example set kills and 5 gold FATEs in each Yok Tural and Xak Tural zone)",
+      "Each further weapon: just trade the Eclipticum weapon to Dodokkuli and pick attributes"
+     ]
+    }
+   ]
+  },
+  "lucis": {
+   "title": "Relic tools (A Realm Reborn)",
+   "stages": [
+    {
+     "name": "Lucis",
+     "title": "Lucis",
+     "lines": [
+      "Trade the Supra tool and the crafted or gathered items Talan asks for, in Mor Dhona"
+     ]
+    },
+    {
+     "name": "Supra",
+     "title": "Supra",
+     "lines": [
+      "Trade the base relic tool and the crafted or gathered items Talan asks for, in Mor Dhona"
+     ]
+    },
+    {
+     "name": "",
+     "title": "Base relic tool",
+     "lines": [
+      "Reward of the class's level 50 quest; it is the start of the Supra and Lucis upgrades with Talan in Mor Dhona"
+     ]
+    }
+   ]
+  },
+  "skysteel": {
+   "title": "Skysteel tools (Shadowbringers)",
+   "stages": [
+    {
+     "name": "Skybuilders'",
+     "title": "Skybuilders'",
+     "lines": [
+      "Quest The Pinnacle of Possibility from Emeny: crafters make 20 fifth-tier collectables at top collectability (expert recipes; fixed macros work with current gear) and trade them to Spanner for 60 oddly delicate parts"
+     ]
+    },
+    {
+     "name": "Skysung",
+     "title": "Skysung",
+     "lines": [
+      "Quest The Tools of Tomorrow from Nimie: crafters make 21 fourth-tier collectables at top collectability, trade them to Denys for 105 highly viscous gobbiegoo; gatherers gather at the set nodes with the tool equipped"
+     ]
+    },
+    {
+     "name": "Augmented Dragonsung",
+     "title": "Augmented Dragonsung",
+     "lines": [
+      "Quest Ever Skyward from Nimie: crafters make 18 third-tier collectables at top collectability, trade them to Denys for 90 gobbiegoo; from here the current tool must be equipped"
+     ]
+    },
+    {
+     "name": "Dragonsung",
+     "title": "Dragonsung",
+     "lines": [
+      "Crafters: 30 second-tier tool recipes to Denys; Fishers: 60 Dragonspine at Dragonspit (Coerthas Western Highlands); Miners and Botanists: the second-tier items at the set nodes",
+      "Then the one-time quest In Everyone's Best Interests"
+     ]
+    },
+    {
+     "name": "+1",
+     "title": "Skysteel +1",
+     "lines": [
+      "Crafters: 20 first-tier tool recipes to Denys in Foundation (8.0, 10.0); Fishers: 40 Thinker's Coral at the Thaliak River (Dravanian Hinterlands) with the Signature Skyball lure; Miners and Botanists: the first-tier items at the set nodes",
+      "Recipe materials: Scrip Exchange, market board, or gather them; monster parts come from Hunting ventures or Gemstone Traders"
+     ]
+    },
+    {
+     "name": "",
+     "title": "Skysteel (base)",
+     "lines": [
+      "Quest Mislaid Plans from the Skysteel Engineer in Foundation (14.2, 12.5), level 80 crafter or gatherer, after Towards the Firmament; it gives a coffer that becomes your current class's tool",
+      "More prototype tools: Denys in the Skysteel Manufactory (8.0, 10.0) for gil"
+     ]
+    }
+   ]
+  },
+  "resplendent": {
+   "title": "Resplendent tools (Shadowbringers)",
+   "stages": [
+    {
+     "name": "",
+     "title": "Resplendent",
+     "lines": [
+      "Needs the quest The Boutique Always Wins",
+      "Crafters: buy Material A with scrips, craft Component A (expert recipe, Master Recipes VIII), trade it to Limbeth for 1 to 2 Material B; repeat through B and C to the Final Material; 60 Final Material buy the tool from Limbeth",
+      "Gatherers: earned from gathering log achievements (timed and legendary nodes count; buy the folklore books with scrips)"
+     ]
+    }
+   ]
+  },
+  "splendorous": {
+   "title": "Splendorous tools (Endwalker)",
+   "stages": [
+    {
+     "il": 640,
+     "title": "Lodestar",
+     "lines": [
+      "Quest Stand Tool, My Friend: 20 sixth-tier collectables (expert recipes) to Quinnana for 60 nightforged components, then to Chora-Zoi"
+     ]
+    },
+    {
+     "il": 635,
+     "title": "Vrandtic Visionary's",
+     "lines": [
+      "Quest A Tool for the Ages: 20 fifth-tier collectables (expert recipes) to Quinnana for 60 inspirational components, then to Chora-Zoi"
+     ]
+    },
+    {
+     "il": 630,
+     "title": "Brilliant",
+     "lines": [
+      "Quest A Tool without Compare: 30 fourth-tier collectables to Quinnana for 90 brilliant components, then to Chora-Zoi"
+     ]
+    },
+    {
+     "il": 625,
+     "title": "Chora-Zoi's Crystalline",
+     "lines": [
+      "Quest A Tool of Her Own: 30 third-tier collectables to Quinnana for 90 customized components, then to Chora-Zoi"
+     ]
+    },
+    {
+     "il": 620,
+     "title": "Crystalline",
+     "lines": [
+      "Quest An Adaptive Tool: 30 second-tier collectables to Quinnana for 90 adaptive components, then to Chora-Zoi"
+     ]
+    },
+    {
+     "il": 590,
+     "title": "Augmented Splendorous",
+     "lines": [
+      "Quest A Dedicated Tool: 20 first-tier collectables at top collectability to Quinnana for 60 splendorous components, then to Chora-Zoi in the Crystarium (10.5, 7.7)",
+      "Gatherers gather the collectables at the set nodes; Fishers use the Select Bait Ball from Quinnana; the tool must be equipped"
+     ]
+    },
+    {
+     "il": 570,
+     "title": "Splendorous (base)",
+     "lines": [
+      "Quest An Original Improvement from Chora-Zoi in the Crystarium (7.8, 11.4), level 90, after the Endwalker main story, The Crystalline Mean and opening the Boutique of Splendors (Mowen in Eulmore)",
+      "Further tools: Quinnana in the Crystarium (10.4, 7.7) for scrips"
+     ]
+    }
+   ]
+  },
+  "cosmic": {
+   "title": "Cosmic tools (Dawntrail)",
+   "stages": [
+    {
+     "name": "",
+     "title": "Cosmic tool",
+     "lines": [
+      "The first tool comes from the quest A Cosmic Homecoming (a prototype coffer); further prototypes are free from Researchingway (Inquire about cosmic tools)",
+      "Earn research data by finishing stellar missions in Cosmic Exploration; the tool need not be equipped, but equipping it gives bonus credits",
+      "When the data is full, Researchingway upgrades the tool; data above a stage's cap is lost, so upgrade promptly (19 upgrades from level 10 to 100)",
+      "Good missions: Auxesia class D and C early, C and B mid, B and A late (data type VI only on class A); Miners and Botanists: the class A gravitational stabilizer missions on Oizys"
+     ]
+    }
+   ]
+  }
+ }
+}

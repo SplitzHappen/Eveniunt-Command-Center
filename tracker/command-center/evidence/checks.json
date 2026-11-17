@@ -1,0 +1,6375 @@
+{
+  "date": "2026-11-17",
+  "browser": "chromium 153.0.8010.12",
+  "playwright": "1.63.0",
+  "node": "v22.23.4",
+  "passed": 84,
+  "total": 84,
+  "notRun": [
+    "C26b: the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
+  ],
+  "results": [
+    {
+      "id": "C1",
+      "title": "The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it",
+      "pass": true,
+      "detail": {
+        "first": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier",
+            "Submersibles",
+            "⚙ Settings"
+          ],
+          "cards": 3,
+          "title": "Eveniunt Command Center"
+        },
+        "again": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier",
+            "Submersibles",
+            "⚙ Settings"
+          ],
+          "cards": 3,
+          "title": "Eveniunt Command Center"
+        },
+        "errors": [],
+        "external": []
+      }
+    },
+    {
+      "id": "C2",
+      "title": "The Atelier opened from the shell is isolated, runs more than one thread and solves, with no extra reload and no hand-over notice",
+      "pass": true,
+      "detail": {
+        "atelierOnArrival": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        },
+        "navigationsToAtelier": 1,
+        "handover": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": false,
+          "device": null
+        },
+        "solve": {
+          "error": null,
+          "quality": 19710,
+          "steps": 34,
+          "seconds": 18,
+          "threads": 4,
+          "wantQuality": 19710
+        },
+        "afterOwnWorkerTookOver": {
+          "isolated": true,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        }
+      }
+    },
+    {
+      "id": "C2b",
+      "title": "Back from the Atelier returns to the shell, which is still not isolated",
+      "pass": true,
+      "detail": {
+        "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+        "isolated": false,
+        "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+        "modules": [
+          "Home",
+          "Tracker",
+          "Atelier",
+          "Submersibles",
+          "⚙ Settings"
+        ],
+        "cards": 3,
+        "title": "Eveniunt Command Center"
+      }
+    },
+    {
+      "id": "C3",
+      "title": "The Tracker opened from the shell works (not isolated, characters set up, overview shown), with the way back and no hand-over notice",
+      "pass": true,
+      "detail": {
+        "tracker": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "handover": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": false,
+          "device": null
+        }
+      }
+    },
+    {
+      "id": "C4",
+      "title": "Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open",
+      "pass": true,
+      "detail": {
+        "shell": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier",
+            "Submersibles",
+            "⚙ Settings"
+          ],
+          "cards": 3,
+          "title": "Eveniunt Command Center"
+        },
+        "tracker": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "atelier": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        }
+      }
+    },
+    {
+      "id": "C2-4 errors",
+      "title": "No page or console errors in that profile",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "id": "C5",
+      "title": "Offline, a module never opened shows a short note with a way back to the shell",
+      "pass": true,
+      "detail": {
+        "note": {
+          "h1": "You are offline",
+          "back": true
+        },
+        "shellAfter": "http://127.0.0.1:8418/Eveniunt-Command-Center/"
+      }
+    },
+    {
+      "id": "C6a",
+      "title": "Today's Atelier opened directly: isolated with more than one thread after exactly one reload under its own worker, and offline",
+      "pass": true,
+      "detail": {
+        "online": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js",
+          "pageLoads": 2,
+          "reloadMark": "1"
+        },
+        "offline": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        }
+      }
+    },
+    {
+      "id": "C6b",
+      "title": "Today's Tracker opened directly: works, and offline with its save",
+      "pass": true,
+      "detail": {
+        "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+        "isolated": false,
+        "overview": true,
+        "chars": 2,
+        "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+      }
+    },
+    {
+      "id": "C6 errors",
+      "title": "No page or console errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "id": "C7",
+      "title": "With both apps already installed, adding the shell leaves each app under its own worker, Atelier isolated and multi-thread, each with the way back",
+      "pass": true,
+      "detail": {
+        "registrations": [
+          "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/"
+        ],
+        "atelier": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js"
+        },
+        "tracker": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "waysBack": {
+          "atelier": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tracker": "http://127.0.0.1:8418/Eveniunt-Command-Center/"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C8",
+      "title": "The shell is installable as an app",
+      "pass": true,
+      "detail": {
+        "installabilityErrors": []
+      }
+    },
+    {
+      "id": "C9",
+      "title": "Phone width (390 px): no sideways scrolling in the shell or in the Tracker with its header link and hand-over notice",
+      "pass": true,
+      "detail": {
+        "shell": {
+          "scroll": 390,
+          "client": 390
+        },
+        "tracker": {
+          "scroll": 390,
+          "client": 390,
+          "back": true,
+          "labelShown": true,
+          "notice": true
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "title": "The test site serves both apps' current builds byte for byte, with no isolation headers from the server",
+      "pass": true,
+      "detail": {
+        "served": [
+          {
+            "file": "/Eveniunt-Command-Center/tracker/index.html",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/tracker/sw.js",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/tracker/manifest.webmanifest",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/atelier/index.html",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/atelier/sw.js",
+            "same": true,
+            "isolationHeaders": false
+          },
+          {
+            "file": "/Eveniunt-Command-Center/atelier/manifest.webmanifest",
+            "same": true,
+            "isolationHeaders": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "C11",
+      "title": "One save for the shell and both modules: the Tracker copies its save in, the Atelier asks once and keeps each character's stats (still isolated, multi-thread), the shell shows the characters, the old data is untouched",
+      "pass": true,
+      "detail": {
+        "tracker": {
+          "chars": [
+            "Alba",
+            "Brio"
+          ],
+          "ticks": 2,
+          "moved": {
+            "at": 1794943549435,
+            "from": "indexeddb",
+            "check": {
+              "chars": 2,
+              "ticks": 3,
+              "excl": 1,
+              "vals": 0,
+              "avail": 0,
+              "same": true
+            },
+            "confirmed": null,
+            "wentBack": null,
+            "oldSeen": null
+          }
+        },
+        "atelier": {
+          "isolated": true,
+          "threads": 4,
+          "alba": 5555,
+          "brio": 4900
+        },
+        "shell": [
+          "Alba",
+          "Brio"
+        ],
+        "oldDataUntouched": true,
+        "save": {
+          "chars": [
+            "Alba",
+            "Brio"
+          ],
+          "modules": [
+            "atelier",
+            "tracker"
+          ],
+          "moved": [
+            "tracker",
+            "atelier"
+          ]
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C12",
+      "title": "Apps installed before the shell keep working offline after it arrives (own workers, save kept, Atelier isolated and multi-thread), show the way back and the hand-over notice; \"Got it\" or installing the Command Center ends the notice in both, and the link stays",
+      "pass": true,
+      "detail": {
+        "offline": {
+          "tracker": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+            "isolated": false,
+            "overview": true,
+            "chars": 2,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js",
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": true,
+            "device": null
+          },
+          "atelier": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/",
+            "isolated": true,
+            "threads": 4,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/atelier/sw.js",
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": true,
+            "device": null
+          }
+        },
+        "gotIt": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": false,
+          "device": {
+            "handoverSeen": 1794943553598
+          }
+        },
+        "afterGotIt": {
+          "tracker": {
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "handoverSeen": 1794943553598
+            }
+          },
+          "atelier": {
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "handoverSeen": 1794943553598
+            }
+          }
+        },
+        "recordCleared": {
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "notice": true,
+          "device": null
+        },
+        "afterInstall": {
+          "tracker": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+            "isolated": false,
+            "overview": true,
+            "chars": 2,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/sw.js",
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "installed": 1794943555236
+            }
+          },
+          "atelier": {
+            "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "notice": false,
+            "device": {
+              "installed": 1794943555236
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C13",
+      "title": "Under a site-wide worker that does not isolate atelier/, the Atelier's first visit still ends isolated with more than one thread, under its own worker, after exactly one reload; a second tab needs none",
+      "pass": true,
+      "detail": {
+        "rootWorkerProbe": {
+          "status": 200,
+          "coep": null,
+          "coop": null
+        },
+        "arrival": {
+          "url": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/sw.js"
+        },
+        "afterOwnWorker": {
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/sw.js",
+          "reloadMark": "1"
+        },
+        "navigationsToAtelier": 2,
+        "secondTab": {
+          "url": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/",
+          "isolated": true,
+          "threads": 4,
+          "controller": "http://127.0.0.1:8419/Eveniunt-Command-Center/atelier/sw.js",
+          "navigations": 1
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C14",
+      "title": "The header link brings the owner back to the shell from the Tracker and from the Atelier, also from an Atelier opened directly with the shell never visited; the shell is not isolated each time",
+      "pass": true,
+      "detail": {
+        "fromTracker": {
+          "link": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "shell": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "isolated": false,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+            "modules": [
+              "Home",
+              "Tracker",
+              "Atelier",
+              "Submersibles",
+              "⚙ Settings"
+            ],
+            "cards": 3,
+            "title": "Eveniunt Command Center"
+          }
+        },
+        "fromAtelier": {
+          "link": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "shell": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "isolated": false,
+            "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+            "modules": [
+              "Home",
+              "Tracker",
+              "Atelier",
+              "Submersibles",
+              "⚙ Settings"
+            ],
+            "cards": 3,
+            "title": "Eveniunt Command Center"
+          }
+        },
+        "fromAtelierOpenedDirectly": {
+          "link": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "shell": {
+            "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+            "isolated": false,
+            "controller": null,
+            "modules": [
+              "Home",
+              "Tracker",
+              "Atelier",
+              "Submersibles",
+              "⚙ Settings"
+            ],
+            "cards": 3,
+            "title": "Eveniunt Command Center"
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C15",
+      "title": "The shell has its own icons and manifest (gate 1E), different from the Tracker's and the Atelier's, and the browser can load every one",
+      "pass": true,
+      "detail": {
+        "distinct": [
+          {
+            "icon": "icon-192.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          },
+          {
+            "icon": "icon-512.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          },
+          {
+            "icon": "icon-maskable-512.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          },
+          {
+            "icon": "apple-touch-icon.png",
+            "present": true,
+            "differsFromTracker": true,
+            "differsFromAtelier": true
+          }
+        ],
+        "manifest": {
+          "name": "Eveniunt Command Center",
+          "icons": [
+            "icons/icon-192.png",
+            "icons/icon-512.png",
+            "icons/icon-maskable-512.png"
+          ]
+        },
+        "served": [
+          {
+            "src": "icons/icon-192.png",
+            "status": 200,
+            "type": "image/png"
+          },
+          {
+            "src": "icons/icon-512.png",
+            "status": 200,
+            "type": "image/png"
+          },
+          {
+            "src": "icons/icon-maskable-512.png",
+            "status": 200,
+            "type": "image/png"
+          }
+        ],
+        "head": {
+          "icon": "http://127.0.0.1:8418/Eveniunt-Command-Center/icons/icon-192.png",
+          "apple": "http://127.0.0.1:8418/Eveniunt-Command-Center/icons/apple-touch-icon.png",
+          "manifest": "http://127.0.0.1:8418/Eveniunt-Command-Center/manifest.webmanifest"
+        }
+      }
+    },
+    {
+      "id": "C16",
+      "title": "The published layout (gate 1E): the repository's files and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
+      "pass": true,
+      "detail": {
+        "scratch": "/tmp/cc-publish-2Zmpgw",
+        "copied": "301",
+        "freshLists": {
+          "workflowWrites": true,
+          "trackerWorkerServes": true
+        },
+        "files": {
+          "root": true,
+          "tracker": true,
+          "atelier": true,
+          "cosmic": true,
+          "oldFrontPageGone": true,
+          "privateRecordsAbsent": true
+        },
+        "workerFiles": {
+          "count": 55,
+          "missing": []
+        },
+        "shell": {
+          "url": "http://127.0.0.1:8420/Eveniunt-Command-Center/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8420/Eveniunt-Command-Center/sw.js",
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier",
+            "Submersibles",
+            "⚙ Settings"
+          ],
+          "cards": 3,
+          "title": "Eveniunt Command Center"
+        },
+        "links": {
+          "local": 16,
+          "outside": 2,
+          "broken": []
+        },
+        "cosmic": {
+          "url": "http://127.0.0.1:8420/Eveniunt-Command-Center/cosmic/cosmic-sinus-ardorum.html",
+          "title": "Cosmic Solver – Sinus Ardorum"
+        },
+        "tracker": {
+          "url": "http://127.0.0.1:8420/Eveniunt-Command-Center/tracker/",
+          "isolated": false,
+          "overview": true,
+          "chars": 2,
+          "controller": "http://127.0.0.1:8420/Eveniunt-Command-Center/tracker/sw.js"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C17",
+      "title": "First sign-in on a device: one tap takes the Tracker to Microsoft's sign-in and back through oauth.html, the helper keeps the device, the cloud copy is created and the status line says Synced; the device handle is in no backup, transfer code, save or cloud copy",
+      "pass": true,
+      "detail": {
+        "before": {
+          "devices": 0,
+          "file": false
+        },
+        "after": {
+          "url": "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/",
+          "devices": 1,
+          "file": true,
+          "grants": [
+            "authorization_code"
+          ],
+          "navs": [
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=kcACoUNg0ciHW1tD9Zj2uQ",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
+          ],
+          "status": "Synced 07:26 PM",
+          "device": "f5a0f525…"
+        },
+        "leaks": {
+          "backup": false,
+          "code": false,
+          "save": false
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C18",
+      "title": "A new sitting on a signed-in device: no sign-in page, one quiet renewal through the helper, the status line says Synced, the panel says the device syncs by itself; a change made on another device arrives on the next sync",
+      "pass": true,
+      "detail": {
+        "grants": [
+          "refresh_token"
+        ],
+        "navs": [
+          "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
+        ],
+        "panel": "SettingsCharactersCountingImport and backupOnline refreshCloud syncAppearanceAboutKeeps a private copy in your own OneDrive (the app’s own folder, which is all this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else. On an iPhone or iPad, each installed app signs in separately once.Th",
+        "renamed": "Brio renamed elsewhere",
+        "etagAfter": "e3",
+        "errors": []
+      }
+    },
+    {
+      "id": "C19",
+      "title": "An ended sign-in asks for one tap and nothing else: the status line says so, the device record is gone, the cloud copy is untouched, the panel offers the sign-in; the tap works again, and signing out forgets the device at the helper",
+      "pass": true,
+      "detail": {
+        "status": "Cloud sync: this device’s sign-in has ended; tap to sign in again (Settings → Cloud sync)",
+        "devices": 0,
+        "deviceRecord": null,
+        "file": true,
+        "panel": "SettingsCharactersCountingImport and backupOnline refreshCloud syncAppearanceAboutKeeps a private copy in your own OneDrive (the app’s own folder, which is all this tracker can see) and merges changes from your other devices. A change made on two devices to the same entry asks you which is right. Free; nothing goes anywhere else. On an iPhone or iPad, each installed app signs in separately once.Th",
+        "notSignedIn": true,
+        "offersSignIn": true,
+        "signedInAgain": true,
+        "afterSignOut": {
+          "devices": 0,
+          "status": "Signed out on this device: nothing syncs here until you sign in again (Settings → Cloud sync)"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C20",
+      "title": "The Submersibles module opens from the shell (switcher and home card) and directly, is not isolated, comes under the shell's site-wide worker and works offline after one visit; its header leads back to the shell",
+      "pass": true,
+      "detail": {
+        "shell": {
+          "modules": [
+            "Home",
+            "Tracker",
+            "Atelier",
+            "Submersibles",
+            "⚙ Settings"
+          ],
+          "cards": 3
+        },
+        "fromShell": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "backHome": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+        "offline": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "shellOffline": 3,
+        "direct": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "directOffline": {
+          "url": "http://127.0.0.1:8418/Eveniunt-Command-Center/submersibles/",
+          "isolated": false,
+          "controller": "http://127.0.0.1:8418/Eveniunt-Command-Center/sw.js",
+          "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+          "tabs": [
+            "Board",
+            "Log",
+            "Map",
+            "Earnings",
+            "Setup"
+          ],
+          "subs": [],
+          "banners": [],
+          "title": "Submersibles · Eveniunt Command Center"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C21",
+      "title": "Guided setup of one free company with four subs, end to end: name, world, slots, names, ranks, parts, a voyage under way and the discovered sectors land in modules.submersibles in the design's shape; the board shows 1 Out and 3 Idle; the next-slot note names the sector and the source's notes; the free company is renamed afterwards with nothing else lost",
+      "pass": true,
+      "detail": {
+        "fcs": 1,
+        "fc": {
+          "name": "Alpha Company",
+          "world": "Maduin",
+          "charId": null,
+          "order": 0,
+          "unlockedSlots": 4,
+          "discovered": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ]
+        },
+        "subs": [
+          [
+            1,
+            "Sub One",
+            50,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ],
+          [
+            2,
+            "Sub Two",
+            40,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ],
+          [
+            3,
+            "Sub Three",
+            30,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ],
+          [
+            4,
+            "Sub Four",
+            12,
+            [
+              3,
+              4,
+              1,
+              2
+            ]
+          ]
+        ],
+        "oneVoyage": {
+          "sentAt": 1794506401070,
+          "route": [],
+          "returnAt": 1794604321070,
+          "gameSaid": "1d 3h 12m"
+        },
+        "board": [
+          "out",
+          "idle",
+          "idle",
+          "idle"
+        ],
+        "unlockNote": true,
+        "renamed": "Alpha Renamed",
+        "sameSubs": true,
+        "voyageKept": true
+      }
+    },
+    {
+      "id": "C22",
+      "title": "Send by tapping a route: the return time is worked out with no typing and matches the formula; with the page clock moved past it the sub shows Back with one banner; a reload shows Back with no second banner; one press on the board's suggested-route button sends it again (worked out, no sheet); \"Check against the game\" keeps the worked-out time beside the game's and shows the difference under Setup; \"Send all back\" sends each picked sub on its own suggested route (subs looking for new sectors split them) and logs the returned voyage; two game times entered in the same minute share one banner and keep the worked-out time beside them",
+      "pass": true,
+      "detail": {
+        "advice": "Suggested · step 2 of 3: Discover every sector (134 sectors still to find)Deep-sea Site: H → I → E Send on this route Change it firstCan reveal 4 new sectors (Deep-sea Site H, Deep-sea Site I, Deep-se",
+        "wantSecs": 54250,
+        "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
+        "afterQuick": {
+          "sentAt": 1794560716888,
+          "route": [
+            8,
+            9,
+            5
+          ],
+          "returnAt": 1794669094888,
+          "calcAt": 1794669094888
+        },
+        "checked": {
+          "sentAt": 1794560716888,
+          "route": [
+            8,
+            9,
+            5
+          ],
+          "returnAt": 1794669257488,
+          "calcAt": 1794669094888,
+          "gameSaid": "30h 9m"
+        },
+        "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
+        "sizeText": "Whole save, compressed as cloud sync sends it: 0.00 MB of the 4 MB limit (0%). 1 logged voyage kept. Every voyage is kept; at this size there is room for many years.Load an archive file",
+        "rank": [
+          40,
+          10610
+        ],
+        "sent": {
+          "sentAt": 1794506402503,
+          "route": [
+            1
+          ],
+          "returnAt": 1794560652503,
+          "calcAt": 1794560652503
+        },
+        "beforeBack": [],
+        "atBack": [
+          "Alpha Renamed · Sub Two is back (09:04)"
+        ],
+        "sentRow": "back",
+        "afterReload": [],
+        "reloadRow": "back",
+        "picked": [
+          "s44lvqymr",
+          "s0fx76f48"
+        ],
+        "allOk": true,
+        "sentAll": [
+          {
+            "sentAt": 1794560718187,
+            "route": [
+              9,
+              7,
+              8
+            ],
+            "returnAt": 1794663240187,
+            "calcAt": 1794663240187
+          },
+          {
+            "sentAt": 1794560718187,
+            "route": [
+              7,
+              5,
+              3
+            ],
+            "returnAt": 1794657594187,
+            "calcAt": 1794657594187
+          }
+        ],
+        "trips": [
+          {
+            "s": "sxxs7wedq",
+            "t": 1794506402503,
+            "r": [
+              1
+            ],
+            "back": 1794560652503,
+            "calc": 1794560652503,
+            "items": [],
+            "newSectors": [],
+            "rankAfter": 40,
+            "rankCalc": 40,
+            "expBase": 10610
+          }
+        ],
+        "typed": [
+          {
+            "sentAt": 1794560718187,
+            "route": [
+              9,
+              7,
+              8
+            ],
+            "returnAt": 1794563465156,
+            "calcAt": 1794663240187,
+            "gameSaid": "45m"
+          },
+          {
+            "sentAt": 1794560718187,
+            "route": [
+              7,
+              5,
+              3
+            ],
+            "returnAt": 1794563465788,
+            "calcAt": 1794657594187,
+            "gameSaid": "45m"
+          }
+        ],
+        "grouped": [
+          "2 submarines are back (09:51): Alpha Renamed · Sub Three, Alpha Renamed · Sub Four"
+        ]
+      }
+    },
+    {
+      "id": "C23",
+      "title": "The calendar file of an Out sub is one event at the typed return time with a 0-minute alarm, titled \"<free company> · <sub> back\"",
+      "pass": true,
+      "detail": {
+        "file": "alpha-renamed-sub-one-back.ics",
+        "want": "20261113T211201Z",
+        "ics": [
+          "DTSTART:20261113T211201Z",
+          "SUMMARY:Alpha Renamed · Sub One back",
+          "TRIGGER:PT0M"
+        ]
+      }
+    },
+    {
+      "id": "C24",
+      "title": "Phone width (390 px): no sideways scrolling on the board, in the send sheet or in any setup step; the tab bar sits at the bottom",
+      "pass": true,
+      "detail": {
+        "board": 0,
+        "tabbar": {
+          "bottom": 844,
+          "height": 60,
+          "position": "fixed"
+        },
+        "sheet": 0,
+        "setupFc": 0,
+        "setupSub": 0,
+        "setupSectors": 0
+      }
+    },
+    {
+      "id": "C21-24 errors",
+      "title": "No page or console errors in that profile",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "id": "C25",
+      "title": "8 free companies x 4 subs fit on one screen at 1920 x 1080 (4 x 2 grid, every sub inside the window, no sideways scrolling), with Back, Out, Idle and Locked shown; a tablet (1024 px) shows two columns; sorting by return time puts Back first, then Out, then Idle",
+      "pass": true,
+      "detail": {
+        "fit": {
+          "fcs": 8,
+          "subs": 32,
+          "statuses": [
+            "back",
+            "idle",
+            "locked",
+            "out"
+          ],
+          "maxBottom": 978,
+          "maxRight": 1895,
+          "columns": 4,
+          "sideways": 0,
+          "scrollY": 0
+        },
+        "tablet": {
+          "columns": 2,
+          "sideways": 0
+        },
+        "order": [
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "back",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "out",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle",
+          "idle"
+        ],
+        "errors": []
+      }
+    },
+    {
+      "id": "C27",
+      "title": "The main Settings (owner request): opened from the main menu; characters and a character's free company typed there reach the Tracker (no first-run window) and Submersibles; the night rule is kept for every module",
+      "pass": true,
+      "detail": {
+        "visible": true,
+        "chars": [
+          "Alba Test",
+          "Character 2"
+        ],
+        "fcs": [
+          {
+            "name": "Alpha Company",
+            "charId": "c1",
+            "order": 0,
+            "unlockedSlots": 1,
+            "discovered": [
+              1,
+              2
+            ]
+          }
+        ],
+        "notify": {
+          "night": "quiet",
+          "quietHours": {
+            "from": 1320,
+            "to": 480
+          }
+        },
+        "trackerDialog": false,
+        "trackerText": "Alba Test,Character 2",
+        "subsFc": "Alpha Company",
+        "errors": []
+      }
+    },
+    {
+      "id": "C28",
+      "title": "An app icon installed from the Tracker's page opens on the main menu and the Tracker still opens from there; the main Settings has the full appearance panel (21 themes), and a theme chosen there colours the main menu, Submersibles and the Tracker alike",
+      "pass": true,
+      "detail": {
+        "landed": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
+        "trackerAfter": "http://127.0.0.1:8418/Eveniunt-Command-Center/tracker/",
+        "themes": 4,
+        "choices": 21,
+        "shellPaper": "#1e2836",
+        "subsPaper": "#1e2836",
+        "trackerPaper": "#1e2836",
+        "errors": []
+      }
+    },
+    {
+      "id": "C26",
+      "title": "Phone notifications (step S7): the page works out the alerts with the automatic grouping (a free company still unlocking gets one alert per sub, one farming gil one alert for the batch), sends them to the helper, shows the helper's status and the grouping now in force, and keeps a changed grouping in the save, resending the schedule; turning on, the test and the night rule are reached through the main Settings",
+      "pass": true,
+      "detail": {
+        "stages": [
+          "unlock",
+          "gil"
+        ],
+        "first": [
+          "Alpha Company · Sub A1 is back",
+          "Alpha Company · Sub A2 is back",
+          "Bravo Company: 4 subs back"
+        ],
+        "firstPanel": true,
+        "duringWizard": true,
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 20:56.",
+        "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
+        "perSub": [
+          "Alpha Company · Sub A1 is back",
+          "Alpha Company · Sub A2 is back",
+          "Bravo Company · Sub B1 is back",
+          "Bravo Company · Sub B2 is back",
+          "Bravo Company · Sub B3 is back",
+          "Bravo Company · Sub B4 is back"
+        ],
+        "prefs": {
+          "grouping": "sub"
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C26b",
+      "title": "Turning a device on and a real push delivery",
+      "pass": null,
+      "notRun": "the browser's push service (run by the browser maker) cannot be reached from the session; the helper's encryption and signature are checked by tests/helper.test.js, and the owner's \"Send a test\" button checks a real delivery"
+    },
+    {
+      "id": "C29",
+      "title": "Main Settings: a free company for character 1, then one for character 2, then a name change: the whole stored record is as before plus the name (both free companies kept)",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "f2uvlv9kw": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Bravo Company",
+                  "order": 1,
+                  "unlockedSlots": 1
+                },
+                "fvigl6o0a": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "f2uvlv9kw": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Bravo Company",
+                  "order": 1,
+                  "unlockedSlots": 1
+                },
+                "fvigl6o0a": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C30",
+      "title": "Main Settings: a free company, then two name changes in a row: the whole stored record is as before plus the last name (the free company kept)",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "ffxd42bkl": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "ffxd42bkl": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C31",
+      "title": "Main Settings: a free company, a name change, then the number of characters raised: the whole stored record is as before plus the name and a new empty character (the free company kept)",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fn9j5u2q2": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fn9j5u2q2": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C34",
+      "title": "After those edits, a reload of the main Settings and of Submersibles shows what is stored (the name, the free company, the new character), and the whole stored record is unchanged by the reloads",
+      "pass": true,
+      "detail": {
+        "shown": [
+          [
+            "Alba Test",
+            "Alpha Company"
+          ],
+          [
+            "",
+            ""
+          ]
+        ],
+        "subsShown": [
+          "Alpha Company"
+        ],
+        "again": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fn9j5u2q2": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C32",
+      "title": "Main Settings open while Submersibles in another tab adds a free company with four subs; then two name changes in Settings: the whole stored record is the other tab's plus the last name",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fojsenegi": {
+                  "charId": null,
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Delta Company",
+                  "order": 0,
+                  "unlockedSlots": 4,
+                  "world": "Maduin"
+                }
+              },
+              "settings": {},
+              "subs": {
+                "s8hi55moo": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub Two",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 40,
+                  "slot": 2,
+                  "voyage": null
+                },
+                "sd8jj45g4": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub Four",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 12,
+                  "slot": 4,
+                  "voyage": null
+                },
+                "sn71rkb7l": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub Three",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 30,
+                  "slot": 3,
+                  "voyage": null
+                },
+                "svdn0vb8h": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub One",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 50,
+                  "slot": 1,
+                  "voyage": null
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fojsenegi": {
+                  "charId": null,
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Delta Company",
+                  "order": 0,
+                  "unlockedSlots": 4,
+                  "world": "Maduin"
+                }
+              },
+              "settings": {},
+              "subs": {
+                "s8hi55moo": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub Two",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 40,
+                  "slot": 2,
+                  "voyage": null
+                },
+                "sd8jj45g4": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub Four",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 12,
+                  "slot": 4,
+                  "voyage": null
+                },
+                "sn71rkb7l": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub Three",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 30,
+                  "slot": 3,
+                  "voyage": null
+                },
+                "svdn0vb8h": {
+                  "fcId": "fojsenegi",
+                  "name": "Sub One",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 50,
+                  "slot": 1,
+                  "voyage": null
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C33",
+      "title": "Main Settings, the reverse order: a name, then a free company, then a name: the whole stored record is as before plus the last name",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fajz0ifyt": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fajz0ifyt": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C35",
+      "title": "Main Settings: the night rule, then two name changes: the whole stored record is as before plus the last name (the night rule kept)",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "settings": {
+              "notify": {
+                "night": "quiet",
+                "quietHours": {
+                  "from": 1320,
+                  "to": 480
+                }
+              }
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "settings": {
+              "notify": {
+                "night": "quiet",
+                "quietHours": {
+                  "from": 1320,
+                  "to": 480
+                }
+              }
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C36",
+      "title": "Main Settings open while the Tracker in another tab ticks an entry; then two name changes in Settings: the whole stored record is the Tracker's plus the last name (the tick kept)",
+      "pass": true,
+      "detail": {
+        "key": "mounts:1",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {
+                  "mounts:1": 1
+                }
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {
+                  "mounts:1": 1
+                }
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C37",
+      "title": "Main Settings open; another page adds a free company, Settings sets the night rule, the other page renames it, Settings changes a name: the whole stored record is the other page's newer one plus the name",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "settings": {
+              "notify": {
+                "night": "quiet",
+                "quietHours": {
+                  "from": 1320,
+                  "to": 480
+                }
+              }
+            },
+            "submersibles": {
+              "fcs": {
+                "fecho": {
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Echo Renamed",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "settings": {
+              "notify": {
+                "night": "quiet",
+                "quietHours": {
+                  "from": 1320,
+                  "to": 480
+                }
+              }
+            },
+            "submersibles": {
+              "fcs": {
+                "fecho": {
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Echo Renamed",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C38",
+      "title": "Main Settings open; another page adds a free company, Settings sets the night rule, the other page removes it, Settings changes a name: the whole stored record is the other page's newer one plus the name",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "settings": {
+              "notify": {
+                "night": "quiet",
+                "quietHours": {
+                  "from": 1320,
+                  "to": 480
+                }
+              }
+            },
+            "submersibles": {
+              "fcs": {},
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "settings": {
+              "notify": {
+                "night": "quiet",
+                "quietHours": {
+                  "from": 1320,
+                  "to": 480
+                }
+              }
+            },
+            "submersibles": {
+              "fcs": {},
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C39",
+      "title": "Main Settings open; the Tracker in another tab ticks an entry, Settings adds a free company, the Tracker unticks the entry, Settings changes a name: the whole stored record keeps the untick and the free company, plus the name",
+      "pass": true,
+      "detail": {
+        "key": "mounts:1",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fjg7zfbb5": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fjg7zfbb5": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C40",
+      "title": "Main Settings, quick succession ten times: a free company and two name changes about 20 ms apart: each time the whole stored record is as before plus the free company and the last name",
+      "pass": true,
+      "detail": {
+        "runs": [
+          {
+            "i": 1,
+            "gap": 12,
+            "ok": true,
+            "name": "Alba Re 1",
+            "fcs": [
+              "Alpha 1"
+            ]
+          },
+          {
+            "i": 2,
+            "gap": 14,
+            "ok": true,
+            "name": "Alba Re 2",
+            "fcs": [
+              "Alpha 2"
+            ]
+          },
+          {
+            "i": 3,
+            "gap": 16,
+            "ok": true,
+            "name": "Alba Re 3",
+            "fcs": [
+              "Alpha 3"
+            ]
+          },
+          {
+            "i": 4,
+            "gap": 18,
+            "ok": true,
+            "name": "Alba Re 4",
+            "fcs": [
+              "Alpha 4"
+            ]
+          },
+          {
+            "i": 5,
+            "gap": 20,
+            "ok": true,
+            "name": "Alba Re 5",
+            "fcs": [
+              "Alpha 5"
+            ]
+          },
+          {
+            "i": 6,
+            "gap": 22,
+            "ok": true,
+            "name": "Alba Re 6",
+            "fcs": [
+              "Alpha 6"
+            ]
+          },
+          {
+            "i": 7,
+            "gap": 24,
+            "ok": true,
+            "name": "Alba Re 7",
+            "fcs": [
+              "Alpha 7"
+            ]
+          },
+          {
+            "i": 8,
+            "gap": 26,
+            "ok": true,
+            "name": "Alba Re 8",
+            "fcs": [
+              "Alpha 8"
+            ]
+          },
+          {
+            "i": 9,
+            "gap": 28,
+            "ok": true,
+            "name": "Alba Re 9",
+            "fcs": [
+              "Alpha 9"
+            ]
+          },
+          {
+            "i": 10,
+            "gap": 30,
+            "ok": true,
+            "name": "Alba Re 10",
+            "fcs": [
+              "Alpha 10"
+            ]
+          }
+        ],
+        "errors": []
+      }
+    },
+    {
+      "id": "C41",
+      "title": "Main Settings open; another tab links a free company to character 1: the field shows it without a reload, and typing another name renames it (one free company for that character); a link the page was not told about is renamed too: each time the whole stored record is as before plus the new name",
+      "pass": true,
+      "detail": {
+        "shown": true,
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "ffox": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Foxtrot Renamed",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "ffox": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Foxtrot Renamed",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "got2": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "ffox": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Foxtrot Renamed",
+                  "order": 0,
+                  "unlockedSlots": 1
+                },
+                "fgolf": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Golf Renamed",
+                  "order": 1,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want2": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "ffox": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Foxtrot Renamed",
+                  "order": 0,
+                  "unlockedSlots": 1
+                },
+                "fgolf": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Golf Renamed",
+                  "order": 1,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C42",
+      "title": "Main Settings open; another tab renames a character and sends a submarine: the Settings field shows the name without a reload; a free company and two names saved in Settings: the whole stored record is both tabs' changes together",
+      "pass": true,
+      "detail": {
+        "shown": true,
+        "added": [
+          "f2ulmcgkp"
+        ],
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio Elsewhere"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "f2ulmcgkp": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 1,
+                  "unlockedSlots": 1
+                },
+                "fhot": {
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Hotel Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {
+                "h1": {
+                  "fcId": "fhot",
+                  "name": "Sub H1",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 5,
+                  "slot": 1,
+                  "voyage": {
+                    "returnAt": 1794947234322,
+                    "route": [
+                      1
+                    ],
+                    "sentAt": 1794943634322
+                  }
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Retest"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio Elsewhere"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fhot": {
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Hotel Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                },
+                "f2ulmcgkp": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 1,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {
+                "h1": {
+                  "fcId": "fhot",
+                  "name": "Sub H1",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 5,
+                  "slot": 1,
+                  "voyage": {
+                    "returnAt": 1794947234322,
+                    "route": [
+                      1
+                    ],
+                    "sentAt": 1794943634322
+                  }
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C43",
+      "title": "Main Settings: a name being typed (caret mid-word) when another tab stores a change keeps its text, focus and caret; after leaving the field both changes are stored and the fields show them; a transfer code that is shown stays shown, keeps the focus and has its whole text selected again, and decodes to the stored save while another change is taken in and after the focus leaves",
+      "pass": true,
+      "detail": {
+        "typing": {
+          "same": true,
+          "value": "Alba Typed",
+          "caret": [
+            7,
+            7
+          ]
+        },
+        "during": {
+          "same": true,
+          "value": "Alba Typed",
+          "caret": [
+            7,
+            7
+          ]
+        },
+        "shownAfter": true,
+        "nameAfter": "Alba Typed",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Typed"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "find": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "India Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Typed"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "find": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "India Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "code": [
+          {
+            "shown": true,
+            "focused": true,
+            "same": true
+          },
+          {
+            "shown": true,
+            "focused": true,
+            "same": false
+          },
+          {
+            "shown": true,
+            "focused": false,
+            "same": false
+          }
+        ],
+        "code1ok": true,
+        "code2ok": true,
+        "errors": []
+      }
+    },
+    {
+      "id": "C46",
+      "title": "Main Settings: a press on a button is kept when another tab adds a character between press and release (a name being typed before the mouse press; no field focused while the button is held; Space held on the focused button), Enter works, a press that saves a typed name as the page's first message is kept, and the typed names are stored",
+      "pass": true,
+      "detail": {
+        "a": {
+          "code": true,
+          "names": 3
+        },
+        "b": {
+          "code": true,
+          "names": 4
+        },
+        "c": {
+          "code": true,
+          "names": 5
+        },
+        "enter": true,
+        "d": {
+          "code": true,
+          "msg": "Saved."
+        },
+        "names": [
+          "Alba Test X",
+          "Brio",
+          "Character 3",
+          "Character 4",
+          "Character 5"
+        ],
+        "errors": []
+      }
+    },
+    {
+      "id": "C47",
+      "title": "Main Settings: another tab's renames and free company reach the fields in place while a field has the focus (a focused box with nothing typed too); typed text is kept; Tab to the next name box and to a free-company box shows the other tab's values and edits build on them; with the focus in a time box a new character is drawn at once, and while text is typed it is drawn when the focus moves on; the whole stored record has everything",
+      "pass": true,
+      "detail": {
+        "s1": {
+          "active": "name:c1",
+          "vals": {
+            "name:c1": "Alba Elsewhere",
+            "fc:c1": "",
+            "name:c2": "Brio Elsewhere",
+            "fc:c2": "Juliet Company"
+          }
+        },
+        "s2": {
+          "active": "name:c1",
+          "n1": "Alba Elsewhere X"
+        },
+        "s3": {
+          "active": "name:c2",
+          "n2": "Brio Elsewhere"
+        },
+        "s4": {
+          "active": "fc:c2",
+          "f2": "Juliet Company"
+        },
+        "s5": {
+          "active": "qfrom:",
+          "n1": "Alba Fourth"
+        },
+        "s6": {
+          "active": "qfrom:",
+          "names": 3
+        },
+        "s7": {
+          "active": "name:c1",
+          "names": 3
+        },
+        "s8": {
+          "active": "fc:c1",
+          "names": 4,
+          "n1": "Alba FourthY"
+        },
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba FourthY"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio ElsewhereX"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c3",
+              "lodestone": null,
+              "name": "Character 3"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c4",
+              "lodestone": null,
+              "name": "Character 4"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fjul": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Juliet Company Two",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {},
+                "c3": {},
+                "c4": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {},
+                "c3": {},
+                "c4": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {},
+                "c3": {},
+                "c4": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba FourthY"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio ElsewhereX"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c3",
+              "lodestone": null,
+              "name": "Character 3"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c4",
+              "lodestone": null,
+              "name": "Character 4"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fjul": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Juliet Company Two",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {},
+                "c3": {},
+                "c4": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {},
+                "c3": {},
+                "c4": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {},
+                "c3": {},
+                "c4": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C44",
+      "title": "Main Settings: a sync under way (the cloud copy holding another device's change, the upload held back): a name and a free company saved during the wait; when the page says Synced the whole stored record holds the other device's change and both edits, the fields show them, and after one more sync the cloud copy holds all three",
+      "pass": true,
+      "detail": {
+        "duringWait": {
+          "held": true,
+          "message": "Saved: the free company is in Submersibles."
+        },
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba During"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio Elsewhere"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "f20502fsp": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba During"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio Elsewhere"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            },
+            "submersibles": {
+              "fcs": {
+                "f20502fsp": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            }
+          }
+        },
+        "shown": {
+          "c1": "Alba During",
+          "c2": "Brio Elsewhere",
+          "fc": "Alpha Company"
+        },
+        "msgAfter": "Synced 07:27 PM.",
+        "cloudSays": {
+          "names": [
+            [
+              "c1",
+              "Alba During"
+            ],
+            [
+              "c2",
+              "Brio Elsewhere"
+            ]
+          ],
+          "fcs": [
+            [
+              "c1",
+              "Alpha Company"
+            ]
+          ]
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C45",
+      "title": "Main Settings: a sync request that never answers (from \"Sync now\", and at opening): an edit made meanwhile is stored and its usual message shown; the characters are shown while the sync at opening waits",
+      "pass": true,
+      "detail": {
+        "stalled": 2,
+        "nowStored": true,
+        "nowMsg": "Saved.",
+        "fields": true,
+        "openStored": true,
+        "openMsg": "Saved: the free company is in Submersibles.",
+        "errors": []
+      }
+    },
+    {
+      "id": "C48",
+      "title": "Main Settings: a name and a free company changed here during a sync and differently on the other device: the clash is not decided (the page says the devices disagree, word for word as for any clash; the stored save keeps this device's values and everything else the sync brought); the next sync raises it again and uploads nothing; once settled, a later change syncs (Synced) and is uploaded",
+      "pass": true,
+      "detail": {
+        "r1": {
+          "msg": "Your devices disagree on 2 entries: open the Tracker to choose which is right (it asks on opening).",
+          "got": {
+            "chars": [
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c1",
+                "lodestone": null,
+                "name": "Alba Local"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c2",
+                "lodestone": null,
+                "name": "Brio Cloud"
+              }
+            ],
+            "modules": {
+              "submersibles": {
+                "fcs": {
+                  "f92j6e1fa": {
+                    "charId": "c1",
+                    "discovered": [
+                      1,
+                      2
+                    ],
+                    "name": "Lima Local",
+                    "order": 0,
+                    "unlockedSlots": 1
+                  }
+                },
+                "settings": {},
+                "subs": {},
+                "trips": {}
+              },
+              "tracker": {
+                "avail": {},
+                "excl": {
+                  "c1": {},
+                  "c2": {}
+                },
+                "settings": {
+                  "countGone": false,
+                  "countLimited": false,
+                  "countUnknown": false,
+                  "gold": true,
+                  "links": true
+                },
+                "ticks": {
+                  "c1": {},
+                  "c2": {}
+                },
+                "vals": {
+                  "c1": {},
+                  "c2": {}
+                }
+              }
+            }
+          },
+          "cloud": {
+            "names": [
+              [
+                "c1",
+                "Alba Cloud"
+              ],
+              [
+                "c2",
+                "Brio Cloud"
+              ]
+            ],
+            "fcs": [
+              [
+                "c1",
+                "Lima Cloud"
+              ]
+            ]
+          }
+        },
+        "want1": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Local"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio Cloud"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "f92j6e1fa": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Lima Local",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "r2": {
+          "msg": "Your devices disagree on 2 entries: open the Tracker to choose which is right (it asks on opening).",
+          "etagSame": true,
+          "got": {
+            "chars": [
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c1",
+                "lodestone": null,
+                "name": "Alba Local"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c2",
+                "lodestone": null,
+                "name": "Brio Cloud"
+              }
+            ],
+            "modules": {
+              "submersibles": {
+                "fcs": {
+                  "f92j6e1fa": {
+                    "charId": "c1",
+                    "discovered": [
+                      1,
+                      2
+                    ],
+                    "name": "Lima Local",
+                    "order": 0,
+                    "unlockedSlots": 1
+                  }
+                },
+                "settings": {},
+                "subs": {},
+                "trips": {}
+              },
+              "tracker": {
+                "avail": {},
+                "excl": {
+                  "c1": {},
+                  "c2": {}
+                },
+                "settings": {
+                  "countGone": false,
+                  "countLimited": false,
+                  "countUnknown": false,
+                  "gold": true,
+                  "links": true
+                },
+                "ticks": {
+                  "c1": {},
+                  "c2": {}
+                },
+                "vals": {
+                  "c1": {},
+                  "c2": {}
+                }
+              }
+            }
+          },
+          "cloud": {
+            "names": [
+              [
+                "c1",
+                "Alba Cloud"
+              ],
+              [
+                "c2",
+                "Brio Cloud"
+              ]
+            ],
+            "fcs": [
+              [
+                "c1",
+                "Lima Cloud"
+              ]
+            ]
+          }
+        },
+        "r3": {
+          "msg": "Synced 07:27 PM.",
+          "etag": "e8",
+          "got": {
+            "chars": [
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c1",
+                "lodestone": null,
+                "name": "Alba Local"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c2",
+                "lodestone": null,
+                "name": "Brio After"
+              }
+            ],
+            "modules": {
+              "submersibles": {
+                "fcs": {
+                  "f92j6e1fa": {
+                    "charId": "c1",
+                    "discovered": [
+                      1,
+                      2
+                    ],
+                    "name": "Lima Local",
+                    "order": 0,
+                    "unlockedSlots": 1
+                  }
+                },
+                "settings": {},
+                "subs": {},
+                "trips": {}
+              },
+              "tracker": {
+                "avail": {},
+                "excl": {
+                  "c1": {},
+                  "c2": {}
+                },
+                "settings": {
+                  "countGone": false,
+                  "countLimited": false,
+                  "countUnknown": false,
+                  "gold": true,
+                  "links": true
+                },
+                "ticks": {
+                  "c1": {},
+                  "c2": {}
+                },
+                "vals": {
+                  "c1": {},
+                  "c2": {}
+                }
+              }
+            }
+          },
+          "cloud": {
+            "names": [
+              [
+                "c1",
+                "Alba Local"
+              ],
+              [
+                "c2",
+                "Brio After"
+              ]
+            ],
+            "fcs": [
+              [
+                "c1",
+                "Lima Local"
+              ]
+            ]
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C51",
+      "title": "Main Settings: a third character added during a sync here and on the other device with different names: the page says the devices disagree, the stored save keeps this device's name and the rest the sync brought; the next sync raises it again and uploads nothing; once settled, a later change syncs (Synced) and is uploaded",
+      "pass": true,
+      "detail": {
+        "r1": {
+          "msg": "Your devices disagree on 1 entry: open the Tracker to choose which is right (it asks on opening).",
+          "got": {
+            "chars": [
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c1",
+                "lodestone": null,
+                "name": "Alba Test"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c2",
+                "lodestone": null,
+                "name": "Brio Cloud"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c3",
+                "lodestone": null,
+                "name": "Cora Local"
+              }
+            ],
+            "modules": {
+              "tracker": {
+                "avail": {},
+                "excl": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                },
+                "settings": {
+                  "countGone": false,
+                  "countLimited": false,
+                  "countUnknown": false,
+                  "gold": true,
+                  "links": true
+                },
+                "ticks": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                },
+                "vals": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                }
+              }
+            }
+          },
+          "cloud": [
+            [
+              "c1",
+              "Alba Test"
+            ],
+            [
+              "c2",
+              "Brio Cloud"
+            ],
+            [
+              "c3",
+              "Cora Cloud"
+            ]
+          ]
+        },
+        "want1": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Brio Cloud"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c3",
+              "lodestone": null,
+              "name": "Cora Local"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {},
+                "c3": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {},
+                "c3": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {},
+                "c3": {}
+              }
+            }
+          }
+        },
+        "r2": {
+          "msg": "Your devices disagree on 1 entry: open the Tracker to choose which is right (it asks on opening).",
+          "etagSame": true,
+          "got": {
+            "chars": [
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c1",
+                "lodestone": null,
+                "name": "Alba Test"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c2",
+                "lodestone": null,
+                "name": "Brio Cloud"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c3",
+                "lodestone": null,
+                "name": "Cora Local"
+              }
+            ],
+            "modules": {
+              "tracker": {
+                "avail": {},
+                "excl": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                },
+                "settings": {
+                  "countGone": false,
+                  "countLimited": false,
+                  "countUnknown": false,
+                  "gold": true,
+                  "links": true
+                },
+                "ticks": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                },
+                "vals": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                }
+              }
+            }
+          },
+          "cloud": [
+            [
+              "c1",
+              "Alba Test"
+            ],
+            [
+              "c2",
+              "Brio Cloud"
+            ],
+            [
+              "c3",
+              "Cora Cloud"
+            ]
+          ]
+        },
+        "r3": {
+          "msg": "Synced 07:27 PM.",
+          "cloud": [
+            [
+              "c1",
+              "Alba Test"
+            ],
+            [
+              "c2",
+              "Brio After"
+            ],
+            [
+              "c3",
+              "Cora Local"
+            ]
+          ],
+          "got": {
+            "chars": [
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c1",
+                "lodestone": null,
+                "name": "Alba Test"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c2",
+                "lodestone": null,
+                "name": "Brio After"
+              },
+              {
+                "cls": null,
+                "gc": null,
+                "id": "c3",
+                "lodestone": null,
+                "name": "Cora Local"
+              }
+            ],
+            "modules": {
+              "tracker": {
+                "avail": {},
+                "excl": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                },
+                "settings": {
+                  "countGone": false,
+                  "countLimited": false,
+                  "countUnknown": false,
+                  "gold": true,
+                  "links": true
+                },
+                "ticks": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                },
+                "vals": {
+                  "c1": {},
+                  "c2": {},
+                  "c3": {}
+                }
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C52",
+      "title": "Main Settings: \"Sign in\" pressed while a name edit is between its save and taking the save back in, with a change the page has not heard of yet: the page leaves for the sign-in page only after that, and the whole stored record holds the change and the name",
+      "pass": true,
+      "detail": {
+        "left": "http://127.0.0.1:8421/login/authorize",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Leaving"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fosc": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Oscar Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Leaving"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fosc": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Oscar Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C56",
+      "title": "Main Settings: with a read that never answers after a name save, \"Sign in\" takes the browser to the sign-in page within 8 seconds, the whole stored record holds the name and the change another page made before, and a second press starts no second departure",
+      "pass": true,
+      "detail": {
+        "left": "http://127.0.0.1:8421/login/authorize",
+        "took": 6532,
+        "begins": "1",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Leaving"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fosc": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Oscar Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Leaving"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fosc": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Oscar Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C57",
+      "title": "Main Settings: \"Sign in\" pressed with an idle queue, the page's reads hanging once the departure's own write has been made: the browser is on the sign-in page within 8 seconds and the whole stored record is unchanged",
+      "pass": true,
+      "detail": {
+        "left": "http://127.0.0.1:8421/login/authorize",
+        "took": 5034,
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C58",
+      "title": "Main Settings: a sync whose closing write reaches memory only (the stores fail during it) says \"Not saved on this device: save a backup file\", not \"Synced\"",
+      "pass": true,
+      "detail": {
+        "msg": "Not saved on this device: save a backup file",
+        "errors": []
+      }
+    },
+    {
+      "id": "C59",
+      "title": "Main Settings in two tabs: a free company typed for the same character in both at the same instant (five times): after both pages have settled there is exactly one free company for that character, the same on both pages and in the stored record",
+      "pass": true,
+      "detail": {
+        "runs": [
+          {
+            "i": 0,
+            "names": [
+              "Delta B 0"
+            ],
+            "shown": {
+              "a": "Delta B 0",
+              "b": "Delta B 0"
+            },
+            "ok": true,
+            "errors": []
+          },
+          {
+            "i": 1,
+            "names": [
+              "Delta B 1"
+            ],
+            "shown": {
+              "a": "Delta B 1",
+              "b": "Delta B 1"
+            },
+            "ok": true,
+            "errors": []
+          },
+          {
+            "i": 2,
+            "names": [
+              "Delta A 2"
+            ],
+            "shown": {
+              "a": "Delta A 2",
+              "b": "Delta A 2"
+            },
+            "ok": true,
+            "errors": []
+          },
+          {
+            "i": 3,
+            "names": [
+              "Delta B 3"
+            ],
+            "shown": {
+              "a": "Delta B 3",
+              "b": "Delta B 3"
+            },
+            "ok": true,
+            "errors": []
+          },
+          {
+            "i": 4,
+            "names": [
+              "Delta B 4"
+            ],
+            "shown": {
+              "a": "Delta B 4",
+              "b": "Delta B 4"
+            },
+            "ok": true,
+            "errors": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "C60",
+      "title": "Two devices (stand-ins) each add a bare free company for the same character before syncing: after the second device's sync there is one on it; after it syncs again and the first device syncs there is one on the first, one in the cloud copy, the same id everywhere",
+      "pass": true,
+      "detail": {
+        "sB1": true,
+        "sA1": true,
+        "sA2": true,
+        "sB2": true,
+        "onA": 1,
+        "ids": {
+          "a": [
+            "fbnpwpzh1"
+          ],
+          "b": [
+            "fbnpwpzh1"
+          ],
+          "cloud": [
+            "fbnpwpzh1"
+          ]
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C61",
+      "title": "A character with one free company that has submarines and one bare one: the bare one goes, the submarines stay and the empty name is filled from it; two free companies with submarines for one character both stay (the whole stored record compared)",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "freal": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Typed Name",
+                  "order": 0,
+                  "unlockedSlots": 2,
+                  "world": "Ravana"
+                },
+                "g1": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Gulf Company",
+                  "order": 2,
+                  "unlockedSlots": 1,
+                  "world": "Ravana"
+                },
+                "g2": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Hotel Company",
+                  "order": 3,
+                  "unlockedSlots": 1,
+                  "world": "Ravana"
+                }
+              },
+              "settings": {},
+              "subs": {
+                "u1": {
+                  "fcId": "freal",
+                  "name": "Sub One",
+                  "slot": 1,
+                  "voyage": null
+                },
+                "u2": {
+                  "fcId": "g1",
+                  "name": "Sub Two",
+                  "slot": 1,
+                  "voyage": null
+                },
+                "u3": {
+                  "fcId": "g2",
+                  "name": "Sub Three",
+                  "slot": 1,
+                  "voyage": null
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            },
+            "submersibles": {
+              "fcs": {
+                "freal": {
+                  "name": "Typed Name",
+                  "world": "Ravana",
+                  "charId": "c1",
+                  "order": 0,
+                  "unlockedSlots": 2,
+                  "discovered": [
+                    1,
+                    2
+                  ]
+                },
+                "g1": {
+                  "name": "Gulf Company",
+                  "world": "Ravana",
+                  "charId": "c2",
+                  "order": 2,
+                  "unlockedSlots": 1,
+                  "discovered": [
+                    1,
+                    2
+                  ]
+                },
+                "g2": {
+                  "name": "Hotel Company",
+                  "world": "Ravana",
+                  "charId": "c2",
+                  "order": 3,
+                  "unlockedSlots": 1,
+                  "discovered": [
+                    1,
+                    2
+                  ]
+                }
+              },
+              "subs": {
+                "u1": {
+                  "fcId": "freal",
+                  "slot": 1,
+                  "name": "Sub One",
+                  "voyage": null
+                },
+                "u2": {
+                  "fcId": "g1",
+                  "slot": 1,
+                  "name": "Sub Two",
+                  "voyage": null
+                },
+                "u3": {
+                  "fcId": "g2",
+                  "slot": 1,
+                  "name": "Sub Three",
+                  "voyage": null
+                }
+              },
+              "trips": {},
+              "settings": {}
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C62",
+      "title": "Submersibles opened alone with a stored save holding a bare duplicate free company: after loading one remains, on the page and stored (the whole stored record compared)",
+      "pass": true,
+      "detail": {
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fa": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Name A",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fa": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Name A",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "shown": [
+          "fa"
+        ],
+        "errors": []
+      }
+    },
+    {
+      "id": "C63",
+      "title": "A shown transfer code is made again when the save changes: after a name is changed here and after a free company is added in another tab it decodes to the stored characters and free companies, in the same box; when the save changes while the first code is still being made the code shown is the newer one; a remake that fails removes the code",
+      "pass": true,
+      "detail": {
+        "s0": {
+          "same": true,
+          "boxes": 1,
+          "decoded": "{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"]]}"
+        },
+        "s1": {
+          "same": true,
+          "boxes": 1,
+          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"]]}"
+        },
+        "s2": {
+          "same": true,
+          "boxes": 1,
+          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"],[\"fnov\",\"November Company\",\"c2\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"],[\"fnov\",\"November Company\",\"c2\"]]}"
+        },
+        "s3": {
+          "same": true,
+          "boxes": 1,
+          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded Twice\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"],[\"fnov\",\"November Company\",\"c2\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Alba Coded Twice\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fdsvi3xvj\",\"Mike Company\",\"c1\"],[\"fnov\",\"November Company\",\"c2\"]]}"
+        },
+        "gone": true,
+        "errors": []
+      }
+    },
+    {
+      "id": "C66",
+      "title": "Delayed transfer-code generation after a character-count change and a first-name change stays hidden pending regeneration; late older results never replace the code matching the stored save",
+      "pass": true,
+      "detail": {
+        "hiddenAtStart": true,
+        "hiddenForCount": true,
+        "hiddenForName": true,
+        "afterLateCount": "C66:{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"],[\"c3\",\"Character 3\"]]}",
+        "expectedCount": "C66:{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"],[\"c3\",\"Character 3\"]]}",
+        "afterLateName": "C66:{\"chars\":[[\"c1\",\"Alba After Count\"],[\"c2\",\"Character 2\"],[\"c3\",\"Character 3\"]]}",
+        "expected": "C66:{\"chars\":[[\"c1\",\"Alba After Count\"],[\"c2\",\"Character 2\"],[\"c3\",\"Character 3\"]]}",
+        "errors": []
+      }
+    },
+    {
+      "id": "C67",
+      "title": "The exposed Settings sign-in path leaves within its bounded departure while initial cloud sync is stalled forever",
+      "pass": true,
+      "detail": {
+        "startupStalled": true,
+        "gets": 1,
+        "left": true,
+        "took": 22,
+        "errors": []
+      }
+    },
+    {
+      "id": "C68",
+      "title": "When an old sync is superseded after entering its local save, its guarded write is cancelled and the replacement sync keeps the newer cloud character",
+      "pass": true,
+      "detail": {
+        "gets": 4,
+        "secondStarted": true,
+        "synced": true,
+        "names": [
+          "Alba Test",
+          "Brio Newer Cloud"
+        ],
+        "cloudNames": [
+          "Alba Test",
+          "Brio Newer Cloud"
+        ],
+        "msg": "Synced 07:29 PM.",
+        "errors": []
+      }
+    },
+    {
+      "id": "C69",
+      "title": "A duplicate-fold write failure is shown while the primary free-company edit remains saved, and cleanup is not retried in a loop",
+      "pass": true,
+      "detail": {
+        "msg": "Saved: the free company is in Submersibles. Duplicate free company cleanup could not be saved.",
+        "fcs": [
+          {
+            "charId": "c1",
+            "discovered": [
+              1,
+              2
+            ],
+            "name": "Visible Cleanup Company",
+            "order": 0,
+            "unlockedSlots": 1
+          }
+        ],
+        "calls": 1,
+        "errors": []
+      }
+    },
+    {
+      "id": "C64",
+      "title": "Main Settings: a sync request that never answers does not block \"Sync now\" after 90 seconds (the page's steady clock moved on): the new attempt ends \"Synced\", and when the first request is answered later the stand-in gets no further request from the first attempt (no upload), and the stored record, the cloud copy, the fields and the message are unchanged",
+      "pass": true,
+      "detail": {
+        "blockedEarly": true,
+        "synced": true,
+        "msg": "Synced 07:29 PM.",
+        "msgAfter": "Synced 07:29 PM.",
+        "same": true,
+        "cloudSame": true,
+        "late": [],
+        "errors": []
+      }
+    },
+    {
+      "id": "C65",
+      "title": "Submersibles: a free company being edited in the setup is removed by the fold (another page stored a bare duplicate that wins); saving the setup stores it again under the same id with its submarine, one free company remains for the character, no error",
+      "pass": true,
+      "detail": {
+        "removed": true,
+        "sv": true,
+        "open": false,
+        "fcs": [
+          {
+            "charId": "c1",
+            "discovered": [
+              1,
+              2
+            ],
+            "name": "Zulu Company",
+            "order": 1,
+            "unlockedSlots": 1
+          }
+        ],
+        "subIds": [
+          "sma939tt5"
+        ],
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fa": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fz": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Zulu Company",
+                  "order": 1,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {
+                "sma939tt5": {
+                  "fcId": "fz",
+                  "name": "Sub 1",
+                  "rank": 1,
+                  "slot": 1,
+                  "voyage": null
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C70",
+      "title": "Submersibles refused write: current saved data and a clear re-entry message appear at once; a later sort edit saves without reloading",
+      "pass": true,
+      "detail": {
+        "held": 1,
+        "removed": [
+          "fz"
+        ],
+        "afterRefusal": {
+          "saved": {
+            "fcs": {
+              "fa": {
+                "name": "Alpha Company",
+                "charId": "c1",
+                "order": 0,
+                "unlockedSlots": 1,
+                "discovered": [
+                  1,
+                  2
+                ]
+              }
+            },
+            "subs": {
+              "sx": {
+                "fcId": "fa",
+                "slot": 1,
+                "name": "Other Device Sub",
+                "rank": 5,
+                "voyage": null
+              }
+            },
+            "trips": {},
+            "settings": {}
+          },
+          "shown": {
+            "fcs": {
+              "fa": {
+                "name": "Alpha Company",
+                "charId": "c1",
+                "order": 0,
+                "unlockedSlots": 1,
+                "discovered": [
+                  1,
+                  2
+                ]
+              }
+            },
+            "subs": {
+              "sx": {
+                "fcId": "fa",
+                "slot": 1,
+                "name": "Other Device Sub",
+                "rank": 5,
+                "voyage": null
+              }
+            },
+            "trips": {},
+            "settings": {}
+          },
+          "status": "Not saved on this device: That submarine slot changed elsewhere. The page now shows what is saved; re-enter any unsaved edits if you still need them."
+        },
+        "afterEdit": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            },
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c2",
+              "lodestone": null,
+              "name": "Character 2"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fa": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Alpha Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {
+                "prefs": {
+                  "sort": "time"
+                }
+              },
+              "subs": {
+                "sx": {
+                  "fcId": "fa",
+                  "name": "Other Device Sub",
+                  "rank": 5,
+                  "slot": 1,
+                  "voyage": null
+                }
+              },
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {},
+                "c2": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {},
+                "c2": {}
+              },
+              "vals": {
+                "c1": {},
+                "c2": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C71",
+      "title": "Two devices (stand-ins): a slot clash met inside the end-of-sync merge from Settings deletes neither submarine; the Tracker asks, and the owner's answer (the other device's submarine) is applied on both devices and the cloud copy",
+      "pass": true,
+      "detail": {
+        "held": true,
+        "msgA": "Your devices disagree on 1 entry: open the Tracker to choose which is right (it asks on opening).",
+        "afterSync": [
+          "A Device Sub",
+          "B Device Sub"
+        ],
+        "asked": {
+          "shown": true,
+          "rows": [
+            {
+              "id": "i|submersibles-slot|fx%7C1",
+              "text": "Submersibles: slot 1 of “Xray Company” holds a different submarine on each device; the one you keep stays, the other and its logged voyages are removedOther device: keep the other device’s “B Device Sub”, rank 1 · This device: keep this device’s “A Device Sub”, rank 1"
+            }
+          ]
+        },
+        "final": {
+          "a": [
+            "B Device Sub"
+          ],
+          "b": [
+            "B Device Sub"
+          ],
+          "cloud": [
+            "B Device Sub"
+          ]
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C72",
+      "title": "Two devices (stand-ins) fill one slot with identical-looking submarines: the Tracker asks; afterwards one submarine is in the slot on both devices and the board shows it",
+      "pass": true,
+      "detail": {
+        "msgA": "Your devices disagree on 1 entry: open the Tracker to choose which is right (it asks on opening).",
+        "asked": {
+          "shown": true,
+          "rows": [
+            {
+              "id": "i|submersibles-slot|fy%7C1",
+              "text": "Submersibles: slot 1 of “Yankee Company” holds a different submarine on each device; the one you keep stays, the other and its logged voyages are removedOther device: keep the other device’s “Sub 1”, rank 1 · This device: keep this device’s “Sub 1”, rank 1"
+            }
+          ]
+        },
+        "a": [
+          "st1zxr7ov"
+        ],
+        "b": [
+          "st1zxr7ov"
+        ],
+        "board": 1,
+        "errors": []
+      }
+    },
+    {
+      "id": "C73",
+      "title": "Two devices (stand-ins): a free company changed on one and removed on the other, with its submarine; answering \"other device\" for the free company and \"this device\" for its submarine removes both everywhere, leaves no submarine without its free company, and stays removed over further syncs",
+      "pass": true,
+      "detail": {
+        "msgA": "Your devices disagree on 2 entries: open the Tracker to choose which is right (it asks on opening).",
+        "asked": {
+          "shown": true,
+          "rows": [
+            {
+              "id": "m|[\"submersibles\",\"fcs\",\"fz\"]",
+              "text": "Submersibles: free company “Zulu Company Renamed”; choosing its removal also removes its submarine “Zulu One” and its logged voyages; keeping the free company keeps it tooOther device: (removed) · This device: the version on this device"
+            },
+            {
+              "id": "m|[\"submersibles\",\"subs\",\"s1\"]",
+              "text": "Submersibles: submarine “Zulu One”Other device: (removed) · This device: the version on this device"
+            }
+          ]
+        },
+        "final": {
+          "a": {
+            "fcs": [],
+            "subs": []
+          },
+          "b": {
+            "fcs": [],
+            "subs": []
+          },
+          "cloud": {
+            "fcs": [],
+            "subs": []
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C74",
+      "title": "Two devices (stand-ins): a free company renamed on one and removed with its submarine on the other; keeping the renamed free company keeps its unchanged submarine on both devices and the cloud copy, and the board shows it",
+      "pass": true,
+      "detail": {
+        "msgA": "Your devices disagree on 1 entry: open the Tracker to choose which is right (it asks on opening).",
+        "asked": {
+          "shown": true,
+          "rows": [
+            {
+              "id": "m|[\"submersibles\",\"fcs\",\"f1\"]",
+              "text": "Submersibles: free company “Renamed Company”; choosing its removal also removes its submarine “Vanguard” and its logged voyages; keeping the free company keeps it tooOther device: (removed) · This device: the version on this device"
+            }
+          ]
+        },
+        "a": {
+          "fcs": [
+            "f1"
+          ],
+          "subs": [
+            "s1"
+          ]
+        },
+        "b": {
+          "fcs": [
+            "f1"
+          ],
+          "subs": [
+            "s1"
+          ]
+        },
+        "cloud": {
+          "fcs": [
+            "f1"
+          ],
+          "subs": [
+            "s1"
+          ]
+        },
+        "boardB": [
+          "Vanguard"
+        ],
+        "errors": []
+      }
+    },
+    {
+      "id": "C49",
+      "title": "Main Settings: emptying a free-company box keeps the free company and the box shows its name again; the message is the one shown before; the whole stored record is unchanged",
+      "pass": true,
+      "detail": {
+        "shown": "Mike Company",
+        "msg": "Saved: the free company is in Submersibles.",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fyrpgs04y": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Mike Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Character 1"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fyrpgs04y": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Mike Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C50",
+      "title": "Main Settings: with a save written by a newer version, a name, the number of characters, a free company, the night rule and a quiet-hours time each say \"Not saved on this device: …\" with the reason, change nothing (no uncaught error) and the field shows what is stored again; once the save is writable again another page's change reaches those fields, a name is saved (\"Saved.\") and the whole stored record is as before plus those two changes",
+      "pass": true,
+      "detail": {
+        "msgs": {
+          "name": "Not saved on this device: This save was written by a newer version of the app. Reload the page to update.",
+          "count": "Not saved on this device: This save was written by a newer version of the app. Reload the page to update.",
+          "countShown": 1,
+          "fc": "Not saved on this device: This save was written by a newer version of the app. Reload the page to update.",
+          "night": "Not saved on this device: This save was written by a newer version of the app. Reload the page to update.",
+          "time": "Not saved on this device: This save was written by a newer version of the app. Reload the page to update."
+        },
+        "shown": {
+          "name": "Alba Test",
+          "count": "1",
+          "fc": "November Company",
+          "night": "always",
+          "time": "22:00"
+        },
+        "unchanged": true,
+        "reached": true,
+        "msgBack": "Saved.",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Back"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fh83gp51x": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "November Elsewhere",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "want": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Back"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "fh83gp51x": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "November Elsewhere",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C53",
+      "title": "Main Settings with neither the browser's database nor its local storage usable: the first character, a name, the number of characters, a free company and the night rule each say \"Not saved on this device: save a backup file\" (never \"Saved\"), the edits stay in the page, and a reload shows nothing was kept",
+      "pass": true,
+      "detail": {
+        "msgs": {
+          "first": "Not saved on this device: save a backup file",
+          "name": "Not saved on this device: save a backup file",
+          "count": "Not saved on this device: save a backup file",
+          "fc": "Not saved on this device: save a backup file",
+          "night": "Not saved on this device: save a backup file"
+        },
+        "inPage": {
+          "names": [
+            "Alba Memory",
+            "Character 2"
+          ],
+          "shown": [
+            "Alba Memory",
+            "Papa Company",
+            2
+          ]
+        },
+        "afterReload": {
+          "first": true,
+          "names": 0
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C54",
+      "title": "Main Settings: both stores fail during a name save only (working again before the next read): the message is \"Not saved on this device: save a backup file\" and the whole stored record is unchanged; the field shows what is stored",
+      "pass": true,
+      "detail": {
+        "msg": "Not saved on this device: save a backup file",
+        "shownNow": "Alba Test",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C54b",
+      "title": "Main Settings: both stores fail during a free-company save only (working again before the next read): the message is \"Not saved on this device: save a backup file\" and the whole stored record is unchanged; the field shows what is stored",
+      "pass": true,
+      "detail": {
+        "msg": "Not saved on this device: save a backup file",
+        "shownNow": "",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C55",
+      "title": "Main Settings: a name save reaches the device, then the stores fail until the message is shown: the message is \"Saved.\" and the whole stored record holds the edit",
+      "pass": true,
+      "detail": {
+        "msg": "Saved.",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Kept"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C55b",
+      "title": "Main Settings: a free-company save reaches the device, then the stores fail until the message is shown: the message is \"Saved: the free company is in Submersibles.\" and the whole stored record holds the edit",
+      "pass": true,
+      "detail": {
+        "msg": "Saved: the free company is in Submersibles.",
+        "got": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "submersibles": {
+              "fcs": {
+                "frjrkz3o4": {
+                  "charId": "c1",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Quebec Company",
+                  "order": 0,
+                  "unlockedSlots": 1
+                }
+              },
+              "settings": {},
+              "subs": {},
+              "trips": {}
+            },
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "before": {
+          "chars": [
+            {
+              "cls": null,
+              "gc": null,
+              "id": "c1",
+              "lodestone": null,
+              "name": "Alba Test"
+            }
+          ],
+          "modules": {
+            "tracker": {
+              "avail": {},
+              "excl": {
+                "c1": {}
+              },
+              "settings": {
+                "countGone": false,
+                "countLimited": false,
+                "countUnknown": false,
+                "gold": true,
+                "links": true
+              },
+              "ticks": {
+                "c1": {}
+              },
+              "vals": {
+                "c1": {}
+              }
+            }
+          }
+        },
+        "errors": []
+      }
+    },
+    {
+      "id": "C75",
+      "title": "What came back (step S5): a returned sub's send window keeps \"What came back\" folded until tapped, then lists the route's possible loot by sector with \"Repeat last\"; typed and tapped quantities, an item added by name and a new sector are kept with the trip and in the free company; the Log tab lists every voyage and reopens one to change it; Setup's archive downloads the oldest voyages to a file, removes them only on confirming and loads them back from the file; Earnings totals the log at market prices after the 5% tax (Universalis stand-in) or the merchant price, shows gil per hour by route with the trip count and exports the log as CSV; the window and the tab fit a phone; the route picker shows the sectors full width under the sea list (not squeezed by the shared appearance styles)",
+      "pass": true,
+      "detail": {
+        "closedAtFirst": true,
+        "pickerFull": true,
+        "archiveOk": true,
+        "arcCount": 1,
+        "afterArc": 10,
+        "afterLoad": 11,
+        "groups": [
+          "Deep-sea Site A · 12 possible items (community data)",
+          "Deep-sea Site B · 9 possible items (community data)"
+        ],
+        "firstRow": "Unaspected Crystal",
+        "repeat": true,
+        "trip": {
+          "s": "a1",
+          "t": 1794835842185,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794940242185,
+          "items": [
+            [
+              10099,
+              3
+            ],
+            [
+              12923,
+              2
+            ],
+            [
+              5,
+              1
+            ]
+          ],
+          "newSectors": [
+            3
+          ],
+          "rankAfter": 3,
+          "rankCalc": 3,
+          "expBase": 21220
+        },
+        "newSector": 3,
+        "slotLine": false,
+        "logRows": 11,
+        "keptQty": "3",
+        "edited": 4,
+        "asked": 1,
+        "earn": {
+          "cards": [
+            "13,300 gil",
+            "17,100 gil",
+            "47,500 gil",
+            "49,400 gil"
+          ],
+          "route": "Deep-sea Site: A → B164 gil10"
+        },
+        "want": 49400,
+        "csvHead": "sent,back,free company,submarine,route,item,quantity,value each (gil),priced by,rank after",
+        "wideEarn": false,
+        "wideSheet": false,
+        "errors": []
+      }
+    },
+    {
+      "id": "C76",
+      "title": "Rank and experience on return: with the voyage grade noted and the rank and experience the game shows typed, the trip keeps the grade, the base and the experience really gained, and the sub takes the typed rank and experience; a sub whose starting point was only an estimate takes the typed rank and experience but teaches nothing, and experience typed without its rank, or a rank above 145, is refused with a message; a voyage typed as a time only, collected with nothing typed, leaves the rank no longer exact; a later return with the same grade and nothing typed moves the rank on by what was learned; Setup shows the learned amount per grade",
+      "pass": true,
+      "detail": {
+        "emptyRank": true,
+        "plan": {
+          "base": 21220,
+          "got": 26525,
+          "to": {
+            "rank": 10,
+            "into": 26625
+          }
+        },
+        "t1": {
+          "s": "b1",
+          "t": 1794835846494,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794940246494,
+          "items": [],
+          "newSectors": [],
+          "rankAfter": 10,
+          "rankCalc": 10,
+          "grade": "A",
+          "expBase": 21220,
+          "expGot": 26525
+        },
+        "b1": {
+          "rank": 10,
+          "into": 26625
+        },
+        "refused": "Type the rank the game shows too (the experience belongs to a rank).",
+        "refusedTop": "The rank is a whole number from 1 to 145.",
+        "t3": {
+          "s": "b3",
+          "t": 1794835846494,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794940246494,
+          "items": [],
+          "newSectors": [],
+          "rankAfter": 10,
+          "rankCalc": 10,
+          "grade": "A",
+          "expBase": 21220
+        },
+        "b3": {
+          "fcId": "fb",
+          "slot": 3,
+          "name": "Sub B3",
+          "rank": 10,
+          "expIntoRank": 26625,
+          "expExact": true,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "b4": {
+          "fcId": "fb",
+          "slot": 4,
+          "name": "Sub B4",
+          "rank": 10,
+          "expIntoRank": 100,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "t2": {
+          "s": "b2",
+          "t": 1794835846494,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794940246494,
+          "items": [],
+          "newSectors": [],
+          "rankAfter": 10,
+          "rankCalc": 10,
+          "grade": "A",
+          "expBase": 21220
+        },
+        "b2": {
+          "rank": 10,
+          "into": 26625
+        },
+        "setupLine": "Experience learned from your voyages (rank and experience typed on return): 1 voyage; per grade, times the base: A ×1.25 (1).",
+        "errors": []
+      }
+    },
+    {
+      "id": "C77",
+      "title": "Return entries the game cannot show: a minus sign in a number box (read by the browser as blank) and a lower experience at the same exact rank, or a point that says the voyage gave less than half or more than four times the route base (an unchanged point included), are refused with a message and nothing is logged; the corrected entry is kept, exact, and teaches the experience really gained; removing a voyage ends exactness; an impossible saved point (more experience than its rank needs) teaches nothing; the starting rank typed without experience keeps the known progress, with or without a route; an impossible saved point is estimated from 0 progress, without a jump of ranks, and after a voyage without a route its progress is 0, rank typed or not; after a voyage without a route the very same exact point is refused; a rank changed in Setup starts with no known progress and is not exact; a grade whose learned value is below the base shows the base it uses",
+      "pass": true,
+      "detail": {
+        "badInput": "The experience is a whole number, as the game shows it.",
+        "lower": "The experience cannot be lower than before the voyage (5,000 into rank 10); check the number the game shows.",
+        "unchanged": "That is the same rank and experience as before the voyage (5,000 into rank 10); a voyage always gives experience. Check the number the game shows.",
+        "implausible": "That would mean this voyage gave 1,000 experience; this route gives about 21,220 or more. Check the rank and experience the game shows.",
+        "t1": {
+          "s": "d1",
+          "t": 1794835850614,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794940250614,
+          "items": [],
+          "newSectors": [],
+          "rankAfter": 10,
+          "rankCalc": 10,
+          "expBase": 21220,
+          "expGot": 23342
+        },
+        "e1": {
+          "fcId": "fe",
+          "slot": 1,
+          "name": "Sub E1",
+          "rank": 10,
+          "expIntoRank": 5000,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "e2": {
+          "fcId": "fe",
+          "slot": 2,
+          "name": "Sub E2",
+          "rank": 10,
+          "expIntoRank": 21220,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "sameRouteless": "That is the same rank and experience as before the voyage (5,000 into rank 10); a voyage always gives experience. Check the number the game shows.",
+        "e3": {
+          "fcId": "fe",
+          "slot": 3,
+          "name": "Sub E3",
+          "rank": 10,
+          "expIntoRank": 26220,
+          "expExact": true,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "e4": {
+          "fcId": "fe",
+          "slot": 4,
+          "name": "Sub E4",
+          "rank": 10,
+          "expIntoRank": 0,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "f1": {
+          "fcId": "ff",
+          "slot": 1,
+          "name": "Sub F1",
+          "rank": 10,
+          "expIntoRank": 0,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "d1": {
+          "fcId": "fd",
+          "slot": 1,
+          "name": "Sub D1",
+          "rank": 10,
+          "expIntoRank": 28342,
+          "expExact": true,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "d2": {
+          "fcId": "fd",
+          "slot": 2,
+          "name": "Sub D2",
+          "rank": 10,
+          "expIntoRank": 5000,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "t3": {
+          "s": "d3",
+          "t": 1794835850614,
+          "r": [
+            1,
+            2
+          ],
+          "back": 1794940250614,
+          "items": [],
+          "newSectors": [],
+          "rankAfter": 12,
+          "rankCalc": 10,
+          "grade": "B",
+          "expBase": 21220
+        },
+        "d3": {
+          "fcId": "fd",
+          "slot": 3,
+          "name": "Sub D3",
+          "rank": 12,
+          "expIntoRank": 10,
+          "expExact": true,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "d4": {
+          "fcId": "fd",
+          "slot": 4,
+          "name": "Sub D4",
+          "rank": 10,
+          "expIntoRank": 60000,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "d1AfterSetup": {
+          "fcId": "fd",
+          "slot": 1,
+          "name": "Sub D1",
+          "rank": 11,
+          "parts": [
+            3,
+            4,
+            1,
+            2
+          ],
+          "voyage": null
+        },
+        "setupLine": "Experience learned from your voyages (rank and experience typed on return): 2 voyages; per grade, times the base: C ×1.00 (1).",
+        "errors": []
+      }
+    }
+  ]
+}

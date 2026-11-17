@@ -1,0 +1,46 @@
+# Runs every check on each pull request and on every push to main. Free on public repositories.
+# A pull request is ready to merge only when this is green.
+name: Checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the check tools (Playwright and Chromium)
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Built copies are up to date (rebuilding the sources gives the committed files byte for byte)
+        run: |
+          node tracker/command-center/restore-build-inputs.js
+          node tracker/command-center/restore-build-inputs.js --verify
+          (cd tracker && node command-center/build.js)
+          git status --porcelain
+          test -z "$(git status --porcelain)" || { echo "A built copy is out of date: rebuild (npm run build) and commit the result."; exit 1; }
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Browser tests (Tracker, Atelier, Cosmic guides)
+        run: npm run test:browser
+      - name: Command Center checks
+        run: npm run check
+      - name: Keep the check evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-evidence
+          path: tracker/command-center/evidence/
+          retention-days: 14
