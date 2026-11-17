@@ -111,6 +111,10 @@
   // ------------------------------------------------------------------ route search
   // Best routes made of the sectors in pool (visitable: discovered, rank allowed), for score(route, ev) (higher is better),
   // optionally all including one sector. A beam over routes of 1 to 5 sectors per sea: fast enough for 32 subs on a phone.
+  // Route evaluations made since the last reset (item R2): the cost figure of spec 4.2, shown as ADVISOR.lastEvals.
+  var evals = 0;
+  A.lastEvals = 0;
+  function counted(route, st) { evals++; return A.evalRoute(route, st); }
   function search(pool, st, score, must, keep) {
     var bySea = {}, out = [];
     pool.forEach(function (s) { (bySea[s.sea] = bySea[s.sea] || []).push(s.id); });
@@ -123,7 +127,7 @@
         layer.forEach(function (r) {
           ids.forEach(function (id) {
             if (r.indexOf(id) >= 0) return;
-            var route = r.concat(id), ev = A.evalRoute(route, st);
+            var route = r.concat(id), ev = counted(route, st);
             if (!ev || !ev.reachable) return;
             var sc = score(route, ev);
             next.push({ route: route, ev: ev, score: sc });
@@ -160,6 +164,7 @@
     var pool = D.sectors.filter(function (s) { return disc.has(s.id) && s.rank <= sub.rank; });
     var undiscovered = D.sectors.filter(function (s) { return !disc.has(s.id); });
     var newOf = function (route) { var n = 0, seen = {}; route.forEach(function (id) { if (pending.has(id)) return; A.children(id).forEach(function (c) { if (!disc.has(c) && !seen[c]) { seen[c] = 1; n++; } }); }); return n; };
+    if (input.recs && globalThis.RECS) return adviseRecs(input, sub, st, disc, pool, undiscovered, newOf);
     var level = function (towards) {
       var c = search(pool, st, function (r, ev) { return ev.exp / hours(ev); });
       if (!c.length) return null;
@@ -257,6 +262,142 @@
     out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, out.plan.route));
     return out;
   };
+  // ------------------------------------------------------------------ the advisor with the player's settings (item R2)
+  // input.recs = { fuel, giveUp, order, loot } (RECS.check). Candidates of spec 4.2, stages of 4.3, the choice RECS.pick (4.4).
+  // Returns today's shape plus lead (the stage key U1, U2, U3, X, G, L1 or L2), skipped and fuel; the reason is minimal here.
+  var LABEL_OF = { U1: 'unlock', U2: 'unlock', U3: 'unlock', X: 'level', G: 'gil', L1: 'loot', L2: 'loot' };
+  function adviseRecs(input, sub, st, disc, pool, undiscovered, newOf) {
+    var R = globalThis.RECS, recs = input.recs, fc = input.fc;
+    evals = 0;
+    var fuel = !!recs.fuel, giveUp = typeof recs.giveUp === 'number' ? recs.giveUp : R.GIVE_UP;
+    var order = Array.isArray(recs.order) && recs.order.length === R.KEYS.length && R.KEYS.every(function (k) { return recs.order.indexOf(k) >= 0; }) ? recs.order : R.KEYS;
+    var items = R.active(recs), chosen = {};
+    items.forEach(function (id) { chosen[id] = 1; });
+    var slots = fc.unlockedSlots || 1, atTop = sub.rank >= TOP;
+    var step = slots < 4 ? 1 : undiscovered.length ? 2 : 3;
+    var stepName = A.STEPS[step - 1];
+    var done = function (o) { A.lastEvals = evals; return o; };
+    // the sector to survey next on the way to the next slot (today's `visit`), when this sub's rank allows it
+    var visit = null;
+    if (slots < 4) {
+      var target = (D.subSlots.find(function (u) { return u.slot === slots + 1; }) || {}).sector;
+      var chain = target ? chainTo(target, disc) : null;
+      visit = disc.has(target) ? target : chain ? chain[0] : null;
+      if (visit && SECTOR[visit].rank > sub.rank) visit = null;
+    }
+    var left = slots < 4 || undiscovered.length > 0;
+    var stars = function (route) { return route.reduce(function (t, id) { return t + SECTOR[id].stars; }, 0); };
+    var lootAt = function (id) { return (D.loot && D.loot[id]) || []; };
+    var cev = function (route) { return counted(route, st); };
+    var mk = function (route, ev) { return { route: route.slice(), ev: ev, seconds: ev.seconds, tanks: Math.max(1, ev.tanks) }; };
+    // singles: every visitable sector alone, if within range
+    var singles = [];
+    pool.forEach(function (s) { var ev = cev([s.id]); if (ev && ev.reachable) singles.push(mk([s.id], ev)); });
+    if (!singles.length) return done({ step: step, stepName: stepName, blocked: 'No discovered sector is within this build\'s range.', lead: null, skipped: [], fuel: fuel });
+    var live = function (fn) { return singles.some(function (r) { return fn(r) > 0; }); };
+    var noUnlock = !left ? 'every sector is found' : null;
+    var U1 = { key: 'U1', objective: 'unlock', rate: true, reason: noUnlock || (slots >= 4 ? 'every submarine slot is unlocked' : 'no route this sub can run now surveys the sector on the way to the next slot'),
+      amount: function (r) { return visit && r.route.indexOf(visit) >= 0 ? 1 : 0; } };
+    var U2 = { key: 'U2', objective: 'unlock', rate: true, reason: noUnlock || 'no sector this sub can reach now can reveal a new one',
+      amount: function (r) { return undiscovered.length ? newOf(r.route) : 0; } };
+    var u1 = live(U1.amount), u2 = live(U2.amount);
+    var U3 = { key: 'U3', objective: 'unlock', rate: true, reason: noUnlock || (atTop ? 'this sub is at the top rank' : 'a route this sub can run now already works towards what is left to unlock'),
+      amount: function (r) { return left && !atTop && !u1 && !u2 ? r.ev.exp : 0; } };
+    var X = { key: 'X', objective: 'level', rate: true, reason: 'this sub is at the top rank', amount: function (r) { return atTop ? 0 : r.ev.exp; } };
+    var G = { key: 'G', objective: 'gil', rate: true, amount: function (r) { return stars(r.route); }, prepare: function (S) {
+      // the tier is chosen among the routes still in play: own log, else community routes, else stars (S6)
+      if (S.some(function (r) { return r.own; })) return function (r) { return r.own ? r.perTrip : 0; };
+      if (S.some(function (r) { return r.label; })) return function (r) { return r.label ? stars(r.route) : 0; };
+      return function (r) { return stars(r.route); };
+    } };
+    var lootReason = items.length ? 'none of your chosen items can drop in a sector this sub can reach now' : 'no item chosen';
+    var L1 = { key: 'L1', objective: 'loot', rate: false, reason: lootReason, amount: function (r) {
+      var seen = {}, n = 0;
+      r.route.forEach(function (id) { lootAt(id).forEach(function (it) { if (chosen[it] && !seen[it]) { seen[it] = 1; n++; } }); });
+      return n;
+    } };
+    var L2 = { key: 'L2', objective: 'loot', rate: true, reason: lootReason, amount: function (r) {
+      var n = 0;
+      r.route.forEach(function (id) { lootAt(id).forEach(function (it) { if (chosen[it]) n++; }); });
+      return n;
+    } };
+    var by = { unlock: [U1, U2, U3], level: [X], gil: [G], loot: [L1, L2] };
+    var stages = [];
+    order.forEach(function (k) { stages = stages.concat(by[k]); });
+    var isLive = {};
+    stages.forEach(function (s) { isLive[s.key] = s.key === 'G' ? true : live(s.amount); });
+    var leadSt = stages.find(function (s) { return isLive[s.key]; });
+    // invariant I1: Gil is the only live priority and fuel is off: today's answer for step 3, unchanged
+    if (!fuel && leadSt.key === 'G' && step === 3 && stages.every(function (s) { return s.key === 'G' || !isLive[s.key]; })) {
+      var today = A.advise(Object.assign({}, input, { recs: null }));
+      today.lead = 'G'; today.fuel = false;
+      today.skipped = stages.filter(function (s) { return s.key !== 'G'; }).map(function (s) { return { key: s.key, objective: s.objective, reason: s.reason }; });
+      return done(today);
+    }
+    var cands = new Map();
+    var add = function (c) { var k = c.route.join(','); if (!cands.has(k)) cands.set(k, c); return cands.get(k); };
+    singles.forEach(add);
+    // always added: this sub's runnable community routes and routes with enough logged voyages, in their exact order
+    var allowed = function (route) { return route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; }); };
+    var havePaid = false;
+    (D.commonRoutes || []).forEach(function (cr) {
+      if (!allowed(cr.route)) return;
+      var ev = cev(cr.route); if (!ev || !ev.reachable) return;
+      add(mk(cr.route, ev)).label = cr.name; havePaid = true;
+    });
+    (input.logged || []).forEach(function (l) {
+      if (!l.enough || !(l.perTrip > 0) || !allowed(l.route)) return;
+      var ev = cev(l.route); if (!ev || !ev.reachable) return;
+      var c = add(mk(l.route, ev)); c.own = true; c.perTrip = l.perTrip; c.trips = l.trips; havePaid = true;
+    });
+    // searched routes: every order of 1 to 5 sectors in a sea of at most 8 visitable sectors, else the bounded search on the lead
+    if (!(leadSt.key === 'G' && havePaid)) {
+      var bySea = {}, bySet = {}, num = function (a, b) { return a - b; };
+      pool.forEach(function (s) { (bySea[s.sea] = bySea[s.sea] || []).push(s); });
+      var keepSet = function (route, ev) {
+        var k = route.slice().sort(num).join(','), cur = bySet[k];
+        if (!cur || ev.seconds < cur.ev.seconds || (ev.seconds === cur.ev.seconds && route.join('-') < cur.route.join('-'))) bySet[k] = { route: route.slice(), ev: ev };
+      };
+      var lead = leadSt.key === 'G' ? G : leadSt;
+      var amt = function (route, ev) { return lead.amount({ route: route, ev: ev }); };
+      Object.keys(bySea).forEach(function (sea) {
+        var secs = bySea[sea];
+        if (secs.length <= 8) {
+          var ids = secs.map(function (s) { return s.id; });
+          (function walk(route) {
+            if (route.length >= D.formula.maxSectors) return;
+            ids.forEach(function (id) {
+              if (route.indexOf(id) >= 0) return;
+              var nr = route.concat(id), ev = cev(nr);
+              if (!ev || !ev.reachable) return;
+              keepSet(nr, ev); walk(nr);
+            });
+          })([]);
+        } else {
+          var hrs = function (ev) { return ev.seconds / 3600; };
+          search(secs, st, function (r, ev) { return lead.rate ? amt(r, ev) / hrs(ev) : amt(r, ev); }).forEach(function (c) { keepSet(c.route, c.ev); });
+          if (fuel) search(secs, st, function (r, ev) { return amt(r, ev) / Math.max(1, ev.tanks); }).forEach(function (c) { keepSet(c.route, c.ev); });
+        }
+      });
+      Object.keys(bySet).forEach(function (k) { add(mk(bySet[k].route, bySet[k].ev)); });
+    }
+    var res = R.pick(Array.from(cands.values()), stages, { fuel: fuel, giveUp: giveUp });
+    var why = 'Suggested · ' + R.LABEL[LABEL_OF[res.lead]] + '.';
+    var shape = function (x) {
+      var o = { route: x.route, ev: x.ev, why: why };
+      if (x.own) { o.own = true; o.trips = x.trips; o.perTrip = x.perTrip; }
+      if (x.label) o.label = x.label;
+      return o;
+    };
+    var out = { step: step, stepName: stepName, goal: step === 1 ? 'slot ' + (slots + 1) : step === 2 ? undiscovered.length + ' sectors still to find' : 'gil' };
+    if (step === 1 && (input.slotsFilled || 0) < slots) out.note = 'A new slot only shows once slot ' + slots + ' holds a submarine: register one there in the game when you can.';
+    out.plan = shape(res.plan);
+    out.alts = res.others.map(shape);
+    out.parts = null;
+    out.own = !!res.plan.own;
+    out.lead = res.lead; out.skipped = res.skipped; out.fuel = fuel;
+    return done(out);
+  }
   // the single part change that brings this route back soonest, among the parts the sub's rank allows (step 3 only)
   function partTip(sub, st, route) {
     var base = A.evalRoute(route, st), best = null;

@@ -291,7 +291,7 @@ change, stop). Acceptance for every builder item: `npm run build && npm run test
   `ADVISOR.lastEvals` counts route evaluations. Without `input.recs` nothing changes.
 - Unit tests: the four routes and both orders of 4.8 to the second; for five pools of at most 8 sectors the plan
   equals a brute-force best under 4.4; invariant I1 against the no-`recs` result for the S6 cases; D8 (rank 5,
-  A to F found: experience route, Gil ranked second); each skip of 4.5; `lastEvals` at most 92,000 for rank 130,
+  A to G found: experience route, Gil ranked second; with A to F found D can still reveal G, so the lead is U2); each skip of 4.5; `lastEvals` at most 92,000 for rank 130,
   everything found, Leveling first, fuel on; the existing advisor tests untouched.
 - Escalate if: an existing advisor test must change; or I1 cannot hold.
 

@@ -568,3 +568,191 @@ test('R1: pick, other routes are the next two with other sets of sectors', () =>
   assert.deepEqual(RECS.pick([plan, sameSet], st, {}).others, []);
   assert.deepEqual(RECS.pick([plan, o1], st, {}).others.map((x) => x.id), ['O1']);
 });
+
+// ---------------------------------------------------------------- R2: route choice in the advisor (spec 4.2 to 4.4, 4.8)
+const ADV = (require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'advisor.js')), globalThis.ADVISOR.init(D));
+const SHARK = [3, 4, 1, 2];
+const sharkObj = { hull: 3, stern: 4, bow: 1, bridge: 2 };
+const withRecs = (o) => Object.assign(RECS.defaults(), o);
+const ALL = D.sectors.map((s) => s.id);
+const PARENT = new Map(Object.entries(D.unlocks).filter(([, u]) => u.by).map(([k, u]) => [+k, u.by]));
+const CHILDREN = (id) => [...PARENT].filter(([, by]) => by === id).map(([k]) => k);
+
+test('Submersibles advisor with settings (R2): the worked example of spec 4.8, four routes and both orders, to the second', () => {
+  const st = ADV.stats(1, SHARK);
+  assert.equal(st.speed, 110); assert.equal(st.range, 70);
+  // [route, range used, seconds, tanks, base experience per hour (1 decimal)]
+  const table = [[[1], 16, 54250, 1, 704.1], [[2], 22, 57885, 1, 659.9], [[1, 2], 34, 66532, 2, 1148.2], [[2, 1], 40, 70167, 2, 1088.7]];
+  for (const [route, range, secs, tanks, xph] of table) {
+    const ev = ADV.evalRoute(route, st);
+    assert.deepEqual([ev.range, ev.seconds, ev.tanks, Math.round(ev.exp / (ev.seconds / 3600) * 10) / 10], [range, secs, tanks, xph], route.join('>'));
+    // the independent reading of the formula agrees
+    assert.deepEqual([voyage(route, st.speed).range, voyage(route, st.speed).seconds], [range, secs]);
+  }
+  const base = { sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1 };
+  const run = (o) => ADV.advise(Object.assign({}, base, { recs: withRecs(o) }));
+  const routes = (a) => [a.plan].concat(a.alts).map((x) => x.route.join('>'));
+  const noFuel = run({}), fuel = run({ fuel: true, giveUp: 15 });
+  assert.deepEqual([noFuel.lead, noFuel.step, routes(noFuel)], ['U1', 1, ['2', '1>2', '1']]);
+  assert.deepEqual(routes(fuel), ['2', '1>2', '1'], 'fuel on: A > B enters the allowance, per tank B wins, same plan');
+  assert.equal(fuel.fuel, true); assert.equal(noFuel.fuel, false);
+  const lvl = run({ order: ['level', 'unlock', 'gil', 'loot'] }), lvlFuel = run({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true, giveUp: 15 });
+  assert.deepEqual([lvl.lead, lvl.plan.route], ['X', [1, 2]]);
+  assert.deepEqual(lvlFuel.plan.route, [1, 2], 'B > A enters with fuel on, both 10,610 an hour per tank, A > B stays first on its score');
+  assert.equal(lvl.alts.length, 2); assert.ok(lvl.alts.every((x) => x.route.slice().sort().join() !== '1,2'), 'other routes have other sectors');
+  // the result keeps today's shape
+  for (const a of [noFuel, fuel, lvl]) {
+    assert.ok(a.plan.ev.reachable && typeof a.plan.why === 'string' && a.plan.why.length > 0); assert.equal(a.parts, null);
+    assert.ok(Array.isArray(a.skipped) && a.skipped.every((s) => s.key && s.objective && s.reason));
+  }
+});
+
+// An independent reading of 4.4 over every order of 1 to 5 sectors of the pool (no RECS.pick, no ADVISOR search).
+function brute(scn) {
+  const { rank, found, slots, order, fuel, giveUp } = scn;
+  const pool = D.sectors.filter((s) => found.includes(s.id) && s.rank <= rank), speed = stats(rank, sharkObj).speed, rng = stats(rank, sharkObj).range;
+  const routes = [];
+  (function walk(r) {
+    if (r.length >= 5) return;
+    for (const s of pool) { if (r.includes(s.id)) continue; const n = r.concat(s.id), v = voyage(n, speed); if (v.range > rng) continue; routes.push({ route: n, seconds: v.seconds, tanks: Math.max(1, n.reduce((t, id) => t + SECTOR.get(id).tanks, 0)), exp: n.reduce((t, id) => t + SECTOR.get(id).exp, 0) }); walk(n); }
+  })([]);
+  const undiscovered = ALL.filter((id) => !found.includes(id));
+  const newOf = (r) => { const seen = new Set(); for (const id of r) for (const c of CHILDREN(id)) if (!found.includes(c)) seen.add(c); return seen.size; };
+  let visit = null;
+  if (slots < 4) {
+    const target = D.subSlots.find((u) => u.slot === slots + 1).sector;
+    let cur = target; const chain = [target];
+    while (!found.includes(cur) && PARENT.has(cur)) { cur = PARENT.get(cur); chain.unshift(cur); }
+    visit = found.includes(target) ? target : found.includes(cur) ? cur : null;
+    if (visit && SECTOR.get(visit).rank > rank) visit = null;
+  }
+  const left = slots < 4 || undiscovered.length > 0, top = rank >= TOP;
+  const stars = (r) => r.route.reduce((t, id) => t + SECTOR.get(id).stars, 0);
+  const U1 = (r) => (visit && r.route.includes(visit) ? 1 : 0), U2 = (r) => (undiscovered.length ? newOf(r.route) : 0);
+  const single = routes.filter((r) => r.route.length === 1), u1 = single.some((r) => U1(r) > 0), u2 = single.some((r) => U2(r) > 0);
+  const U3 = (r) => (left && !top && !u1 && !u2 ? r.exp : 0), X = (r) => (top ? 0 : r.exp);
+  const fns = { unlock: [U1, U2, U3], level: [X], gil: [stars] };
+  const stages = order.filter((k) => fns[k]).flatMap((k) => fns[k]);
+  let S = routes, lead = false;
+  const rec = new Map(routes.map((r) => [r, []]));
+  for (const fn of stages) {
+    const sc = new Map(S.map((r) => [r, fn(r) / (r.seconds / 3600)]));
+    const best = Math.max(...sc.values());
+    if (!(best > 0)) continue;
+    const band = fuel && !lead ? giveUp / 100 : 0.05;
+    S.forEach((r) => rec.get(r).push(sc.get(r)));
+    S = S.filter((r) => sc.get(r) >= (1 - band) * best - 1e-9 * best);
+    if (fuel && !lead) {
+      const e = (r) => fn(r) / r.tanks, bestE = Math.max(...S.map(e));
+      S = S.filter((r) => e(r) >= 0.95 * bestE - 1e-9 * bestE);
+    }
+    lead = true;
+  }
+  S = S.slice().sort((a, b) => {
+    const x = rec.get(a), y = rec.get(b);
+    for (let i = 0; i < Math.min(x.length, y.length); i++) if (x[i] !== y[i]) return y[i] - x[i];
+    if (a.seconds !== b.seconds) return a.seconds - b.seconds;
+    if (a.tanks !== b.tanks) return a.tanks - b.tanks;
+    return a.route.join('-') < b.route.join('-') ? -1 : 1;
+  });
+  return S[0].route;
+}
+const SCENARIOS = [
+  { name: 'rank 1, two found', rank: 1, found: [1, 2], slots: 1, order: ['unlock', 'level', 'gil', 'loot'], fuel: false, giveUp: 15 },
+  { name: 'rank 10, seven visitable, Leveling first, fuel', rank: 10, found: [1, 2, 3, 4, 5, 6, 7, 8], slots: 1, order: ['level', 'gil', 'unlock', 'loot'], fuel: true, giveUp: 15 },
+  { name: 'rank 14, eight visitable, Gil first, fuel off', rank: 14, found: [1, 2, 3, 4, 5, 6, 7, 8], slots: 1, order: ['gil', 'unlock', 'level', 'loot'], fuel: false, giveUp: 15 },
+  { name: 'rank 14, eight visitable, all slots, sectors to find, fuel at 25', rank: 14, found: [1, 2, 3, 4, 5, 6, 7, 8], slots: 4, order: ['gil', 'unlock', 'level', 'loot'], fuel: true, giveUp: 25 },
+  { name: 'rank 10, slot 2 held, Gil then Leveling', rank: 10, found: [1, 2, 3, 4, 5, 6, 7], slots: 2, order: ['gil', 'level', 'unlock', 'loot'], fuel: false, giveUp: 15 },
+  { name: 'D8: rank 5, A to G found, Gil second', rank: 5, found: [1, 2, 3, 4, 5, 6, 7], slots: 1, order: ['unlock', 'gil', 'level', 'loot'], fuel: false, giveUp: 15 },
+  { name: 'rank 14, Unlocking first, fuel at 10', rank: 14, found: [1, 2, 3, 4, 5, 6, 7, 8], slots: 1, order: ['unlock', 'level', 'gil', 'loot'], fuel: true, giveUp: 10 },
+];
+
+test('Submersibles advisor with settings (R2): for pools of at most 8 sectors the plan equals a brute-force best under 4.4', () => {
+  for (const s of SCENARIOS) {
+    const a = ADV.advise({ sub: { rank: s.rank, parts: SHARK }, fc: { unlockedSlots: s.slots, discovered: s.found }, slotsFilled: s.slots, recs: withRecs({ order: s.order, fuel: s.fuel, giveUp: s.giveUp }) });
+    assert.deepEqual(a.plan.route, brute(s), s.name);
+    assert.ok(a.alts.length <= 2 && a.alts.every((x) => x.route.slice().sort().join() !== a.plan.route.slice().sort().join()), s.name + ': other routes have other sectors');
+  }
+});
+
+test('Submersibles advisor with settings (R2): D8, levelling towards what is left to unlock when no route can reveal it now', () => {
+  const s = SCENARIOS.find((x) => x.name.startsWith('D8'));
+  const input = { sub: { rank: s.rank, parts: SHARK }, fc: { unlockedSlots: 1, discovered: s.found }, slotsFilled: 1 };
+  const a = ADV.advise(Object.assign({}, input, { recs: withRecs({ order: s.order }) }));
+  assert.equal(a.lead, 'U3', 'Unlocking scores experience per hour');
+  assert.ok(a.skipped.some((x) => x.key === 'U1') && a.skipped.some((x) => x.key === 'U2'));
+  const st = ADV.stats(s.rank, SHARK), xph = (r) => { const e = ADV.evalRoute(r, st); return e.exp / (e.seconds / 3600); };
+  const best = Math.max(...[[1], [2], [3], [4], [1, 2], [3, 4], [1, 2, 3, 4], [4, 3, 2, 1]].map(xph));
+  assert.ok(xph(a.plan.route) >= 0.95 * best, 'the plan is an experience route');
+  assert.ok(a.plan.route.length >= 2);
+  // Gil is ranked second and decides only among the routes within 5% of the best experience
+  assert.deepEqual(a.plan.route, brute(s));
+  // with sector G (7) still unfound, D can reveal it: the premise changes and Unlocking leads by U2
+  const f = ADV.advise(Object.assign({}, input, { fc: { unlockedSlots: 1, discovered: [1, 2, 3, 4, 5, 6] }, recs: withRecs({ order: s.order }) }));
+  assert.equal(f.lead, 'U2');
+});
+
+test('Submersibles advisor with settings (R2): invariant I1, the S6 cases equal today\'s advice when only Gil is live and fuel is off', () => {
+  const build = [31, 24, 25, 34], base = { sub: { rank: 145, parts: build }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+  const L = (route, trips, perTrip, enough) => ({ route, trips, perTrip, enough: enough === undefined ? trips >= 10 : enough });
+  const plain = ADV.advise(base);
+  const cases = [
+    base,
+    Object.assign({}, base, { sub: { rank: 145, parts: SHARK } }),
+    Object.assign({}, base, { logged: null }), Object.assign({}, base, { logged: [] }),
+    Object.assign({}, base, { logged: [L([1, 2], 9, 5000)], enough: 10 }),
+    Object.assign({}, base, { logged: [L(plain.plan.route, 9, 5000)], enough: 10 }),
+    Object.assign({}, base, { logged: [L([1, 2], 14, 412000)], enough: 10, priceNote: 'Market prices seen Tue 14:05 on this device.' }),
+    Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 12, 0)], enough: 10 }),
+    Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 4, 1000, false)], enough: 10 }),
+  ];
+  for (const [i, c] of cases.entries()) {
+    const today = ADV.advise(c), now = ADV.advise(Object.assign({}, c, { recs: RECS.defaults() }));
+    const pick = (a) => ({ step: a.step, stepName: a.stepName, goal: a.goal, plan: a.plan, alts: a.alts, parts: a.parts, note: a.note, own: a.own });
+    assert.deepEqual(pick(now), pick(today), 'case ' + i);
+    assert.equal(now.lead, 'G'); assert.equal(now.fuel, false);
+    assert.deepEqual(now.skipped.map((x) => x.key), ['U1', 'U2', 'U3', 'X', 'L1', 'L2']);
+  }
+  // fuel on is no longer today's answer path, but is still a gil route this sub can run
+  const f = ADV.advise(Object.assign({}, base, { recs: withRecs({ fuel: true }) }));
+  assert.equal(f.lead, 'G'); assert.equal(f.fuel, true); assert.ok(f.plan.ev.reachable);
+});
+
+test('Submersibles advisor with settings (R2): each skip of 4.5 names its cause; loot leads when an item can drop', () => {
+  const full = { sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+  const a = ADV.advise(Object.assign({}, full, { recs: RECS.defaults() }));
+  const why = Object.fromEntries(a.skipped.map((s) => [s.key, s.reason]));
+  assert.equal(why.U1, 'every sector is found'); assert.equal(why.U2, 'every sector is found'); assert.equal(why.U3, 'every sector is found');
+  assert.equal(why.X, 'this sub is at the top rank'); assert.equal(why.L1, 'no item chosen'); assert.equal(why.L2, 'no item chosen');
+  // loot skipped because no chosen item can drop where this sub can go (rank 1, sectors A and B)
+  const items = RECS.items(D);
+  const lowDrop = (id) => D.sectors.some((s) => s.rank <= 1 && (D.loot[s.id] || []).includes(id));
+  const far = items.find((i) => !lowDrop(i.id)), near = items.find((i) => (D.loot[1] || []).includes(i.id) && !(D.loot[2] || []).includes(i.id));
+  const low = { sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1 };
+  const b = ADV.advise(Object.assign({}, low, { recs: withRecs({ loot: [[far.id, true], [0, false], [0, false], [0, false], [0, false]] }) }));
+  assert.match(b.skipped.find((s) => s.key === 'L1').reason, /^none of your chosen items can drop in a sector this sub can reach now$/);
+  assert.ok(b.skipped.some((s) => s.key === 'L2'));
+  // with an item that can drop in A only, Loot first: coverage 1 for each route through A; per hour A alone wins
+  const c = ADV.advise(Object.assign({}, low, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: [[near.id, true], [0, false], [0, false], [0, false], [0, false]] }) }));
+  assert.equal(c.lead, 'L1'); assert.deepEqual(c.plan.route, [1]);
+  // a sub with a range of nothing: blocked, today's sentence
+  const weak = [0, 1, 2, 3].map((sl) => D.parts.filter((p) => p.slot === sl).sort((x, y) => x.range - y.range)[0].id);
+  const d = ADV.advise({ sub: { rank: 1, parts: weak }, fc: { unlockedSlots: 1, discovered: [1, 2] }, recs: RECS.defaults() });
+  assert.equal(d.blocked, 'No discovered sector is within this build\'s range.');
+  // no rank or parts: today's blocked answer, with or without settings
+  assert.ok(ADV.advise({ sub: { rank: 5, parts: null }, fc: { unlockedSlots: 1, discovered: [1, 2] }, recs: RECS.defaults() }).blocked);
+});
+
+test('Submersibles advisor with settings (R2): without input.recs nothing is counted or added', () => {
+  const a = ADV.advise({ sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1 });
+  assert.equal(a.lead, undefined); assert.equal(a.skipped, undefined); assert.equal(a.fuel, undefined);
+  assert.equal(ADV.advise({ sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1, recs: null }).lead, undefined);
+});
+
+test('Submersibles advisor with settings (R2): rank 130, everything found, Leveling first, fuel on: at most 92,000 route evaluations', () => {
+  const t0 = Date.now();
+  const a = ADV.advise({ sub: { rank: 130, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true }) });
+  assert.ok(ADV.lastEvals > 0 && ADV.lastEvals <= 92000, 'evaluations ' + ADV.lastEvals);
+  assert.equal(a.lead, 'X'); assert.ok(a.plan.ev.reachable);
+  assert.ok(Date.now() - t0 < 5000, 'a few seconds at most');
+});
