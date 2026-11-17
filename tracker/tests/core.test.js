@@ -1440,6 +1440,70 @@ test('Submersibles advisor: the owner\'s order (unlock all four subs, discover e
   for (const a of [a1, a2, a3, a4, a5, a6, a7]) for (const x of [a.plan].concat(a.alts)) assert.ok(x.ev.reachable && x.route.length >= 1 && x.route.length <= 5);
 });
 
+test('Submersibles advisor, advice from the log (S6-2): ranked reachable routes become the plan, by gil per hour for this sub, with the rules of the spec', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD);
+  const all = SD.sectors.map((s) => s.id), build = [31, 24, 25, 34];
+  const base = { sub: { rank: 145, parts: build }, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 4 };
+  const L = (route, trips, perTrip, enough) => ({ route, trips, perTrip, enough: enough === undefined ? trips >= 10 : enough });
+  const secs = (r) => A.evalRoute(r, A.stats(145, build)).seconds;
+  const plain = A.advise(base);
+  // without a log (none, null or empty) the result is today's
+  for (const extra of [{}, { logged: null }, { logged: [] }, { logged: [L([1, 2], 9, 5000)], enough: 10 }]) {
+    const a = A.advise(Object.assign({}, base, extra));
+    assert.deepStrictEqual(a.plan.route, plain.plan.route); assert.deepStrictEqual(a.alts.map((x) => x.route), plain.alts.map((x) => x.route));
+    assert.ok(!a.own, 'not from the log'); assert.match(a.plan.why, /community gil route/); assert.doesNotMatch(a.plan.why, /logging arrives/);
+  }
+  // 9 voyages do not count: the reason says how many there are
+  const nine = A.advise(Object.assign({}, base, { logged: [L(plain.plan.route, 9, 5000)], enough: 10 }));
+  assert.deepStrictEqual(nine.plan.route, plain.plan.route); assert.match(nine.plan.why, /takes over once a route has 10 logged voyages \(this one has 9\)/);
+  // a ranked, reachable route becomes the plan, with the figures and the price note
+  assert.notDeepStrictEqual(plain.plan.route, [1, 2]);
+  const own = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000)], enough: 10, priceNote: 'Market prices seen Tue 14:05 on this device.' }));
+  assert.strictEqual(own.own, true); assert.strictEqual(own.plan.own, true); assert.deepStrictEqual(own.plan.route, [1, 2]);
+  assert.match(own.plan.why, /^From your own log: about 412,000 gil a voyage over 14 logged voyages; this sub is back in \d+(\.\d)? hours, so about [\d,]+ gil per hour\. Market prices seen Tue 14:05 on this device\.$/);
+  assert.strictEqual(own.alts.length, 2, 'filled up from today\'s list');
+  for (const x of own.alts) { assert.match(x.why, /^Not enough of your own data \(0 of 10 voyages\)/); assert.notDeepStrictEqual(x.route, [1, 2]); assert.ok(x.ev.reachable); }
+  assert.notDeepStrictEqual(own.alts[0].route, own.alts[1].route);
+  // the order: gil per hour for this sub; the fill-up names the logged count of a thin route
+  const thin = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 4, 1000, false)], enough: 10 }));
+  assert.ok(thin.alts.some((x) => x.route.join() === plain.plan.route.join() && /\(4 of 10 voyages\)/.test(x.why)));
+  const g = (r, p) => p / (secs(r) / 3600), pa = { '1,2': 100000, '1': 90000, '2': 20000 };
+  const o3 = A.advise(Object.assign({}, base, { logged: [L([2], 12, pa['2']), L([1], 12, pa['1']), L([1, 2], 12, pa['1,2'])], enough: 10 }));
+  const want = [[1], [1, 2], [2]].sort((x, y) => g(y, pa[y.join()]) - g(x, pa[x.join()]));
+  assert.deepStrictEqual([o3.plan.route].concat(o3.alts.map((x) => x.route)), want, 'best gil per hour first, by this sub\'s own hours (not the log\'s)');
+  // tie-break 1: equal gil per hour, fewer seconds first (the shorter route)
+  const sS = secs([1]), sL = secs([2]); assert.ok(sS < sL);
+  const gph = 50000 / (sS / 3600), pL = 50000 * sL / sS, ulp = (x, n) => { const f = new Float64Array([x]), u = new BigInt64Array(f.buffer); u[0] += BigInt(n); return f[0]; };
+  let found = null;
+  for (let k = -64; k <= 64 && found === null; k++) if (ulp(pL, k) / (sL / 3600) === gph) found = ulp(pL, k);
+  assert.ok(found !== null, 'test data: an equal figure exists');
+  const t1 = A.advise(Object.assign({}, base, { logged: [L([2], 12, found), L([1], 12, 50000)], enough: 10 }));
+  assert.deepStrictEqual(t1.plan.route, [1], 'equal gil per hour: fewer seconds first'); assert.deepStrictEqual(t1.alts[0].route, [2]);
+  // tie-break 2: equal gil per hour and equal seconds, the route text ascending (32,36 before 34,38), in either input order
+  assert.strictEqual(secs([32, 36]), secs([34, 38]));
+  for (const list of [[L([34, 38], 11, 70000), L([32, 36], 11, 70000)], [L([32, 36], 11, 70000), L([34, 38], 11, 70000)]]) {
+    const t2 = A.advise(Object.assign({}, base, { logged: list, enough: 10 }));
+    assert.deepStrictEqual(t2.plan.route, [32, 36]); assert.deepStrictEqual(t2.alts[0].route, [34, 38]);
+  }
+  // routes this sub cannot run are ignored: an undiscovered sector, a sector above the rank, a route out of range, and perTrip 0
+  const ignored = [
+    [Object.assign({}, base, { fc: { unlockedSlots: 4, discovered: all.filter((id) => id !== 2) } }), L([1, 2], 20, 9e6)],
+    [Object.assign({}, base, { sub: { rank: 1, parts: [3, 4, 1, 2] } }), L([1, 2, 3], 20, 9e6)],
+    [Object.assign({}, base, { sub: { rank: 145, parts: [3, 4, 1, 2] } }), null],
+    [base, L([1, 2], 20, 0)]
+  ];
+  const far = [50, 43, 48, 45, 39]; // 202 of 200 range for the weak build
+  assert.ok(!A.evalRoute(far, A.stats(145, [3, 4, 1, 2])).reachable, 'test data: a route out of range of the weak build');
+  ignored[2][1] = L(far, 20, 9e6);
+  for (const [input, l] of ignored) {
+    const ref = A.advise(input), got = A.advise(Object.assign({}, input, { logged: [l], enough: 10 }));
+    assert.ok(!got.own, 'ignored: ' + l.route.join()); assert.deepStrictEqual(got.plan.route, ref.plan.route);
+  }
+  // blocked stays blocked
+  assert.ok(A.advise({ sub: { rank: 5, parts: null }, fc: { unlockedSlots: 1, discovered: [1] }, logged: [L([1], 20, 100)] }).blocked);
+});
+
 test('Submersibles notifications: automatic grouping by stage, stragglers, the three fixed groupings, quiet hours (push.js)', () => {
   require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'push.js'));
   const P = globalThis.PUSH, M = 60000, now = new Date(2026, 10, 12, 12, 0).getTime();

@@ -136,6 +136,7 @@
     ['earn', 'Earnings', null], ['setup', 'Setup', null]];
   function render() {
     if (!D) return;
+    refreshLogged();
     $$('.tabs [data-tab]').forEach(function (b) { b.setAttribute('aria-current', b.dataset.tab === UI.tab ? 'page' : 'false'); });
     var main = $('#view');
     if (SH.problem) { main.innerHTML = '<div class="note bad"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.</div>'; return; }
@@ -237,9 +238,10 @@
   // where each free company stands in the owner's order: still unlocking (subs or sectors, levelling included), farming
   // gil, or finished (gil step, every sub at the top rank and no better part to fit)
   function stageOf(fcId) {
+    refreshLogged();
     var fc = S.fcs[fcId], list = Object.keys(S.subs).filter(function (k) { return S.subs[k].fcId === fcId && S.subs[k].slot <= (fc.unlockedSlots || 1); });
     if (!fc || !list.length) return 'unlock';
-    var advice = list.map(function (k) { return ADV.advise({ sub: S.subs[k], fc: fc, slotsFilled: list.length }); });
+    var advice = list.map(function (k) { return ADV.advise(Object.assign({ sub: S.subs[k], fc: fc, slotsFilled: list.length }, logInput())); });
     if (advice.some(function (a) { return a.blocked || a.step < 3; })) return 'unlock';
     return list.every(function (k) { return S.subs[k].rank === 145; }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
   }
@@ -477,13 +479,28 @@
   }
   function slotsFilled(fcId) { return Object.keys(subsOf(fcId)).length; }
   var ADVICE = {};
+  // the player's own log for the advisor (item S6-2): ranked from the prices already cached on this device, never fetched
+  var LOGGED = { list: [], sig: '', note: '' };
+  function refreshLogged() {
+    var now = Date.now(), c = null;
+    try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
+    var tot = EARN.totals(S, c ? c.prices : {}, now);
+    var list = Object.keys(tot.byRoute).sort().map(function (k) { var r = tot.byRoute[k]; return { route: r.route.slice(), trips: r.trips, perTrip: r.perTrip, enough: r.enough }; });
+    LOGGED = {
+      list: list,
+      note: c && c.at ? 'Market prices seen ' + F.fmtClock(c.at, now) + ' on this device.' : 'Merchant prices only; open Earnings to load market prices.',
+      sig: JSON.stringify([c && c.at || 0, list.map(function (l) { return [l.route.join(','), l.trips, Math.round(l.perTrip)]; })])
+    };
+    return LOGGED;
+  }
+  function logInput() { return { logged: LOGGED.list.length ? LOGGED.list : null, enough: EARN.ENOUGH, priceNote: LOGGED.note }; }
   function adviceFor(subId) {
     var s = S.subs[subId], fc = s && S.fcs[s.fcId]; if (!fc) return null;
     // a sub that is back is planned at the rank its voyage brings it to, so the button sends what it shows
     if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
-    var key = JSON.stringify([s.rank, s.parts, fc.unlockedSlots, fc.discovered, pendingFor(subId), slotsFilled(s.fcId)]);
+    var key = JSON.stringify([s.rank, s.parts, fc.unlockedSlots, fc.discovered, pendingFor(subId), slotsFilled(s.fcId), LOGGED.sig]);
     if (ADVICE[subId] && ADVICE[subId].key === key) return ADVICE[subId].value;
-    var v = ADV.advise({ sub: s, fc: fc, pending: pendingFor(subId), slotsFilled: slotsFilled(s.fcId) });
+    var v = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(subId), slotsFilled: slotsFilled(s.fcId) }, logInput()));
     ADVICE[subId] = { key: key, value: v };
     return v;
   }
@@ -505,7 +522,7 @@
     var s = S.subs[id], a = adviceFor(id), now = Date.now();
     if (!a) return '';
     if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p></div>';
-    var alt = (a.alts || []).map(function (x, i) { return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span></li>'; }).join('');
+    var alt = (a.alts || []).map(function (x, i) { return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' + (x.why && /^Not enough of your own data/.test(x.why) ? ' <span class="muted">' + esc(x.why.replace(/;.*$/, '')) + '</span>' : '') + '</li>'; }).join('');
     return '<div class="advice"><p class="advice-step">Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName) + (a.goal ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
       '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' +
@@ -705,6 +722,7 @@
     sendSheet(id, false);
   }
   function sendSheet(id, retime) {
+    refreshLogged();
     var s = S.subs[id], fc = S.fcs[s.fcId], now = Date.now(), st = F.status(s, fc, now), v = s.voyage;
     PICK = { id: id, route: retime && v ? (v.route || []).slice() : [], sea: null };
     var head = retime ? 'Change this voyage' : 'Send ' + (s.name || 'Sub ' + s.slot);
@@ -724,7 +742,7 @@
     ids.forEach(function (id) {
       var s = S.subs[id], fc = S.fcs[s.fcId];
       if (s.voyage && s.voyage.returnAt <= Date.now()) { var up = ADV.afterVoyage(s, s.voyage.route); if (up) s = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
-      var a = ADV.advise({ sub: s, fc: fc, pending: pendingFor(id).concat(taken), slotsFilled: slotsFilled(s.fcId) });
+      var a = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pendingFor(id).concat(taken), slotsFilled: slotsFilled(s.fcId) }, logInput()));
       out[id] = a;
       if (a && a.plan) taken = taken.concat(a.plan.route);
     });
@@ -735,6 +753,7 @@
     var s = S.subs[id], now = Date.now();
     if (!s) return;
     if (s.voyage && s.voyage.returnAt <= now) logTrip(id, rankFix, loot); // the rank moves on first, so the suggestion fits it
+    refreshLogged();
     var a = adviceFor(id);
     if (!a || !a.plan) { schedule(); openSub(id); return; }
     s.voyage = { sentAt: now, route: a.plan.route.slice(), returnAt: now + a.plan.ev.seconds * 1000, calcAt: now + a.plan.ev.seconds * 1000 };
@@ -787,6 +806,7 @@
     return { rank: rank && rank >= 1 ? rank : 0, into: into, grade: ADV.GRADES.indexOf(g) >= 0 ? g : '', bad: bad };
   }
   function sendAllSheet(fcId) {
+    refreshLogged();
     var fc = S.fcs[fcId], subs = subsOf(fcId), now = Date.now();
     var list = Object.keys(subs).map(function (k) { return subs[k]; }).filter(function (e) { var st = F.status(e.sub, fc, now); return st === 'back' || st === 'idle'; });
     var plans = planAll(list.map(function (e) { return e.id; }));
@@ -866,6 +886,7 @@
         var picks = $$('input[name=pick]:checked', form).map(function (x) { return x.value; }), t = readTime(form, 't');
         if (!picks.length) { sheetError('Pick at least one submarine.'); break; }
         picks.forEach(function (pid) { var x = S.subs[pid]; if (x && x.voyage) logTrip(pid); }); // ranks move on first
+        refreshLogged();
         var plans = planAll(picks);
         var missing = picks.filter(function (pid) { var a = plans[pid]; return !(a && a.plan); });
         if (missing.length && !t) { sheetError('Some subs have no worked-out route: type the time the game shows for them.'); break; }

@@ -2624,6 +2624,57 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server10.close();
     }
 
+    // ── C79 Submersibles step S6-2: at the gil step the suggestion comes from the player's own log once a route has ten
+    //    logged voyages (nine do not count), on the Board and in the send window, without a reload, with no new saved field.
+    {
+      const server11 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const requests = [];
+      page.on('request', (r) => { if (/universalis/.test(r.url())) requests.push(r.url()); });
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const saved = () => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles; });
+      const allIds = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8')).sectors.map((s) => s.id);
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async (all) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fi = { name: 'India Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.i1 = { fcId: 'fi', slot: 1, name: 'Sub I1', rank: 145, parts: [31, 24, 25, 34], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+        sec.subs.i2 = { fcId: 'fi', slot: 2, name: 'Sub I2', rank: 145, parts: [31, 24, 25, 34] };
+        for (let i = 1; i <= 9; i++) sec.trips['i1-' + i] = { s: 'i1', t: now - (40 + i * 30) * H, r: [1, 2], back: now - (40 + i * 30 - 29) * H, items: [[10099, 2]], newSectors: [] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, allIds);
+      await page.reload(); await ready();
+      const board = () => page.evaluate(() => { const b = document.querySelector('.sub[data-sub="i2"] [data-quick]'); return b ? { text: b.textContent, title: b.getAttribute('title') } : null; });
+      const communityRoute = await page.evaluate(() => ADVISOR.routeText(ADVISOR.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: window.__subs.section().fcs.fi.discovered }, slotsFilled: 4 }).plan.route));
+      const loggedText = await page.evaluate(() => ADVISOR.routeText([1, 2]));
+      const before = await board();
+      const before0 = await saved();
+      // the 10th voyage, logged through the page: the returned sub's send window, a quantity, "Send on this route"
+      await page.click('.sub[data-sub="i1"] .sub-top');
+      await page.waitForSelector('#sheet .loot');
+      await page.click('#sheet .loot summary');
+      await page.fill('#sheet [data-qty="10099"]', '2');
+      await page.click('#sheet [data-act=quick]');
+      await page.waitForFunction(() => !document.querySelector('#sheet[open]') && /From your own log/.test((document.querySelector('.sub[data-sub="i2"] [data-quick]') || {}).title || ''), null, { timeout: 10000 }).catch(() => {});
+      const after = await board();
+      await page.click('.sub[data-sub="i2"] .sub-top');
+      await page.waitForSelector('#sheet .advice');
+      const sheetAdvice = await page.$eval('#sheet .advice', (el) => el.textContent);
+      await page.waitForTimeout(800);
+      const s1 = await saved();
+      const keys = (o, f) => [...new Set(Object.values(o).flatMap((x) => Object.keys(x)))].filter(f || (() => true)).sort();
+      const noNew = JSON.stringify(Object.keys(s1).sort()) === JSON.stringify(Object.keys(before0).sort()) &&
+        keys(s1.trips).every((k) => ['s', 't', 'r', 'back', 'calc', 'said', 'items', 'newSectors', 'rankAfter', 'rankCalc', 'grade', 'expBase', 'expGot'].includes(k)) &&
+        keys(s1.fcs).every((k) => keys(before0.fcs).includes(k)) && keys(s1.subs).every((k) => keys(before0.subs).concat(['voyage', 'expIntoRank', 'expExact']).includes(k));
+      const ok = !!before && before.text.includes(communityRoute) && !/From your own log/.test(before.title) && loggedText !== communityRoute &&
+        !!after && after.text.includes(loggedText) && /From your own log: about [\d,]+ gil a voyage over 10 logged voyages/.test(after.title) &&
+        /From your own log/.test(sheetAdvice) && sheetAdvice.includes(loggedText) && Object.keys(s1.trips).length === 10 && noNew && requests.length === 0 && real(errors).length === 0;
+      record('C79', 'Advice from the log (step S6-2): at the gil step, with nine logged voyages on a route other than the community one the Board shows the community route; once the tenth is logged through the page, another sub\'s Board button and send window show the logged route and "From your own log", without a reload, with nothing fetched and no new field in the stored section',
+        ok, { before, after, communityRoute, loggedText, sheetAdvice, trips: Object.keys(s1.trips).length, noNew, requests, errors: real(errors) });
+      await ctx.close(); server11.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }

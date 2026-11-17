@@ -210,11 +210,45 @@
       .map(function (cr) { var ev = A.evalRoute(cr.route, st); return ev && ev.reachable ? { route: cr.route, ev: ev, label: cr.name, score: stars(cr.route) / hours(ev) } : null; })
       .filter(Boolean).sort(function (a, b) { return b.score - a.score; });
     var c3 = named.length ? named : search(pool, st, function (r, ev) { return stars(r) / hours(ev); });
+    // the player's own log (item S6-2): ranked routes this sub can run, by gil per hour for this sub's own build
+    var enough = input.enough || 10, logged = input.logged || null, byKey = {};
+    (logged || []).forEach(function (l) { byKey[l.route.join(',')] = l; });
+    var own = [];
+    (logged || []).forEach(function (l) {
+      if (!l.enough || !(l.perTrip > 0)) return;
+      if (!l.route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; })) return;
+      var ev = A.evalRoute(l.route, st);
+      if (!ev || !ev.reachable) return;
+      own.push({ route: l.route.slice(), ev: ev, trips: l.trips, perTrip: l.perTrip, gph: l.perTrip / (ev.seconds / 3600), key: l.route.join(',') });
+    });
+    own.sort(function (a, b) { return b.gph - a.gph || a.ev.seconds - b.ev.seconds || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0); });
+    var fmt = function (n) { return Math.round(n).toLocaleString('en'); };
+    var note = input.priceNote ? ' ' + input.priceNote : '';
+    if (own.length) {
+      var ownWhy = function (x) {
+        return 'From your own log: about ' + fmt(x.perTrip) + ' gil a voyage over ' + x.trips + ' logged voyages; this sub is back in ' + (Math.round(x.ev.seconds / 360) / 10) + ' hours, so about ' + fmt(x.gph) + ' gil per hour.' + note;
+      };
+      var picked = own.slice(0, 3), seenKeys = {};
+      picked.forEach(function (x) { seenKeys[x.key] = 1; });
+      var alts = picked.slice(1).map(function (x) { return Object.assign({ why: ownWhy(x), own: true }, x); });
+      for (var ci = 0; ci < c3.length && alts.length < 2; ci++) {
+        var cx = c3[ci], ck = cx.route.join(',');
+        if (seenKeys[ck] || ck === picked[0].key) continue;
+        seenKeys[ck] = 1;
+        var nn = byKey[ck] ? byKey[ck].trips : 0;
+        alts.push(Object.assign({ why: 'Not enough of your own data (' + nn + ' of ' + enough + ' voyages); ' + (cx.label ? 'a community gil route ("' + cx.label + '")' : 'many sector stars per hour') + '.' }, cx));
+      }
+      out = Object.assign(head3, { plan: Object.assign({ why: ownWhy(picked[0]), own: true }, picked[0]), alts: alts, own: true });
+      out.parts = partTip(sub, st, out.plan.route);
+      return out;
+    }
     if (!c3.length) return { step: 3, stepName: A.STEPS[2], blocked: 'No discovered sector is within this build\'s range.' };
     out = Object.assign(head3, pack(c3, function (x) {
+      var have = byKey[x.route.join(',')], n = have ? have.trips : (logged ? 0 : null);
       return (x.label ? 'A community gil route ("' + x.label + '", Submarine Tracker)' : 'The route with the most sector stars per hour (game data)') +
-        '. Real gil per hour comes from your own logged returns once logging arrives; until then the stars are only a guide.';
+        '. Your own gil per hour takes over once a route has ' + enough + ' logged voyages' + (n ? ' (this one has ' + n + ')' : '') + '; until then the stars are only a guide.';
     }));
+    out.own = false;
     out.parts = partTip(sub, st, out.plan.route);
     return out;
   };
