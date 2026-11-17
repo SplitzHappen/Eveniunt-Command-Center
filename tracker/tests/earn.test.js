@@ -88,3 +88,24 @@ test('archive: the voyages back before a moment go to a file that loads back wit
   assert.equal(E.restore(kept, a), 0);
   assert.throws(() => E.restore(kept, { trips: {} }), /not a Submersibles archive/);
 });
+
+test('ranking: ten voyages on one route rank it, nine do not; ties share a position; an unlogged trip adds nothing', () => {
+  const trip = (r, n, gilItems, hours, at) => ({ s: 'a1', t: at, r, back: at + hours * H, items: gilItems, newSectors: [] });
+  const trips = {};
+  // routes [1,2] and [3] earn the same per hour (10 gil per crystal, 1 crystal per hour); [5] earns less; [4] has nine voyages
+  for (let i = 0; i < 10; i++) trips['x' + i] = trip([1, 2], i, [[10099, 20]], 20, 1000 + i);
+  for (let i = 0; i < 12; i++) trips['y' + i] = trip([3], i, [[10099, 10]], 10, 2000 + i);
+  for (let i = 0; i < 10; i++) trips['z' + i] = trip([5], i, [[10099, 5]], 10, 3000 + i);
+  for (let i = 0; i < 9; i++) trips['w' + i] = trip([4], i, [[10099, 50]], 10, 4000 + i);
+  trips.none = { s: 'a1', t: 5000, r: [1, 2], back: 5000 + 20 * H, items: [], newSectors: [] };
+  const tot = E.totals({ subs: { a1: { fcId: 'fa' } }, trips }, {}, 9e12);
+  assert.equal(tot.byRoute['1,2'].trips, 10);                  // the unlogged trip is not counted
+  assert.equal(tot.byRoute['1,2'].perTrip, 200);
+  assert.equal(tot.byRoute['4'].enough, false);
+  assert.equal(tot.byRoute['1,2'].enough, true);
+  assert.equal(E.ENOUGH, 10);
+  const r = E.ranked(tot.byRoute);
+  assert.deepEqual(r.ranked.map((x) => [x.route.join(), x.pos]), [['3', 1], ['1,2', 1], ['5', 3]]); // tie: more voyages first
+  assert.deepEqual(r.thin.map((x) => x.route.join()), ['4']);
+  assert.equal(r.thin[0].trips, 9);
+});

@@ -10,6 +10,7 @@
   'use strict';
   var E = (globalThis.EARN = globalThis.EARN || {});
   var D = null;
+  E.ENOUGH = 10; // logged voyages on exactly one route (same sectors, same order) before its figure is ranked
   E.TAX = 0.05; // design Q4 default: the Market module's rule once it exists
   E.init = function (data) { D = data; return E; };
   E.name = function (id) { return (D && D.items[id]) || 'Item ' + id; };
@@ -76,8 +77,31 @@
       }
       (t.items || []).forEach(function (x) { var u = E.unitValue(x[0], prices), b = out.byItem[x[0]] = out.byItem[x[0]] || { qty: 0, gil: 0, how: u.how }; b.qty += x[1]; b.gil += (u.each || 0) * x[1]; });
     });
-    Object.keys(out.byRoute).forEach(function (k) { var r = out.byRoute[k]; r.perHour = r.hours ? r.gil / r.hours : 0; });
+    Object.keys(out.byRoute).forEach(function (k) { var r = out.byRoute[k]; r.perHour = r.hours ? r.gil / r.hours : 0; r.perTrip = r.trips ? r.gil / r.trips : 0; r.enough = r.trips >= E.ENOUGH; });
     return out;
+  };
+  // Ranks the routes of totals().byRoute: { ranked: [entry + pos], thin: [entry] }. Ranked: enough voyages, best gil per
+  // hour first; routes whose gil per hour rounds to the same whole gil share a position (1, 1, 3), inside a tie more
+  // voyages first, then the route text. Thin: by voyage count, highest first, then gil per hour.
+  E.ranked = function (byRoute) {
+    var all = Object.keys(byRoute || {}).map(function (k) { return { key: k, e: byRoute[k] }; });
+    var by = function (o) { return o.e; };
+    var txt = function (a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; };
+    var good = all.filter(function (o) { return o.e.enough; }).sort(function (a, b) {
+      return (Math.round(b.e.perHour) - Math.round(a.e.perHour)) || (b.e.trips - a.e.trips) || txt(a, b);
+    });
+    var ranked = good.map(function (o, i) {
+      var pos = i > 0 && Math.round(good[i - 1].e.perHour) === Math.round(o.e.perHour) ? null : i + 1;
+      o.pos = pos; return o;
+    });
+    ranked.forEach(function (o, i) { if (o.pos === null) o.pos = ranked[i - 1].pos; });
+    var thin = all.filter(function (o) { return !o.e.enough; }).sort(function (a, b) {
+      return (b.e.trips - a.e.trips) || (b.e.perHour - a.e.perHour) || txt(a, b);
+    });
+    return {
+      ranked: ranked.map(function (o) { var x = Object.assign({}, o.e); x.pos = o.pos; return x; }),
+      thin: thin.map(by)
+    };
   };
 
   // The log as CSV: one line per item of every trip (a trip with nothing logged gets one line with no item).

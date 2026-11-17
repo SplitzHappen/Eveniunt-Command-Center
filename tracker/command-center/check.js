@@ -2554,6 +2554,40 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server8.close();
     }
 
+    // ── C78 Submersibles step S6-1: Earnings ranks the routes with ten logged voyages (equal gil per hour share a position)
+    //    and lists the others as "n of 10 voyages" without a position, under a line that says what the figure is.
+    {
+      const server9 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      await page.route('https://universalis.app/**', (r) => { const ids = new URL(r.request().url()).pathname.split('/').pop().split(','); const items = {}; ids.forEach((id) => { items[id] = { itemID: +id, averagePrice: 2000 }; }); r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) }); });
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async () => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: { prefs: { priceWorld: 'Aether' } } };
+        sec.fcs.fg = { name: 'Golf Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2, 3] };
+        sec.subs.g1 = { fcId: 'fg', slot: 1, name: 'Sub G1', rank: 10, parts: [3, 4, 1, 2] };
+        for (let i = 1; i <= 10; i++) sec.trips['p' + i] = { s: 'g1', t: now - (200 + i * 30) * H, r: [1, 2], back: now - (200 + i * 30 - 20) * H, items: [[10099, 2]], newSectors: [] };
+        for (let i = 1; i <= 10; i++) sec.trips['q' + i] = { s: 'g1', t: now - (200 + i * 30) * H, r: [3], back: now - (200 + i * 30 - 10) * H, items: [[10099, 1]], newSectors: [] };
+        for (let i = 1; i <= 3; i++) sec.trips['r' + i] = { s: 'g1', t: now - (10 + i * 30) * H, r: [2], back: now - (10 + i * 30 - 10) * H, items: [[10099, 1]], newSectors: [] };
+        sec.trips.s1 = { s: 'g1', t: now - 5 * H, r: [1], back: now - H, items: [], newSectors: [] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready();
+      await page.click('[data-tab=earn]');
+      await page.waitForSelector('.earn-ranked');
+      const got = await page.evaluate(() => ({
+        ranked: [...document.querySelectorAll('.earn-ranked tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent)),
+        thin: [...document.querySelectorAll('.earn-thin tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent)),
+        text: document.querySelector('#view').textContent
+      }));
+      const ok = got.ranked.length === 2 && got.ranked.every((r) => r[0] === '1') && got.thin.length === 1 && got.thin[0].length === 3 &&
+        got.thin[0][2] === '3 of 10 voyages' && /Logged gil divided by logged hours at sea, at the prices shown above/.test(got.text) && real(errors).length === 0;
+      record('C78', 'Earnings ranking (step S6-1): two routes with ten logged voyages and equal gil per hour are ranked and share position 1, a route with three voyages is listed apart as "3 of 10 voyages" without a position, a trip with nothing logged adds nothing, and a line says the figure is logged gil divided by logged hours at sea at the prices shown',
+        ok, { got, errors: real(errors) });
+      await ctx.close(); server9.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }
