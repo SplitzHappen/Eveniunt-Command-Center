@@ -1465,6 +1465,10 @@ test('Submersibles advisor, advice from the log (S6-2): ranked reachable routes 
   assert.strictEqual(own.alts.length, 2, 'filled up from today\'s list');
   for (const x of own.alts) { assert.match(x.why, /^Not enough of your own data \(0 of 10 voyages\)/); assert.notDeepStrictEqual(x.route, [1, 2]); assert.ok(x.ev.reachable); }
   assert.notDeepStrictEqual(own.alts[0].route, own.alts[1].route);
+  // a community route with enough logged voyages but no known price (pays 0): not "not enough data", and no gil figure
+  const noPrice = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 12, 0)], enough: 10 }));
+  const np = noPrice.alts.find((x) => x.route.join() === plain.plan.route.join());
+  assert.ok(np, 'the unpriced community route is listed'); assert.match(np.why, /^Its items have no known price on this device \(12 logged voyages\), so no gil figure;/); assert.doesNotMatch(np.why, /Not enough of your own data/);
   // the order: gil per hour for this sub; the fill-up names the logged count of a thin route
   const thin = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 4, 1000, false)], enough: 10 }));
   assert.ok(thin.alts.some((x) => x.route.join() === plain.plan.route.join() && /\(4 of 10 voyages\)/.test(x.why)));
@@ -1544,6 +1548,24 @@ test('Submersibles advisor, part advice in gil (S6-3): the swap that raises the 
   // below 1% of the current best: no tip (a build that is already the best the rank allows for the ranked route)
   const none = A.advise(Object.assign(base(good), { logged: [L([1, 2], 12, 100000)], enough: 10 }));
   assert.strictEqual(none.own, true); assert.strictEqual(none.parts, null, 'no better part: no tip');
+  // a gain strictly between 0 and 1% of the current best gives no tip (fixed inputs: the best allowed swap gains about 0.35%)
+  const small = [31, 8, 9, 22], bfs = brute(small, [L([1], 12, 100000)]);
+  assert.ok(bfs.best && bfs.best.gain > 0 && bfs.best.gain < bfs.cur * 0.01 && bfs.best.gain > bfs.cur * 0.001, 'test data: a gain between 0 and 1%');
+  assert.strictEqual(A.advise(Object.assign(base(small), { logged: [L([1], 12, 100000)], enough: 10 })).parts, null, 'a gain below 1%: no tip');
+  // exact ties, from real inputs: the same best gain from two parts; the lower slot wins, then the lower part id
+  const tieSlot = [7, 12, 37, 38], bt = brute(tieSlot, [L([1], 12, 100000)]);
+  const gains = []; // the allowed swaps with the best gain, found without the advisor's own loop order
+  for (const p of SD.parts) { const i = p.slot, o = PT[tieSlot[i]]; if (p.id === tieSlot[i] || SD.classes.find((c) => c.id === p.class).rank > 145 || p.surveillance < o.surveillance || p.retrieval < o.retrieval || p.favor < o.favor) continue; const np = tieSlot.slice(); np[i] = p.id; gains.push({ slot: i, id: p.id, g: gphOf(np, [1], 100000) - bt.cur }); }
+  const top = Math.max(...gains.map((x) => x.g)), tops = gains.filter((x) => x.g === top);
+  assert.ok(tops.length > 1 && new Set(tops.map((x) => x.slot)).size > 1, 'test data: an exact tie across slots');
+  const ts = A.advise(Object.assign(base(tieSlot), { logged: [L([1], 12, 100000)], enough: 10 })).parts;
+  assert.strictEqual(ts.slot, Math.min(...tops.map((x) => x.slot))); assert.strictEqual(ts.to, 27);
+  const tiePart = [23, 32, 9, 6], bp = brute(tiePart, [L([1], 12, 100000)]);
+  const gp = SD.parts.filter((p) => p.slot === 3 && p.id !== 6 && (p.id === 14 || p.id === 34)).map((p) => gphOf([23, 32, 9, p.id], [1], 100000) - bp.cur);
+  assert.strictEqual(gp.length, 2); assert.strictEqual(gp[0], gp[1], 'test data: two parts of one slot with exactly the same gain');
+  assert.ok(Math.abs(bp.best.gain - gp[0]) < 1e-9);
+  const tp = A.advise(Object.assign(base(tiePart), { logged: [L([1], 12, 100000)], enough: 10 })).parts;
+  assert.strictEqual(tp.slot, 3); assert.strictEqual(tp.to, 14, 'same slot: the lower part id');
   // a swap that lowers retrieval, surveillance or favor is never suggested, even when it is faster
   const lowers = SD.parts.some((p) => p.slot === 0 && PT[weak[0]] && (p.surveillance < PT[weak[0]].surveillance || p.retrieval < PT[weak[0]].retrieval || p.favor < PT[weak[0]].favor) && p.speed > PT[weak[0]].speed);
   assert.ok(lowers, 'test data: a faster hull that lowers a stat exists');

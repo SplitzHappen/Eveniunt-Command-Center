@@ -2624,6 +2624,40 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server10.close();
     }
 
+    // ── C83 Submersibles step S6 review fix: "Send on this route" sends the route the window showed, even when a "discovered"
+    //    tick entered in the same window would change the advice (rank 145, four slots, every sector found except 3).
+    {
+      const server14 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const saved = () => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles; });
+      const allIds = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8')).sectors.map((s) => s.id).filter((id) => id !== 3);
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async (all) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fl = { name: 'Lima Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.l1 = { fcId: 'fl', slot: 1, name: 'Sub L1', rank: 145, parts: [31, 24, 25, 34], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, allIds);
+      await page.reload(); await ready();
+      await page.click('.sub[data-sub="l1"] .sub-top');
+      await page.waitForSelector('#sheet .advice');
+      const shown = await page.$eval('#sheet [data-act=quick]', (el) => el.dataset.route || null);
+      const freshAfterTick = await page.evaluate(() => { const fcs = JSON.parse(JSON.stringify(window.__subs.section().fcs.fl)); fcs.discovered.push(3); const a = ADVISOR.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: fcs, slotsFilled: 4 }); return a.plan.route.join(','); });
+      await page.click('#sheet .loot summary');
+      await page.check('#sheet [data-new-sector="3"]');
+      await page.click('#sheet [data-act=quick]');
+      await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(800);
+      const s1 = await saved();
+      const sent = s1.subs.l1.voyage && s1.subs.l1.voyage.route ? s1.subs.l1.voyage.route.join(',') : null;
+      const ok = shown === '1' && sent === shown && Object.keys(s1.trips).length === 1 && s1.fcs.fl.discovered.includes(3) && real(errors).length === 0;
+      record('C83', 'Send on this route (step S6 review): the button carries the route the window shows and sends exactly it, also when a "discovered" tick entered in the same window would change the advice; the return is logged once',
+        ok, { shown, sent, freshAfterTick, trips: Object.keys(s1.trips).length, errors: real(errors) });
+      await ctx.close(); server14.close();
+    }
+
     // ── C79 Submersibles step S6-2: at the gil step the suggestion comes from the player's own log once a route has ten
     //    logged voyages (nine do not count), on the Board and in the send window, without a reload, with no new saved field.
     {

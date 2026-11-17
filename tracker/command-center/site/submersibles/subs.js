@@ -523,9 +523,9 @@
     var s = S.subs[id], a = adviceFor(id), now = Date.now();
     if (!a) return '';
     if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p></div>';
-    var alt = (a.alts || []).map(function (x, i) { return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' + (x.why && /^Not enough of your own data/.test(x.why) ? ' <span class="muted">' + esc(x.why.replace(/;.*$/, '')) + '</span>' : '') + '</li>'; }).join('');
+    var alt = (a.alts || []).map(function (x, i) { return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' + (x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why) ? ' <span class="muted">' + esc(x.why.replace(/;.*$/, '')) + '</span>' : '') + '</li>'; }).join('');
     return '<div class="advice"><p class="advice-step">Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName) + (a.goal ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
-      '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
+      '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
       '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' +
       (alt ? '<details><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
       (a.parts ? '<p class="note">' + esc(a.parts.why) + '</p>' : '') + (a.note ? '<p class="note">' + esc(a.note) + '</p>' : '') + '</div>';
@@ -797,16 +797,28 @@
     return out;
   }
   // one press: send this sub on its suggested route, with the worked-out return time
-  function quickSend(id, rankFix, loot) {
+  // shown: the route the send window showed (sector ids); the button sends exactly that one, worked out for the sub as it is
+  // after the return is logged. If it cannot be sent then, nothing is sent and the window opens again with fresh advice.
+  function quickSend(id, rankFix, loot, shown) {
     var s = S.subs[id], now = Date.now();
     if (!s) return;
     if (s.voyage && s.voyage.returnAt <= now) logTrip(id, rankFix, loot); // the rank moves on first, so the suggestion fits it
     refreshLogged();
-    var a = adviceFor(id);
-    if (!a || !a.plan) { schedule(); openSub(id); return; }
-    s.voyage = { sentAt: now, route: a.plan.route.slice(), returnAt: now + a.plan.ev.seconds * 1000, calcAt: now + a.plan.ev.seconds * 1000 };
+    var route, ev;
+    if (shown && shown.length) {
+      var fc = S.fcs[s.fcId], disc = new Set((fc && fc.discovered) || []), st = subStats(s);
+      var okRoute = !!st && shown.length <= 5 && shown.every(function (x) { return SECTOR[x] && disc.has(x) && SECTOR[x].rank <= (s.rank || 0); });
+      ev = okRoute ? ADV.evalRoute(shown, st) : null;
+      if (!ev || !ev.reachable) { schedule(); openSub(id); return; }
+      route = shown.slice();
+    } else {
+      var a = adviceFor(id);
+      if (!a || !a.plan) { schedule(); openSub(id); return; }
+      route = a.plan.route.slice(); ev = a.plan.ev;
+    }
+    s.voyage = { sentAt: now, route: route, returnAt: now + ev.seconds * 1000, calcAt: now + ev.seconds * 1000 };
     closeSheet(); schedule();
-    setStatus((s.name || 'Sub ' + s.slot) + ' sent: ' + ADV.routeText(a.plan.route) + ', back ' + F.fmtClock(s.voyage.returnAt, now) + '.');
+    setStatus((s.name || 'Sub ' + s.slot) + ' sent: ' + ADV.routeText(route) + ', back ' + F.fmtClock(s.voyage.returnAt, now) + '.');
   }
   // after a voyage: the voyage grade, the rank the game shows and the experience into it (optional). Typing the rank and
   // the experience makes the app exact and teaches it what each grade gives; the estimate shown uses what it has learned.
@@ -950,7 +962,7 @@
         closeSheet(); schedule(); break;
       }
       case 'pickclear': PICK.route = []; redrawPicker(); break;
-      case 'quick': { var repq = readRankFix(form), badq = rankFixError(b.dataset.sub, repq); if (badq) { sheetError(badq); break; } quickSend(b.dataset.sub, repq, readLoot(form)); break; }
+      case 'quick': { var repq = readRankFix(form), badq = rankFixError(b.dataset.sub, repq); if (badq) { sheetError(badq); break; } quickSend(b.dataset.sub, repq, readLoot(form), (b.dataset.route || '').split(',').map(Number).filter(function (x) { return x > 0; })); break; }
       case 'loot-repeat': { var rep = JSON.parse(b.dataset.items || '[]'); $$('[data-qty]', form).forEach(function (el) { el.value = ''; }); rep.forEach(function (x) { var el = $('[data-qty="' + x[0] + '"]', form); if (!el) { addLootRow(form, x[0]); el = $('[data-qty="' + x[0] + '"]', form); } if (el) el.value = x[1]; }); break; }
       case 'loot-clear': $$('[data-qty]', form).forEach(function (el) { el.value = ''; }); break;
       case 'trip-save': {

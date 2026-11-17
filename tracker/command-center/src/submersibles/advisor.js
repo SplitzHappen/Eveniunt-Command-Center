@@ -240,7 +240,8 @@
         if (seenKeys[ck] || ck === picked[0].key) continue;
         seenKeys[ck] = 1;
         var nn = byKey[ck] ? byKey[ck].trips : 0;
-        alts.push(Object.assign({ why: 'Not enough of your own data (' + nn + ' of ' + enough + ' voyages); ' + (cx.label ? 'a community gil route ("' + cx.label + '")' : 'many sector stars per hour') + '.' }, cx));
+        var lead = byKey[ck] && byKey[ck].enough ? 'Its items have no known price on this device (' + nn + ' logged voyages), so no gil figure' : 'Not enough of your own data (' + nn + ' of ' + enough + ' voyages)';
+        alts.push(Object.assign({ why: lead + '; ' + (cx.label ? 'a community gil route ("' + cx.label + '")' : 'many sector stars per hour') + '.' }, cx));
       }
       out = Object.assign(head3, { plan: Object.assign({ why: ownWhy(picked[0]), own: true }, picked[0]), alts: alts, own: true });
       out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, out.plan.route));
