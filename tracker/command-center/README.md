@@ -6,6 +6,16 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 
 `src/settings.js`, ⚙ Settings in the main menu (`#settings`): characters and each character's free company (into Submersibles), cloud sync (sign-in through `tracker/oauth.html` and back, sync of every module on opening), backups, notifications for every module (on or off per device, test, night rule in `modules.settings.notify`), appearance. It runs the Tracker's core code, copied to `site/core/` by `build.js`. Scripts and styles load network first so installed apps pick up updates. Check C27.
 
+## Submersibles: Customizable Recommendations
+
+- **Setup panel "Customizable Recommendations"** holds a fuel-efficiency switch with its allowance slider (default 10%, range 5 to 50), a ranking of four priorities (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming; Move up and Move down buttons) and five loot pickers, each with type-to-narrow.
+- **The rule:** the first priority that can be served leads; each lower one chooses only among routes within 5% of the best for those above. With fuel on, routes within the allowance of the best for the leading priority are compared by what they bring per tank.
+- **Storage:** the settings live in their own save section, `modules['submersibles-recommendations']`; `save.js` is unchanged.
+- **Loot** is "possible items only": the pickers list the items a route can bring; drop odds are not known.
+- **Files:** `recs.js` (the rule and the settings), `advisor.js` (the Board's and the send window's routes), `subs.js` (the panel).
+- **Browser checks C85, C86, C87, C88** (C85: the default order and the switch, reordering, the Board follows; C86: the allowance slider and the stored switch; C87: the five pickers; C88: Loot Farming first and the item's route).
+- **Tuning:** `tracker/tools/recs-tune.js` produces `docs/submersibles-recommendations-tuning.md`, which sets the default allowance.
+
 ## Submersibles step S6: gil advice from the player's own log
 
 - **Earnings** ranks routes by gil per hour once a route has 10 logged voyages; the rest are listed as not enough data yet (`earn.js`, check C78).
@@ -89,10 +99,10 @@ Gate 1E (round 1) puts the shell at the root of the public site.
 | `src/index.html`, `src/shell.css`, `src/shell.js` | The shell page: header, module switcher, home screen with the two modules, the Cosmic Exploration guides, the coming modules in the owner's order, the offline-file downloads, the credits, and an install button |
 | `src/icons/`, `make-icons.js` | The Command Center's own icons (gate 1E) and the script that draws them |
 | `src/sw.js` | The site-wide service worker (template; `build.js` fills in the build id and file list) |
-| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4) |
+| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings) |
 | `site/save.js` | The one save (gate 1C), copied from `src/core/save.js` by `build.js` |
 | `restore-build-inputs.js` | Recovers the fonts, the Atelier's solver and its action icons from the committed single-file builds, so both apps can be rebuilt in a session without the toolchain (`--verify` rebuilds and compares byte for byte) |
-| `build.js` | Builds the shell and the Submersibles page into `site/` (57 files; the icons are most of it) |
+| `build.js` | Builds the shell and the Submersibles page into `site/` (58 files; the icons are most of it) |
 | `site/` | The built shell. On the public site it is the root, next to `tracker/`, `atelier/` and `cosmic/` (gate 1E) |
 | `serve.js` | Test server: the published layout under `/Eveniunt-Command-Center/`, assembled on the fly from the shell, today's `site/` (Tracker) and `../ffxiv-cosmic-crafting-solver/atelier/site/` (Atelier), with no isolation headers, like GitHub Pages |
 | `check.js` | The browser checks (`BROWSER=chromium|firefox|webkit`); writes `evidence/checks*.json` and the screenshots. C16 also runs the publish script and the Pages workflow's assemble step into a scratch clone |
