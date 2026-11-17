@@ -731,10 +731,10 @@
     return out;
   }
   // one press: send this sub on its suggested route, with the worked-out return time
-  function quickSend(id, rankFix) {
+  function quickSend(id, rankFix, loot) {
     var s = S.subs[id], now = Date.now();
     if (!s) return;
-    if (s.voyage && s.voyage.returnAt <= now) logTrip(id, rankFix); // the rank moves on first, so the suggestion fits it
+    if (s.voyage && s.voyage.returnAt <= now) logTrip(id, rankFix, loot); // the rank moves on first, so the suggestion fits it
     var a = adviceFor(id);
     if (!a || !a.plan) { schedule(); openSub(id); return; }
     s.voyage = { sentAt: now, route: a.plan.route.slice(), returnAt: now + a.plan.ev.seconds * 1000, calcAt: now + a.plan.ev.seconds * 1000 };
@@ -877,7 +877,7 @@
         closeSheet(); schedule(); break;
       }
       case 'pickclear': PICK.route = []; redrawPicker(); break;
-      case 'quick': { var repq = readRankFix(form), badq = rankFixError(b.dataset.sub, repq); if (badq) { sheetError(badq); break; } quickSend(b.dataset.sub, repq); break; }
+      case 'quick': { var repq = readRankFix(form), badq = rankFixError(b.dataset.sub, repq); if (badq) { sheetError(badq); break; } quickSend(b.dataset.sub, repq, readLoot(form)); break; }
       case 'loot-repeat': { var rep = JSON.parse(b.dataset.items || '[]'); $$('[data-qty]', form).forEach(function (el) { el.value = ''; }); rep.forEach(function (x) { var el = $('[data-qty="' + x[0] + '"]', form); if (!el) { addLootRow(form, x[0]); el = $('[data-qty="' + x[0] + '"]', form); } if (el) el.value = x[1]; }); break; }
       case 'loot-clear': $$('[data-qty]', form).forEach(function (el) { el.value = ''; }); break;
       case 'trip-save': {

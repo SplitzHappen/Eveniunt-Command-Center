@@ -2588,6 +2588,42 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server9.close();
     }
 
+    // ── C81 Submersibles step S6-0: in the send window of a returned sub, "Send on this route" keeps what was typed above it
+    //    (a quantity and a "discovered" tick) in the trip and the free company, as "Send again" does.
+    {
+      const server10 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const saved = () => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles; });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async () => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fh = { name: 'Hotel Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1] };
+        sec.subs.h1 = { fcId: 'fh', slot: 1, name: 'Sub H1', rank: 1, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready();
+      await page.click('.sub[data-sub="h1"] .sub-top');
+      await page.waitForSelector('#sheet .loot');
+      await page.click('#sheet .loot summary');
+      const itemId = await page.$eval('#sheet [data-qty]', (el) => +el.dataset.qty);
+      await page.fill(`#sheet [data-qty="${itemId}"]`, '3');
+      const newSector = await page.$eval('#sheet [data-new-sector]', (el) => +el.dataset.newSector).catch(() => null);
+      if (newSector) await page.check(`#sheet [data-new-sector="${newSector}"]`);
+      const hasQuick = !!(await page.$('#sheet [data-act=quick]'));
+      if (hasQuick) await page.click('#sheet [data-act=quick]');
+      await page.waitForFunction(() => window.__subs && window.__subs.state().ready && !document.querySelector('#sheet[open]'), null, { timeout: 10000 }).then(() => page.waitForTimeout(800)).catch(() => {});
+      const s1 = await saved();
+      const trips = Object.values(s1.trips);
+      const trip = trips[0] || {};
+      const items = Object.fromEntries(trip.items || []);
+      const ok = hasQuick && !!newSector && trips.length === 1 && items[itemId] === 3 && (trip.newSectors || []).includes(newSector) && s1.fcs.fh.discovered.includes(newSector) && !!s1.subs.h1.voyage && real(errors).length === 0;
+      record('C81', 'Send on this route (step S6-0): in the send window of a returned sub, a quantity and a "discovered" tick entered before pressing "Send on this route" are kept in the trip and the free company, and the sub is sent again',
+        ok, { hasQuick, newSector, itemId, trip, discovered: s1.fcs.fh.discovered, errors: real(errors) });
+      await ctx.close(); server10.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }
