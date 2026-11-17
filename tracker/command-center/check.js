@@ -3024,6 +3024,152 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close().catch(() => {}); server16.close();
     }
 
+
+    // ── C87 Customizable Recommendations (R6): five loot pickers, the first without a switch; every list is the same items A to Z;
+    //    typing narrows one list in place (text, caret and focus stay; the chosen item stays listed; no match says so; clearing
+    //    restores the list) and is not saved; pickers 2 to 5 are disabled until switched on and keep their choice; an item chosen
+    //    once is absent elsewhere; choices survive a reload; a stored duplicate shows "counted once"; no sideways scroll on a phone.
+    {
+      const server17 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const stored = () => page.evaluate(async () => { const r = await CC.read(); const m = CC.checkDoc(r.raw).modules['submersibles-recommendations']; return m ? JSON.stringify(m.choices.loot) : null; });
+      const toSetup = async () => { await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel] .rec-picker'); };
+      const opts = (i) => page.$$eval('[data-rec="loot-' + i + '"] option', (os) => os.map((o) => ({ v: o.value, t: o.textContent, d: o.disabled })));
+      const sorted = (list) => list.filter((o) => o.v !== '0' && o.v !== '-1').every((o, k, a) => k === 0 || o.t.toLowerCase() >= a[k - 1].t.toLowerCase());
+      const state = () => page.evaluate(() => [0, 1, 2, 3, 4].map((i) => ({ sel: document.querySelector('[data-rec="loot-' + i + '"]').disabled, find: document.querySelector('[data-rec-find="' + i + '"]').disabled, val: document.querySelector('[data-rec="loot-' + i + '"]').value,
+        sw: (document.querySelector('[data-rec="loot-on-' + i + '"]') || {}).checked, note: document.querySelector('[data-rec-note="' + i + '"]').textContent })));
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async () => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fa = { name: 'Alfa Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2] };
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 1, parts: [3, 4, 1, 2] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready(); await toSetup();
+      const pickers = await page.$$eval('.rec-picker', (els) => els.map((e) => ({ sw: !!e.querySelector('[data-rec^="loot-on-"]'), label: e.querySelector('select').getAttribute('aria-label'), find: e.querySelector('input[type=text]').getAttribute('aria-label') })));
+      const empty = await page.$eval('[data-rec-empty]', (e) => e.textContent);
+      const start0 = await state();
+      const full = await opts(0);
+      const total = full.length - 1;
+      const noneFirst = full[0].t === 'none' && full[0].v === '0';
+      const itemCount = await page.evaluate(() => RECS.items(JSON.parse(JSON.stringify(window.SUB_DATA || {}))).length).catch(() => -1);
+      // choose Empty Crystal (12928) in picker 1
+      await page.selectOption('[data-rec="loot-0"]', '12928');
+      await page.waitForTimeout(300);
+      const chosen1 = await state();
+      const emptyAfter = await page.$eval('[data-rec-empty]', (e) => e.textContent);
+      const focusAfterChoice = await page.evaluate(() => document.activeElement.dataset.rec);
+      const p2 = await opts(1);
+      const lacks = !p2.some((o) => o.v === '12928') && p2.length === full.length - 1;
+      // typing narrows picker 1 in place
+      const docBefore = await stored();
+      await page.click('[data-rec-find="0"]');
+      await page.keyboard.type('shard');
+      const typed = await page.evaluate(() => ({ focus: document.activeElement.dataset.recFind, val: document.activeElement.value, caret: document.activeElement.selectionStart }));
+      const narrow = await opts(0);
+      const shardOnly = narrow.filter((o) => o.v !== '0' && o.v !== '12928' && o.v !== '-1');
+      const narrowOk = narrow.length < full.length && shardOnly.length > 0 && shardOnly.every((o) => /shard/i.test(o.t)) && narrow.some((o) => o.v === '12928') && sorted(narrow) && sorted(full);
+      await page.keyboard.type('zzq');
+      const none = await opts(0);
+      const noMatch = none.some((o) => o.t === 'No item matches' && o.d) && none.some((o) => o.v === '12928') && none.length === 3;
+      const typed2 = await page.evaluate(() => ({ focus: document.activeElement.dataset.recFind, val: document.activeElement.value }));
+      await page.fill('[data-rec-find="0"]', '');
+      const restored = await opts(0);
+      const restoredOk = restored.length === full.length && sorted(restored);
+      const docTyped = await stored();
+      // picker 2 switched on, an item chosen, then switched off: the choice is kept
+      await page.check('[data-rec="loot-on-1"]');
+      const on2 = await state();
+      await page.fill('[data-rec-find="1"]', 'fire');
+      const sh2 = await opts(1);
+      await page.selectOption('[data-rec="loot-1"]', '2'); // Fire Shard: possible in one sector only
+      await page.waitForTimeout(300);
+      const withFire = await state();
+      const noteFire = withFire[1].note;
+      const findAfter = await page.$eval('[data-rec-find="1"]', (e) => e.value); // typed text of another picker survives a redraw, never saved
+      const p1lack = !(await opts(0)).some((o) => o.v === '2') && !(await opts(2)).some((o) => o.v === '2');
+      await page.check('[data-rec="loot-on-2"]'); await page.selectOption('[data-rec="loot-2"]', '3'); await page.uncheck('[data-rec="loot-on-2"]');
+      const off3 = await state();
+      await page.waitForTimeout(800);
+      const storedNow = await stored();
+      if (SHOT) { const h = await page.$('[data-recs-panel]'); await h.scrollIntoViewIfNeeded(); await h.screenshot({ path: path.join(ev, 'submersibles-recommendations.png') }); }
+      await page.reload(); await ready(); await toSetup();
+      const reloaded = await state();
+      const reNote = reloaded[0].note;
+      const typedGone = await page.$eval('[data-rec-find="0"]', (e) => e.value);
+      // a stored duplicate: picker 2 holds the item picker 1 already counts
+      await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[12928, true], [12928, true], [0, false], [0, false], [0, false]] } }, { rev: r.rev, base: null }); });
+      await page.reload(); await ready(); await toSetup();
+      const dup = await state();
+      // phone width
+      await page.setViewportSize({ width: 360, height: 800 });
+      await page.waitForTimeout(200);
+      const wide = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      await ctx.close();
+      const ok = pickers.length === 5 && pickers[0].sw === false && pickers.slice(1).every((p) => p.sw) && pickers[1].label === 'Loot item 2' && pickers[1].find === 'Type to narrow the list for loot item 2' &&
+        empty === 'No item chosen: Loot Farming is skipped.' && emptyAfter === '' && noneFirst && total >= 300 && sorted(full) &&
+        start0[0].sel === false && start0[0].find === false && start0.slice(1).every((s) => s.sel && s.find && s.sw === false) &&
+        chosen1[0].val === '12928' && /^Possible in \d+ sectors \(community data; drop odds are not known\)\.$/.test(chosen1[0].note) && focusAfterChoice === 'loot-0' && lacks &&
+        typed.focus === '0' && typed.val === 'shard' && typed.caret === 5 && narrowOk && typed2.focus === '0' && typed2.val === 'shardzzq' && noMatch && restoredOk && docTyped === docBefore &&
+        sh2.some((o) => o.t === 'Fire Shard') && sh2.length < full.length &&
+        on2[1].sel === false && on2[1].find === false && on2[1].sw === true && withFire[1].val === '2' && noteFire === 'Possible in 1 sector (community data; drop odds are not known).' && findAfter === 'fire' && p1lack &&
+        off3[2].sel === true && off3[2].find === true && off3[2].val === '3' && off3[2].sw === false &&
+        JSON.parse(storedNow)[0][0] === 12928 && JSON.parse(storedNow)[1][0] === 2 && JSON.parse(storedNow)[1][1] === true && JSON.parse(storedNow)[2][0] === 3 && JSON.parse(storedNow)[2][1] === false &&
+        reloaded[0].val === '12928' && reloaded[1].val === '2' && reloaded[1].sw === true && reloaded[2].val === '3' && reloaded[2].sw === false && reloaded[2].sel === true && reloaded[0].find === false && typedGone === '' && /Possible in/.test(reNote) &&
+        dup[1].val === '12928' && /counted once/i.test(dup[1].note) && /picker 1/i.test(dup[1].note) &&
+        wide <= 0 && real(errors).length === 0;
+      record('C87', 'Customizable Recommendations (R6): Setup shows five loot pickers (a text box and a drop-down each), the first without a switch; every list holds the same items A to Z with "none" first; typing narrows one list in place (the text box keeps its text, caret and focus, the chosen item stays listed, no match shows a disabled "No item matches", clearing restores the list) and is not saved; pickers 2 to 5 are disabled until switched on and keep their choice when switched off; an item chosen in one picker is absent from the others; choices survive a reload; a stored duplicate shows "counted once"; no sideways page scroll at 360 px',
+        ok, { pickers, empty, total, itemCount, start0: start0.map((s) => [s.sel, s.find]), typed, typed2, narrow: narrow.length, none, restored: restored.length, noteFire, findAfter, p1lack, off3: off3[2], storedNow, reloaded: reloaded.map((s) => [s.val, s.sw, s.sel]), typedGone, dup: dup[1], wide, errors: real(errors) });
+      await ctx.close().catch(() => {}); server17.close();
+    }
+
+    // ── C88 Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board suggests a route whose sectors
+    //    list that item, the reason says "drop odds are not known", and an item no reachable sector lists shows the skip sentence.
+    {
+      const server18 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      const sea1 = data.sectors.filter((s) => s.sea === 1 && [1, 2].includes(s.id));
+      const letterOf = (id) => data.sectors.find((s) => s.id === id).name.replace(/^.*\(([A-Z])\)$/, '$1');
+      const item = 5680; // Battledance Materia II: listed by sector 2 only (letter B), not by sector 1
+      const listing = [1, 2].filter((id) => (data.loot[id] || []).includes(item));
+      const seed = (choices) => page.evaluate(async (c) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fa = { name: 'Alfa Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2] };
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 1, parts: [3, 4, 1, 2] };
+        let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: c }, { rev: r.rev, base: null });
+      }, choices);
+      const read = async () => {
+        await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="a1"]');
+        const btn = await page.$eval('.quick[data-quick="a1"]', (b) => b.textContent);
+        await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+        const sheet = await page.$eval('#sheet .advice', (b) => b.textContent);
+        const head = await page.$eval('#sheet .advice-step', (b) => b.textContent);
+        const route = await page.$eval('#sheet .advice-route b', (b) => b.textContent);
+        await page.keyboard.press('Escape');
+        return { btn, sheet, head, route };
+      };
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const base = { fuel: false, giveUp: 10, order: ['loot', 'unlock', 'level', 'gil'] };
+      await seed(Object.assign({}, base, { loot: [[item, true], [0, false], [0, false], [0, false], [0, false]] }));
+      await page.reload(); await ready();
+      const reach = await read();
+      await seed(Object.assign({}, base, { loot: [[2, true], [0, false], [0, false], [0, false], [0, false]] })); // Fire Shard: only a sector far out of this sub's reach
+      await page.reload(); await ready();
+      const far = await read();
+      await ctx.close();
+      const ok = listing.length === 1 && reach.head.includes('Loot Farming') && reach.btn.includes(letterOf(listing[0])) && /drop odds are not known/.test(reach.sheet) && sea1.length === 2 &&
+        /none of your chosen items can drop in a sector this sub can reach now/.test(far.sheet) && !/Loot Farming\)?$/.test(far.head.trim()) && real(errors).length === 0;
+      record('C88', 'Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board button and the send window suggest a route whose sectors list that item and the reason says "drop odds are not known"; with an item no sector this sub can reach lists, the reason names that Loot Farming was skipped for that cause',
+        ok, { listing, reach, far, errors: real(errors) });
+      await ctx.close().catch(() => {}); server18.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }

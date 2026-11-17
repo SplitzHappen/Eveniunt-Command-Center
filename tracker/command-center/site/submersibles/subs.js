@@ -48,7 +48,7 @@
   var S = { fcs: {}, subs: {}, trips: {}, settings: {} };
   // The player's recommendation settings: a save section of their own (spec section 6), with its own { rev, base }. Nothing is
   // written until a setting changes; RECS.check only reads, so a bad stored value is replaced here and never rewritten.
-  var RC = { raw: null, rev: null, base: null, choices: null, pending: 0, chain: Promise.resolve(), live: '', focus: null };
+  var RC = { raw: null, rev: null, base: null, choices: null, pending: 0, chain: Promise.resolve(), live: '', focus: null, find: ['', '', '', '', ''], items: null };
   function recsRead(doc, rev) {
     var sec = doc.modules[RECS_NAME];
     RC.raw = sec ? JSON.parse(JSON.stringify(sec)) : null; RC.rev = rev; RC.choices = null;
@@ -329,6 +329,53 @@
     }).catch(function (e) { el.textContent = 'Could not measure: ' + e.message; });
   }
   // ------------------------------------------------------------------ Customizable Recommendations (spec section 5, items 1 to 3 and 5)
+  // ---- Loot Farming pickers (spec section 5, item 4): a native text box plus a native drop-down whose options the text narrows
+  function recItems() { if (!RC.items) RC.items = window.RECS.items(D); return RC.items; }
+  function sectorsWith(id) { return Object.keys(D.loot || {}).filter(function (k) { return (D.loot[k] || []).indexOf(id) >= 0; }).length; }
+  // a stored duplicate: the item this picker holds in the save but which an earlier picker already counts (check() has set it to none)
+  function recDupOf(i) {
+    var c = recsNow(), raw = RC.raw && RC.raw.choices && Array.isArray(RC.raw.choices.loot) ? RC.raw.choices.loot[i] : null;
+    var id = Array.isArray(raw) && Number.isInteger(raw[0]) ? raw[0] : 0;
+    if (!id || c.loot[i][0]) return null;
+    for (var j = 0; j < i; j++) if (c.loot[j][0] === id) return { id: id, of: j + 1 };
+    return null;
+  }
+  function recOptionsHtml(i) {
+    var c = recsNow(), dup = recDupOf(i), own = dup ? dup.id : c.loot[i][0], q = (RC.find[i] || '').trim().toLowerCase(), taken = {};
+    c.loot.forEach(function (p, j) { if (j !== i && p[0]) taken[p[0]] = 1; });
+    var out = '<option value="0">none</option>', hits = 0;
+    recItems().forEach(function (it) {
+      if (taken[it.id] && it.id !== own) return;
+      var match = !q || it.name.toLowerCase().indexOf(q) >= 0;
+      if (match) hits++;
+      if (!match && it.id !== own) return; // the chosen item always stays listed
+      out += '<option value="' + it.id + '"' + (it.id === own ? ' selected' : '') + '>' + esc(it.name) + '</option>';
+    });
+    if (!hits) out += '<option value="-1" disabled>No item matches</option>';
+    return out;
+  }
+  function recNoteHtml(i) {
+    var c = recsNow(), dup = recDupOf(i), id = dup ? dup.id : c.loot[i][0];
+    if (!id) return '';
+    var n = sectorsWith(id);
+    return (dup ? 'Same as picker ' + dup.of + ', counted once. ' : '') + 'Possible in ' + n + ' sector' + (n === 1 ? '' : 's') + ' (community data; drop odds are not known).';
+  }
+  function recPickersHtml() {
+    var c = recsNow(), R = window.RECS, html = '';
+    for (var i = 0; i < R.PICKERS; i++) {
+      var n = i + 1, on = i === 0 || c.loot[i][1] === true, off = on ? '' : ' disabled';
+      html += '<div class="rec-picker" data-rec-picker="' + i + '">' +
+        (i === 0 ? '<p class="rec-pick-title"><b>Loot item 1</b></p>' : '<label class="opt"><input type="checkbox" data-rec="loot-on-' + i + '"' + (on ? ' checked' : '') + '> <span>Use picker ' + n + '</span></label>') +
+        '<div class="rec-pick-row"><input type="text" class="rec-find" data-rec-find="' + i + '" value="' + esc(RC.find[i] || '') + '" placeholder="Type to narrow the list" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="' + esc('Type to narrow the list for loot item ' + n) + '"' + off + '>' +
+        '<select class="rec-sel" data-rec="loot-' + i + '" aria-label="' + esc('Loot item ' + n) + '"' + off + '>' + recOptionsHtml(i) + '</select></div>' +
+        '<p class="hint rec-note" data-rec-note="' + i + '">' + esc(recNoteHtml(i)) + '</p></div>';
+    }
+    return html + '<p class="hint" data-rec-empty>' + (R.active(c).length ? '' : 'No item chosen: Loot Farming is skipped.') + '</p>';
+  }
+  function recNarrow(t) { // typing: only this picker's option list is rebuilt; the text box, caret and focus are not touched
+    var i = +t.dataset.recFind; RC.find[i] = t.value;
+    var sel = $('[data-rec="loot-' + i + '"]'); if (sel) sel.innerHTML = recOptionsHtml(i);
+  }
   function recsBodyHtml() {
     var R = window.RECS, c = recsNow(), n = c.order.length;
     var rows = c.order.map(function (k, i) {
@@ -342,7 +389,8 @@
       '<input type="range" id="rec-give" data-rec="giveUp" min="' + R.GIVE_MIN + '" max="' + R.GIVE_MAX + '" step="' + R.GIVE_STEP + '" value="' + c.giveUp + '"' + (c.fuel ? '' : ' disabled') + '> ' +
       '<span class="rec-give-text" data-rec-give-text>' + c.giveUp + '%</span> <button type="button" class="btn sm ghost" data-rec="give-default"' + (c.fuel ? '' : ' disabled') + '>Use the default (' + R.GIVE_UP + '%)</button></p>' +
       '<h3>Ranking</h3><p class="hint">The first objective decides; the next ones choose only among routes within ' + Math.round(R.BAND * 100) + '% of the best for those above.</p>' +
-      '<ol class="rec-rank">' + rows + '</ol><p><button type="button" class="btn sm ghost" data-rec="order-default">Use the default order</button></p>';
+      '<ol class="rec-rank">' + rows + '</ol><p><button type="button" class="btn sm ghost" data-rec="order-default">Use the default order</button></p>' +
+      '<h3>Loot Farming</h3><p class="hint">Up to five items. The first is always used; switch on more to farm several items at once. Each list holds every item that can drop in any sector, A to Z; type to make it shorter.</p>' + recPickersHtml();
   }
   function recsHtml() {
     return '<section class="panel recs" data-recs-panel><h2>Customizable Recommendations</h2>' +
@@ -1135,11 +1183,18 @@
   }
   function onInput(e) {
     var t = e.target;
+    if (t.matches && t.matches('[data-rec-find]')) { if (e.type === 'input') recNarrow(t); return; }
+    if (t.matches && t.matches('select[data-rec]') && e.type === 'change') {
+      var si = +t.dataset.rec.slice(5), sv = +t.value, sname = sv ? (D.items[sv] || 'Item ' + sv) : '';
+      recsChange(function (c) { c.loot[si][0] = sv; }, t.dataset.rec, sv ? 'Loot item ' + (si + 1) + ': ' + sname + '.' : 'Loot item ' + (si + 1) + ' is cleared.');
+      return;
+    }
     if (t.matches && t.matches('[data-rec]') && t.tagName === 'INPUT') {
       if (t.dataset.rec === 'giveUp') {
         var gt = $('[data-rec-give-text]'); if (gt) gt.textContent = t.value + '%'; // while dragging only the shown number moves
         if (e.type === 'change') { var gv = +t.value; recsChange(function (c) { c.giveUp = gv; }, 'giveUp', 'The allowance is ' + gv + '%.'); }
-      } else if (t.dataset.rec === 'fuel' && e.type === 'change') { var fv = t.checked; recsChange(function (c) { c.fuel = fv; }, 'fuel', fv ? 'Fuel efficiency is on.' : 'Fuel efficiency is off.'); }
+      } else if (/^loot-on-\d$/.test(t.dataset.rec) && e.type === 'change') { var oi = +t.dataset.rec.slice(8), ov = t.checked; recsChange(function (c) { c.loot[oi][1] = ov; }, t.dataset.rec, 'Picker ' + (oi + 1) + (ov ? ' is on.' : ' is off; its choice is kept.')); }
+      else if (t.dataset.rec === 'fuel' && e.type === 'change') { var fv = t.checked; recsChange(function (c) { c.fuel = fv; }, 'fuel', fv ? 'Fuel efficiency is on.' : 'Fuel efficiency is off.'); }
       return;
     }
     if (t.matches && t.matches('[data-map-fc]')) { var m2 = mapState(); m2.fc = t.value; m2.sector = null; m2.sub = null; m2.route = []; keepUi(); render(); return; }

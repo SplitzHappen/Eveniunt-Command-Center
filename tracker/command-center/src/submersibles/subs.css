@@ -241,3 +241,9 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .recs .btn:focus-visible, .recs input:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
 .recs .btn[disabled] { opacity: .5; cursor: default; }
 .recs .btn.sm { min-height: 36px; }
+
+.rec-picker { padding: 8px 0; border-top: 1px solid var(--rule); }
+.rec-pick-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
+.rec-pick-row input, .rec-pick-row select { flex: 1 1 200px; min-width: 0; max-width: 100%; min-height: 40px; font: inherit; padding: 4px 8px; box-sizing: border-box; }
+.rec-note { margin: 2px 0 0; overflow-wrap: anywhere; }
+.recs select:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
