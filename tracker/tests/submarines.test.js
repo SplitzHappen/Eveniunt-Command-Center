@@ -353,3 +353,218 @@ test('chart: an over-rank sector says so in its accessible label; slot and opens
     }
   }
 });
+
+// ---------------------------------------------------------------- R1: the recommendation settings (recs.js)
+// First (spec risk 1): a save section of its own, 'submersibles-recommendations', survives the shared save's checks,
+// another module's write and a merge, with no change to save.js (it keeps a section it has no checker for as plain data).
+test('R1: the section submersibles-recommendations survives checkDoc, another module\'s writeSection and mergeModules', async () => {
+  require(path.join(__dirname, '..', 'src', 'core', 'save.js'));
+  const CC = globalThis.CC;
+  const m = new Map();
+  globalThis.localStorage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), get length() { return m.size; }, key: (i) => [...m.keys()][i] };
+  CC.resetMemory();
+  const NAME = 'submersibles-recommendations';
+  assert.ok(CC.MODULE.test(NAME), 'the name is a valid module name');
+  const rec = { choices: { fuel: true, giveUp: 20, order: ['gil', 'unlock', 'level', 'loot'], loot: [[5665, true], [0, false], [0, false], [0, false], [0, false]] } };
+  // checkDoc
+  const doc = { app: CC.APP, v: CC.VERSION, updated: 1, chars: [], modules: { [NAME]: rec }, device: {}, moved: {} };
+  assert.deepStrictEqual(CC.checkDoc(doc).modules[NAME], rec, 'checkDoc keeps it exactly');
+  // another module's writeSection
+  const first = await CC.writeSection(NAME, rec, null);
+  await CC.writeSection('lists', { lists: { l1: { name: 'Gear', items: {} } } }, { rev: first.rev, base: null });
+  const stored = CC.checkDoc((await CC.read()).raw).modules;
+  assert.deepStrictEqual(stored[NAME], rec, 'another module\'s write leaves it');
+  assert.deepStrictEqual(stored.lists.lists.l1.name, 'Gear');
+  // mergeModules: changed on one side only is taken; an unrelated module's change leaves it; both sides keep it
+  const other = { lists: { lists: { l2: { name: 'Food', items: {} } } } };
+  const merged = CC.mergeModules({ [NAME]: rec }, Object.assign({ [NAME]: rec }, other), { [NAME]: rec });
+  assert.deepStrictEqual(merged[NAME], rec, 'a merge keeps it');
+  const rec2 = { choices: Object.assign({}, rec.choices, { fuel: false }) };
+  assert.deepStrictEqual(CC.mergeModules({ [NAME]: rec }, { [NAME]: rec }, { [NAME]: rec2 })[NAME].choices.fuel, false, 'a change from the other device is taken');
+  assert.deepStrictEqual(CC.mergeModules({ [NAME]: rec }, { [NAME]: rec }, { [NAME]: rec })[NAME], rec);
+  assert.deepStrictEqual(CC.mergeModules({}, other, { [NAME]: rec })[NAME], rec, 'a section only the other device has is taken');
+  delete globalThis.localStorage;
+  CC.resetMemory();
+});
+
+const RECS = (require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'recs.js')), globalThis.RECS);
+const route = (id, secs, tanks, sectors, extra) => Object.assign({ id, route: sectors || [id.charCodeAt(0)], seconds: secs, tanks }, extra);
+const byAmount = (key, rate) => ({ key, objective: key, rate: !!rate, amount: (r) => r[key] });
+
+test('R1: constants, labels and defaults', () => {
+  assert.deepEqual(RECS.KEYS, ['unlock', 'level', 'gil', 'loot']);
+  assert.deepEqual(RECS.KEYS.map((k) => RECS.LABEL[k]), ['Unlocking Routes', 'Leveling Submersible Rank', 'Gil Farming', 'Loot Farming']);
+  assert.equal(RECS.NAME, 'submersibles-recommendations');
+  assert.equal(RECS.BAND, 0.05);
+  assert.deepEqual([RECS.GIVE_UP, RECS.GIVE_MIN, RECS.GIVE_MAX, RECS.GIVE_STEP], [15, 5, 50, 5]);
+  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 15, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, false], [0, false], [0, false], [0, false], [0, false]] });
+});
+
+test('R1: items holds each loot item once, by name then id', () => {
+  const items = RECS.items(D);
+  assert.equal(items.length, D.counts.lootItems);
+  assert.equal(new Set(items.map((x) => x.id)).size, items.length);
+  const all = new Set(); for (const l of Object.values(D.loot)) for (const id of l) all.add(id);
+  assert.deepEqual(items.map((x) => x.id).sort((a, b) => a - b), [...all].sort((a, b) => a - b));
+  for (let i = 1; i < items.length; i++) {
+    const a = items[i - 1], b = items[i];
+    assert.ok(a.name.toLowerCase() < b.name.toLowerCase() || (a.name.toLowerCase() === b.name.toLowerCase() && (a.name < b.name || (a.name === b.name && a.id < b.id))), a.name + ' before ' + b.name);
+  }
+  const small = { loot: { 1: [7, 3], 2: [3, 9] }, items: { 7: 'Beta', 3: 'alpha', 9: 'Beta' } };
+  assert.deepEqual(RECS.items(small), [{ id: 3, name: 'alpha' }, { id: 7, name: 'Beta' }, { id: 9, name: 'Beta' }]);
+  assert.deepEqual(RECS.items(null), []);
+});
+
+test('R1: check reads every row of the storage table and never fails on rubbish', () => {
+  const [a, b, c] = RECS.items(D);
+  const sec = (ch) => ({ choices: ch });
+  const dflt = RECS.defaults();
+  for (const bad of [undefined, null, 5, 'x', [], {}, { choices: null }, { choices: [] }, { choices: 7 }]) assert.deepEqual(RECS.check(bad, D), dflt);
+  // fuel: anything but true is off
+  assert.equal(RECS.check(sec({ fuel: true }), D).fuel, true);
+  for (const v of [false, 1, 'true', null, undefined, {}]) assert.equal(RECS.check(sec({ fuel: v }), D).fuel, false);
+  // giveUp: whole number 5 to 50, a multiple of 5
+  for (const v of [5, 15, 25, 50]) assert.equal(RECS.check(sec({ giveUp: v }), D).giveUp, v);
+  for (const v of [0, 4, 7, 55, 100, -5, 12.5, '20', null, NaN]) assert.equal(RECS.check(sec({ giveUp: v }), D).giveUp, RECS.GIVE_UP);
+  // order: the four keys, each once
+  assert.deepEqual(RECS.check(sec({ order: ['gil', 'loot', 'level', 'unlock'] }), D).order, ['gil', 'loot', 'level', 'unlock']);
+  for (const v of [['gil', 'gil', 'level', 'unlock'], ['gil', 'loot', 'level'], ['gil', 'loot', 'level', 'unlock', 'x'], ['a', 'b', 'c', 'd'], 'gil', null]) assert.deepEqual(RECS.check(sec({ order: v }), D).order, dflt.order);
+  // loot: five pairs; 0 is none; the first is always on; unknown item or later duplicate is none; missing pairs are [0, false]
+  assert.deepEqual(RECS.check(sec({ loot: [[a.id, false], [b.id, true]] }), D).loot, [[a.id, true], [b.id, true], [0, false], [0, false], [0, false]]);
+  assert.deepEqual(RECS.check(sec({ loot: [[a.id, true], [b.id, false], [c.id, 1], [0, true], [a.id, true]] }), D).loot, [[a.id, true], [b.id, false], [c.id, false], [0, true], [0, true]]);
+  assert.deepEqual(RECS.check(sec({ loot: [[999999999, true], 'x', null, [a.id], [1.5, true], [b.id, true]] }), D).loot, [[0, true], [0, false], [0, false], [a.id, false], [0, true]]);
+  assert.deepEqual(RECS.check(sec({ loot: 'x' }), D).loot, dflt.loot);
+  // the same raw value gives the same result and the input is not touched
+  const raw = sec({ fuel: true, giveUp: 20, order: ['gil', 'loot', 'level', 'unlock'], loot: [[a.id, true]] });
+  const before = JSON.stringify(raw); RECS.check(raw, D); assert.equal(JSON.stringify(raw), before);
+});
+
+test('R1: active and sig', () => {
+  const [a, b, c] = RECS.items(D);
+  const ch = RECS.check({ choices: { loot: [[a.id, true], [b.id, false], [c.id, true]] } }, D);
+  assert.deepEqual(RECS.active(ch), [a.id, c.id], 'a picker that is off is not chosen');
+  assert.deepEqual(RECS.active(RECS.defaults()), []);
+  assert.deepEqual(RECS.active({ loot: [[a.id, true], [0, true], [a.id, true]] }), [a.id], 'each item once');
+  const s0 = RECS.sig(RECS.defaults());
+  assert.equal(typeof s0, 'string');
+  assert.notEqual(RECS.sig(Object.assign(RECS.defaults(), { fuel: true })), s0);
+  assert.notEqual(RECS.sig(Object.assign(RECS.defaults(), { order: ['gil', 'unlock', 'level', 'loot'] })), s0);
+  assert.notEqual(RECS.sig(ch), s0);
+  assert.equal(RECS.sig(Object.assign(RECS.defaults(), { giveUp: 30 })), s0, 'the allowance matters only with fuel on');
+  assert.notEqual(RECS.sig(Object.assign(RECS.defaults(), { fuel: true, giveUp: 30 })), RECS.sig(Object.assign(RECS.defaults(), { fuel: true, giveUp: 20 })));
+  assert.equal(RECS.sig(Object.assign({}, ch, { loot: [[a.id, true], [b.id, false], [c.id, true], [0, false], [0, false]] })), RECS.sig(ch));
+});
+
+test('R1: pick, the 5% band at 4.9% and 5.1%', () => {
+  // equal seconds: the score is the amount
+  const X = route('X', 3600, 1, [1], { u: 100 }), In = route('I', 3600, 1, [2], { u: 95.1 }), Out = route('O', 3600, 1, [3], { u: 94.9 });
+  const lowIn = route('L', 3600, 1, [4], { u: 1, g: 5 }), lowOut = route('M', 3600, 1, [5], { u: 1, g: 99 });
+  // priority 2 chooses only among routes within 5% of the best for priority 1
+  const r = RECS.pick([X, In, Out, lowIn, lowOut].map((x) => Object.assign({}, x, { g: x.g || (x.id === 'I' ? 50 : x.id === 'O' ? 90 : 10) })), [byAmount('u'), byAmount('g')], {});
+  assert.equal(r.plan.id, 'I', '4.9% below the best stays in the band; 5.1% below leaves it');
+  assert.equal(r.lead, 'u');
+  assert.deepEqual(r.used, ['u', 'g']);
+  assert.deepEqual(r.skipped, []);
+  assert.deepEqual(r.routes.map((x) => x.id).slice(0, 3), ['I', 'X', 'O'], 'steps survived first, then the scores');
+  assert.equal(r.routes.length, 5, 'every candidate is returned');
+});
+
+test('R1: pick, per hour or per voyage', () => {
+  const longer = route('L', 7200, 1, [1], { a: 150 }), quick = route('Q', 3600, 1, [2], { a: 100 });
+  assert.equal(RECS.pick([longer, quick], [byAmount('a', true)], {}).plan.id, 'Q', '100 an hour beats 75 an hour');
+  assert.equal(RECS.pick([longer, quick], [byAmount('a', false)], {}).plan.id, 'L', 'per voyage the larger amount wins');
+});
+
+test('R1: pick, a stage with nothing to give is skipped and named; prepare gives the amount function', () => {
+  const a = route('A', 3600, 1, [1], { g: 3 }), b = route('B', 3600, 1, [2], { g: 5 });
+  const zero = { key: 'unlock', objective: 'unlock', rate: true, amount: () => 0, reason: 'every sector is found' };
+  const seen = [];
+  const prepared = { key: 'gil', objective: 'gil', rate: true, prepare: (S) => { seen.push(S.length); return (r) => r.g; } };
+  const r = RECS.pick([a, b], [zero, prepared], {});
+  assert.equal(r.plan.id, 'B');
+  assert.equal(r.lead, 'gil', 'the lead is the first live stage');
+  assert.deepEqual(r.used, ['gil']);
+  assert.deepEqual(r.skipped, [{ key: 'unlock', objective: 'unlock', reason: 'every sector is found' }]);
+  assert.deepEqual(seen, [2]);
+  // a later stage prepares on the routes still in play only
+  const seen2 = [];
+  const first = byAmount('g'), second = { key: 'x', objective: 'x', rate: true, prepare: (S) => { seen2.push(S.map((q) => q.id)); return () => 1; } };
+  RECS.pick([a, b, route('C', 3600, 1, [3], { g: 1 })], [first, second], {});
+  assert.deepEqual(seen2, [['B']]);
+  // nothing live at all: no lead, order by seconds, tanks, id
+  const none = RECS.pick([route('Z', 100, 1), route('Y', 100, 1)], [zero], {});
+  assert.equal(none.lead, null); assert.deepEqual(none.used, []); assert.equal(none.plan.id, 'Y');
+  assert.deepEqual(RECS.pick([], [zero], {}).plan, null);
+});
+
+test('R1: pick, fuel on: the allowance replaces the band for the top priority, then the per-tank filter', () => {
+  const best = route('B', 3600, 2, [1], { u: 100, g: 1 });      // 50 per tank
+  const frugal = route('F', 3600, 1, [2], { u: 86, g: 1 });      // 86 per tank, 14% below the best
+  const wasteful = route('W', 3600, 3, [3], { u: 90, g: 9 });    // 30 per tank
+  const far = route('R', 3600, 1, [4], { u: 80, g: 99 });        // 20% below the best
+  const cands = [best, frugal, wasteful, far];
+  const off = RECS.pick(cands, [byAmount('u'), byAmount('g')], { fuel: false });
+  assert.equal(off.plan.id, 'B', 'fuel off: band 5%, only the best remains');
+  const on = RECS.pick(cands, [byAmount('u'), byAmount('g')], { fuel: true, giveUp: 15 });
+  assert.equal(on.plan.id, 'F', 'allowance 15%: B, F and W are in; per tank only F is within 5% of the best');
+  assert.equal(on.lead, 'u');
+  assert.equal(on.routes[1].id, 'B', 'B stayed through the allowance but not the per-tank filter');
+  const tight = RECS.pick(cands, [byAmount('u'), byAmount('g')], { fuel: true, giveUp: 10 });
+  assert.equal(tight.plan.id, 'B', 'allowance 10% leaves F out (14% below); of B and W, B is the best per tank');
+  // the allowance applies to the lead only: priority 2 uses the 5% band
+  const l1 = route('1', 3600, 2, [1], { u: 100, g: 10 }), l2 = route('2', 3600, 1, [2], { u: 90, g: 50 }), l3 = route('3', 3600, 1, [3], { u: 89, g: 80 });
+  const two = RECS.pick([l1, l2, l3], [byAmount('u'), byAmount('g')], { fuel: true, giveUp: 15 });
+  assert.equal(two.plan.id, '3', 'the allowance lets 2 and 3 in with 1, the per-tank filter drops 1 (50 per tank), the second priority picks 3');
+  const stage2 = RECS.pick([l1, l2, l3], [byAmount('u'), byAmount('g')], { fuel: false });
+  assert.equal(stage2.plan.id, '1');
+  // when the top stage is skipped, the allowance goes to the first live one (the lead)
+  const skippedTop = RECS.pick(cands, [{ key: 'level', objective: 'level', rate: true, amount: () => 0 }, byAmount('u'), byAmount('g')], { fuel: true, giveUp: 15 });
+  assert.equal(skippedTop.plan.id, 'F');
+  assert.equal(skippedTop.lead, 'u');
+  // the default allowance is the module's
+  assert.equal(RECS.pick(cands, [byAmount('u')], { fuel: true }).plan.id, 'F');
+});
+
+test('R1: pick, each tie-break in order: steps, scores, seconds, tanks, id', () => {
+  const st = [byAmount('u'), byAmount('g')];
+  // more narrowing steps survived: a route that stayed in both bands beats one that dropped at the second
+  const full = route('Z', 3600, 1, [1], { u: 100, g: 10 }), half = route('A', 3600, 1, [2], { u: 100, g: 1 });
+  assert.deepEqual(RECS.pick([half, full], st, {}).routes.map((x) => x.id), ['Z', 'A']);
+  // each used stage's score, in order, highest first (both inside the band of the first stage)
+  const hi = route('H', 3600, 1, [1], { u: 100, g: 7 }), lo = route('L', 3600, 1, [2], { u: 97, g: 7 });
+  assert.deepEqual(RECS.pick([lo, hi], st, {}).routes.map((x) => x.id), ['H', 'L']);
+  const g1 = route('G', 3600, 1, [3], { u: 100, g: 7.1 });
+  assert.deepEqual(RECS.pick([hi, g1], st, {}).routes.map((x) => x.id), ['G', 'H'], 'equal first score, the second decides');
+  // fewer seconds: equal per voyage (rate off), so quicker first
+  const one = [{ key: 'a', objective: 'a', rate: false, amount: () => 5 }];
+  const slow = route('A', 7200, 1, [1]), fast = route('B', 3600, 1, [2]);
+  assert.deepEqual(RECS.pick([slow, fast], one, {}).routes.map((x) => x.id), ['B', 'A']);
+  // fewer tanks
+  const tankier = route('A', 3600, 3, [1]), lean = route('B', 3600, 2, [2]);
+  assert.deepEqual(RECS.pick([tankier, lean], one, {}).routes.map((x) => x.id), ['B', 'A']);
+  // the route's id text ascending; compared as text ("10" before "9")
+  const r9 = route('9', 3600, 1, [1]), r10 = route('10', 3600, 1, [2]), ra = route('a', 3600, 1, [3]);
+  assert.deepEqual(RECS.pick([ra, r9, r10], one, {}).routes.map((x) => x.id), ['10', '9', 'a']);
+  // without an id: the sectors in order
+  const p = { route: [2, 1], seconds: 100, tanks: 1 }, q = { route: [1, 2], seconds: 100, tanks: 1 };
+  assert.deepEqual(RECS.pick([p, q], one, {}).routes, [q, p]);
+  // nothing random: the same answer for any input order
+  const set = [hi, lo, g1, full, half];
+  const a = RECS.pick(set, st, {}).routes.map((x) => x.id), b = RECS.pick(set.slice().reverse(), st, {}).routes.map((x) => x.id);
+  assert.deepEqual(a, b);
+});
+
+test('R1: pick, other routes are the next two with other sets of sectors', () => {
+  const st = [byAmount('a', true)];
+  const plan = route('P', 3600, 1, [1, 2], { a: 100 });
+  const sameSet = route('S', 3600, 1, [2, 1], { a: 99 });   // same sectors, other order: not "other"
+  const o1 = route('O1', 3600, 1, [3], { a: 98 });
+  const dupOfO1 = route('D', 3600, 1, [3], { a: 97 });
+  const o2 = route('O2', 3600, 1, [4], { a: 96 });
+  const o3 = route('O3', 3600, 1, [5], { a: 95 });
+  const r = RECS.pick([o3, dupOfO1, o2, sameSet, o1, plan], st, {});
+  assert.equal(r.plan.id, 'P');
+  assert.deepEqual(r.others.map((x) => x.id), ['O1', 'O2']);
+  assert.deepEqual(RECS.pick([plan, sameSet], st, {}).others, []);
+  assert.deepEqual(RECS.pick([plan, o1], st, {}).others.map((x) => x.id), ['O1']);
+});
