@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/model_plan.py\"",
+            "timeout": 20,
+            "statusMessage": "Choosing the model plan"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/tier_guard.py\"",
+            "timeout": 20,
+            "onFailure": "block",
+            "statusMessage": "Checking the model tier"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/tier_guard.py\"",
+            "timeout": 20,
+            "statusMessage": "Recording the delegation"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -40,6 +40,22 @@ refuses a pull request whose built copies are out of date.
 4. The owner decides whether it ships. Merging into `main` publishes the website, so merge only on the owner's `ship`.
 5. Record what shipped, and the next step, in `docs/STATE.md`.
 
+## Models: who does which job (`docs/model-tiers.md`)
+
+The session's main model orchestrates: it decomposes the request, delegates, tracks progress and writes the final
+summary. It delegates only to these tier agents (`.claude/agents/`, generated from `.claude/agent-sets/`), which need no
+per-task permission from the owner:
+
+- `architect` (Fable; Opus on the pro plan): architecture and difficult planning; one written spec.
+- `builder` (Sonnet): implementation and testing of a fully specified item.
+- `clerk` (Haiku): routine and repetitive work, file discovery, log reading.
+- `reviewer` (Opus): independent review and debugging, read-only.
+
+Do small work (about three tool calls) yourself. Plan once. Escalate clerk, then builder, then reviewer, then architect.
+Keep briefs under 6,000 characters and results to a few lines. A Claude review of Claude-built work is same-family,
+never called independent. The plan (max or pro) follows `.claude/model-plan.json` and drops to pro on a Sonnet or Haiku
+start. `.claude/hooks/tier_guard.py` refuses any other launch.
+
 ## Rules
 
 - **Keep saves compatible.** The save's app tag `eveniunt-completionist-tracker` and every existing field stay readable;

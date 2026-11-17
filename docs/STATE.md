@@ -10,6 +10,7 @@ Last updated: 2026-11-17.
 - **Submersibles step S5: what came back, the voyage log and earnings** (2026-11-15).
 - **Settings and Submersibles: cross-device integrity fix** (2026-11-15). A free company and its submarines are decided
   together; nothing is deleted across devices without the player's explicit choice.
+- **Sub-agent tiers** (2026-11-17): Opus orchestrates and reviews, Fable plans (Opus on the pro plan), Sonnet builds, Haiku does routine work; `docs/model-tiers.md`.
 - **This repository became the working home** (2026-11-17), with free automatic checks. The Atelier was rebuilt with the
   current shared save code (its copy predated the rank feature and dropped the new learning fields when it saved).
 
