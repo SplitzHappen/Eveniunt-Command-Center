@@ -1504,6 +1504,63 @@ test('Submersibles advisor, advice from the log (S6-2): ranked reachable routes 
   assert.ok(A.advise({ sub: { rank: 5, parts: null }, fc: { unlockedSlots: 1, discovered: [1] }, logged: [L([1], 20, 100)] }).blocked);
 });
 
+test('Submersibles advisor, part advice in gil (S6-3): the swap that raises the best gil per hour, only if it lowers no surveillance, retrieval or favor', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD);
+  const all = SD.sectors.map((s) => s.id), weak = [3, 4, 1, 2], good = [31, 24, 25, 34], PT = {};
+  SD.parts.forEach((p) => { PT[p.id] = p; });
+  const base = (parts) => ({ sub: { rank: 145, parts }, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 4 });
+  const L = (route, trips, perTrip) => ({ route, trips, perTrip, enough: trips >= 10 });
+  const gphOf = (parts, route, perTrip) => { const ev = A.evalRoute(route, A.stats(145, parts)); return ev.reachable ? perTrip / (ev.seconds / 3600) : 0; };
+  // a ranked route the weak build runs slowly: a tip in gil, with the figures and the three stats not lowered
+  const a = A.advise(Object.assign(base(weak), { logged: [L([1, 2], 12, 100000)], enough: 10 }));
+  assert.ok(a.parts && /more gil per hour/.test(a.parts.why) && /lowers none of surveillance, retrieval and favor/.test(a.parts.why));
+  assert.ok(a.parts.gilGain > 0 && a.parts.gain > 0 && Number.isInteger(a.parts.slot) && a.parts.from === weak[a.parts.slot]);
+  for (const k of ['surveillance', 'retrieval', 'favor']) assert.ok(PT[a.parts.to][k] >= PT[a.parts.from][k], 'does not lower ' + k);
+  assert.ok(a.parts.gain >= gphOf(weak, [1, 2], 100000) * 0.01);
+  // the best swap by brute force over the allowed ones: same gain, and the tie-break is the lower slot then the lower part id
+  const brute = (parts, logged) => {
+    const cur = Math.max(0, ...logged.map((l) => gphOf(parts, l.route, l.perTrip))); let best = null;
+    for (let i = 0; i < 4; i++) for (const p of SD.parts.slice().sort((x, y) => x.id - y.id)) {
+      const o = PT[parts[i]];
+      if (p.slot !== i || p.id === parts[i] || SD.classes.find((c) => c.id === p.class).rank > 145) continue;
+      if (p.surveillance < o.surveillance || p.retrieval < o.retrieval || p.favor < o.favor) continue;
+      const np = parts.slice(); np[i] = p.id;
+      const g = Math.max(0, ...logged.map((l) => gphOf(np, l.route, l.perTrip))) - cur;
+      if (g > 0 && (!best || g > best.gain)) best = { slot: i, to: p.id, gain: g };
+    }
+    return { cur, best };
+  };
+  const bf = brute(weak, [L([1, 2], 12, 100000)]);
+  assert.strictEqual(a.parts.slot, bf.best.slot); assert.strictEqual(a.parts.to, bf.best.to); assert.ok(Math.abs(a.parts.gain - bf.best.gain) < 1e-6);
+  // a swap that makes a better, ranked route reachable is preferred to one that only saves minutes
+  const far = [50, 43, 48, 45, 39];
+  assert.ok(!A.evalRoute(far, A.stats(145, weak)).reachable);
+  const f = A.advise(Object.assign(base(weak), { logged: [L(far, 12, 500000)], enough: 10 }));
+  assert.ok(f.parts && /nothing within range now/.test(f.parts.why), 'a route out of range now comes into range');
+  assert.ok(A.evalRoute(far, A.stats(145, weak.map((p, i) => (i === f.parts.slot ? f.parts.to : p)))).reachable);
+  const timeOnly = A.advise(base(weak)).parts; // today's tip (no log) looks at minutes only
+  assert.ok(timeOnly && /sooner \(calculated\)/.test(timeOnly.why));
+  // below 1% of the current best: no tip (a build that is already the best the rank allows for the ranked route)
+  const none = A.advise(Object.assign(base(good), { logged: [L([1, 2], 12, 100000)], enough: 10 }));
+  assert.strictEqual(none.own, true); assert.strictEqual(none.parts, null, 'no better part: no tip');
+  // a swap that lowers retrieval, surveillance or favor is never suggested, even when it is faster
+  const lowers = SD.parts.some((p) => p.slot === 0 && PT[weak[0]] && (p.surveillance < PT[weak[0]].surveillance || p.retrieval < PT[weak[0]].retrieval || p.favor < PT[weak[0]].favor) && p.speed > PT[weak[0]].speed);
+  assert.ok(lowers, 'test data: a faster hull that lowers a stat exists');
+  for (const lg of [[L([1, 2], 12, 1e5)], [L([1], 12, 5e4), L([2], 12, 9e4)], [L(far, 12, 5e5)]]) {
+    const r = A.advise(Object.assign(base(weak), { logged: lg, enough: 10 }));
+    if (r.parts) for (const k of ['surveillance', 'retrieval', 'favor']) assert.ok(PT[r.parts.to][k] >= PT[r.parts.from][k]);
+  }
+  // with no ranked route (none, or nine voyages) the tip is today's, unchanged
+  for (const lg of [null, [], [L([1, 2], 9, 100000)]]) {
+    const r = A.advise(Object.assign(base(weak), lg ? { logged: lg, enough: 10 } : {}));
+    assert.deepStrictEqual(r.parts, timeOnly);
+  }
+  // the tip keeps its four fields and the result is null (not undefined) when there is none
+  for (const k of ['slot', 'from', 'to', 'why']) assert.ok(k in a.parts);
+  assert.ok(A.advise(Object.assign(base(good), { logged: [L([1, 2], 12, 100000)], enough: 10 })).parts === null);
+});
+
 test('Submersibles notifications: automatic grouping by stage, stragglers, the three fixed groupings, quiet hours (push.js)', () => {
   require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'push.js'));
   const P = globalThis.PUSH, M = 60000, now = new Date(2026, 10, 12, 12, 0).getTime();

@@ -214,6 +214,10 @@
     var enough = input.enough || 10, logged = input.logged || null, byKey = {};
     (logged || []).forEach(function (l) { byKey[l.route.join(',')] = l; });
     var own = [];
+    // routes the part advice weighs: ranked, paying, discovered and within the rank; reachability is worked out per build
+    var eligible = (logged || []).filter(function (l) {
+      return l.enough && l.perTrip > 0 && l.route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; });
+    });
     (logged || []).forEach(function (l) {
       if (!l.enough || !(l.perTrip > 0)) return;
       if (!l.route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; })) return;
@@ -239,7 +243,7 @@
         alts.push(Object.assign({ why: 'Not enough of your own data (' + nn + ' of ' + enough + ' voyages); ' + (cx.label ? 'a community gil route ("' + cx.label + '")' : 'many sector stars per hour') + '.' }, cx));
       }
       out = Object.assign(head3, { plan: Object.assign({ why: ownWhy(picked[0]), own: true }, picked[0]), alts: alts, own: true });
-      out.parts = partTip(sub, st, out.plan.route);
+      out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, out.plan.route));
       return out;
     }
     if (!c3.length) return { step: 3, stepName: A.STEPS[2], blocked: 'No discovered sector is within this build\'s range.' };
@@ -249,7 +253,7 @@
         '. Your own gil per hour takes over once a route has ' + enough + ' logged voyages' + (n ? ' (this one has ' + n + ')' : '') + '; until then the stars are only a guide.';
     }));
     out.own = false;
-    out.parts = partTip(sub, st, out.plan.route);
+    out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, out.plan.route));
     return out;
   };
   // the single part change that brings this route back soonest, among the parts the sub's rank allows (step 3 only)
@@ -268,5 +272,41 @@
     if (!best) return null;
     best.why = 'Swapping the ' + ['hull', 'stern', 'bow', 'bridge'][best.slot] + ' for ' + PART[best.to].name + ' would bring this route back ' + Math.round(best.gain / 60) + ' min sooner (calculated). Only if you already have the part or plan to craft it.';
     return best;
+  }
+  // Part advice in gil (item S6-3, owner's answer A to Q1): the one part swap, allowed by the rank, that raises this sub's
+  // best gil per hour over its ranked routes (a route out of range now may come into range with the new part). Only swaps
+  // that lower none of surveillance, retrieval and favor are weighed: how those three change what comes back is not known,
+  // so the figure assumes the same items come back. Largest gain wins; ties go to the lower slot, then the lower part id;
+  // a gain below 1% of the current best gives no tip. null when there is none.
+  function bestGph(rank, parts, routes) {
+    var st = A.stats(rank, parts), best = null;
+    if (!st) return null;
+    routes.forEach(function (l) {
+      var ev = A.evalRoute(l.route, st); if (!ev || !ev.reachable) return;
+      var g = l.perTrip / (ev.seconds / 3600);
+      if (!best || g > best.gph) best = { gph: g, route: l.route };
+    });
+    return best;
+  }
+  function gilTip(sub, routes, fmt) {
+    if (!routes.length) return null;
+    var cur = bestGph(sub.rank, sub.parts, routes), curG = cur ? cur.gph : 0, best = null;
+    var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
+    for (var i = 0; i < 4; i++) {
+      var old = PART[sub.parts[i]];
+      parts.forEach(function (p) {
+        if (p.slot !== i || p.id === sub.parts[i] || CLASS[p.class].rank > sub.rank) return;
+        if (!old || p.surveillance < old.surveillance || p.retrieval < old.retrieval || p.favor < old.favor) return;
+        var np = sub.parts.slice(); np[i] = p.id;
+        var b = bestGph(sub.rank, np, routes); if (!b) return;
+        var gain = b.gph - curG;
+        if (gain > 0 && (!best || gain > best.gain)) best = { slot: i, from: sub.parts[i], to: p.id, gain: gain, gph: b.gph, route: b.route };
+      });
+    }
+    if (!best || best.gain < curG * 0.01) return null;
+    var tip = { slot: best.slot, from: best.from, to: best.to, gain: best.gain, gilGain: Math.round(best.gain), gilFrom: Math.round(curG), gilTo: Math.round(best.gph) };
+    tip.why = 'Swapping the ' + ['hull', 'stern', 'bow', 'bridge'][best.slot] + ' for ' + PART[best.to].name + ' would give more gil per hour: about ' + fmt(best.gph) + ' instead of ' + (cur ? 'about ' + fmt(curG) : 'nothing within range now') +
+      ' on ' + A.routeText(best.route) + ' (calculated from your own log; it assumes the same items come back). It lowers none of surveillance, retrieval and favor. Only if you already have the part or plan to craft it.';
+    return tip;
   }
 })();

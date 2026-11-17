@@ -2675,6 +2675,43 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server11.close();
     }
 
+    // ── C80 Submersibles step S6-3: with a ranked logged route, a weak build gets a part note in gil ("more gil per hour")
+    //    and its free company is at the gil stage; a build with no better part shows no note and its company is finished.
+    {
+      const server12 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const allIds = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8')).sectors.map((s) => s.id);
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async (all) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fj = { name: 'Juliet Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.fcs.fk = { name: 'Kilo Company', world: 'Gilgamesh', unlockedSlots: 4, order: 1, discovered: all };
+        sec.subs.j1 = { fcId: 'fj', slot: 1, name: 'Sub J1', rank: 145, parts: [3, 4, 1, 2] };
+        sec.subs.k1 = { fcId: 'fk', slot: 1, name: 'Sub K1', rank: 145, parts: [31, 24, 25, 34] };
+        for (let i = 1; i <= 10; i++) sec.trips['j1-' + i] = { s: 'j1', t: now - (40 + i * 30) * H, r: [1, 2], back: now - (40 + i * 30 - 29) * H, items: [[10099, 2]], newSectors: [] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, allIds);
+      await page.reload(); await ready();
+      const advice = async (id) => {
+        await page.click(`.sub[data-sub="${id}"] .sub-top`);
+        await page.waitForSelector('#sheet .advice');
+        const got = await page.evaluate(() => ({ text: document.querySelector('#sheet .advice').textContent, notes: [...document.querySelectorAll('#sheet .advice .note')].map((n) => n.textContent) }));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 }).catch(() => {});
+        return got;
+      };
+      const weak = await advice('j1');
+      const goodBuild = await advice('k1');
+      const stages = await page.evaluate(() => ({ weak: window.__subs.stageOf('fj'), good: window.__subs.stageOf('fk') }));
+      const ok = /From your own log/.test(weak.text) && weak.notes.some((n) => /more gil per hour/.test(n) && /lowers none of surveillance, retrieval and favor/.test(n)) &&
+        /From your own log/.test(goodBuild.text) && !goodBuild.notes.some((n) => /Swapping/.test(n)) && stages.weak === 'gil' && stages.good === 'final' && real(errors).length === 0;
+      record('C80', 'Part advice in gil (step S6-3): with a ranked logged route, a weak build shows a part note with "more gil per hour" that names no swap lowering surveillance, retrieval or favor and its free company is at the gil stage; a build with no better part shows no part note and its company is finished',
+        ok, { weak, goodBuild, stages, errors: real(errors) });
+      await ctx.close(); server12.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }
