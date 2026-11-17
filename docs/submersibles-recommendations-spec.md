@@ -367,3 +367,181 @@ No item is blocked from being built. Q1 must be answered before R5 ships; Q2 bef
   Risk: if S6 changes before shipping, this branch must follow.
 - *Added to the S6 and S4 pull request:* one `ship` covers three features. Risk: a problem in one holds all three.
 - How sure: high. Recommendation: its own pull request on top of S6.
+
+## 10. Storage, final design
+
+Written 2026-11-17 from reading `tracker/src/core/save.js`, `merge.js`, `recs.js`, `subs.js`, the recommendation
+tests and checks C85 to C88 on the branch. **Nothing was run for this section**; every statement about the merge
+follows from the code as read, and R8's first test confirms the one the design rests on. Where this section differs
+from sections 5, 6 and 8, this section wins; R8 brings 5 and 6 into line. `save.js` and `merge.js` stay untouched
+(D5 stands); only the Command Center is rebuilt.
+
+### 10.1 How the save picks merge units
+
+- `CC.UNIT_DEPTH = 2` and `walk()` in `save.js`: a unit is the value at `section › key › key` when the first-level
+  value is a non-empty plain object, otherwise the first-level value itself. Arrays are never split and nothing below
+  the second level is. So `choices.loot` is **one** unit whether it is an array or an object keyed by picker; only
+  keys directly inside `choices` are units of their own.
+- One device (`CC.writeSection`): when the save's stamp differs from the page's, `CC.mergeModules` merges unit by
+  unit against the page's base, inside the same transaction as the write (`CC.transact`; the localStorage fallback
+  does read, merge and write in one synchronous step). A unit changed on one side is taken; a unit changed on both
+  keeps the writing page's value, without asking.
+- Across devices (`ET.threeWay`, through `CC.flatModules`): the same units; a unit changed differently on both sides
+  raises "which one is right?".
+
+### 10.2 Decisions
+
+| # | Decision | Rejected |
+| --- | --- | --- |
+| D13 | Every control is its own merge unit: one key per control directly inside `choices` (10.3). The existing merge then keeps another tab's change to any other control, inside the write's own transaction. | (a) Reading the save before each write, in `subs.js` only: a save that lands between that read and the write still clashes on the whole `loot` array and the other tab's picker is lost (milliseconds, but real), and two devices changing different pickers still get a prompt. (c) Both: the extra read adds nothing once units are per control. `loot` as an object inside `choices`: still one unit (10.1). Five keys holding pairs `[itemId, on]`: a stale tab switching a picker off would undo an item chosen for it in another tab. |
+| D14 | The write path moves out of `subs.js` into `recs.js` as `RECS.keeper(write, done)`; the page hands in the write function. | Leaving it in `subs.js`: it needs a page, so a unit test can only copy its logic (the reviewer found such a copy). |
+| D15 | A write that fails drops the changes it carried: the panel returns to the last saved settings and says so. | Keeping them for the next write: once the status line is replaced the panel shows an unsaved value as if it were set, and reloads need a third state. Reading the save again first: not needed, the page knows its base. |
+| D16 | The `choices.loot` array written by earlier builds of this branch is not read. | A fallback reader: the feature never shipped, and the frozen format would carry two shapes for good. |
+
+### 10.3 Stored shape (frozen once shipped)
+
+`modules['submersibles-recommendations'] = { choices: { fuel, giveUp, order, loot1 … loot5, use2 … use5 } }`
+
+| Key in `choices` | Shape | When absent or bad |
+| --- | --- | --- |
+| `fuel`, `giveUp`, `order` | as in section 6 | as in section 6 |
+| `loot1` … `loot5` | whole number: the item id of picker 1 to 5; 0 is none | none. An id the data does not know, or one an earlier switched-on picker already uses while this picker is on, reads as none; the stored number stays |
+| `use2` … `use5` | `true` or `false`: picker 2 to 5 is switched on | anything but `true` is off. Picker 1 is always on: `use1` is never written and never read |
+
+- In memory nothing changes: settings stay `{ fuel, giveUp, order, loot: [[itemId, on] x 5] }`, built by
+  `RECS.check`; `advisor.js`, `RECS.active`, `RECS.sig`, `RECS.pick` and the tuning tool are untouched.
+- A write never removes a key ("none" is 0, "off" is `false`) and holds only keys that were stored or that the
+  player changed. Unknown keys beside or inside `choices`, an old `loot` array among them, stay as stored and are
+  ignored. `RECS.check` only reads.
+
+### 10.4 The write path (`recs.js`)
+
+- `RECS.intent(was, now)` returns a **patch** `{ key: value }`: the stored keys whose control differs between two
+  settings objects (`fuel`, `giveUp`, `order` by value; per picker N, `lootN` when the item differs and, from N = 2,
+  `useN` when the switch differs).
+- `RECS.store(raw, patch)`: a deep copy of `raw` (or `{}`) with `choices[key] = value` for each key of the patch;
+  nothing else is touched; the input is not modified.
+- `RECS.rebase(section, edits)`: `section` with each edit's patch stored in order; `null` with no edits stays `null`.
+- `RECS.held(raw, i)`: the whole number stored for picker `i` (0 if none), for the "counted once" note.
+- `RECS.keeper(write, done)`. `write(section, known)` resolves `{ rev, section, merged }`; `done(result)` is called
+  after every write attempt. State: `raw` (what the panel reads), `base`, `rev`, `edits` (`{ seq, patch }`: changes
+  not yet stored), `pending`.
+  - `read(section, rev)`: `base` = a copy of the stored section or `null`; `rev`; `raw = rebase(base, edits)`.
+  - `change(patch)` returns a promise that resolves (never rejects) when this page's queue has drained up to it:
+    1. An empty patch does nothing.
+    2. At once: `raw = store(raw, patch)`, the edit is recorded, `pending++`.
+    3. Queued behind this page's earlier writes, one at a time, in order. At its turn: if no edit is unsent (an
+       earlier write carried it) nothing is written; otherwise `snapSeq` = the highest seq and
+       `write(copy of raw, { rev, base })`.
+    4. Written: `rev = r.rev`; `base` = a copy of `r.section`; edits up to `snapSeq` are dropped;
+       `raw = rebase(r.section, the remaining edits)`; `done({ ok: true, merged })`.
+    5. Failed (thrown or rejected): edits up to `snapSeq` are dropped; `raw = rebase(base, the remaining edits)`;
+       `rev` and `base` stay; `done({ ok: false, error })`.
+    6. `pending--`.
+- **Two changes in quick succession.** Both before the first write starts: one write carries both and the second
+  turn writes nothing. The second while the first is being written: the first result becomes the base, the second
+  change is put back on top of it (step 4) and written next; whatever another page stored meanwhile is in that base.
+- **The page (`subs.js`).** `RC.k = RECS.keeper(…)` with `write` = `CC.writeSection(RECS.NAME, section, known)`
+  (it also sets `SH.updated`, as today). `recsRead` calls `read`; `reload()` keeps its guard (no `read` while
+  `pending` is above 0). `recsChange` builds the patch with `intent`, adds `lootN` by force when a stored duplicate
+  is cleared, drops a change after which the settings read the same (`RECS.check(RECS.store(raw, patch))` against
+  before; never when forced), calls `change` and redraws the panel. `done`: on success `pushSync()`; on failure the
+  status line "Recommendation settings not saved on this device: <message> The panel shows the last saved settings
+  again; make the change again if you still want it." and "Not saved. The panel shows the last saved settings
+  again." in the panel's live line; in both cases the panel is redrawn when the settings now read differently from
+  what it shows. No copy of steps 1 to 6 stays in `subs.js`.
+
+### 10.5 What is safe, what asks, what remains
+
+| Sequence | Result |
+| --- | --- |
+| One device: tab A changes one control; tab B, which has not taken that in, changes another (the switch, the allowance, the ranking, a picker's item, a picker's switch; the item and the switch of one picker count as two) | Both kept. No window: the merge and the write are one transaction |
+| One device: another save stored a key or an item id this build does not know; a stale tab changes something else | Kept: that key is never in the tab's patch |
+| One device: A picks an item in picker 1, stale B picks the same item in picker 2 | Both stored; picker 2 reads "same as picker 1, counted once" (section 5) |
+| One device: A and B change the **same** control (the ranking is one control) | The later write is stored, without asking. This is what remains (Q3) |
+| Two devices change different controls, two different pickers included | Merged, no prompt (the pair array raised one) |
+| Two devices change the same control differently | "Which one is right?", labelled "submersibles-recommendations: choices › loot2" (a plainer label needs `save.js`; known limit) |
+| A write fails | Nothing stored changes; the panel returns to the last saved settings and says so (D15) |
+| An older build that never heard of the section (any embedded `save.js`: Tracker, Atelier, an older shell) | Has no checker for it and keeps it as plain data through writes, backups and merges (section 6); an older Submersibles page ignores it |
+
+**Plainly:** no window remains in which a tab silently overwrites a control it did not change. A tab always
+overwrites the control it changes; if another tab on the same device changed that same control meanwhile, the later
+change wins unasked, as for every other section of the save. Only a `save.js` change could make that ask.
+
+### 10.6 Work item R8: one merge unit per control (Sonnet builder)
+
+Complete with 10.3 and 10.4; nothing else in this spec needs reading.
+
+- **Files:** `tracker/command-center/src/submersibles/recs.js` and `subs.js`; `tracker/tests/submarines.test.js`;
+  `tracker/command-center/check.js`; this spec (sections 5 and 6 only); the rebuilt `tracker/command-center/site/`.
+  Not touched: `tracker/src/`, `advisor.js`, `tracker/tools/recs-tune.js`, `package.json`.
+- **Steps:**
+  1. Note `git rev-parse HEAD` as START. Write unit test K1 and run `npm run test:unit`; K1 must pass before any
+     source changes. If it fails, stop and escalate.
+  2. `recs.js`: `check` reads 10.3; `intent`, `store`, `rebase`, `held`, `keeper` as 10.4; the pair logic goes; the
+     file's header comment is brought up to date.
+  3. `subs.js`: `RC` keeps the panel's own state (`choices`, `live`, `focus`, `find`, `items`) and `k`; `recsRead`,
+     `recsNow`, `recsChange`, `recDupOf` and `reload()` use the keeper; `recsWrite` goes.
+  4. Tests and checks below; sections 5 and 6; `npm run build`; commit source, tests, spec and the rebuilt site.
+- **Unit tests.** A "page" is `RECS.keeper((s, k) => CC.writeSection(NAME, s, k), done)` on the real save code
+  (`recsFixture()`), loaded with `CC.read()` and `read()`; changes go through `RECS.intent` and `change`. No test
+  re-implements a step of 10.4.
+  - K1 `CC.flatModules` of a section holding every key of 10.3 gives exactly one unit per key,
+    `m|["submersibles-recommendations","choices","<key>"]`; the section survives `CC.checkDoc`, another module's
+    `CC.writeSection` and `CC.mergeModules` unchanged.
+  - K2 the defect: A sets picker 1 to X; B, loaded earlier and not reloaded, switches picker 2 on and picks Y; the
+    save reads `[[X, true], [Y, true], …]`. Once with a section stored before both loaded, once with none.
+  - K3 a stored `loot3` the data does not know, an unknown key inside `choices` and one beside it survive a stale
+    page's change to picker 2; so does an unknown `loot4` written by another save after the page loaded.
+  - K4 A picks an item for picker 2, stale B switches picker 2 off: the item is A's and the switch is off.
+  - K5 two changes without waiting: one write, both stored. A second change made while the first write is in
+    progress, with another page's write landing in between (a `write` wrapper does both before it calls
+    `CC.writeSection`): all three changes stored.
+  - K6 a `write` that rejects once: `done` gets `ok: false`; the save is unchanged; `RECS.check(raw)` reads as
+    before the change; `edits` is empty; the next change stores only itself; a change queued while the failing
+    write was in progress is still stored.
+  - K7 the same control in two pages (picker 1; the ranking): the later write is stored (documents what remains).
+  - K8 through `ET.threeWay`: two devices changing different pickers, and the item and the switch of one picker,
+    give no conflict and keep both; the same picker's item changed differently gives one conflict whose id ends
+    `"choices","loot2"]`.
+  - K9 `check` for every row of 10.3; an old `choices.loot` array is ignored and still there after a write.
+  - Rewrite to the new shape, keeping what each asserts: "Review fix 1", "2", "2a", "2b", "2c", "Round 2, fix 2",
+    "fix 3", "fix 4", the R1 `check` test, and any other test that stores a `loot` array. Delete "Round 2, fix 1"
+    (it copies the write logic); K5 replaces it.
+- **Browser checks.** C87 and C88: seeds and stored assertions in the new shape, same behaviour asserted. C85 and
+  C86 unchanged unless they read `loot`. New **C89** (two tabs, one browser context, both on Setup; the save seeded
+  beforehand with `{ choices: { loot4: 999999999, use4: true } }`): B stops hearing A (the page-id line C86 uses);
+  A picks item X in picker 1; B switches picker 2 on and picks Y; then the save holds `loot1` X, `loot2` Y, `use2`
+  true, `loot4` 999999999, `use4` true and no `loot` key; B's picker 1 now shows X; both status lines are empty; no
+  dialog and no page error.
+- **Spec.** Section 6: the first line, the `loot` row (replaced by the two rows of 10.3), the sentence on what a
+  write holds and "each of the four fields" (each stored key). Section 5 item 4: "from another device" becomes
+  "from another device or another tab". Nothing else.
+- **Acceptance:** `npm run build && npm run test:unit && npm run check` pass;
+  `git diff --stat START..HEAD -- tracker/src tracker/dist tracker/site crafting` prints nothing;
+  `git status --porcelain` is empty after the commit.
+- **Escalate if:** K1 fails; anything seems to need a change in `tracker/src/`, `advisor.js` or the tuning tool;
+  the build changes a file outside `tracker/command-center/site/`; C89 cannot be made repeatable with the page-id
+  line; or a check outside C85 to C89 changes its result.
+
+### 10.7 Risks, and the first thing to verify
+
+1. **First:** K1. The whole design rests on keys inside `choices` being separate units, which was read, not run.
+2. The key names are frozen at shipping and show in the prompt label across devices ("choices › loot2").
+3. Nine existing tests are rewritten; each must keep its assertion in the new shape, not lose it.
+4. A page that skipped a reload while its own write was in progress shows another tab's change only at the next
+   save it hears or makes. That is as today and safe for other controls; it is not changed here.
+5. A save written by an earlier build of this branch keeps its `loot` array, ignored (D16); pickers chosen in such a
+   test build read as none. No published build ever wrote one.
+
+### 10.8 Owner question
+
+**Q3. On one device, the same setting changed in two open tabs: should the app ask which one is right?**
+- *Keep things as they are (after R8):* the later change is stored without a question, as when one submarine is
+  edited in two tabs today. No cost. Risk left: the earlier tab's value for that one setting is replaced unasked;
+  the later tab changed it on purpose, though it may not have shown the earlier value.
+- *Ask on one device too:* the shared save code changes, against D5; the Tracker, the Command Center and the Atelier
+  are rebuilt and checked again, and the question then appears in every module. Cost: a separate, larger job. Risk:
+  a change to the code all three apps share.
+- How sure: high on what each does (it follows from the code as read; not run).
+- Recommendation: keep things as they are.
