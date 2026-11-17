@@ -48,24 +48,36 @@
   var S = { fcs: {}, subs: {}, trips: {}, settings: {} };
   // The player's recommendation settings: a save section of their own (spec section 6), with its own { rev, base }. Nothing is
   // written until a setting changes; RECS.check only reads, so a bad stored value is replaced here and never rewritten.
-  var RC = { raw: null, rev: null, base: null, choices: null, pending: 0, chain: Promise.resolve(), live: '', focus: null, find: ['', '', '', '', ''], items: null };
+  var RC = { seq: 0, edits: [], raw: null, rev: null, base: null, choices: null, pending: 0, chain: Promise.resolve(), live: '', focus: null, find: ['', '', '', '', ''], items: null };
   function recsRead(doc, rev) {
     var sec = doc.modules[RECS_NAME];
-    RC.raw = sec ? JSON.parse(JSON.stringify(sec)) : null; RC.rev = rev; RC.choices = null;
+    RC.raw = sec ? JSON.parse(JSON.stringify(sec)) : null; RC.rev = rev; RC.choices = null; RC.edits = [];
     // nothing stored: no base. A write holds only the fields stored or changed (RECS.store), so what another page stored meanwhile for any other field is kept
     RC.base = sec ? JSON.parse(JSON.stringify(sec)) : null;
   }
   function recsNow() { if (RC.choices) return RC.choices; var c = window.RECS.check(RC.raw, D); if (D) RC.choices = c; return c; }
   function recsWrite() {
     RC.pending++;
+    var snapSeq = 0;
     RC.chain = RC.chain.then(function () {
+      snapSeq = RC.seq; // the changes up to here are in this write's snapshot
       var snap = JSON.parse(JSON.stringify(RC.raw)); // only the fields stored or changed (set by recsChange)
       return CC.writeSection(RECS_NAME, snap, { rev: RC.rev, base: RC.base }).then(function (r) {
         RC.rev = r.rev; RC.base = JSON.parse(JSON.stringify(r.section)); SH.updated = r.doc.updated || Date.now();
-        if (r.merged && RC.pending === 1) { var was = JSON.stringify(recsNow()); RC.raw = JSON.parse(JSON.stringify(r.section)); RC.choices = null; if (JSON.stringify(recsNow()) !== was) redrawRecs(); }
+        var later = RC.edits.filter(function (e) { return e.seq > snapSeq; });
+        RC.edits = later;
+        if (r.merged) {
+          // our copy becomes the merged section plus only the fields changed here since the snapshot, so the next write
+          // (whose base is the merged section) cannot delete what another page stored
+          var was = JSON.stringify(recsNow()), raw = JSON.parse(JSON.stringify(r.section));
+          later.forEach(function (e) { raw = window.RECS.store(raw, e.next, e.fields, e.pickers); });
+          RC.raw = raw; RC.choices = null;
+          if (JSON.stringify(recsNow()) !== was) redrawRecs();
+        }
         pushSync();
       });
     }).catch(function (e) {
+      RC.edits = RC.edits.filter(function (x) { return x.seq > snapSeq; });
       setStatus('Recommendation settings not saved on this device: ' + e.message);
     }).then(function () { RC.pending--; });
   }
@@ -162,6 +174,12 @@
     ['earn', 'Earnings', null], ['setup', 'Setup', null]];
   function render() {
     if (!D) return;
+    var ae = document.activeElement, keep = ae && ae.matches && ae.matches('[data-rec-find]') ? { i: ae.dataset.recFind, a: ae.selectionStart, b: ae.selectionEnd } : null; // the narrowing box being typed in
+    try { return renderView(); } finally {
+      if (keep) { var box = $('[data-rec-find="' + keep.i + '"]'); if (box && !box.disabled) { box.focus(); try { box.setSelectionRange(keep.a, keep.b); } catch (e) { /* none */ } } }
+    }
+  }
+  function renderView() {
     refreshLogged();
     $$('.tabs [data-tab]').forEach(function (b) { b.setAttribute('aria-current', b.dataset.tab === UI.tab ? 'page' : 'false'); });
     var main = $('#view');
@@ -336,13 +354,13 @@
   function recDupOf(i) {
     var c = recsNow(), raw = RC.raw && RC.raw.choices && Array.isArray(RC.raw.choices.loot) ? RC.raw.choices.loot[i] : null;
     var id = Array.isArray(raw) && Number.isInteger(raw[0]) ? raw[0] : 0;
-    if (!id || c.loot[i][0]) return null;
-    for (var j = 0; j < i; j++) if (c.loot[j][0] === id) return { id: id, of: j + 1 };
+    if (!id || c.loot[i][0] || !c.loot[i][1]) return null; // only a switched-on picker can be a duplicate
+    for (var j = 0; j < i; j++) if (c.loot[j][1] && c.loot[j][0] === id) return { id: id, of: j + 1 };
     return null;
   }
   function recOptionsHtml(i) {
     var c = recsNow(), dup = recDupOf(i), own = dup ? dup.id : c.loot[i][0], q = (RC.find[i] || '').trim().toLowerCase(), taken = {};
-    c.loot.forEach(function (p, j) { if (j !== i && p[0]) taken[p[0]] = 1; });
+    c.loot.forEach(function (p, j) { if (j !== i && p[0] && p[1]) taken[p[0]] = 1; }); // only switched-on pickers exclude an item
     var out = '<option value="0">none</option>', hits = 0;
     recItems().forEach(function (it) {
       if (taken[it.id] && it.id !== own) return;
@@ -413,12 +431,17 @@
     }
   }
   // one setting changed: normalise, store the fields already stored plus the changed ones through the section's own write, redraw only this panel
-  function recsChange(mut, focus, live) {
-    var c = JSON.parse(JSON.stringify(recsNow()));
+  function recsChange(mut, focus, live, forcePicker) {
+    var R = window.RECS, was = recsNow(), c = JSON.parse(JSON.stringify(was));
     mut(c);
-    var next = window.RECS.check({ choices: c }, D);
-    var was = recsNow(), changed = window.RECS.changed(was, next), same = !changed.length;
-    if (!same) { RC.raw = window.RECS.store(RC.raw, next, changed); RC.choices = next; }
+    var next = R.check({ choices: c }, D), it = R.intent(was, c);
+    var force = typeof forcePicker === 'number' && forcePicker >= 0; // a stored duplicate cleared or replaced: a change although the settings read the same
+    if (force) { if (it.fields.indexOf('loot') < 0) it.fields.push('loot'); if (!it.pickers.some(function (p) { return p.i === forcePicker; })) it.pickers.push({ i: forcePicker, id: true, on: false }); }
+    var same = !it.fields.length || (!force && !R.changed(was, next).length);
+    if (!same) {
+      RC.raw = R.store(RC.raw, c, it.fields, it.pickers); RC.choices = null;
+      RC.edits.push({ seq: ++RC.seq, next: JSON.parse(JSON.stringify(c)), fields: it.fields, pickers: it.pickers });
+    }
     RC.live = typeof live === 'function' ? live(recsNow()) : live || '';
     redrawRecs(focus);
     if (!same) recsWrite();
@@ -632,7 +655,7 @@
   }
   // One advice per sub, kept while every input the advisor reads is unchanged (one entry per caller, so they do not push each other out).
   function advised(tag, subId, s, fc, pending, slots) {
-    var key = JSON.stringify([s.rank, s.expIntoRank, s.parts, fc.unlockedSlots, fc.discovered, pending, slots, LOGGED.sig, window.RECS.sig(recsNow())]);
+    var key = JSON.stringify([s.rank, s.expIntoRank, s.parts, fc.unlockedSlots, fc.discovered, pending, slots, LOGGED.sig, LOGGED.note, window.RECS.sig(recsNow())]);
     var slot = ADVICE[subId] = ADVICE[subId] || {};
     if (slot[tag] && slot[tag].key === key) return slot[tag].value;
     var v = ADV.advise(Object.assign({ sub: s, fc: fc, pending: pending, slotsFilled: slots }, logInput(), { recs: recsNow() }));
@@ -1191,7 +1214,7 @@
     if (t.matches && t.matches('[data-rec-find]')) { if (e.type === 'input') recNarrow(t); return; }
     if (t.matches && t.matches('select[data-rec]') && e.type === 'change') {
       var si = +t.dataset.rec.slice(5), sv = +t.value, sname = sv ? (D.items[sv] || 'Item ' + sv) : '';
-      recsChange(function (c) { c.loot[si][0] = sv; }, t.dataset.rec, sv ? 'Loot item ' + (si + 1) + ': ' + sname + '.' : 'Loot item ' + (si + 1) + ' is cleared.');
+      recsChange(function (c) { c.loot[si][0] = sv; }, t.dataset.rec, sv ? 'Loot item ' + (si + 1) + ': ' + sname + '.' : 'Loot item ' + (si + 1) + ' is cleared.', recDupOf(si) ? si : -1);
       return;
     }
     if (t.matches && t.matches('[data-rec]') && t.tagName === 'INPUT') {

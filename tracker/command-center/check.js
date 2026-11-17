@@ -3014,11 +3014,22 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const reason = await B.$eval('#sheet .advice-route + .hint', (p) => p.textContent);
       const sheetHead = await B.$eval('#sheet .advice-step', (b) => b.textContent);
       await B.keyboard.press('Escape');
-      // the advice is kept while nothing it reads changes: the second stageOf makes no new advise call (so no new route evaluation)
-      const cache = await B.evaluate(() => {
+      // the advice is kept while nothing it reads changes. A setting is changed first (the allowance: 25 to 30), so the cache is
+      // really cold: the first stageOf makes one advise call per submarine concerned, the second none, and after another
+      // setting change (30 to 35) the next call is fresh again
+      await B.click('[data-tab=setup]'); await B.waitForSelector('[data-recs-panel]');
+      const stageCalls = () => B.evaluate(() => {
         let calls = 0; const orig = ADVISOR.advise; ADVISOR.advise = function () { calls++; return orig.apply(this, arguments); };
-        try { const one = window.__subs.stageOf('fb'), c1 = calls, two = window.__subs.stageOf('fb'); return { one, two, first: c1, second: calls - c1 }; } finally { ADVISOR.advise = orig; }
+        try {
+          const subs = window.__subs.section().subs, concerned = Object.keys(subs).filter((k) => subs[k].fcId === 'fb' && subs[k].slot <= 2).length;
+          const one = window.__subs.stageOf('fb'), c1 = calls, two = window.__subs.stageOf('fb');
+          return { one, two, concerned, first: c1, second: calls - c1 };
+        } finally { ADVISOR.advise = orig; }
       });
+      await B.focus('[data-rec=giveUp]'); await B.keyboard.press('ArrowRight'); await B.waitForTimeout(800);
+      const cache = await stageCalls();
+      await B.focus('[data-rec=giveUp]'); await B.keyboard.press('ArrowRight'); await B.waitForTimeout(800);
+      const cacheAfterChange = await stageCalls();
       await ctx.close();
       const ok = sliderOff.disabled === true && sliderOff.min === '5' && sliderOff.max === '50' && sliderOff.step === '5' && sliderOff.value === '10' && defaultBtnOff === true &&
         afterA && afterA.order.join() === 'level,unlock,gil,loot' && Object.keys(afterA).join() === 'order' &&
@@ -3027,9 +3038,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         reloaded.fuel === true && reloaded.value === '25' && reloaded.disabled === false &&
         /Fuel efficiency: 1 tank instead of 4, for \d+% less experience per hour\./.test(reason) && /Suggested · Leveling Submersible Rank/.test(sheetHead) &&
         afterMerge && afterMerge.fuel === true && afterMerge.order.join() === 'level,unlock,gil,loot' && statusA === '' && statusB === '' && prompts === 0 &&
-        cache.second === 0 && cache.one === cache.two && real(errors).length === 0;
-      record('C86', 'Customizable Recommendations (R5): the slider (5 to 50, step 5) and "Use the default" are disabled until the fuel switch is on; the switch and the number are stored; a second page that changed another field from an older copy merges with no prompt, shows no clash or save problem and keeps the first page\'s order in the stored section together with its own change; a second call of the notification stage logic with nothing changed makes no new advice call; on a seeded fleet where fuel changes the route the reason carries the fuel sentence',
-        ok, { sliderOff, defaultBtnOff, afterA, sliderOn, afterMerge, statusA, statusB, cache, orderOnB, afterSlider, shown, reloaded, reason, sheetHead, prompts, errors: real(errors) });
+        cache.concerned === 2 && cache.first === cache.concerned && cache.second === 0 && cache.one === cache.two &&
+        cacheAfterChange.first === cacheAfterChange.concerned && cacheAfterChange.second === 0 && real(errors).length === 0;
+      record('C86', 'Customizable Recommendations (R5): the slider (5 to 50, step 5) and "Use the default" are disabled until the fuel switch is on; the switch and the number are stored; a second page that changed another field from an older copy merges with no prompt, shows no clash or save problem and keeps the first page\'s order in the stored section together with its own change; after a setting change the notification stage logic makes one advice call per submarine, a second call with nothing changed makes none and a call after another change is fresh; on a seeded fleet where fuel changes the route the reason carries the fuel sentence',
+        ok, { sliderOff, defaultBtnOff, afterA, sliderOn, afterMerge, statusA, statusB, cache, cacheAfterChange, orderOnB, afterSlider, shown, reloaded, reason, sheetHead, prompts, errors: real(errors) });
       await ctx.close().catch(() => {}); server16.close();
     }
 
@@ -3112,6 +3124,19 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[12928, true], [12928, true], [0, false], [0, false], [0, false]] } }, { rev: r.rev, base: null }); });
       await page.reload(); await ready(); await toSetup();
       const dup = await state();
+      // a stored duplicate can be cleared: choosing "none" in that picker is a change
+      await page.selectOption('[data-rec="loot-1"]', '0');
+      await page.waitForTimeout(800);
+      const dupStored = JSON.parse(await stored()), dupAfter = await state();
+      // a switched-off picker blocks nothing: its item stays in the other lists, and switching it on later shows the note
+      await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { loot: [[0, true], [12928, false], [0, false], [0, false], [0, false]] } }, { rev: r.rev, base: null }); });
+      await page.reload(); await ready(); await toSetup();
+      const offHeld = await state(), offList0 = await opts(0), offList2 = await opts(2);
+      await page.selectOption('[data-rec="loot-0"]', '12928');
+      await page.waitForTimeout(800);
+      await page.check('[data-rec="loot-on-1"]');
+      await page.waitForTimeout(800);
+      const onLater = await state(), onLaterStored = JSON.parse(await stored());
       // phone width
       await page.setViewportSize({ width: 360, height: 800 });
       await page.waitForTimeout(200);
@@ -3128,9 +3153,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         JSON.parse(storedNow)[0][0] === 12928 && JSON.parse(storedNow)[1][0] === 2 && JSON.parse(storedNow)[1][1] === true && JSON.parse(storedNow)[2][0] === 3 && JSON.parse(storedNow)[2][1] === false &&
         reloaded[0].val === '12928' && reloaded[1].val === '2' && reloaded[1].sw === true && reloaded[2].val === '3' && reloaded[2].sw === false && reloaded[2].sel === true && reloaded[0].find === false && typedGone === '' && /Possible in/.test(reNote) &&
         dup[1].val === '12928' && /counted once/i.test(dup[1].note) && /picker 1/i.test(dup[1].note) &&
+        dupStored[1][0] === 0 && dupAfter[1].val === '0' && !/counted once/i.test(dupAfter[1].note) &&
+        offHeld[1].val === '12928' && offList0.some((o) => o.v === '12928') && offList2.some((o) => o.v === '12928') && onLater[1].val === '12928' && /counted once/i.test(onLater[1].note) && /picker 1/i.test(onLater[1].note) && onLaterStored[1][0] === 12928 && onLaterStored[1][1] === true &&
         wide <= 0 && real(errors).length === 0;
-      record('C87', 'Customizable Recommendations (R6): Setup shows five loot pickers (a text box and a drop-down each), the first without a switch; every list holds the same items A to Z with "none" first; typing narrows one list in place (the text box keeps its text, caret and focus, the chosen item stays listed, no match shows a disabled "No item matches", clearing restores the list) and is not saved; pickers 2 to 5 are disabled until switched on and keep their choice when switched off; an item chosen in one picker is absent from the others; choices survive a reload; a stored duplicate shows "counted once"; no sideways page scroll at 360 px',
-        ok, { pickers, empty, total, itemCount, start0: start0.map((s) => [s.sel, s.find]), typed, typed2, narrow: narrow.length, none, restored: restored.length, noteFire, findAfter, p1lack, off3: off3[2], storedNow, reloaded: reloaded.map((s) => [s.val, s.sw, s.sel]), typedGone, dup: dup[1], wide, errors: real(errors) });
+      record('C87', 'Customizable Recommendations (R6): Setup shows five loot pickers (a text box and a drop-down each), the first without a switch; every list holds the same items A to Z with "none" first; typing narrows one list in place (the text box keeps its text, caret and focus, the chosen item stays listed, no match shows a disabled "No item matches", clearing restores the list) and is not saved; pickers 2 to 5 are disabled until switched on and keep their choice when switched off; an item chosen in one picker is absent from the others; choices survive a reload; a stored duplicate shows "counted once" and choosing "none" there clears it; a picker that is switched off keeps its item in the other lists, and switching it on later shows "counted once"; no sideways page scroll at 360 px',
+        ok, { pickers, empty, total, itemCount, start0: start0.map((s) => [s.sel, s.find]), typed, typed2, narrow: narrow.length, none, restored: restored.length, noteFire, findAfter, p1lack, off3: off3[2], storedNow, reloaded: reloaded.map((s) => [s.val, s.sw, s.sel]), typedGone, dup: dup[1], dupStored, dupAfter: dupAfter[1], offHeld: offHeld[1], offList0: offList0.length, offList2: offList2.length, onLater: onLater[1], onLaterStored, wide, errors: real(errors) });
       await ctx.close().catch(() => {}); server17.close();
     }
 

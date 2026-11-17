@@ -918,8 +918,8 @@ function recsFixture() {
 function recsEdit(raw, mut) {
   const was = RECS.check(raw, D), c = JSON.parse(JSON.stringify(was));
   mut(c);
-  const next = RECS.check({ choices: c }, D);
-  return RECS.store(raw, next, RECS.changed(was, next));
+  const it = RECS.intent(was, c);
+  return RECS.store(raw, c, it.fields, it.pickers);
 }
 const OTHER_ORDER = ['gil', 'unlock', 'level', 'loot'];
 
@@ -932,10 +932,10 @@ test('Review fix 2: a write stores only the stored fields and the changed ones',
   const a = recsEdit(null, (c) => { c.order = OTHER_ORDER.slice(); });
   assert.deepEqual(Object.keys(a.choices), ['order']);
   const b = recsEdit(a, (c) => { c.fuel = true; });
-  assert.deepEqual(Object.keys(b.choices), ['fuel', 'order'], 'the stored one stays, the changed one is added');
+  assert.deepEqual(Object.keys(b.choices).sort(), ['fuel', 'order'], 'the stored one stays, the changed one is added');
   assert.deepEqual(RECS.check(b, D), Object.assign(RECS.defaults(), { fuel: true, order: OTHER_ORDER }), 'check fills in the rest');
   assert.deepEqual(recsEdit(null, (c) => { c.giveUp = 35; }).choices, { giveUp: 35 });
-  assert.deepEqual(RECS.store({ choices: { giveUp: 'x', order: ['a'] } }, RECS.defaults(), []).choices, { giveUp: 10, order: RECS.KEYS }, 'a bad stored field is stored normalised');
+  assert.deepEqual(RECS.store({ choices: { giveUp: 'x', order: ['a'] } }, RECS.defaults(), []).choices, { giveUp: 'x', order: ['a'] }, 'an unchanged stored field is kept exactly as stored');
 });
 
 test('Review fix 2a: no section at the last sync, one device changes the order and the other the fuel switch: both kept, no clash', () => {
@@ -1050,4 +1050,89 @@ test('R4: the 5% band gains more on the second priority than it loses on the fir
 test('R4: the tuning document is the tool\'s output', () => {
   const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'submersibles-recommendations-tuning.md'), 'utf8');
   assert.equal(doc, TUNE.render(tuning()) + '\n', 'run: node tracker/tools/recs-tune.js --write');
+});
+
+// ---------------------------------------------------------------- second review round
+const BIG = 999999999; // an item id this build's data does not know (a newer data release on another device)
+
+test('Round 2, fix 2: a write replaces only what the player changed and keeps everything else exactly as stored', () => {
+  const [a] = RECS.items(D);
+  const raw = { future: 1, choices: { fuel: false, loot: [[a.id, true], [BIG, true], [0, false], [0, false], [0, false]], order: ['unlock', 'level', 'gil', 'loot', 'extra'], newer: { x: 1 } } };
+  const keep = JSON.stringify(raw);
+  const fuel = recsEdit(raw, (c) => { c.fuel = true; });
+  assert.equal(JSON.stringify(raw), keep, 'the input is not touched');
+  assert.equal(fuel.choices.fuel, true);
+  assert.deepEqual(fuel.choices.loot, raw.choices.loot, 'the unknown item 99-like id stays through a fuel change');
+  assert.deepEqual(fuel.choices.order, raw.choices.order, 'an order with an unknown extra key stays through a fuel change');
+  assert.equal(fuel.future, 1); assert.deepEqual(fuel.choices.newer, { x: 1 }, 'unknown field and unknown sibling of choices stay');
+  // picker 3 changed: only its pair is replaced; picker 2 keeps the unknown id
+  const [, b] = RECS.items(D);
+  const p3 = recsEdit(raw, (c) => { c.loot[2] = [b.id, true]; });
+  assert.deepEqual(p3.choices.loot, [[a.id, true], [BIG, true], [b.id, true], [0, false], [0, false]]);
+  // picker 1 changed: the others stay, including the unknown id
+  const p1 = recsEdit(raw, (c) => { c.loot[0] = [b.id, true]; });
+  assert.deepEqual(p1.choices.loot, [[b.id, true], [BIG, true], [0, false], [0, false], [0, false]]);
+  // the unknown-id picker itself switched off: its id is kept, only the switch changes
+  const off = recsEdit(raw, (c) => { c.loot[1][1] = false; });
+  assert.deepEqual(off.choices.loot[1], [BIG, false]);
+  for (const out of [fuel, p3, p1, off]) { assert.equal(out.future, 1); assert.deepEqual(out.choices.newer, { x: 1 }); }
+  // the unknown id with the [10,true] shape of the brief survives too
+  const r2 = { choices: { loot: [[10, true], [99, true]] } };
+  assert.deepEqual(recsEdit(r2, (c) => { c.fuel = true; }).choices.loot, [[10, true], [99, true]]);
+  assert.deepEqual(recsEdit(r2, (c) => { c.loot[0] = [a.id, true]; }).choices.loot, [[a.id, true], [99, true]]);
+});
+
+test('Round 2, fix 4: a switched-off picker blocks nothing and is not judged as a duplicate', () => {
+  const [a, b] = RECS.items(D);
+  assert.deepEqual(RECS.check({ choices: { loot: [[0, true], [a.id, false], [a.id, true]] } }, D).loot, [[0, true], [a.id, false], [a.id, true], [0, false], [0, false]], 'a later switched-on picker keeps the item an off picker holds');
+  assert.deepEqual(RECS.check({ choices: { loot: [[a.id, true], [b.id, false], [a.id, false]] } }, D).loot, [[a.id, true], [b.id, false], [a.id, false], [0, false], [0, false]], 'off pickers keep their choice, even equal ones');
+  assert.deepEqual(RECS.check({ choices: { loot: [[a.id, true], [a.id, true]] } }, D).loot[1], [0, true], 'two switched-on: the earlier wins');
+  assert.deepEqual(RECS.active({ loot: [[0, true], [a.id, false], [a.id, true]] }), [a.id]);
+  // switching on the picker that holds a used item: stored as on, read as a duplicate (none)
+  const sw = recsEdit({ choices: { loot: [[a.id, true], [a.id, false]] } }, (c) => { c.loot[1][1] = true; });
+  assert.deepEqual(sw.choices.loot, [[a.id, true], [a.id, true]], 'the stored item is kept');
+  assert.deepEqual(RECS.check(sw, D).loot[1], [0, true]);
+});
+
+test('Round 2, fix 1: a second quick change does not delete another page\'s setting (real CC.writeSection)', async () => {
+  for (const variant of ['no section', 'older value']) {
+    const results = {};
+    for (const mode of ['before', 'after']) {
+      const { CC, NAME } = recsFixture();
+      let start = null;
+      if (variant === 'older value') { const r = await CC.read(); const w = await CC.writeSection(NAME, { choices: { order: ['level', 'unlock', 'gil', 'loot'] } }, { rev: r.rev, base: null }); start = { sec: { choices: { order: ['level', 'unlock', 'gil', 'loot'] } }, rev: w.rev }; }
+      const r0 = start ? start : { sec: null, rev: (await CC.read()).rev };
+      // page A's copy and write state
+      let raw = r0.sec ? JSON.parse(JSON.stringify(r0.sec)) : null, rev = r0.rev, base = r0.sec ? JSON.parse(JSON.stringify(r0.sec)) : null, edits = [], seq = 0;
+      // page B (same copy) stores order
+      const b = recsEdit(r0.sec, (c) => { c.order = OTHER_ORDER.slice(); });
+      await CC.writeSection(NAME, b, { rev: r0.rev, base: r0.sec ? JSON.parse(JSON.stringify(r0.sec)) : null });
+      const change = (mut) => { const was = RECS.check(raw, D), c = JSON.parse(JSON.stringify(was)); mut(c); const it = RECS.intent(was, c); raw = RECS.store(raw, c, it.fields, it.pickers); edits.push({ seq: ++seq, next: c, fields: it.fields, pickers: it.pickers }); };
+      change((c) => { c.fuel = true; });                         // A's first change; write 1 starts
+      const snapSeq = seq, snap1 = JSON.parse(JSON.stringify(raw));
+      change((c) => { c.giveUp = 30; });                         // A's second change while write 1 is in progress
+      const w1 = await CC.writeSection(NAME, snap1, { rev, base });
+      assert.equal(w1.merged, true, 'write 1 merged B\'s order');
+      rev = w1.rev; base = JSON.parse(JSON.stringify(w1.section));
+      const later = edits.filter((e) => e.seq > snapSeq);
+      if (mode === 'after') { let n = JSON.parse(JSON.stringify(w1.section)); later.forEach((e) => { n = RECS.store(n, e.next, e.fields, e.pickers); }); raw = n; } // else: the old code kept its own copy
+      const w2 = await CC.writeSection(NAME, JSON.parse(JSON.stringify(raw)), { rev, base });
+      void w2;
+      results[mode] = RECS.check(CC.checkDoc((await CC.read()).raw).modules[NAME], D);
+      delete globalThis.localStorage; CC.resetMemory();
+    }
+    assert.deepEqual(results.after, Object.assign(RECS.defaults(), { fuel: true, giveUp: 30, order: OTHER_ORDER }), variant + ': nothing lost');
+    assert.notDeepEqual(results.before.order, OTHER_ORDER, variant + ': the old behaviour lost the other page\'s order');
+  }
+});
+
+test('Round 2, fix 3: an item held by an unrelated duplicate picker can be cleared by writing 0', () => {
+  const [a] = RECS.items(D);
+  const raw = { choices: { loot: [[a.id, true], [a.id, true]] } };
+  const was = RECS.check(raw, D); // [a,true],[0,true]
+  const c = JSON.parse(JSON.stringify(was)); // the player picks "none": nothing differs ...
+  assert.deepEqual(RECS.intent(was, c).fields, []);
+  // ... so the page forces picker 2 as changed
+  const out = RECS.store(raw, c, ['loot'], [{ i: 1, id: true, on: false }]);
+  assert.deepEqual(out.choices.loot, [[a.id, true], [0, true]]);
 });

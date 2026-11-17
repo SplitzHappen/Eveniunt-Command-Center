@@ -57,9 +57,11 @@
       out.loot = d.loot.map(function (blank, i) {
         var p = c.loot[i];
         if (!Array.isArray(p)) return blank;
-        var id = Number.isInteger(p[0]) && known[p[0]] && !taken[p[0]] ? p[0] : 0; // unknown or later duplicate: none
-        if (id) taken[id] = 1;
-        return [id, i === 0 ? true : p[1] === true];
+        var on = i === 0 || p[1] === true;
+        // unknown, or a duplicate of an earlier switched-on picker: none. A switched-off picker keeps its stored choice and counts for nothing.
+        var id = Number.isInteger(p[0]) && known[p[0]] && !(on && taken[p[0]]) ? p[0] : 0;
+        if (id && on) taken[id] = 1;
+        return [id, on];
       });
     }
     return out;
@@ -71,16 +73,44 @@
     return R.FIELDS.filter(function (k) { return JSON.stringify(a && a[k]) !== JSON.stringify(b && b[k]); });
   };
 
-  // What a write stores: only the fields already stored in raw plus the ones just changed, each taken from next (the
-  // normalised settings). A field nobody stored stays absent, so a merge never sees a change that was not made; R.check
-  // fills in the rest when reading.
-  R.store = function (raw, next, changed) {
-    var have = raw && typeof raw === 'object' && raw.choices && typeof raw.choices === 'object' && !Array.isArray(raw.choices) ? raw.choices : {};
-    var out = {};
-    R.FIELDS.forEach(function (k) {
-      if (Object.prototype.hasOwnProperty.call(have, k) || (changed || []).indexOf(k) >= 0) out[k] = JSON.parse(JSON.stringify(next[k]));
+  // What the player's change touched: the fields of R.FIELDS that differ between the settings read (was) and the settings
+  // after the change (now), and within loot the pickers that differ, each with which part (id, on) changed.
+  R.intent = function (was, now) {
+    var fields = R.changed(was, now), pickers = [];
+    if (fields.indexOf('loot') >= 0) {
+      for (var i = 0; i < R.PICKERS; i++) {
+        var a = was && was.loot && was.loot[i] || [], b = now && now.loot && now.loot[i] || [];
+        if (JSON.stringify(a) !== JSON.stringify(b)) pickers.push({ i: i, id: a[0] !== b[0], on: a[1] !== b[1] });
+      }
+    }
+    return { fields: fields, pickers: pickers };
+  };
+
+  // What a write stores: a deep copy of the stored section in which only the fields the player changed are replaced, each
+  // with its new value from `next` (the settings after the change). Everything else stays exactly as stored: unchanged
+  // fields (even bad or unknown values), unknown fields, unknown keys beside choices, unknown item ids. Within loot only
+  // the changed pickers' pairs are replaced (pickers: [{ i, id, on }] from R.intent; omitted: the whole list). A field
+  // nobody stored stays absent, so a merge never sees a change that was not made; R.check fills in the rest when reading.
+  var copy = function (v) { return JSON.parse(JSON.stringify(v)); };
+  R.store = function (raw, next, changed, pickers) {
+    var out = raw && typeof raw === 'object' && !Array.isArray(raw) ? copy(raw) : {};
+    if (!out.choices || typeof out.choices !== 'object' || Array.isArray(out.choices)) out.choices = {};
+    var ch = out.choices;
+    (changed || []).forEach(function (k) {
+      if (k === 'loot' && Array.isArray(pickers) && Array.isArray(ch.loot)) {
+        pickers.forEach(function (p) {
+          while (ch.loot.length < p.i) ch.loot.push(copy(next.loot[ch.loot.length]));
+          var pair = ch.loot[p.i];
+          if (!Array.isArray(pair)) pair = copy(next.loot[p.i]);
+          else {
+            if (p.id || pair[0] === undefined) pair[0] = next.loot[p.i][0];
+            if (p.on || pair[1] === undefined) pair[1] = next.loot[p.i][1];
+          }
+          ch.loot[p.i] = pair;
+        });
+      } else ch[k] = copy(next[k]);
     });
-    return { choices: out };
+    return out;
   };
 
   // The chosen item ids: picker on and an item set, each once.
