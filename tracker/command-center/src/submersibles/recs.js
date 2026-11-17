@@ -86,7 +86,8 @@
   //   { key, objective, rate, amount(r), prepare(S)? }; rate true: score = amount per hour at sea, false: per voyage.
   //   prepare(S) is given the routes still in play and returns the amount function.
   // opts: { fuel, giveUp (percent) } and optional accessors seconds(r), tanks(r), id(r), sectors(r).
-  // Returns { routes (every candidate, best first), plan, others (two more with other sectors), lead, used, skipped }.
+  // Returns { routes (every candidate, best first), plan, others (two more with other sectors), lead, used, skipped,
+  //   trace: per used stage { key, objective, before, after }, the routes in play before and after it }.
   R.pick = function (cands, stages, opts) {
     opts = opts || {};
     var seconds = opts.seconds || function (r) { return r.seconds; };
@@ -94,7 +95,7 @@
     var idOf = opts.id || function (r) { return r.id != null ? String(r.id) : (r.route || []).join('-'); };
     var setOf = opts.sectors || function (r) { return (r.route || []).slice().sort(function (a, b) { return a - b; }).join(','); };
     var fuel = !!opts.fuel, giveUp = typeof opts.giveUp === 'number' ? opts.giveUp : R.GIVE_UP;
-    var S = cands.slice(), lead = null, used = [], skipped = [];
+    var S = cands.slice(), lead = null, used = [], skipped = [], trace = [];
     var steps = new Map(), scores = new Map();
     cands.forEach(function (r) { steps.set(r, 0); scores.set(r, []); });
     (stages || []).forEach(function (st) {
@@ -111,6 +112,7 @@
       var first = lead === null;
       var band = fuel && first ? giveUp / 100 : R.BAND;
       S.forEach(function (r) { scores.get(r).push(sc.get(r).s); });
+      var before = S.length;
       S = S.filter(function (r) { return sc.get(r).s >= (1 - band) * best - EPS * best; });
       S.forEach(function (r) { steps.set(r, steps.get(r) + 1); });
       if (fuel && first) {
@@ -119,6 +121,7 @@
         S = S.filter(function (r) { return sc.get(r).a / tanksOf(r) >= 0.95 * bestE - EPS * bestE; });
         S.forEach(function (r) { steps.set(r, steps.get(r) + 1); });
       }
+      trace.push({ key: st.key, objective: st.objective, before: before, after: S.length }); // how many routes the stage left in play
       if (first) lead = st.key;
       used.push(st.key);
     });
@@ -140,6 +143,6 @@
         sets[k] = 1; others.push(routes[i]);
       }
     }
-    return { routes: routes, plan: plan, others: others, lead: lead, used: used, skipped: skipped };
+    return { routes: routes, plan: plan, others: others, lead: lead, used: used, skipped: skipped, trace: trace };
   };
 })();

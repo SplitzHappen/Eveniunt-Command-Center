@@ -757,6 +757,149 @@ test('Submersibles advisor with settings (R2): rank 130, everything found, Level
   assert.ok(Date.now() - t0 < 5000, 'a few seconds at most');
 });
 
+// ---------------------------------------------------------------- R3: reasons, header, part advice (spec 4.5, 4.7)
+const R3_FULL = { sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+const R3_LOW = { sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1 };
+const R3_LOGGED = (route, trips, perTrip) => ({ route, trips, perTrip, enough: trips >= 10 });
+const R3_ITEMS = RECS.items(D);
+const R3_NEAR = R3_ITEMS.find((i) => (D.loot[1] || []).includes(i.id) && !(D.loot[2] || []).includes(i.id));
+const R3_LOOT = (id) => [[id, true], [0, false], [0, false], [0, false], [0, false]];
+
+test('Submersibles advisor reasons (R3): the worked example of spec 4.8, to the word', () => {
+  const run = (o) => ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs(o) }));
+  const b = 'On the way to Deep-sea Site J, which grants slot 2: surveying Deep-sea Site B can reveal Deep-sea Site E.';
+  assert.equal(run({}).plan.why, b);
+  assert.equal(run({ fuel: true, giveUp: 15 }).plan.why, b + ' Fuel efficiency made no difference here.');
+  assert.equal(run({ order: ['level', 'unlock', 'gil', 'loot'] }).plan.why, 'Most experience per hour within reach (at least 1,148 an hour).');
+  assert.equal(run({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true, giveUp: 15 }).plan.why, 'Most experience per hour within reach (at least 1,148 an hour). Fuel efficiency made no difference here.');
+  // every other route carries its own sentence, as plain text
+  for (const a of [run({}), run({ order: ['level', 'unlock', 'gil', 'loot'] })]) for (const x of [a.plan].concat(a.alts)) assert.ok(typeof x.why === 'string' && x.why.length > 0 && !/[<>&]/.test(x.why));
+});
+
+test('Submersibles advisor reasons (R3): U2 and U3 wording, and a later stage that narrowed the choice', () => {
+  const found8 = D.sectors.filter((s) => s.rank <= 14).map((s) => s.id).slice(0, 8);
+  const u2 = ADV.advise({ sub: { rank: 14, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found8 }, slotsFilled: 4, recs: RECS.defaults() });
+  assert.equal(u2.lead, 'U2');
+  assert.match(u2.plan.why, /^Can reveal \d+ new sectors? \(.+ lead to them\): the most per hour within reach\.$/);
+  const d8 = ADV.advise({ sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2, 3, 4, 5, 6, 7] }, slotsFilled: 1, recs: withRecs({ order: ['unlock', 'gil', 'level', 'loot'] }) });
+  assert.equal(d8.lead, 'U3');
+  assert.match(d8.plan.why, /^Most experience per hour within reach \(at least [\d,]+ an hour\), (levelling to rank \d+ for|building range for) .+ \(step 1: slot 2\)/);
+  // Leveling leads, Gil is ranked second and narrows the 5% band: "Then Gil Farming: ..."
+  const lvl = ADV.advise({ sub: { rank: 14, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found8 }, slotsFilled: 4, recs: withRecs({ order: ['level', 'gil', 'unlock', 'loot'] }) });
+  const thens = lvl.plan.why.match(/Then [^.]*\./g) || [];
+  assert.ok(thens.length <= 2);
+  for (const t of thens) assert.match(t, /^Then (Gil Farming|Unlocking Routes|Loot Farming): /);
+});
+
+test('Submersibles advisor reasons (R3): the fuel sentence compares with the same candidates decided without fuel', () => {
+  const found = D.sectors.filter((s) => s.rank <= 5).map((s) => s.id).slice(0, 8);
+  const inp = { sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found }, slotsFilled: 4 };
+  const order = ['level', 'gil', 'unlock', 'loot'];
+  const on = ADV.advise(Object.assign({}, inp, { recs: withRecs({ order, fuel: true, giveUp: 10 }) }));
+  const off = ADV.advise(Object.assign({}, inp, { recs: withRecs({ order, fuel: false, giveUp: 10 }) }));
+  const m = on.plan.why.match(/Fuel efficiency: (\d+) tanks? instead of (\d+), for (\d+)% less experience per hour\.$/);
+  assert.ok(m, on.plan.why);
+  const rate = (x) => x.ev.exp / (x.ev.seconds / 3600);
+  assert.equal(+m[1], on.plan.ev.tanks); assert.equal(+m[2], off.plan.ev.tanks); assert.ok(+m[1] < +m[2]);
+  assert.equal(+m[3], Math.round((1 - rate(on.plan) / rate(off.plan)) * 100));
+  assert.ok(ADV.lastEvals > 0);
+  // no fuel sentence without fuel
+  assert.ok(!/Fuel efficiency/.test(off.plan.why));
+  // fuel on over a sea of more than 8 sectors: the comparison reuses the candidates, it makes no further route evaluation
+  const big = { sub: { rank: 130, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'], fuel: true }) };
+  const a = ADV.advise(big); const evalsOn = ADV.lastEvals;
+  assert.ok(evalsOn <= 92000 && /Fuel efficiency/.test(a.plan.why));
+});
+
+test('Submersibles advisor reasons (R3): skipped objectives above the lead are named with their cause, those below are not', () => {
+  const a = ADV.advise(Object.assign({}, R3_FULL, { recs: withRecs({ fuel: true }) }));
+  assert.equal(a.lead, 'G');
+  assert.match(a.plan.why, /Skipped Unlocking Routes: every sector is found\./);
+  assert.match(a.plan.why, /Skipped Leveling Submersible Rank: this sub is at the top rank\./);
+  assert.ok(!/Loot Farming/.test(a.plan.why), 'no item chosen is said in Setup only');
+  // Gil ranked first: nothing above it, so nothing named
+  const g = ADV.advise(Object.assign({}, R3_FULL, { recs: withRecs({ fuel: true, order: ['gil', 'unlock', 'level', 'loot'] }) }));
+  assert.ok(!/Skipped/.test(g.plan.why));
+  // a chosen item that cannot drop where this sub can go: named, with the 4.5 sentence
+  const far = R3_ITEMS.find((i) => !D.sectors.some((s) => s.rank <= 1 && (D.loot[s.id] || []).includes(i.id)));
+  const l = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(far.id) }) }));
+  assert.equal(l.lead, 'U1');
+  assert.match(l.plan.why, /Skipped Loot Farming: none of your chosen items can drop in a sector this sub can reach now\./);
+  // the 4.5 causes sit in the skipped list too
+  const why = Object.fromEntries(a.skipped.map((s) => [s.key, s.reason]));
+  assert.equal(why.U1, 'every sector is found'); assert.equal(why.X, 'this sub is at the top rank'); assert.equal(why.L1, 'no item chosen');
+});
+
+test('Submersibles advisor header (R3): each case of spec 4.7', () => {
+  const run = (inp, o) => ADV.advise(Object.assign({}, inp, { recs: withRecs(o) }));
+  const found8 = D.sectors.filter((s) => s.rank <= 14).map((s) => s.id).slice(0, 8);
+  const STEP1 = 'Suggested · step 1 of 3: Unlock all four submarines';
+  assert.equal(run(R3_LOW, {}).head, STEP1); assert.equal(run(R3_LOW, {}).label, 'Unlocking Routes');
+  assert.equal(run({ sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2, 3, 4, 5, 6, 7] }, slotsFilled: 1 }, { order: ['unlock', 'gil', 'level', 'loot'] }).head, STEP1); // U3
+  assert.equal(run({ sub: { rank: 14, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found8 }, slotsFilled: 4 }, {}).head, 'Suggested · step 2 of 3: Discover every sector'); // U2
+  assert.equal(run(R3_LOW, { order: ['level', 'unlock', 'gil', 'loot'] }).head, 'Suggested · Leveling Submersible Rank');
+  assert.equal(run(R3_LOW, { order: ['gil', 'unlock', 'level', 'loot'] }).head, 'Suggested · Gil Farming'); // Gil leads before step 3
+  assert.equal(run(R3_LOW, { order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_NEAR.id) }).head, 'Suggested · Loot Farming');
+  assert.equal(run(R3_FULL, { fuel: true }).head, 'Suggested · step 3 of 3: Farm gil'); // Gil at step 3, fuel path
+  assert.equal(run(R3_FULL, {}).head, 'Suggested · step 3 of 3: Farm gil'); // Gil at step 3, today's answer unchanged
+  assert.equal(run(Object.assign({}, R3_FULL, { sub: { rank: 130, parts: [31, 24, 25, 34] } }), { order: ['level', 'unlock', 'gil', 'loot'] }).head, 'Suggested · Leveling Submersible Rank'); // Leveling at step 3
+  // the plain no-settings answer has no header field
+  assert.equal(ADV.advise(R3_LOW).head, undefined);
+});
+
+test('Submersibles advisor part advice (R3): none before step 3; a gil tip only beside a gil plan', () => {
+  const logged = [R3_LOGGED([1, 2], 14, 412000), R3_LOGGED([3, 4], 12, 300000)];
+  for (const o of [{}, { order: ['level', 'unlock', 'gil', 'loot'] }, { fuel: true }, { order: ['gil', 'unlock', 'level', 'loot'] }]) {
+    assert.equal(ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs(o) })).parts, null, 'step 1');
+    assert.equal(ADV.advise({ sub: { rank: 14, parts: SHARK }, fc: { unlockedSlots: 4, discovered: [1, 2, 3, 4, 5, 6, 7, 8] }, slotsFilled: 4, recs: withRecs(o) }).parts, null, 'step 2');
+  }
+  const shark145 = Object.assign({}, R3_FULL, { sub: { rank: 145, parts: SHARK }, logged, enough: 10 });
+  const g = ADV.advise(Object.assign({}, shark145, { recs: RECS.defaults() }));
+  assert.equal(g.lead, 'G'); assert.ok(g.parts && g.parts.gilGain > 0, 'with Gil leading the S6 gil tip stays');
+  assert.deepEqual(g.parts, ADV.advise(shark145).parts, 'the same tip as today');
+  // a non-gil lead at step 3: never a gil tip, only the minutes tip on the suggested route
+  for (const rank of [30, 60, 130]) {
+    const x = ADV.advise(Object.assign({}, shark145, { sub: { rank, parts: SHARK }, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'] }) }));
+    assert.equal(x.step, 3); assert.equal(x.lead, 'X');
+    assert.ok(x.parts && x.parts.gilGain === undefined && x.parts.gilFrom === undefined, 'rank ' + rank);
+    assert.match(x.parts.why, /min sooner \(calculated\)/);
+  }
+  const l = ADV.advise(Object.assign({}, shark145, { sub: { rank: 30, parts: SHARK }, recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_ITEMS.find((i) => D.sectors.some((s) => s.rank <= 30 && (D.loot[s.id] || []).includes(i.id))).id) }) }));
+  assert.ok(l.lead === 'L1' && l.step === 3 && (l.parts === null || l.parts.gilGain === undefined));
+});
+
+test('Submersibles advisor reasons (R3): a loot reason says drop odds are not known and promises nothing', () => {
+  const a = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_NEAR.id) }) }));
+  assert.equal(a.lead, 'L1'); assert.equal(a.plan.route.length, 1);
+  assert.ok(a.plan.why.startsWith('Can bring back 1 of your 1 chosen item (' + R3_NEAR.name + '); possible items only (community data), drop odds are not known.'), a.plan.why);
+  assert.ok(!/will drop|guarantee|always/i.test(a.plan.why));
+  // L2 leads when coverage cannot tell routes apart
+  const l2 = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_NEAR.id) }) }));
+  for (const x of [l2.plan].concat(l2.alts)) if (/Can bring back/.test(x.why)) assert.match(x.why, /drop odds are not known/);
+  // a loot plan on a later stage still carries the note
+  const later = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['level', 'loot', 'unlock', 'gil'], loot: R3_LOOT(R3_NEAR.id) }) }));
+  if (/Then Loot Farming/.test(later.plan.why)) assert.match(later.plan.why, /drop odds are not known/);
+});
+
+test('Submersibles advisor blocked answer (R3): with settings it carries today\'s step, step name and sentence', () => {
+  const weak = [0, 1, 2, 3].map((sl) => D.parts.filter((p) => p.slot === sl).sort((x, y) => x.range - y.range)[0].id);
+  const cases = [
+    { sub: { rank: 1, parts: weak }, fc: { unlockedSlots: 1, discovered: [1, 2] } },
+    { sub: { rank: 1, parts: weak }, fc: { unlockedSlots: 4, discovered: [1, 2] } },
+    { sub: { rank: 1, parts: weak }, fc: { unlockedSlots: 4, discovered: ALL } },
+    { sub: { rank: 20, parts: weak }, fc: { unlockedSlots: 2, discovered: [1, 2, 3, 4, 5] }, slotsFilled: 1 },
+  ];
+  for (const c of cases) for (const o of [{}, { fuel: true }, { order: ['gil', 'loot', 'level', 'unlock'] }]) {
+    const today = ADV.advise(c), now = ADV.advise(Object.assign({}, c, { recs: withRecs(o) }));
+    if (!today.blocked) continue;
+    assert.equal(now.blocked, today.blocked); assert.equal(now.step, today.step); assert.equal(now.stepName, today.stepName);
+    assert.equal(now.lead, null); assert.deepEqual(now.skipped, []);
+  }
+  assert.ok(cases.some((c) => ADV.advise(c).blocked), 'at least one case is blocked today');
+  const t = ADV.advise(cases[0]);
+  assert.deepEqual([t.step, t.stepName], [3, 'Farm gil']);
+});
+
 // ---------------------------------------------------------------- R4: the tuning tool and the shipped defaults
 // tools/recs-tune.js builds the test fleet from the data only and applies the rule of spec 4.6; the tuning document is its text.
 const TUNE = require(path.join(__dirname, '..', 'tools', 'recs-tune.js'));
