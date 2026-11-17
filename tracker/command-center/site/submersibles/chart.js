@@ -51,26 +51,88 @@
   var STATE = { found: 'found', next: 'can be revealed next', far: 'further away' };
   C.stateText = function (st) { return STATE[st]; };
 
+  // The invisible tap circle of each node, in chart units: about 40 px across at a phone width (the chart is then roughly
+  // 340 px wide, so a radius of span / 17), but never more than half the distance to the nearest other sector, so
+  // neighbouring tap circles do not swallow each other's taps.
+  C.TAP_FRACTION = 1 / 17;
+  C.hitRadii = function (view) {
+    var b = view.box, span = Math.max(b.w, b.h), want = span * C.TAP_FRACTION, out = {};
+    view.nodes.forEach(function (n) {
+      var near = Infinity;
+      view.nodes.forEach(function (m) { if (m !== n) near = Math.min(near, Math.hypot(m.x - n.x, m.y - n.y)); });
+      out[n.id] = Math.min(want, near / 2);
+    });
+    return out;
+  };
+
+  // Where each secondary label (slot / opens) goes: the first of below, above, right, left whose estimated box touches no
+  // other marker, letter, Start, reveal line, earlier label or the edge of the drawing. Position data is not changed.
+  function placeTags(view, r, fs) {
+    var b = view.box, ext = { x0: b.x, y0: b.y, x1: b.x + b.w, y1: b.y + b.h }, fsT = fs * 0.8, cw = 0.55, boxes = [], res = {}, lines = view.lines;
+    function textBox(x, y, str, size, anchor) { var w = str.length * cw * size, x0 = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2; return { x0: x0, x1: x0 + w, y0: y - size, y1: y + size * 0.25 }; }
+    function hit(a, c) { return a.x0 < c.x1 && c.x0 < a.x1 && a.y0 < c.y1 && c.y0 < a.y1; }
+    view.nodes.forEach(function (n) {
+      boxes.push({ x0: n.x - r * 1.5, x1: n.x + r * 1.5, y0: n.y - r * 1.5, y1: n.y + r * 1.5 });
+      boxes.push(textBox(n.x, n.y - r * 2.2 - fs * 0.3, n.letter + ' 5', fs, 'middle'));
+    });
+    boxes.push({ x0: view.start.x - r * 1.5, x1: view.start.x + r * 1.5, y0: view.start.y - r * 1.5, y1: view.start.y + r * 1.5 });
+    boxes.push(textBox(view.start.x, view.start.y + r * 1.5 + fs * 1.1, 'Start', fs, 'middle'));
+    function inside(t) { return t.x0 >= b.x && t.x1 <= b.x + b.w && t.y0 >= b.y && t.y1 <= b.y + b.h; }
+    function free(t) {
+      if (boxes.some(function (o) { return hit(t, o); })) return false;
+      return !lines.some(function (l) { for (var i = 0; i <= 24; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 24, py = l.y1 + (l.y2 - l.y1) * i / 24; if (px > t.x0 && px < t.x1 && py > t.y0 && py < t.y1) return true; } return false; });
+    }
+    view.nodes.forEach(function (n) {
+      var str = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean).join(' · ');
+      if (!str) return;
+      var cand = [
+        { x: 0, y: r * 2.2 + fs * 0.85, anchor: 'middle' },
+        { x: 0, y: -r * 2.2 - fs * 1.65, anchor: 'middle' },
+        { x: r * 1.8, y: fsT * 0.35, anchor: 'start' },
+        { x: -r * 1.8, y: fsT * 0.35, anchor: 'end' },
+        // a long label that fits none of the four: below or above, hanging to one side
+        { x: -r, y: r * 2.2 + fs * 0.85, anchor: 'end' },
+        { x: r, y: r * 2.2 + fs * 0.85, anchor: 'start' },
+        { x: -r, y: -r * 2.2 - fs * 1.65, anchor: 'end' },
+        { x: r, y: -r * 2.2 - fs * 1.65, anchor: 'start' }
+      ];
+      var pick = null, loose = null;
+      for (var i = 0; i < cand.length && !pick; i++) {
+        var c = cand[i], t = textBox(n.x + c.x, n.y + c.y, str, fsT, c.anchor);
+        if (!free(t)) continue;
+        if (inside(t)) pick = c; else if (!loose) loose = c; // a free place outside the drawing box is taken only if none inside (the box then grows)
+      }
+      pick = pick || loose || cand[0];
+      var pb = textBox(n.x + pick.x, n.y + pick.y, str, fsT, pick.anchor);
+      boxes.push(pb);
+      res[n.id] = pick;
+      ext = { x0: Math.min(ext.x0, pb.x0 - fsT * 0.3), y0: Math.min(ext.y0, pb.y0 - fsT * 0.3), x1: Math.max(ext.x1, pb.x1 + fsT * 0.3), y1: Math.max(ext.y1, pb.y1 + fsT * 0.3) };
+    });
+    res.extent = ext;
+    return res;
+  }
+
   // The SVG text. route: sector ids (optional), drawn as a numbered line from Start.
   C.svg = function (view, route) {
     var b = view.box, span = Math.max(b.w, b.h), fs = span / 30, r = span / 70;
     var at = {}; view.nodes.forEach(function (n) { at[n.id] = n; });
-    var o = '<svg class="chart-svg" viewBox="' + [b.x, b.y, b.w, b.h].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
+    var hits = C.hitRadii(view), tagAt = placeTags(view, r, fs);
+    var e = tagAt.extent, o = '<svg class="chart-svg" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
     o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
     var path = [view.start].concat((route || []).filter(function (id) { return at[id]; }).map(function (id) { return at[id]; }));
     if (path.length > 1) o += '<polyline class="chart-route" aria-hidden="true" points="' + path.map(function (p) { return num(p.x) + ',' + num(p.y); }).join(' ') + '"/>';
     o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><rect x="' + num(view.start.x - r) + '" y="' + num(view.start.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(view.start.x) + ' ' + num(view.start.y) + ')"/><text x="' + num(view.start.x) + '" y="' + num(view.start.y + r * 1.5 + fs * 1.1) + '" text-anchor="middle" font-size="' + num(fs) + '">Start</text></g>';
     view.nodes.forEach(function (n) {
       var tags = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean);
-      var label = n.name + ', rank ' + n.rank + ', ' + STATE[n.state] + (tags.length ? ', ' + tags.join(', ') : '');
+      var label = n.name + ', rank ' + n.rank + ', ' + STATE[n.state] + (tags.length ? ', ' + tags.join(', ') : '') + (n.rankOk ? '' : ', above this submarine\'s rank');
       var shape = n.state === 'found' ? '<circle r="' + num(r) + '"/>'
         : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"/>'
         : '<rect x="' + num(-r * 0.7) + '" y="' + num(-r * 0.7) + '" width="' + num(1.4 * r) + '" height="' + num(1.4 * r) + '"/>';
       var idx = (route || []).indexOf(n.id);
       o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
-        '<circle class="hit" r="' + num(r * 2.2) + '"/>' + shape +
+        '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + shape +
         '<text class="chart-letter" y="' + num(-r * 2.2 - fs * 0.3) + '" text-anchor="middle" font-size="' + num(fs) + '">' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
-        (tags.length ? '<text class="chart-tag" y="' + num(r * 2.2 + fs * 0.85) + '" text-anchor="middle" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
+        (tags.length ? '<text class="chart-tag" x="' + num(tagAt[n.id].x) + '" y="' + num(tagAt[n.id].y) + '" text-anchor="' + tagAt[n.id].anchor + '" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
     });
     return o + '</svg>';
   };

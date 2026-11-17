@@ -2652,9 +2652,32 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.waitForTimeout(800);
       const s1 = await saved();
       const sent = s1.subs.l1.voyage && s1.subs.l1.voyage.route ? s1.subs.l1.voyage.route.join(',') : null;
-      const ok = shown === '1' && sent === shown && Object.keys(s1.trips).length === 1 && s1.fcs.fl.discovered.includes(3) && real(errors).length === 0;
-      record('C83', 'Send on this route (step S6 review): the button carries the route the window shows and sends exactly it, also when a "discovered" tick entered in the same window would change the advice; the return is logged once',
-        ok, { shown, sent, freshAfterTick, trips: Object.keys(s1.trips).length, errors: real(errors) });
+      const ok = shown === '1' && freshAfterTick !== shown && sent === shown && Object.keys(s1.trips).length === 1 && s1.fcs.fl.discovered.includes(3) && real(errors).length === 0;
+      // the reopen path: the shown route cannot be sent once the return is logged (it holds sector 3, which is not found), so
+      // exactly one trip is logged with its typed loot, nothing is sent, and the send window opens again with one plain sentence
+      await page.evaluate(async (all) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fl = { name: 'Lima Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.l1 = { fcId: 'fl', slot: 1, name: 'Sub L1', rank: 145, parts: [31, 24, 25, 34], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, allIds);
+      await page.reload(); await ready();
+      await page.click('.sub[data-sub="l1"] .sub-top');
+      await page.waitForSelector('#sheet .advice');
+      await page.click('#sheet .loot summary');
+      const lootId = await page.$eval('#sheet [data-qty]', (el) => +el.dataset.qty);
+      await page.fill('#sheet [data-qty="' + lootId + '"]', '7');
+      await page.$eval('#sheet [data-act=quick]', (el) => { el.dataset.route = '3'; });
+      await page.click('#sheet [data-act=quick]');
+      await page.waitForSelector('#sheet[open] [data-reopened]', { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(800);
+      const s2 = await saved();
+      const reopened = await page.evaluate(() => ({ open: !!document.querySelector('#sheet[open]'), note: (document.querySelector('#sheet [data-reopened]') || {}).textContent || '', send: !!document.querySelector('#sheet [data-act=dosend]') }));
+      const tripList = Object.values(s2.trips);
+      const keptLoot = tripList.length === 1 && (tripList[0].items || []).some((x) => x[0] === lootId && x[1] === 7);
+      const ok2 = tripList.length === 1 && keptLoot && !s2.subs.l1.voyage && reopened.open && reopened.send && /return was logged/.test(reopened.note) && /nothing was sent/.test(reopened.note) && real(errors).length === 0;
+      record('C83', 'Send on this route (step S6 review): the button carries the route the window shows and sends exactly it, also when a "discovered" tick entered in the same window would change the advice (the fresh advice differs from the shown route); the return is logged once. Reopen path: when the shown route cannot be sent once the return is logged, exactly one trip is logged with its typed loot kept, nothing is sent, and the send window opens again with a sentence saying so',
+        ok && ok2, { shown, sent, freshAfterTick, firstCase: ok, trips: tripList.length, keptLoot, voyage: s2.subs.l1.voyage || null, reopened, errors: real(errors) });
       await ctx.close(); server14.close();
     }
 
@@ -2800,13 +2823,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await pp.click('.chart-svg [data-sector="10"]');
       const sidePhone = await pp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       const svgWidth = await pp.$eval('.chart-svg', (el) => Math.round(el.getBoundingClientRect().width));
+      const hitMin = await pp.$$eval('.chart-svg .chart-node .hit', (els) => Math.round(Math.min(...els.map((e) => e.getBoundingClientRect().width))));
       await ph.ctx.close();
       const ok = !/arrive in step S4/.test(lima.text) && lima.buttons.length === 7 && /Deep-sea Site/.test(lima.pressed) && lima.sectors === 30 && lima.start && lima.found === 4 && lima.next >= 1 &&
         /found 4 of 30/.test(lima.buttons[0]) && /found 0 of 20/.test(lima.buttons[1]) && /found 1 of 30/.test(mike.buttons[0]) && mike.found === 1 && /not opened yet/.test(ash.text) && ash.sectors === 20 &&
-        /slot 2/.test(details) && /unidentified derelict/.test(details) && /Rank needed/.test(details) && sideDesktop <= 0 && sidePhone <= 0 && svgWidth > 300 &&
+        /slot 2/.test(details) && /unidentified derelict/.test(details) && /Rank needed/.test(details) && sideDesktop <= 0 && sidePhone <= 0 && svgWidth > 300 && hitMin >= 36 &&
         /The Map tab shows them on a chart\./.test(setupText) && !/step S4/.test(setupText) && before === after && real(errors).length === 0 && real(ph.errors).length === 0;
       record('C82', 'Sea chart (step S4-1): the Map tab no longer says it arrives in step S4; it has seven sea buttons with "found n of m"; the Deep-sea Site shows 30 sectors and Start; found counts follow the seeded free company and change with the selector; a sea with nothing found says "not opened yet"; tapping J shows its details with "slot 2"; at a phone width the page does not scroll sideways; the Setup sector step carries the new sentence; the stored section is unchanged',
-        ok, { lima: { buttons: lima.buttons, sectors: lima.sectors, start: lima.start, found: lima.found, next: lima.next }, mike: { found: mike.found }, ash: { sectors: ash.sectors }, details, sideDesktop, sidePhone, svgWidth, setupText: setupText.slice(-200), same: before === after, errors: real(errors) });
+        ok, { lima: { buttons: lima.buttons, sectors: lima.sectors, start: lima.start, found: lima.found, next: lima.next }, mike: { found: mike.found }, ash: { sectors: ash.sectors }, details, sideDesktop, sidePhone, svgWidth, hitMin, setupText: setupText.slice(-200), same: before === after, errors: real(errors) });
       await ctx.close().catch(() => {}); server13.close();
     }
 
@@ -2824,7 +2848,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.evaluate(async () => {
         const parts = [3, 4, 1, 2], now = Date.now();
         const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
-        sec.fcs.fl = { name: 'Lima Company', world: 'Gilgamesh', unlockedSlots: 2, order: 0, discovered: [1, 2, 3, 4, 5, 6, 7, 10, 15, 26] };
+        sec.fcs.fl = { name: 'Lima Company', world: 'Gilgamesh', unlockedSlots: 2, order: 0, discovered: [1, 2, 3, 4, 5, 6, 7, 10, 15, 18, 26] };
         sec.subs.l1 = { fcId: 'fl', slot: 1, name: 'Sub L1', rank: 30, parts };
         sec.subs.l2 = { fcId: 'fl', slot: 2, name: 'Sub L2', rank: 30, parts, voyage: { sentAt: now, route: [1], returnAt: now + 3600000 } };
         const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
@@ -2842,11 +2866,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const figuresOk = [want.range, want.tanks, want.exp, want.route, want.calc].every((x) => planned.includes(x));
       const drawn = await page.evaluate(() => ({ line: document.querySelectorAll('.chart-svg .chart-route').length, pts: (document.querySelector('.chart-route') || { getAttribute: () => '' }).getAttribute('points').split(' ').length }));
       await tap(3); const dropped = await route();
+      await tap(26); const afterHigh = await route(); // one sector in the route: refused for the rank (50 > 30) alone, not because the route is full
       await tap(3);
-      for (const id of [2, 4, 5]) await tap(id);
+      await page.focus('.chart-svg [data-sector="2"]'); await page.keyboard.press('Enter'); // a keyboard tap keeps the focus on the tapped sector after the redraw
+      const kbFocus = await page.evaluate(() => (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.sector) || null);
+      for (const id of [4, 5]) await tap(id);
       const five = await route();
-      await tap(6); const afterSixth = await route();
-      await tap(26); const afterHigh = await route();
+      await tap(6); const afterSixth = await route(); // the sixth sector: refused because the route is full
       await page.click('[data-act=mapclear]');
       const community = await page.$$eval('[data-map-use]', (bs) => bs.map((b) => ({ t: b.textContent, d: b.disabled })));
       const okBtn = community.findIndex((b) => /OJ/.test(b.t) && !b.d), highBtn = community.find((b) => /JORZ/.test(b.t));
@@ -2869,11 +2895,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close();
       const arrows = (s) => (s.match(/→/g) || []).length;
       const ok = /Choose a submarine/.test(noSub) && figuresOk && drawn.line === 1 && drawn.pts === 3 && arrows(dropped) === 0 && /: A\b/.test(dropped) &&
-        arrows(five) === 4 && arrows(afterSixth) === 4 && !/\bF\b/.test(afterSixth) && arrows(afterHigh) === 4 && !/\bZ\b/.test(afterHigh) &&
+        kbFocus === '2' && arrows(five) === 4 && arrows(afterSixth) === 4 && !/\bF\b/.test(afterSixth) && arrows(afterHigh) === 0 && /: A\b/.test(afterHigh) && !/\bZ\b/.test(afterHigh) &&
         okBtn >= 0 && highBtn && highBtn.d === true && loaded.includes(loadedWant) && sheetRoute.includes(loadedWant) && sheetOn.length === 2 &&
         before === afterCancel && outBtn.disabled === true && /back/.test(outBtn.text) && before === afterAll && wideDesktop <= 0 && real(errors).length === 0;
       record('C84', 'Route planner (step S4-2): choosing a sub and tapping two found sectors gives the figures ADVISOR.evalRoute gives for it, with the "calculated" label, and draws a numbered line; a sixth sector cannot be added and a sector above the sub\'s rank cannot be tapped into the route; a community route button loads its route (disabled when the rank or a sector is missing); "Send ... on this route..." opens the send window with that route selected; Cancel leaves the stored section byte-for-byte as before; a sub that is Out has the button disabled',
-        ok, { noSub: noSub.slice(0, 120), planned: planned.slice(0, 300), want, drawn, dropped, five, afterSixth, afterHigh, community, loaded, sheetRoute, sheetOn, same: before === afterCancel, outBtn, wideDesktop, errors: real(errors) });
+        ok, { kbFocus, noSub: noSub.slice(0, 120), planned: planned.slice(0, 300), want, drawn, dropped, five, afterSixth, afterHigh, community, loaded, sheetRoute, sheetOn, same: before === afterCancel, outBtn, wideDesktop, errors: real(errors) });
       await ctx.close().catch(() => {}); server14.close();
     }
 

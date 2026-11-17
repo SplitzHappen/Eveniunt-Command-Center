@@ -318,3 +318,38 @@ test('chart: the SVG holds each sector once, names are escaped, the route is num
   assert.ok(!/<[^>]*\bonclick/.test(svg));
   assert.ok(CH.svg(CH.view(1, [1, 2]), [1, 2]).includes('<polyline'));
 });
+
+// ---------------------------------------------------------------- review fixes: tap targets, labels
+test('chart: tap circles are about 40 px across at a phone width and never overlap a neighbour', () => {
+  for (const sea of D.seas) {
+    const v = CH.view(sea.id, []), hits = CH.hitRadii(v), span = Math.max(v.box.w, v.box.h);
+    for (const a of v.nodes) for (const c of v.nodes) if (a.id < c.id) assert.ok(hits[a.id] + hits[c.id] <= Math.hypot(a.x - c.x, a.y - c.y) + 1e-6, `sea ${sea.id}: ${a.id}/${c.id} circles overlap`);
+    for (const a of v.nodes) assert.ok(hits[a.id] > 0);
+    if (sea.id === 1) for (const a of v.nodes) assert.ok(hits[a.id] * 2 * 340 / span >= 36, `node ${a.id} tap target ${Math.round(hits[a.id] * 2 * 340 / span)} px`);
+  }
+  const svg = CH.svg(CH.view(1, []));
+  assert.ok(!/class="hit" r="29\.\d"/.test(svg));
+});
+test('chart: an over-rank sector says so in its accessible label; slot and opens labels do not cover letters or markers', () => {
+  const svg = CH.svg(CH.view(1, [], 10));
+  assert.ok(/aria-label="[^"]*\(R\)[^"]*above this submarine's rank"/.test(svg.replace(/&#39;/g, "'")));
+  assert.ok(!/aria-label="[^"]*\(A\)[^"]*above this submarine/.test(svg.replace(/&#39;/g, "'")));
+  for (const sea of D.seas) {
+    const v = CH.view(sea.id, []), svg2 = CH.svg(v), size = Math.max(v.box.w, v.box.h) / 30;
+    const boxes = [];
+    for (const g of svg2.split('<g class="chart-node').slice(1)) {
+      const [tx, ty] = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g).slice(1).map(Number);
+      const letter = /<text class="chart-letter" y="([-\d.]+)"[^>]*>([^<]*)</.exec(g);
+      boxes.push({ id: +/data-sector="(\d+)"/.exec(g)[1], kind: 'letter', x0: tx - letter[2].length * 0.55 * size / 2, x1: tx + letter[2].length * 0.55 * size / 2, y0: ty + +letter[1] - size, y1: ty + +letter[1] + size * 0.25 });
+      boxes.push({ id: +/data-sector="(\d+)"/.exec(g)[1], kind: 'marker', x0: tx - size * 0.4, x1: tx + size * 0.4, y0: ty - size * 0.4, y1: ty + size * 0.4 });
+    }
+    for (const g of svg2.split('<g class="chart-node').slice(1)) {
+      const tag = /<text class="chart-tag" x="([-\d.]+)" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)">([^<]*)</.exec(g);
+      if (!tag) continue;
+      const [tx, ty] = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g).slice(1).map(Number), fsT = +tag[4], w = tag[5].length * 0.55 * fsT;
+      const x0 = tx + +tag[1] - (tag[3] === 'start' ? 0 : tag[3] === 'end' ? w : w / 2), t = { x0, x1: x0 + w, y0: ty + +tag[2] - fsT, y1: ty + +tag[2] + fsT * 0.25 };
+      const id = +/data-sector="(\d+)"/.exec(g)[1];
+      for (const o of boxes) if (o.id !== id || o.kind === 'marker') assert.ok(!(t.x0 < o.x1 && o.x0 < t.x1 && t.y0 < o.y1 && o.y0 < t.y1), `sea ${sea.id}: label of ${id} covers ${o.kind} of ${o.id}`);
+    }
+  }
+});

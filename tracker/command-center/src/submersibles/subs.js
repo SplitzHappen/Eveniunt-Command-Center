@@ -672,7 +672,7 @@
   }
   // opens the existing send window with the planned route loaded (the send window does the sending)
   function planSend(id) {
-    var m = mapState(), s = S.subs[id], fc = s && S.fcs[s.fcId]; if (!fc || !m.route.length) return;
+    var m = mapState(), s = S.subs[id], fc = s && S.fcs[s.fcId]; if (id !== m.sub || !fc || !m.route.length) return;
     var st = F.status(s, fc, Date.now()); if (st === 'out' || st === 'locked') return;
     var route = m.route.slice();
     sendSheet(id, false);
@@ -706,7 +706,7 @@
       if (at >= 0) m.route.splice(at, 1); else if (m.route.length < 5) m.route.push(id);
     } else m.sector = m.sector === id ? null : id;
     keepUi(); render();
-    var n = $('#view [data-sector="' + id + '"]'); if (n && m.sector) n.focus();
+    var n = $('#view [data-sector="' + id + '"]'); if (n) n.focus();
   }
 
   function fmtGil(n) { return Math.round(n).toLocaleString('en') + ' gil'; }
@@ -852,7 +852,11 @@
       var fc = S.fcs[s.fcId], disc = new Set((fc && fc.discovered) || []), st = subStats(s);
       var okRoute = !!st && shown.length <= 5 && shown.every(function (x) { return SECTOR[x] && disc.has(x) && SECTOR[x].rank <= (s.rank || 0); });
       ev = okRoute ? ADV.evalRoute(shown, st) : null;
-      if (!ev || !ev.reachable) { schedule(); openSub(id); return; }
+      if (!ev || !ev.reachable) {
+        schedule(); openSub(id);
+        var h2 = $('#sheet h2'); if (h2) h2.insertAdjacentHTML('afterend', '<p class="note" data-reopened>' + esc('The return was logged, and the suggested route changed, so nothing was sent. Check the route below and send again.') + '</p>');
+        return;
+      }
       route = shown.slice();
     } else {
       var a = adviceFor(id);
