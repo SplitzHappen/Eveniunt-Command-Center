@@ -248,3 +248,58 @@ test('foldFcs: applying it again removes nothing', () => {
   const again = FOLD(once.section);
   assert.deepEqual(again.removed, []); assert.deepEqual(again.section, once.section);
 });
+
+// ---------------------------------------------------------------- step S4-1: the sea chart (command-center/src/submersibles/chart.js)
+require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'chart.js'));
+const CH = globalThis.CHART.init(D);
+const count = (text, needle) => text.split(needle).length - 1;
+test('chart: every sea has one node per sector, all inside the box, one reveal line per sector revealed from the same sea', () => {
+  assert.equal(CH.Y_DOWN, true);
+  for (const sea of D.seas) {
+    const v = CH.view(sea.id, []);
+    const secs = D.sectors.filter((s) => s.sea === sea.id);
+    assert.equal(v.nodes.length, sea.sectors); assert.equal(v.nodes.length, secs.length);
+    const b = v.box;
+    for (const n of v.nodes.concat([v.start])) assert.ok(n.x >= b.x && n.x <= b.x + b.w && n.y >= b.y && n.y <= b.y + b.h, `sea ${sea.id} node inside`);
+    const want = secs.filter((s) => D.unlocks[s.id].by != null && SECTOR.get(D.unlocks[s.id].by).sea === sea.id).length;
+    assert.equal(v.lines.length, want);
+    for (const l of v.lines) assert.equal(D.unlocks[l.to].by, l.from);
+    assert.deepEqual([v.start.x, v.start.y], [sea.x, sea.y]); // y drawn downward: unchanged
+  }
+  const A = CH.view(1, []).nodes.find((n) => n.letter === 'A'), start = CH.view(1, []).start;
+  assert.ok(A.x > start.x && A.y < start.y); // by the data A lies up and to the right of Start
+});
+test('chart: sector states, slot labels and sea-opening labels', () => {
+  const v = CH.view(1, [1, 3]);
+  const st = Object.fromEntries(v.nodes.map((n) => [n.id, n.state]));
+  assert.equal(st[1], 'found'); assert.equal(st[3], 'found');
+  assert.equal(st[2], 'next'); // a start sector, not found yet
+  for (const s of D.sectors.filter((x) => x.sea === 1)) {
+    const u = D.unlocks[s.id];
+    if (![1, 3].includes(s.id) && !u.start) assert.equal(st[s.id], u.by === 1 || u.by === 3 ? 'next' : 'far', 'sector ' + s.id);
+  }
+  assert.ok(Object.values(st).includes('far'));
+  const slots = Object.fromEntries(D.subSlots.map((u) => [u.sector, u.slot]));
+  for (const sea of D.seas) for (const n of CH.view(sea.id, [], 5).nodes) {
+    assert.equal(n.slot, slots[n.id] || null);
+    const o = D.unlocks[n.id].opensSea;
+    assert.equal(n.opens, o ? SEA.get(o).name : null);
+    assert.equal(n.rankOk, SECTOR.get(n.id).rank <= 5);
+  }
+  assert.deepEqual(D.subSlots.map((u) => CH.view(1, []).nodes.find((n) => n.id === u.sector).slot), [2, 3, 4]);
+  assert.equal(D.sectors.filter((s) => D.unlocks[s.id].opensSea).length, 6);
+  assert.equal(CH.view(1, []).nodes.find((n) => n.id === 30).opens, SEA.get(2).name);
+  assert.equal(CH.view(99, []), null);
+});
+test('chart: the SVG holds each sector once, names are escaped, the route is numbered', () => {
+  for (const sea of D.seas) {
+    const svg = CH.svg(CH.view(sea.id, [1]));
+    for (const s of D.sectors.filter((x) => x.sea === sea.id)) assert.equal(count(svg, `data-sector="${s.id}"`), 1);
+    assert.equal(count(svg, 'data-sector='), sea.sectors);
+    assert.equal(count(svg, 'tabindex="0"'), sea.sectors);
+  }
+  const svg = CH.svg(CH.view(1, []));
+  assert.ok(!svg.includes("Offender's Rot")); assert.ok(svg.includes('Offender&#39;s Rot'));
+  assert.ok(!/<[^>]*\bonclick/.test(svg));
+  assert.ok(CH.svg(CH.view(1, [1, 2]), [1, 2]).includes('<polyline'));
+});

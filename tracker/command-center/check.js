@@ -2712,6 +2712,70 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server12.close();
     }
 
+    // ── C82 Submersibles step S4-1: the Map tab draws the sea chart (read-only): seven sea buttons, found counts, the
+    //    Deep-sea Site with 30 sectors and Start, details of J with its slot, no sideways scrolling on a phone, and the
+    //    stored section unchanged.
+    {
+      const server13 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const saved = () => page.evaluate(async () => { const r = await CC.read(); return JSON.stringify(CC.checkDoc(r.raw).modules.submersibles); });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const seed = async (pg) => pg.evaluate(async () => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fl = { name: 'Lima Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2, 3, 10] };
+        sec.fcs.fm = { name: 'Mike Company', world: 'Gilgamesh', unlockedSlots: 1, order: 1, discovered: [1] };
+        sec.subs.l1 = { fcId: 'fl', slot: 1, name: 'Sub L1', rank: 10, parts: [3, 4, 1, 2] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await seed(page);
+      await page.reload(); await ready();
+      const before = await saved();
+      const wide = () => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      await page.click('[data-tab=setup]'); await page.click('[data-act=edit]');
+      for (let i = 0; i < 12 && !(await page.$('#view .hint')); i++) await page.click('[data-act=wnext]').catch(() => {});
+      let setupText = '';
+      for (let i = 0; i < 12; i++) { setupText = await page.$eval('#view', (el) => el.textContent); if (/Sectors already discovered/.test(setupText) || !(await page.$('[data-act=wnext]'))) break; await page.click('[data-act=wnext]'); }
+      await page.click('[data-act=wcancel]');
+      await page.click('[data-tab=map]');
+      await page.waitForSelector('.chart-svg');
+      const sea = () => page.evaluate(() => ({ text: document.querySelector('#view').textContent, buttons: [...document.querySelectorAll('[data-map-sea]')].map((b) => b.textContent), pressed: document.querySelector('[data-map-sea][aria-pressed=true]').textContent,
+        sectors: document.querySelectorAll('.chart-svg [data-sector]').length, start: !!document.querySelector('.chart-start'), found: document.querySelectorAll('.chart-node.found').length, next: document.querySelectorAll('.chart-node.next').length }));
+      const lima = await sea();
+      await page.selectOption('#map-fc', 'fm');
+      const mike = await sea();
+      await page.selectOption('#map-fc', 'fl');
+      await page.click('[data-map-sea="2"]');
+      const ash = await sea();
+      await page.click('[data-map-sea="1"]');
+      await page.click('.chart-svg [data-sector="10"]');
+      await page.waitForSelector('.chart-details');
+      const details = await page.$eval('.chart-details', (el) => el.textContent);
+      if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-map.png') });
+      await page.keyboard.press('Tab');
+      const sideDesktop = await wide();
+      await page.waitForTimeout(800);
+      const after = await saved();
+      await ctx.close();
+      const ph = await context(PHONE);
+      const pp = await ph.ctx.newPage();
+      await pp.goto(ROOT5 + 'submersibles/'); await pp.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await seed(pp); await pp.reload(); await pp.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await pp.click('[data-tab=map]'); await pp.waitForSelector('.chart-svg');
+      await pp.click('.chart-svg [data-sector="10"]');
+      const sidePhone = await pp.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      const svgWidth = await pp.$eval('.chart-svg', (el) => Math.round(el.getBoundingClientRect().width));
+      await ph.ctx.close();
+      const ok = !/arrive in step S4/.test(lima.text) && lima.buttons.length === 7 && /Deep-sea Site/.test(lima.pressed) && lima.sectors === 30 && lima.start && lima.found === 4 && lima.next >= 1 &&
+        /found 4 of 30/.test(lima.buttons[0]) && /found 0 of 20/.test(lima.buttons[1]) && /found 1 of 30/.test(mike.buttons[0]) && mike.found === 1 && /not opened yet/.test(ash.text) && ash.sectors === 20 &&
+        /slot 2/.test(details) && /unidentified derelict/.test(details) && /Rank needed/.test(details) && sideDesktop <= 0 && sidePhone <= 0 && svgWidth > 300 &&
+        /The Map tab shows them on a chart\./.test(setupText) && !/step S4/.test(setupText) && before === after && real(errors).length === 0 && real(ph.errors).length === 0;
+      record('C82', 'Sea chart (step S4-1): the Map tab no longer says it arrives in step S4; it has seven sea buttons with "found n of m"; the Deep-sea Site shows 30 sectors and Start; found counts follow the seeded free company and change with the selector; a sea with nothing found says "not opened yet"; tapping J shows its details with "slot 2"; at a phone width the page does not scroll sideways; the Setup sector step carries the new sentence; the stored section is unchanged',
+        ok, { lima: { buttons: lima.buttons, sectors: lima.sectors, start: lima.start, found: lima.found, next: lima.next }, mike: { found: mike.found }, ash: { sectors: ash.sectors }, details, sideDesktop, sidePhone, svgWidth, setupText: setupText.slice(-200), same: before === after, errors: real(errors) });
+      await ctx.close().catch(() => {}); server13.close();
+    }
+
   } finally {
     await browser.close(); server.close();
   }

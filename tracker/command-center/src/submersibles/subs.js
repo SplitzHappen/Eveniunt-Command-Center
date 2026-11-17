@@ -8,7 +8,7 @@
 // CC.read, as the Atelier does; backups, transfer codes and cloud sync carry it. Nothing is read from the game.
 (function () {
   'use strict';
-  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH, EARN = window.EARN;
+  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH, EARN = window.EARN, CHART = window.CHART;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -21,7 +21,7 @@
   function loadData() {
     var p = window.SUB_DATA ? Promise.resolve(window.SUB_DATA) : CC.unpack(window.SUB_DATA_PACKED).then(JSON.parse);
     return p.then(function (d) {
-      D = d; ADV.init(d); EARN.init(d);
+      D = d; ADV.init(d); EARN.init(d); CHART.init(d);
       d.sectors.forEach(function (s) { SECTOR[s.id] = s; });
       d.parts.forEach(function (x) { PART[x.id] = x; });
       d.classes.forEach(function (c) { CLASS[c.id] = c; });
@@ -123,8 +123,8 @@
   function setStatus(t) { var el = $('#status'); if (el) el.textContent = t; }
 
   // ------------------------------------------------------------------ view state (this tab only)
-  var UI = { tab: 'board' };
-  try { var saved = JSON.parse(sessionStorage.getItem('eveniunt-subs-ui') || '{}'); if (saved.tab) UI.tab = saved.tab; } catch (e) { /* none */ }
+  var UI = { tab: 'board', map: {} };
+  try { var saved = JSON.parse(sessionStorage.getItem('eveniunt-subs-ui') || '{}'); if (saved.tab) UI.tab = saved.tab; if (saved.map && typeof saved.map === 'object') UI.map = saved.map; } catch (e) { /* none */ }
   function keepUi() { try { sessionStorage.setItem('eveniunt-subs-ui', JSON.stringify(UI)); } catch (e) { /* none */ } }
   function sortMode() { return (S.settings.prefs && S.settings.prefs.sort) || 'fc'; }
   function fcList() { return Object.keys(S.fcs).map(function (id) { return { id: id, fc: S.fcs[id] }; }).sort(function (a, b) { return (a.fc.order || 0) - (b.fc.order || 0) || String(a.fc.name || '').localeCompare(b.fc.name || ''); }); }
@@ -132,7 +132,7 @@
   function charName(id) { var c = SH.chars.find(function (x) { return x.id === id; }); return c ? c.name : ''; }
 
   // ------------------------------------------------------------------ rendering
-  var TABS = [['board', 'Board', null], ['log', 'Log', null], ['map', 'Map', 'The seven sea maps and the route planner arrive in step S4.'],
+  var TABS = [['board', 'Board', null], ['log', 'Log', null], ['map', 'Map', null],
     ['earn', 'Earnings', null], ['setup', 'Setup', null]];
   function render() {
     if (!D) return;
@@ -143,6 +143,7 @@
     if (UI.tab === 'board') main.innerHTML = boardHtml();
     else if (UI.tab === 'setup') { main.innerHTML = safeNotify() + (W ? wizardHtml() : setupHtml()); if (!W) measureSize(); pushStatus(); }
     else if (UI.tab === 'log') { main.innerHTML = logHtml(); loadPrices(false); }
+    else if (UI.tab === 'map') main.innerHTML = mapHtml();
     else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); loadPrices(false); }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
@@ -376,7 +377,7 @@
           }).join('') + '</fieldset>' + voyageFields(s, i);
       }
     } else {
-      body = '<h3>Sectors already discovered</h3><p class="hint">Tick what this free company has found; discoveries are shared by all its submarines. The first two sectors of the Deep-sea Site are open from the start. The sea map comes in step S4.</p>' +
+      body = '<h3>Sectors already discovered</h3><p class="hint">Tick what this free company has found; discoveries are shared by all its submarines. The first two sectors of the Deep-sea Site are open from the start. The Map tab shows them on a chart.</p>' +
         unlockNote(0) + D.seas.map(function (sea, k) {
           var list = D.sectors.filter(function (x) { return x.sea === sea.id; });
           var got = list.filter(function (x) { return W.disc.has(x.id); }).length;
@@ -618,6 +619,53 @@
         '<span class="log-what">' + (v.logged ? t.items.length + ' item' + (t.items.length === 1 ? '' : 's') + ' · <b>' + fmtGil(v.gil) + '</b>' + (v.unknown.length ? ' + unpriced' : '') : '<span class="muted">nothing logged · tap to add</span>') + '</span></button>';
     }).join('') + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
   }
+  // ------------------------------------------------------------------ the Map tab (step S4-1): read-only; writes nothing to the save
+  function mapState() {
+    var fcs = fcList(), m = UI.map || (UI.map = {});
+    if (!m.fc || !S.fcs[m.fc]) m.fc = fcs.length ? fcs[0].id : null;
+    if (!SEA[m.sea]) m.sea = D.seas[0].id;
+    if (m.sector && (!SECTOR[m.sector] || SECTOR[m.sector].sea !== m.sea)) m.sector = null;
+    return m;
+  }
+  function sectorDetails(id, fc) {
+    var s = SECTOR[id], u = D.unlocks[id] || {}, found = (fc.discovered || []).indexOf(id) >= 0;
+    var node = CHART.view(s.sea, fc.discovered || []).nodes.find(function (n) { return n.id === id; });
+    var by = u.start ? 'open from the start' : u.by != null && SECTOR[u.by] ? esc(sectorLabel(SECTOR[u.by])) + (SECTOR[u.by].sea !== s.sea ? ' (in the previous sea)' : '') : 'not known';
+    var reveals = D.sectors.filter(function (x) { return (D.unlocks[x.id] || {}).by === id; }).map(function (x) { return esc(sectorLabel(x)); });
+    var loot = (D.loot[id] || []).map(function (i) { return esc(EARN.name(i)); });
+    return '<section class="chart-details panel" aria-live="polite"><h3>' + esc(s.name) + '</h3>' +
+      '<p class="muted">' + esc(CHART.stateText(node.state)) + (node.slot ? ' · <b>slot ' + node.slot + '</b>' : '') + (node.opens ? ' · <b>opens ' + esc(node.opens) + '</b>' : '') + '</p>' +
+      '<dl class="chart-facts"><dt>Rank needed</dt><dd>' + s.rank + '</dd><dt>Tanks</dt><dd>' + s.tanks + '</dd><dt>Survey</dt><dd>' + s.survey + ' min</dd>' +
+      '<dt>Base experience</dt><dd>at least ' + Number(s.exp).toLocaleString('en') + '</dd><dt>Stars</dt><dd>' + s.stars + '</dd>' +
+      '<dt>Revealed by</dt><dd>' + by + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span></dd>' +
+      '<dt>Reveals</dt><dd>' + (reveals.length ? reveals.join(', ') : 'nothing') + '</dd>' +
+      '<dt>Possible items</dt><dd>' + (loot.length ? loot.join(', ') : 'no loot list for this sector yet') + '</dd></dl></section>';
+  }
+  function mapHtml() {
+    var fcs = fcList();
+    if (!fcs.length) return boardHtml();
+    var m = mapState(), fc = S.fcs[m.fc], disc = fc.discovered || [];
+    var opts = fcs.map(function (f) { return '<option value="' + esc(f.id) + '"' + (f.id === m.fc ? ' selected' : '') + '>' + esc(f.fc.name || 'Unnamed free company') + '</option>'; }).join('');
+    var seas = D.seas.map(function (sea) {
+      var n = D.sectors.filter(function (s) { return s.sea === sea.id && disc.indexOf(s.id) >= 0; }).length;
+      return '<button type="button" class="btn sm" data-map-sea="' + sea.id + '" aria-pressed="' + (sea.id === m.sea) + '">' + esc(sea.name) + ' <span class="muted">found ' + n + ' of ' + sea.sectors + '</span></button>';
+    }).join('');
+    var view = CHART.view(m.sea, disc), nFound = view.nodes.filter(function (n) { return n.state === 'found'; }).length;
+    return '<section class="panel wide-panel map-panel"><h2>Map</h2>' +
+      '<label class="field inline">Free company <select id="map-fc" data-map-fc>' + opts + '</select></label>' +
+      '<div class="map-seas" role="group" aria-label="Sea">' + seas + '</div>' +
+      (disc.length ? '' : '<p class="note">Nothing is ticked as found for this free company yet. Tick the sectors in Setup (Edit the free company, sectors step) and they show here.</p>') +
+      (nFound ? '' : '<p class="hint">This sea is not opened yet.</p>') +
+      '<div class="chart-wrap">' + CHART.svg(view, null) + '</div>' +
+      '<p class="hint chart-key"><span class="key found">●</span> found · <span class="key next">◆</span> can be revealed next · <span class="key far">▪</span> further away. Tap a sector for its details.</p>' +
+      (m.sector ? sectorDetails(m.sector, fc) : '') +
+      '<p class="hint">Drawn by this app from the game\'s position numbers; this is not the game\'s map picture. Depth is not drawn. Which sector reveals which is community data.</p></section>';
+  }
+  function mapPick(id) {
+    var m = mapState(); m.sector = m.sector === id ? null : id; keepUi(); render();
+    var n = $('#view [data-sector="' + id + '"]'); if (n && m.sector) n.focus();
+  }
+
   function fmtGil(n) { return Math.round(n).toLocaleString('en') + ' gil'; }
   function tripSheet(tripId) {
     var t = S.trips[tripId], sub = S.subs[t.s]; if (!t) return;
@@ -833,6 +881,10 @@
     if (tb) { tripSheet(tb.dataset.trip); return; }
     var qk = e.target.closest('[data-quick]');
     if (qk) { quickSend(qk.dataset.quick); return; }
+    var ms = e.target.closest('[data-map-sea]');
+    if (ms) { var m1 = mapState(); m1.sea = +ms.dataset.mapSea; m1.sector = null; keepUi(); render(); return; }
+    var mn = e.target.closest('#view [data-sector]');
+    if (mn) { mapPick(+mn.dataset.sector); return; }
     var pk = e.target.closest('[data-pick], [data-use]');
     if (pk && PICK) {
       if (pk.dataset.use) { PICK.route = pk.dataset.use.split(',').map(Number); PICK.sea = SECTOR[PICK.route[0]].sea; }
@@ -935,6 +987,7 @@
   }
   function onInput(e) {
     var t = e.target;
+    if (t.matches && t.matches('[data-map-fc]')) { var m2 = mapState(); m2.fc = t.value; m2.sector = null; keepUi(); render(); return; }
     if (t.closest('#sheet')) {
       if (t.matches('[data-add-item]')) { // an item picked from the list joins "Other items" with a quantity of 1
         var nm = t.value.trim().toLowerCase(), id = Object.keys(D.items).find(function (k) { return D.items[k].toLowerCase() === nm; });
@@ -1008,7 +1061,7 @@
   document.addEventListener('input', onInput);
   document.addEventListener('change', onInput);
   document.addEventListener('submit', function (e) { e.preventDefault(); });
-  document.addEventListener('keydown', function (e) { var r = e.target; if ((e.key === 'Enter' || e.key === ' ') && r.classList && r.classList.contains('sub') && r.dataset.sub) { e.preventDefault(); openSub(r.dataset.sub); } });
+  document.addEventListener('keydown', function (e) { var r = e.target; if ((e.key === 'Enter' || e.key === ' ') && r.closest && r.matches('#view [data-sector]')) { e.preventDefault(); mapPick(+r.dataset.sector); return; } if ((e.key === 'Enter' || e.key === ' ') && r.classList && r.classList.contains('sub') && r.dataset.sub) { e.preventDefault(); openSub(r.dataset.sub); } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.closest && e.target.closest('#sheet') && e.target.tagName === 'INPUT' && !e.target.matches('[data-add-item], [data-qty]')) { e.preventDefault(); var p = $('#sheet .btn.primary'); if (p) p.click(); } });
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && SH.timer) write(); else if (document.visibilityState === 'visible') { reload(); tick(); } });
