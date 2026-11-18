@@ -183,13 +183,20 @@ Chart tokens, declared on `.map-panel` (the sea hue arrives as `--sea`, set by
 | Token | Light mode | Dark mode |
 | --- | --- | --- |
 | `--chart-bg` | `color-mix(in srgb, var(--ink) 90%, var(--sea))` | `color-mix(in srgb, var(--paper) 86%, var(--sea))` |
-| `--chart-bg-2` (shallow) | `color-mix(in srgb, var(--ink) 74%, var(--sea))` | `color-mix(in srgb, var(--paper-3) 78%, var(--sea))` |
+| `--chart-bg-2` (shallow) | `color-mix(in srgb, var(--ink) 84%, var(--sea))` | `color-mix(in srgb, var(--paper-3) 90%, var(--sea))` |
 | `--chart-ink` | `var(--paper)` | `var(--ink)` |
 | `--chart-ink-2` | `color-mix(in srgb, var(--paper) 70%, var(--ink))` | `var(--ink-2)` |
 | `--chart-line` | `color-mix(in srgb, var(--chart-ink) 20%, transparent)` | same |
-| `--chart-hot` (route, focus, selection) | `color-mix(in srgb, var(--seal) 45%, white)` | `var(--seal)` |
+| `--chart-hot` (route, focus, selection) | `color-mix(in srgb, var(--seal) 45%, white)` | same |
 | `--chart-found`, `--chart-next` | `#4fd18b`, `#f0b347` | same |
-| `--chart-far` | `color-mix(in srgb, var(--chart-ink) 45%, var(--chart-bg))` | same |
+| `--chart-far` | `color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg))` | same |
+
+Rule for these values (set by W1's contrast test, which wins over any hand figure): the chart is always a dark deep-water
+panel and every token keeps its hue (per-sea tint included). Order of adjustment: first darken `--chart-bg-2` toward
+`--chart-bg` (the gradient stays visible, its lightest point dark enough); then lighten a failing foreground toward
+white (or the same hue, lighter, for the fixed hex colours). Every pair must pass against both gradient ends in all 21
+themes, both modes and 7 seas (4.5 for ink, found, next, hot; 3 for far). Found (green), next (amber), hot (light
+seal tint) and far (muted ink) differ in hue or lightness, not only shape.
 
 Layers, back to front (all strokes `vector-effect: non-scaling-stroke`, widths in px, so they stay legible at 360 px):
 
