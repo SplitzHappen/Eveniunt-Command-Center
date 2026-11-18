@@ -11,10 +11,28 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 - **Setup panel "Customizable Recommendations"** holds a fuel-efficiency switch with its allowance slider (default 15%, range 5 to 50), a ranking of four priorities (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming; Move up and Move down buttons) and five loot pickers, each with type-to-narrow.
 - **The rule:** the first priority that can be served leads; each lower one chooses only among routes within 5% of the best for those above. With fuel on, routes within the allowance of the best for the leading priority are compared by what they bring per tank.
 - **Storage:** the settings live in their own save section, `modules['submersibles-recommendations']`; `save.js` is unchanged.
-- **Loot** is "possible items only": the pickers list the items a route can bring; drop odds are not known.
+- **Loot** is ranked by expected quantity from the community drop records (see "Submersibles: community drop rates"); the pickers list the items a route can bring.
 - **Files:** `recs.js` (the rule and the settings), `advisor.js` (the Board's and the send window's routes), `subs.js` (the panel).
 - **Browser checks C85, C86, C87, C88** (C85: the default order and the switch, reordering, the Board follows; C86: the allowance slider and the stored switch; C87: the five pickers; C88: Loot Farming first and the item's route).
 - **Tuning:** `tracker/tools/recs-tune.js` produces `docs/submersibles-recommendations-tuning.md` (and its fingerprint file). The default allowance, 15%, is the owner's choice, informed by the gil-only result; it is no longer the rule's output over the whole fleet. The routine unit test checks the document against its fingerprint and a small fixed sample. The full re-derivation takes about a minute and runs with `npm run test:tuning` (`node tracker/tools/recs-tune.js --check`); it is also a step of the `Checks` workflow. Run it, and `node tracker/tools/recs-tune.js --write` if it fails, after any change to `advisor.js`, `recs.js`, `drops.js` or the data.
+
+## Submersibles: community drop rates
+
+- **Data:** `tracker/data/submarines.json` holds the community voyage results for all 143 sectors (per pool the records by surveillance band and retrieval result, and per item the rolls, summed quantity and quantity range), each sector's surveillance, retrieval and favor thresholds, and the record counts. `tracker/tools/submarines.py` imports them at a pinned commit; the sources and licence are in `tracker/data/SOURCES.md`.
+- **Estimate:** `drops.js` estimates the merchant gil for any route and build. Every figure is an estimate with its record count: the second item of a survey is not in the records.
+- **Gil Farming** (`advisor.js`) ranks the community gil routes a submarine can run by that estimate. A route with 10 logged voyages is ranked by the player's own log, in the same unit (merchant gil per hour). A route found by the app leads when it is at least twice as good as the best community route the submarine can run. At the top rank (145) Leveling is skipped.
+- **Loot Farming** ranks routes by expected quantity per hour, and **part advice** is valued by the same estimate.
+- **Shown on** the Map, in the send window and in Earnings.
+- **Files:** `drops.js`, `advisor.js`, `subs.js`.
+- **Browser checks** C90 to C96, C98 and C99 (C97 is the voyage gauge, see the look section below).
+
+## Submersibles: the look
+
+- **The "Dive console" look:** slab heads (each panel's title on an inverted block), slanted state fields, display numerals as the largest figure on each screen, the action slab (primary and quick buttons), the sonar sea chart on the Map, and the voyage gauge on an Out row.
+- **Tokens and rules** are in `subs.css`: the tokens in its three token blocks, then the base rules.
+- **Contrast test:** `tracker/tests/subs-look.test.js` asserts the module's text and status pairs at 4.5:1 in all 21 themes, in light and dark.
+- **Evidence:** block `L1` in `check.js` walks one seeded profile through every screen and writes the `look-*.png` screenshots to `evidence/` (32 files at this build).
+- **Browser check C97:** the voyage gauge.
 
 ## Submersibles step S6: gil advice from the player's own log
 
@@ -22,6 +40,8 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 - **The Board** advises routes from the player's own log, using the device's cached prices and fetching nothing (`advisor.js`, `subs.js`, check C79).
 - **Part advice** is given in gil only for swaps that lower none of surveillance, retrieval and favor (`advisor.js`, check C80).
 - **"Send on this route"** keeps the typed loot and discovery ticks (`subs.js`, check C81) and sends exactly the route it shows (check C83). No new save field.
+
+The two S6 rules "the own log alone picks the gil route" and "part advice refuses swaps that lower a stat" were replaced by the drop-rates work (see "Submersibles: community drop rates").
 
 ## Submersibles step S4: the sea map
 
@@ -99,10 +119,10 @@ Gate 1E (round 1) puts the shell at the root of the public site.
 | `src/index.html`, `src/shell.css`, `src/shell.js` | The shell page: header, module switcher, home screen with the two modules, the Cosmic Exploration guides, the coming modules in the owner's order, the offline-file downloads, the credits, and an install button |
 | `src/icons/`, `make-icons.js` | The Command Center's own icons (gate 1E) and the script that draws them |
 | `src/sw.js` | The site-wide service worker (template; `build.js` fills in the build id and file list) |
-| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings) |
+| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings), `drops.js` (the community drop-rate estimate) |
 | `site/save.js` | The one save (gate 1C), copied from `src/core/save.js` by `build.js` |
 | `restore-build-inputs.js` | Recovers the fonts, the Atelier's solver and its action icons from the committed single-file builds, so both apps can be rebuilt in a session without the toolchain (`--verify` rebuilds and compares byte for byte) |
-| `build.js` | Builds the shell and the Submersibles page into `site/` (58 files; the icons are most of it) |
+| `build.js` | Builds the shell and the Submersibles page into `site/` (59 files; the icons are most of it) |
 | `site/` | The built shell. On the public site it is the root, next to `tracker/`, `atelier/` and `cosmic/` (gate 1E) |
 | `serve.js` | Test server: the published layout under `/Eveniunt-Command-Center/`, assembled on the fly from the shell, today's `site/` (Tracker) and `../ffxiv-cosmic-crafting-solver/atelier/site/` (Atelier), with no isolation headers, like GitHub Pages |
 | `check.js` | The browser checks (`BROWSER=chromium|firefox|webkit`); writes `evidence/checks*.json` and the screenshots. C16 also runs the publish script and the Pages workflow's assemble step into a scratch clone |
@@ -118,6 +138,8 @@ node command-center/build.js
 ```bash
 node command-center/check.js
 ```
+
+Notes on running the checks: run one check at a time. The ports are fixed at 8418 to 8422 (`PORT` moves the range); a second run that finds them taken stops with an error. A failing check is recorded as failed and the run continues with the next one.
 
 To look at it yourself: `node command-center/serve.js`, then open http://127.0.0.1:8418/Eveniunt-Command-Center/.
 
