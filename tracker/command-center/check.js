@@ -3718,6 +3718,109 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server30.close();
     });
 
+    // ── C100 Submersibles design gaps, Part A (docs/submersibles-design-gaps-spec.md): in the planner at desktop and at 360 px, G1 (a collapsed list of what the chosen
+    //    route usually brings, equal to the send window's), G2 (a sector that cannot be added says why: the chart's cannot ring and cross, the words when tapped or
+    //    focused, the accessible name; the numbers equal the planner's own evaluation) and G3 (a small source label on each figure); and G4 on an advice with other routes. ──
+    await guard('C100', async () => {
+      const server31 = await start(PORT5);
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      for (const f of ['recs.js', 'drops.js', 'advisor.js']) require(path.join(CC, 'src', 'submersibles', f));
+      const NA = globalThis.ADVISOR.init(data), RC = globalThis.RECS, all = data.sectors.map((x) => x.id);
+      const Q1 = { rank: 85, parts: [27, 28, 25, 26] };
+      const wantAdvice = NA.advise({ sub: Q1, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 2, recs: Object.assign(RC.defaults(), { fuel: false, giveUp: 10, order: ['gil', 'unlock', 'level', 'loot'] }) });
+      const FOUND = [1, 2, 3, 4, 5, 6, 7, 10, 15, 18, 26];
+      const seen = {};
+      for (const [label, opts] of [['desktop', { viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 1 }], ['phone', { viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
+        const { ctx, errors } = await context(opts);
+        const page = await ctx.newPage();
+        const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+        await page.goto(ROOT5 + 'submersibles/'); await ready();
+        await page.evaluate(async ([allIds, found, q1]) => {
+          const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+          sec.fcs.fp = { name: 'Papa Company', world: 'Gilgamesh', unlockedSlots: 2, order: 0, discovered: found };
+          sec.subs.p1 = { fcId: 'fp', slot: 1, name: 'Sub P1', rank: 30, parts: [3, 4, 1, 2] };
+          sec.fcs.fq = { name: 'Quebec Company', world: 'Gilgamesh', unlockedSlots: 4, order: 1, discovered: allIds };
+          sec.subs.q1 = { fcId: 'fq', slot: 1, name: 'Sub Q1', rank: q1.rank, parts: q1.parts };
+          let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+          r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['gil', 'unlock', 'level', 'loot'] } }, { rev: r.rev, base: null });
+        }, [all, FOUND, Q1]);
+        await page.reload(); await ready();
+        const out = {};
+        await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+        await page.selectOption('#map-sub', 'p1');
+        out.noRoute = await page.$eval('.planner', (el) => ({ rates: !!el.querySelector('[data-planner-rates]'), line: !!el.querySelector('[data-cannot-line]') }));
+        const tap = (id) => page.click('.chart-svg [data-sector="' + id + '"]');
+        await tap(10);
+        // the planner's own evaluation, worked out independently of cannotAdd
+        out.want = await page.evaluate(() => { const st = ADVISOR.stats(30, [3, 4, 1, 2]); return { rangeNeed: ADVISOR.evalRoute([10, 1], st).range - st.range, ranges: [1, 7, 18].map((id) => ADVISOR.evalRoute([10, id], st).range - st.range), addable: [2, 3, 4, 5, 6, 15].filter((id) => ADVISOR.evalRoute([10, id], st).reachable) }; });
+        // G1: collapsed by default, opens to the send window's content
+        out.g1 = await page.$eval('.planner', (el) => { const d = el.querySelector('[data-planner-rates]'); return d ? { open: d.open, summary: d.querySelector('summary').textContent, rates: !!d.querySelector('[data-rates]'), text: d.querySelector('[data-rates]') ? d.querySelector('[data-rates]').textContent : '' } : null; });
+        await page.click('[data-planner-rates] > summary');
+        out.g1open = await page.$eval('[data-planner-rates]', (d) => d.open);
+        // G3 in the planner
+        out.g3 = await page.$$eval('.planner .calc-line .tag.src', (els) => els.map((e) => e.textContent));
+        out.g3rate = await page.$$eval('.planner [data-rates] [data-src] .tag.src', (els) => els.map((e) => e.textContent));
+        out.confirm = await page.$$eval('.planner .hint .tag:not(.src)', (els) => els.map((e) => e.textContent));
+        // G2 on the chart: marks, structure and names
+        out.chart = await page.evaluate(() => {
+          const svg = document.querySelector('.chart-svg'), nodes = [...svg.querySelectorAll('.chart-node')], cannot = nodes.filter((n) => n.classList.contains('cannot'));
+          const lab = (id) => svg.querySelector('[data-sector="' + id + '"]').getAttribute('aria-label');
+          return { nodes: nodes.length, cannot: cannot.length, marked: cannot.every((n) => n.querySelector('.chart-cannot-ring') && n.querySelector('.chart-cannot-x')), plainHasNone: nodes.filter((n) => !n.classList.contains('cannot')).every((n) => !n.querySelector('.chart-cannot-ring, .chart-cannot-x')),
+            polylines: svg.querySelectorAll('polyline').length, nested: nodes.filter((n) => n.querySelector('g')).length, tabindex: svg.querySelectorAll('[tabindex]').length, hidden: [...svg.querySelectorAll('.chart-cannot-ring, .chart-cannot-x')].every((e) => e.getAttribute('aria-hidden') === 'true'),
+            letterAttrs: [...svg.querySelectorAll('.chart-letter')].every((t) => t.getAttributeNames().join(',') === 'class,y,text-anchor,font-size'),
+            l1: lab(1), l8: lab(8), l26: lab(26), l2: lab(2), l10: lab(10), noCross10: !svg.querySelector('[data-sector="10"]').classList.contains('cannot') };
+        });
+        // a sector that can be added stays as it is
+        out.addable = await page.evaluate((ids) => ids.map((id) => document.querySelector('.chart-svg [data-sector="' + id + '"]').classList.contains('cannot')), out.want.addable);
+        // tapping a sector that cannot be added says why in words and leaves the route as it was
+        await tap(8);
+        out.t8 = await page.evaluate(() => ({ route: document.querySelector('.planner .route-line').textContent, line: document.querySelector('[data-cannot-line]').textContent, why: (document.querySelector('.chart-details [data-cannot-why]') || {}).textContent || '' }));
+        await tap(26);
+        out.t26 = await page.evaluate(() => ({ line: document.querySelector('[data-cannot-line]').textContent, why: (document.querySelector('.chart-details [data-cannot-why]') || {}).textContent || '' }));
+        await page.focus('.chart-svg [data-sector="1"]');
+        out.f1 = await page.$eval('[data-cannot-line]', (el) => el.textContent);
+        await tap(2);
+        out.after2 = await page.$eval('.planner .route-line', (el) => el.textContent);
+        out.rates2 = await page.$eval('[data-planner-rates]', (d) => d.open); // still open after the redraw
+        out.side = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+        if (SHOT) await (await page.$('.map-panel')).screenshot({ path: path.join(ev, 'submersibles-gaps-planner-' + label + '.png') });
+        // the same content in the send window
+        await page.click('[data-map-send="p1"]'); await page.waitForSelector('#sheet [data-rates]');
+        out.sheet = await page.evaluate(() => ({ rates: document.querySelector('#sheet [data-rates]').textContent, plannerRates: null, tags: [...document.querySelectorAll('#sheet .calc-line .tag.src, #sheet .advice .hint .tag.src')].map((e) => e.textContent), rateTag: [...document.querySelectorAll('#sheet [data-rates] [data-src] .tag.src')].map((e) => e.textContent), side: document.documentElement.scrollWidth - window.innerWidth, sheetSide: document.querySelector('#sheet').scrollWidth - document.querySelector('#sheet').clientWidth }));
+        if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-gaps-sheet-route-' + label + '.png') });
+        await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 }).catch(() => {});
+        out.plannerRatesText = await page.$eval('[data-planner-rates] [data-rates]', (el) => el.textContent).catch(() => null);
+        // G4 (and G3 in the advice block): the send window of a submarine whose advice has other routes
+        await page.click('[data-tab=board]'); await page.waitForSelector('.sub[data-sub="q1"]');
+        await page.click('.sub[data-sub="q1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+        out.g4 = await page.evaluate(() => ({ alts: [...document.querySelectorAll('#sheet .alts li')].map((li) => ({ vs: (li.querySelector('[data-alt-vs]') || {}).textContent || '', fig: (li.querySelector('[data-alt-figure]') || {}).textContent || '', tag: (li.querySelector('[data-alt-figure] + .tag.src') || {}).textContent || '' })),
+          src: (document.querySelector('#sheet .advice [data-src]') || {}).textContent || '', figTags: [...document.querySelectorAll('#sheet .advice .hint .tag.src')].map((e) => e.textContent), clock: null, side: document.documentElement.scrollWidth - window.innerWidth, sheetSide: document.querySelector('#sheet').scrollWidth - document.querySelector('#sheet').clientWidth }));
+        if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-gaps-sheet-advice-' + label + '.png') });
+        out.errors = real(errors);
+        seen[label] = out;
+        await ctx.close();
+      }
+      const wantAlts = wantAdvice.alts.map((x) => x.vs.text);
+      const good = (o) => {
+        const c = o.chart, w = o.want;
+        return o.noRoute.rates === false && o.noRoute.line === true &&
+          o.g1 && o.g1.open === false && o.g1.summary === 'What this route usually brings' && o.g1.rates && o.g1.text.includes('an estimate from community drop records') && o.g1open === true && o.rates2 === true &&
+          o.plannerRatesText === o.sheet.rates && o.plannerRatesText.length > 100 &&
+          JSON.stringify(o.g3) === JSON.stringify(['calculated', 'calculated', 'game data', 'game data']) && o.g3rate.join() === 'community estimate' && o.confirm.length === 1 && /^calculated, not yet confirmed/.test(o.confirm[0]) &&
+          c.cannot > 0 && c.cannot < c.nodes && c.marked && c.plainHasNone && c.polylines === 1 && c.nested === 0 && c.tabindex === c.nodes && c.hidden && c.letterAttrs &&
+          c.l1.endsWith('out of range if added: Needs range ' + w.rangeNeed + ' more') && w.rangeNeed > 0 && w.ranges.every((n) => n > 0) && c.l8.endsWith('cannot be added: Not found yet') && c.l26.endsWith('cannot be added: Rank 50 needed (this submarine is rank 30)') &&
+          !/cannot/.test(c.l2) && !/cannot/.test(c.l10) && c.noCross10 &&
+          !/→/.test(o.t8.route) && /: J\b/.test(o.t8.route) && o.t8.line.endsWith(' cannot be added: Not found yet') && o.t8.why === 'Cannot be added to the planned route: Not found yet' && o.t26.why === 'Cannot be added to the planned route: Rank 50 needed (this submarine is rank 30)' && /cannot be added: Rank 50 needed/.test(o.t26.line) &&
+          o.f1.endsWith(' out of range if added: Needs range ' + w.rangeNeed + ' more') && (o.after2.match(/→/g) || []).length === 1 && o.addable.length > 0 && o.addable.every((x) => x === false) &&
+          o.side <= 0 && o.sheet.side <= 0 && o.sheet.sheetSide <= 0 && o.sheet.tags.length >= 4 && o.sheet.rateTag.join() === 'community estimate' &&
+          o.g4.alts.length === wantAlts.length && wantAlts.length > 0 && o.g4.alts.every((a, i) => a.vs.startsWith(wantAlts[i] + ' (') && a.vs.endsWith(')') && a.tag === 'community estimate' && a.fig) && o.g4.src.startsWith('Gil an hour: about ') && o.g4.src.includes('community estimate') &&
+          o.g4.figTags.join() === 'calculated,calculated,game data,game data' && o.g4.side <= 0 && o.g4.sheetSide <= 0 && o.errors.length === 0;
+      };
+      record('C100', 'Design gaps A (G1 to G4), desktop and 360 px: the planner lists what the chosen route usually brings (collapsed by default, the same text as the send window, kept open across redraws); a sector the submarine cannot add shows a ring and a cross on the chart and says why in its name, in the line under the route and in its details (rank needed, not found yet, or, for a sector that would take the route out of range, the range needed as the planner\'s own evaluation gives it); a sector it can add stays plain; every figure carries a source label (calculated, game data, community estimate); each other route says how it differs from the plan; no sideways scroll',
+        good(seen.desktop) && good(seen.phone), { desktop: seen.desktop, phone: seen.phone, wantAlts });
+      server31.close();
+    });
+
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.

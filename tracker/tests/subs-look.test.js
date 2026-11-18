@@ -538,3 +538,28 @@ test('final pass (W29): subs.css and subs.js carry the rules and the classes', (
   const hot = css.split('\n').filter((l) => /^\.chart-[\w-]+[^{]*\{[^}]*var\(--chart-hot(-text)?\)/.test(l)).map((l) => l.slice(0, l.indexOf(' {')));
   assert.ok(hot.every((x) => ['.chart-route-glow', '.chart-route', '.chart-routering', '.chart-node.on-route .chart-letter'].includes(x)), 'only the route and its stops use --chart-hot: ' + hot.join(', '));
 });
+
+// ---- gaps spec Part A (G1 to G3): the "cannot" mark on the chart, the reason text and the source tags ----
+test('gaps G2, G3: the cannot ring and cross (error colour) on every water, the reason text and the source tags reach their contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need5 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  const no = /\.map-panel \{ --chart-no: (#[0-9a-f]{6}); \}/.exec(css);
+  assert.ok(no, 'subs.css has the one --chart-no token'); assert.equal(css.split('--chart-no:').length - 1, 1);
+  for (const [row, mode, where] of rows) {
+    const dk = mode === 'dark', th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), e0 = P.env(row, mode);
+    // the ring and the cross are meaningful graphics (3:1) on every ground of every sea; the cross is also a shape, so the colour never carries the meaning alone
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, dk ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env);
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) need5('cannot ring and cross (--chart-no) on ' + g.slice(2) + ' (3)', hexRgb(no[1]), cc(g), 3, where + ' sea ' + n);
+    }
+    // the reason under the route and in the sector details: --bad-s text on the planner (paper), the details panel (slip) and the sheet (slip)
+    for (const [n, b] of Object.entries({ paper: hx(th.paper), slip: hx(th.slip) })) need5('cannot reason: bad-s on ' + n + ' (4.5)', c('--bad-s'), b, 4.5, where);
+    // the source tags: ink-2 in the planner and send window (paper, slip), ink inside the advice block (the --hi wash, where ink-2 reaches 3.7:1 only)
+    for (const [n, b] of Object.entries({ paper: hx(th.paper), slip: hx(th.slip) })) need5('source tag: ink-2 on ' + n + ' (4.5)', hx(th.ink2), b, 4.5, where);
+    need5('source tag in the advice block: ink on hi-slip (4.5)', ink, P.colour('var(--hi-slip)', P.env(row, mode)), 4.5, where);
+  }
+  console.log('Gaps Part A, lowest ratio per new pair over 21 themes x 2 modes (x 7 seas for the chart pair):\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+  for (const s of ['.chart-cannot-ring { fill: none; stroke: var(--chart-no);', '.chart-cannot-x { fill: none; stroke: var(--chart-no);', '.tag.src {', '.advice .tag { color: var(--ink); }']) assert.ok(css.includes(s), s);
+  assert.equal(css.split('\n').filter((l) => /stroke-dasharray/.test(l)).length, 1, 'still one dash rule');
+});

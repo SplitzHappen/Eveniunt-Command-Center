@@ -459,7 +459,22 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .planner { margin: 8px 0; }
 .planner .route-line { margin: 6px 0; }
 .chart-wrap.planning .chart-node.over-rank { opacity: .45; cursor: not-allowed; }
-.chart-wrap.planning .chart-node.found:not(.over-rank) { cursor: copy; }
+.chart-wrap.planning .chart-node.found:not(.over-rank):not(.cannot) { cursor: copy; }
+/* G2 (gaps spec): a sector the chosen submarine cannot add: an outline ring and a cross in the error colour (shape and colour together; the words are in the label and the line under the route) */
+.map-panel { --chart-no: #ff8a80; }
+.chart-cannot-ring { fill: none; stroke: var(--chart-no); stroke-width: 2.5; }
+.chart-cannot-x { fill: none; stroke: var(--chart-no); stroke-width: 3.5; stroke-linecap: round; }
+.chart-wrap.planning .chart-node.cannot { cursor: not-allowed; }
+.chart-wrap.planning .chart-node.over-rank.cannot { opacity: .85; }
+.cannot-line { min-height: 1.5em; margin: 4px 0; font-weight: 700; color: var(--bad-s); }
+.cannot-line:empty { min-height: 0; margin: 0; }
+.cannot-why { margin: 6px 0 0; font-weight: 700; color: var(--bad-s); }
+/* G3 (gaps spec): where a figure comes from, in the small tag style; G1: the planner's collapsed list of what a route brings */
+.tag.src { font-size: 10px; letter-spacing: .03em; padding: 0 3px; margin: 0 2px; line-height: 1.5; }
+.advice .tag { color: var(--ink); }
+.src-line { margin: -2px 0 4px; font-size: 13px; }
+.planner-rates { margin: 6px 0; }
+.planner-rates > summary { box-sizing: border-box; min-height: 44px; margin: 0; padding: 12px 0; font: 700 14px/20px var(--f-body); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
 
 /* Customizable Recommendations (Setup) */
 .recs h3 { margin: 12px 0 4px; }

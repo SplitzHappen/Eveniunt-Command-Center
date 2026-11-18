@@ -629,6 +629,13 @@
   function closeSheet() { if (dlg && dlg.open) dlg.close(); }
   // a tap outside the window closes it (owner request 2026-11-12)
   document.addEventListener('click', function (e) { var d = document.getElementById('sheet'); if (d && d.open && e.target === d) d.close(); });
+  // G1: the planner's collapsed list of what the route brings stays as the player left it while the page redraws (this tab only)
+  document.addEventListener('toggle', function (e) { var d = e.target; if (d && d.matches && d.matches('[data-planner-rates]')) { var m = mapState(); if (!!m.rates !== d.open) { m.rates = d.open; keepUi(); } } }, true);
+  // G2: a sector on the chart that cannot be added says why when it takes the focus (its accessible name says it too)
+  document.addEventListener('focusin', function (e) {
+    var n = e.target.closest && e.target.closest('#view [data-sector]'), line = $('[data-cannot-line]'); if (!n || !line) return;
+    var w = /^(.*?), rank \d+.*, ((?:cannot be added|out of range if added): .*)$/.exec(n.getAttribute('aria-label') || ''); line.textContent = w ? w[1] + ' ' + w[2] : '';
+  });
   function timeFields(prefix, mode, val) {
     return '<div class="seg wide" role="radiogroup" aria-label="How to give the return time"><label><input type="radio" name="' + prefix + 'mode" value="in"' + (mode !== 'at' ? ' checked' : '') + '> Back in</label><label><input type="radio" name="' + prefix + 'mode" value="at"' + (mode === 'at' ? ' checked' : '') + '> Back at</label></div>' +
       '<div data-mode="in"' + (mode === 'at' ? ' hidden' : '') + '><input class="inp big" name="' + prefix + 'in" value="' + esc(mode !== 'at' ? val || '' : '') + '" placeholder="1d 3h 12m or 27:45" autocomplete="off" aria-label="Time left, as the game shows"></div>' +
@@ -713,15 +720,25 @@
     var ok = agree >= 10 && differ === 0;
     return { agree: agree, differ: differ, ok: ok, text: ok ? 'calculated, confirmed by ' + agree + ' of your game times' : 'calculated, not yet confirmed (' + agree + ' of 10 game times agree' + (differ ? ', ' + differ + ' differ' : '') + ')' };
   }
+  // G3 (gaps spec): a small label on a figure says where it comes from, in the small tag style: calculated (return time, range, the rank after),
+  // game data (tanks, base experience), learned (the player's own log, with its voyage count), community estimate
+  function src(t) { return ' <span class="tag src">' + esc(t) + '</span>'; }
   function figures(ev, s, now) {
     var after = ADV.rankAfter(s.rank, s.expIntoRank || 0, ev.exp);
-    return 'Back <b>' + esc(F.fmtClock(now + ev.seconds * 1000, now)) + '</b> (in ' + F.fmtDur(ev.seconds * 1000, true) + ') · range ' + ev.range + ' of ' + ev.maxRange + ' · ' + ev.tanks + ' tank' + (ev.tanks === 1 ? '' : 's') +
-      ' · at least ' + ev.exp.toLocaleString('en') + ' exp' + (after.rank > s.rank ? ', rank at least ' + after.rank : '');
+    return 'Back <b>' + esc(F.fmtClock(now + ev.seconds * 1000, now)) + '</b> (in ' + F.fmtDur(ev.seconds * 1000, true) + ')' + src('calculated') + ' · range ' + ev.range + ' of ' + ev.maxRange + src('calculated') + ' · ' + ev.tanks + ' tank' + (ev.tanks === 1 ? '' : 's') + src('game data') +
+      ' · at least ' + ev.exp.toLocaleString('en') + ' exp' + src('game data') + (after.rank > s.rank ? ', rank at least ' + after.rank + src('calculated') : '');
+  }
+  // the gil-an-hour figures of a plan or another route (Gil Farming leading): the community estimate, and the player's own log where it decided
+  function gilSources(x) {
+    var DR = window.DROPS, out = '';
+    if (x.est) out += DR.fmt.about(DR.fmt.hour(x.est.perHour)) + src('community estimate');
+    if (x.own && x.perTrip > 0 && x.trips) out += (out ? ' · ' : '') + DR.fmt.about(DR.fmt.hour(x.perTrip / (x.ev.seconds / 3600))) + src('learned, ' + x.trips + ' voyage' + (x.trips === 1 ? '' : 's'));
+    return out;
   }
   function adviceHtml(id) {
     var s = S.subs[id], a = adviceFor(id), now = Date.now();
     if (!a) return '';
-    if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p></div>';
+    if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p>' + (a.parts ? '<p class="note" data-range-tip>' + esc(a.parts.why) + '</p>' : '') + '</div>';
     // every other route says what it is (community route or found by the app), its figure and its reason (spec 6.1)
     var alt = (a.alts || []).map(function (x) {
       var kind = x.kind === 'community' ? 'Community route' : x.kind === 'derived' ? 'Found by the app' : '';
@@ -729,12 +746,14 @@
       var old = x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why); // the unchanged advisor's two short reasons
       var why = x.why ? (old ? x.why.replace(/;.*$/, '') : x.why) : '';
       return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' +
-        (kind ? ' <span class="tag" data-alt-kind>' + kind + '</span>' : '') + (fig ? ' <span class="muted" data-alt-figure>' + esc(fig) + '</span>' : '') +
+        (kind ? ' <span class="tag" data-alt-kind>' + kind + '</span>' : '') + (fig ? ' <span class="muted" data-alt-figure>' + esc(fig) + '</span>' + src('community estimate') : '') +
+        (x.own && x.perTrip > 0 && x.trips ? ' <span class="muted" data-alt-own>' + esc(window.DROPS.fmt.about(window.DROPS.fmt.hour(x.perTrip / (x.ev.seconds / 3600))) + ' gil an hour from your log') + '</span>' + src('learned, ' + x.trips + ' voyage' + (x.trips === 1 ? '' : 's')) : '') +
+        (x.vs ? '<br><span class="muted" data-alt-vs>' + esc(x.vs.text + ' (' + F.fmtClock(now + x.ev.seconds * 1000, now) + ')') + '</span>' : '') +
         (why ? '<br><span class="muted" data-alt-why>' + esc(why) + '</span>' : '') + '</li>';
     }).join('');
     return '<div class="advice' + leadVoice(a) + '"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
-      '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' +
+      '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' + (a.lead === 'G' && gilSources(a.plan) ? '<p class="src-line" data-src>Gil an hour: ' + gilSources(a.plan) + '</p>' : '') +
       (alt ? '<details><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
       (a.parts ? '<p class="note">' + esc(a.parts.why) + '</p>' : '') + (a.note ? '<p class="note">' + esc(a.note) + '</p>' : '') + '</div>';
   }
@@ -903,7 +922,7 @@
     var DR = window.DROPS, r = st && ev && ev.reachable ? DR.route(D, route, st) : null;
     if (!r) return '';
     var now = Date.now(), out = '<div class="rates" data-rates>';
-    out += '<p class="hint">' + cap(DR.fmt.about(DR.fmt.voyage(r.gil))) + ' gil a voyage at merchant prices (' + DR.fmt.about(DR.fmt.hour(DR.perHour(r.gil, ev.seconds))) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(r.count) + ' surveys per sector on this route), not a promise.' + (r.few ? ' Few records for a submarine like this one.' : '') + '</p>';
+    out += '<p class="hint">' + cap(DR.fmt.about(DR.fmt.voyage(r.gil))) + ' gil a voyage at merchant prices (' + DR.fmt.about(DR.fmt.hour(DR.perHour(r.gil, ev.seconds))) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(r.count) + ' surveys per sector on this route), not a promise.' + (r.few ? ' Few records for a submarine like this one.' : '') + '</p><p class="src-line" data-src>' + src('community estimate').trim() + '</p>';
     route.forEach(function (sid, i) {
       var b = D.breakpoints && D.breakpoints[sid], x = r.sectors[i], stt = x.state, bits = [];
       if (!b || !stt) bits.push('no community thresholds, the community average is used');
@@ -930,8 +949,10 @@
     var s = SECTOR[id], u = D.unlocks[id] || {}, found = (fc.discovered || []).indexOf(id) >= 0;
     var node = CHART.view(s.sea, fc.discovered || []).nodes.find(function (n) { return n.id === id; });
     var by = u.start ? 'open from the start' : u.by != null && SECTOR[u.by] ? esc(sectorLabel(SECTOR[u.by])) + (SECTOR[u.by].sea !== s.sea ? ' (in the previous sea)' : '') : 'not known';
+    var ms = mapState(), sbm = ms.sub && S.subs[ms.sub], no = sbm ? ADV.cannotAdd(sbm, fc.discovered || [], ms.route, id) : null;
     var reveals = D.sectors.filter(function (x) { return (D.unlocks[x.id] || {}).by === id; }).map(function (x) { return esc(sectorLabel(x)); });
     return '<section class="chart-details panel" aria-live="polite"><h3><span class="sd-letter" aria-hidden="true">' + esc(s.letter) + '</span><span class="sd-name">' + esc(s.name) + '</span></h3>' +
+      (no ? '<p class="cannot-why" data-cannot-why>' + esc(cap(reasonPhrase(no)).replace(/^Cannot be added:/, 'Cannot be added to the planned route:')) + '</p>' : '') +
       '<p class="muted st-' + node.state + '">' + esc(CHART.stateText(node.state)) + (node.slot ? ' · <b>slot ' + node.slot + '</b>' : '') + (node.opens ? ' · <b>opens ' + esc(node.opens) + '</b>' : '') + '</p>' +
       '<dl class="chart-facts"><dt>Rank needed</dt><dd>' + s.rank + '</dd><dt>Tanks</dt><dd>' + s.tanks + '</dd><dt>Survey</dt><dd>' + s.survey + ' min</dd>' +
       '<dt>Base experience</dt><dd>at least ' + Number(s.exp).toLocaleString('en') + '</dd><dt>Stars</dt><dd>' + s.stars + '</dd>' +
@@ -939,6 +960,16 @@
       '<dt>Reveals</dt><dd>' + (reveals.length ? reveals.join(', ') : 'nothing') + '</dd></dl>' + sectorRatesHtml(id) + '</section>';
   }
   // the route planner: draws and works out a route; it never sends and writes nothing (the send window does that, on the owner's press)
+  // G2: for each sector of the shown sea that cannot be added to the planned route, why (ADVISOR.cannotAdd: the rank, not found yet, or the range the
+  // route would need, from the planner's own route evaluation); empty without a chosen submarine
+  // the words: a sector above the rank or not found cannot be added; one that needs more range can be tapped in, but the route is then out of range
+  function reasonPhrase(w) { return (w.kind === 'range' ? 'out of range if added: ' : 'cannot be added: ') + w.text; }
+  function cannotMap(fc, m) {
+    var sb = m.sub && S.subs[m.sub], out = {};
+    if (!sb) return out;
+    D.sectors.forEach(function (x) { if (x.sea !== m.sea) return; var w = ADV.cannotAdd(sb, fc.discovered || [], m.route, x.id); if (w) out[x.id] = reasonPhrase(w); });
+    return out;
+  }
   function plannerHtml(fc, m) {
     var subs = subsOf(m.fc), now = Date.now(), slots = Object.keys(subs).sort(function (a, b) { return a - b; });
     var opts = '<option value="">No submarine chosen</option>' + slots.map(function (k) { return '<option value="' + esc(subs[k].id) + '"' + (subs[k].id === m.sub ? ' selected' : '') + '>' + esc(subs[k].sub.name || 'Sub ' + subs[k].sub.slot) + '</option>'; }).join('');
@@ -954,10 +985,17 @@
     if (!route.length) calc = '<p class="hint">Tap found sectors on the chart in the order the sub should visit them (up to 5; tap again to drop one). The time is worked out as you go.</p>';
     else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out.</p>';
     else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
-    else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
+    else {
+      calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
+      // G1 (gaps spec): what the chosen route usually brings, the same content as the send window, collapsed until the player opens it (kept open across redraws in this tab)
+      var rates = routeRatesHtml(s, st, ev, route);
+      if (rates) calc += '<details class="planner-rates" data-planner-rates' + (m.rates ? ' open' : '') + '><summary>What this route usually brings</summary>' + rates + '</details>';
+    }
     var name = s.name || 'Sub ' + s.slot, out = status === 'out' || status === 'locked';
+    var no = cannotMap(fc, m), why = m.sector && no[m.sector] ? SECTOR[m.sector].name + ' ' + no[m.sector] : '';
     return o + '<p class="route-line">Route: ' + (route.length ? '<b>' + esc(ADV.routeText(route)) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' +
       (common ? '<p class="hint">Community routes in this sea: ' + common + '</p>' : '') + calc +
+      '<p class="hint">A sector marked with a cross cannot be added, or would take the route out of range: tap or focus it to see why.</p><p class="cannot-line" data-cannot-line role="status">' + esc(why) + '</p>' +
       '<p><button type="button" class="btn primary" data-map-send="' + esc(m.sub) + '"' + (!route.length || out ? ' disabled' : '') + '>Send ' + esc(name) + ' on this route…</button>' +
       (status === 'out' && s.voyage ? ' <span class="muted">Out: back ' + esc(F.fmtClock(s.voyage.returnAt, now)) + '</span>' : status === 'locked' ? ' <span class="muted">Not unlocked yet</span>' : '') + '</p>' +
       '<p class="hint">Nothing is sent or saved here; the button opens the send window with this route.</p></div>';
@@ -988,17 +1026,20 @@
       (disc.length ? '' : '<p class="note">Nothing is ticked as found for this free company yet. Tick the sectors in Setup (Edit the free company, sectors step) and they show here.</p>') +
       (nFound ? '' : '<p class="hint">This sea is not opened yet.</p>') +
       '<div class="map-grid">' + plannerHtml(fc, m) +
-      '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '"><header class="chart-head"><span class="chart-sea">' + esc(seaName) + '</span><span class="chart-count">found ' + nFound + ' of ' + seaCount + '</span></header>' + CHART.svg(view, m.sub ? m.route : null, { selected: m.sector }) + '</div>' +
+      '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '"><header class="chart-head"><span class="chart-sea">' + esc(seaName) + '</span><span class="chart-count">found ' + nFound + ' of ' + seaCount + '</span></header>' + CHART.svg(view, m.sub ? m.route : null, { selected: m.sector, cannot: m.sub ? cannotMap(fc, m) : null }) + '</div>' +
       '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="currentColor"/>') + ' can be revealed next · ' + sw('far', '<rect x="3" y="3" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · dimmed: above this submarine\'s rank · bright line: the way to the next slot or sea · amber arrow: can be revealed now. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
       (m.sector ? sectorDetails(m.sector, fc) : '') + '</div>' +
       '<p class="hint">Drawn by this app from the game\'s position numbers; this is not the game\'s map picture. Depth is not drawn. Which sector reveals which is community data.</p></section>';
   }
   function mapPick(id) {
-    var m = mapState(), sb = m.sub && S.subs[m.sub], found = ((S.fcs[m.fc] || {}).discovered || []).indexOf(id) >= 0;
-    if (sb && found && SECTOR[id].sea === m.sea && (!sb.rank || SECTOR[id].rank <= sb.rank)) { // planner tap: add or drop
+    var m = mapState(), sb = m.sub && S.subs[m.sub], disc = (S.fcs[m.fc] || {}).discovered || [];
+    var why = sb && SECTOR[id].sea === m.sea && m.route.indexOf(id) < 0 ? ADV.cannotAdd(sb, disc, m.route, id) : null;
+    // planner tap: add or drop. A sector above the rank or not found is shown with its reason instead; one that only needs more range is still added, as before
+    // (the route then shows "Out of range"), because the gaps spec changes no adding behaviour
+    if (sb && SECTOR[id].sea === m.sea && (!why || why.kind === 'range')) {
       var at = m.route.indexOf(id);
       if (at >= 0) m.route.splice(at, 1); else if (m.route.length < 5) m.route.push(id);
-    } else m.sector = m.sector === id ? null : id;
+    } else m.sector = m.sector === id ? null : id; // a sector that cannot be added is shown with its reason instead
     keepUi(); render();
     var n = $('#view [data-sector="' + id + '"]'); if (n) n.focus();
   }

@@ -305,7 +305,7 @@
       // the same step, step name and sentence as today's answer for this input, so the Board's grouping and notifications do not move
       var kept = evals, td = A.advise(Object.assign({}, input, { recs: null }));
       evals = kept;
-      return done({ step: td.blocked ? td.step : step, stepName: td.blocked ? td.stepName : stepName, blocked: td.blocked || 'No discovered sector is within this build\'s range.', lead: null, skipped: [], fuel: fuel });
+      return done({ step: td.blocked ? td.step : step, stepName: td.blocked ? td.stepName : stepName, blocked: td.blocked || 'No discovered sector is within this build\'s range.', lead: null, skipped: [], fuel: fuel, parts: rangeTip(sub, pool) });
     }
     var live = function (fn) { return singles.some(function (r) { return fn(r) > 0; }); };
     var noUnlock = !left ? 'every sector is found' : null;
@@ -666,16 +666,56 @@
       var cShape = shape(commBest, false);
       out.alts = [cShape].concat(out.alts.filter(function (a) { return a.route.join(',') !== commBest.route.join(','); })).slice(0, 2);
     }
-    // part advice only at step 3: gil by the S6 rule when Gil leads, else the quickest-return swap for this route
+    // part advice (gaps spec G6): only the estimate-based gil tip, and only at step 3 when Gil Farming leads. While Unlocking Routes or Leveling
+    // Submersible Rank leads there is none; Loot Farming has no loot-valued tip, so none (the old minutes-only tip is not given beside these plans).
     out.parts = null;
-    if (step === 3) {
-      if (lead === 'G') {
-        out.parts = gilTipEst(sub, st, plan, DR, estOf);
-      } else out.parts = partTip(sub, st, plan.route);
-    }
+    if (step === 3 && lead === 'G') out.parts = gilTipEst(sub, st, plan, DR, estOf);
+    // G4: how each other route differs from the plan, on the measure that decided and on return time
+    var measure = { U1: 'slot chances an hour', U2: 'reveal chances an hour', U3: 'experience an hour', X: 'experience an hour', G: 'gil an hour', L: 'loot an hour' }[lead];
+    var score = function (x) { return lead === 'G' ? estOf(x.route, x.ev).perHour : leadScore({ route: x.route, ev: x.ev, seconds: x.ev.seconds, tanks: Math.max(1, x.ev.tanks) }); };
+    out.alts.forEach(function (x) { x.vs = A.altClause(score(x), score(plan), x.ev.seconds, plan.ev.seconds, measure); });
     out.own = !!plan.own;
     out.lead = lead; out.skipped = fixSkipped(res.skipped); out.fuel = fuel;
     return done(out);
+  }
+  // G4 (gaps spec): one short clause comparing another route with the plan, on the deciding measure (an hour) and on return time. Computed from the
+  // two figures the advice already holds. mine/plan: the measure per hour; secs/planSecs: the voyage lengths. Returns { text, pct, seconds }.
+  A.altClause = function (mine, plan, secs, planSecs, measure) {
+    var pct = plan > 0 ? Math.round((mine / plan - 1) * 100) : null, d = secs - planSecs, mins = Math.round(Math.abs(d) / 60);
+    var m = pct === null ? 'a different ' + measure : pct === 0 ? 'about the same ' + measure : Math.abs(pct) + '% ' + (pct > 0 ? 'more ' : 'less ') + measure;
+    var t = mins < 1 ? 'back at about the same time' : 'back ' + (mins < 90 ? mins + ' min' : (Math.round(mins / 6) / 10) + ' h') + (d > 0 ? ' later' : ' sooner');
+    return { text: m + ', ' + t, pct: pct, seconds: d };
+  };
+  // G2 (gaps spec): why a sector cannot be added to the route being planned, or null when it can (or is already on the route, or the route is full).
+  // sub: { rank, parts }; discovered: the free company's found sector ids; route: the planned route. The range uses the planner's own evaluation.
+  A.cannotAdd = function (sub, discovered, route, id) {
+    var s = SECTOR[id]; if (!s || route.indexOf(id) >= 0) return null;
+    if (sub.rank && s.rank > sub.rank) return { kind: 'rank', text: 'Rank ' + s.rank + ' needed (this submarine is rank ' + sub.rank + ')' };
+    if ((discovered || []).indexOf(id) < 0) return { kind: 'unfound', text: 'Not found yet' };
+    if (route.length >= D.formula.maxSectors) return null;
+    var st = A.stats(sub.rank, sub.parts); if (!st) return null;
+    var ev = A.evalRoute(route.concat(id), st); if (!ev || ev.reachable) return null;
+    var alone = A.evalRoute([id], st), need = ev.range - st.range;
+    return { kind: 'range', need: need, alone: !!alone && !alone.reachable, text: 'Needs range ' + need + ' more' + (alone && !alone.reachable ? ' (out of range from Start even on its own)' : '') };
+  };
+  // G5 (gaps spec): nothing discovered is in reach, so name the single part change (any slot, parts the rank allows) that brings the most discovered
+  // sectors into range; ties go to the lower slot, then the lower part id. Always an object: { why } and, when a swap helps, { slot, from, to, count }.
+  function rangeTip(sub, pool) {
+    var best = null, SL = ['hull', 'stern', 'bow', 'bridge'];
+    var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
+    for (var i = 0; i < 4; i++) {
+      parts.forEach(function (p) {
+        if (p.slot !== i || p.id === sub.parts[i] || CLASS[p.class].rank > sub.rank) return;
+        var np = sub.parts.slice(); np[i] = p.id;
+        var st2 = A.stats(sub.rank, np); if (!st2) return;
+        var got = pool.filter(function (s) { var ev = A.evalRoute([s.id], st2); return ev && ev.reachable; });
+        if (got.length && (!best || got.length > best.got.length)) best = { slot: i, from: sub.parts[i], to: p.id, got: got };
+      });
+    }
+    if (!best) return { why: 'Calculated: no single part change brings a discovered sector into range for this submarine.' };
+    var names = best.got.slice(0, 4).map(function (s) { return name(s.id); }).join(', ') + (best.got.length > 4 ? ' and ' + (best.got.length - 4) + ' more' : '');
+    return { slot: best.slot, from: best.from, to: best.to, count: best.got.length,
+      why: 'Calculated: swapping the ' + SL[best.slot] + ' for ' + PART[best.to].name + ' would bring ' + best.got.length + ' discovered sector' + (best.got.length === 1 ? '' : 's') + ' into range (' + names + '). It applies only if you already have the part or plan to craft it.' };
   }
   // Part advice in gil, by the community estimate (docs/submersibles-droprates-spec.md 6.4, E14): each swap the sub's rank allows is
   // valued by DROPS on the advised route for the changed build (time and all five stats). A swap is advised only when the estimated

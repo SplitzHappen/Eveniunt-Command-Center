@@ -912,17 +912,16 @@ test('Submersibles advisor part advice (R3): none before step 3; a gil tip only 
   assert.match(g.parts.why, /estimate from community drop records/);
   const today = ADV.advise(shark145).parts;
   assert.ok(today && today.gilGain > 0 && today.estimate === undefined && /calculated from your own log/.test(today.why), 'no settings: today\'s tip');
-  // a non-gil lead at step 3: never a gil tip, only the minutes tip on the suggested route
+  // a non-gil lead at step 3: no part advice at all (gaps spec G6; before, the minutes-only tip "N min sooner (calculated)" stood beside a Leveling plan)
   for (const rank of [30, 60, 130]) {
     const x = ADV.advise(Object.assign({}, shark145, { sub: { rank, parts: SHARK }, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'] }) }));
     assert.equal(x.step, 3); assert.equal(x.lead, 'X');
-    assert.ok(x.parts && x.parts.gilGain === undefined && x.parts.gilFrom === undefined, 'rank ' + rank);
-    assert.match(x.parts.why, /min sooner \(calculated\)/);
+    assert.equal(x.parts, null, 'rank ' + rank);
   }
   // D5: Loot leads only for an item with a drop record this sub can reach; the first such item is chosen here
   const lootAt30 = (id) => ADV.advise(Object.assign({}, shark145, { sub: { rank: 30, parts: SHARK }, recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(id) }) }));
   const l = R3_ITEMS.map((i) => lootAt30(i.id)).find((x) => x.lead === 'L');
-  assert.ok(l && l.step === 3 && (l.parts === null || l.parts.gilGain === undefined));
+  assert.ok(l && l.step === 3 && l.parts === null, 'Loot Farming: no loot-valued tip exists, so none (G6)');
 });
 
 test('Submersibles advisor reasons (R3, D5): a loot reason gives expected quantities per hour, names its source and promises nothing', () => {
@@ -2201,4 +2200,104 @@ test('chart W23: with every sector found there is no goal and no lead; svg calle
     assert.equal(svg, CH.svg(v, [all[0]], { selected: all[0] }));
   }
   const v = CH.view(1, [1, 2, 3, 10, 15]); assert.equal(CH.svg(v, [1, 3]), CH.svg(v, [1, 3]));
+});
+
+// ---------------------------------------------------------------- gaps spec Part A: G2, G4, G5, G6
+const GAPS_PARTS = [3, 4, 1, 2]; // rank 30 Shark build, as the planner check uses
+test('G2: a sector that cannot be added says why: the rank, not found yet, or the range the route would need (the planner\'s own evaluation)', () => {
+  const sub = { rank: 30, parts: GAPS_PARTS }, st = ADV.stats(30, GAPS_PARTS), found = [1, 2, 3, 4, 5, 6, 7, 10, 15, 18, 26];
+  // the rank: sector 26 needs rank 50 (the planner check seeds it)
+  const hi = D.sectors.find((x) => x.rank > 30 && found.includes(x.id)) || null;
+  const over = D.sectors.find((x) => x.rank > 30);
+  assert.deepEqual(ADV.cannotAdd(sub, found, [], over.id), { kind: 'rank', text: `Rank ${over.rank} needed (this submarine is rank 30)` });
+  // not found yet (a sector within the rank that is not ticked)
+  const lost = D.sectors.find((x) => x.rank <= 30 && !found.includes(x.id));
+  assert.deepEqual(ADV.cannotAdd(sub, found, [], lost.id), { kind: 'unfound', text: 'Not found yet' });
+  // the rank comes before "not found" when both apply
+  assert.equal(ADV.cannotAdd(sub, [], [], over.id).kind, 'rank');
+  // the range: the number is the range the route would use with the sector added, minus the build's range, from evalRoute
+  let seen = 0, near = 0;
+  const weakParts = [0, 1, 2, 3].map((sl) => D.parts.filter((p) => p.slot === sl && D.classes.find((c) => c.id === p.class).rank <= 60).sort((x, y) => x.range - y.range)[0].id);
+  const wsub = { rank: 60, parts: weakParts }, wst = ADV.stats(60, weakParts);
+  for (const sea of D.seas) {
+    const ids = D.sectors.filter((x) => x.sea === sea.id && x.rank <= 60).map((x) => x.id);
+    for (const base of [[], ids.slice(0, 2), ids.slice(0, 4)]) for (const id of ids) {
+      if (base.includes(id) || base.length >= 5) continue;
+      const ev = ADV.evalRoute(base.concat(id), wst), w = ADV.cannotAdd(wsub, ids, base, id);
+      if (ev.reachable) assert.equal(w, null);
+      else {
+        seen++; assert.equal(w.kind, 'range'); assert.equal(w.need, ev.range - wst.range); assert.ok(w.need > 0);
+        assert.equal(w.alone, !ADV.evalRoute([id], wst).reachable); if (w.alone) near++;
+        assert.equal(w.text, 'Needs range ' + w.need + ' more' + (w.alone ? ' (out of range from Start even on its own)' : ''));
+      }
+    }
+  }
+  assert.ok(seen > 0 && near > 0, 'some sector is out of range for this build, some even alone');
+  // a sector already on the route, a full route and a missing build give no reason of their own
+  assert.equal(ADV.cannotAdd(sub, found, [1], 1), null);
+  assert.equal(ADV.cannotAdd(sub, found, [1, 2, 3, 4, 5], 6), null);
+  assert.equal(ADV.cannotAdd({ rank: 30, parts: [null, null, null, null] }, found, [], 6), null);
+  assert.ok(hi === null || ADV.cannotAdd(sub, found, [], hi.id).kind === 'rank');
+});
+
+test('G4: each other route says how it differs from the plan on the deciding measure and on return time', () => {
+  const c = ADV.altClause(112, 100, 10 * 3600 + 5 * 3600, 10 * 3600, 'experience an hour');
+  assert.equal(c.text, '12% more experience an hour, back 5 h later'); assert.equal(c.pct, 12); assert.equal(c.seconds, 5 * 3600);
+  assert.equal(ADV.altClause(92, 100, 7 * 3600, 10 * 3600, 'gil an hour').text, '8% less gil an hour, back 3 h sooner');
+  assert.equal(ADV.altClause(100, 100, 3600, 3600 + 20, 'gil an hour').text, 'about the same gil an hour, back at about the same time');
+  assert.equal(ADV.altClause(50, 100, 3600 + 40 * 60, 3600, 'gil an hour').text, '50% less gil an hour, back 40 min later');
+  // on a real advice: every other route carries the clause, worked out from its own figures and the plan's
+  const a = ADV.advise({ sub: { rank: 60, parts: bestParts(60) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'] }) });
+  assert.equal(a.lead, 'X'); assert.ok(a.alts.length > 0);
+  for (const x of a.alts) {
+    const want = ADV.altClause((x.ev.exp / (x.ev.seconds / 3600)), (a.plan.ev.exp / (a.plan.ev.seconds / 3600)), x.ev.seconds, a.plan.ev.seconds, 'experience an hour');
+    assert.deepEqual(x.vs, want); assert.match(x.vs.text, /experience an hour, back /);
+  }
+  // Gil Farming compares the estimates; a plain advice (no settings) has no clause
+  const g = ADV.advise(D6_IN(85, [3, 4, 5, 14]));
+  assert.equal(g.lead, 'G');
+  for (const x of g.alts) { assert.match(x.vs.text, /gil an hour, back /); assert.equal(x.vs.pct, Math.round((x.est.perHour / g.plan.est.perHour - 1) * 100)); }
+  for (const x of ADV.advise({ sub: { rank: 60, parts: bestParts(60) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }).alts) assert.equal(x.vs, undefined);
+});
+
+test('G5: with nothing discovered in range, the one part change that brings the most discovered sectors into range is named (a calculation, if the player has or crafts the part)', () => {
+  // a build with the weakest range in every slot, a rank that allows better parts, and the nearest sectors found
+  const weak = [0, 1, 2, 3].map((sl) => D.parts.filter((p) => p.slot === sl && D.classes.find((c) => c.id === p.class).rank <= 60).sort((x, y) => x.range - y.range)[0].id);
+  const rank = 60, st = ADV.stats(rank, weak);
+  const far = D.sectors.filter((x) => x.rank <= rank && !ADV.evalRoute([x.id], st).reachable).map((x) => x.id);
+  assert.ok(far.length > 0);
+  const inp = { sub: { rank, parts: weak }, fc: { unlockedSlots: 4, discovered: far }, slotsFilled: 4 };
+  const a = ADV.advise(Object.assign({}, inp, { recs: withRecs({}) }));
+  assert.ok(a.blocked && a.parts && a.parts.count > 0, 'a swap brings something into range');
+  // brute force over every single swap the rank allows
+  let bestCount = 0, bestAt = null;
+  for (let i = 0; i < 4; i++) for (const p of D.parts.slice().sort((x, y) => x.id - y.id)) {
+    if (p.slot !== i || p.id === weak[i] || D.classes.find((c) => c.id === p.class).rank > rank) continue;
+    const np = weak.slice(); np[i] = p.id; const s2 = ADV.stats(rank, np);
+    const n = far.filter((id) => ADV.evalRoute([id], s2).reachable).length;
+    if (n > bestCount) { bestCount = n; bestAt = { slot: i, to: p.id }; }
+  }
+  assert.equal(a.parts.count, bestCount); assert.equal(a.parts.slot, bestAt.slot); assert.equal(a.parts.to, bestAt.to);
+  assert.match(a.parts.why, /^Calculated: swapping the (hull|stern|bow|bridge) for .+ would bring \d+ discovered sectors? into range \(.+\)\. It applies only if you already have the part or plan to craft it\.$/);
+  // no settings: today's answer, no tip
+  assert.equal(ADV.advise(inp).parts, undefined);
+  // no single swap helps: say so (every discovered sector is too far even for the best range part of this rank)
+  const best = ADV.stats(1, SHARK), none = D.sectors.filter((x) => x.rank <= 1 && !ADV.evalRoute([x.id], best).reachable).map((x) => x.id);
+  if (none.length) {
+    const n = ADV.advise({ sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: none }, slotsFilled: 1, recs: withRecs({}) });
+    assert.ok(n.blocked); assert.ok(n.parts && n.parts.count === undefined && /no single part change brings a discovered sector into range/.test(n.parts.why));
+  }
+});
+
+test('G6: part advice only beside a Gil Farming plan (the estimate tip) or in the nothing-in-reach case', () => {
+  const base = { sub: { rank: 145, parts: SHARK }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+  for (const order of [['gil', 'unlock', 'level', 'loot'], ['level', 'unlock', 'gil', 'loot'], ['unlock', 'level', 'gil', 'loot'], ['loot', 'unlock', 'level', 'gil']]) {
+    const a = ADV.advise(Object.assign({}, base, { recs: withRecs({ order, loot: R3_LOOT(22506) }) }));
+    if (a.lead === 'G') assert.ok(a.parts === null || a.parts.estimate === true, order[0]);
+    else assert.equal(a.parts, null, order[0] + ' leads ' + a.lead);
+  }
+  const lv = ADV.advise(Object.assign({}, base, { sub: { rank: 60, parts: SHARK }, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'] }) }));
+  assert.equal(lv.lead, 'X'); assert.equal(lv.parts, null);
+  // while unlocking (step 1) there was never a tip, and still none
+  assert.equal(ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({}) })).parts, null);
 });
