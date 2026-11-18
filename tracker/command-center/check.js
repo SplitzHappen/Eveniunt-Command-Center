@@ -2681,8 +2681,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await ctx.close(); server14.close();
     }
 
-    // ── C79 Submersibles step S6-2: at the gil step the suggestion comes from the player's own log once a route has ten
-    //    logged voyages (nine do not count), on the Board and in the send window, without a reload, with no new saved field.
+    // ── C79 Submersibles step S6-2, as changed by the drop-rates work (owner decision Q3): the community estimate ranks the gil
+    //    routes; once a route has ten logged voyages its own log (in merchant gil per hour) is compared with its estimate and
+    //    ranks it, and the reason shows both figures and says which decided. Nine voyages do not count. On the Board and in the
+    //    send window, without a reload, with nothing fetched and no new field in the stored section.
     {
       const server11 = await start(PORT5);
       const { ctx, errors } = await context();
@@ -2692,28 +2694,29 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
       const saved = () => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules.submersibles; });
       const allIds = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8')).sectors.map((s) => s.id);
+      const LOOT = 22507; // Extravagant Salvaged Necklace: dropped on the Fight Club route JORZ and sold to a merchant
       await page.goto(ROOT5 + 'submersibles/'); await ready();
-      await page.evaluate(async (all) => {
-        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+      await page.evaluate(async ([all, loot]) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} }, jorz = [10, 15, 18, 26];
         sec.fcs.fi = { name: 'India Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
-        sec.subs.i1 = { fcId: 'fi', slot: 1, name: 'Sub I1', rank: 145, parts: [31, 24, 25, 34], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+        sec.subs.i1 = { fcId: 'fi', slot: 1, name: 'Sub I1', rank: 145, parts: [31, 24, 25, 34], voyage: { sentAt: now - 30 * H, route: jorz, returnAt: now - H } };
         sec.subs.i2 = { fcId: 'fi', slot: 2, name: 'Sub I2', rank: 145, parts: [31, 24, 25, 34] };
-        for (let i = 1; i <= 9; i++) sec.trips['i1-' + i] = { s: 'i1', t: now - (40 + i * 30) * H, r: [1, 2], back: now - (40 + i * 30 - 29) * H, items: [[10099, 2]], newSectors: [] };
+        for (let i = 1; i <= 9; i++) sec.trips['i1-' + i] = { s: 'i1', t: now - (40 + i * 30) * H, r: jorz, back: now - (40 + i * 30 - 29) * H, items: [[loot, 100]], newSectors: [] };
         const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
-      }, allIds);
+      }, [allIds, LOOT]);
       await page.reload(); await ready();
       const board = () => page.evaluate(() => { const b = document.querySelector('.sub[data-sub="i2"] [data-quick]'); return b ? { text: b.textContent, title: b.getAttribute('title') } : null; });
-      const communityRoute = await page.evaluate(() => ADVISOR.routeText(ADVISOR.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: window.__subs.section().fcs.fi.discovered }, slotsFilled: 4 }).plan.route));
-      const loggedText = await page.evaluate(() => ADVISOR.routeText([1, 2]));
+      const communityRoute = await page.evaluate(() => ADVISOR.routeText(ADVISOR.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: window.__subs.section().fcs.fi.discovered }, slotsFilled: 4, recs: RECS.defaults() }).plan.route));
+      const jorzText = await page.evaluate(() => ADVISOR.routeText([10, 15, 18, 26]));
       const before = await board();
       const before0 = await saved();
       // the 10th voyage, logged through the page: the returned sub's send window, a quantity, "Send on this route"
       await page.click('.sub[data-sub="i1"] .sub-top');
       await page.waitForSelector('#sheet .loot');
       await page.click('#sheet .loot summary');
-      await page.fill('#sheet [data-qty="10099"]', '2');
+      await page.fill('#sheet [data-qty="' + LOOT + '"]', '100');
       await page.click('#sheet [data-act=quick]');
-      await page.waitForFunction(() => !document.querySelector('#sheet[open]') && /From your own log/.test((document.querySelector('.sub[data-sub="i2"] [data-quick]') || {}).title || ''), null, { timeout: 10000 }).catch(() => {});
+      await page.waitForFunction(() => !document.querySelector('#sheet[open]') && /Your own log decided/.test((document.querySelector('.sub[data-sub="i2"] [data-quick]') || {}).title || ''), null, { timeout: 10000 }).catch(() => {});
       const after = await board();
       await page.click('.sub[data-sub="i2"] .sub-top');
       await page.waitForSelector('#sheet .advice');
@@ -2724,11 +2727,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const noNew = JSON.stringify(Object.keys(s1).sort()) === JSON.stringify(Object.keys(before0).sort()) &&
         keys(s1.trips).every((k) => ['s', 't', 'r', 'back', 'calc', 'said', 'items', 'newSectors', 'rankAfter', 'rankCalc', 'grade', 'expBase', 'expGot'].includes(k)) &&
         keys(s1.fcs).every((k) => keys(before0.fcs).includes(k)) && keys(s1.subs).every((k) => keys(before0.subs).concat(['voyage', 'expIntoRank', 'expExact']).includes(k));
-      const ok = !!before && before.text.includes(communityRoute) && !/From your own log/.test(before.title) && loggedText !== communityRoute &&
-        !!after && after.text.includes(loggedText) && /From your own log: about [\d,]+ gil a voyage over 10 logged voyages/.test(after.title) &&
-        /From your own log/.test(sheetAdvice) && sheetAdvice.includes(loggedText) && Object.keys(s1.trips).length === 10 && noNew && requests.length === 0 && real(errors).length === 0;
-      record('C79', 'Advice from the log (step S6-2): at the gil step, with nine logged voyages on a route other than the community one the Board shows the community route; once the tenth is logged through the page, another sub\'s Board button and send window show the logged route and "From your own log", without a reload, with nothing fetched and no new field in the stored section',
-        ok, { before, after, communityRoute, loggedText, sheetAdvice, trips: Object.keys(s1.trips).length, noNew, requests, errors: real(errors) });
+      const logSentence = /Your own log on this route: about [\d,]+ gil an hour at merchant prices over 10 logged voyages \(this submarine is back in [\d.]+ hours\); the community estimate is about [\d,]+ an hour\. Your own log decided/;
+      const ok = !!before && before.text.includes(communityRoute) && communityRoute === jorzText && /^Community gil route /.test(before.title) && /an estimate from community drop records/.test(before.title) &&
+        /Your own log on this route: 9 of 10 logged voyages; the estimate decides until then\./.test(before.title) && !/Your own log decided/.test(before.title) &&
+        !!after && after.text.includes(communityRoute) && /^Community gil route /.test(after.title) && logSentence.test(after.title) && !/stars/.test(after.title) &&
+        logSentence.test(sheetAdvice) && /an estimate from community drop records/.test(sheetAdvice) && sheetAdvice.includes(communityRoute) && Object.keys(s1.trips).length === 10 && noNew && requests.length === 0 && real(errors).length === 0;
+      record('C79', 'Advice from the log (step S6-2, owner decision Q3): at the gil step the Board shows the best community route by estimate and, with nine logged voyages on it, "9 of 10 logged voyages" with the estimate deciding; once the tenth is logged through the page, another sub\'s Board button and send window show the same route with the log figure beside the community estimate and "Your own log decided", without a reload, with nothing fetched and no new field in the stored section',
+        ok, { before, after, communityRoute, jorzText, sheetAdvice, trips: Object.keys(s1.trips).length, noNew, requests, errors: real(errors) });
       await ctx.close(); server11.close();
     }
 
@@ -2762,8 +2767,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const weak = await advice('j1');
       const goodBuild = await advice('k1');
       const stages = await page.evaluate(() => ({ weak: window.__subs.stageOf('fj'), good: window.__subs.stageOf('fk') }));
-      const ok = /From your own log/.test(weak.text) && weak.notes.some((n) => /more gil per hour/.test(n) && /lowers none of surveillance, retrieval and favor/.test(n)) &&
-        /From your own log/.test(goodBuild.text) && !goodBuild.notes.some((n) => /Swapping/.test(n)) && stages.weak === 'gil' && stages.good === 'final' && real(errors).length === 0;
+      // the route is now chosen from the community estimate (the log is on a route that is not a community route), so the text names the community route
+      const ok = /Community gil route /.test(weak.text) && weak.notes.some((n) => /more gil per hour/.test(n) && /lowers none of surveillance, retrieval and favor/.test(n)) &&
+        /Community gil route /.test(goodBuild.text) && !goodBuild.notes.some((n) => /Swapping/.test(n)) && stages.weak === 'gil' && stages.good === 'final' && real(errors).length === 0;
       record('C80', 'Part advice in gil (step S6-3): with a ranked logged route, a weak build shows a part note with "more gil per hour" that names no swap lowering surveillance, retrieval or favor and its free company is at the gil stage; a build with no better part shows no part note and its company is finished',
         ok, { weak, goodBuild, stages, errors: real(errors) });
       await ctx.close(); server12.close();
@@ -3257,6 +3263,132 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C89', 'Customizable Recommendations (R8): in two tabs of one browser, A picks an item in picker 1 and it is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item; the save then holds both items, picker 2\'s switch and a key this build does not know, with no old "loot" key; B\'s picker 1 shows A\'s item; A then moves Gil Farming up and "Use the default order" on B, which has not seen that, puts the default order back; neither page shows a save problem, no dialog and no page error',
         ok, { afterA, stored, orderAfterA, orderAfterB, picker1OnB, picker2OnB, statusA, statusB, liveB, prompts, errors: real(errors) });
       await ctx.close().catch(() => {}); server19.close();
+    }
+
+    // ── C90 Submersibles drop rates, work item D3: a seeded rank-145 submarine (everything found, no log) at the gil step: the
+    //    Board button and the send window show the same route, which is the best runnable community route by estimated merchant
+    //    gil per hour (worked out here from the data); the reason says "Community gil route", "estimate from community drop
+    //    records" and a record count, and no sentence is about sector stars.
+    {
+      const server21 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      for (const f of ['recs.js', 'drops.js', 'advisor.js']) require(path.join(CC, 'src', 'submersibles', f));
+      const NA = globalThis.ADVISOR.init(data), PARTS = [31, 24, 25, 34], ST = NA.stats(145, PARTS);
+      let best = null;
+      for (const cr of data.commonRoutes) { const ev = NA.evalRoute(cr.route, ST); if (!ev || !ev.reachable) continue; const g = globalThis.DROPS.perHour(globalThis.DROPS.route(data, cr.route, ST).gil, ev.seconds); if (!best || g > best.g) best = { name: cr.name, route: cr.route, g }; }
+      const bestText = NA.routeText(best.route);
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async ([all, parts]) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fm = { name: 'Mike Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.m1 = { fcId: 'fm', slot: 1, name: 'Sub M1', rank: 145, parts };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, [data.sectors.map((x) => x.id), PARTS]);
+      await page.reload(); await ready();
+      await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="m1"]');
+      const btn = await page.$eval('.quick[data-quick="m1"]', (b) => ({ text: b.textContent, title: b.getAttribute('title') }));
+      await page.click('.sub[data-sub="m1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+      const sheet = await page.evaluate(() => ({ route: document.querySelector('#sheet .advice-route b').textContent, why: document.querySelector('#sheet .advice-route + .hint').textContent, send: document.querySelector('#sheet [data-act=quick]').dataset.route, head: document.querySelector('#sheet .advice-step').textContent }));
+      await ctx.close();
+      const why = /^Community gil route [^:]+: about [\d,]+ gil a voyage at merchant prices \(about [\d,]+ an hour for this submarine\): an estimate from community drop records \(at least [\d.,]+( million)? surveys per sector on this route\), not a promise\. The best of the \d+ community gil routes this submarine can run\./;
+      const ok = btn.text.includes(bestText) && sheet.route === bestText && sheet.send === best.route.join(',') && btn.title === sheet.why && why.test(sheet.why) && sheet.why.includes('Community gil route ' + best.name + ':') &&
+        !/stars|only a guide/.test(btn.title + sheet.why) && /Suggested · step 3 of 3: Farm gil/.test(sheet.head) && real(errors).length === 0;
+      record('C90', 'Gil Farming (D3): a rank-145 submarine with everything found and no log: the Board button and the send window show the same route, the best runnable community route by estimated merchant gil per hour (worked out from the data), and the reason says "Community gil route", "an estimate from community drop records" with its record count and "not a promise", and says nothing about stars',
+        ok, { best, bestText, btn, sheet, errors: real(errors) });
+      server21.close();
+    }
+
+    // ── C91 Submersibles drop rates, work item D3: a seeded rank-15 submarine (a few sectors found, Gil Farming first) cannot run
+    //    a community route: "Found by the app from community drop rates", with the cause; with ten logged voyages on the route
+    //    the log sentence stands beside the estimate and says which decided.
+    {
+      const server22 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const seed = (trips) => page.evaluate(async (n) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} }, parts = [3, 4, 1, 2];
+        sec.fcs.fn = { name: 'November Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: [1, 2, 3, 4, 5, 6, 7, 8, 9] };
+        sec.subs.n1 = { fcId: 'fn', slot: 1, name: 'Sub N1', rank: 15, parts };
+        if (n.route) for (let i = 1; i <= n.count; i++) sec.trips['n1-' + i] = { s: 'n1', t: now - (40 + i * 30) * H, r: n.route, back: now - (40 + i * 30 - 29) * H, items: [[10099, 20000]], newSectors: [] };
+        let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { order: ['gil', 'unlock', 'level', 'loot'] } }, { rev: r.rev, base: null });
+      }, trips);
+      const read = async () => {
+        await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="n1"]');
+        const btn = await page.$eval('.quick[data-quick="n1"]', (b) => ({ text: b.textContent, title: b.getAttribute('title') }));
+        await page.click('.sub[data-sub="n1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+        const sheet = await page.evaluate(() => ({ route: document.querySelector('#sheet .advice-route b').textContent, why: document.querySelector('#sheet .advice-route + .hint').textContent, head: document.querySelector('#sheet .advice-step').textContent }));
+        await page.keyboard.press('Escape');
+        return { btn, sheet };
+      };
+      await seed({}); await page.reload(); await ready();
+      const plain = await read();
+      // the route the advice shows, as sector ids, from the send window's button
+      await page.click('.sub[data-sub="n1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+      const shown = await page.$eval('#sheet [data-act=quick]', (el) => el.dataset.route); await page.keyboard.press('Escape');
+      await seed({ route: shown.split(',').map(Number), count: 10 }); await page.reload(); await ready();
+      const logged = await read();
+      await ctx.close();
+      const head = /^No community gil route can be run by this submarine now \(sectors not found\)\. Found by the app from community drop rates: about [\d,]+ gil a voyage at merchant prices \(about [\d,]+ an hour for this submarine\): an estimate from community drop records \(at least [\d.,]+( million)? surveys per sector on this route\), not a promise\./;
+      const logSentence = /Your own log on this route: about [\d,]+ gil an hour at merchant prices over 10 logged voyages \(this submarine is back in [\d.]+ hours\); the community estimate is about [\d,]+ an hour\. Your own log decided/;
+      const ok = head.test(plain.sheet.why) && plain.btn.title === plain.sheet.why && !/Your own log/.test(plain.sheet.why) && /Suggested · Gil Farming/.test(plain.sheet.head) &&
+        head.test(logged.sheet.why) && logSentence.test(logged.sheet.why) && logged.btn.title === logged.sheet.why && logged.sheet.route === plain.sheet.route && !/stars|only a guide/.test(plain.sheet.why + logged.sheet.why) && real(errors).length === 0;
+      record('C91', 'Gil Farming (D3): a rank-15 submarine with sectors A to I found and Gil Farming first cannot run a community route: the reason says "No community gil route can be run by this submarine now (sectors not found)" and "Found by the app from community drop rates", with an estimate and its record count; with ten seeded logged voyages on that route the log sentence stands beside the community estimate and says "Your own log decided", on the Board and in the send window',
+        ok, { plain, logged, shown, errors: real(errors) });
+      server22.close();
+    }
+
+    // ── C92 Submersibles drop rates, work item D4: one submarine at the top rank and one at rank 60 in a seeded free company: the
+    //    Setup line under the Leveling row names only the first; the Leveling row's buttons still work; the first shows a gil
+    //    route, the second a levelling route; when every submarine is at the top rank the line says so.
+    {
+      const server23 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      const TOP = data.ranks[data.ranks.length - 1].rank;
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const seed = (secondRank) => page.evaluate(async ([all, top, second]) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} }, parts = [31, 24, 25, 34];
+        sec.fcs.fo = { name: 'Oscar Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.o1 = { fcId: 'fo', slot: 1, name: 'Sub Top', rank: top, parts };
+        sec.subs.o2 = { fcId: 'fo', slot: 2, name: 'Sub Mid', rank: second, parts };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, [data.sectors.map((x) => x.id), TOP, secondRank]);
+      await seed(60); await page.reload(); await ready();
+      await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="o1"]');
+      const board = () => page.evaluate(() => ({ o1: document.querySelector('.quick[data-quick="o1"]').getAttribute('title'), o2: document.querySelector('.quick[data-quick="o2"]').getAttribute('title') }));
+      const b1 = await board();
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel]');
+      const line = () => page.evaluate(() => { const e = document.querySelector('[data-rec-top-skip]'); return { text: e ? e.textContent : null, prevRow: e && e.previousElementSibling ? e.previousElementSibling.textContent : null }; });
+      const l1 = await line();
+      const order = () => page.$$eval('.rec-rank .rec-name', (els) => els.map((e) => e.textContent));
+      const enabled = await page.evaluate(() => ({ up: !document.querySelector('[data-rec="up-level"]').disabled, down: !document.querySelector('[data-rec="down-level"]').disabled }));
+      await page.focus('[data-rec="up-level"]'); await page.keyboard.press('Enter'); await page.waitForTimeout(600);
+      const o1 = await order(), l2 = await line();
+      await page.focus('[data-rec="down-level"]'); await page.keyboard.press('Enter'); await page.waitForTimeout(600);
+      const o2 = await order();
+      await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="o1"]');
+      const b2 = await board();
+      await seed(TOP); await page.reload(); await ready();
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel]');
+      const lAll = await line();
+      await ctx.close();
+      const want = 'Skipped for submarines at rank ' + TOP + ', the top rank: Sub Top. They go to the next priority.';
+      const ok = TOP === 145 && l1.text === want && !/Sub Mid/.test(l1.text) && /Leveling Submersible Rank/.test(l1.prevRow) &&
+        enabled.up && enabled.down && o1[0] === '1. Leveling Submersible Rank' && o2.join('|') === ['1. Unlocking Routes', '2. Leveling Submersible Rank', '3. Gil Farming', '4. Loot Farming'].join('|') && l2.text === want &&
+        /^Community gil route /.test(b1.o1) && /Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank\./.test(b1.o1) && /^(Most experience per hour within reach|At least [\d,]+ experience an hour)/.test(b1.o2) && !/top rank/.test(b1.o2) &&
+        /^Community gil route /.test(b2.o1) && /^(Most experience per hour within reach|At least [\d,]+ experience an hour)/.test(b2.o2) &&
+        lAll.text === 'Skipped for submarines at rank ' + TOP + ', the top rank: every submarine.' && real(errors).length === 0;
+      record('C92', 'The top rank (D4): with one submarine at rank 145 and one at rank 60, the Setup line under the Leveling row names only the first; the Leveling row\'s Move up and Move down still work and the line stays; the rank-145 submarine\'s Board button shows a community gil route with "Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank." and the rank-60 one a levelling route; with every submarine at 145 the line says "every submarine"',
+        ok, { TOP, b1, l1, enabled, o1, o2, l2, b2, lAll, errors: real(errors) });
+      server23.close();
     }
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the

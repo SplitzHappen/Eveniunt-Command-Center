@@ -628,15 +628,18 @@ function brute(scn) {
     if (visit && SECTOR.get(visit).rank > rank) visit = null;
   }
   const left = slots < 4 || undiscovered.length > 0, top = rank >= TOP;
-  const stars = (r) => r.route.reduce((t, id) => t + SECTOR.get(id).stars, 0);
+  // Gil (D3): estimated merchant gil of the route for this build; when a community route is among the routes in play, only those score
+  const bst = stats(rank, sharkObj), commKey = new Set(D.commonRoutes.map((c) => c.route.join(','))), estG = (r) => DROPS.route(D, r.route, bst).gil;
+  const gilFor = (S) => (S.some((r) => commKey.has(r.route.join(','))) ? (r) => (commKey.has(r.route.join(',')) ? estG(r) : 0) : estG);
   const U1 = (r) => (visit && r.route.includes(visit) ? 1 : 0), U2 = (r) => (undiscovered.length ? newOf(r.route) : 0);
   const single = routes.filter((r) => r.route.length === 1), u1 = single.some((r) => U1(r) > 0), u2 = single.some((r) => U2(r) > 0);
   const U3 = (r) => (left && !top && !u1 && !u2 ? r.exp : 0), X = (r) => (top ? 0 : r.exp);
-  const fns = { unlock: [U1, U2, U3], level: [X], gil: [stars] };
+  const fns = { unlock: [U1, U2, U3].map((f) => () => f), level: [() => X], gil: [gilFor] };
   const stages = order.filter((k) => fns[k]).flatMap((k) => fns[k]);
   let S = routes, lead = false;
   const rec = new Map(routes.map((r) => [r, []]));
-  for (const fn of stages) {
+  for (const mkFn of stages) {
+    const fn = mkFn(S);
     const sc = new Map(S.map((r) => [r, fn(r) / (r.seconds / 3600)]));
     const best = Math.max(...sc.values());
     if (!(best > 0)) continue;
@@ -666,6 +669,10 @@ const SCENARIOS = [
   { name: 'rank 10, slot 2 held, Gil then Leveling', rank: 10, found: [1, 2, 3, 4, 5, 6, 7], slots: 2, order: ['gil', 'level', 'unlock', 'loot'], fuel: false, giveUp: 15 },
   { name: 'D8: rank 5, A to G found, Gil second', rank: 5, found: [1, 2, 3, 4, 5, 6, 7], slots: 1, order: ['unlock', 'gil', 'level', 'loot'], fuel: false, giveUp: 15 },
   { name: 'rank 14, Unlocking first, fuel at 10', rank: 14, found: [1, 2, 3, 4, 5, 6, 7, 8], slots: 1, order: ['unlock', 'level', 'gil', 'loot'], fuel: true, giveUp: 10 },
+  // D3: the Fight Club sectors M, R, O, J, Z found, so five community routes can be run; only they score for Gil
+  { name: 'D3: rank 60, Fight Club sectors found, Gil first', rank: 60, found: [13, 18, 15, 10, 26], slots: 4, order: ['gil', 'unlock', 'level', 'loot'], fuel: false, giveUp: 15 },
+  { name: 'D3: rank 60, Fight Club sectors found, Gil first, fuel at 25', rank: 60, found: [13, 18, 15, 10, 26], slots: 4, order: ['gil', 'unlock', 'level', 'loot'], fuel: true, giveUp: 25 },
+  { name: 'D3: rank 60, Leveling first, Gil second', rank: 60, found: [13, 18, 15, 10, 26], slots: 4, order: ['level', 'gil', 'unlock', 'loot'], fuel: false, giveUp: 15 },
 ];
 
 test('Submersibles advisor with settings (R2): for pools of at most 8 sectors the plan equals a brute-force best under 4.4', () => {
@@ -693,38 +700,12 @@ test('Submersibles advisor with settings (R2): D8, levelling towards what is lef
   assert.equal(f.lead, 'U2');
 });
 
-test('Submersibles advisor with settings (R2): invariant I1, the S6 cases equal today\'s advice when only Gil is live and fuel is off', () => {
-  const build = [31, 24, 25, 34], base = { sub: { rank: 145, parts: build }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
-  const L = (route, trips, perTrip, enough) => ({ route, trips, perTrip, enough: enough === undefined ? trips >= 10 : enough });
-  const plain = ADV.advise(base);
-  const cases = [
-    base,
-    Object.assign({}, base, { sub: { rank: 145, parts: SHARK } }),
-    Object.assign({}, base, { logged: null }), Object.assign({}, base, { logged: [] }),
-    Object.assign({}, base, { logged: [L([1, 2], 9, 5000)], enough: 10 }),
-    Object.assign({}, base, { logged: [L(plain.plan.route, 9, 5000)], enough: 10 }),
-    Object.assign({}, base, { logged: [L([1, 2], 14, 412000)], enough: 10, priceNote: 'Market prices seen Tue 14:05 on this device.' }),
-    Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 12, 0)], enough: 10 }),
-    Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 4, 1000, false)], enough: 10 }),
-  ];
-  for (const [i, c] of cases.entries()) {
-    const today = ADV.advise(c), now = ADV.advise(Object.assign({}, c, { recs: RECS.defaults() }));
-    const pick = (a) => ({ step: a.step, stepName: a.stepName, goal: a.goal, plan: a.plan, alts: a.alts, parts: a.parts, note: a.note, own: a.own });
-    assert.deepEqual(pick(now), pick(today), 'case ' + i);
-    assert.equal(now.lead, 'G'); assert.equal(now.fuel, false);
-    assert.deepEqual(now.skipped.map((x) => x.key), ['U1', 'U2', 'U3', 'X', 'L1', 'L2']);
-  }
-  // fuel on is no longer today's answer path, but is still a gil route this sub can run
-  const f = ADV.advise(Object.assign({}, base, { recs: withRecs({ fuel: true }) }));
-  assert.equal(f.lead, 'G'); assert.equal(f.fuel, true); assert.ok(f.plan.ev.reachable);
-});
-
 test('Submersibles advisor with settings (R2): each skip of 4.5 names its cause; loot leads when an item can drop', () => {
   const full = { sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
   const a = ADV.advise(Object.assign({}, full, { recs: RECS.defaults() }));
   const why = Object.fromEntries(a.skipped.map((s) => [s.key, s.reason]));
   assert.equal(why.U1, 'every sector is found'); assert.equal(why.U2, 'every sector is found'); assert.equal(why.U3, 'every sector is found');
-  assert.equal(why.X, 'this sub is at the top rank'); assert.equal(why.L1, 'no item chosen'); assert.equal(why.L2, 'no item chosen');
+  assert.equal(why.X, `this submarine is at rank ${TOP}, the top rank`); assert.equal(why.L1, 'no item chosen'); assert.equal(why.L2, 'no item chosen');
   // loot skipped because no chosen item can drop where this sub can go (rank 1, sectors A and B)
   const items = RECS.items(D);
   const lowDrop = (id) => D.sectors.some((s) => s.rank <= 1 && (D.loot[s.id] || []).includes(id));
@@ -819,7 +800,7 @@ test('Submersibles advisor reasons (R3): skipped objectives above the lead are n
   const a = ADV.advise(Object.assign({}, R3_FULL, { recs: withRecs({ fuel: true }) }));
   assert.equal(a.lead, 'G');
   assert.match(a.plan.why, /Skipped Unlocking Routes: every sector is found\./);
-  assert.match(a.plan.why, /Skipped Leveling Submersible Rank: this sub is at the top rank\./);
+  assert.match(a.plan.why, new RegExp('Skipped Leveling Submersible Rank: this submarine is at rank ' + TOP + ', the top rank\\.'));
   assert.ok(!/Loot Farming/.test(a.plan.why), 'no item chosen is said in Setup only');
   // Gil ranked first: nothing above it, so nothing named
   const g = ADV.advise(Object.assign({}, R3_FULL, { recs: withRecs({ fuel: true, order: ['gil', 'unlock', 'level', 'loot'] }) }));
@@ -831,7 +812,7 @@ test('Submersibles advisor reasons (R3): skipped objectives above the lead are n
   assert.match(l.plan.why, /Skipped Loot Farming: none of your chosen items can drop in a sector this sub can reach now\./);
   // the 4.5 causes sit in the skipped list too
   const why = Object.fromEntries(a.skipped.map((s) => [s.key, s.reason]));
-  assert.equal(why.U1, 'every sector is found'); assert.equal(why.X, 'this sub is at the top rank'); assert.equal(why.L1, 'no item chosen');
+  assert.equal(why.U1, 'every sector is found'); assert.equal(why.X, `this submarine is at rank ${TOP}, the top rank`); assert.equal(why.L1, 'no item chosen');
 });
 
 test('Submersibles advisor header (R3): each case of spec 4.7', () => {
@@ -1600,4 +1581,202 @@ test('drops: cost of one route and of ranking the ten community routes', () => {
   // cold: compile every sector of a route for a state not seen before
   const cold = JSON.parse(JSON.stringify({ breakpoints: D.breakpoints, itemInfo: D.itemInfo, dropRates: D.dropRates }));
   t0 = process.hrtime.bigint(); DROPS.route(cold, five, OJ_ST); console.log('cost: cold first call of a 5-sector route %s ms', (Number(process.hrtime.bigint() - t0) / 1e6).toFixed(3));
+});
+
+// ---------------------------------------------------------------- D3: Gil Farming (community routes first), D4: the top rank
+// (docs/submersibles-droprates-spec.md sections 6.1, 6.2, 5.5 and the owner's decisions of 2026-11-18)
+const D3_PARTS = [3, 4, 5, 14]; // the build of spec 5.3
+const D3_FULL = { sub: { rank: TOP, parts: D3_PARTS }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+const gilAdvise = (inp, o) => ADV.advise(Object.assign({}, inp, { recs: withRecs(o || {}) }));
+const LOGGED_ROW = (route, trips, merchantPerTrip, enough) => ({ route, trips, perTrip: merchantPerTrip == null ? 0 : merchantPerTrip, merchantPerTrip, enough: enough === undefined ? trips >= 10 : enough });
+// brute force: every pinned community route the build can run, by estimated merchant gil per hour (a log figure replaces it when given)
+function communityRanking(inp, logged) {
+  const st = ADV.stats(inp.sub.rank, inp.sub.parts), disc = new Set(inp.fc.discovered), out = [];
+  for (const cr of D.commonRoutes) {
+    if (!cr.route.every((id) => disc.has(id) && SECTOR.get(id).rank <= inp.sub.rank)) continue;
+    const ev = ADV.evalRoute(cr.route, st); if (!ev || !ev.reachable) continue;
+    const est = DROPS.route(D, cr.route, st), lg = (logged || []).find((l) => l.route.join() === cr.route.join() && l.enough && Number.isFinite(l.merchantPerTrip));
+    out.push({ name: cr.name, route: cr.route, ev, est, estPerHour: DROPS.perHour(est.gil, ev.seconds), perHour: DROPS.perHour(lg ? lg.merchantPerTrip : est.gil, ev.seconds), tanks: Math.max(1, ev.tanks) });
+  }
+  return out.sort((a, b) => b.perHour - a.perHour);
+}
+const noStarsText = (a) => [a.plan].concat(a.alts).forEach((x) => assert.ok(!/only a guide|sector stars|stars/i.test(x.why), x.why));
+
+test('D3: rank 145, the build of 5.3, everything found, default order: Gil leads, the plan is the best runnable community route by DROPS', () => {
+  const a = gilAdvise(D3_FULL), rank = communityRanking(D3_FULL);
+  assert.equal(a.lead, 'G'); assert.equal(a.step, 3);
+  assert.equal(a.plan.kind, 'community'); assert.deepEqual(a.plan.route, rank[0].route); assert.equal(a.plan.name, rank[0].name);
+  assert.equal(rank.length, 10, 'all ten community routes can be run by this build');
+  near(a.plan.est.perHour, rank[0].estPerHour, 1e-12, 'perHour'); near(a.plan.est.gil, rank[0].est.gil, 1e-12, 'gil');
+  const least = Math.min(...rank[0].est.sectors.map((x) => x.rolls)); assert.equal(a.plan.est.n, least, 'the count is the band\'s least-recorded sector');
+  assert.equal(a.plan.est.few, false);
+  assert.ok(a.plan.why.startsWith(`Community gil route ${rank[0].name}: about `), a.plan.why);
+  assert.ok(a.plan.why.includes('an estimate from community drop records (at least ' + DROPS.fmt.count(least) + ' surveys per sector on this route), not a promise.'), a.plan.why);
+  assert.ok(a.plan.why.includes('The best of the 10 community gil routes this submarine can run.'), a.plan.why);
+  assert.ok(a.plan.why.includes(DROPS.fmt.voyage(rank[0].est.gil) + ' gil a voyage at merchant prices (about ' + DROPS.fmt.hour(rank[0].estPerHour) + ' an hour'), a.plan.why);
+  // other routes: community routes in order, each says what it is
+  const idx = a.alts.map((x) => rank.findIndex((r) => r.route.join() === x.route.join()));
+  assert.ok(idx.every((i) => i > 0) && idx.every((v, i) => i === 0 || v > idx[i - 1]), 'other routes are the next community routes, best first: ' + idx);
+  for (const x of a.alts) assert.equal(x.kind, 'community');
+  noStarsText(a);
+  // with the default order, nothing is skipped silently: the two objectives above Gil are named
+  assert.match(a.plan.why, /Skipped Unlocking Routes: every sector is found\./); assert.match(a.plan.why, /Skipped Leveling Submersible Rank: /);
+  // the unchanged path (no recs) is untouched: it still says stars
+  assert.match(ADV.advise(D3_FULL).plan.why, /stars are only a guide/);
+});
+
+test('D3: no community route can be run: the plan is derived, and the sentence says why (rank, sectors not found, range)', () => {
+  const gilFirst = { order: ['gil', 'unlock', 'level', 'loot'] };
+  const notFound = gilAdvise({ sub: { rank: 15, parts: SHARK }, fc: { unlockedSlots: 4, discovered: [1, 2, 3, 4, 5, 6, 7, 8, 9] }, slotsFilled: 4 }, gilFirst);
+  assert.equal(notFound.lead, 'G'); assert.equal(notFound.plan.kind, 'derived');
+  assert.ok(notFound.plan.why.startsWith('No community gil route can be run by this submarine now (sectors not found). Found by the app from community drop rates: about '), notFound.plan.why);
+  assert.ok(/an estimate from community drop records \(at least [\d,.]+( million)? surveys per sector on this route\), not a promise\./.test(notFound.plan.why));
+  for (const x of [notFound.plan].concat(notFound.alts)) assert.equal(x.kind, 'derived');
+  noStarsText(notFound);
+  // the plan equals the best of every route the sub can run in that sea, by estimated gil per hour (brute force, 9 sectors found)
+  const st = ADV.stats(15, SHARK); let best = 0;
+  (function walk(r) { if (r.length >= 5) return; for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9]) { if (r.includes(id)) continue; const n = r.concat(id), ev = ADV.evalRoute(n, st); if (!ev.reachable) continue; best = Math.max(best, DROPS.perHour(DROPS.route(D, n, st).gil, ev.seconds)); walk(n); } })([]);
+  assert.ok(notFound.plan.est.perHour >= 0.95 * best, `plan ${notFound.plan.est.perHour} vs best ${best}: within the search's reach`);
+  // rank: the Fight Club sectors are found but rank 30 is below Z (rank 50) and R (37)... OJ stays runnable at 30, so use a rank below O (30)
+  const lowRank = gilAdvise({ sub: { rank: 25, parts: SHARK }, fc: { unlockedSlots: 4, discovered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 18, 26, 13] }, slotsFilled: 4 }, gilFirst);
+  assert.equal(lowRank.plan.kind, 'derived'); assert.match(lowRank.plan.why, /^No community gil route can be run by this submarine now \(rank\)\./);
+  // range: found and rank allowed, but the range does not reach any of them
+  const rangeInp = { sub: { rank: 30, parts: [11, 16, 21, 2] }, fc: { unlockedSlots: 4, discovered: [13, 18, 15, 10, 26] }, slotsFilled: 4 };
+  const noRange = gilAdvise(rangeInp, gilFirst);
+  assert.equal(noRange.plan.kind, 'derived'); assert.match(noRange.plan.why, /^No community gil route can be run by this submarine now \(range\)\./);
+  assert.equal(communityRanking(rangeInp).length, 0);
+  // a sea of more than 8 visitable sectors: "best found, not proven best"
+  const big = gilAdvise({ sub: { rank: TOP, parts: D3_PARTS }, fc: { unlockedSlots: 4, discovered: D.sectors.filter((s) => s.sea === 7).map((s) => s.id) }, slotsFilled: 4 });
+  assert.equal(big.lead, 'G'); assert.equal(big.plan.kind, 'derived'); assert.match(big.plan.why, /The best found, not proven best\./);
+});
+
+test('D3: a derived route only appears among the other routes, only above 5%, never as the plan while a community route can be run', () => {
+  // item prices lowered for every item the two community seas drop, so the community routes get poorer and the app-found routes in the other seas
+  // (whose own items keep their price) richer by comparison (a copy of the data; the advisor is set back after)
+  const commSeas = new Set(D.commonRoutes.map((c) => SECTOR.get(c.route[0]).sea)), itemsOf = (sid) => new Set(D.dropRates.sectors[sid].pools.flatMap((p) => p.items.map((it) => it[0])));
+  const inComm = new Set();
+  for (const s of D.sectors) if (commSeas.has(s.sea)) for (const it of itemsOf(s.id)) inComm.add(it);
+  const withPrices = (f) => { const info = Object.assign({}, D.itemInfo); for (const id of inComm) if (info[id]) info[id] = [info[id][0] * f].concat(info[id].slice(1)); return Object.assign({}, D, { itemInfo: info }); };
+  let derivedSeen = 0;
+  try {
+    for (const k of [1, 0.5, 0.2, 0.05, 0.01, 0.001]) {
+      ADV.init(withPrices(k));
+      const a = gilAdvise(D3_FULL);
+      assert.equal(a.lead, 'G'); assert.equal(a.plan.kind, 'community', 'never the plan, k=' + k);
+      assert.ok(a.alts.length <= 2);
+      for (const x of a.alts) {
+        if (x.kind !== 'derived') continue;
+        derivedSeen++;
+        assert.ok(x.est.perHour > 1.05 * a.plan.est.perHour, `derived ${x.est.perHour} must beat the plan ${a.plan.est.perHour} by more than 5%`);
+        assert.equal(a.alts[0], x, 'second place');
+        assert.match(x.why, /^Found by the app in [A-Za-z -]+: about [\d,]+ gil an hour by the same estimate, \d+% more than the community route\. Community routes come first\./);
+        assert.ok(!commSeas.has(SECTOR.get(x.route[0]).sea), 'a sea where this sub can run no community route');
+      }
+      noStarsText(a);
+      if (k === 1) assert.ok(a.alts.every((x) => x.kind === 'community'), 'at the real prices no app-found route beats the community plan by 5%');
+    }
+  } finally { ADV.init(D); }
+  assert.ok(derivedSeen > 0, 'with poor enough community loot a derived route is shown');
+});
+
+test('D3: the own log (owner decision Q3): 10 voyages replace the estimate for that route only, both figures shown, the reason says which decided', () => {
+  const base = gilAdvise(D3_FULL), rank = communityRanking(D3_FULL), st = ADV.stats(TOP, D3_PARTS);
+  const hours = (r) => ADV.evalRoute(r, st).seconds / 3600;
+  // a log on a route that is not a community route does not change the plan; nothing else changes
+  const far = gilAdvise(Object.assign({}, D3_FULL, { logged: [LOGGED_ROW([1, 2], 30, 5e6)], enough: 10 }));
+  assert.deepEqual(far.plan.route, base.plan.route);
+  // fewer than 10 logged voyages: shown as "n of 10", the estimate decides
+  const nine = gilAdvise(Object.assign({}, D3_FULL, { logged: [LOGGED_ROW(base.plan.route, 9, 5e6)], enough: 10 }));
+  assert.deepEqual(nine.plan.route, base.plan.route);
+  assert.ok(nine.plan.why.includes('Your own log on this route: 9 of 10 logged voyages; the estimate decides until then.'), nine.plan.why);
+  // a log close to the estimate: the plan keeps the route, both figures are in the reason and the log decided
+  const same = LOGGED_ROW(base.plan.route, 12, base.plan.est.gil * 1.01);
+  const s = gilAdvise(Object.assign({}, D3_FULL, { logged: [same], enough: 10 }));
+  assert.deepEqual(s.plan.route, base.plan.route); assert.equal(s.plan.own, true);
+  assert.ok(s.plan.why.includes('Your own log on this route: about ' + DROPS.fmt.hour(same.merchantPerTrip / hours(base.plan.route)) + ' gil an hour at merchant prices over 12 logged voyages'), s.plan.why);
+  assert.ok(s.plan.why.includes('the community estimate is about ' + DROPS.fmt.hour(base.plan.est.perHour) + ' an hour. Your own log decided'), s.plan.why);
+  // a much better own figure on a lower route lifts it to the plan; a much worse one on the best route lowers it
+  const lower = rank[2], up = LOGGED_ROW(lower.route, 14, lower.est.gil * 3);
+  const lifted = gilAdvise(Object.assign({}, D3_FULL, { logged: [up], enough: 10 }));
+  assert.deepEqual(lifted.plan.route, lower.route); assert.equal(lifted.plan.kind, 'community'); assert.match(lifted.plan.why, /Your own log decided/);
+  assert.ok(lifted.plan.why.includes('the community estimate is about ' + DROPS.fmt.hour(lower.estPerHour) + ' an hour'));
+  const down = LOGGED_ROW(base.plan.route, 11, 1000);
+  const lowered = gilAdvise(Object.assign({}, D3_FULL, { logged: [down], enough: 10 }));
+  assert.notDeepEqual(lowered.plan.route, base.plan.route);
+  // the plan is the argmax of the figures, whichever mix of logged and estimated routes
+  for (const logs of [[up], [down], [up, down], [LOGGED_ROW(rank[1].route, 10, 0)]]) {
+    const r = communityRanking(D3_FULL, logs), a = gilAdvise(Object.assign({}, D3_FULL, { logged: logs, enough: 10 }));
+    assert.deepEqual(a.plan.route, r[0].route, JSON.stringify(logs.map((l) => l.route.join('>') + ':' + l.merchantPerTrip)));
+  }
+  // a log that cannot be counted in merchant gil: the estimate decides for that route and the reason says so
+  const unk = gilAdvise(Object.assign({}, D3_FULL, { logged: [LOGGED_ROW(base.plan.route, 12, null)], enough: 10 }));
+  assert.deepEqual(unk.plan.route, base.plan.route); assert.ok(!unk.plan.own);
+  assert.ok(unk.plan.why.includes('cannot be counted in merchant gil') && unk.plan.why.includes('so the estimate decided for it'), unk.plan.why);
+  for (const a of [far, nine, s, lifted, lowered, unk]) noStarsText(a);
+});
+
+test('D3: fuel on with Gil leading narrows by estimated gil per tank; the evaluation bound holds', () => {
+  const rank = communityRanking(D3_FULL), giveUp = 25;
+  const a = gilAdvise(D3_FULL, { fuel: true, giveUp });
+  assert.equal(a.lead, 'G'); assert.equal(a.fuel, true);
+  const best = rank[0].perHour, inBand = rank.filter((r) => r.perHour >= (1 - giveUp / 100) * best - 1e-9 * best), bestE = Math.max(...inBand.map((r) => r.est.gil / r.tanks));
+  const mine = rank.find((r) => r.route.join() === a.plan.route.join());
+  assert.ok(mine && mine.perHour >= (1 - giveUp / 100) * best - 1e-9 * best, 'inside the allowance');
+  assert.ok(mine.est.gil / mine.tanks >= 0.95 * bestE - 1e-9 * bestE, 'within 5% of the best gil per tank');
+  assert.match(a.plan.why, /Fuel efficiency/); noStarsText(a);
+  assert.ok(ADV.lastEvals > 0 && ADV.lastEvals <= 92000, 'evaluations ' + ADV.lastEvals);
+  gilAdvise(D3_FULL); assert.ok(ADV.lastEvals <= 92000, 'evaluations ' + ADV.lastEvals);
+  gilAdvise(D3_FULL, { fuel: true }); assert.ok(ADV.lastEvals <= 92000);
+});
+
+test('D3: Gil later in the order: it narrows within 5% with community routes only; the figure is an estimate', () => {
+  const a = gilAdvise(Object.assign({}, D3_FULL, { sub: { rank: 60, parts: SHARK }, fc: { unlockedSlots: 4, discovered: [13, 18, 15, 10, 26] } }), { order: ['level', 'gil', 'unlock', 'loot'] });
+  assert.equal(a.lead, 'X');
+  for (const t of a.plan.why.match(/Then Gil Farming: [^.]*\./g) || []) assert.match(t, /^Then Gil Farming: about [\d,]+ gil an hour at merchant prices \((estimate from community drop records|your own log)\)\.$/);
+  noStarsText(a);
+});
+
+// ---- D4: the top rank
+test('D4: at the top rank, with the default order and everything found, Gil leads and the reason names the skipped Leveling with the rank from the data', () => {
+  assert.equal(TOP, D.ranks[D.ranks.length - 1].rank);
+  const a = gilAdvise(D3_FULL);
+  assert.equal(a.lead, 'G'); assert.equal(a.plan.kind, 'community');
+  assert.ok(a.plan.why.includes(`Skipped Leveling Submersible Rank: this submarine is at rank ${TOP}, the top rank.`), a.plan.why);
+  assert.equal(a.skipped.find((x) => x.key === 'X').reason, `this submarine is at rank ${TOP}, the top rank`);
+  // Leveling first: the same lead, plan and reason
+  const l = gilAdvise(D3_FULL, { order: ['level', 'unlock', 'gil', 'loot'] });
+  assert.equal(l.lead, 'G'); assert.deepEqual(l.plan.route, a.plan.route);
+  assert.ok(l.plan.why.includes(`Skipped Leveling Submersible Rank: this submarine is at rank ${TOP}, the top rank.`), l.plan.why);
+  // the next rank down: Leveling is not skipped, with the same save
+  const below = gilAdvise(Object.assign({}, D3_FULL, { sub: { rank: TOP - 1, parts: D3_PARTS } }), { order: ['level', 'unlock', 'gil', 'loot'] });
+  assert.equal(below.lead, 'X'); assert.ok(!/top rank/.test(below.plan.why), below.plan.why);
+  const belowDefault = gilAdvise(Object.assign({}, D3_FULL, { sub: { rank: TOP - 1, parts: D3_PARTS } }));
+  assert.equal(belowDefault.lead, 'X', 'default order: levelling before gil below the top rank, as before');
+});
+
+test('D4: a top-rank submarine that can still reveal a sector explores first (the case of spec 6.2: H found, K and M not), then farms gil', () => {
+  const letter = (L) => D.sectors.find((s) => s.sea === 7 && s.letter === L).id, H = letter('H'), K = letter('K'), M = letter('M');
+  assert.equal(SECTOR.get(H).rank, 141); assert.deepEqual(CHILDREN(H).sort(), [K, M].sort());
+  const found = ALL.filter((id) => id !== K && id !== M), inp = (rank) => ({ sub: { rank, parts: D3_PARTS }, fc: { unlockedSlots: 4, discovered: found }, slotsFilled: 4 });
+  const top = gilAdvise(inp(TOP));
+  assert.equal(top.lead, 'U2'); assert.ok(top.plan.route.includes(H), 'the plan surveys H');
+  assert.match(top.plan.why, /^Can reveal 2 new sectors/);
+  assert.equal(top.skipped.find((x) => x.key === 'X').reason, `this submarine is at rank ${TOP}, the top rank`);
+  // Leveling first at the top rank: Unlocking still leads, and Leveling is named as skipped
+  const lvl = gilAdvise(inp(TOP), { order: ['level', 'unlock', 'gil', 'loot'] });
+  assert.equal(lvl.lead, 'U2'); assert.ok(lvl.plan.route.includes(H)); assert.ok(lvl.plan.why.includes(`Skipped Leveling Submersible Rank: this submarine is at rank ${TOP}, the top rank.`));
+  // one rank down, Leveling first: Leveling leads, as before
+  const down = gilAdvise(inp(TOP - 1), { order: ['level', 'unlock', 'gil', 'loot'] });
+  assert.equal(down.lead, 'X');
+  // once K and M are found, the same submarine farms gil
+  assert.equal(gilAdvise(Object.assign({}, inp(TOP), { fc: { unlockedSlots: 4, discovered: ALL } })).lead, 'G');
+});
+
+test('D4: a top-rank submarine with nothing to reveal and no community route it can run farms a derived route; the top rank is read from the data', () => {
+  const north = D.sectors.filter((s) => s.sea === 7).map((s) => s.id);
+  const a = gilAdvise({ sub: { rank: TOP, parts: D3_PARTS }, fc: { unlockedSlots: 4, discovered: north }, slotsFilled: 4 });
+  assert.equal(a.lead, 'G'); assert.equal(a.plan.kind, 'derived');
+  assert.match(a.plan.why, /^No community gil route can be run by this submarine now \(sectors not found\)\./);
+  assert.ok(a.plan.why.includes(`Skipped Leveling Submersible Rank: this submarine is at rank ${TOP}, the top rank.`));
+  assert.equal(ADV.top(), TOP);
 });

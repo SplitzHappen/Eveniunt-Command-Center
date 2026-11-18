@@ -11,7 +11,7 @@ Everything comes from `tracker/data/submarines.json`: no number is invented, no 
 - Scenario *levelling*: every sector of rank at most R is found (R is the sub's rank); Leveling is ranked first. Intended lead: experience (stage X).
 - Scenario *unlocking*: every sector of rank at most R/2 (rounded down) is found, and always the two sectors A and B of the first sea; Unlocking is ranked first. Intended lead: new sectors (stage U2).
 - Scenarios: 122. With the intended lead: 122 (61 levelling, 61 unlocking). Only these are measured. The rest have another lead (for example no sector able to reveal a new one), which these tables do not describe.
-- Scenarios in which some allowance from 5 to 50 changed the route compared with fuel off: 75 of 122.
+- Scenarios in which some allowance from 5 to 50 changed the route compared with fuel off: 76 of 122.
 
 | Rank | Classes | Levelling lead | Unlocking lead |
 | --- | --- | --- | --- |
@@ -36,16 +36,16 @@ For each allowance g the top priority may give up (fuel efficiency on), over the
 | g (%) | L(g) | E(g) | step cost (L) | step gain (E) | step pays (E gain >= L cost) | scenarios whose route changed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 (fuel off) | 0.00 | 0.00 | | | | |
-| 5 | 0.15 | 13.18 | 0.15 | 13.18 | yes | 22 |
-| 10 | 1.30 | 17.88 | 1.15 | 4.70 | yes | 39 |
-| 15 | 3.41 | 19.34 | 2.11 | 1.46 | no | 52 |
-| 20 | 4.76 | 23.60 | 1.35 | 4.26 | yes | 57 |
-| 25 | 6.70 | 30.27 | 1.94 | 6.67 | yes | 61 |
-| 30 | 9.17 | 35.83 | 2.46 | 5.56 | yes | 68 |
-| 35 | 11.17 | 40.85 | 2.01 | 5.02 | yes | 73 |
-| 40 | 12.93 | 44.85 | 1.75 | 4.00 | yes | 75 |
-| 45 | 14.29 | 47.54 | 1.37 | 2.70 | yes | 75 |
-| 50 | 14.81 | 48.95 | 0.52 | 1.41 | yes | 75 |
+| 5 | 0.13 | 13.73 | 0.13 | 13.73 | yes | 27 |
+| 10 | 1.14 | 18.43 | 1.01 | 4.69 | yes | 43 |
+| 15 | 3.03 | 19.99 | 1.89 | 1.56 | no | 52 |
+| 20 | 4.32 | 24.44 | 1.29 | 4.45 | yes | 57 |
+| 25 | 6.27 | 31.28 | 1.94 | 6.83 | yes | 61 |
+| 30 | 9.03 | 36.97 | 2.76 | 5.69 | yes | 69 |
+| 35 | 11.21 | 41.99 | 2.18 | 5.02 | yes | 74 |
+| 40 | 13.03 | 46.01 | 1.82 | 4.02 | yes | 76 |
+| 45 | 14.41 | 48.98 | 1.38 | 2.97 | yes | 76 |
+| 50 | 14.88 | 50.39 | 0.46 | 1.41 | yes | 76 |
 
 **The rule, in one sentence:** the default allowance is the largest g up to which every step of 5 points bought at least as much extra gain per tank as it cost in lost per-hour score (`E(g) - E(g-5) >= L(g) - L(g-5)`, with fuel off as `E = L = 0`).
 
@@ -61,15 +61,15 @@ Fuel off. The first priority is the scenario's lead (experience in a levelling s
 | Band | Mean loss on the first priority | Mean gain on the second priority |
 | --- | --- | --- |
 | 0% | 0.00 | 0.00 |
-| 2% | 0.15 | 2.90 |
-| 5% | 0.77 | 5.10 |
-| 10% | 1.65 | 8.60 |
+| 2% | 0.15 | 2.91 |
+| 5% | 1.11 | 5.05 |
+| 10% | 3.07 | 8.56 |
 
-Accepted at 5% when the second priority gains more than the first loses: 5.10 against 0.77, so accepted.
+Accepted at 5% when the second priority gains more than the first loses: 5.05 against 1.11, so accepted.
 
 ## What this does and does not show
 
-- **10% is where the rule stops, not the best value.** It is the first allowance at which a 5-point step stops paying (the step to 15%: gain 1.46 against cost 2.11). 7 of the 7 steps after it pay again, and the gap between E and L keeps growing: 16.58 at 10%, 34.14 at 50% (the 50% row: L 14.81, E 48.95, route changed in 75 of 122 scenarios). The table does not show which allowance is best; the rule only picks the first point where the gain falls short of the cost.
+- **10% is where the rule stops, not the best value.** It is the first allowance at which a 5-point step stops paying (the step to 15%: gain 1.56 against cost 1.89). 7 of the 7 steps after it pay again, and the gap between E and L keeps growing: 17.28 at 10%, 35.51 at 50% (the 50% row: L 14.88, E 50.39, route changed in 76 of 122 scenarios). The table does not show which allowance is best; the rule only picks the first point where the gain falls short of the cost.
 - **E and L are different units.** E is a gain in the amount per ceruleum tank; L is the share of the top priority's per-hour score given up. Comparing them (`E gain >= L cost`) puts a tank and an hour of that score on one scale, and the data gives no exchange rate between them, so "pays" is only the rule's word.
 - **The next-slot stage is never measured.** Every scenario has 4 slots unlocked, so the stage that looks for the sector granting the next submarine slot (U1) has nothing to do in any of them.
 - **The 95% per-tank filter was not tuned.** After the allowance, only routes within 95% of the best gain per tank stay (spec 4.4); that 95% is fixed, and no other value was tried.

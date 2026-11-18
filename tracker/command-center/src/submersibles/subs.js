@@ -273,7 +273,7 @@
     if (!fc || !list.length) return 'unlock';
     var advice = list.map(function (k) { return advised('stage', k, S.subs[k], fc, [], list.length); });
     if (advice.some(function (a) { return a.blocked || a.step < 3; })) return 'unlock';
-    return list.every(function (k) { return S.subs[k].rank === 145; }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
+    return list.every(function (k) { return S.subs[k].rank === ADV.top(); }) && advice.every(function (a) { return !a.parts; }) ? 'final' : 'gil';
   }
   function prefs() { return Object.assign({}, S.settings.prefs || {}, SH.notify || {}); } // the night rule comes from the main Settings
   var pushTimer = null;
@@ -378,13 +378,21 @@
     var i = +t.dataset.recFind; RC.find[i] = t.value;
     var sel = $('[data-rec="loot-' + i + '"]'); if (sel) sel.innerHTML = recOptionsHtml(i);
   }
+  // Under the Leveling row: the submarines at the top rank (the last rank of the data), for which Leveling is skipped (drop-rates spec 6.2, E12).
+  // The row and its buttons stay usable: the order still applies to every submarine below the top rank.
+  function topSkipHtml() {
+    var top = ADV.top(), all = Object.keys(S.subs).map(function (k) { return S.subs[k]; }), at = all.filter(function (x) { return x.rank >= top; });
+    if (!at.length) return '';
+    var names = at.length === all.length ? 'every submarine.' : at.map(function (x) { return x.name || 'Sub ' + x.slot; }).join(', ') + '. They go to the next priority.';
+    return '<li class="hint" data-rec-top-skip>' + esc('Skipped for submarines at rank ' + top + ', the top rank: ' + names) + '</li>';
+  }
   function recsBodyHtml() {
     var R = window.RECS, c = recsNow(), n = c.order.length;
     var rows = c.order.map(function (k, i) {
       var name = R.LABEL[k];
       return '<li><span class="rec-name"><b>' + (i + 1) + '.</b> ' + esc(name) + '</span><span class="row">' +
         '<button type="button" class="btn sm" data-rec="up-' + esc(k) + '" aria-label="' + esc('Move up: ' + name) + '"' + (i === 0 ? ' disabled' : '') + '>Move up</button>' +
-        '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move down: ' + name) + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>';
+        '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move down: ' + name) + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>' + (k === 'level' ? topSkipHtml() : '');
     }).join('');
     return '<label class="opt big"><input type="checkbox" data-rec="fuel"' + (c.fuel ? ' checked' : '') + '> <span>Prioritise fuel efficiency</span></label>' +
       '<p class="rec-give"><label for="rec-give">To save fuel, give up at most <b>' + c.giveUp + '%</b> of the best result for my top priority</label><br>' +
@@ -401,7 +409,7 @@
       '<details><summary>How the recommendation is decided</summary>' +
       '<p class="hint">Your ranking decides in order. For the first objective the app finds the best route and keeps every route within ' + Math.round(window.RECS.BAND * 100) + '% of it; the next objective chooses among those, and so on. A route is never more than ' + Math.round(window.RECS.BAND * 100) + '% worse than the best for any objective above the one that chose it. An objective with nothing to offer here is skipped, and the reason is named when it ranks above the suggestion. Nothing is random: equal routes go to the quicker one, then the one with fewer tanks.</p>' +
       '<p class="hint">With fuel efficiency on, the first objective may give up to the percentage you set; among those routes the one that brings the most per ceruleum tank wins. Fuel is counted in tanks, not in gil, because the price of a tank is not in the data.</p>' +
-      '<p class="hint">What each objective measures, and its limits. Unlocking Routes: new submarine slots, then sectors that can still be revealed (community data; a reveal is not certain on every visit), then experience towards a needed rank. Leveling Submersible Rank: the base experience a voyage gives per hour, a floor only, because surveillance, retrieval and favor are not modelled. Gil Farming: gil per hour from your own log once a route has 10 logged voyages, at the market prices seen on this device; otherwise community routes or sector stars, which are only a guide. Loot Farming: where a chosen item can possibly drop; no drop odds or quantities are known.</p>' +
+      '<p class="hint">What each objective measures, and its limits. Unlocking Routes: new submarine slots, then sectors that can still be revealed (community data; a reveal is not certain on every visit), then experience towards a needed rank. Leveling Submersible Rank: the base experience a voyage gives per hour, a floor only, because surveillance, retrieval and favor are not modelled. Gil Farming: the gil routes made by the community (loot sold to merchants) that this submarine can run, ranked by the gil per hour they are estimated to bring for this submarine, an estimate from community drop records; once a route has 10 logged voyages, your own log, counted in merchant gil per hour, replaces the estimate for that route, and the reason shows both figures. Loot Farming: where a chosen item can possibly drop; no drop odds or quantities are known.</p>' +
       '<p class="hint">In a sea with more than 8 sectors you can visit, the route is the best one found by a bounded search, not proven best.</p></details></section>';
   }
   function redrawRecs(focus) {
@@ -621,11 +629,22 @@
     var now = Date.now(), c = null;
     try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
     var tot = EARN.totals(S, c ? c.prices : {}, now);
-    var list = Object.keys(tot.byRoute).sort().map(function (k) { var r = tot.byRoute[k]; return { route: r.route.slice(), trips: r.trips, perTrip: r.perTrip, enough: r.enough }; });
+    // the same log in merchant gil only (item sheet prices, no market price): the unit the community estimate is in, so the two
+    // can be compared (drop-rates spec, owner decision Q3). A route with a logged item that has no price entry in the data
+    // cannot be counted that way: merchantPerTrip is null and the estimate decides for it.
+    var mer = EARN.totals(S, {}, now), unpriced = {};
+    Object.keys(S.trips).forEach(function (k) {
+      var t = S.trips[k];
+      if (t.items && t.items.some(function (x) { return !(D && D.itemInfo && D.itemInfo[x[0]]); })) unpriced[(t.r || []).join(',')] = 1;
+    });
+    var list = Object.keys(tot.byRoute).sort().map(function (k) {
+      var r = tot.byRoute[k], m = mer.byRoute[k];
+      return { route: r.route.slice(), trips: r.trips, perTrip: r.perTrip, enough: r.enough, merchantPerTrip: m && !unpriced[k] ? m.perTrip : null };
+    });
     LOGGED = {
       list: list,
       note: c && c.at ? 'Market prices seen ' + F.fmtClock(c.at, now) + ' on this device.' : 'Merchant prices only; open Earnings to load market prices.',
-      sig: JSON.stringify([c && c.at || 0, list.map(function (l) { return [l.route.join(','), l.trips, Math.round(l.perTrip)]; })])
+      sig: JSON.stringify([c && c.at || 0, list.map(function (l) { return [l.route.join(','), l.trips, Math.round(l.perTrip), l.merchantPerTrip == null ? null : Math.round(l.merchantPerTrip)]; })])
     };
     return LOGGED;
   }

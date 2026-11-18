@@ -15,6 +15,7 @@ const DOC = path.join(ROOT, 'docs', 'submersibles-recommendations-tuning.md');
 const SRC = path.join(ROOT, 'tracker', 'command-center', 'src', 'submersibles');
 const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'tracker', 'data', 'submarines.json'), 'utf8'));
 require(path.join(SRC, 'recs.js'));
+require(path.join(SRC, 'drops.js')); // the advisor's Gil stage reads DROPS
 require(path.join(SRC, 'advisor.js'));
 const RECS = globalThis.RECS, ADV = globalThis.ADVISOR.init(D);
 
