@@ -2598,8 +2598,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.click('[data-tab=earn]');
       await page.waitForSelector('.earn-ranked');
       const got = await page.evaluate(() => ({
-        ranked: [...document.querySelectorAll('.earn-ranked tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent)),
-        thin: [...document.querySelectorAll('.earn-thin tbody tr')].map((tr) => [...tr.children].map((td) => td.textContent)),
+        ranked: [...document.querySelectorAll('.earn-ranked tbody tr:not(.earn-note)')].map((tr) => [...tr.children].map((td) => td.textContent)),
+        thin: [...document.querySelectorAll('.earn-thin tbody tr:not(.earn-note)')].map((tr) => [...tr.children].map((td) => td.textContent)),
         text: document.querySelector('#view').textContent
       }));
       const ok = got.ranked.length === 2 && got.ranked.every((r) => r[0] === '1') && got.thin.length === 1 && got.thin[0].length === 3 &&
@@ -3487,6 +3487,85 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C94', 'Part advice by estimate (D6): a rank-85 submarine with Gil Farming first shows a part tip valued by the community estimate that names the threshold crossed ("retrieval becomes optimal at O (160 needed, 148 now)") and says extra surveillance, retrieval or favor above a threshold is counted as worth nothing; with Leveling first the same submarine shows no gil tip',
         ok, { gil, lvl, tip, errors: real(errors) });
       server25.close();
+    }
+
+    // ── C95 Submersibles drop rates, work item D7: at 360 px wide, selecting O on the Map shows "61,069,971 surveys", the
+    //    thresholds line and three tier blocks (tier 3 first, the odds worked out here from the data) with a first item's
+    //    share, quantities and merchant price; the page does not scroll sideways.
+    {
+      const server26 = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      require(path.join(CC, 'src', 'submersibles', 'drops.js'));
+      const DR = globalThis.DROPS, O = 15, sec = data.dropRates.sectors[O], bp = data.breakpoints[O];
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async ([all]) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fo = { name: 'Oscar Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.o1 = { fcId: 'fo', slot: 1, name: 'Sub O1', rank: 145, parts: [31, 24, 25, 34] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, [data.sectors.map((x) => x.id)]);
+      await page.reload(); await ready();
+      await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+      await page.click('.chart-svg [data-sector="' + O + '"]'); await page.waitForSelector('.chart-details .rates');
+      const got = await page.evaluate(() => ({ text: document.querySelector('.chart-details').textContent, tiers: [...document.querySelectorAll('.chart-details .rates-tier')].map((d) => ({ tier: d.dataset.tier, summary: d.querySelector('summary').textContent, first: d.querySelector('.rate-item') && d.querySelector('.rate-item').textContent })),
+        side: document.documentElement.scrollWidth - window.innerWidth, open: document.querySelectorAll('.chart-details details[open]').length }));
+      await ctx.close();
+      const band2 = (t) => sec.pools[t].band[2], sum2 = band2(0) + band2(1) + band2(2);
+      const top = sec.pools[2].items.slice().sort((a, b) => b[1] - a[1] || a[0] - b[0])[0], rolls3 = sec.pools[2].band[0] + sec.pools[2].band[1] + sec.pools[2].band[2];
+      const rng = (lo, hi) => (!lo && !hi ? 'none' : lo === hi ? String(lo) : lo + ' to ' + hi);
+      const firstWant = data.items[top[0]] + DR.fmt.pct(top[1] / rolls3) + ' of this tier' + [rng(top[3], top[4]), rng(top[5], top[6]), rng(top[7], top[8])].join(' / ') + ' by retrieval (poor / normal / optimal)' + Math.round(data.itemInfo[top[0]][0]).toLocaleString('en') + ' gil each at a merchant';
+      const thr = 'Thresholds (community): surveillance ' + bp[0] + ' for tier 2, ' + bp[1] + ' for tier 3; retrieval ' + bp[2] + ' for normal, ' + bp[3] + ' for optimal quantities; favor ' + bp[4] + ' for a possible second item (it came on ' + DR.fmt.pct(sec.favor[1] / sec.favor[0]) + ' of surveys with enough favor).';
+      const ok = got.text.includes(sec.n.toLocaleString('en') + ' surveys') && got.text.includes('Community drop records: 61,069,971 surveys.') && got.text.includes(thr) && got.tiers.length === 3 && got.tiers.map((x) => x.tier).join() === '3,2,1' &&
+        got.tiers[0].summary === 'Tier 3: ' + DR.fmt.pct(band2(2) / sum2) + ' of surveys by submarines with surveillance ' + bp[1] + ' or more' && got.tiers[0].first === firstWant && got.open === 0 && !/Possible items/.test(got.text) && got.side <= 0 && real(errors).length === 0;
+      record('C95', 'Drop rates on the Map (D7): at 360 px wide, selecting O shows "Community drop records: 61,069,971 surveys.", the thresholds line (worked out from the data), three collapsed tier blocks with tier 3 first ("Tier 3: p% of surveys by submarines with surveillance 115 or more"), and per item its share of the tier, quantities by retrieval and merchant price; the old comma list is gone; the page does not scroll sideways',
+        ok, { got: { tiers: got.tiers, side: got.side, open: got.open }, thr, firstWant, errors: real(errors) });
+      server26.close();
+    }
+
+    // ── C96 Submersibles drop rates, work item D7: the send window for OJ (opened from the Map planner) shows the estimate,
+    //    one line per sector and the collapsed list of what the route usually brings; the Earnings row of a logged route shows
+    //    "Community average for this route" and the own-log figure; the page does not scroll sideways at 360 px.
+    {
+      const server27 = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      for (const f of ['recs.js', 'drops.js', 'advisor.js']) require(path.join(CC, 'src', 'submersibles', f));
+      const NA = globalThis.ADVISOR.init(data), DR = globalThis.DROPS, PARTS = [31, 24, 25, 34], ST = NA.stats(145, PARTS), OJ = data.commonRoutes.find((c) => c.name === 'Fight Club - OJ').route;
+      const ev = NA.evalRoute(OJ, ST), res = DR.route(data, OJ, ST), avg = DR.route(data, OJ, null), price = DR.merchant(data);
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async ([all, parts, route]) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fp = { name: 'Papa Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.p1 = { fcId: 'fp', slot: 1, name: 'Sub P1', rank: 145, parts };
+        sec.trips.t1 = { s: 'p1', t: now - 60 * H, r: route, back: now - 40 * H, items: [[22507, 4]], newSectors: [] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, [data.sectors.map((x) => x.id), PARTS, OJ]);
+      await page.reload(); await ready();
+      await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+      await page.selectOption('#map-sub', 'p1'); await page.click('[data-map-use="' + OJ.join(',') + '"]');
+      await page.click('[data-map-send="p1"]'); await page.waitForSelector('#sheet [data-rates]');
+      const sheet = await page.evaluate(() => { const b = document.querySelector('#sheet [data-rates]'); return { lines: [...b.querySelectorAll(':scope > p.hint')].map((x) => x.textContent), list: [...b.querySelectorAll(':scope > details.rates')].map((d) => ({ head: d.querySelector('summary').textContent, open: d.open, items: [...d.querySelectorAll('.rate-item')].map((x) => x.textContent) })),
+        side: document.documentElement.scrollWidth - window.innerWidth, sheetSide: document.querySelector('#sheet').scrollWidth - document.querySelector('#sheet').clientWidth }; });
+      await page.keyboard.press('Escape');
+      await page.click('[data-tab=earn]'); await page.waitForSelector('.earn-note');
+      const earn = await page.evaluate(() => ({ notes: [...document.querySelectorAll('.earn-note')].map((x) => x.textContent), side: document.documentElement.scrollWidth - window.innerWidth }));
+      await ctx.close();
+      const estWant = 'About ' + DR.fmt.voyage(res.gil) + ' gil a voyage at merchant prices (about ' + DR.fmt.hour(DR.perHour(res.gil, ev.seconds)) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(res.n) + ' surveys per sector on this route), not a promise.' + (res.few ? ' Few records for a submarine like this one.' : '');
+      const ids = Object.keys(res.items).map(Number).filter((id) => res.items[id] > 0).sort((a, b) => res.items[b] * price(b) - res.items[a] * price(a) || a - b).slice(0, 8);
+      const itemsWant = ids.map((id) => data.items[id] + 'about ' + DR.fmt.qty(res.items[id]) + ' a voyage');
+      const sectorLines = sheet.lines.filter((l) => /^[OJ]: /.test(l));
+      const avgWant = 'Community average for this route: about ' + DR.fmt.voyage(avg.gil) + ' gil a voyage at merchant prices (what the community\'s submarines brought back; at least ' + DR.fmt.count(avg.n) + ' surveys per sector).';
+      const ok = sheet.lines[0] === estWant && sectorLines.length === 2 && /^O: tier 3 in reach, retrieval optimal, second item possible$/.test(sectorLines[0]) && /^J: tier 3 in reach, retrieval optimal, second item possible$/.test(sectorLines[1]) &&
+        sheet.list.length === 2 && sheet.list[0].head === 'What this route usually brings' && !sheet.list[0].open && JSON.stringify(sheet.list[0].items) === JSON.stringify(itemsWant) && sheet.list[0].items.length <= 8 && sheet.list[1].head === 'How this is estimated' && !sheet.list[1].open &&
+        sheet.side <= 0 && sheet.sheetSide <= 0 && earn.notes.length >= 1 && earn.notes[0].startsWith(avgWant) && /Your own log: about [\d,]+ gil a voyage at merchant prices over 1 voyage\./.test(earn.notes[0]) && earn.side <= 0 && real(errors).length === 0;
+      record('C96', 'Drop rates in the send window and Earnings (D7): the send window for OJ (from the Map planner) shows the estimate line, one line per sector ("O: tier 3 in reach, retrieval optimal, second item possible"), a collapsed "What this route usually brings" with the expected items (worked out from the data) and a collapsed "How this is estimated"; the Earnings row of a logged route shows "Community average for this route: about X gil a voyage at merchant prices (...)" and the own-log figure; no sideways scroll at 360 px',
+        ok, { estWant, lines: sheet.lines, list: sheet.list, itemsWant, avgWant, earn, side: sheet.side, errors: real(errors) });
+      server27.close();
     }
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the

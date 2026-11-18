@@ -204,8 +204,18 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .facts dd { margin: 0; font: 600 16px var(--f-data); }
 .rankbox .inp, .rankbox select { font: 600 16px var(--f-data); }
 /* a summary line in the sheet is a 44 px target */
-.loot summary, .game-says summary, .route-pick summary, .advice summary { box-sizing: border-box; min-height: 44px; margin: 0; padding: 12px 0; font: 700 14px/20px var(--f-body); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
-.loot summary .muted, .game-says summary .muted, .route-pick summary .muted { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.loot summary, .game-says summary, .route-pick summary, .advice summary, .rates summary { box-sizing: border-box; min-height: 44px; margin: 0; padding: 12px 0; font: 700 14px/20px var(--f-body); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
+.loot summary .muted, .game-says summary .muted, .route-pick summary .muted, .rates summary .muted { font-weight: 400; text-transform: none; letter-spacing: 0; }
+/* drop rates (D7): one short line per figure, under the item's name; nothing wider than the column */
+.rates { margin: 8px 0; min-width: 0; overflow-wrap: anywhere; }
+.rates-tier { border-top: 2px solid var(--ink); margin: 6px 0 0; }
+.rates-tier summary { box-sizing: border-box; min-height: 44px; margin: 0; padding: 12px 0; font: 700 14px/20px var(--f-body); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
+.rate-item { margin: 0; padding: 4px 0; border-top: 1px dashed var(--rule); }
+.rate-item b { display: block; font: 600 15px var(--f-data); }
+.rate-item span { display: block; font-size: 13px; color: var(--ink-2); }
+.loot-name small { display: block; font-size: 12px; color: var(--ink-2); }
+.earn-t .earn-note td { font-size: 13px; color: var(--ink-2); white-space: normal; }
+.earn-note-text { display: block; position: sticky; left: 0; box-sizing: border-box; width: min(100vw - 110px, 62ch); } /* the phone table scrolls inside itself: the note stays in view and wraps */
 .stops { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0 8px; }
 .pick { display: grid; gap: 2px; margin: 8px 0; }
 

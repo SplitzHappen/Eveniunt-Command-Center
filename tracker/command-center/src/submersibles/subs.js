@@ -723,7 +723,7 @@
     if (!PICK.route.length) calc = '<p class="hint">Tap sectors in the order the sub should visit them (up to 5). The time is worked out as you go.</p>';
     else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out; until then, type the game\'s time below.</p>';
     else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
-    else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
+    else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>' + routeRatesHtml(s, st, ev, PICK.route);
     return '<div class="route-pick"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
       '<div class="sectors">' + btns + '</div>' +
       '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + esc(ADV.routeText(PICK.route)) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' + calc + '</div>';
@@ -749,11 +749,13 @@
     var s = S.subs[subId], fc = S.fcs[s.fcId], disc = new Set(fc.discovered || []);
     var qty = {}; (items || []).forEach(function (x) { qty[x[0]] = x[1]; });
     var hist = EARN.history(S.trips, route), groups = EARN.routeLoot(route), listed = {};
-    var row = function (id) { listed[id] = 1; return '<div class="loot-row"><span class="loot-name">' + esc(EARN.name(id)) + (EARN.tradable(id) ? '' : ' <span class="tag">merchant only</span>') + '</span>' +
+    var row = function (id, avg) { listed[id] = 1; return '<div class="loot-row"><span class="loot-name">' + esc(EARN.name(id)) + (EARN.tradable(id) ? '' : ' <span class="tag">merchant only</span>') +
+      (avg ? '<small>' + (avg.items[id] > 0 ? 'community average: about ' + window.DROPS.fmt.qty(avg.items[id]) + ' a voyage' : 'listed as possible, no drop record yet') + '</small>' : '') + '</span>' +
       '<span class="qty"><button type="button" class="qbtn" data-q="-" data-item="' + id + '" aria-label="One less">−</button><input class="inp qinp" type="number" min="0" max="999999" inputmode="numeric" data-qty="' + id + '" value="' + (qty[id] || '') + '" placeholder="0" aria-label="' + esc(EARN.name(id)) + ' quantity"><button type="button" class="qbtn" data-q="+" data-item="' + id + '" aria-label="One more">+</button></span></div>'; };
     var body = route && route.length ? groups.map(function (g) {
       var list = g.items.slice().sort(function (a, b) { return (hist.count[b] || 0) - (hist.count[a] || 0) || EARN.name(a).localeCompare(EARN.name(b)); });
-      return '<div class="loot-group"><div class="loot-h">' + esc(ADV.sectorName(g.sector)) + ' <span class="muted">· ' + list.length + ' possible items (community data)</span></div>' + (list.length ? list.map(row).join('') : '<p class="hint">No loot list for this sector yet.</p>') + '</div>';
+      var avg = window.DROPS.sector(D, g.sector, null), seen = avg ? list.filter(function (id) { return avg.items[id] > 0; }).length : 0;
+      return '<div class="loot-group"><div class="loot-h">' + esc(ADV.sectorName(g.sector)) + ' <span class="muted">· ' + list.length + ' possible items (community data)' + (avg ? '; ' + seen + ' with drop records, from ' + window.DROPS.fmt.count(avg.n) + ' community surveys' : '') + '</span></div>' + (list.length ? list.map(function (id) { return row(id, avg); }).join('') : '<p class="hint">No loot list for this sector yet.</p>') + '</div>';
     }).join('') : '<p class="hint">No route was recorded for this voyage, so add the items by name.</p>';
     var extra = Object.keys(qty).map(Number).filter(function (id) { return !listed[id]; });
     var reveal = []; (route || []).forEach(function (sid) { ADV.children(sid).forEach(function (c) { if (!disc.has(c) && reveal.indexOf(c) < 0) reveal.push(c); }); });
@@ -762,7 +764,7 @@
     var slotTick = slotSector && (route || []).indexOf(slotSector) >= 0;
     return '<details class="loot"' + (open ? ' open' : '') + '><summary>What came back <span class="muted">(optional: the quantities in the voyage report' + (open ? '' : '; can also be entered later in the Log tab') + ')</span></summary>' +
       '<p class="row">' + (hist.last ? '<button type="button" class="btn sm" data-act="loot-repeat" data-items="' + esc(JSON.stringify(hist.last)) + '">Repeat last</button>' : '') + '<button type="button" class="btn sm ghost" data-act="loot-clear">Clear</button></p>' +
-      body + '<div class="loot-group" data-extra>' + (extra.length ? '<div class="loot-h">Other items</div>' + extra.map(row).join('') : '') + '</div>' +
+      body + '<div class="loot-group" data-extra>' + (extra.length ? '<div class="loot-h">Other items</div>' + extra.map(function (id) { return row(id); }).join('') : '') + '</div>' +
       '<label class="field">Add another item <input class="inp" list="all-items" data-add-item placeholder="type a name"></label>' +
       (reveal.length || slotTick ? '<fieldset class="loot-new"><legend>Did the report say…</legend>' + reveal.map(function (c) { var x = D.sectors.find(function (z) { return z.id === c; }); return '<label class="opt"><input type="checkbox" data-new-sector="' + c + '"' + ((newSectors || []).indexOf(c) >= 0 ? ' checked' : '') + '> “' + esc(x ? x.name.replace(/\s*\([A-Z]\)$/, '') : '') + ' discovered!” <span class="muted">' + esc(ADV.sectorName(c)) + '</span></label>'; }).join('') +
         (slotTick ? '<label class="opt"><input type="checkbox" data-new-slot> “Permission granted to register an additional submersible!” <span class="muted">slot ' + ((fc.unlockedSlots || 1) + 1) + '</span></label>' : '') + '</fieldset>' : '') +
@@ -810,19 +812,85 @@
     m.route = (Array.isArray(m.route) ? m.route : []).filter(function (id, i, a) { return SECTOR[id] && SECTOR[id].sea === m.sea && disc.has(id) && (!sb || !sb.rank || SECTOR[id].rank <= sb.rank) && a.indexOf(id) === i; }).slice(0, 5);
     return m;
   }
+  // ------------------------------------------------------------------ drop rates shown (spec 6.5, item D7): content only, one short line per figure
+  function rangeText(lo, hi) { return !lo && !hi ? 'none' : lo === hi ? String(lo) : lo + ' to ' + hi; }
+  // collapsed, once per screen that shows an estimate (spec 5.4)
+  function howEstimatedHtml() {
+    return '<details class="rates"><summary>How this is estimated</summary>' +
+      '<p class="hint">For each sector on the route, the app takes the community\'s drop records and the thresholds the community worked out. A submarine whose surveillance reaches a sector\'s threshold is counted in the higher tier band, and one whose retrieval reaches it in the better quantity; that stat is counted the same however far above the threshold it is. The tier odds are the share of surveys of that band that landed in each tier. The odds of an item inside a tier are what the community recorded, and its quantity is the recorded range for this submarine\'s retrieval, scaled so the community\'s own average comes out. A second item is counted as often as the community recorded it when the favor is enough. Merchant prices are the game\'s. An estimate, not a promise.</p>' +
+      '<p class="hint">What the second item is, is not in the records; the estimate assumes it is drawn like the first.</p></details>';
+  }
+  // Map, the selected sector (spec 6.5 item 1): the record count, the thresholds, one collapsed block per tier with its items
+  function sectorRatesHtml(id) {
+    var DR = window.DROPS, sec = D.dropRates && D.dropRates.sectors && D.dropRates.sectors[id], b = D.breakpoints && D.breakpoints[id];
+    var price = DR.merchant(D), listed = D.loot[id] || [];
+    if (!sec) return '<p class="hint">Possible items: ' + (listed.length ? listed.map(function (i) { return esc(EARN.name(i)); }).join(', ') + ' (listed as possible, no drop record yet).' : 'no loot list for this sector yet.') + '</p>';
+    var recorded = {}; sec.pools.forEach(function (pl) { pl.items.forEach(function (r) { recorded[r[0]] = 1; }); });
+    var out = '<div class="rates"><p class="hint">Community drop records: ' + sec.n.toLocaleString('en') + ' surveys.</p>';
+    if (b) out += '<p class="hint">Thresholds (community): surveillance ' + b[0] + ' for tier 2, ' + b[1] + ' for tier 3; retrieval ' + b[2] + ' for normal, ' + b[3] + ' for optimal quantities; favor ' + b[4] + ' for a possible second item' + (sec.favor[0] > 0 ? ' (it came on ' + DR.fmt.pct(sec.favor[1] / sec.favor[0]) + ' of surveys with enough favor)' : '') + '.</p>';
+    else out += '<p class="hint">No community thresholds are recorded for this sector.</p>';
+    var bandSum = function (k) { return sec.pools[0].band[k] + sec.pools[1].band[k] + sec.pools[2].band[k]; };
+    for (var t = 2; t >= 0; t--) {
+      var pool = sec.pools[t], rolls = pool.band[0] + pool.band[1] + pool.band[2];
+      if (!rolls) continue;
+      var head, low = '';
+      if (b && bandSum(2) > 0) {
+        head = 'Tier ' + (t + 1) + ': ' + DR.fmt.pct(pool.band[2] / bandSum(2)) + ' of surveys by submarines with surveillance ' + b[1] + ' or more';
+        var parts = [];
+        if (bandSum(1) > 0 && pool.band[1] > 0) parts.push(DR.fmt.pct(pool.band[1] / bandSum(1)) + ' with surveillance ' + b[0] + ' to ' + (b[1] - 1));
+        if (bandSum(0) > 0 && pool.band[0] > 0) parts.push(DR.fmt.pct(pool.band[0] / bandSum(0)) + ' with less than ' + b[0]);
+        if (parts.length) low = '<p class="hint">Lower: ' + parts.join('; ') + '.</p>';
+      } else head = 'Tier ' + (t + 1) + ': ' + DR.fmt.pct(rolls / sec.n) + ' of all recorded surveys';
+      var rows = pool.items.slice().sort(function (x, y) { return y[1] - x[1] || x[0] - y[0]; }).map(function (r) {
+        var g = price(r[0]);
+        return '<p class="rate-item"><b>' + esc(EARN.name(r[0])) + '</b><span>' + DR.fmt.pct(r[1] / rolls) + ' of this tier</span><span>' +
+          [rangeText(r[3], r[4]), rangeText(r[5], r[6]), rangeText(r[7], r[8])].join(' / ') + ' by retrieval (poor / normal / optimal)</span><span>' + (g ? Math.round(g).toLocaleString('en') + ' gil each at a merchant' : 'no merchant price') + '</span></p>';
+      }).join('');
+      out += '<details class="rates-tier" data-tier="' + (t + 1) + '"><summary>' + esc(head) + '</summary>' + low + rows + '</details>';
+    }
+    var open = listed.filter(function (i) { return !recorded[i]; });
+    if (open.length) out += '<p class="hint">Listed as possible, no drop record yet: ' + open.map(function (i) { return esc(EARN.name(i)); }).join(', ') + '.</p>';
+    return out + '</div>';
+  }
+  // the send window and the planner (spec 6.5 item 2, 5.4, 5.5): the estimate for this submarine on the chosen route
+  function routeRatesHtml(s, st, ev, route) {
+    var DR = window.DROPS, r = st && ev && ev.reachable ? DR.route(D, route, st) : null;
+    if (!r) return '';
+    var now = Date.now(), out = '<div class="rates" data-rates>';
+    out += '<p class="hint">About ' + DR.fmt.voyage(r.gil) + ' gil a voyage at merchant prices (about ' + DR.fmt.hour(DR.perHour(r.gil, ev.seconds)) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(r.n) + ' surveys per sector on this route), not a promise.' + (r.few ? ' Few records for a submarine like this one.' : '') + '</p>';
+    route.forEach(function (sid, i) {
+      var b = D.breakpoints && D.breakpoints[sid], x = r.sectors[i], stt = x.state, bits = [];
+      if (!b || !stt) bits.push('no community thresholds, the community average is used');
+      else {
+        bits.push(stt.band === 2 ? 'tier 3 in reach' : 'tier 3 out of reach (surveillance ' + b[1] + ' needed, this submarine has ' + st.surveillance + ')');
+        bits.push(stt.ret === 2 ? 'retrieval optimal' : 'retrieval ' + (stt.ret === 1 ? 'normal (' + b[3] + ' needed, this submarine has ' + st.retrieval + ')' : 'poor (' + b[2] + ' needed for normal, this submarine has ' + st.retrieval + ')'));
+        bits.push(stt.favor ? 'second item possible' : 'no second item (favor ' + b[4] + ' needed, this submarine has ' + st.favor + ')');
+      }
+      out += '<p class="hint">' + esc(SECTOR[sid].letter) + ': ' + bits.join(', ') + '</p>';
+    });
+    var price = DR.merchant(D), ids = Object.keys(r.items).map(Number).filter(function (id) { return r.items[id] > 0; });
+    ids.sort(function (a, b) { return r.items[b] * price(b) - r.items[a] * price(a) || a - b; });
+    if (ids.length) out += '<details class="rates"><summary>What this route usually brings</summary>' + ids.slice(0, 8).map(function (id) {
+      return '<p class="rate-item"><b>' + esc(EARN.name(id)) + '</b><span>about ' + DR.fmt.qty(r.items[id]) + ' a voyage</span></p>';
+    }).join('') + '</details>';
+    var c = null; try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
+    if (c && c.prices && ids.some(function (id) { return c.prices[id]; })) {
+      var z = 0; ids.forEach(function (id) { z += r.items[id] * (EARN.unitValue(id, c.prices).each || 0); });
+      out += '<p class="hint">At the market prices cached on this device (seen ' + esc(F.fmtClock(c.at, now)) + '): about ' + DR.fmt.voyage(z) + ' gil a voyage. Not used to choose the route.</p>';
+    }
+    return out + howEstimatedHtml() + '</div>';
+  }
   function sectorDetails(id, fc) {
     var s = SECTOR[id], u = D.unlocks[id] || {}, found = (fc.discovered || []).indexOf(id) >= 0;
     var node = CHART.view(s.sea, fc.discovered || []).nodes.find(function (n) { return n.id === id; });
     var by = u.start ? 'open from the start' : u.by != null && SECTOR[u.by] ? esc(sectorLabel(SECTOR[u.by])) + (SECTOR[u.by].sea !== s.sea ? ' (in the previous sea)' : '') : 'not known';
     var reveals = D.sectors.filter(function (x) { return (D.unlocks[x.id] || {}).by === id; }).map(function (x) { return esc(sectorLabel(x)); });
-    var loot = (D.loot[id] || []).map(function (i) { return esc(EARN.name(i)); });
     return '<section class="chart-details panel" aria-live="polite"><h3>' + esc(s.name) + '</h3>' +
       '<p class="muted">' + esc(CHART.stateText(node.state)) + (node.slot ? ' · <b>slot ' + node.slot + '</b>' : '') + (node.opens ? ' · <b>opens ' + esc(node.opens) + '</b>' : '') + '</p>' +
       '<dl class="chart-facts"><dt>Rank needed</dt><dd>' + s.rank + '</dd><dt>Tanks</dt><dd>' + s.tanks + '</dd><dt>Survey</dt><dd>' + s.survey + ' min</dd>' +
       '<dt>Base experience</dt><dd>at least ' + Number(s.exp).toLocaleString('en') + '</dd><dt>Stars</dt><dd>' + s.stars + '</dd>' +
       '<dt>Revealed by</dt><dd>' + by + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span></dd>' +
-      '<dt>Reveals</dt><dd>' + (reveals.length ? reveals.join(', ') : 'nothing') + '</dd>' +
-      '<dt>Possible items</dt><dd>' + (loot.length ? loot.join(', ') : 'no loot list for this sector yet') + '</dd></dl></section>';
+      '<dt>Reveals</dt><dd>' + (reveals.length ? reveals.join(', ') : 'nothing') + '</dd></dl>' + sectorRatesHtml(id) + '</section>';
   }
   // the route planner: draws and works out a route; it never sends and writes nothing (the send window does that, on the owner's press)
   function plannerHtml(fc, m) {
@@ -926,6 +994,15 @@
     var ratio = function (v, m) { return m > 0 ? (Math.max(0, +v || 0) / m).toFixed(3) : '0'; }; // look only: a bar's fill is a ratio of figures already shown
     var maxHr = Math.max.apply(null, rk.ranked.map(function (r) { return +r.perHour || 0; }).concat([0]));
     var maxFc = Math.max.apply(null, fcList().map(function (f) { return +tot.byFc[f.id] || 0; }).concat([0]));
+    var mer = EARN.totals(S, {}, now), unpriced = {}; // the log in merchant gil only, the unit of the community figure; a route with an item the data has no price for is left out
+    Object.keys(S.trips).forEach(function (k) { var t = S.trips[k]; if (t.items && t.items.some(function (x) { return !(D && D.itemInfo && D.itemInfo[x[0]]); })) unpriced[(t.r || []).join(',')] = 1; });
+    var noteRow = function (route, span) {
+      var key = route.join(','), c = window.DROPS.route(D, route, null), m = mer.byRoute[key], bits = [];
+      if (c) bits.push('Community average for this route: about ' + window.DROPS.fmt.voyage(c.gil) + ' gil a voyage at merchant prices (what the community\'s submarines brought back; at least ' + window.DROPS.fmt.count(c.n) + ' surveys per sector).');
+      if (m && !unpriced[key]) bits.push('Your own log: about ' + window.DROPS.fmt.voyage(m.perTrip) + ' gil a voyage at merchant prices over ' + m.trips + ' voyage' + (m.trips === 1 ? '' : 's') + '.');
+      return bits.length ? '<tr class="earn-note"><td colspan="' + span + '"><span class="earn-note-text">' + bits.join(' ') + '</span></td></tr>' : '';
+    };
+    var anyNote = rk.ranked.concat(rk.thin).some(function (r) { return !!window.DROPS.route(D, r.route, null); });
     var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
     var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
     var src = PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : PRICES.error ? 'Universalis could not be reached (' + esc(PRICES.error) + '): merchant prices only' : 'no market prices yet';
@@ -934,8 +1011,8 @@
       (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +
       '<p class="row"><label class="field inline">Market prices from <select class="inp" data-pref="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' + dcs.map(function (d) { return '<option' + (S.settings.prefs && S.settings.prefs.priceWorld === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label><button type="button" class="btn sm" data-act="prices">Refresh prices</button><button type="button" class="btn sm" data-act="csv">Export the log (CSV)</button></p>' +
       '<h3>Gil per hour by route <span class="muted">(from your own log)</span></h3>' + (rk.ranked.length || rk.thin.length ? '<p class="hint">Logged gil divided by logged hours at sea, at the prices shown above.</p>' +
-        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked"><thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" style="--p:' + ratio(r.perHour, maxHr) + '"><td>' + r.pos + '</td><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
-        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>'; }).join('') + '</tbody></table>' : '')
+        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked"><thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" style="--p:' + ratio(r.perHour, maxHr) + '"><td>' + r.pos + '</td><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>' + noteRow(r.route, 5); }).join('') + '</tbody></table>' : '') +
+        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml() : '')
         : '<p class="hint">Log what came back from voyages with a route to see this.</p>') +
       '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, maxFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
       '<h3>Top items</h3><table class="earn-t"><thead><tr><th>Item</th><th>Quantity</th><th>Value</th><th>Priced by</th></tr></thead><tbody>' + items.map(function (x) { return '<tr><td>' + esc(EARN.name(x[0])) + '</td><td>' + x[1].qty.toLocaleString('en') + '</td><td>' + fmtGil(x[1].gil) + '</td><td>' + (x[1].how || 'unknown') + '</td></tr>'; }).join('') + '</tbody></table></section>';
