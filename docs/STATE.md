@@ -16,8 +16,8 @@ Last updated: 2026-11-17.
 
 ## Built, waiting for the owner's `ship`
 
-All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.md` and
-`docs/submersibles-recommendations-spec.md`.
+All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.md`,
+`docs/submersibles-recommendations-spec.md`, `docs/submersibles-droprates-spec.md` and `docs/submersibles-look-spec.md`.
 
 - **Submersibles step S6: gil advice from the player's own log** (built 2026-11-17). Earnings ranks routes by gil per
   hour once a route has 10 logged voyages; the Board then advises routes from the log, using the prices cached on the
@@ -31,12 +31,27 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   tunable allowance (default 15%) and five loot pickers. The first priority that can be served leads; each lower one
   chooses only among routes within 5% of the best for those above. The settings live in a save section of their own;
   `save.js` is unchanged. How the defaults were chosen: `docs/submersibles-recommendations-tuning.md`. Browser checks
-  C85 to C88.
+  C85 to C89.
+- **Submersibles: community drop rates** (built 2026-11-18). The data holds the community's voyage results for all 143
+  sectors and each sector's surveillance, retrieval and favor thresholds (MIT-licensed source, pinned; see
+  `tracker/data/SOURCES.md`). From them the app estimates merchant gil for any route and build. Gil Farming ranks the
+  community gil routes a submarine can run by that estimate; a route with 10 logged voyages is ranked by the player's
+  own log; a route found by the app leads when it is at least twice as good. At rank 145 Leveling is skipped. Loot
+  Farming ranks by expected quantity per hour; part advice is valued by the estimate. Rates are shown on the Map, the
+  send window and Earnings. This replaces S6's rules that the own log alone picks the gil route and that part advice
+  refuses swaps lowering a stat. Browser checks C90 to C96, C98 and C99.
+- **Submersibles: the new look** (built 2026-11-18). The whole module restyled to match the shell, Tracker and Atelier
+  ("Dive console", revision 2): slab heads, slanted state fields, display numerals, the action slab, a sonar sea chart
+  drawn by the app, and a voyage gauge on submarines that are out. Screenshots of every screen:
+  `tracker/command-center/evidence/look-*.png`. Browser check C97 and the evidence block L1.
+- **Shared fixes** (built 2026-11-18). Text on the accent colour now reaches 4.5:1 in all 21 themes, light and dark
+  (Tracker, Atelier and Command Center rebuilt). The Atelier no longer reloads over a first-visit click on Command
+  Center. A failing browser check no longer ends the whole check run.
 
 ## Next
 
 1. The owner compares the Deep-sea Site chart with the game's map (one constant, `CHART.Y_DOWN`, flips it), then decides
-   whether steps S6 and S4 and the Customizable Recommendations ship.
+   whether the work above ships.
 2. The Submersibles design document is not in this repository; the owner adds it to `docs/` after a privacy check, and
    the S4 and S6 work is then checked against it.
 
@@ -49,14 +64,14 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 - The "between half and four times the route's usual experience" refusal on return is a guard, not a measured game
   limit; if a real voyage falls outside it, widen it.
 - The sea map is drawn by the app, not the game's pictures; its orientation is unverified until the owner's comparison.
-- Gil advice assumes a part swap brings back the same items; the effect of surveillance, retrieval and favor on loot is
-  not modelled.
-- Loot Farming knows only where an item can drop, not how often; gil is known only for routes with 10 logged voyages.
+- Gil and loot figures are estimates from community records. The records hold only the first item of a survey; the
+  second is assumed to be drawn like the first, which is about 45% of a typical gil figure. Above a threshold, extra
+  surveillance, retrieval or favor is counted as worth nothing (the community's reading, not confirmed).
+- The only licensed list of community routes holds ten routes, six of them the OJ family; other seas rely on routes the
+  app finds from the drop rates.
+- The default fuel allowance (15%) is the owner's choice; the tuning rule gives no single answer over the whole fleet.
 - With the default ranking, a submarine below the top rank in a free company that has found everything is levelled
   before it farms gil, until the player moves Gil Farming up.
-- The default fuel allowance was tuned on unlocking and levelling only, with four-slot test submarines; the default of 15% is
-  the owner's choice (the rule over the whole fleet, with rank 145 and gil added, gives no clear answer: 10% on levelling and
-  unlocking, 15% on gil only), not the best value for every player.
 - Each recommendation control is stored on its own, so different controls changed in two tabs or on two devices are
   both kept. The same control changed in two tabs on one device takes the later change without asking, as every part
   of the save does.
