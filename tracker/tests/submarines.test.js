@@ -1385,3 +1385,219 @@ test('drop records: the source, commit, licence, notice and permission are carri
   assert.match(D.tables.dropRates.label, /second item is not in the records/);
   assert.match(D.tables.breakpoints.label, /used for loot estimates only/);
 });
+
+// ---------------------------------------------------------------- D2: the estimator (drops.js)
+const DROPS = (require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'drops.js')), globalThis.DROPS);
+const OJ_ST = ADV.stats(145, [3, 4, 5, 14]);
+const near = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= Math.abs(b) * tol, `${what}: ${a} vs ${b}`);
+const ALLHI = { surveillance: 999, retrieval: 999, favor: 999, speed: 100, range: 999 };
+
+// A second, straightforward reading of spec 5.1 straight from the raw tables (direct sums, no cache, no shared helper).
+function refSector(sid, st, price) {
+  const sec = D.dropRates.sectors[String(sid)], bp = D.breakpoints[String(sid)];
+  const price1 = (id) => (D.itemInfo[String(id)] && D.itemInfo[String(id)][0]) || 0;
+  const pf = price || price1;
+  let gil = 0, second;
+  if (!st) {
+    second = sec.favor[1] / sec.n;
+    for (const pool of sec.pools) for (const it of pool.items) gil += (it[2] / sec.n) * pf(it[0]); // Total / sector rolls x price
+    return { gil: gil * (1 + second), second };
+  }
+  const band = st.surveillance >= bp[1] ? 'high' : st.surveillance >= bp[0] ? 'mid' : 'low';
+  const bi = { low: 0, mid: 1, high: 2 }[band];
+  const res = st.retrieval >= bp[3] ? 2 : st.retrieval >= bp[2] ? 1 : 0;
+  const counts = sec.pools.map((p) => p.band[bi]), tot = counts[0] + counts[1] + counts[2];
+  assert.ok(tot >= 100, 'reference covers only well-recorded bands');
+  second = st.favor >= bp[4] ? sec.favor[1] / sec.favor[0] : 0;
+  sec.pools.forEach((pool, t) => {
+    const rolls = pool.band[0] + pool.band[1] + pool.band[2];
+    for (const it of pool.items) {
+      const mids = [0, 1, 2].map((k) => (it[3 + 2 * k] + it[4 + 2 * k]) / 2), has = [0, 1, 2].map((k) => it[3 + 2 * k] + it[4 + 2 * k] > 0);
+      assert.ok(has[res], 'reference covers only items with a range for the result');
+      let num = 0, den = 0;
+      for (let k = 0; k < 3; k++) if (has[k]) { num += pool.ret[k] * mids[k]; den += pool.ret[k]; }
+      const q = mids[res] * (it[2] / it[1]) / (num / den);
+      gil += (counts[t] / tot) * (it[1] / rolls) * q * pf(it[0]);
+    }
+  });
+  return { gil: gil * (1 + second), second };
+}
+
+test('drops: the OJ example of spec 5.3, computed from the data', () => {
+  const ev = ADV.evalRoute([15, 10], OJ_ST), r = DROPS.route(D, [15, 10], OJ_ST), per = DROPS.perHour(r.gil, ev.seconds);
+  console.log('OJ: O %s, J %s, voyage %s, per hour %s, second-item share %s, seconds %s, range %s',
+    r.sectors[0].gil, r.sectors[1].gil, r.gil, per, r.sectors[0].second / (1 + r.sectors[0].second), ev.seconds, ev.range);
+  assert.equal(ev.seconds, 73640); assert.equal(ev.range, 59);
+  near(r.sectors[0].gil, 58314, 0.005, 'O'); near(r.sectors[1].gil, 58348, 0.005, 'J');
+  near(r.gil, 116700, 0.005, 'voyage'); near(per, 5700, 0.005, 'hour');
+  assert.deepEqual(r.sectors.map((s) => s.state), [{ band: 2, ret: 2, favor: true }, { band: 2, ret: 2, favor: true }]);
+  near(r.sectors[0].second, 0.8242, 0.001, 'O second'); near(r.sectors[1].second, 0.8242, 0.001, 'J second');
+  const t = r.sectors[0].tiers; // merchant gil per roll at optimal, first item
+  near(t[0].p, 0.5118, 0.002, 'O tier 1'); near(t[1].p, 0.3320, 0.002, 'O tier 2'); near(t[2].p, 0.1562, 0.002, 'O tier 3');
+  near(t[0].gil, 64, 0.01, 'O tier 1 gil'); near(t[1].gil, 30660, 0.005, 'O tier 2 gil'); near(t[2].gil, 139259, 0.005, 'O tier 3 gil');
+  near(r.sectors[1].tiers[2].gil, 139284, 0.005, 'J tier 3 gil');
+  assert.equal(r.sectors[0].rolls, 60074656); assert.equal(r.sectors[1].rolls, 60042984);
+  assert.equal(r.few, false);
+  assert.equal(DROPS.fmt.voyage(r.gil), '116,700'); assert.equal(DROPS.fmt.hour(per), '5,700');
+});
+test('drops: the rank 85 contrast of spec 5.3', () => {
+  const st = ADV.stats(85, [3, 4, 5, 14]);
+  assert.equal(st.retrieval, 148);
+  const r = DROPS.route(D, [15, 10], st);
+  assert.deepEqual(r.sectors.map((s) => s.state.ret), [1, 2]);
+  near(r.sectors[0].gil, 25900, 0.005, 'O at rank 85'); near(r.gil, 84300, 0.005, 'voyage at rank 85');
+});
+test('drops: cross-check against a direct recomputation for several sectors and builds', () => {
+  const builds = [OJ_ST, ADV.stats(85, [3, 4, 5, 14]), ADV.stats(145, [1, 2, 3, 4]), ADV.stats(60, [5, 6, 7, 8])];
+  let checked = 0;
+  for (const sid of [15, 10, 18, 26, 1, 4, 63]) for (const st of builds.concat([null])) {
+    let ref;
+    try { ref = refSector(sid, st); } catch (e) { if (/reference covers/.test(e.message)) continue; throw e; }
+    const got = DROPS.sector(D, sid, st);
+    near(got.gil, ref.gil, 1e-9, `sector ${sid}`); near(got.second, ref.second, 1e-12, 'second'); checked++;
+  }
+  assert.ok(checked >= 12, 'checked ' + checked);
+  const price = (id) => (id * 7) % 1000;
+  near(DROPS.sector(D, 15, OJ_ST, price).gil, refSector(15, OJ_ST, price).gil, 1e-9, 'other price');
+  console.log('cross-check: %d sector and build pairs agree', checked + 1);
+});
+test('drops: band and result edges at O (thresholds 80 / 115 / 120 / 160 / 90)', () => {
+  assert.deepEqual(D.breakpoints['15'], [80, 115, 120, 160, 90]);
+  const S = (o) => DROPS.state(D, 15, Object.assign({}, ALLHI, o));
+  assert.equal(S({ surveillance: 114 }).band, 1); assert.equal(S({ surveillance: 115 }).band, 2);
+  assert.equal(S({ surveillance: 79 }).band, 0); assert.equal(S({ surveillance: 80 }).band, 1);
+  assert.equal(S({ retrieval: 159 }).ret, 1); assert.equal(S({ retrieval: 160 }).ret, 2);
+  assert.equal(S({ retrieval: 119 }).ret, 0); assert.equal(S({ retrieval: 120 }).ret, 1);
+  assert.equal(S({ favor: 89 }).favor, false); assert.equal(S({ favor: 90 }).favor, true);
+  assert.equal(DROPS.state(D, 15, null), null); assert.equal(DROPS.state(D, 99999, ALLHI), null);
+  // a build below every threshold: low band, poor, no second item, still an estimate
+  const lo = DROPS.sector(D, 15, { surveillance: 0, retrieval: 0, favor: 0 });
+  assert.deepEqual(lo.state, { band: 0, ret: 0, favor: false }); assert.equal(lo.second, 0); assert.ok(lo.gil > 0);
+  // a build exactly on every threshold gets the higher band, result and the second item
+  const on = DROPS.sector(D, 15, { surveillance: 115, retrieval: 160, favor: 90 });
+  assert.deepEqual(on.state, { band: 2, ret: 2, favor: true });
+  assert.ok(on.gil > lo.gil);
+});
+test('drops: low band gives tier 1 items only; favor below the threshold gives no second item', () => {
+  const tier1 = new Set(D.dropRates.sectors['15'].pools[0].items.map((r) => String(r[0])));
+  const low = DROPS.sector(D, 15, { surveillance: 0, retrieval: 999, favor: 999 });
+  assert.deepEqual(low.tiers.map((t) => t.p), [1, 0, 0]);
+  for (const id of Object.keys(low.items)) assert.ok(tier1.has(id), 'item ' + id);
+  const no = DROPS.sector(D, 15, { surveillance: 999, retrieval: 999, favor: 89 }), yes = DROPS.sector(D, 15, ALLHI);
+  assert.equal(no.second, 0); near(yes.gil / no.gil, 1 + yes.second, 1e-12, 'second item factor');
+  near(yes.second, D.dropRates.sectors['15'].favor[1] / D.dropRates.sectors['15'].favor[0], 1e-12, 'second share');
+});
+test('drops: without a build the community average equals the formula of 5.1 computed here', () => {
+  for (const sid of [15, 10, 1, 63]) {
+    const ref = refSector(sid, null), got = DROPS.sector(D, sid, null);
+    near(got.gil, ref.gil, 1e-9, 'average ' + sid); assert.equal(got.state, null); assert.equal(got.few, false);
+    near(DROPS.sector(D, sid, undefined).gil, ref.gil, 1e-9, 'undefined build');
+  }
+  // sector without thresholds behaves as no build
+  const D2 = Object.assign({}, D, { breakpoints: {} });
+  near(DROPS.sector(D2, 15, OJ_ST).gil, refSector(15, null).gil, 1e-9, 'no thresholds');
+});
+test('drops: a route is the sum of its sectors in any order; n is the least-recorded sector; one and five sectors', () => {
+  const route = [10, 15, 18, 26], a = DROPS.route(D, route, OJ_ST), b = DROPS.route(D, route.slice().reverse(), OJ_ST);
+  near(a.gil, b.gil, 1e-12, 'order'); near(a.gil, route.reduce((t, id) => t + DROPS.sector(D, id, OJ_ST).gil, 0), 1e-12, 'sum');
+  assert.equal(a.n, Math.min(...route.map((id) => D.dropRates.sectors[String(id)].n)));
+  const items = {}; for (const s of a.sectors) for (const [id, q] of Object.entries(s.items)) items[id] = (items[id] || 0) + q;
+  for (const [id, q] of Object.entries(items)) near(a.items[id], q, 1e-12, 'item ' + id);
+  const one = DROPS.route(D, [15], OJ_ST); assert.equal(one.sectors.length, 1); near(one.gil, DROPS.sector(D, 15, OJ_ST).gil, 1e-12, 'one');
+  const five = D.commonRoutes.find((r) => r.route.length === 5) || { route: [10, 15, 18, 26, 17] };
+  const f = DROPS.route(D, five.route, OJ_ST); assert.equal(f.sectors.length, five.route.length);
+  assert.equal(DROPS.route(D, [], OJ_ST), null); assert.equal(DROPS.route(D, [99999], OJ_ST), null);
+  // gil is the quantities times the price
+  near(Object.entries(a.items).reduce((t, [id, q]) => t + q * DROPS.merchant(D)(+id), 0), a.gil, 1e-9, 'items x price');
+});
+test('drops: another price function changes gil and nothing else; no price or price 0 counts nothing', () => {
+  const base = DROPS.route(D, [15, 10], OJ_ST), dbl = DROPS.route(D, [15, 10], OJ_ST, (id) => 2 * DROPS.merchant(D)(id));
+  near(dbl.gil, 2 * base.gil, 1e-12, 'double price'); assert.deepEqual(dbl.items, base.items); assert.equal(dbl.n, base.n);
+  assert.equal(DROPS.route(D, [15, 10], OJ_ST, () => 0).gil, 0);
+  assert.equal(DROPS.route(D, [15, 10], OJ_ST, () => undefined).gil, 0);
+  assert.equal(DROPS.route(D, [15, 10], OJ_ST, () => NaN).gil, 0);
+  const D2 = JSON.parse(JSON.stringify({ itemInfo: D.itemInfo }));
+  const m = DROPS.merchant({ itemInfo: { 5: [0, 1], 6: [7, 0] } });
+  assert.equal(m(5), 0); assert.equal(m(6), 7); assert.equal(m(7), 0);
+  assert.equal(DROPS.merchant({})(1), 0); assert.ok(D2);
+  // the merchant price of a real item is the table's
+  const id = D.dropRates.sectors['15'].pools[2].items[0][0]; assert.equal(DROPS.merchant(D)(id), D.itemInfo[String(id)][0]);
+});
+// A small hand-made table: every number below is the test's own, so the expected figures can be worked out by eye.
+const MINI = {
+  itemInfo: { 1: [10, 1], 2: [100, 1], 3: [0, 0] },
+  breakpoints: { 1: [10, 20, 5, 8, 3] },
+  dropRates: {
+    all: [[400, 300, 200], [0, 100, 200], [0, 0, 100]],
+    sectors: { 1: {
+      n: 1000, favor: [500, 250],
+      pools: [
+        { band: [200, 50, 10], ret: [0, 100, 160], items: [[1, 260, 520, 0, 0, 1, 3, 2, 2]] },       // the item has no poor range
+        { band: [0, 40, 10], ret: [0, 25, 25], items: [[2, 50, 50, 1, 1, 1, 1, 1, 1], [3, 0, 0, 0, 0, 0, 0, 0, 0]] },
+        { band: [0, 0, 5], ret: [0, 0, 5], items: [[2, 5, 15, 0, 0, 0, 0, 3, 3]] }
+      ] } }
+  }
+};
+MINI.dropRates.sectors[1].pools[2].items = [[2, 5, 15, 0, 0, 0, 0, 3, 3]];
+MINI.dropRates.sectors[1].pools[1].items = [[2, 50, 50, 1, 1, 1, 1, 1, 1]];
+test('drops: a thin band uses the all-sector counts and a missing range uses the nearest result; both marked few', () => {
+  // low band here has 200 rolls in tier 1 only; the high band has 10 + 10 + 5 = 25 rolls (< 100): all-sector counts
+  const thin = DROPS.sector(MINI, 1, { surveillance: 50, retrieval: 50, favor: 0 });
+  assert.equal(thin.few, true); assert.equal(thin.rolls, 0);
+  near(thin.tiers[0].p, 200 / 500, 1e-12, 'tier 1'); near(thin.tiers[1].p, 200 / 500, 1e-12, 'tier 2'); near(thin.tiers[2].p, 100 / 500, 1e-12, 'tier 3');
+  // a well-recorded band (low: 200 rolls) and a result with no range for the item (poor): the normal range is used, marked few
+  const lowPoor = DROPS.sector(MINI, 1, { surveillance: 0, retrieval: 0, favor: 0 });
+  assert.equal(lowPoor.few, true); assert.equal(lowPoor.rolls, 200); assert.deepEqual(lowPoor.tiers.map((t) => t.p), [1, 0, 0]);
+  // item 1: ranges normal 1..3 (mid 2, share 100/260) and optimal 2..2 (mid 2, share 160/260): scaled q = 2 x (520/260) / 2 = 2
+  near(lowPoor.items[1], (260 / 260) * 2 * 1, 1e-12, 'quantity'); near(lowPoor.gil, 2 * 10, 1e-12, 'gil');
+  const lowOpt = DROPS.sector(MINI, 1, { surveillance: 0, retrieval: 99, favor: 0 });
+  assert.equal(lowOpt.few, false); near(lowOpt.items[1], 2, 1e-12, 'optimal quantity');
+  // mid band: 50 + 40 + 0 = 90 rolls < 100: thin as well
+  assert.equal(DROPS.sector(MINI, 1, { surveillance: 10, retrieval: 99, favor: 0 }).few, true);
+  // a band with no records at all (no tier has one) falls back to the all-sector counts, never divides by zero
+  const none = { itemInfo: MINI.itemInfo, breakpoints: MINI.breakpoints, dropRates: { all: MINI.dropRates.all, sectors: { 1: Object.assign({}, MINI.dropRates.sectors[1], { pools: MINI.dropRates.sectors[1].pools.map((p) => Object.assign({}, p, { band: [p.band[0], 0, 0] })) }) } } };
+  const z = DROPS.sector(none, 1, { surveillance: 15, retrieval: 99, favor: 0 });
+  assert.equal(z.few, true); assert.ok(Number.isFinite(z.gil));
+  // the same real data: a sector's answer carries `few` only for thin cases
+  assert.equal(DROPS.sector(D, 15, OJ_ST).few, false);
+});
+test('drops: real items with no range for the build\'s result are marked few', () => {
+  let found = null;
+  for (const [sid, s] of Object.entries(D.dropRates.sectors)) {
+    s.pools.forEach((p, t) => p.items.forEach((it) => {
+      for (let k = 0; k < 3 && !found; k++) if (it[3 + 2 * k] === 0 && it[4 + 2 * k] === 0 && [0, 1, 2].some((j) => it[3 + 2 * j] > 0) && p.band[2] >= 100 && s.pools.every((q) => q.band[2] >= 100)) found = [+sid, k];
+    }));
+    if (found) break;
+  }
+  assert.ok(found, 'such an item exists in the data');
+  const bp = D.breakpoints[String(found[0])], retr = [0, bp[2], bp[3]][found[1]];
+  const poor = DROPS.sector(D, found[0], { surveillance: 999, retrieval: retr, favor: 0 });
+  assert.equal(poor.few, true);
+  assert.ok(Number.isFinite(poor.gil));
+});
+test('drops: hours of zero are guarded; the rounding of spec 5.4', () => {
+  assert.equal(DROPS.perHour(100, 0), null); assert.equal(DROPS.perHour(100, -5), null); assert.equal(DROPS.perHour(100, NaN), null);
+  assert.equal(DROPS.perHour(7200, 3600), 7200);
+  const f = DROPS.fmt;
+  assert.equal(f.voyage(116662.9), '116,700'); assert.equal(f.hour(5703.2), '5,700');
+  assert.equal(f.qty(4.612), '4.6'); assert.equal(f.qty(27.4), '27'); assert.equal(f.qty(1234), '1200'); assert.equal(f.qty(0.04567), '0.046'); assert.equal(f.qty(0), '0');
+  assert.equal(f.pct(0.5118), '51%'); assert.equal(f.pct(0.0962), '9.6%'); assert.equal(f.pct(0.1562), '16%');
+  assert.equal(f.count(61069971), '61.1 million'); assert.equal(f.count(60042984), '60.0 million'); assert.equal(f.count(18474), '18,474');
+});
+test('drops: cost of one route and of ranking the ten community routes', () => {
+  const routes = D.commonRoutes.slice(0, 10);
+  DROPS.route(D, routes[0].route, OJ_ST);
+  const N = 100000, five = [10, 15, 18, 26, 17];
+  let t0 = process.hrtime.bigint();
+  for (let i = 0; i < N; i++) DROPS.route(D, five, OJ_ST);
+  const perRoute = Number(process.hrtime.bigint() - t0) / 1e6 / N;
+  t0 = process.hrtime.bigint();
+  const R = 200;
+  for (let i = 0; i < R; i++) for (const r of routes) { const ev = ADV.evalRoute(r.route, OJ_ST); if (ev) DROPS.perHour(DROPS.route(D, r.route, OJ_ST).gil, ev.seconds); }
+  const rank10 = Number(process.hrtime.bigint() - t0) / 1e6 / R;
+  console.log('cost: %s ms per 5-sector route (warm cache, %d calls); %s ms to rank %d community routes with evalRoute', perRoute.toFixed(5), N, rank10.toFixed(4), routes.length);
+  assert.ok(perRoute < 1);
+  // cold: compile every sector of a route for a state not seen before
+  const cold = JSON.parse(JSON.stringify({ breakpoints: D.breakpoints, itemInfo: D.itemInfo, dropRates: D.dropRates }));
+  t0 = process.hrtime.bigint(); DROPS.route(cold, five, OJ_ST); console.log('cost: cold first call of a 5-sector route %s ms', (Number(process.hrtime.bigint() - t0) / 1e6).toFixed(3));
+});
