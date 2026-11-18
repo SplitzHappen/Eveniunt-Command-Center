@@ -1006,3 +1006,490 @@ a hair (4.49 against 4.5).
 - In the same pull request as the look work. One decision; the fix waits for the restyle.
 - Keep things as they are: no fix; nine theme-and-mode pairs keep faint button text.
 - Recommendation: its own pull request. Fairly sure.
+
+## Revision 3: colour
+
+Appended 2026-11-18. Everything above is unchanged; it records what W0 to W3, W10 and W12 to W21 built. Where this
+section and the earlier ones disagree, this section wins. A builder of W22 onward reads section 5, R1, R4, then R3.3
+to R3.7 and its own item. R1's bold test still applies; the colour test of R3.7 is added to it.
+
+Why: the owner looked at the finished Revision 2 screens and said: "The log looks very bland since it only has two
+colors with a line in another color"; the chart is "a bunch of lines together with 2-3 colors that are very similar";
+"it appears you chose 2-3 and went to the market with those, making the entire design the same in general which makes
+me think AI slop/laziness". Wanted: "A LOT of contrast between colors while maintaining the same vibe of the chosen
+theme", with the worry that some colours may "clash a lot with the chosen theme (which may or may not be a good
+thing)".
+
+Read for this revision: `CLAUDE.md`; this spec; the brief with the owner's words; `subs.css` and `chart.js` whole; in
+`subs.js` the functions `strip`, `subRow`, `lockedRow`, `fcCard`, `boardHtml`, `recPickersHtml`, `recsBodyHtml`,
+`recsHtml`, `adviceHtml`, `pickerHtml`, `logHtml`, `sectorDetails`, `plannerHtml`, `mapHtml`, `earnHtml` (the wizard's
+sea list and the voyage grade by search); `THEMES`, `ACCENTS` and `applyLook()` in `crafting/atelier/src/atelier.js`;
+the token blocks of `shared.css` (by search); `tracker/tests/subs-look.test.js`; block `L1` of `check.js`. By search:
+no file in `tracker/tests/` reads the class of a chart line, a chevron or a dash; `submarines.test.js` reads
+`chart-sweep`, `chart-sweep-fan`, both `chart-grid` paths and the ring classes `solid` and `dash`, so that markup
+stays. Not read: `index.html` (one line only: `<body class="subs-page">`), `build.js`, `shell.css`, `settings.js`,
+`recs.js` beyond its four labels, the data file, `docs/STATE.md`. Nothing was built or run and no picture was viewed:
+what the screens look like is the orchestrator's description. Every colour figure below is hand arithmetic in OKLCH,
+good to about two figures; W22's test and palette sheet are the authority. Browser versions are from memory.
+
+### R3.1 Goal and constraints
+
+- A real palette in each of the 21 themes, light and dark: several hues that contrast strongly with each other and
+  still belong to the chosen theme. Every colour on a screen means something. The chart reads at a glance.
+- Colour only. No size, spacing, text, order, hook or behaviour changes, except where an item names one. Section 5
+  and R1's "must hold" list stand: text 4.5:1, meaningful graphics 3:1, C20, C24, C25 (`fit.maxBottom` is 1,020 by the
+  brief; limit 1,040), C28 (never set `--paper`), C82, the 360 px checks, both reduced-motion rules, no new external
+  resource, no game artwork, nothing automated, no invented number.
+- Not edited: `advisor.js`, `recs.js`, `earn.js`, `drops.js`, `fleet.js`, `push.js`, `save.js`, `shared.css`,
+  `atelier.js`. `subs.js` is edited only in the function an item names, and only to add a class or a
+  `style="--p:…"` from data that function already holds (W24 also redraws two `aria-hidden` legend swatches).
+- A state is never told by colour alone: a word or a shape always goes with it.
+
+### R3.2 Findings
+
+- **Where colour comes from today.** `--ink` (every slab, head, time cell and border), `--paper` and `--slip`, the
+  accent, the molten band; the Board's three status colours; green and amber on the chart. In the Log, Earnings,
+  Setup and around the chart no colour says what a thing is.
+- **What a theme provides.** Four colours per mode: page, text, accent, progress colour. `applyLook()` derives every
+  other token by mixing those (`--lb-a` is a tint of the accent, `--lb-b` the accent, `--lb-c` the progress colour).
+  A theme therefore owns two hues at most, and in Ascian Crimson and Azure Dragoon dark the second one is grey. More
+  hues have to be derived.
+- **The 42 accents differ widely** in lightness (dark on light themes, bright on dark ones) and in strength
+  (`#ff2424`, `#2ff0e0` against `#3d6c96`). Only their hue is safe to reuse.
+- **Magitek Steel's accent is not grey.** `#0a7cc2` is a strong blue (hue about 245°); its page and text are the
+  neutral ones. The grey accents are the "Black / White" preset (`#111417`, `#f0f0f0`) and any custom grey.
+- **The test's reader** (`colour()`) knows hex, `white`, `var()` and `color-mix(in srgb, …)` only.
+- **The chart** draws grid, rings, sweep and reveal lines in near-identical pale tints (`--chart-line`,
+  `--chart-ink-2`, `--chart-far`) at 1 to 2 px, three of them dashed; found and next markers have almost the same
+  lightness (luminance 0.49 and 0.51 by hand).
+- **`L1` seeds eleven voyages on one route, all with items:** every Log row is the same by construction.
+
+### R3.3 Decisions (alternatives rejected in brackets)
+
+- **D23 Only the hue is taken from the theme.** Lightness and strength of every new colour are fixed numbers (OKLCH
+  0.70 and 0.10); every other tone is that colour mixed into the theme's own `--ink` or `--slip`. [Taking lightness
+  or strength from the accent: a neon accent gives a neon palette, a pale one fails contrast. Rotating in HSL:
+  lightness swings with the hue, yellow against blue, and no contrast can be promised.]
+- **D24 Four voices a quarter turn apart, the first on the accent's hue** (+0°, +90°, +180°, +270°). [The complement
+  alone, or a triad: three colours again. Split complements plus neighbours: unevenly spaced, two voices 30° apart. A
+  typed table per theme: 42 rows of twelve colours, and custom accents left out.] The three offsets are one line (Q8).
+- **D25 Each voice means one kind of thing on every screen:** rank, gil, loot, route, the four objectives of the
+  recommendations panel, which thereby is the legend. [Colour per free company: eight companies need eight hues that
+  collide with seas and states, and a company is always named. A different colour per card for variety: colour without
+  meaning, the complaint itself.]
+- **D26 The palette is CSS in `subs.css` only. Relative colour syntax may be used in one form only, to read a hue:**
+  `oklch(from <colour> 0.7 0.1 calc(h + N))`, inside `@supports (color: oklch(from red 0.7 0.1 calc(h + 90)))`.
+  Fallback where that is not supported: the same tones at the fixed hues 350°, 80°, 170° and 260°, by plain
+  `oklch()`: equal contrast, no rotation with the theme. [A palette computed in `applyLook()`: it could push every hue
+  to its most vivid and solve contrast in a loop, and the test would call the very same function; but it is shared
+  code: the Tracker, the Atelier and the Command Center are rebuilt and republished for one module's look, a fault in
+  it breaks theming in every module, and it undoes D4. Kept as the strongest option of Q8. JavaScript inside the
+  module: a second place that must follow every theme change, and behaviour for a look matter.]
+- **D27 Every new colour lies inside sRGB for every hue** (the test proves it), so the engines' differing treatment of
+  out-of-range colours and wide-gamut screens cannot change a ratio. That caps the strength near 0.10: at lightness
+  0.70 the narrow point is cyan, about 0.12 by hand. [Strength 0.15: more vivid, out of range around cyan and yellow,
+  and the contrast is no longer computable.]
+- **D28 The hue is read from an anchor with a grey guard:** the accent 90% and the progress colour 10%, then that 97%
+  and `#2f7fd0` 3%, mixed in OKLab. A coloured accent moves by a few degrees; a grey one takes the hue of the theme's
+  second colour, and blue if that is grey too. [Reading the hue of a grey: undefined, engines differ, the test cannot
+  compute it.]
+- **D29 The status colours keep their hue and their tested values in every theme** (Back and found green, Out blue,
+  Idle amber, errors red, Locked and far neutral). They sit with the theme through tone: their washes are mixed into
+  the theme's `--slip`, the chart's into its water. One value moves: "next" on the chart (D33). [Pulling them toward
+  the accent: Out turns violet in red themes and Back olive in orange ones; twelve tested pairs reopen.] Q9.
+- **D30 The seven sea colours are fixed hues at the palette's tone** (plain `oklch()` at lightness 0.70), the same in
+  every theme, and may now carry text through the same four tones. [Rotating with the theme: a sea changes colour when
+  the theme does, and lands on the voices. Keeping the built hexes: their lightness runs from about 0.53 to 0.77, dark
+  text fails on two of them.]
+- **D31 A coloured block is a slab whose tokens are set again where it stands** (a "field", R3.5). Every "on any slab"
+  rule of R4 then works unchanged. The text on a field is the darker of ink and paper in both modes. This changes D15
+  for fields only: an ink slab stays a true inversion. [New classes and a second set of rules for coloured heads.]
+- **D32 The molten band stops marking everything.** It stays on actions, the Board's strip and card heads, and the
+  sheet; a head that becomes a field gets a 6 px `--ink` band. [Molten under every head: the "one line in another
+  color".]
+- **D33 On the chart each visual channel has one job.** Dashes: the planned route only. Hue: the state. Weight: how
+  soon a thing matters. Lightness: a ladder from far to next. The background is one receding colour, capped at 1.6:1.
+  "Next" becomes the lightest, filled marker (`#ffe38a`); "far" becomes hollow. [Plates as new `<rect>` behind labels:
+  new markup inside node groups, against section 5; the halo already is the plate. Removing chevrons from the markup:
+  hidden by CSS instead, so `chart.js` only adds classes.]
+- **D34 The way to the next submarine slot and to the next sea is worked out in `chart.js`** from the reveal links
+  already in the view, and only adds a class. It is drawn in `--chart-ink`, the lightest neutral. [A fifth chart hue:
+  it lands on the accent's tint in some themes.]
+- **D35 "Not two or three colours" is measured,** in `L1`, from computed colours in three themes (R3.7). [Judging
+  from pictures alone: what failed twice.]
+- **D36 No new words on screen in this revision.** The voyage grade on Log rows and a legend clause for the new line
+  colours are owner questions (Q10, Q11).
+
+### R3.4 The palette (W22 builds it)
+
+**Tones.** Every hue has the same four tones, by the same formulas in light and dark mode (`X` is `rank`, `gil`,
+`loot`, `route`, `sea` or `scr`):
+
+| Token | Formula | Use | Must reach |
+| --- | --- | --- | --- |
+| `--X-m` (mid; a sea's is `--sea`) | the hue at OKLCH 0.70 / 0.10 (seas 0.10 to 0.13) | a field with `--on-mid` text; any mark on the chart | `--on-mid` on it 4.5; in sRGB |
+| `--X-g` (graphic) | `color-mix(in srgb, var(--X-m) 70%, var(--ink))` | bands, bars, borders, icons | 3 on `--slip`, `--paper`, `--paper-2` |
+| `--X-s` (strong) | `color-mix(in srgb, var(--X-m) 46%, var(--ink))` | coloured text | 4.5 on `--slip`, `--paper`, `--paper-2`, its own wash |
+| `--X-w` (wash) | `color-mix(in srgb, var(--X-m) 14%, var(--slip))` | a tint under `--ink` text | `--ink` on it 4.5 |
+| `--on-mid` | light `var(--ink)`; dark `var(--paper)` | text and focus ring on a field | as above |
+
+**The rules, exactly** (after the three `:root` token rules; `--on-mid` goes into those three; `--sea-1` to `--sea-7`
+are deleted from them because they move here):
+
+```css
+.subs-page { --rank-m: oklch(0.7 0.1 350); --gil-m: oklch(0.7 0.1 80); --loot-m: oklch(0.7 0.1 170); --route-m: oklch(0.7 0.1 260);
+  --rank-g: color-mix(in srgb, var(--rank-m) 70%, var(--ink)); --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip));
+  --gil-g: color-mix(in srgb, var(--gil-m) 70%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 46%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip));
+  --loot-g: color-mix(in srgb, var(--loot-m) 70%, var(--ink)); --loot-s: color-mix(in srgb, var(--loot-m) 46%, var(--ink)); --loot-w: color-mix(in srgb, var(--loot-m) 14%, var(--slip));
+  --route-g: color-mix(in srgb, var(--route-m) 70%, var(--ink)); --route-s: color-mix(in srgb, var(--route-m) 46%, var(--ink)); --route-w: color-mix(in srgb, var(--route-m) 14%, var(--slip));
+  --gil-bar: color-mix(in srgb, var(--gil-m) 26%, var(--slip));
+  --sea-1: oklch(0.7 0.12 250); --sea-2: oklch(0.7 0.13 50); --sea-3: oklch(0.7 0.11 165); --sea-4: oklch(0.7 0.13 0); --sea-5: oklch(0.7 0.12 315); --sea-6: oklch(0.7 0.12 282); --sea-7: oklch(0.7 0.1 215);
+  --scr: var(--route-m); --scr-g: color-mix(in srgb, var(--scr) 70%, var(--ink)); --ring: color-mix(in srgb, var(--scr) 45%, var(--ink)); }
+@supports (color: oklch(from red 0.7 0.1 calc(h + 90))) { .subs-page { --hue-src: color-mix(in oklab, color-mix(in oklab, var(--seal) 90%, var(--ochre)) 97%, #2f7fd0); --rank-m: oklch(from var(--hue-src) 0.7 0.1 h); --gil-m: oklch(from var(--hue-src) 0.7 0.1 calc(h + 90)); --loot-m: oklch(from var(--hue-src) 0.7 0.1 calc(h + 180)); --route-m: oklch(from var(--hue-src) 0.7 0.1 calc(h + 270)); } }
+.subs-page:has(.tabs [data-tab="log"][aria-current="page"]) { --scr: var(--loot-m); }
+.subs-page:has(.tabs [data-tab="earn"][aria-current="page"]) { --scr: var(--gil-m); }
+.subs-page:has(.tabs [data-tab="setup"][aria-current="page"]) { --scr: var(--rank-m); }
+.subs-page:has(.tabs [data-tab="map"][aria-current="page"]) { --scr: var(--sea-1); }
+.in-sea-1, [data-map-sea="1"] { --sea: var(--sea-1); }   /* and so on to 7 */
+[class*="in-sea-"], [data-map-sea], .map-panel { --sea-g: color-mix(in srgb, var(--sea) 70%, var(--ink)); --sea-s: color-mix(in srgb, var(--sea) 46%, var(--ink)); --sea-w: color-mix(in srgb, var(--sea) 14%, var(--slip)); }
+```
+
+The sea hues keep their names: blue 250°, ember 50°, jade 165°, rose 0°, lilac 315°, indigo 282°, ice 215°. `--scr`
+is the voice of the screen (Board: route; Log: loot; Earnings: gil; Setup: rank; Map: the first sea's blue). The
+`@supports` condition is the exact form used, so an engine that cannot do `calc(h + 90)` there falls back instead of
+breaking. Support, from memory and not checked: Chrome and Edge 119, Firefox 128, Safari 16.4 (complete in 18); plain
+`oklch()` and `color-mix` are older than those (the module already needs them or `:has`).
+
+**What it yields** (hue angles by hand; the hexes are W22's to print):
+
+| Case | Anchor | rank | gil | loot | route |
+| --- | --- | --- | --- | --- | --- |
+| Crystarium Dawnglass (the default), light: accent `#b5476b` | about 356° | rose | gold 86°, about `#ba9a51` | teal 176°, about `#4fb39c` | blue-violet 266° |
+| Azure Dragoon, dark: accent `#6ea2ff`, second colour near grey | about 261° | azure | rose 351° | gold 81° | teal-green 171° |
+| Magitek Steel, light: accent `#0a7cc2` | about 249° | steel blue | magenta-rose 339° | amber 69° | green 159° |
+
+**Guards, and what each yields:**
+
+| Case | Result |
+| --- | --- |
+| Grey accent ("Black / White" preset, a custom grey) | the hue of the theme's second colour; blue (about 252°) if that is grey too; never a hue that differs between engines |
+| Very strong accent (`#ff2424`, `#2ff0e0`) | the voices stay at strength 0.10, calmer than the accent, which remains the loudest colour on the screen |
+| Pale accent on a light theme, dark accent on a dark one | lightness is fixed at 0.70 and text tones are mixed into `--ink`: no ratio depends on the accent |
+| A voice beside a status hue (Magitek Steel light: loot amber beside Idle, route green beside Back; any blue accent beside Out) | not avoided by hue. Forms keep them apart: the slanted status field, the chip and the chart markers belong to states; a voice is a head, a band, a bar or a plate; a state always carries its word |
+| A voice beside a sea hue | a sea colour is used only where a sea is meant, with the sea's name or its sectors' letters beside it |
+| Engine without relative colour syntax | fixed hues 350°, 80°, 170°, 260° at the same tones |
+| Custom page or text colour | not covered, as in section 8 |
+
+**Chart tokens** (the three `.map-panel` rules): `--chart-bg` light `color-mix(in srgb, var(--ink) 80%, var(--sea))`,
+dark `color-mix(in srgb, var(--paper) 80%, var(--sea))`; `--chart-bg-2` light `color-mix(in srgb, var(--ink) 74%,
+var(--sea))`, dark as built; `--chart-next: #ffe38a`; new `--chart-back: color-mix(in srgb, var(--sea) 28%,
+var(--chart-bg))`, `--chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg))`, `--chart-done:
+color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg))`. The rest as built. So each sea's water is visibly its
+own colour.
+
+**The test** (`tracker/tests/subs-look.test.js`, with the model in the new `tracker/tests/subs-palette.js`). The model
+adds to `colour()`: `oklch(L C H)`, `oklch(from <colour> L C h)` and `… calc(h + N))`, `color-mix(in oklab, …)`; any
+other form throws. OKLab by the published matrices (the ones CSS Color 4 uses); first assert that `#ffffff` gives
+lightness 1.000 and strength under 0.001, `#ff0000` 0.628 / 0.258 / 29.2° and `#0000ff` 0.452 / 0.313 / 264.1°, to
+two decimals. Then, for the 21 themes in both modes, the four voices, the seven seas and the five values of `--scr`,
+and for one voice also with its hue forced through 0° to 355° in steps of 5° (this covers every accent, preset and
+custom):
+- in sRGB: every mid has its three linear channels between -0.001 and 1.001;
+- every "must reach" of the table above; `--ink` on `--gil-bar` 4.5; `--route-s` on `--back-bg`, `--out-bg` and
+  `--idle-bg` 4.5; `--idle` on `--slip` and on `--paper-2` 4.5 (it becomes text in the Log); `--on-slab` on `--ring`
+  4.5;
+- the four voice hues differ pairwise by at least 80°;
+- the chart: every existing pair with the new values; `--on-mid` on `--sea` 4.5; `--chart-back` on `--chart-bg`
+  between 1.15 and 1.6; `--chart-link` on `--chart-bg` between 1.8 and 3; `--chart-done` on `--chart-bg-hi` at least
+  2; luminance in the order back, link, far, found, next; next against found at least 1.5:1 and found against far at
+  least 1.3:1 (the ladder a colour-blind player reads);
+- print, do not assert: `--ink-2` on each wash; each voice's hue and the nearest status hue, per theme.
+
+If a pair fails, change a share, never a hue, in this order, and report the final numbers: a strong tone: 46% down by
+2; a graphic tone: 70% down by 2; a wash or bar: down by 2; in sRGB: strength down by 0.005; the chart: first
+`--chart-hot`'s accent share from 45% down by 5 to no less than 30%, then the sea's share in the water down by 2,
+then `--chart-far`'s ink share.
+
+### R3.5 What each colour means, and the field
+
+| Colour | Means | Never used for |
+| --- | --- | --- |
+| Accent (`--seal`, molten) | an action, the chosen thing, the best | a category |
+| Green, blue, amber, red, neutral (status) | Back and found; Out; Idle, next and "needs your input"; an error; Locked and far | decoration |
+| A sea colour | that sea: its tab, chart head, water, sector details, a voyage that went there | anything else |
+| rank voice | a submarine's rank and levelling (Leveling Submersible Rank) | |
+| gil voice | gil figures and value (Gil Farming) | |
+| loot voice | items brought back (Loot Farming) | |
+| route voice | routes, sector letters, unlocking (Unlocking Routes) | |
+| `--ink` slab | structure with no kind of its own | |
+
+**Field** (D31): set on the element `--slab: var(--X-m); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid)`; where
+the built rule gives it a molten band, also `border-image: none; border-bottom-color: var(--ink)`. Secondary text on a
+field has the same colour and is quieter by size and weight. A coloured band that must be measured (R3.7) is a real
+`border` or `background-color`, not a shadow or a gradient.
+
+### R3.6 The chart, readable
+
+Back to front. Nothing but the planned route is dashed; widths are px (`non-scaling-stroke`, as built).
+
+| Layer | Selector | Colour | Weight and form | Against the water |
+| --- | --- | --- | --- | --- |
+| Grid, rings, sweep | `.chart-grid`, `.chart-rings circle`, `.chart-sweep-edge` | `--chart-back` only | 1 px (minor grid at `stroke-opacity: .55`); rings all solid; sweep edge 1.5 px; `.chart-sweep-fan { display: none }` | at most 1.6:1 |
+| Link from a sector not yet found | `line.closed` | `--chart-link` | 1 px solid, no arrowhead | 1.8 to 3 |
+| Link between two found sectors | `line.open.done` | `--chart-done` (dim green) | 1.5 px solid, no arrowhead | at least 2 |
+| Link from a found sector to one that can be revealed next | `line.open.lead` | `--chart-next` | 2.5 px solid, arrowhead `.chart-chev.lead` in the same colour | 4.5 |
+| The way to an unfound slot or next-sea sector | `line.goal` (declared after the others) | `--chart-ink` | 3 px solid; arrowhead `.chart-chev.goal:not(.lead)` in `--chart-ink` | highest |
+| Planned route | `.chart-route`, glow, `.chart-route-dir` | `--chart-hot` | as built: 5 px dashed, marching, 14 px glow, leg arrows | 4.5 |
+| Far sector | `.chart-node.far > rect` | fill `--chart-bg`, stroke `--chart-far` 2 px | small hollow square | 3 |
+| Found sector | as built | `--chart-found` | filled disc with gap ring and glow | 4.5 |
+| Next sector | `.chart-node.next > rect` | fill `--chart-next`, stroke `--chart-bg` 6 px, `paint-order: stroke fill` | filled diamond, halo as built; the lightest mark | 4.5, and 1.5 against found |
+| Slot plus, next-sea ring | `.chart-plus`, `.chart-ring2` | `--chart-ink` (the plus was amber) | 3 px and 2 px | |
+| Above the submarine's rank | `.chart-overring` | `--chart-far` | 1 px solid (was dashed) | |
+
+`.chart-chev { display: none }` by default; only `lead` and `goal` arrowheads show. Labels, Start, selection brackets,
+the on-route ring, focus and hover stay as built. Frozen, as in section 5 and D7: geometry, `viewBox`, `placeTags`,
+`C.Y_DOWN`, one `<polyline`, no nested `<g>` in a node, the attribute order of `.chart-letter` and `.chart-tag`, tap
+sizes, escaping, and the markup `submarines.test.js` reads (both grid paths, ring classes, the sweep group and fan).
+
+### R3.7 Proof that it is not two or three colours again
+
+**Measure** (a function `families()` in `L1`, run on each screen after its picture):
+1. Take every rendered element inside `.subs-main` and `#sheet[open]` (the tab rail is left out), and its `::before`
+   and `::after` when they have content.
+2. Samples: `background-color` (weight: the element's area in px²); `color` when the element has a text node of its
+   own (weight 300); each border 3 px or wider (300); in an SVG, `fill` and `stroke` that are not `none` (300 each).
+   Skip a colour whose alpha is under 0.5. Resolve each to sRGB by painting it on a 1 × 1 canvas, then to OKLCH.
+3. A sample is coloured when its strength is 0.06 or more. Sort coloured samples by hue; a new family starts when a
+   hue is more than 30° from the first hue of the current family (the wheel wraps). A family counts when its weights
+   add up to 300 or more.
+4. Record per screen and theme: the number of families and each family's mean hue and weight.
+
+**Floors** (asserted in `L1` by the item that owns the screen; hand estimates of today's figures: Log 0, Earnings 1):
+
+| Screen | Default theme, light | Azure Dragoon dark, Magitek Steel light |
+| --- | --- | --- |
+| Log; Map; planner | 5 | 4 |
+| Board; Earnings; Setup; recommendations | 4 | 3 |
+| Send window | 3 | 3 |
+
+**Colour test (required self-review, every item from W23).** Read the item's pictures in the three themes (tags
+`desktop`, `desktop-azure-dark`, `desktop-magitek-light`) and the phone picture, and report per picture: the hue
+families seen, in plain names; what each stands for; any colour that is there for no reason; any two neighbours that
+could be mixed up; then one sentence: "varied" or "still two or three colours: <where>". Reported, never hidden.
+
+Colour-blind players: the status word or the marker's shape, the chart's lightness ladder (asserted in the test), the
+words "nothing logged" in the Log, and a name beside every sea colour.
+
+### R3.8 Work items
+
+Order: W22, W23, W24, W25, W26, W27, W28, W29, W30. One builder at a time. Each item is committable on its own and,
+as in section 6: a branch; only the named files; `npm run build` and commit the rebuilt files (only
+`tracker/command-center/site/submersibles/{subs.css,subs.js,chart.js}` and `site/sw.js` may change); `npm run
+test:unit` and `npm run check`; report what was run and what was not; never merge or push to `main`. Every item's
+acceptance includes: C25 `fit.maxBottom` unchanged from before the item; C20, C24, C28, C82 pass; the contrast test
+passes and its table is in the hand-back; the item's floors of R3.7 hold; the colour test is in the hand-back.
+
+#### W22. Palette, model, palette sheet (Sonnet builder; first)
+- Files: `src/submersibles/subs.css` (token rules only); new `tracker/tests/subs-palette.js`;
+  `tracker/tests/subs-look.test.js`; `tracker/command-center/check.js` (`L1` only).
+- Steps: (1) Before any edit: search `shared.css`, `shell.css` and `subs.css` for the token names of R3.4 (none may
+  exist); read `src/submersibles/index.html` and confirm the five tab buttons carry `data-tab` `board`, `log`, `map`,
+  `earn`, `setup` inside `body.subs-page`. (2) `subs.css`: the R3.4 rules and `--on-mid`; no other rule changes (the
+  chart tokens are W23's). (3) `subs-palette.js`: move the helpers of `subs-look.test.js` into it and extend them as
+  R3.4 says; export also `palette(row, mode)`, every R3.4 token as sRGB bytes. (4) The test: R3.4's list except the
+  chart lines that need W23's tokens; print the three themes' palettes as hex. (5) `L1`: `walk` gains a mode
+  argument (`[data-look=mode][data-v=<mode>]`, as C28 picks a theme); the Azure Dragoon dark walk covers all eight
+  screens (same tag), a new Magitek Steel light walk covers all eight (tag `desktop-magitek-light`); in each of the
+  three desktop walks inject a temporary overlay (made and removed by the check; nothing ships) that shows every R3.4
+  token as a named swatch, fields with sample text in `--on-mid`, take `look-palette-<tag>.png`, read each swatch's
+  computed colour through a 1 × 1 canvas and assert it equals `palette()` within 2 per channel; record
+  `CSS.supports('color', 'oklch(from red 0.7 0.1 calc(h + 90))')`. Extend the seed: four more voyages, two on a route
+  in sea 2 and two in sea 5 (sector ids looked up in the data file and written as constants), one of each pair with
+  `items: []`. Add `families()` and record it for every screen; assert nothing yet.
+- Must not change: any look rule; the other blocks of `check.js`; `package.json`.
+- Evidence: the three `look-palette-*.png`; every `look-*.png` regenerates (the sea colours move slightly).
+- Acceptance: as above; the browser equals the model in the three themes; the recorded family counts are in the
+  hand-back as the "before" figures.
+- Self-review: Read the three palette sheets; name the four voices and seven seas per theme; say which two swatches
+  are hardest to tell apart.
+- Escalate if: the support check is false in Chromium; the browser and the model differ by more than 2; a mid is out
+  of sRGB at strength 0.10; a pair still fails at 36% strong or 60% graphic; a token name is taken; the tab names
+  differ; the `L1` run grows by more than two minutes.
+
+#### W23. The chart (Sonnet builder; needs W22)
+- Files: `src/submersibles/chart.js`; `subs.css` (chart rules, the chart tokens of R3.4);
+  `tracker/tests/submarines.test.js` (append only); `tracker/tests/subs-look.test.js`; `check.js` (`L1`).
+- `chart.js`, in `C.svg` only: `var byOf = {}; view.lines.forEach(function (l) { byOf[l.to] = l.from; });` then
+  `var goal = {};` and, for every node with `slot` or `opens` whose state is not `found`: walk `id = n.id; while (id
+  != null && at[id] && at[id].state !== 'found' && i++ < 64) { goal[id] = true; id = byOf[id]; }`. A link's classes
+  become: `open` or `closed` as today; then ` done` when both ends are found; ` lead` when only its `from` end is
+  found; ` goal` when `goal[l.to]`. Each chevron gets the same extra classes after `chart-chev open|closed`. Nothing
+  else: no element added, removed or reordered.
+- CSS: R3.6, every row. Remove every `stroke-dasharray` but the route's.
+- Tests to add: every line has exactly one of `open` and `closed`; `done` and `lead` only with `open`, never both;
+  for one sea and a found list that leaves a slot sector unfound, the `goal` links equal the chain walked
+  independently over the data's unlock links; with every sector found there is no `goal` and no `lead`; `C.svg`
+  called twice gives the same string. The chart lines of R3.4's test list.
+- `L1`, on the Map screen: no element of `.chart-svg` other than `.chart-route` has a computed `stroke-dasharray`
+  other than `none`; computed stroke widths: grid and rings at most 1, `lead` at least 2.5, `goal` at least 3, route
+  at least 5; at least one `goal` line and one `lead` line are drawn (else change the seed's found list and say so);
+  the Map and planner floors.
+- Must not change: `C.view`, `placeTags`, `hitRadii`, node groups, the texts, every `aria-label`, existing tests.
+- Evidence: `look-map-*`, `look-planner-*`, `submersibles-map.png`, `submersibles-planner.png`.
+- Self-review: the colour test, and three questions per map picture: can you follow which sector reveals which; do
+  you see at once what can be revealed next and where the next slot is; is the planned route the first thing seen.
+- Escalate if: an existing chart test would have to change; C82 moves; the ladder cannot hold in some theme after
+  the R3.4 order of changes; the water of two seas cannot be told apart.
+
+#### W24. Map tab and sector details (Sonnet builder; needs W23)
+- Files: `subs.css`; `subs.js` in `mapHtml` (the `next` swatch becomes filled: `fill="currentColor"`, no stroke; the
+  `far` swatch hollow: `fill="none" stroke="currentColor" stroke-width="2"`) and `sectorDetails` (the state line
+  becomes `<p class="muted st-found|st-next|st-far">` from `node.state`); `check.js` (`L1` floors only).
+- Rules: sea tab (`.map-seas .btn[data-map-sea]`): `border-left: 10px solid var(--sea); padding-left: 6px`; bar track
+  `var(--rule)`, fill `var(--sea-g)`; pressed: a field in `--sea` with `border-color: var(--ink)`, track
+  `color-mix(in srgb, var(--on-mid) 25%, var(--sea))`, fill `var(--on-mid)`. `.map-panel > h2:first-child`: ink slab,
+  `border-image: none; border-bottom-color: var(--sea)`. `.chart-head`: `background: var(--sea); border-bottom: 6px
+  solid var(--ink)`, name and count `--on-mid`. `.chart-details h3`: a field in `--sea`. State line: `border-left:
+  12px solid; padding-left: 10px`, colour `--back` for `st-found`, `--idle` for `st-next`, `--ink-2` for `st-far`.
+  `.chart-facts dd:nth-of-type(1)`: `--rank-s`; the sixth and seventh: `--route-s`. `.chart-details .rates-tier >
+  summary::before`: `background: var(--loot-m); color: var(--on-mid)`; `.chart-details .rate-item b`: `--loot-s`.
+  `.map-grid > .planner`: `border-left: 10px solid var(--sea-g)`; `.planner .route-line b`: `--route-s`.
+- Must not change: section 5 (the sea button's text, "slot 2", "Rank needed", the keyboard path); the legend's words.
+- Evidence: `look-map-*`, `look-map-tiers-*`, `look-planner-*`.
+- Escalate if: a sea tab grows or wraps differently at 360 px; C82 or C84 changes; `sectorDetails` needs more.
+
+#### W25. Screen voice, tab rail and the Log (Sonnet builder; needs W22)
+- Files: `subs.css`; `subs.js` in `logHtml` only; `check.js` (`L1` floors only).
+- Screen voice: `.panel:not(.welcome):not(.empty-state):not(.recs):not(.map-panel) > h2:first-child` and `.wiz-head`:
+  a field in `--scr`. Section hatches (`.recs h3::after`, `.wide-panel > h3::after`) and `.panel h4`'s underline:
+  `--scr-g`. Rail: the current tab is a field in `--scr`, its edge `::before` `--ink`; the other tabs' icons take
+  `--route-g` (Board), `--loot-g` (Log), `color-mix(in srgb, var(--sea-1) 70%, var(--ink))` (Map), `--gil-g`
+  (Earnings), `--rank-g` (Setup); labels as built.
+- `logHtml`: work out each row's value before building the rows; on `.log-row` add `in-sea-<id>` (the sea of the
+  route's first sector, when there is a route), `logged` or `unlogged` (from the value's `logged`), and on logged rows
+  `style="--p:<its gil ÷ the largest gil among the rows shown>"`, three decimals, 0 when the largest is 0.
+- Log rules: `.log-row[class*="in-sea-"] .log-when`: a field in `--sea` (rows with no route keep the ink slab; hover
+  as built). Even rows `background: var(--paper-2)` with `.muted` in `--ink`. `.log-row.logged`: `border-right: 8px
+  solid var(--loot-g)`; `.log-row.unlogged`: `border-right: 8px dashed var(--idle)` and its "nothing logged" words in
+  `--idle`, 700. `.log-what b`: `--gil-s`; under it on logged rows a heat line, `.log-what::after`: `display: block;
+  height: 4px; margin: 4px 0 0 auto; width: max(4px, calc(var(--p) * 100%)); background: var(--gil-g)`. Phone: the
+  same, the time strip in the sea's colour.
+- Must not change: any text, the order, `.log-row[data-trip]`, the row height at 360 px (`L1` measures it).
+- Evidence: `look-log-*`; also `look-earnings-*` and `look-setup-*` (their heads change here).
+- Escalate if: the border makes a row wrap at 360 px; `logHtml` needs any other edit; a head's first child is not its
+  `h2`.
+
+#### W26. Earnings (Sonnet builder; needs W25)
+- Files: `subs.css`; `subs.js` in `earnHtml` only (add `in-sea-<id>` to each `tr[data-pos]` and each `.earn-thin`
+  body row, from the route's first sector); `check.js` (`L1` floor only).
+- Rules: `.earn-card:first-child`: a field in `--gil-m`; the other cards' figures `--gil-s`, their top band
+  `background-image: linear-gradient(var(--gil-g), var(--gil-g))`. Bars (ranked gil per hour, by free company):
+  `--gil-bar` in place of `--bar`, figures `--ink`. Route cells (second cell of a ranked row, first of a thin row):
+  `600 var(--f-data)`, `--route-s`, `border-left: 6px solid var(--sea-g)`. "Top items": first cell `--loot-s`, 700,
+  `border-left: 6px solid var(--loot-g)`; third cell `--gil-s`. Position blocks, the thin rows' hazard edge and the
+  phone layout as built.
+- Must not change: any figure or text; `.earn-card b` (four, in order); the first `.earn-t` row; `tr[data-pos]`.
+- Evidence: `look-earnings-*`, `look-earnings-ranked-*`.
+- Escalate if: a table no longer fits at 360 px; C22 or C78 reads a changed cell.
+
+#### W27. Board and send window (Sonnet builder; needs W25)
+- Files: `subs.css`; `subs.js` in `pickerHtml` only (class `in-sea-<PICK.sea>` on `.route-pick`); `check.js` (`L1`
+  floors only).
+- Board, colour only, no size: the rank plate (`.sub[data-sub] .sub-meta > span:first-child`): a field in `--rank-m`;
+  `.sub-meta .route`: `--route-s`. Strip, card heads, status fields, `.quick` as built.
+- Send window: `.sector`: `border-left: 8px solid var(--sea-g); padding-left: 4px` (the same 12 px inset as today);
+  `.sector:not(.on) b`: `--route-s`. `.route-line`: `border-left: 8px solid var(--route-g); padding-left: 10px`; its
+  `b` `--route-s`. `.loot-h`: a label block, `background: var(--loot-m); color: var(--on-mid); padding: 2px 10px`,
+  its hatch `--loot-g`; `.rate-item b`: `--loot-s`. `.rankbox`: `border-left: 8px solid var(--rank-g); padding-left:
+  10px`. `.advice` and the sheet's head as built.
+- Must not change: C25 by a single pixel; `.sectors` wider than 300 px; `#sheet .btn.primary` order.
+- Evidence: `look-board-*`, `look-sheet-*`, `look-sheet-route-*`, `submersibles-board.png`, `-desktop.png`.
+- Escalate if: C25 moves; C22's `pickerFull` or any of C21 to C23, C78 to C81, C85 to C88 changes.
+
+#### W28. Setup, recommendations, empty states (Sonnet builder; needs W25)
+- Files: `subs.css`; `subs.js` in `wizardHtml` only (class `in-sea-<sea.id>` on each `<details class="sea">`);
+  `check.js` (`L1` floors only).
+- Recommendations: `.panel.recs > h2:first-child`: ink slab with `border-image: linear-gradient(90deg,
+  var(--route-m) 0 25%, var(--rank-m) 25% 50%, var(--gil-m) 50% 75%, var(--loot-m) 75%) 1`. Number block
+  (`.rec-name b`), by objective and whatever its position: a field in `--route-m` for `li:has([data-rec="up-unlock"])`,
+  `--rank-m` for `up-level`, `--gil-m` for `up-gil`, `--loot-m` for `up-loot`. First row: the `--hi` wash as built and
+  `border-left: 8px solid var(--seal)`. The second section label ("Loot Farming") and each `.rec-picker`: `--loot-s`
+  text on the label, `border-left: 8px solid var(--loot-g)` on the picker; a switched-off picker
+  (`:has(.rec-find:disabled)`): `border-left-color: var(--ink-3)`.
+- Setup: `.sea[class*="in-sea-"]`: `border-left: 10px solid var(--sea-g)`; its open summary a field in `--sea`;
+  `.tick b`: `--route-s`. `.dot`, `.fc-list` and the fields as built (the wizard's head is W25's).
+- Empty states (`.panel.welcome`, `.panel.empty-state`): ink slab as built, the rings in `var(--ring)` in place of
+  the 10% tint.
+- Must not change: what the buttons, slider and pickers do; `[data-rec]`, `[data-rec-find]`, `.rec-picker`.
+- Evidence: `look-setup-*`, `look-recommendations-*`, `submersibles-recommendations.png`.
+- Escalate if: a recommendations check reads a style; `wizardHtml` needs more than the class; text on the rings is
+  hard to read in a picture.
+
+#### W29. Final pass (Sonnet builder; needs W23 to W28)
+- Files: `subs.css`; `check.js` (`L1`).
+- Steps: every floor of R3.7 asserted; walk the eight screens at 360 × 800 in light and dark and in the three themes
+  on the desktop; fix any text under its ratio that the test does not model (text over a band, a hover, a focus
+  ring), any clipped band; reduced motion still stops every loop. Run the colour test and the bold test over all
+  pictures and list every "still two or three colours" and "still tame".
+- Acceptance: `npm run build`, `npm run test:unit`, `npm run test:browser`, `npm run check` pass; the hand-back
+  lists C25 `maxBottom`, C82 `hitMin`, the family counts per screen and theme, and the contrast table.
+- Escalate if: a floor is missed because two roles share a 30° family in that theme: report the hues; do not lower a
+  floor or move a hue.
+
+#### W30. Records (Haiku clerk; needs W29)
+- Files: `docs/STATE.md` (one entry naming Revision 3 and the `L1` measure), `tracker/command-center/README.md` (the
+  new `look-*` picture names). Acceptance: `git diff --stat` shows only those two files.
+
+### R3.9 Risks, and the first thing to verify
+
+- **First:** this file was rewritten whole to append this section. `git diff --numstat
+  docs/submersibles-look-spec.md` must show additions only. Then W22's cross-check: Chromium supports the exact
+  `@supports` form, and the browser's palette equals the model in the three themes. Until then every hue, hex and
+  ratio in this revision is hand arithmetic.
+- Relative colour syntax in WebKit and Firefox was not checked here; old Safari gets the fixed-hue fallback. `L1`
+  records the support check in every engine it runs.
+- At strength 0.10 the voices are jewel tones, not neon. If the owner finds them too quiet, the remedy is Q8's
+  strongest option, not a number here: 0.10 is the ceiling that stays inside sRGB for every hue.
+- A voice can land beside a status or sea hue (R3.4's guard table). Magitek Steel light is the test case; the colour
+  test asks for any two neighbours that could be mixed up.
+- The family count is sensitive near its 30° edges and to the seed. A missed floor is reported with the hues.
+- On dark themes fields are light blocks, like slabs (R6). The Log's time cells and the heads will be bright.
+- The sea colours change slightly in W22 (new values); every picture with a sea bar or the chart moves.
+- The link colours are learned from the markers they join; no words explain them unless Q11 is answered yes.
+- The risks of section 8 and R6 stand (parallel work on the same files, custom colours, the unverified orientation).
+
+### R3.10 Owner questions
+
+Q1 to Q7 stand as written. Four more:
+
+**Q8. How far the new colours may go from the chosen theme.**
+- Four colours spaced evenly around the colour wheel, starting from your theme's accent, all at one calm strength
+  (what this revision builds). Strong contrast between them; the theme decides which four. Cost: none extra. Risk: in
+  some themes one of them sits close to a status colour (green, amber, blue).
+- Calmer: the accent's two neighbours and its opposite. Closer to the theme, less contrast; one line changes. Risk:
+  it may read as "three colours" again.
+- Only the theme's own two colours plus the status colours. Closest to the theme; in two themes the second colour is
+  grey. Risk: the complaint stays.
+- Stronger still: every colour as vivid as a screen can show. Cost: the palette moves into the code shared with the
+  Tracker and the Atelier, which are then rebuilt and republished; one more item. Risk: a fault there touches every
+  module.
+- Keep things as they are: no new colours.
+- Recommendation: the first. Fairly sure; the fourth can follow once you have seen the first.
+
+**Q9. The status colours (green, blue, amber, red).**
+- Exactly the same in every theme (what is built today and kept here). Always recognisable. Risk: in a few themes
+  they stand apart from the theme.
+- Tinted a little toward each theme's text colour. Slightly calmer; twelve checked colour pairs are checked again.
+  Cost: one small item. Risk: low; the change is subtle.
+- Recommendation: keep them exactly the same (this is also "keep things as they are"). Fairly sure.
+
+**Q10. The voyage grade in the Log.** The grade you note on a return (C to SS) is stored but not shown in the Log.
+- Show it as a small coloured chip on the row. New words on the screen. Cost: one small item.
+- Keep things as they are: the Log does not show it.
+- Recommendation: show it, after this revision is accepted. Moderately sure.
+
+**Q11. Words for the new line colours on the chart.** The chart's legend text is not changed by this revision.
+- Add one clause to the legend: "bright line: the way to the next slot or sea · amber arrow: can be revealed now".
+  Cost: one sentence, in the next item that touches the Map. Risk: none.
+- Keep things as they are: the lines are understood from the markers they join.
+- Recommendation: add the clause. Fairly sure.
