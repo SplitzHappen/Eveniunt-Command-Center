@@ -17,6 +17,7 @@
 
   A.init = function (data) {
     D = data; SECTOR = {}; SEA = {}; PART = {}; CLASS = {}; RANK = {}; CHILD = {};
+    SEA_CACHE.clear();
     data.sectors.forEach(function (s) { SECTOR[s.id] = s; });
     data.seas.forEach(function (s) { SEA[s.id] = s; });
     data.parts.forEach(function (p) { PART[p.id] = p; });
@@ -119,6 +120,8 @@
   // Route evaluations made since the last reset (item R2): the cost figure of spec 4.2, shown as ADVISOR.lastEvals.
   var evals = 0;
   A.lastEvals = 0;
+  // one sea's searched routes, kept for the next submarine with the same inputs (see adviseRecs); bounded, oldest out first
+  var SEA_CACHE = new Map(), SEA_CACHE_MAX = 64;
   function counted(route, st) { evals++; return A.evalRoute(route, st); }
   function search(pool, st, score, must, keep) {
     var bySea = {}, out = [];
@@ -422,8 +425,22 @@
       };
       var searchLead = leadSt.key === 'G' ? G : leadSt;
       var amt = function (route, ev) { return searchLead.amount({ route: route, ev: ev }); };
+      // The search of one sea is memoised across submarines (item: first Board draw). It reads exactly: the sea's visitable sectors (their ids, in
+      // order), the build's speed and range (evalRoute), its surveillance, retrieval and favor (DROPS.route through estOf), the fuel flag,
+      // the logged figures that decided a route of this sea (ownBy, read by gilAmount), the data (the cache is emptied in A.init) and the
+      // Gil stage as the lead (only then is the score gilAmount; any other lead is searched afresh). Nothing of the submarine's identity,
+      // its rank beyond the pool, the pending voyages or the other stages is read. The list of { route, ev } found is read only.
+      var seaKey = function (sea, secs) {
+        if (searchLead !== G) return null;
+        var own = [];
+        Object.keys(ownBy).forEach(function (k) { if (SECTOR[+k.split(',')[0]].sea === +sea) own.push(k + '=' + ownBy[k].merchantPerTrip); });
+        return [sea, secs.map(function (s) { return s.id; }).join('.'), st.speed, st.range, st.surveillance, st.retrieval, st.favor, fuel ? 1 : 0, own.sort().join(';')].join('|');
+      };
       Object.keys(bySea).forEach(function (sea) {
-        var secs = bySea[sea];
+        var secs = bySea[sea], ck = seaKey(sea, secs), hit = ck !== null ? SEA_CACHE.get(ck) : null;
+        if (hit) { hit.forEach(function (c) { keepSet(c.route, c.ev); }); return; }
+        var found = [], keepSetSea = keepSet;
+        if (ck !== null) { keepSetSea = function (route, ev) { found.push({ route: route.slice(), ev: ev }); keepSet(route, ev); }; }
         if (secs.length <= 8) {
           var ids = secs.map(function (s) { return s.id; });
           (function walk(route) {
@@ -432,13 +449,17 @@
               if (route.indexOf(id) >= 0) return;
               var nr = route.concat(id), ev = cev(nr);
               if (!ev || !ev.reachable) return;
-              keepSet(nr, ev); walk(nr);
+              keepSetSea(nr, ev); walk(nr);
             });
           })([]);
         } else {
           var hrs = function (ev) { return ev.seconds / 3600; };
-          search(secs, st, function (r, ev) { return searchLead.rate || searchLead.key === 'L' ? amt(r, ev) / hrs(ev) : amt(r, ev); }).forEach(function (c) { keepSet(c.route, c.ev); });
-          if (fuel) search(secs, st, function (r, ev) { return amt(r, ev) / Math.max(1, ev.tanks); }).forEach(function (c) { keepSet(c.route, c.ev); });
+          search(secs, st, function (r, ev) { return searchLead.rate || searchLead.key === 'L' ? amt(r, ev) / hrs(ev) : amt(r, ev); }).forEach(function (c) { keepSetSea(c.route, c.ev); });
+          if (fuel) search(secs, st, function (r, ev) { return amt(r, ev) / Math.max(1, ev.tanks); }).forEach(function (c) { keepSetSea(c.route, c.ev); });
+        }
+        if (ck !== null) {
+          if (SEA_CACHE.size >= SEA_CACHE_MAX) SEA_CACHE.delete(SEA_CACHE.keys().next().value);
+          SEA_CACHE.set(ck, found);
         }
       });
       Object.keys(bySet).forEach(function (k) { add(mk(bySet[k].route, bySet[k].ev)); });

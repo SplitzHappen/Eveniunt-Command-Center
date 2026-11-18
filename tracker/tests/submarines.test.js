@@ -1885,12 +1885,34 @@ test('review fix 7: part tips need a minimum absolute gain besides 5%, and say l
 
 test('review fix 1: cost of the app-found search in every sea (route evaluations and time per submarine, everything found, Gil first)', () => {
   for (const [rank, limit] of [[60, 14000], [85, 22000], [145, 45000]]) {
+    ADV.init(D); // a cold start: the search shared between submarines is empty
     const t0 = Date.now(); gilAdvise({ sub: { rank, parts: bestParts(rank) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, { order: ['gil', 'unlock', 'level', 'loot'] });
     console.log('cost: rank %d, everything found, Gil first: %d route evaluations, %d ms', rank, ADV.lastEvals, Date.now() - t0);
     assert.ok(ADV.lastEvals > 0 && ADV.lastEvals <= limit, 'evaluations ' + ADV.lastEvals); assert.ok(Date.now() - t0 < 5000);
   }
 });
 
+
+test('first Board draw: 8 free companies x 4 rank-145 submarines, everything found, Gil first: the search is shared, at most 60,000 route evaluations in total (80,000 with fuel on); the plans equal fresh searches', () => {
+  const run = (parts, rank) => gilAdvise({ sub: { rank, parts }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, { order: ['gil', 'unlock', 'level', 'loot'] });
+  for (const fuel of [false, true]) {
+    ADV.init(D); // empties the shared search cache: a cold start
+    let total = 0; const t0 = Date.now(), plans = [];
+    for (let i = 0; i < 32; i++) {
+      const a = gilAdvise({ sub: { rank: 145, parts: bestParts(145) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, { order: ['gil', 'unlock', 'level', 'loot'], fuel });
+      total += ADV.lastEvals; plans.push(JSON.stringify(a));
+    }
+    console.log('first Board, 32 submarines, fuel %s: %d route evaluations, %d ms', fuel, total, Date.now() - t0);
+    assert.ok(total > 0 && total <= (fuel ? 80000 : 60000), 'evaluations ' + total);
+    assert.ok(plans.every((x) => x === plans[0]));
+    ADV.init(D); const fresh = JSON.stringify(gilAdvise({ sub: { rank: 145, parts: bestParts(145) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, { order: ['gil', 'unlock', 'level', 'loot'], fuel }));
+    assert.equal(plans[0], fresh);
+  }
+  // different builds, ranks and seas never share an answer: each equals the answer of a cold start
+  for (const [rank, parts] of [[60, bestParts(60)], [85, bestParts(85)], [145, [3, 4, 1, 2]]]) {
+    const warm = JSON.stringify(run(parts, rank)); ADV.init(D); assert.equal(warm, JSON.stringify(run(parts, rank)));
+  }
+});
 
 test('D3 (Q4): the factor is one named constant and the rule moves with it', () => {
   assert.equal(ADV.DERIVED_FACTOR, 2);

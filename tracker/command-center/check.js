@@ -3690,6 +3690,34 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server29.close();
     });
 
+    // ── C99 Submersibles first Board draw: 8 free companies x 4 rank-145 submarines, everything found, Gil first. The search for app-found routes
+    //    is shared between submarines of one build, so the first Board renders within a generous bound (3 seconds; about 5 seconds before). ──
+    await guard('C99', async () => {
+      const server30 = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1920, height: 1080 } });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 60000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      const allIds = data.sectors.map((x) => x.id);
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async (ids) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        ['Alpha', 'Bravo', 'Cedar', 'Delta', 'Ember', 'Fable', 'Garnet', 'Harbor'].forEach((n, i) => {
+          sec.fcs['f' + i] = { name: n + ' Company', world: 'Maduin', order: i, unlockedSlots: 4, discovered: ids };
+          for (let s = 1; s <= 4; s++) sec.subs['s' + i + s] = { fcId: 'f' + i, slot: s, name: 'Sub ' + n[0] + s, rank: 145, parts: [31, 24, 25, 34] };
+        });
+        let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['gil', 'unlock', 'level', 'loot'] } }, { rev: r.rev, base: null });
+      }, allIds);
+      const t0 = Date.now();
+      await page.reload(); await ready(); await page.waitForSelector('.fc .sub[data-status]');
+      const ms = Date.now() - t0, subs = await page.locator('.fc .sub[data-status]').count();
+      await ctx.close();
+      record('C99', 'First Board draw (review fix 1): 8 free companies x 4 submarines at rank 145 with every sector found and Gil first render all 32 submarines within 3 seconds of loading the page (' + ms + ' ms here)',
+        subs === 32 && ms < 3000 && real(errors).length === 0, { ms, subs, errors: real(errors) });
+      server30.close();
+    });
+
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.

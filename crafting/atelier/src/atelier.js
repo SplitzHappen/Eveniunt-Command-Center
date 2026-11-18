@@ -1586,7 +1586,11 @@
       if (once) return;
       var own = new URL('sw.js', location.href).href;
       var mine = function () { var c = navigator.serviceWorker.controller; return !!c && c.scriptURL === own; };
-      var go = function () { try { sessionStorage.setItem('atelier-coi-reload', '1'); } catch (e) { /* ignore */ } location.reload(); };
+      // A click on the way back to the Command Center, or a page already leaving, must not be cancelled by this one reload.
+      var leaving = false;
+      window.addEventListener('pagehide', function () { leaving = true; });
+      document.addEventListener('click', function (e) { var t = e.target; if (t && t.closest && t.closest('a[data-cc-back]')) leaving = true; }, true);
+      var go = function () { if (leaving) return; try { sessionStorage.setItem('atelier-coi-reload', '1'); } catch (e) { /* ignore */ } location.reload(); };
       if (mine()) return go();
       navigator.serviceWorker.addEventListener('controllerchange', function () { if (mine()) go(); });
     }).catch(function () { /* offline install unavailable; the page still works */ });
