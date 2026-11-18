@@ -421,6 +421,8 @@
     var patch = R.intent(was, c);
     var force = typeof forcePicker === 'number' && forcePicker >= 0; // a stored duplicate cleared or replaced: a change although the settings read the same
     if (force) patch['loot' + (forcePicker + 1)] = c.loot[forcePicker][0];
+    // "Use the default …": always sent, so a tab that has not yet seen another tab's change still makes the later change win
+    if (forcePicker === 'order' || forcePicker === 'giveUp') { force = true; patch[forcePicker] = c[forcePicker]; }
     var none = !Object.keys(patch).length || (!force && JSON.stringify(R.check(R.store(RC.k.raw, patch), D)) === JSON.stringify(was));
     if (!none) RC.k.change(patch);
     RC.choices = null;
@@ -432,8 +434,8 @@
     if (m) {
       recsChange(function (c) { var i = c.order.indexOf(m[2]), j = m[1] === 'up' ? i - 1 : i + 1; if (i < 0 || j < 0 || j >= c.order.length) return; c.order.splice(j, 0, c.order.splice(i, 1)[0]); }, v,
         function (now) { return R.LABEL[m[2]] + ' is now ' + (now.order.indexOf(m[2]) + 1) + ' of ' + R.KEYS.length; });
-    } else if (v === 'order-default') recsChange(function (c) { c.order = R.KEYS.slice(); }, v, 'The default order is back.');
-    else if (v === 'give-default') recsChange(function (c) { c.giveUp = R.GIVE_UP; }, v, 'The allowance is back to ' + R.GIVE_UP + '%.');
+    } else if (v === 'order-default') recsChange(function (c) { c.order = R.KEYS.slice(); }, v, 'The default order is back.', 'order');
+    else if (v === 'give-default') recsChange(function (c) { c.giveUp = R.GIVE_UP; }, v, 'The allowance is back to ' + R.GIVE_UP + '%.', 'giveUp');
   }
   function setupHtml() {
     var fcs = fcList();

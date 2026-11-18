@@ -3238,15 +3238,24 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const c = (stored && stored.choices) || {};
       const picker1OnB = await B.$eval('[data-rec="loot-0"]', (el) => el.value);
       const picker2OnB = await B.$eval('[data-rec="loot-1"]', (el) => ({ value: el.value, on: document.querySelector('[data-rec="loot-on-1"]').checked }));
+      // A moves Gil Farming up; B has not seen it and still shows the default order: "Use the default order" on B is the later
+      // change and must win, not be dropped as "nothing changed"
+      await A.click('[data-rec="up-gil"]');
+      await A.waitForTimeout(800);
+      const orderAfterA = ((await raw()).choices.order || []).join(',');
+      await B.click('[data-rec="order-default"]');
+      await B.waitForTimeout(800);
+      const orderAfterB = ((await raw()).choices.order || []).join(',');
       const statusA = await A.$eval('#status', (el) => el.textContent), statusB = await B.$eval('#status', (el) => el.textContent);
       const liveB = await B.$eval('[data-recs-live]', (el) => el.textContent);
       await ctx.close();
       const ok = afterA && afterA.choices.loot1 === 12928 &&
+        orderAfterA === 'unlock,gil,level,loot' && orderAfterB === 'unlock,level,gil,loot' &&
         c.loot1 === 12928 && c.loot2 === 2 && c.use2 === true && c.loot4 === 999999999 && c.use4 === true && !('loot' in c) &&
         picker1OnB === '12928' && picker2OnB.value === '2' && picker2OnB.on === true &&
         statusA === '' && statusB === '' && !/Not saved/.test(liveB) && prompts === 0 && real(errors).length === 0;
-      record('C89', 'Customizable Recommendations (R8): in two tabs of one browser, A picks an item in picker 1 and it is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item; the save then holds both items, picker 2\'s switch and a key this build does not know, with no old "loot" key; B\'s picker 1 shows A\'s item; neither page shows a save problem, no dialog and no page error',
-        ok, { afterA, stored, picker1OnB, picker2OnB, statusA, statusB, liveB, prompts, errors: real(errors) });
+      record('C89', 'Customizable Recommendations (R8): in two tabs of one browser, A picks an item in picker 1 and it is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item; the save then holds both items, picker 2\'s switch and a key this build does not know, with no old "loot" key; B\'s picker 1 shows A\'s item; A then moves Gil Farming up and "Use the default order" on B, which has not seen that, puts the default order back; neither page shows a save problem, no dialog and no page error',
+        ok, { afterA, stored, orderAfterA, orderAfterB, picker1OnB, picker2OnB, statusA, statusB, liveB, prompts, errors: real(errors) });
       await ctx.close().catch(() => {}); server19.close();
     }
 
