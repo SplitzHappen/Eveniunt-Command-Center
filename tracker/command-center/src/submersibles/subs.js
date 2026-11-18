@@ -174,7 +174,7 @@
     else if (UI.tab === 'log') { main.innerHTML = logHtml(); loadPrices(false); }
     else if (UI.tab === 'map') main.innerHTML = mapHtml();
     else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); loadPrices(false); }
-    else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
+    else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel empty-state"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
   var lastStatus = '';
@@ -790,7 +790,7 @@
   var LOGSHOW = 60;
   function logHtml() {
     var now = Date.now(), prices = PRICES.prices || {}, list = Object.keys(S.trips).map(function (k) { return { id: k, t: S.trips[k] }; }).sort(function (a, b) { return (b.t.back || b.t.t) - (a.t.back || a.t.t); });
-    if (!list.length) return '<section class="panel"><h2>Log</h2><p class="muted">Every voyage that ends ("Send again", "Collected" or the one-press send) is kept here. Tap one to enter what came back.</p></section>';
+    if (!list.length) return '<section class="panel empty-state"><h2>Log</h2><p class="muted">Every voyage that ends ("Send again", "Collected" or the one-press send) is kept here. Tap one to enter what came back.</p></section>';
     return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p><div class="log-list">' + list.slice(0, LOGSHOW).map(function (x) {
       var t = x.t, sub = S.subs[t.s] || {}, fc = S.fcs[sub.fcId] || {}, v = EARN.tripValue(t, prices);
       return '<button type="button" class="log-row" data-trip="' + esc(x.id) + '"><span class="log-when">' + esc(F.fmtClock(t.back || t.t, now)) + '</span><span class="log-who"><b>' + esc((fc.name || '?') + ' · ' + (sub.name || 'removed sub')) + '</b><span class="muted">' + esc(t.r && t.r.length ? ADV.routeText(t.r) : 'no route') + (t.rankAfter ? ' · rank ' + t.rankAfter : '') + '</span></span>' +
@@ -921,8 +921,11 @@
   }
   function earnHtml() {
     var now = Date.now(), tot = EARN.totals(S, PRICES.prices || {}, now), scope = priceScope();
-    if (!tot.trips) return '<section class="panel"><h2>Earnings</h2><p class="muted">Earnings come from what you log in each returned voyage (Log tab, or the send window of a returned sub).</p></section>';
+    if (!tot.trips) return '<section class="panel empty-state"><h2>Earnings</h2><p class="muted">Earnings come from what you log in each returned voyage (Log tab, or the send window of a returned sub).</p></section>';
     var rk = EARN.ranked(tot.byRoute);
+    var ratio = function (v, m) { return m > 0 ? (Math.max(0, +v || 0) / m).toFixed(3) : '0'; }; // look only: a bar's fill is a ratio of figures already shown
+    var maxHr = Math.max.apply(null, rk.ranked.map(function (r) { return +r.perHour || 0; }).concat([0]));
+    var maxFc = Math.max.apply(null, fcList().map(function (f) { return +tot.byFc[f.id] || 0; }).concat([0]));
     var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
     var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
     var src = PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : PRICES.error ? 'Universalis could not be reached (' + esc(PRICES.error) + '): merchant prices only' : 'no market prices yet';
@@ -931,10 +934,10 @@
       (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +
       '<p class="row"><label class="field inline">Market prices from <select class="inp" data-pref="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' + dcs.map(function (d) { return '<option' + (S.settings.prefs && S.settings.prefs.priceWorld === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label><button type="button" class="btn sm" data-act="prices">Refresh prices</button><button type="button" class="btn sm" data-act="csv">Export the log (CSV)</button></p>' +
       '<h3>Gil per hour by route <span class="muted">(from your own log)</span></h3>' + (rk.ranked.length || rk.thin.length ? '<p class="hint">Logged gil divided by logged hours at sea, at the prices shown above.</p>' +
-        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked"><thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '"><td>' + r.pos + '</td><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked"><thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" style="--p:' + ratio(r.perHour, maxHr) + '"><td>' + r.pos + '</td><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
         (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>'; }).join('') + '</tbody></table>' : '')
         : '<p class="hint">Log what came back from voyages with a route to see this.</p>') +
-      '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
+      '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, maxFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
       '<h3>Top items</h3><table class="earn-t"><thead><tr><th>Item</th><th>Quantity</th><th>Value</th><th>Priced by</th></tr></thead><tbody>' + items.map(function (x) { return '<tr><td>' + esc(EARN.name(x[0])) + '</td><td>' + x[1].qty.toLocaleString('en') + '</td><td>' + fmtGil(x[1].gil) + '</td><td>' + (x[1].how || 'unknown') + '</td></tr>'; }).join('') + '</tbody></table></section>';
   }
 

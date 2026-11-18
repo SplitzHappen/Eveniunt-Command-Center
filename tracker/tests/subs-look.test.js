@@ -125,9 +125,11 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
       note('ink-2 on hi-slip (shared ink, printed)', ratio(c('--ink-2'), c('--hi-slip')), where);
       need('bad on slip', c('--bad'), c('--slip'), 4.5, where);
       need('bad on paper', c('--bad'), c('--paper'), 4.5, where);
-      // printed, not asserted: the shared ink-2
-      note('ink-2 on slip (shared, printed)', ratio(c('--ink-2'), c('--slip')), where);
-      note('ink-2 on paper (shared, printed)', ratio(c('--ink-2'), c('--paper')), where);
+      // Revision 2 (W15, W16): labels and kickers in the sheet and the tables sit on the slip, the sector names on the paper, the Log's row hover on paper-2
+      need('ink-2 on slip (labels, kickers, table heads)', c('--ink-2'), c('--slip'), 4.5, where);
+      need('ink-2 on paper (sector rank line)', c('--ink-2'), c('--paper'), 4.5, where);
+      need('ink on paper-2 (Log row hover)', c('--ink'), c('--paper-2'), 4.5, where);
+      note('ink-2 on paper-2 (printed; the Log row uses --ink there)', ratio(c('--ink-2'), c('--paper-2')), where);
       for (let sea = 1; sea <= 7; sea++) {
         const cenv = Object.assign({}, env, dk ? RULES.chartDark : RULES.chartLight, { '--sea': env['--sea-' + sea] });
         const w = where + ' sea ' + sea;
