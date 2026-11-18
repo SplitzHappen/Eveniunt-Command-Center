@@ -45,7 +45,13 @@
       var u = D.unlocks[s.id] || {};
       if (u.by != null && at[u.by]) lines.push({ from: u.by, to: s.id, x1: at[u.by].x, y1: at[u.by].y, x2: at[s.id].x, y2: at[s.id].y });
     });
-    return { sea: seaId, name: sea.name, box: box, start: { x: sea.x, y: py(sea.y) }, nodes: nodes, lines: lines };
+    // Graticule (decoration): a line at every multiple of 100 in data x and data y, over the box and one box-width beyond; y goes through py like the nodes.
+    var step = 100, gx0 = box.x - box.w, gx1 = box.x + 2 * box.w, gy0 = box.y - box.h, gy1 = box.y + 2 * box.h;
+    var dlo = C.Y_DOWN ? gy0 : minY + maxY - gy1, dhi = C.Y_DOWN ? gy1 : minY + maxY - gy0, gxs = [], gyd = [];
+    for (var gx = Math.ceil(gx0 / step) * step; gx <= gx1; gx += step) gxs.push(gx);
+    for (var gy = Math.ceil(dlo / step) * step; gy <= dhi; gy += step) gyd.push(gy);
+    var grid = { step: step, xs: gxs, ys: gyd.map(py), yd: gyd, x0: gx0, x1: gx1, y0: gy0, y1: gy1 };
+    return { sea: seaId, name: sea.name, box: box, start: { x: sea.x, y: py(sea.y) }, nodes: nodes, lines: lines, grid: grid };
   };
 
   var STATE = { found: 'found', next: 'can be revealed next', far: 'further away' };
@@ -112,25 +118,60 @@
     return res;
   }
 
-  // The SVG text. route: sector ids (optional), drawn as a numbered line from Start.
-  C.svg = function (view, route) {
-    var b = view.box, span = Math.max(b.w, b.h), fs = span / 30, r = span / 70;
+  // The SVG text. route: sector ids (optional), drawn as a numbered line from Start. opts.selected: the sector id drawn with brackets.
+  // Everything but the sector nodes, Start and its label is decoration (aria-hidden); no position is changed (spec D7).
+  C.svg = function (view, route, opts) {
+    var b = view.box, span = Math.max(b.w, b.h), fs = span / 30, r = span / 70, sel = opts && opts.selected != null ? String(opts.selected) : null;
     var at = {}; view.nodes.forEach(function (n) { at[n.id] = n; });
-    var hits = C.hitRadii(view), tagAt = placeTags(view, r, fs);
-    var e = tagAt.extent, o = '<svg class="chart-svg" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
-    o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
-    var path = [view.start].concat((route || []).filter(function (id) { return at[id]; }).map(function (id) { return at[id]; }));
-    if (path.length > 1) o += '<polyline class="chart-route" aria-hidden="true" points="' + path.map(function (p) { return num(p.x) + ',' + num(p.y); }).join(' ') + '"/>';
-    o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><rect x="' + num(view.start.x - r) + '" y="' + num(view.start.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(view.start.x) + ' ' + num(view.start.y) + ')"/><text x="' + num(view.start.x) + '" y="' + num(view.start.y + r * 1.5 + fs * 1.1) + '" text-anchor="middle" font-size="' + num(fs) + '">Start</text></g>';
+    var hits = C.hitRadii(view), tagAt = placeTags(view, r, fs), st = view.start, g = view.grid;
+    var e = tagAt.extent, o = '<svg class="chart-svg" data-sea="' + esc(view.sea) + '" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
+    function gridPath(cls, keepX, keepY) {
+      var d = '';
+      g.xs.forEach(function (x) { if (keepX(x)) d += 'M' + num(x) + ' ' + num(g.y0) + 'L' + num(x) + ' ' + num(g.y1); });
+      g.ys.forEach(function (y, i) { if (keepY(g.yd[i])) d += 'M' + num(g.x0) + ' ' + num(y) + 'L' + num(g.x1) + ' ' + num(y); });
+      return '<path class="' + cls + '" aria-hidden="true" d="' + d + '"/>';
+    }
+    o += gridPath('chart-grid', function () { return true; }, function () { return true; });
+    o += gridPath('chart-grid major', function (x) { return x % 500 === 0; }, function (y) { return y % 500 === 0; });
+    // sonar rings: every 200 units out from Start to the farthest corner of the box, 8 at most; every second ring is dashed
+    var far = Math.max.apply(null, [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]].map(function (c) { return Math.hypot(c[0] - st.x, c[1] - st.y); }));
+    var nr = Math.min(8, Math.floor(far / 200)), R = nr ? nr * 200 : far, rings = '';
+    for (var k = 1; k <= nr; k++) rings += '<circle class="' + (k % 2 ? 'solid' : 'dash') + '" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + (k * 200) + '"/>';
+    o += '<g class="chart-rings" aria-hidden="true">' + rings + '</g>';
+    // the turning sweep: a 40 degree fan with its point on Start, its leading edge clockwise; CSS turns it about Start
+    var a1 = -Math.PI / 2, a0 = a1 - 40 * Math.PI / 180, p0 = [st.x + R * Math.cos(a0), st.y + R * Math.sin(a0)], p1 = [st.x + R * Math.cos(a1), st.y + R * Math.sin(a1)];
+    o += '<g class="chart-sweep" aria-hidden="true" style="transform-origin:' + num(st.x) + 'px ' + num(st.y) + 'px"><path class="chart-sweep-fan" d="M' + num(st.x) + ' ' + num(st.y) + 'L' + num(p0[0]) + ' ' + num(p0[1]) + 'A' + num(R) + ' ' + num(R) + ' 0 0 1 ' + num(p1[0]) + ' ' + num(p1[1]) + 'Z"/><line class="chart-sweep-edge" x1="' + num(st.x) + '" y1="' + num(st.y) + '" x2="' + num(p1[0]) + '" y2="' + num(p1[1]) + '"/></g>';
+    // a chevron on the middle of a segment, pointing from (x1, y1) to (x2, y2)
+    function chev(x1, y1, x2, y2, size, cls) {
+      var dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy); if (!len) return '';
+      var ux = dx / len, uy = dy / len, mx = (x1 + x2) / 2, my = (y1 + y2) / 2, px = -uy, py2 = ux;
+      return '<path class="' + cls + '" aria-hidden="true" d="M' + num(mx - ux * size * 0.6 + px * size * 0.8) + ' ' + num(my - uy * size * 0.6 + py2 * size * 0.8) + 'L' + num(mx + ux * size) + ' ' + num(my + uy * size) + 'L' + num(mx - ux * size * 0.6 - px * size * 0.8) + ' ' + num(my - uy * size * 0.6 - py2 * size * 0.8) + '"/>';
+    }
+    o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line class="' + (at[l.from].state === 'found' ? 'open' : 'closed') + '" x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
+    o += '<g class="chart-chevs" aria-hidden="true">' + view.lines.map(function (l) { return chev(l.x1, l.y1, l.x2, l.y2, r * 0.7, 'chart-chev ' + (at[l.from].state === 'found' ? 'open' : 'closed')); }).join('') + '</g>';
+    var path = [st].concat((route || []).filter(function (id) { return at[id]; }).map(function (id) { return at[id]; }));
+    if (path.length > 1) {
+      var pts = path.map(function (p) { return num(p.x) + ',' + num(p.y); }).join(' ');
+      o += '<path class="chart-route-glow" aria-hidden="true" d="M' + path.map(function (p) { return num(p.x) + ' ' + num(p.y); }).join('L') + '"/>';
+      o += '<polyline class="chart-route" aria-hidden="true" points="' + pts + '"/>';
+      for (var i = 1; i < path.length; i++) o += chev(path[i - 1].x, path[i - 1].y, path[i].x, path[i].y, r * 0.8, 'chart-route-dir');
+    }
+    o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><circle class="chart-start-ping" aria-hidden="true" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + num(r * 1.5) + '"/><circle class="chart-start-ring" aria-hidden="true" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + num(r * 1.5) + '"/><rect x="' + num(st.x - r) + '" y="' + num(st.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(st.x) + ' ' + num(st.y) + ')"/><text x="' + num(st.x) + '" y="' + num(st.y + r * 1.5 + fs * 1.1) + '" text-anchor="middle" font-size="' + num(fs) + '">Start</text></g>';
     view.nodes.forEach(function (n) {
       var tags = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean);
       var label = n.name + ', rank ' + n.rank + ', ' + STATE[n.state] + (tags.length ? ', ' + tags.join(', ') : '') + (n.rankOk ? '' : ', above this submarine\'s rank');
       var shape = n.state === 'found' ? '<circle r="' + num(r) + '"/>'
         : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"/>'
         : '<rect x="' + num(-r * 0.7) + '" y="' + num(-r * 0.7) + '" width="' + num(1.4 * r) + '" height="' + num(1.4 * r) + '"/>';
-      var idx = (route || []).indexOf(n.id);
-      o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
-        '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + shape +
+      var idx = (route || []).indexOf(n.id), onRoute = idx >= 0, isSel = sel === String(n.id), c15 = r * 1.5, c09 = r * 0.9;
+      var extra = (n.state === 'next' ? '<circle class="chart-halo" aria-hidden="true" r="' + num(r * 1.1) + '"/>' : '') +
+        (n.rankOk ? '' : '<circle class="chart-overring" aria-hidden="true" r="' + num(r * 1.3) + '"/>') +
+        (onRoute ? '<circle class="chart-routering" aria-hidden="true" r="' + num(r * 1.4) + '"/>' : '') +
+        (n.opens ? '<circle class="chart-ring2" aria-hidden="true" r="' + num(c15) + '"/>' : '') +
+        (isSel ? '<path class="chart-lock" aria-hidden="true" d="' + [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (q) { return 'M' + num(q[0] * c15) + ' ' + num(q[1] * c09) + 'L' + num(q[0] * c15) + ' ' + num(q[1] * c15) + 'L' + num(q[0] * c09) + ' ' + num(q[1] * c15); }).join('') + '"/>' : '') +
+        (n.slot ? '<path class="chart-plus" aria-hidden="true" d="M' + num(r * 0.6) + ' ' + num(-r) + 'H' + num(r * 1.4) + 'M' + num(r) + ' ' + num(-r * 1.4) + 'V' + num(-r * 0.6) + '"/>' : '');
+      o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + (onRoute ? ' on-route' : '') + (isSel ? ' selected' : '') + (n.slot ? ' has-slot' : '') + (n.opens ? ' opens-sea' : '') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
+        '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + extra + shape +
         '<text class="chart-letter" y="' + num(-r * 2.2 - fs * 0.3) + '" text-anchor="middle" font-size="' + num(fs) + '">' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
         (tags.length ? '<text class="chart-tag" x="' + num(tagAt[n.id].x) + '" y="' + num(tagAt[n.id].y) + '" text-anchor="' + tagAt[n.id].anchor + '" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
     });

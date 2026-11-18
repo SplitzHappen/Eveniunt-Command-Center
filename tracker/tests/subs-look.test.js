@@ -134,8 +134,8 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
         const cenv = Object.assign({}, env, dk ? RULES.chartDark : RULES.chartLight, { '--sea': env['--sea-' + sea] });
         const w = where + ' sea ' + sea;
         const cc = (n) => colour('var(' + n + ')', cenv);
-        for (const bgName of ['--chart-bg', '--chart-bg-2']) {
-          for (const k of ['--chart-ink', '--chart-found', '--chart-next', '--chart-hot']) need(k.slice(2) + ' on ' + bgName.slice(2), cc(k), cc(bgName), 4.5, w);
+        for (const bgName of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) { // -hi: the lightest ground under any marker (scan line plus sweep), spec R5 W18
+          for (const k of ['--chart-ink', '--chart-ink-2', '--chart-found', '--chart-next', '--chart-hot']) need(k.slice(2) + ' on ' + bgName.slice(2), cc(k), cc(bgName), 4.5, w);
           need('chart-far on ' + bgName.slice(2), cc('--chart-far'), cc(bgName), 3, w);
         }
       }

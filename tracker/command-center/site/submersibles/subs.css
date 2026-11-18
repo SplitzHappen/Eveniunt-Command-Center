@@ -5,9 +5,9 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --back: #4fd18b; --on-back: #06210f; --out: #7d93ff; --on-out: #0b0d1a; --idle: #f0b347; --on-idle: #2a1800; --bad: #ff8a80; --locked: var(--ink-2); --back-bg: color-mix(in srgb, var(--back) 16%, var(--slip)); --out-bg: color-mix(in srgb, var(--out) 10%, var(--slip)); --idle-bg: color-mix(in srgb, var(--idle) 10%, var(--slip)); --molten: linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal)) 48%, var(--lb-c, var(--ochre))); --f-disp: "Big Shoulders Display", "Arial Narrow", sans-serif; --f-kick: "Cinzel", var(--f-serif); --sea-1: #2f7fd0; --sea-2: #d0642f; --sea-3: #2fb07a; --sea-4: #d04f9a; --sea-5: #9a6fe0; --sea-6: #5560e0; --sea-7: #6fc3d6; --slab: var(--ink); --on-slab: var(--paper); --on-slab-2: color-mix(in srgb, var(--paper) 72%, var(--ink)); --bar: color-mix(in srgb, var(--seal) 22%, var(--slip)); --hi-slip: color-mix(in srgb, var(--seal) 16%, var(--slip)); --hazard: repeating-linear-gradient(-65deg, var(--hz, var(--ink-2)) 0 8px, transparent 8px 16px); --edge: 2px; --sweep: rgba(255, 255, 255, .28); --glow: 0 0 0 1px color-mix(in srgb, var(--seal) 60%, transparent), 0 0 26px -6px var(--lb-glow, var(--seal)); } }
 :root[data-theme="dark"] { --back: #4fd18b; --on-back: #06210f; --out: #7d93ff; --on-out: #0b0d1a; --idle: #f0b347; --on-idle: #2a1800; --bad: #ff8a80; --locked: var(--ink-2); --back-bg: color-mix(in srgb, var(--back) 16%, var(--slip)); --out-bg: color-mix(in srgb, var(--out) 10%, var(--slip)); --idle-bg: color-mix(in srgb, var(--idle) 10%, var(--slip)); --molten: linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal)) 48%, var(--lb-c, var(--ochre))); --f-disp: "Big Shoulders Display", "Arial Narrow", sans-serif; --f-kick: "Cinzel", var(--f-serif); --sea-1: #2f7fd0; --sea-2: #d0642f; --sea-3: #2fb07a; --sea-4: #d04f9a; --sea-5: #9a6fe0; --sea-6: #5560e0; --sea-7: #6fc3d6; --slab: var(--ink); --on-slab: var(--paper); --on-slab-2: color-mix(in srgb, var(--paper) 72%, var(--ink)); --bar: color-mix(in srgb, var(--seal) 22%, var(--slip)); --hi-slip: color-mix(in srgb, var(--seal) 16%, var(--slip)); --hazard: repeating-linear-gradient(-65deg, var(--hz, var(--ink-2)) 0 8px, transparent 8px 16px); --edge: 2px; --sweep: rgba(255, 255, 255, .28); --glow: 0 0 0 1px color-mix(in srgb, var(--seal) 60%, transparent), 0 0 26px -6px var(--lb-glow, var(--seal)); }
 /* Chart tokens (declared here so the contrast test reads them; the chart itself is drawn in a later item). On .map-panel because they use var(). */
-.map-panel { --sea: var(--sea-1); --chart-bg: color-mix(in srgb, var(--ink) 90%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--ink) 84%, var(--sea)); --chart-ink: var(--paper); --chart-ink-2: color-mix(in srgb, var(--paper) 70%, var(--ink)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 86%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--paper-3) 90%, var(--sea)); --chart-ink: var(--ink); --chart-ink-2: var(--ink-2); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); } }
-:root[data-theme="dark"] .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 86%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--paper-3) 90%, var(--sea)); --chart-ink: var(--ink); --chart-ink-2: var(--ink-2); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); }
+.map-panel { --sea: var(--sea-1); --chart-bg: color-mix(in srgb, var(--ink) 90%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--ink) 84%, var(--sea)); --chart-ink: var(--paper); --chart-ink-2: color-mix(in srgb, var(--paper) 80%, var(--ink)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 86%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); } }
+:root[data-theme="dark"] .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 86%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); }
 .map-panel:has(.chart-svg[data-sea="1"]) { --sea: var(--sea-1); }
 .map-panel:has(.chart-svg[data-sea="2"]) { --sea: var(--sea-2); }
 .map-panel:has(.chart-svg[data-sea="3"]) { --sea: var(--sea-3); }
@@ -17,13 +17,17 @@
 .map-panel:has(.chart-svg[data-sea="7"]) { --sea: var(--sea-7); }
 
 @keyframes subs-halo { from { transform: scale(.92); opacity: .9; } to { transform: scale(1.55); opacity: 0; } }
-@keyframes subs-march { to { stroke-dashoffset: -16; } }
+@keyframes subs-march { to { stroke-dashoffset: -22; } }
+@keyframes subs-turn { to { transform: rotate(360deg); } }
 @keyframes subs-sweep { from { background-position-x: 150%; } to { background-position-x: -50%; } }
 @keyframes subs-charge { 0% { clip-path: inset(0 100% 0 0); } 25% { clip-path: inset(0 66% 0 0); } 50% { clip-path: inset(0 33% 0 0); } 75%, 100% { clip-path: inset(0 0 0 0); } }
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion="off"]) *, :root:not([data-motion="off"]) *::before, :root:not([data-motion="off"]) *::after { animation: none !important; transition: none !important; }
 }
 :root[data-motion="on"] *, :root[data-motion="on"] *::before, :root[data-motion="on"] *::after { animation: none !important; transition: none !important; }
+/* the chart's sweep and halos are not drawn at all with motion reduced */
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="off"]) :is(.chart-sweep, .chart-halo, .chart-start-ping) { display: none; } }
+:root[data-motion="on"] :is(.chart-sweep, .chart-halo, .chart-start-ping) { display: none; }
 
 /* Revision 2 kit. --hazard reads --hz where it is declared, so a rule that needs another stripe colour writes the gradient itself (the Board does). */
 .subs-mast { max-width: none; padding-top: 12px; padding-bottom: 10px; align-items: center; }
@@ -168,29 +172,44 @@ div.sub { cursor: default; }
 
 /* setup */
 .fc-list { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 6px; }
-.fc-list li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--r); background: var(--paper); }
+.fc-list li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; min-height: 64px; padding: 8px 12px; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); }
+.fc-list li > span:first-child { min-width: 0; }
+.fc-list li > span > b { display: block; font: 900 22px/1 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; }
+.fc-list li > span > .muted { display: block; margin-top: 4px; font: 12px/1.4 var(--f-data); }
 .wiz-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center; }
 .dots { display: flex; gap: 4px; flex-wrap: wrap; }
-.dot { width: auto; height: auto; box-shadow: none; line-height: 1.4; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor; border-radius: 2px; color: var(--ink-2); }
-.dot.on { background: var(--seal); color: var(--on-seal); border-color: var(--seal); }
-.dot.done { color: var(--ink); }
-.wiz-body h3 { font: 600 18px/1.2 var(--f-serif); margin: 12px 0 6px; }
+.panel.wiz { padding-top: 0; background-image: none; }
+.wiz-head { margin: 0 calc(-1 * var(--pad-x)) 14px; padding: 14px var(--pad-x) 12px; background: var(--slab); color: var(--on-slab); border-bottom: 6px solid transparent; border-image: var(--molten) 1; }
+.wiz-head h2 { font: 900 40px/.95 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; margin: 0; }
+.wiz-head .dots { flex-basis: 100%; gap: 6px 4px; }
+.dot { display: inline-block; width: auto; height: auto; line-height: 24px; font: 900 13px/24px var(--f-disp); letter-spacing: .06em; text-transform: uppercase; padding: 0 16px; border: 0; border-radius: 0; color: var(--on-slab-2); box-shadow: inset 0 0 0 2px currentColor; clip-path: polygon(11px 0, 100% 0, calc(100% - 11px) 100%, 0 100%); }
+.dot.on { background: var(--seal); color: var(--on-seal); box-shadow: none; }
+.dot.done { background: var(--on-slab); color: var(--slab); box-shadow: none; }
+@media (max-width: 700px) { .wiz-head h2 { font-size: 30px; } }
+.wiz-body h3 { font: 900 24px/1.15 var(--f-serif); margin: 14px 0 6px; }
 .field { display: grid; gap: 3px; margin: 8px 0; font-size: 13px; color: var(--ink-2); max-width: 420px; }
 .inp, select, .qinp, .rec-pick-row input, .rec-pick-row select { border: var(--edge) solid var(--ink); }
 .inp { font: inherit; font-size: 15px; padding: 7px 9px; border-radius: var(--r); background: var(--paper); color: var(--ink); width: 100%; min-width: 0; }
-.inp.big { font-size: 17px; padding: 10px; }
+.inp.big { font-size: 20px; padding: 10px; }
 .inp:focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
-fieldset { border: 1px solid var(--rule); border-radius: var(--r); margin: 10px 0; padding: 8px 12px; min-width: 0; }
-legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
+fieldset { border: 2px solid var(--ink); border-radius: 0; margin: 10px 0; padding: 8px 12px; min-width: 0; }
+legend { font: 900 14px/1.3 var(--f-disp); text-transform: uppercase; letter-spacing: .06em; padding: 2px 10px; background: var(--slab); color: var(--on-slab); }
+input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-color: var(--seal); flex: none; }
 .parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; }
 .parts legend { grid-column: 1 / -1; }
 .opt { display: flex; gap: 8px; align-items: center; margin: 5px 0; font-size: 14px; }
 .opt.big { font-size: 15px; font-weight: 600; margin: 10px 0; }
-.sea { border: 1px solid var(--rule); border-radius: var(--r); margin: 6px 0; padding: 4px 10px; background: var(--paper); }
-.sea summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.sea { border: 2px solid var(--ink); border-radius: 0; margin: 6px 0; padding: 0 10px; background: var(--paper); }
+.sea summary { cursor: pointer; display: flex; align-items: center; gap: 8px; min-height: 48px; margin: 0 -10px; padding: 0 10px; font: 900 18px/1.1 var(--f-disp); text-transform: uppercase; letter-spacing: .03em; }
+.sea[open] > summary { background: var(--slab); color: var(--on-slab); margin-bottom: 6px; }
+.sea summary .muted { font: 400 13px var(--f-body); text-transform: none; letter-spacing: 0; }
+.sea[open] > summary .muted { color: var(--on-slab-2); }
+.sea summary:focus-visible { outline-offset: -4px; }
+.sea[open] > summary:focus-visible { outline-color: var(--on-slab); }
 .ticks { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 2px 12px; padding: 4px 0 8px; }
-.tick { display: flex; gap: 6px; align-items: baseline; font-size: 13px; padding: 3px 0; }
-.wiz-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.tick { display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 3px 0; }
+.wiz-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 4px double var(--ink); }
+.wiz-foot .btn.primary { min-height: 48px; }
 
 /* the sheet */
 .sheet { padding: 0; color: var(--ink); width: min(520px, calc(100vw - 24px)); max-height: calc(100vh - 32px); }
@@ -227,6 +246,7 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
   .tabs button[aria-current="page"]::before { left: 0; right: 0; bottom: auto; width: auto; height: 6px; background: var(--molten); }
   .btn, .btn.sm, .quick, .qbtn, .sector, [data-map-sea] { min-height: 40px; }
   .btn.primary { min-height: 44px; }
+  .tick { min-height: 40px; }
   .subs-main { padding: 10px 10px 84px; }
   .subs-foot { padding-bottom: 80px; }
   .subs-page .switcher { display: none; }
@@ -273,7 +293,8 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .seg.wide label { min-height: 48px; }
 
 .acc { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
-.acc th, .acc td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); }
+.acc th { text-align: left; padding: 4px 8px; font: 700 11px var(--f-body); text-transform: uppercase; letter-spacing: .1em; color: var(--ink-2); border-bottom: 4px double var(--ink); }
+.acc td { text-align: left; padding: 4px 8px; border-bottom: 1px dashed var(--rule); }
 .acc .ok { color: var(--back); font-weight: 600; }
 .acc .bad { color: var(--bad); font-weight: 600; }
 @media (max-width: 700px) { .quick { margin: 4px 0 0; width: 100%; } }
@@ -350,20 +371,48 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 .map-seas { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .map-seas .btn[aria-pressed="true"] { background: var(--seal); border-color: var(--seal); color: var(--on-seal); }
 .map-seas .btn[aria-pressed="true"] .muted { color: inherit; }
-.chart-wrap { max-width: 100%; overflow: hidden; border: 1px solid var(--rule); background: var(--paper); }
-.chart-svg { display: block; width: 100%; height: auto; max-height: 80vh; }
-.chart-lines line { stroke: var(--ink-3); stroke-width: 1.5; opacity: .6; }
-.chart-route { fill: none; stroke: var(--seal); stroke-width: 3; }
-.chart-svg text { fill: var(--ink); font-family: inherit; paint-order: stroke fill; stroke: var(--paper); stroke-width: .3em; stroke-linejoin: round; }
-.chart-tag { fill: var(--ink-2); }
-.chart-start rect { fill: var(--ink); }
+.chart-wrap { max-width: 100%; overflow: hidden; border: 1px solid var(--rule); background: var(--chart-bg); }
+/* The chart is a dark deep-water sonar chart drawn by the app (not the game's map): water, scan lines, graticule, rings and a turning sweep around Start. Every stroke keeps its pixel width. */
+.chart-svg { display: block; width: 100%; height: auto; max-height: 80vh; background: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--chart-ink) 4%, transparent) 3px 4px), radial-gradient(120% 90% at 50% 0, var(--chart-bg-2), var(--chart-bg) 70%); box-shadow: inset 0 0 80px -10px var(--chart-bg); }
+.chart-svg :is(path, line, circle, polyline, rect) { vector-effect: non-scaling-stroke; }
+.chart-grid { fill: none; stroke: var(--chart-line); stroke-width: 1; }
+.chart-grid.major { stroke-width: 2; }
+.chart-rings circle { fill: none; stroke: color-mix(in srgb, var(--sea) 45%, var(--chart-ink)); stroke-opacity: .5; stroke-width: 1.5; }
+.chart-rings circle.dash { stroke-dasharray: 4 6; }
+.chart-sweep { transform-box: view-box; animation: subs-turn 9s linear infinite; }
+/* W18 fallback (spec "Escalate if"): a filled fan would lighten the ground under the markers past the contrast test, so the fan is an outline only */
+.chart-sweep-fan { fill: none; stroke: var(--chart-hot); stroke-opacity: .28; stroke-width: 1; }
+.chart-sweep-edge { stroke: var(--chart-hot); stroke-opacity: .6; stroke-width: 2; }
+.chart-lines line.open { stroke: var(--chart-ink-2); stroke-width: 2; }
+.chart-lines line.closed { stroke: var(--chart-far); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.chart-chev { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.chart-chev.open { stroke: var(--chart-ink-2); } .chart-chev.closed { stroke: var(--chart-far); }
+.chart-route-glow { fill: none; stroke: var(--chart-hot); stroke-opacity: .3; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+.chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 5; stroke-dasharray: 14 8; stroke-linejoin: round; filter: drop-shadow(0 0 6px var(--chart-glow)); animation: subs-march 1.2s linear infinite; }
+.chart-route-dir { fill: none; stroke: var(--chart-ink); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.chart-svg text { fill: var(--chart-ink); font-family: var(--f-body); font-weight: 700; paint-order: stroke fill; stroke: var(--chart-bg); stroke-width: .3em; stroke-linejoin: round; }
+.chart-svg .chart-letter { font-family: var(--f-disp); font-weight: 900; letter-spacing: .02em; }
+.chart-tag { fill: var(--chart-ink); }
+.chart-start rect { fill: var(--chart-ink); }
+.chart-start-ring { fill: none; stroke: var(--chart-ink); stroke-width: 2; }
+.chart-start-ping { fill: none; stroke: var(--chart-hot); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: subs-halo 2.4s ease-out infinite; }
 .chart-node { cursor: pointer; }
 .chart-node .hit { fill: transparent; stroke: none; }
-.chart-node.found circle:not(.hit), .chart-node.found rect { fill: var(--back); stroke: var(--back); }
-.chart-node.next rect { fill: var(--paper); stroke: var(--idle); stroke-width: 3; }
-.chart-node.far rect { fill: var(--locked); stroke: var(--locked); }
+.chart-node:hover .hit { fill: color-mix(in srgb, var(--chart-ink) 10%, transparent); }
+.chart-node.found > circle:last-of-type { fill: var(--chart-found); stroke: var(--chart-bg); stroke-width: 6; paint-order: stroke fill; filter: drop-shadow(0 0 5px var(--chart-found)); }
+.chart-node.next > rect { fill: var(--chart-bg); stroke: var(--chart-next); stroke-width: 3; }
+.chart-halo { fill: none; stroke: var(--chart-next); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: subs-halo 2.4s ease-out infinite; }
+.chart-node.far > rect { fill: var(--chart-far); stroke: none; }
+.chart-node.far .chart-letter { fill: var(--chart-ink-2); }
+.chart-overring { fill: none; stroke: var(--chart-far); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-node.over-rank .chart-letter { fill: var(--chart-far); }
+.chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 3; }
+.chart-node.on-route .chart-letter { fill: var(--chart-hot); }
+.chart-lock { fill: none; stroke: var(--chart-hot); stroke-width: 3; stroke-linecap: square; }
+.chart-plus { fill: none; stroke: var(--chart-next); stroke-width: 2.5; stroke-linecap: round; }
+.chart-ring2 { fill: none; stroke: var(--chart-ink); stroke-width: 2; }
 .chart-node:focus { outline: none; }
-.chart-node:focus-visible .hit, .chart-node:focus .hit { stroke: var(--seal); stroke-width: 3; }
+.chart-node:focus-visible .hit, .chart-node:focus .hit { stroke: var(--chart-hot); stroke-width: 4; }
 .chart-key .key.found { color: var(--back); } .chart-key .key.next { color: var(--idle); } .chart-key .key.far { color: var(--locked); }
 .chart-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 14px; }
 .chart-facts dt { color: var(--ink-2); } .chart-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
@@ -375,18 +424,31 @@ legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 
 /* Customizable Recommendations (Setup) */
 .recs h3 { margin: 12px 0 4px; }
-.rec-give input[type="range"] { width: min(100%, 320px); vertical-align: middle; accent-color: var(--seal); }
-.rec-give .rec-give-text { display: inline-block; min-width: 3ch; font-weight: 600; }
-.rec-rank { list-style: none; margin: 6px 0; padding: 0; }
-.rec-rank li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--rule); }
-.rec-rank li:first-child { border-top: 0; }
+.rec-give input[type="range"] { width: min(100%, 320px); vertical-align: middle; accent-color: var(--seal); -webkit-appearance: none; appearance: none; height: 32px; background: transparent; margin: 4px 0; }
+.rec-give input[type="range"]::-webkit-slider-runnable-track { height: 14px; background: var(--paper-3); border: 2px solid var(--ink); border-radius: 0; }
+.rec-give input[type="range"]::-moz-range-track { height: 10px; background: var(--paper-3); border: 2px solid var(--ink); border-radius: 0; }
+.rec-give input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 32px; margin-top: -11px; background: var(--seal); border: 2px solid var(--ink); border-radius: 0; box-sizing: border-box; }
+.rec-give input[type="range"]::-moz-range-thumb { width: 24px; height: 32px; background: var(--seal); border: 2px solid var(--ink); border-radius: 0; box-sizing: border-box; }
+.rec-give input[type="range"][disabled] { opacity: .5; }
+.rec-give .rec-give-text { display: inline-block; min-width: 3ch; font: 900 40px/1 var(--f-disp); vertical-align: middle; }
+.rec-rank { list-style: none; margin: 8px 0; padding: 0; border: 2px solid var(--ink); }
+.rec-rank li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 64px; padding: 0 10px 0 0; border-top: 2px solid var(--ink); }
+.rec-rank li:first-child { border-top: 0; background: var(--hi); }
+.rec-rank li.hint { min-height: 0; margin: 0; padding: 6px 12px; background: var(--paper); font-size: 13px; }
+.rec-name { display: flex; align-items: center; gap: 12px; align-self: stretch; font-size: 15px; font-weight: 700; min-width: 0; }
+.rec-name b { display: flex; align-items: center; justify-content: center; align-self: stretch; flex: none; width: 56px; font: 900 36px/1 var(--f-disp); background: var(--slab); color: var(--on-slab); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); padding-right: 8px; box-sizing: border-box; }
+.rec-rank li:first-child .rec-name { font-size: 17px; }
+.rec-rank li:first-child .rec-name b { background: var(--seal); color: var(--on-seal); }
+.rec-rank .btn { min-height: 40px; }
 .recs .btn:focus-visible, .recs input:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
 .recs .btn[disabled] { opacity: .5; cursor: default; }
-.recs .btn.sm { min-height: 36px; }
+.recs .btn.sm { min-height: 40px; }
 
-.rec-picker { padding: 8px 0; border-top: 1px solid var(--rule); }
+.rec-picker { padding: 10px 12px; margin-top: 10px; border: 2px solid var(--ink); background: var(--paper); }
+.rec-pick-title, .rec-picker .opt { font-size: 15px; font-weight: 700; margin: 0; }
 .rec-pick-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
-.rec-pick-row input, .rec-pick-row select { flex: 1 1 200px; min-width: 0; max-width: 100%; min-height: 40px; font: inherit; padding: 4px 8px; box-sizing: border-box; }
+.rec-pick-row input, .rec-pick-row select { flex: 1 1 200px; min-width: 0; max-width: 100%; min-height: 44px; font: inherit; padding: 4px 8px; box-sizing: border-box; }
+.rec-note { font-size: 13px; color: var(--ink-2); }
 .rec-note { margin: 2px 0 0; overflow-wrap: anywhere; }
 .recs select:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
 

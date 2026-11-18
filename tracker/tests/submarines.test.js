@@ -354,6 +354,67 @@ test('chart: an over-rank sector says so in its accessible label; slot and opens
   }
 });
 
+// ---------------------------------------------------------------- Revision 2, W18: the bolder chart (decoration only; geometry frozen)
+test('chart W18: the seven viewBox strings are the baseline of W0 (geometry frozen), and the SVG text is deterministic', () => {
+  const W0 = ['25.2 -17.6 939.6 1011.5', '81.6 77 857.5 912.9', '-5.9 8.6 1013.8 976.7', '-3.7 -0.7 1010.4 996.4', '-20.8 -7.3 1012.7 1004.6', '7.4 -9.4 995.3 1005.7', '277.4 85.7 704.1 917.6']; // measured before any W18 change
+  assert.equal(D.seas.length, 7);
+  D.seas.forEach((sea, i) => {
+    const svg = CH.svg(CH.view(sea.id, []));
+    assert.equal(/viewBox="([^"]+)"/.exec(svg)[1], W0[i], 'sea ' + sea.id);
+    assert.equal(svg, CH.svg(CH.view(sea.id, [])));
+    assert.ok(svg.includes(`data-sea="${sea.id}"`));
+  });
+});
+test('chart W18: one polyline with a route and none without; selected only with opts.selected, once; one sweep; no nested g; new decoration is aria-hidden', () => {
+  const v = CH.view(1, [1, 2, 3], 10), route = [1, 3];
+  assert.equal(count(CH.svg(v, route), '<polyline'), 1); assert.equal(count(CH.svg(v), '<polyline'), 0);
+  for (const none of [CH.svg(v, route), CH.svg(v, route, {}), CH.svg(v, route, { selected: null })]) assert.ok(!none.includes('selected') && !none.includes('chart-lock'));
+  const sel = CH.svg(v, route, { selected: 3 });
+  assert.equal(count(sel, ' selected"'), 1); assert.equal(count(sel, 'chart-lock'), 1);
+  assert.ok(new RegExp('class="chart-node [^"]* selected" data-sector="3"').test(sel));
+  assert.ok(new RegExp('class="chart-node [^"]*on-route[^"]*" data-sector="1"').test(sel));
+  assert.equal(count(sel, 'class="chart-sweep"'), 1);
+  assert.ok(sel.includes('has-slot')); assert.ok(CH.svg(CH.view(1, [])).includes('opens-sea'));
+  for (const sea of D.seas) {
+    const svg = CH.svg(CH.view(sea.id, [1]), [1], { selected: 1 }), nodes = svg.split('<g class="chart-node').slice(1);
+    for (const g of nodes) { const inner = g.slice(0, g.indexOf('</g>')); assert.ok(!inner.includes('<g'), 'no nested g'); assert.equal(count(g.slice(0, g.indexOf('</g>')), 'tabindex'), 1); }
+    assert.equal(count(svg, 'tabindex="0"'), sea.sectors);
+    const outside = [svg.slice(0, svg.indexOf('<g class="chart-start"')), svg.slice(svg.lastIndexOf('</g>') + 4)].join('');
+    for (const gh of outside.match(/<g class="chart-(?:rings|sweep|lines|chevs)"[^>]*>/g)) assert.ok(gh.includes('aria-hidden="true"')); // the children of these groups are hidden with them
+    const top = outside.replace(/<g class="chart-(?:rings|sweep|lines|chevs)"[^>]*>.*?<\/g>/g, '');
+    for (const el of top.match(/<(path|line|circle|polyline|g)\b[^>]*>/g) || []) assert.ok(el.includes('aria-hidden="true"'), 'aria-hidden: ' + el.slice(0, 60));
+    for (const el of svg.match(/<(path|circle)\b[^>]*class="chart-(start-ring|start-ping|halo|overring|routering|ring2|lock|plus)"[^>]*>/g) || []) assert.ok(el.includes('aria-hidden="true"'));
+    assert.ok(count(svg, 'class="chart-grid major"') === 1 && count(svg, 'class="chart-grid"') === 1);
+  }
+});
+test('chart W18: with C.Y_DOWN false the rings and the sweep stay centred on Start and every grid line lies on a multiple of 100 in data y', () => {
+  const saved = CH.Y_DOWN;
+  try {
+    for (const down of [true, false]) {
+      CH.Y_DOWN = down;
+      for (const sea of D.seas) {
+        const v = CH.view(sea.id, []), svg = CH.svg(v), secs = D.sectors.filter((s) => s.sea === sea.id);
+        const ys = secs.map((s) => s.y).concat([sea.y]), sum = Math.min(...ys) + Math.max(...ys);
+        const near = (a, b) => Math.abs(a - b) < 0.06;
+        assert.ok(near(v.start.y, down ? sea.y : sum - sea.y) && near(v.start.x, sea.x));
+        const rings = svg.match(/<circle class="(?:solid|dash)" cx="([-\d.]+)" cy="([-\d.]+)"/g);
+        assert.ok(rings.length >= 1 && rings.length <= 8);
+        for (const r of rings) { const m = /cx="([-\d.]+)" cy="([-\d.]+)"/.exec(r); assert.ok(near(+m[1], v.start.x) && near(+m[2], v.start.y)); }
+        const o = /transform-origin:([-\d.]+)px ([-\d.]+)px/.exec(svg); assert.ok(near(+o[1], v.start.x) && near(+o[2], v.start.y), 'sweep origin');
+        const fan = /class="chart-sweep-fan" d="M([-\d.]+) ([-\d.]+)L/.exec(svg); assert.ok(near(+fan[1], v.start.x) && near(+fan[2], v.start.y), 'fan point on Start');
+        const lines = svg.match(/<path class="chart-grid(?: major)?" aria-hidden="true" d="([^"]*)"/g).map((x) => /d="([^"]*)"/.exec(x)[1]);
+        let horizontal = 0;
+        for (const d of lines) for (const seg of d.match(/M[-\d.]+ [-\d.]+L[-\d.]+ [-\d.]+/g) || []) {
+          const [x1, y1, x2, y2] = seg.match(/-?[\d.]+/g).map(Number);
+          if (near(y1, y2)) { horizontal++; const dataY = down ? y1 : sum - y1; assert.ok(Math.abs(dataY / 100 - Math.round(dataY / 100)) < 0.002, 'y ' + dataY); } else { assert.ok(near(x1, x2)); assert.ok(Math.abs(x1 / 100 - Math.round(x1 / 100)) < 0.002, 'x ' + x1); }
+        }
+        assert.ok(horizontal > 5);
+      }
+    }
+  } finally { CH.Y_DOWN = saved; }
+  assert.equal(CH.Y_DOWN, true);
+});
+
 // ---------------------------------------------------------------- R1: the recommendation settings (recs.js)
 // First (spec risk 1): a save section of its own, 'submersibles-recommendations', survives the shared save's checks,
 // another module's write and a merge, with no change to save.js (it keeps a section it has no checker for as plain data).
