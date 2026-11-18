@@ -8,13 +8,13 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 
 ## Submersibles: Customizable Recommendations
 
-- **Setup panel "Customizable Recommendations"** holds a fuel-efficiency switch with its allowance slider (default 10%, range 5 to 50), a ranking of four priorities (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming; Move up and Move down buttons) and five loot pickers, each with type-to-narrow.
+- **Setup panel "Customizable Recommendations"** holds a fuel-efficiency switch with its allowance slider (default 15%, range 5 to 50), a ranking of four priorities (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming; Move up and Move down buttons) and five loot pickers, each with type-to-narrow.
 - **The rule:** the first priority that can be served leads; each lower one chooses only among routes within 5% of the best for those above. With fuel on, routes within the allowance of the best for the leading priority are compared by what they bring per tank.
 - **Storage:** the settings live in their own save section, `modules['submersibles-recommendations']`; `save.js` is unchanged.
 - **Loot** is "possible items only": the pickers list the items a route can bring; drop odds are not known.
 - **Files:** `recs.js` (the rule and the settings), `advisor.js` (the Board's and the send window's routes), `subs.js` (the panel).
 - **Browser checks C85, C86, C87, C88** (C85: the default order and the switch, reordering, the Board follows; C86: the allowance slider and the stored switch; C87: the five pickers; C88: Loot Farming first and the item's route).
-- **Tuning:** `tracker/tools/recs-tune.js` produces `docs/submersibles-recommendations-tuning.md`, which sets the default allowance.
+- **Tuning:** `tracker/tools/recs-tune.js` produces `docs/submersibles-recommendations-tuning.md` (and its fingerprint file). The default allowance, 15%, is the owner's choice, informed by the gil-only result; it is no longer the rule's output over the whole fleet. The routine unit test checks the document against its fingerprint and a small fixed sample. The full re-derivation takes about a minute and runs with `npm run test:tuning` (`node tracker/tools/recs-tune.js --check`); it is also a step of the `Checks` workflow. Run it, and `node tracker/tools/recs-tune.js --write` if it fails, after any change to `advisor.js`, `recs.js`, `drops.js` or the data.
 
 ## Submersibles step S6: gil advice from the player's own log
 

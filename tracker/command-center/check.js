@@ -3041,9 +3041,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const reason = await B.$eval('#sheet .advice-route + .hint', (p) => p.textContent);
       const sheetHead = await B.$eval('#sheet .advice-step', (b) => b.textContent);
       await B.keyboard.press('Escape');
-      // the advice is kept while nothing it reads changes. A setting is changed first (the allowance: 25 to 30), so the cache is
+      // the advice is kept while nothing it reads changes. A setting is changed first (the allowance: 30 to 35), so the cache is
       // really cold: the first stageOf makes one advise call per submarine concerned, the second none, and after another
-      // setting change (30 to 35) the next call is fresh again
+      // setting change (35 to 40) the next call is fresh again
       await B.click('[data-tab=setup]'); await B.waitForSelector('[data-recs-panel]');
       const stageCalls = () => B.evaluate(() => {
         let calls = 0; const orig = ADVISOR.advise; ADVISOR.advise = function () { calls++; return orig.apply(this, arguments); };
@@ -3058,11 +3058,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await B.focus('[data-rec=giveUp]'); await B.keyboard.press('ArrowRight'); await B.waitForTimeout(800);
       const cacheAfterChange = await stageCalls();
       await ctx.close();
-      const ok = sliderOff.disabled === true && sliderOff.min === '5' && sliderOff.max === '50' && sliderOff.step === '5' && sliderOff.value === '10' && defaultBtnOff === true &&
+      const ok = sliderOff.disabled === true && sliderOff.min === '5' && sliderOff.max === '50' && sliderOff.step === '5' && sliderOff.value === '15' && defaultBtnOff === true &&
         afterA && afterA.order.join() === 'level,unlock,gil,loot' && Object.keys(afterA).join() === 'order' &&
         sliderOn === false && afterMerge && afterMerge.fuel === true && afterMerge.order.join() === 'level,unlock,gil,loot' && orderOnB[0] === '1. Leveling Submersible Rank' &&
-        afterSlider && afterSlider.fuel === true && afterSlider.giveUp === 25 && afterSlider.order.join() === 'level,unlock,gil,loot' && shown === '25%' &&
-        reloaded.fuel === true && reloaded.value === '25' && reloaded.disabled === false &&
+        afterSlider && afterSlider.fuel === true && afterSlider.giveUp === 30 && afterSlider.order.join() === 'level,unlock,gil,loot' && shown === '30%' &&
+        reloaded.fuel === true && reloaded.value === '30' && reloaded.disabled === false &&
         /Fuel efficiency: 1 tank instead of 4, for \d+% less experience per hour\./.test(reason) && /Suggested · Leveling Submersible Rank/.test(sheetHead) &&
         afterMerge && afterMerge.fuel === true && afterMerge.order.join() === 'level,unlock,gil,loot' && statusA === '' && statusB === '' && prompts === 0 &&
         cache.concerned === 2 && cache.first === cache.concerned && cache.second === 0 && cache.one === cache.two &&

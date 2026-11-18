@@ -12,7 +12,7 @@
   R.KEYS = ['unlock', 'level', 'gil', 'loot']; // the default order
   R.LABEL = { unlock: 'Unlocking Routes', level: 'Leveling Submersible Rank', gil: 'Gil Farming', loot: 'Loot Farming' };
   R.BAND = 0.05; // fixed band between priorities (spec 4.6)
-  R.GIVE_UP = 10; // fuel allowance, percent; set by the tuning rule of spec 4.6 (docs/submersibles-recommendations-tuning.md, item R4)
+  R.GIVE_UP = 15; // fuel allowance, percent; the owner's choice (docs/submersibles-recommendations-tuning.md, item R4); a stored player value is never changed by it
   R.GIVE_MIN = 5;
   R.GIVE_MAX = 50;
   R.GIVE_STEP = 5;

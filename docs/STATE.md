@@ -28,7 +28,7 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   Browser checks C82 and C84.
 - **Submersibles: Customizable Recommendations** (built 2026-11-17). A panel in Setup: a ranking of four priorities
   (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming), a fuel-efficiency switch with a
-  tunable allowance (default 10%) and five loot pickers. The first priority that can be served leads; each lower one
+  tunable allowance (default 15%) and five loot pickers. The first priority that can be served leads; each lower one
   chooses only among routes within 5% of the best for those above. The settings live in a save section of their own;
   `save.js` is unchanged. How the defaults were chosen: `docs/submersibles-recommendations-tuning.md`. Browser checks
   C85 to C88.
@@ -54,8 +54,9 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 - Loot Farming knows only where an item can drop, not how often; gil is known only for routes with 10 logged voyages.
 - With the default ranking, a submarine below the top rank in a free company that has found everything is levelled
   before it farms gil, until the player moves Gil Farming up.
-- The default fuel allowance was tuned on unlocking and levelling only, with four-slot test submarines; 10% is the first
-  allowance at which a 5-point step stops paying, not the best value for every player.
+- The default fuel allowance was tuned on unlocking and levelling only, with four-slot test submarines; the default of 15% is
+  the owner's choice (the rule over the whole fleet, with rank 145 and gil added, gives no clear answer: 10% on levelling and
+  unlocking, 15% on gil only), not the best value for every player.
 - Each recommendation control is stored on its own, so different controls changed in two tabs or on two devices are
   both kept. The same control changed in two tabs on one device takes the later change without asking, as every part
   of the save does.

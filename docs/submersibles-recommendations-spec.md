@@ -135,7 +135,7 @@ with one live stage the result is that stage's best route; nothing is random.
 | Number | Value | Why |
 | --- | --- | --- |
 | Band between priorities (`RECS.BAND`) | 5%, fixed | Differences smaller than this are below what the data can tell: times are "calculated, not yet confirmed", experience is a floor, gil rests on as few as 10 voyages. It also bounds the cost: the top priority loses at most 5%. |
-| Fuel allowance (`RECS.GIVE_UP`) | starting value 15%; range 5 to 50, step 5 | Must exceed the 5% band or the switch does nothing, and stay well under half or the ranking stops being a ranking. The shipped number is set by the rule below, not by this guess. |
+| Fuel allowance (`RECS.GIVE_UP`) | starting value 15%; range 5 to 50, step 5 | Must exceed the 5% band or the switch does nothing, and stay well under half or the ranking stops being a ranking. The shipped default is 15%: the owner's choice (informed by the gil-only result of the rule below, which gives 15%; over the whole fleet the rule gives no clear answer), not the output of the rule. |
 | Exact search up to | 8 sectors per sea | Never more work than one bounded search costs today (8,800 against 9,630). |
 | Enough logged voyages | 10 (`EARN.ENOUGH`) | S6 decision D1. |
 
@@ -150,8 +150,10 @@ voyage log and none is made up; loot is left out because there are no odds.
   every step bought at least as much as it cost: `E(g) - E(g-5) >= L(g) - L(g-5)`** (with `E = L = 0` for fuel off).
 - For the band, the tool prints, for 0, 2, 5 and 10%, the mean loss on the first live priority and the mean gain on
   the second. Accepted at 5% when the second gains more than the first loses.
-- The tool writes its tables to `docs/submersibles-recommendations-tuning.md`; a unit test fails when
-  `RECS.GIVE_UP` differs from the rule's result. That file is the explanation the owner asked for.
+- The tool writes its tables to `docs/submersibles-recommendations-tuning.md`; routine unit tests check
+  that file against its fingerprint, that `RECS.GIVE_UP` equals the tool's owner-chosen constant (15) and that the gil-only
+  rule result is 15; `npm run test:tuning` re-derives everything and fails if the file differs. That file is the
+  explanation the owner asked for.
 
 ### 4.7 Living with S6: one answer everywhere
 

@@ -7,12 +7,16 @@
 // docs/submersibles-recommendations-tuning.md. Nothing is random and nothing time-dependent is written, so a second run
 // writes an identical file.
 //   node tracker/tools/recs-tune.js            print
-//   node tracker/tools/recs-tune.js --write    print and write the document
+//   node tracker/tools/recs-tune.js --write    print and write the document and its fingerprint file
+//   node tracker/tools/recs-tune.js --check    recompute everything (about a minute) and fail if the committed document or fingerprint differ
+// The shipped default (RECS.GIVE_UP) is the OWNER'S CHOICE, not the output of the rule (see OWNER_DEFAULT below).
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
 const DOC = path.join(ROOT, 'docs', 'submersibles-recommendations-tuning.md');
+const FPR = path.join(ROOT, 'docs', 'submersibles-recommendations-tuning.fingerprint.json');
 const SRC = path.join(ROOT, 'tracker', 'command-center', 'src', 'submersibles');
 const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'tracker', 'data', 'submarines.json'), 'utf8'));
 require(path.join(SRC, 'recs.js'));
@@ -22,9 +26,16 @@ const RECS = globalThis.RECS, ADV = globalThis.ADVISOR.init(D);
 
 const RANKS = [1, 10, 20, 30, 40, 50, 70, 90, 110, 130, 145];
 const GIL_FROM = 20; // the gil scenario starts at this rank
+// The default fuel allowance, in percent, as the owner chose it. With rank 145 and the gil scenario added, the rule over the whole
+// fleet no longer gives a clear answer (every 5-point step pays, so it would return 50); its parts give 10% (levelling and
+// unlocking, ranks 1 to 130) and 15% (gil only). The owner was shown this and chose 15%, informed by the gil-only result.
+// RECS.GIVE_UP must equal this constant (a unit test checks it); a stored player value is never changed by it.
+const OWNER_DEFAULT = 15;
 const BEFORE = { giveUp: 10, band: 5, scenarios: 122 }; // the previous run (levelling and unlocking, ranks 1 to 130), as the previous document stated it
 const SLOTS = 4;
 const STEP = 5;
+// a small fixed sample (kind, rank; every class at that rank) that the routine unit test re-runs and compares with the document
+const SAMPLE = [['levelling', 30], ['unlocking', 50], ['gil', 20]];
 const BANDS = [0, 0.02, 0.05, 0.10];
 const INTENDED = { levelling: 'X', unlocking: 'U2', gil: 'G' };
 
@@ -172,7 +183,8 @@ function render(R) {
   L.push('- The rule is unchanged. Result on all three scenarios: ' + (R.chosen === null ? 'no clear answer (' + R.verdict + ')' : 'a fuel allowance of ' + R.chosen + '%') + '. The 5% band: ' + (R.bandOk ? 'accepted' : 'not accepted') + '.');
   const res = (s) => (s.chosen === null ? 'no clear answer' : s.chosen + '%');
   L.push('- What the new tables show: ' + R.sets.map(([name, s]) => name + ': ' + res(s)).join('; ') + '; all three scenarios together: ' + res(R) + '. See "The same rule on parts of the scenarios" below.');
-  L.push('- The shipped constants in this run: `RECS.GIVE_UP` = ' + RECS.GIVE_UP + '%, `RECS.BAND` = ' + Math.round(RECS.BAND * 100) + '%. ' + (R.chosen === RECS.GIVE_UP ? 'The rule confirms them.' : 'They are not changed by this run: the choice is left to the owner.'), '');
+  L.push('- **The default allowance is the owner\'s choice: ' + OWNER_DEFAULT + '%.** It was chosen by the owner, informed by the gil-only result above (' + res(R.sets[2][1]) + '), and it is no longer the output of the rule over the whole fleet. Stored player values are not changed by it, only the default for a setting never changed.');
+  L.push('- The shipped constants in this run: `RECS.GIVE_UP` = ' + RECS.GIVE_UP + '% (the owner\'s choice: ' + (RECS.GIVE_UP === OWNER_DEFAULT ? 'they agree' : 'THEY DIFFER') + '), `RECS.BAND` = ' + Math.round(RECS.BAND * 100) + '%.', '');
   L.push('## The test fleet and the scenarios', '');
   L.push('Everything comes from `tracker/data/submarines.json`: no number is invented and no voyage log is used. The only prices are the data\'s own merchant prices, used by the gil scenario.', '');
   L.push('- Ranks: ' + RANKS.join(', ') + '. At each rank, one build for every submarine class the rank allows, made of that class\'s own four parts (hull, stern, bow, bridge). That gives ' + subs.length + ' builds.');
@@ -200,8 +212,7 @@ function render(R) {
   L.push('');
   L.push('**The rule, in one sentence:** the default allowance is the largest g up to which every step of 5 points bought at least as much extra gain per tank as it cost in lost per-hour score (`E(g) - E(g-5) >= L(g) - L(g-5)`, with fuel off as `E = L = 0`).', '');
   L.push('**Chosen numbers**', '');
-  if (R.chosen !== null) L.push('- Fuel allowance (`RECS.GIVE_UP`): **' + R.chosen + '%** (the first step that does not pay is ' + R.table[R.knee].g + '%).' + (R.chosen === RECS.GIVE_UP ? ' This is the shipped value.' : ' The shipped value is ' + RECS.GIVE_UP + '% and is not changed by this run: the owner decides.'));
-  else L.push('- Fuel allowance (`RECS.GIVE_UP`): no result from the rule: ' + R.verdict + '. The shipped value stays at ' + RECS.GIVE_UP + '% until the owner decides.');
+  L.push('- Fuel allowance (`RECS.GIVE_UP`): **' + OWNER_DEFAULT + '%, the owner\'s choice**, informed by the gil-only result (' + res(R.sets[2][1]) + '). It is not the output of the rule over the whole fleet, which gives ' + (R.chosen === null ? 'no clear answer (' + R.verdict + ')' : R.chosen + '%') + '.');
   L.push('', 'The same rule on parts of the scenarios, to show where the answer comes from (first column: the scenarios used; "pays" lists the steps 5, 10, ... 50 in order):', '', '| Scenarios | Count | Result | Steps that pay |', '| --- | --- | --- | --- |');
   L.push('| all three | ' + R.count + ' | ' + (R.chosen === null ? 'none (' + R.verdict + ')' : R.chosen + '%') + ' | ' + R.table.slice(1).map((t) => (t.pays ? 'y' : 'n')).join(' ') + ' |');
   R.sets.forEach(([name, s]) => L.push('| ' + name + ' | ' + s.n + ' | ' + (s.chosen === null ? 'none (' + s.verdict + ')' : s.chosen + '%') + ' | ' + s.table.slice(1).map((t) => (t.pays ? 'y' : 'n')).join(' ') + ' |'));
@@ -232,13 +243,48 @@ function render(R) {
   L.push('- **Loot:** which items a player picks cannot be derived from data, so no loot scenario was run.');
   L.push('- Times are "calculated, not yet confirmed" and experience is a floor (see the data\'s notes), so the tables describe how the rule behaves on the data, not what the game pays.');
   L.push('- Searches above 8 visitable sectors in a sea return the best route found, not a proven best, exactly as in the advisor.', '');
+  L.push('## A fixed sample, re-run by the routine unit test', '');
+  L.push('The scenarios below (' + SAMPLE.map(([k, r]) => k + ' at rank ' + r).join(', ') + '; every class at that rank) are re-run by the unit test on every routine run and compared with these rows. Columns: the lead; g; share of the top priority\'s per-hour score given up (L, percent); gain per tank (E, percent); whether the route changed.', '');
+  L.push.apply(L, sampleLines(R.runs.filter(inSample)));
+  L.push('');
+  L.push('## Fingerprint', '');
+  L.push('The key numbers of the whole run and a SHA-256 of every table row above (all lines that begin with `|`). The same block is written to `docs/submersibles-recommendations-tuning.fingerprint.json`. The routine unit test checks the document against it; `node tracker/tools/recs-tune.js --check` recomputes everything.', '');
+  L.push('```json', JSON.stringify(fingerprint(R, L), null, 2), '```');
   return L.join('\n');
 }
+function inSample(r) { return SAMPLE.some(([k, rank]) => r.scenario.kind === k && r.scenario.sub.rank === rank); }
+function sampleLines(runs) {
+  const out = ['| Scenario | Rank | Class | Lead | g (%) | L | E | route changed |', '| --- | --- | --- | --- | --- | --- | --- | --- |'];
+  runs.forEach((r) => {
+    if (!r.rows.length) out.push('| ' + r.scenario.kind + ' | ' + r.scenario.sub.rank + ' | ' + r.scenario.sub.cls + ' | ' + (r.lead || 'none') + ' | not measured | | | |');
+    r.rows.forEach((x) => out.push('| ' + r.scenario.kind + ' | ' + r.scenario.sub.rank + ' | ' + r.scenario.sub.cls + ' | ' + r.lead + ' | ' + x.g + ' | ' + f2(x.lost * 100) + ' | ' + f2(x.gain * 100) + ' | ' + (x.changed ? 'yes' : 'no') + ' |'));
+  });
+  return out;
+}
+// the sample, run on its own (a few seconds): what the routine unit test compares with the document
+function sample() { return sampleLines(scenarios().filter((sc) => SAMPLE.some(([k, rank]) => sc.kind === k && sc.sub.rank === rank)).map(tuneAllowance)); }
+// hash of the table rows of a document text, taken before its Fingerprint section
+function tablesHash(lines) {
+  const end = lines.indexOf('## Fingerprint');
+  return crypto.createHash('sha256').update(lines.slice(0, end < 0 ? lines.length : end).filter((l) => l.startsWith('|')).join('\n')).digest('hex');
+}
+function fingerprint(R, lines) {
+  const res = (s) => (s.chosen === null ? null : s.chosen);
+  return { ownerDefault: OWNER_DEFAULT, band: Math.round(RECS.BAND * 100), scenarios: R.total, measured: R.count, ruleAll: res(R),
+    ruleParts: R.sets.map(([name, s]) => ({ name, count: s.n, result: res(s) })), bandAccepted: R.bandOk, tablesSha256: tablesHash(lines) };
+}
 
-module.exports = { run, render, fleet, scenarios };
+module.exports = { run, render, fleet, scenarios, sample, tablesHash, OWNER_DEFAULT, SAMPLE, rule, DOC, FPR };
 
 if (require.main === module) {
-  const R = run(), text = render(R);
-  process.stdout.write(text + '\n');
-  if (process.argv.indexOf('--write') >= 0) { fs.writeFileSync(DOC, text + '\n'); console.log('Wrote ' + path.relative(ROOT, DOC)); }
+  const R = run(), text = render(R) + '\n';
+  const fp = JSON.stringify(fingerprint(R, text.split('\n').slice(0, -1)), null, 2) + '\n';
+  if (process.argv.indexOf('--check') >= 0) {
+    const same = (file, want) => { const have = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null; if (have === want) return true; console.error('DIFFERS: ' + path.relative(ROOT, file) + ' (run: node tracker/tools/recs-tune.js --write)'); return false; };
+    const ok = [same(DOC, text), same(FPR, fp)].every(Boolean);
+    console.log(ok ? 'Tuning document and fingerprint match a full re-derivation.' : 'Tuning check FAILED.');
+    process.exit(ok ? 0 : 1);
+  }
+  process.stdout.write(text);
+  if (process.argv.indexOf('--write') >= 0) { fs.writeFileSync(DOC, text); fs.writeFileSync(FPR, fp); console.log('Wrote ' + path.relative(ROOT, DOC) + ' and ' + path.relative(ROOT, FPR)); }
 }

@@ -1,0 +1,26 @@
+{
+  "ownerDefault": 15,
+  "band": 5,
+  "scenarios": 211,
+  "measured": 201,
+  "ruleAll": null,
+  "ruleParts": [
+    {
+      "name": "levelling and unlocking, ranks 1 to 130 (exactly the previous run's scenarios)",
+      "count": 122,
+      "result": 10
+    },
+    {
+      "name": "levelling and unlocking, ranks 1 to 145",
+      "count": 132,
+      "result": null
+    },
+    {
+      "name": "gil only (ranks 20 to 145)",
+      "count": 69,
+      "result": 15
+    }
+  ],
+  "bandAccepted": true,
+  "tablesSha256": "414946afe8dfbc9bd7cf3622fd7368322b18b8edd50754506a32a62b02795aab"
+}

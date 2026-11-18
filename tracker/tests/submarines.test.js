@@ -457,8 +457,8 @@ test('R1: constants, labels and defaults', () => {
   assert.deepEqual(RECS.KEYS.map((k) => RECS.LABEL[k]), ['Unlocking Routes', 'Leveling Submersible Rank', 'Gil Farming', 'Loot Farming']);
   assert.equal(RECS.NAME, 'submersibles-recommendations');
   assert.equal(RECS.BAND, 0.05);
-  assert.deepEqual([RECS.GIVE_UP, RECS.GIVE_MIN, RECS.GIVE_MAX, RECS.GIVE_STEP], [10, 5, 50, 5]);
-  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, true], [0, false], [0, false], [0, false], [0, false]] });
+  assert.deepEqual([RECS.GIVE_UP, RECS.GIVE_MIN, RECS.GIVE_MAX, RECS.GIVE_STEP], [15, 5, 50, 5]);
+  assert.deepEqual(RECS.defaults(), { fuel: false, giveUp: 15, order: ['unlock', 'level', 'gil', 'loot'], loot: [[0, true], [0, false], [0, false], [0, false], [0, false]] });
   assert.deepEqual(RECS.check({ choices: RECS.defaults() }), RECS.defaults(), 'what check returns for the defaults is the defaults');
 });
 
@@ -1080,31 +1080,48 @@ test('Review fix 6b: a stage that the 5% band emptied does not claim no sector c
 // ---------------------------------------------------------------- R4: the tuning tool and the shipped defaults
 // tools/recs-tune.js builds the test fleet from the data only and applies the rule of spec 4.6; the tuning document is its text.
 const TUNE = require(path.join(__dirname, '..', 'tools', 'recs-tune.js'));
-let tuned = null;
-const tuning = () => (tuned = tuned || TUNE.run());
-test('R4: the tuning fleet is big enough and includes rank 145 and the gil scenario (D8)', () => {
-  const t = tuning();
-  assert.ok(t.count >= 20, 'scenarios with the intended lead: ' + t.count);
-  assert.ok(t.runs.some((r) => r.scenario.sub.rank === 145), 'rank 145 is in the fleet');
-  const gil = t.runs.filter((r) => r.scenario.kind === 'gil');
-  assert.ok(gil.length > 0 && gil.every((r) => r.scenario.sub.rank >= 20 && r.intended && r.lead === 'G'), 'every gil scenario starts at rank 20 and is led by Gil');
-  assert.ok(t.table.slice(1).every((x) => x.g === 0 || Number.isFinite(x.L) && Number.isFinite(x.E)));
+const TUNE_DOC = path.join(__dirname, '..', '..', 'docs', 'submersibles-recommendations-tuning.md');
+const TUNE_FPR = path.join(__dirname, '..', '..', 'docs', 'submersibles-recommendations-tuning.fingerprint.json');
+// The routine run stays cheap: it checks the committed document against its own fingerprint and the constants, and re-runs a small
+// fixed sample. The full re-derivation (about a minute) is `npm run test:tuning` (node tracker/tools/recs-tune.js --check); run it
+// after any change to advisor.js, recs.js, drops.js or the data.
+const tuneDoc = () => fs.readFileSync(TUNE_DOC, 'utf8');
+const tuneFpr = () => JSON.parse(fs.readFileSync(TUNE_FPR, 'utf8'));
+test('R4: the tuning document carries a fingerprint that matches its own tables and the fingerprint file', () => {
+  const doc = tuneDoc(), lines = doc.split('\n');
+  const m = /```json\n([\s\S]*?)\n```/.exec(doc);
+  assert.ok(m, 'the document holds a fingerprint block');
+  const fp = JSON.parse(m[1]);
+  assert.deepEqual(fp, tuneFpr(), 'the fingerprint file equals the block in the document');
+  assert.equal(fp.tablesSha256, TUNE.tablesHash(lines), 'the table rows match their hash: run node tracker/tools/recs-tune.js --write');
+  assert.ok(fp.measured >= 20 && fp.scenarios >= fp.measured, 'scenarios measured: ' + fp.measured + ' of ' + fp.scenarios);
+  assert.ok(lines.some((l) => /^\| 145 \|/.test(l)), 'rank 145 is in the fleet');
+  assert.ok(doc.includes('| Rank | Classes | Levelling lead | Unlocking lead | Gil lead |'));
+  assert.equal(fp.band, Math.round(RECS.BAND * 100));
+  assert.equal(fp.bandAccepted, true, 'the 5% band is accepted by the document');
 });
-// the constant follows the rule. When the rule gives no clear answer, or another number than the shipped one, the owner decides
-// (spec D8): the test is then reported as skipped, with the figures, and is not a failure.
-test('R4: RECS.GIVE_UP equals the tuning rule\'s result', (tc) => {
-  const t = tuning();
-  if (t.chosen === null || t.chosen !== RECS.GIVE_UP) return tc.skip('rule result ' + (t.chosen === null ? 'none (' + t.verdict + ')' : t.chosen + '%') + ' differs from RECS.GIVE_UP ' + RECS.GIVE_UP + '%: the owner decides (docs/submersibles-recommendations-tuning.md)');
-  assert.equal(t.chosen, RECS.GIVE_UP);
+// the default is the owner's choice and the rule no longer gives it over the whole fleet (spec D8); these cannot rot: they compare
+// the constant with the tool's named constant, the document's own gil-only result and its own statement.
+test('R4: RECS.GIVE_UP is the owner-chosen default of the tool, which the document states', () => {
+  assert.equal(TUNE.OWNER_DEFAULT, 15);
+  assert.equal(RECS.GIVE_UP, TUNE.OWNER_DEFAULT);
   assert.ok(RECS.GIVE_UP > RECS.BAND * 100 && RECS.GIVE_UP < RECS.GIVE_MAX, 'above the band and short of the top of the range');
+  const fp = tuneFpr(), gil = fp.ruleParts.find((x) => /^gil only/.test(x.name));
+  assert.ok(gil, 'the document has the gil-only part');
+  assert.equal(gil.result, 15, 'the rule on the gil-only scenarios gives 15%');
+  assert.equal(fp.ownerDefault, RECS.GIVE_UP);
+  const doc = tuneDoc();
+  assert.ok(doc.includes("The default allowance is the owner's choice: 15%."), 'the document says the default is the owner\'s choice');
+  assert.ok(doc.includes('no longer the output of the rule over the whole fleet'));
 });
-test('R4: the 5% band gains more on the second priority than it loses on the first', () => {
-  const b = tuning().band.rows.find((r) => r.band === 0.05);
-  assert.ok(b.gain > b.loss, 'gain ' + b.gain + ' loss ' + b.loss);
-});
-test('R4: the tuning document is the tool\'s output', () => {
-  const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'submersibles-recommendations-tuning.md'), 'utf8');
-  assert.equal(doc, TUNE.render(tuning()) + '\n', 'run: node tracker/tools/recs-tune.js --write');
+test('R4: the rule re-run on a small fixed sample gives the rows the document holds', () => {
+  const doc = tuneDoc(), lines = doc.split('\n');
+  const from = lines.indexOf('## A fixed sample, re-run by the routine unit test'), to = lines.indexOf('## Fingerprint');
+  assert.ok(from > 0 && to > from);
+  const rows = lines.slice(from, to).filter((l) => l.startsWith('|'));
+  const got = TUNE.sample();
+  assert.ok(got.length > 10, 'sample rows: ' + got.length);
+  assert.deepEqual(got, rows);
 });
 
 // ---------------------------------------------------------------- second review round
