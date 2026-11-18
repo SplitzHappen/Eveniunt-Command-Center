@@ -705,3 +705,40 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 @media (max-width: 700px) { .vgauge { left: 12px; bottom: 1px; } }
 @media (min-width: 1400px) { .subs-main:has(.fleet > .fc:nth-child(5)) .vgauge { height: 3px; bottom: 0; left: calc(var(--field) + 10px); } }
 @media (min-width: 701px) { .fc-subs.list .vgauge { height: 3px; bottom: 0; left: calc(var(--field) + 10px); } }
+/* W25 (spec R3.5, R3.8): the screen's voice. A head is a field in --scr with a 6 px ink band; the rail's current tab is a field in --scr and the others' icons take the voices' graphic tones */
+.panel:not(.welcome):not(.empty-state):not(.recs):not(.map-panel) > h2:first-child, .wiz-head { --slab: var(--scr); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); border-image: none; border-bottom-color: var(--ink); }
+.recs h3::after, .wide-panel > h3::after { background: repeating-linear-gradient(-65deg, var(--scr-g) 0 2px, transparent 2px 8px); }
+.panel h4 { border-bottom-color: var(--scr-g); }
+.tabs button[aria-current="page"] { --slab: var(--scr); --on-slab: var(--on-mid); background: var(--slab); color: var(--on-slab); }
+.tabs button[aria-current="page"]::before { background: var(--ink); }
+.tabs button:not([aria-current="page"]) .ico { color: var(--ico, currentColor); }
+.tabs button[data-tab="board"] { --ico: var(--route-g); }
+.tabs button[data-tab="log"] { --ico: var(--loot-g); }
+.tabs button[data-tab="map"] { --ico: var(--sea-1-g); }
+.tabs button[data-tab="earn"] { --ico: var(--gil-g); }
+.tabs button[data-tab="setup"] { --ico: var(--rank-g); }
+/* W25: the Log. Each row says which sea (the time cell), how valuable (the gil figure and its heat line), graded or not (the chip) and whether loot was entered (solid edge and "N items", or dashed edge and "nothing logged") */
+.log-row[class*="in-sea-"] .log-when { --slab: var(--sea); --on-slab: var(--on-mid); background: var(--slab); color: var(--on-slab); }
+.log-row[class*="in-sea-"]:hover .log-when { background: var(--seal); color: var(--on-seal); }
+.log-row:nth-child(even) { background: var(--paper-2); }
+.log-row:nth-child(even) .muted { color: var(--ink); }
+.log-row.logged { border-right: 8px solid var(--loot-g); }
+.log-row.unlogged { border-right: 8px dashed var(--idle); }
+.log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }
+.log-what b { color: var(--gil-s); }
+.log-row.logged .log-what::after { content: ""; display: block; height: 4px; margin: 4px 0 0 auto; width: max(4px, calc(var(--p, 0) * 100%)); background: var(--gil-g); }
+.log-row.logged .log-what { min-width: 150px; }
+.log-grade { display: inline-block; vertical-align: middle; margin-right: 6px; padding: 1px 6px; font: 700 11px/1.4 var(--f-data); letter-spacing: .06em; color: var(--ink); background: var(--rank-w); border: 2px solid var(--rank-g); }
+.log-grade.g-s, .log-grade.g-ss { background: var(--rank-m); color: var(--on-mid); border-color: var(--ink); }
+@media (max-width: 700px) { .log-row.logged .log-what { min-width: 0; } .log-row.logged .log-what::after { margin-left: 0; } }
+/* W26: Earnings. Gil is the gold voice; a route carries its sea's colour; items brought back are the loot voice */
+.earn-card:first-child { --slab: var(--gil-m); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background-color: var(--slab); color: var(--on-slab); background-image: linear-gradient(var(--ink), var(--ink)); }
+.earn-card:not(:first-child) { background-image: linear-gradient(var(--gil-g), var(--gil-g)); }
+.earn-card:not(:first-child) b { color: var(--gil-s); }
+.earn-t td b { color: var(--gil-s); }
+.earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { background: linear-gradient(90deg, var(--gil-bar) calc(var(--p) * 100%), transparent 0); }
+.earn-ranked tr[style] > td:nth-child(3) b, .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child b { color: var(--ink); }
+.earn-ranked tr[data-pos] > td:nth-child(2), .earn-thin tr:not(.earn-note) > td:first-child { font: 600 14px var(--f-data); color: var(--route-s); border-left: 6px solid var(--sea-g, var(--route-g)); }
+.earn-ranked tr[data-pos] > td:nth-child(4) { color: var(--gil-s); }
+.earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:first-child { font-weight: 700; color: var(--loot-s); border-left: 6px solid var(--loot-g); }
+.earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:nth-child(3) { color: var(--gil-s); }

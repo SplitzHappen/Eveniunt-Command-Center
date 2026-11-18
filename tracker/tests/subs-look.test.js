@@ -379,3 +379,50 @@ test('chart (W23): subs.css has the dash only on the route, chevrons hidden but 
   assert.ok(css.indexOf('.chart-lines line.goal:is(.open, .closed)') > css.indexOf('.chart-lines line.open.lead') && css.indexOf('.chart-lines line.open.lead') > css.indexOf('.chart-lines line.open.done'));
   assert.equal(P.RULES.chartLight['--chart-next'], '#ffe38a'); assert.equal(P.RULES.chartDark['--chart-next'], '#ffe38a');
 });
+
+// ---- Revision 3 (W25, W26): the screen voice, the rail, the Log and Earnings ----
+test('Log and Earnings (W25, W26): every new pair reaches its contrast in all 21 themes, light and dark (computed palette)', () => {
+  const fail = [], lo = {};
+  const need3 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink);
+    const pg = { slip: hx(th.slip), paper: hx(th.paper), 'paper-2': hx(th.paper2) };
+    for (const [n, b] of Object.entries(pg)) {
+      // text: even Log rows (ink on paper-2), the unlogged words, gil, route and loot figures, the "Grade" chip's neighbours
+      need3('Log/Earnings text: ink on ' + n + ' (4.5)', ink, b, 4.5, where);
+      need3('Log: "nothing logged" idle-s on ' + n + ' (4.5)', c('--idle-s'), b, 4.5, where);
+      for (const v of ['gil', 'route', 'loot']) need3('Log/Earnings text: ' + v + '-s on ' + n + ' (4.5)', c('--' + v + '-s'), b, 4.5, where);
+      // meaningful graphics: the unlogged dashed edge (--idle), the logged edge, the heat line and card bands, the chip border, the sea edges, the rail icons
+      need3('Log graphic: dashed edge idle on ' + n + ' (3)', hx(T['--idle'] || th.idle), b, 3, where);
+      for (const v of ['loot', 'gil', 'rank', 'route']) need3('Log/Earnings/rail graphic: ' + v + '-g on ' + n + ' (3)', c('--' + v + '-g'), b, 3, where);
+      for (let s = 1; s <= 7; s++) need3('Log/Earnings graphic: sea edge -g on ' + n + ' (3)', c('--sea-' + s + '-g'), b, 3, where);
+    }
+    need3('Log chip: ink on rank wash (7)', ink, c('--rank-w'), 7, where);
+    need3('Log chip (S, SS): on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    need3('Earnings: ink figure on gil bar (4.5)', ink, c('--gil-bar'), 4.5, where);
+    need3('Earnings card and head: on-mid on gil field (4.5)', c('--on-mid'), c('--gil-m'), 4.5, where);
+    need3('Log head: on-mid on loot field (4.5)', c('--on-mid'), c('--loot-m'), 4.5, where);
+    need3('Setup head: on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    need3('Board head: on-mid on route field (4.5)', c('--on-mid'), c('--route-m'), 4.5, where);
+    for (let s = 1; s <= 7; s++) need3('Log time cell: on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
+    for (const v of ['gil', 'loot', 'rank', 'route']) need3('rail: current tab on-mid on ' + v + ' field (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where);
+    need3('rail: current tab on-mid on sea-1 field (Map) (4.5)', c('--on-mid'), c('--sea-1'), 4.5, where);
+    for (const v of ['gil', 'loot', 'rank', 'route']) need3('head band: ink on page (the 6 px band) (3)', ink, pg.slip, 3, where);
+  }
+  console.log('Log and Earnings (W25, W26), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new Log and Earnings pairs outside their rules');
+});
+
+test('Log and Earnings (W25, W26): subs.css and logHtml and earnHtml carry the rules and the classes', () => {
+  for (const s of [
+    '.panel:not(.welcome):not(.empty-state):not(.recs):not(.map-panel) > h2:first-child, .wiz-head { --slab: var(--scr);',
+    '.tabs button[aria-current="page"] { --slab: var(--scr);', '.tabs button[aria-current="page"]::before { background: var(--ink); }',
+    '.log-row[class*="in-sea-"] .log-when { --slab: var(--sea);', '.log-row:nth-child(even) { background: var(--paper-2); }',
+    '.log-row.logged { border-right: 8px solid var(--loot-g); }', '.log-row.unlogged { border-right: 8px dashed var(--idle); }',
+    '.log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }', '.log-what b { color: var(--gil-s); }', 'background: var(--gil-g); }',
+    '.earn-card:first-child { --slab: var(--gil-m);', 'var(--gil-bar) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  assert.ok(js.includes("' in-sea-' + sec.sea") && js.includes("(v.logged ? ' logged' : ' unlogged')") && js.includes('"--p:'), 'Log row classes');
+  assert.ok(js.includes('class="log-grade g-') && js.includes("'>Grade ' + esc(t.grade)") === false && js.includes("Grade ' + esc(t.grade)"), 'the grade chip');
+  assert.ok(js.includes("var seaOf = function (route)") && js.includes('<tr data-pos="\' + r.pos + \'" class="\' + seaOf(r.route)'), 'Earnings route rows carry the sea');
+});
