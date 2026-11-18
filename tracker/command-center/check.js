@@ -3407,9 +3407,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         for (let i = 1; i <= 11; i++) sec.trips['a1-' + i] = { s: 'a1', t: now - (40 + i * 30) * H, r: [1, 2], back: now - (40 + i * 30 - 29) * H, items: [[10099, 2]], newSectors: [] };
         const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
       });
-      const walk = async (opts, tag, screens, checkPhone) => {
+      const walk = async (opts, tag, screens, checkPhone, theme) => {
         const { ctx, errors } = await context(opts);
         const page = await ctx.newPage();
+        if (theme) { // as C28 chooses a theme: the main Settings, dark mode
+          await page.goto(ROOT5 + '#settings'); await page.waitForSelector('#s-appearance .look-card');
+          await page.click('#s-appearance [data-look=toggle][data-v="shared:theme"]');
+          await page.click('#s-appearance [data-look=theme][data-v="' + theme + '"]'); await page.click('#s-appearance [data-look=mode][data-v=dark]');
+        }
         const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.goto(ROOT5 + 'submersibles/'); await ready();
         await seedL1(page); await page.reload(); await ready();
@@ -3445,11 +3450,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const all8 = ['board', 'sheet', 'log', 'map', 'planner', 'earnings', 'setup', 'recommendations'];
       const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8, false);
       const dd = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-dark', ['board', 'map'], false);
+      const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', ['board'], false, 'azure-dragoon');
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map'], false);
-      const ok = p.wide.length === 8 && p.wide.every((w) => w <= 0) && !d.errors.length && !dd.errors.length && !p.errors.length && !pl.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: 20 look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; tap sizes at 360 px are recorded, not asserted',
-        ok, { sideways360: p.wide, errors: [d.errors, dd.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart });
+      const ok = p.wide.length === 8 && p.wide.every((w) => w <= 0) && !d.errors.length && !dd.errors.length && !da.errors.length && !p.errors.length && !pl.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: 21 look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; tap sizes at 360 px are recorded, not asserted',
+        ok, { sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart });
       server20.close();
     }
 

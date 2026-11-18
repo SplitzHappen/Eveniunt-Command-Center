@@ -15,6 +15,8 @@ const css = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.css'), 'u
 const themesText = lookSrc.slice(lookSrc.indexOf('var THEMES = [') + 'var THEMES = '.length, lookSrc.indexOf('];', lookSrc.indexOf('var THEMES = [')) + 1);
 const THEMES = new Function('return ' + themesText)();
 
+const accText = lookSrc.slice(lookSrc.indexOf('var ACCENTS = [') + 'var ACCENTS = '.length);
+const ACCENTS = new Function('return ' + accText.slice(0, accText.indexOf('];') + 1))();
 const hexRgb = (h) => { const n = parseInt(h.replace('#', ''), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
 const rnd = (r) => r.map((x) => Math.max(0, Math.min(255, Math.round(x))));
 const mixRgb = (a, b, t) => rnd(a.map((x, i) => x + (b[i] - x) * t)); // applyLook's mix(), rounded to bytes
@@ -112,8 +114,8 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
         need(k + ' on ' + k + '-bg (row edge, 3:1)', c('--' + k), c('--' + k + '-bg'), 3, where);
         note('ink-2 on ' + k + '-bg (shared ink, printed)', ratio(c('--ink-2'), c('--' + k + '-bg')), where);
       }
-      // printed, not asserted: --on-seal is the shared token applyLook() picks (it falls under 4.5:1 in some themes; shared, so reported, not changed here)
-      note('on-seal on seal (shared, printed; primary buttons and .quick)', ratio(lum(ac) > 0.42 ? hexRgb('#111111') : hexRgb('#ffffff'), c('--seal')), where);
+      // --on-seal: the shared token applyLook() picks through onSeal(), taken from the built look.js
+      need('on-seal on seal (shared; primary buttons and .quick)', hexRgb(onSeal(ac)), c('--seal'), 4.5, where);
       need('bad on slip', c('--bad'), c('--slip'), 4.5, where);
       need('bad on paper', c('--bad'), c('--paper'), 4.5, where);
       // printed, not asserted: the shared ink-2
@@ -146,4 +148,40 @@ test('the old fixed colours are gone from subs.css', () => {
   }
   const body = css.split('\n').filter((l) => !l.startsWith(':root') && !l.includes(':root:not([data-theme="light"])') && !l.startsWith('.map-panel')).join('\n');
   assert.ok(!/#fff\b/i.test(body));
+});
+
+// W12: the text colour on the accent, taken out of the built look.js with its own lum()
+const fn = (name) => { const i = lookSrc.indexOf('function ' + name + '('); assert.ok(i >= 0, 'no ' + name + '() in look.js'); return lookSrc.slice(i, lookSrc.indexOf('\n', i)); };
+const { lum: lumB, onSeal } = new Function(fn('lum') + '\n' + fn('onSeal') + '\nreturn { lum: lum, onSeal: onSeal };')();
+const oldRule = (ac) => (lumB(ac) > 0.42 ? '#111111' : '#ffffff');
+
+test('on-seal on seal reaches 4.5:1 for the 21 themes, the preset accents and a sweep of accents', () => {
+  const bad = [], changed = [];
+  const chk = (ac, where) => { const col = onSeal(ac); if (ratio(hexRgb(col), ac) < 4.5) bad.push(where + ' ' + col); return col; };
+  for (const row of THEMES) for (const mode of ['light', 'dark']) {
+    const ac = hexRgb((mode === 'dark' ? row[3] : row[2])[2]);
+    const col = chk(ac, row[0] + ' ' + mode);
+    if (col !== oldRule(ac)) changed.push(row[0] + ' ' + mode + ' ' + oldRule(ac) + ' -> ' + col);
+  }
+  const presets = ACCENTS.filter((a) => a[2]);
+  assert.equal(presets.length, 7);
+  for (const a of presets) { chk(hexRgb(a[2]), a[0] + ' light'); chk(hexRgb(a[3]), a[0] + ' dark'); }
+  let n = 0;
+  for (let r = 0; r <= 255; r += 15) for (let g = 0; g <= 255; g += 15) for (let b = 0; b <= 255; b += 15) {
+    const ac = [r, g, b], col = onSeal(ac); n++;
+    assert.ok(['#ffffff', '#111111', '#000000'].includes(col), 'one of the three colours');
+    if (ratio([255, 255, 255], ac) >= 4.5) assert.equal(col, '#ffffff', 'white whenever it reaches 4.5:1: ' + ac);
+    chk(ac, 'rgb(' + ac + ')');
+  }
+  assert.equal(n, 18 * 18 * 18);
+  assert.deepEqual(bad, []);
+  console.log('Pairs whose on-seal colour differs from the old rule (' + changed.length + '):\n  ' + changed.join('\n  '));
+});
+
+test('the three built files carry onSeal() and not the old rule', () => {
+  for (const f of [path.join(CC, 'site', 'look.js'), path.join(__dirname, '..', 'dist', 'eveniunt-tracker.html'), path.join(__dirname, '..', '..', 'crafting', 'atelier', 'dist', 'eveniunt-atelier.html')]) {
+    const t = fs.readFileSync(f, 'utf8');
+    assert.ok(t.includes('function onSeal('), f + ' has onSeal()');
+    assert.ok(!t.includes('> 0.42 ?'), f + ' has no old rule');
+  }
 });

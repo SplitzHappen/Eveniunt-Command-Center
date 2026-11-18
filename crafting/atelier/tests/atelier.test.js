@@ -309,6 +309,7 @@ test('UI: guide opens inside the workbook; accent and custom hex/RGB colours app
   await page.click('[data-look=theme][data-v=abyssal-oath]');
   assert.equal(await cssVar('--paper'), '#1f0a10', 'Abyssal Oath dark');
   assert.equal(await cssVar('--lb-b'), '#ff3452', 'the wordmark follows the theme accent');
+  assert.equal(await cssVar('--on-seal'), '#111111', 'Abyssal Oath dark: dark text on the accent (white is only 3.58:1)');
   await page.click('[data-look=toggle][data-v="shared:theme"]');
   await page.click('[data-look=theme][data-v=limsa-brineward]');
   assert.equal(await cssVar('--paper'), '#0f1b2b', 'Limsa Brineward dark background');
