@@ -107,6 +107,30 @@
 
   // ------------------------------------------------------------------ unlocks (community data, Submarine Tracker)
   A.children = function (id) { return CHILD[id] || []; };
+  // G11 (gaps spec): the sectors a voyage on this route could have revealed: not yet discovered, and revealed by a sector on the route (the unlock table),
+  // each once, in route order. discovered: an array or a Set of sector ids. Nothing else is offered.
+  A.revealable = function (route, discovered) {
+    var has = function (id) { return discovered && (discovered.has ? discovered.has(id) : discovered.indexOf(id) >= 0); }, out = [];
+    (route || []).forEach(function (sid) { A.children(sid).forEach(function (c) { if (!has(c) && out.indexOf(c) < 0) out.push(c); }); });
+    return out;
+  };
+  // What revealing this sector brings, where the data says so: { slot: the submarine slot it grants or null, opens: the name of the sea it opens or null }
+  A.revealNote = function (id) {
+    var u = D.unlocks[id] || {}, g = D.subSlots.find(function (x) { return x.sector === id; });
+    return { slot: g ? g.slot : null, opens: u.opensSea && SEA[u.opensSea] ? SEA[u.opensSea].name : null };
+  };
+  // G9 (gaps spec): the rank-up plan of a submarine below the top rank. need: the experience still needed to reach the top rank, from the game's rank table,
+  // the rank and the experience into it (a progress the game cannot show counts as 0, as everywhere). With a route: perVoyage, the route's base experience
+  // (a floor, so "at least"), voyages and days at that rate (the voyage's own length: ev.seconds). null at the top rank or without a known rank.
+  A.rankUpPlan = function (rank, into, route, seconds) {
+    if (!RANK[rank] || rank >= TOP) return null;
+    var i0 = into || 0; if (i0 < 0 || i0 >= RANK[rank].expToNext) i0 = 0;
+    var need = -i0; for (var r = rank; r < TOP; r++) need += RANK[r].expToNext;
+    var out = { rank: rank, top: TOP, need: need, perVoyage: null, voyages: null, days: null };
+    var exp = (route || []).reduce(function (t, id) { return t + (SECTOR[id] ? SECTOR[id].exp : 0); }, 0);
+    if (exp > 0 && seconds > 0) { out.perVoyage = exp; out.voyages = Math.ceil(need / exp); out.days = out.voyages * seconds / 86400; }
+    return out;
+  };
   // the chain of sectors from a discovered one down to the target: [discovered ancestor, ..., target]
   function chainTo(target, disc) {
     var path = [target], cur = target, guard = 0;

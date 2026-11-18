@@ -73,6 +73,18 @@
     return Number.isInteger(v) && v > 0 ? v : 0;
   };
 
+  // Which free companies the Board shows (a view preference, gaps spec G8): one flat key per free company inside choices,
+  // hide-<free company id> = true when hidden; false (or absent) = shown. Flat keys are separate merge units, so two pages or devices
+  // hiding different companies both keep their change. R.check ignores these keys; they are not part of R.sig.
+  R.HIDE = 'hide-';
+  R.hideKey = function (fcId) { return R.HIDE + fcId; };
+  // The hidden ids as { id: true }: every stored key hide-<id> that is exactly true, whether or not the company still exists.
+  R.hidden = function (raw) {
+    var c = raw && typeof raw === 'object' && raw.choices && typeof raw.choices === 'object' && !Array.isArray(raw.choices) ? raw.choices : {}, out = {};
+    Object.keys(c).forEach(function (k) { if (k.indexOf(R.HIDE) === 0 && k.length > R.HIDE.length && c[k] === true) out[k.slice(R.HIDE.length)] = true; });
+    return out;
+  };
+
   var copy = function (v) { return JSON.parse(JSON.stringify(v)); };
   var same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
 

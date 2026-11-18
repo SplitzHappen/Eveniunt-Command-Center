@@ -2301,3 +2301,92 @@ test('G6: part advice only beside a Gil Farming plan (the estimate tip) or in th
   // while unlocking (step 1) there was never a tip, and still none
   assert.equal(ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({}) })).parts, null);
 });
+
+// ---------------------------------------------------------------- gaps spec Part B (G8 to G11)
+test('G8: the hidden free companies are one flat key each in the settings section; hide and show round-trip; unknown companies are kept and ignored; the advice is untouched', () => {
+  assert.equal(RECS.hideKey('f1'), 'hide-f1');
+  assert.deepEqual(RECS.hidden(undefined), {}); assert.deepEqual(RECS.hidden({}), {}); assert.deepEqual(RECS.hidden({ choices: [] }), {});
+  let raw = RECS.store(null, { 'hide-fa': true });
+  assert.deepEqual(RECS.hidden(raw), { fa: true });
+  raw = RECS.store(raw, { 'hide-fb': true });
+  assert.deepEqual(RECS.hidden(raw), { fa: true, fb: true });
+  raw = RECS.store(raw, { 'hide-fa': false });
+  assert.deepEqual(RECS.hidden(raw), { fb: true }, 'shown again');
+  assert.equal(raw.choices['hide-fa'], false);
+  // only exactly true hides; a bare prefix or a wrong type is nothing
+  assert.deepEqual(RECS.hidden({ choices: { 'hide-': true, 'hide-x': 1, 'hide-y': 'true', 'hide-z': null, hide: true } }), {});
+  // a company that no longer exists: the key stays as stored (store never drops keys) and nothing reads it as a company
+  const stale = RECS.store({ choices: { fuel: true, 'hide-gone': true, mystery: 7 } }, { 'hide-fb': true });
+  assert.equal(stale.choices['hide-gone'], true); assert.equal(stale.choices.mystery, 7); assert.deepEqual(RECS.hidden(stale), { gone: true, fb: true });
+  // hiding changes no recommendation and not the advice cache key
+  const was = RECS.check({ choices: { fuel: true, giveUp: 20, order: ['gil', 'unlock', 'level', 'loot'] } }, D), withHide = RECS.check({ choices: { fuel: true, giveUp: 20, order: ['gil', 'unlock', 'level', 'loot'], 'hide-fa': true, 'hide-fb': false } }, D);
+  assert.deepEqual(withHide, was); assert.equal(RECS.sig(withHide), RECS.sig(was));
+  assert.deepEqual(RECS.check({ choices: { 'hide-fa': true } }, D), RECS.defaults());
+  assert.deepEqual(RECS.intent(was, withHide), {}, 'no recommendation patch');
+});
+
+test('G8: two pages hiding different free companies both keep their change (the real CC.writeSection merge); the stored section holds no other key', async () => {
+  require(path.join(__dirname, '..', 'src', 'core', 'save.js'));
+  const CC = globalThis.CC, m = new Map();
+  globalThis.localStorage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k), get length() { return m.size; }, key: (i) => [...m.keys()][i] };
+  CC.resetMemory();
+  const NAME = RECS.NAME;
+  const first = await CC.writeSection(NAME, { choices: { fuel: true, giveUp: 20 } }, null);
+  const page = () => RECS.keeper((section, known) => CC.writeSection(NAME, section, known), () => {});
+  const a = page(), b = page();
+  a.read(first.section, first.rev); b.read(first.section, first.rev);
+  await a.change({ 'hide-fa': true });
+  await b.change({ 'hide-fb': true }); // b never saw a's write: the merge keeps both
+  const stored = CC.checkDoc((await CC.read()).raw).modules[NAME];
+  assert.deepEqual(RECS.hidden(stored), { fa: true, fb: true });
+  assert.equal(stored.choices.fuel, true); assert.equal(stored.choices.giveUp, 20);
+  // showing one again on one page, hiding another elsewhere
+  await a.change({ 'hide-fa': false });
+  const again = CC.checkDoc((await CC.read()).raw).modules[NAME];
+  assert.deepEqual(RECS.hidden(again), { fb: true });
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('G9: the rank-up plan: the experience to the top rank from the rank table, and the days at a route (base experience, a floor)', () => {
+  const top = ADV.top(), rk = (r) => D.ranks.find((x) => x.rank === r).expToNext;
+  assert.equal(ADV.rankUpPlan(top, 0, [1], 3600), null, 'nothing at the top rank');
+  assert.equal(ADV.rankUpPlan(0, 0, [1], 3600), null); assert.equal(ADV.rankUpPlan(null, 0, [1], 3600), null);
+  const want = (rank, into) => { let n = -into; for (let r = rank; r < top; r++) n += rk(r); return n; };
+  assert.equal(ADV.rankUpPlan(1, 0, null, 0).need, want(1, 0)); assert.equal(ADV.rankUpPlan(60, 1234, null, 0).need, want(60, 1234));
+  assert.equal(ADV.rankUpPlan(144, 10, null, 0).need, rk(144) - 10);
+  const none = ADV.rankUpPlan(60, 0, null, 0); assert.equal(none.perVoyage, null); assert.equal(none.days, null);
+  // a progress the game cannot show counts as 0, as everywhere
+  assert.equal(ADV.rankUpPlan(60, rk(60), null, 0).need, want(60, 0)); assert.equal(ADV.rankUpPlan(60, -5, null, 0).need, want(60, 0));
+  const route = [1, 2], exp = D.sectors.find((x) => x.id === 1).exp + D.sectors.find((x) => x.id === 2).exp, secs = 11 * 3600;
+  const p = ADV.rankUpPlan(100, 500, route, secs);
+  assert.equal(p.perVoyage, exp); assert.equal(p.voyages, Math.ceil(p.need / exp)); assert.equal(p.days, p.voyages * secs / 86400); assert.equal(p.top, top);
+});
+
+test('G11: only undiscovered sectors that a sector on the route can reveal are offered; nothing when none; the unlock table says what a reveal opens or grants', () => {
+  // brute force from the table: every sector X with unlocks[X].by on the route and X not discovered
+  const brute = (route, disc) => D.sectors.map((x) => x.id).filter((id) => route.includes((D.unlocks[id] || {}).by) && !disc.includes(id));
+  for (const [route, disc] of [[[1, 2], [1, 2]], [[1, 2, 3], [1, 2, 3]], [[1], [1, 2, 3, 4]], [[10, 15], [1, 2, 3, 10, 15]], [[28], [1, 2, 28]], [[70, 47, 28], [28, 47, 70]], [[], [1]], [[4, 5, 6, 7, 8], [4, 5, 6, 7, 8]]]) {
+    assert.deepEqual([...ADV.revealable(route, disc)].sort((a, b) => a - b), brute(route, disc).sort((x, y) => x - y), JSON.stringify([route, disc]));
+    assert.deepEqual(ADV.revealable(route, new Set(disc)), ADV.revealable(route, disc), 'an array or a Set');
+    for (const id of ADV.revealable(route, disc)) assert.ok(!disc.includes(id) && route.includes(D.unlocks[id].by));
+  }
+  const every = D.sectors.map((x) => x.id);
+  assert.deepEqual(ADV.revealable([1, 2, 3, 28], every), [], 'with everything found there is nothing to ask');
+  assert.deepEqual(ADV.revealable([], [1]), []);
+  const seen = ADV.revealable([1, 2, 3, 4, 5], [1, 2, 3, 4, 5]); assert.equal(new Set(seen).size, seen.length, 'each once');
+  // what a revealed sector opens or grants, where the data says so
+  const sl = D.subSlots[0], op = Object.keys(D.unlocks).find((k) => D.unlocks[k].opensSea);
+  assert.equal(ADV.revealNote(sl.sector).slot, sl.slot); assert.equal(ADV.revealNote(+op).opens, D.seas.find((s) => s.id === D.unlocks[op].opensSea).name);
+  assert.deepEqual(ADV.revealNote(1), { slot: null, opens: null });
+});
+
+test('gaps correction: the cannot ring and cross mark only a FOUND sector above the submarine\'s rank; every other reason stays in words (the accessible name)', () => {
+  const found = [1, 2, 3, 10, 26], v = CH.view(1, found, 30);
+  const cannot = { 8: 'cannot be added: Not found yet', 26: 'cannot be added: Rank 50 needed (this submarine is rank 30)', 1: 'out of range if added: Needs range 4 more' };
+  const svg = CH.svg(v, [10], { cannot });
+  const node = (id) => new RegExp('<g class="chart-node[^"]*" data-sector="' + id + '"[\\s\\S]*?</g>').exec(svg)[0];
+  assert.ok(/chart-cannot-ring/.test(node(26)) && /chart-cannot-x/.test(node(26)) && / cannot/.test(node(26).slice(0, 80)), 'found and above the rank: marked');
+  for (const id of [8, 1]) { assert.ok(!/chart-cannot/.test(node(id)) && !/ cannot/.test(node(id).slice(0, 80)), id + ' has no mark'); }
+  assert.match(node(8), /aria-label="[^"]*Not found yet"/); assert.match(node(1), /aria-label="[^"]*Needs range 4 more"/);
+  assert.equal((svg.match(/chart-cannot-ring/g) || []).length, 1);
+});

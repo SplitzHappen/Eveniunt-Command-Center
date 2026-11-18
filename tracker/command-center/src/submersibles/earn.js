@@ -59,7 +59,7 @@
   }
   // Totals of the logged trips (a trip counts on the day it came back).
   E.totals = function (sec, prices, now) {
-    var out = { day: 0, week: 0, month: 0, all: 0, trips: 0, logged: 0, unknown: {}, byFc: {}, byRoute: {}, byItem: {} };
+    var out = { day: 0, week: 0, month: 0, all: 0, trips: 0, logged: 0, unknown: {}, byFc: {}, bySub: {}, byRoute: {}, byItem: {} };
     var lim = { day: startOf('day', now), week: startOf('week', now), month: startOf('month', now) };
     Object.keys(sec.trips || {}).forEach(function (k) {
       var t = sec.trips[k], v = E.tripValue(t, prices), when = t.back || t.t, sub = (sec.subs || {})[t.s], fcId = sub ? sub.fcId : '';
@@ -70,6 +70,7 @@
       out.all += v.gil;
       ['day', 'week', 'month'].forEach(function (p) { if (when >= lim[p]) out[p] += v.gil; });
       out.byFc[fcId] = (out.byFc[fcId] || 0) + v.gil;
+      var bs = out.bySub[t.s] = out.bySub[t.s] || { gil: 0, trips: 0 }; bs.gil += v.gil; bs.trips++; // G10: the same total per submarine (a removed submarine keeps its voyages)
       var rk = (t.r || []).join(',');
       if (rk && t.back && t.t && t.back > t.t) {
         var r = out.byRoute[rk] = out.byRoute[rk] || { route: t.r.slice(), gil: 0, hours: 0, trips: 0 };

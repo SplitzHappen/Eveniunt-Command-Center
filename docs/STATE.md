@@ -44,6 +44,13 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   ("Dive console", revision 2): slab heads, slanted state fields, display numerals, the action slab, a sonar sea chart
   drawn by the app, and a voyage gauge on submarines that are out. Screenshots of every screen:
   `tracker/command-center/evidence/look-*.png`. Browser check C97 and the evidence block L1.
+- **Submersibles: gaps against the original design** (built 2026-11-18; `docs/submersibles-design-gaps-spec.md`). The
+  planner lists what a route can bring and says why a sector cannot be taken; every figure is labelled game data,
+  calculated, learned or community estimate; alternatives say how they differ from the plan; part advice appears only
+  when Gil Farming leads or a build is stuck; "Send all back" for the whole fleet; which free companies to show; a
+  rank-up plan per submarine; earnings by submarine; the return sheet asks which sectors a voyage revealed, offering
+  only the ones it could have. By the owner's decision the sea map stays read-only and there is no availability
+  window. Browser checks C100 and C101.
 - **Shared fixes** (built 2026-11-18). Text on the accent colour now reaches 4.5:1 in all 21 themes, light and dark
   (Tracker, Atelier and Command Center rebuilt). The Atelier no longer reloads over a first-visit click on Command
   Center. A failing browser check no longer ends the whole check run.
@@ -52,8 +59,8 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 
 1. The owner compares the Deep-sea Site chart with the game's map (one constant, `CHART.Y_DOWN`, flips it), then decides
    whether the work above ships.
-2. The Submersibles design document is not in this repository; the owner adds it to `docs/` after a privacy check, and
-   the S4 and S6 work is then checked against it.
+2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
+   compared with the original design (kept outside this repository) and the gaps closed.
 
 ## Parked by the owner
 
@@ -63,7 +70,8 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 
 - The "between half and four times the route's usual experience" refusal on return is a guard, not a measured game
   limit; if a real voyage falls outside it, widen it.
-- The sea map is drawn by the app, not the game's pictures; its orientation is unverified until the owner's comparison.
+- The sea map is drawn by the app, not the game's pictures. Its orientation was checked against one game screenshot
+  of the Deep-sea Site (the start, A and B).
 - Gil and loot figures are estimates from community records. The records hold only the first item of a survey; the
   second is assumed to be drawn like the first, which is about 45% of a typical gil figure. Above a threshold, extra
   surveillance, retrieval or favor is counted as worth nothing (the community's reading, not confirmed).

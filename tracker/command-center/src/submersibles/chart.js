@@ -170,6 +170,7 @@
     view.nodes.forEach(function (n) {
       var tags = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean);
       var no = opts && opts.cannot && opts.cannot[n.id]; // G2: why this sector cannot be added to the route being planned (words from the planner)
+      var mark = !!no && n.state === 'found' && !n.rankOk; // the ring and cross: only a FOUND sector above the submarine's rank; every other reason is in words (label, line, details)
       var label = n.name + ', rank ' + n.rank + ', ' + STATE[n.state] + (tags.length ? ', ' + tags.join(', ') : '') + (n.rankOk ? '' : ', above this submarine\'s rank') + (no ? ', ' + no : '');
       var shape = n.state === 'found' ? '<circle r="' + num(r) + '"/>'
         : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"/>'
@@ -178,13 +179,13 @@
       var extra = (n.state === 'next' ? '<circle class="chart-halo" aria-hidden="true" r="' + num(r * 1.1) + '"/>' : '') +
         (n.rankOk ? '' : '<circle class="chart-overring" aria-hidden="true" r="' + num(r * 1.3) + '"/>') +
         (onRoute ? '<circle class="chart-routering" aria-hidden="true" r="' + num(r * 1.4) + '"/>' : '') +
-        (no ? '<circle class="chart-cannot-ring" aria-hidden="true" r="' + num(r * 1.25) + '"/>' : '') +
+        (mark ? '<circle class="chart-cannot-ring" aria-hidden="true" r="' + num(r * 1.25) + '"/>' : '') +
         (n.opens ? '<circle class="chart-ring2" aria-hidden="true" r="' + num(c15) + '"/>' : '') +
         (isSel ? '<path class="chart-lock" aria-hidden="true" d="' + [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (q) { return 'M' + num(q[0] * c15) + ' ' + num(q[1] * c09) + 'L' + num(q[0] * c15) + ' ' + num(q[1] * c15) + 'L' + num(q[0] * c09) + ' ' + num(q[1] * c15); }).join('') + '"/>' : '') +
         (n.slot ? '<path class="chart-plus" aria-hidden="true" d="M' + num(r * 0.6) + ' ' + num(-r) + 'H' + num(r * 1.4) + 'M' + num(r) + ' ' + num(-r * 1.4) + 'V' + num(-r * 0.6) + '"/>' : '');
-      o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + (no ? ' cannot' : '') + (onRoute ? ' on-route' : '') + (isSel ? ' selected' : '') + (n.slot ? ' has-slot' : '') + (n.opens ? ' opens-sea' : '') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
+      o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + (mark ? ' cannot' : '') + (onRoute ? ' on-route' : '') + (isSel ? ' selected' : '') + (n.slot ? ' has-slot' : '') + (n.opens ? ' opens-sea' : '') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
         '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + extra + shape +
-        (no ? '<path class="chart-cannot-x" aria-hidden="true" d="M' + num(r * 0.7) + ' ' + num(r * 0.7) + 'L' + num(r * 1.7) + ' ' + num(r * 1.7) + 'M' + num(r * 1.7) + ' ' + num(r * 0.7) + 'L' + num(r * 0.7) + ' ' + num(r * 1.7) + '"/>' : '') +
+        (mark ? '<path class="chart-cannot-x" aria-hidden="true" d="M' + num(r * 0.7) + ' ' + num(r * 0.7) + 'L' + num(r * 1.7) + ' ' + num(r * 1.7) + 'M' + num(r * 1.7) + ' ' + num(r * 0.7) + 'L' + num(r * 0.7) + ' ' + num(r * 1.7) + '"/>' : '') +
         '<text class="chart-letter" y="' + num(-r * 2.2 - fs * 0.3) + '" text-anchor="middle" font-size="' + num(fs) + '">' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
         (tags.length ? '<text class="chart-tag" x="' + num(tagAt[n.id].x) + '" y="' + num(tagAt[n.id].y) + '" text-anchor="' + tagAt[n.id].anchor + '" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
     });

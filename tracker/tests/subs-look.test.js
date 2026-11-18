@@ -563,3 +563,17 @@ test('gaps G2, G3: the cannot ring and cross (error colour) on every water, the 
   for (const s of ['.chart-cannot-ring { fill: none; stroke: var(--chart-no);', '.chart-cannot-x { fill: none; stroke: var(--chart-no);', '.tag.src {', '.advice .tag { color: var(--ink); }']) assert.ok(css.includes(s), s);
   assert.equal(css.split('\n').filter((l) => /stroke-dasharray/.test(l)).length, 1, 'still one dash rule');
 });
+
+// ---- gaps spec Part B (G9): the rank-up plan is in the rank voice; the plan is in the send window only (a Board line did not fit C25) ----
+test('gaps G9: the rank-up plan figures (rank-s) on the sheet and the planner grounds reach 4.5 in all 21 themes, light and dark; the rule and the classes exist', () => {
+  const fail = [], lo = {};
+  const need6 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]);
+    for (const [n, b] of Object.entries({ slip: hx(th.slip), paper: hx(th.paper) })) need6('rank-up plan: rank-s figure on ' + n + ' (4.5)', c('--rank-s'), b, 4.5, where);
+    need6('rank-up plan: its rank-g rule on slip (3)', c('--rank-g'), hx(th.slip), 3, where);
+  }
+  console.log('Gaps G9, lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+  for (const s of ['.rank-plan { border-left: 8px solid var(--rank-g);', '.rank-plan b { color: var(--rank-s); }']) assert.ok(css.includes(s), s);
+});

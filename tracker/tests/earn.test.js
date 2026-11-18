@@ -109,3 +109,14 @@ test('ranking: ten voyages on one route rank it, nine do not; ties share a posit
   assert.deepEqual(r.thin.map((x) => x.route.join()), ['4']);
   assert.equal(r.thin[0].trips, 9);
 });
+
+test('G10: totals per submarine: the same gil as the totals by free company, summed by submarine, removed submarines kept', () => {
+  const sec = { fcs: { f: {} }, subs: { a: { fcId: 'f', slot: 1 }, b: { fcId: 'f', slot: 2 } }, trips: {
+    t1: { s: 'a', t: 1000, back: 2000, r: [1], items: [[5, 3]] }, t2: { s: 'a', t: 3000, back: 4000, r: [1], items: [[5, 1]] },
+    t3: { s: 'b', t: 1000, back: 2000, r: [1], items: [[5, 10]] }, t4: { s: 'gone', t: 1000, back: 2000, r: [1], items: [[5, 2]] }, t5: { s: 'b', t: 5000, back: 6000, r: [1], items: [] } } };
+  const tot = E.totals(sec, { 5: 1000 }, 7000), each = E.unitValue(5, { 5: 1000 }).each;
+  assert.equal(tot.bySub.a.gil, each * 4); assert.equal(tot.bySub.a.trips, 2); assert.equal(tot.bySub.b.gil, each * 10); assert.equal(tot.bySub.b.trips, 1); assert.equal(tot.bySub.gone.gil, each * 2);
+  assert.equal(Object.values(tot.bySub).reduce((n, x) => n + x.gil, 0), tot.all, 'the submarines add up to all time');
+  assert.equal(tot.byFc.f, each * 14, 'the free company total is unchanged');
+});
+

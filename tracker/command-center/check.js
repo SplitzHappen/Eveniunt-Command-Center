@@ -3757,6 +3757,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         out.g1 = await page.$eval('.planner', (el) => { const d = el.querySelector('[data-planner-rates]'); return d ? { open: d.open, summary: d.querySelector('summary').textContent, rates: !!d.querySelector('[data-rates]'), text: d.querySelector('[data-rates]') ? d.querySelector('[data-rates]').textContent : '' } : null; });
         await page.click('[data-planner-rates] > summary');
         out.g1open = await page.$eval('[data-planner-rates]', (d) => d.open);
+        out.headings = await page.$$eval('.planner', (els) => els[0].textContent.split('What this route usually brings').length - 1); // once (correction 2)
         // G3 in the planner
         out.g3 = await page.$$eval('.planner .calc-line .tag.src', (els) => els.map((e) => e.textContent));
         out.g3rate = await page.$$eval('.planner [data-rates] [data-src] .tag.src', (els) => els.map((e) => e.textContent));
@@ -3805,7 +3806,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const c = o.chart, w = o.want;
         return o.noRoute.rates === false && o.noRoute.line === true &&
           o.g1 && o.g1.open === false && o.g1.summary === 'What this route usually brings' && o.g1.rates && o.g1.text.includes('an estimate from community drop records') && o.g1open === true && o.rates2 === true &&
-          o.plannerRatesText === o.sheet.rates && o.plannerRatesText.length > 100 &&
+          o.plannerRatesText === o.sheet.rates.replace('What this route usually brings', '') && o.plannerRatesText.length > 100 && o.headings === 1 &&
           JSON.stringify(o.g3) === JSON.stringify(['calculated', 'calculated', 'game data', 'game data']) && o.g3rate.join() === 'community estimate' && o.confirm.length === 1 && /^calculated, not yet confirmed/.test(o.confirm[0]) &&
           c.cannot > 0 && c.cannot < c.nodes && c.marked && c.plainHasNone && c.polylines === 1 && c.nested === 0 && c.tabindex === c.nodes && c.hidden && c.letterAttrs &&
           c.l1.endsWith('out of range if added: Needs range ' + w.rangeNeed + ' more') && w.rangeNeed > 0 && w.ranges.every((n) => n > 0) && c.l8.endsWith('cannot be added: Not found yet') && c.l26.endsWith('cannot be added: Rank 50 needed (this submarine is rank 30)') &&
@@ -3816,9 +3817,195 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           o.g4.alts.length === wantAlts.length && wantAlts.length > 0 && o.g4.alts.every((a, i) => a.vs.startsWith(wantAlts[i] + ' (') && a.vs.endsWith(')') && a.tag === 'community estimate' && a.fig) && o.g4.src.startsWith('Gil an hour: about ') && o.g4.src.includes('community estimate') &&
           o.g4.figTags.join() === 'calculated,calculated,game data,game data' && o.g4.side <= 0 && o.g4.sheetSide <= 0 && o.errors.length === 0;
       };
-      record('C100', 'Design gaps A (G1 to G4), desktop and 360 px: the planner lists what the chosen route usually brings (collapsed by default, the same text as the send window, kept open across redraws); a sector the submarine cannot add shows a ring and a cross on the chart and says why in its name, in the line under the route and in its details (rank needed, not found yet, or, for a sector that would take the route out of range, the range needed as the planner\'s own evaluation gives it); a sector it can add stays plain; every figure carries a source label (calculated, game data, community estimate); each other route says how it differs from the plan; no sideways scroll',
+      record('C100', 'Design gaps A (G1 to G4), desktop and 360 px: the planner lists what the chosen route usually brings (collapsed by default, headed once, the same text as the send window, kept open across redraws); a found sector above the submarine\'s rank shows a ring and a cross on the chart (a sector not found yet or out of range shows none), and every sector the submarine cannot add says why in its name, in the line under the route and in its details (rank needed, not found yet, or, for a sector that would take the route out of range, the range needed as the planner\'s own evaluation gives it); a sector it can add stays plain; every figure carries a source label (calculated, game data, community estimate); each other route says how it differs from the plan; no sideways scroll',
         good(seen.desktop) && good(seen.phone), { desktop: seen.desktop, phone: seen.phone, wantAlts });
       server31.close();
+    });
+
+    // ── C101 Submersibles design gaps, Part B (docs/submersibles-design-gaps-spec.md): G7 (one sheet that sends every shown free company's returned subs, each with its own tick, logged exactly as
+    //    the per-company sheet logs them), G8 (hide a free company: Board, next-back strip and fleet-wide send follow; a reload keeps it; nothing is deleted), G9 (the rank-up plan, "at least"),
+    //    G10 (earnings by submarine) and G11 (discoveries are asked for: a list in Setup, and a question after a voyage that offers only the sectors that voyage could have revealed). ──
+    await guard('C101', async () => {
+      const server32 = await start(PORT5);
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      const kids = (ids) => data.sectors.map((x) => x.id).filter((id) => ids.includes((data.unlocks[id] || {}).by));
+      const seaName = (id) => data.seas.find((x) => x.id === id).name;
+      const ready = (page) => page.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+      const wroteOut = (page) => page.waitForFunction(() => window.__subs && window.__subs.state().ready && !document.querySelector('#sheet[open]'), null, { timeout: 10000 }).then(() => page.waitForTimeout(600));
+      const saved = (page) => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules; });
+      const parts = [3, 4, 1, 2];
+      // profile 1 (G7 to G10): Alpha and Bravo; three returned subs (a1, a2, b1); a3 and b2 out; a4 out at the top rank; two companies' worth of logged voyages for Earnings
+      const seed1 = (page) => page.evaluate(async (parts) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fa = { name: 'Alpha Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: [1, 2, 3] };
+        sec.fcs.fb = { name: 'Bravo Company', world: 'Gilgamesh', unlockedSlots: 2, order: 1, discovered: [1, 2, 3] };
+        const back = (r) => ({ sentAt: now - 30 * H, route: r, returnAt: now - H });
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts, voyage: back([1, 2]) };
+        sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub A2', rank: 40, parts, voyage: back([1, 3]) };
+        sec.subs.a3 = { fcId: 'fa', slot: 3, name: 'Sub A3', rank: 30, parts, voyage: { sentAt: now - H, route: [1, 2], returnAt: now + 5 * H } };
+        sec.subs.a4 = { fcId: 'fa', slot: 4, name: 'Sub A4', rank: 145, parts: [31, 24, 25, 34], voyage: { sentAt: now - H, route: [1, 2], returnAt: now + 9 * H } };
+        sec.subs.b1 = { fcId: 'fb', slot: 1, name: 'Sub B1', rank: 35, parts, voyage: back([1, 2]) };
+        sec.subs.b2 = { fcId: 'fb', slot: 2, name: 'Sub B2', rank: 20, parts, voyage: { sentAt: now - H, route: [1], returnAt: now + 1 * H } };
+        [['a1', 3], ['a1', 5], ['a2', 2], ['b1', 4]].forEach(([s, q], i) => { sec.trips['t' + i] = { s, t: now - (100 + i * 30) * H, r: [1, 2], back: now - (100 + i * 30 - 29) * H, items: [[10099, q]], newSectors: [] }; });
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, parts);
+      const out = {};
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'submersibles/'); await ready(page);
+      await seed1(page); await page.reload(); await ready(page);
+      const before = await saved(page);
+
+      // ---- G7: the fleet-wide send sheet
+      await page.click('[data-act=sendallfleet]'); await page.waitForSelector('#sheet .pick-fc');
+      out.g7 = await page.evaluate(() => ({ groups: [...document.querySelectorAll('#sheet .pick-fc')].map((h) => h.textContent), rows: [...document.querySelectorAll('#sheet input[name=pick]')].map((x) => [x.value, x.checked]), perGroup: [...document.querySelectorAll('#sheet .pick')].map((d) => d.querySelectorAll('input[name=pick]').length), side: document.documentElement.scrollWidth - window.innerWidth }));
+      if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-gaps-sendall-fleet-desktop.png') });
+      await page.uncheck('#sheet input[name=pick][value=b1]');
+      await page.click('#sheet [data-act=dosendall]'); await wroteOut(page);
+      const g7 = await saved(page); const sub7 = g7.submersibles;
+      const tripOf = (sec, id) => Object.values(sec.trips).filter((t) => t.s === id && t.t > Date.now() - 40 * 3600000);
+      out.g7after = { a1: tripOf(sub7, 'a1').length, a2: tripOf(sub7, 'a2').length, b1: tripOf(sub7, 'b1').length, a1v: !!(sub7.subs.a1.voyage && sub7.subs.a1.voyage.returnAt > Date.now()), a2v: !!(sub7.subs.a2.voyage && sub7.subs.a2.voyage.returnAt > Date.now()),
+        b1same: JSON.stringify(sub7.subs.b1.voyage) === JSON.stringify(before.submersibles.subs.b1.voyage), b1rank: sub7.subs.b1.rank, a1rank: sub7.subs.a1.rank, trips: Object.keys(sub7.trips).length };
+      // the per-company sheet logs the third one the same way (same code path): the two trips have the same fields
+      await page.click('.fc[data-fc="fb"] [data-act=sendall]'); await page.waitForSelector('#sheet input[name=pick]');
+      await page.click('#sheet [data-act=dosendall]'); await wroteOut(page);
+      const g7b = (await saved(page)).submersibles;
+      const keys = (t) => Object.keys(t).sort().join();
+      out.g7same = { a1: keys(tripOf(g7b, 'a1')[0] || {}), b1: keys(tripOf(g7b, 'b1')[0] || {}) };
+
+      // ---- G8: hide a free company
+      await seed1(page); await page.reload(); await ready(page);
+      const base8 = await saved(page);
+      out.g8all = await page.evaluate(() => ({ fcs: document.querySelectorAll('.fc').length, next: document.querySelector('.strip-next').textContent, note: !!document.querySelector('[data-hidden-note]'), fleetBtn: !!document.querySelector('[data-act=sendallfleet]') }));
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-shown-panel]');
+      out.g8panel = await page.evaluate(() => ({ text: document.querySelector('[data-shown-panel]').textContent, boxes: [...document.querySelectorAll('[data-shown-fc]')].map((x) => [x.dataset.shownFc, x.checked]) }));
+      if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-gaps-setup-fcs.png'), fullPage: true });
+      await page.uncheck('[data-shown-fc=fb]'); await page.waitForTimeout(700);
+      await page.click('[data-tab=board]');
+      out.g8hidden = await page.evaluate(() => ({ fcs: [...document.querySelectorAll('.fc')].map((x) => x.dataset.fc), next: document.querySelector('.strip-next').textContent, note: (document.querySelector('[data-hidden-note]') || {}).textContent || '', back: document.querySelector('.strip-back').textContent }));
+      await page.click('[data-act=sendallfleet]'); await page.waitForSelector('#sheet .pick-fc');
+      out.g8sheet = await page.evaluate(() => ({ groups: [...document.querySelectorAll('#sheet .pick-fc')].map((h) => h.textContent), rows: [...document.querySelectorAll('#sheet input[name=pick]')].map((x) => x.value) }));
+      await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 });
+      await page.click('[data-sort=time]'); await page.waitForSelector('.fc.wide');
+      out.g8time = await page.$$eval('.fc.wide .sub .sub-fc', (xs) => [...new Set(xs.map((x) => x.textContent.replace(/ · $/, '')))]);
+      await page.click('[data-sort=fc]'); await page.waitForSelector('.fleet');
+      await page.reload(); await ready(page);
+      out.g8reload = await page.evaluate(() => ({ fcs: [...document.querySelectorAll('.fc')].map((x) => x.dataset.fc), note: !!document.querySelector('[data-hidden-note]') }));
+      const g8s = await saved(page);
+      out.g8stored = { hide: g8s['submersibles-recommendations'] && g8s['submersibles-recommendations'].choices && g8s['submersibles-recommendations'].choices['hide-fb'], keys: Object.keys((g8s['submersibles-recommendations'] || {}).choices || {}), fb: !!g8s.submersibles.fcs.fb && !!g8s.submersibles.subs.b1 && !!g8s.submersibles.subs.b2,
+        same: JSON.stringify(g8s.submersibles.subs.b1) === JSON.stringify(base8.submersibles.subs.b1) && JSON.stringify(g8s.submersibles.subs.b2) === JSON.stringify(base8.submersibles.subs.b2) && JSON.stringify(g8s.submersibles.fcs.fb) === JSON.stringify(base8.submersibles.fcs.fb) };
+      out.g8alerts = await page.evaluate(() => { const S = window.__subs.section(); return Object.keys(S.subs).length; });
+      // the note takes the way back to Setup, where a tick brings the company back
+      await page.click('[data-hidden-note] [data-tab=setup]'); await page.waitForSelector('[data-shown-panel]');
+      await page.check('[data-shown-fc=fb]'); await page.waitForTimeout(700);
+      await page.click('[data-tab=board]');
+      out.g8back = await page.evaluate(() => ({ fcs: document.querySelectorAll('.fc').length, note: !!document.querySelector('[data-hidden-note]') }));
+
+      // ---- G9: the rank-up plan
+      out.g9board = await page.evaluate(() => ({ a1: (document.querySelector('.sub[data-sub=a1] [data-rank-up]') || {}).textContent || null, a4: !!document.querySelector('.sub[data-sub=a4] [data-rank-up]') }));
+      await page.click('.sub[data-sub=a1] .sub-top'); await page.waitForSelector('#sheet [data-rank-plan]');
+      out.g9 = await page.evaluate(() => {
+        const s = window.__subs.section().subs.a1, v = s.voyage, up = ADVISOR.afterVoyage(s, v.route), a = ADVISOR.advise({ sub: Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }), fc: window.__subs.section().fcs.fa, slotsFilled: 4, recs: RECS.defaults() }), want = ADVISOR.rankUpPlan(up.rank, up.into, v.route, (v.returnAt - v.sentAt) / 1000);
+        return { text: document.querySelector('#sheet [data-rank-plan]').textContent, need: want.need.toLocaleString('en'), perVoyage: want.perVoyage.toLocaleString('en'), side: document.documentElement.scrollWidth - window.innerWidth, hasAdvice: !!a };
+      });
+      await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 });
+      await page.click('.sub[data-sub=a4] .sub-top'); await page.waitForSelector('#sheet h2');
+      out.g9top = await page.evaluate(() => !!document.querySelector('#sheet [data-rank-plan]'));
+      await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 });
+
+      // ---- G10: earnings by submarine
+      await page.click('[data-tab=earn]'); await page.waitForSelector('[data-earn-subs]');
+      out.g10 = await page.evaluate(() => {
+        const tot = EARN.totals(window.__subs.section(), {}, Date.now()), S = window.__subs.section();
+        const rows = [...document.querySelectorAll('[data-earn-subs] tr')].map((tr) => [tr.cells[0].textContent, tr.cells[1].textContent]);
+        const want = (id) => Math.round((tot.bySub[id] || { gil: 0 }).gil).toLocaleString('en') + ' gil';
+        const got = (name) => (rows.find((r) => r[0].startsWith(name)) || [])[1];
+        return { rows: rows.length, subs: Object.keys(S.subs).length, a1: [got('Alpha Company · Sub A1'), want('a1')], a2: [got('Alpha Company · Sub A2'), want('a2')], b1: [got('Bravo Company · Sub B1'), want('b1')], a3: [got('Alpha Company · Sub A3'), want('a3')],
+          sum: Object.values(tot.bySub).reduce((n, x) => n + x.gil, 0) === tot.all, heading: [...document.querySelectorAll('#view h3')].map((h) => h.textContent).filter((t) => /submarine/i.test(t)) };
+      });
+      if (SHOT) await page.screenshot({ path: path.join(ev, 'submersibles-gaps-earn-subs.png'), fullPage: true });
+      out.side = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      await ctx.close();
+
+      // ---- G11: discoveries are asked for, not hunted (and on a phone)
+      const disc = [];
+      for (const [label, opts] of [['desktop', { viewport: { width: 1280, height: 1000 } }], ['phone', { viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
+        const { ctx: c2, errors: e2 } = await context(opts);
+        const p2 = await c2.newPage();
+        await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        await p2.evaluate(async (parts) => {
+          const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+          const back = (r) => ({ sentAt: now - 30 * H, route: r, returnAt: now - H });
+          sec.fcs.fa = { name: 'Alpha Company', world: 'Gilgamesh', unlockedSlots: 3, order: 0, discovered: [1, 2] };
+          sec.fcs.fb = { name: 'Bravo Company', world: 'Gilgamesh', unlockedSlots: 1, order: 1, discovered: [1, 2, 3] };
+          sec.fcs.fc = { name: 'Cedar Company', world: 'Gilgamesh', unlockedSlots: 2, order: 2, discovered: [1, 2, 3, 4, 5, 28] };
+          sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts, voyage: back([1, 2]) };
+          sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub A2', rank: 40, parts, voyage: back([1, 2]) };
+          sec.subs.b1 = { fcId: 'fb', slot: 1, name: 'Sub B1', rank: 35, parts, voyage: back([1]) };
+          sec.subs.c1 = { fcId: 'fc', slot: 1, name: 'Sub C1', rank: 60, parts, voyage: back([5]) };
+          sec.subs.c2 = { fcId: 'fc', slot: 2, name: 'Sub C2', rank: 60, parts, voyage: back([28]) };
+          const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        }, parts);
+        await p2.reload(); await ready(p2);
+        const o = { label };
+        const openSheet = async (id) => { await p2.click('.sub[data-sub=' + id + '] .sub-top'); await p2.waitForSelector('#sheet h2'); };
+        const closeIt = async () => { await p2.keyboard.press('Escape'); await p2.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 }); };
+        const asked = () => p2.evaluate(() => { const q = document.querySelector('#sheet [data-reveal]'); return q ? { legend: q.querySelector('legend').textContent, ids: [...q.querySelectorAll('[data-new-sector]')].map((x) => +x.dataset.newSector), ticked: [...q.querySelectorAll('[data-new-sector]:checked')].length, none: q.querySelector('[data-reveal-none]').checked, noneText: q.querySelector('.reveal-none').textContent.trim(), inLoot: !!document.querySelector('#sheet .loot [data-reveal]'), labels: [...q.querySelectorAll('label.opt')].map((l) => l.textContent), side: document.documentElement.scrollWidth - window.innerWidth } : null; });
+        await openSheet('a1'); o.a1 = await asked();
+        if (SHOT) await p2.screenshot({ path: path.join(ev, 'submersibles-gaps-discovery-' + label + '.png') });
+        await p2.check('#sheet [data-new-sector="4"]');
+        o.afterTick = await p2.evaluate(() => ({ none: document.querySelector('[data-reveal-none]').checked, ticked: [...document.querySelectorAll('[data-new-sector]:checked')].map((x) => +x.dataset.newSector) }));
+        await p2.check('#sheet [data-reveal-none]');
+        o.afterNone = await p2.evaluate(() => ({ none: document.querySelector('[data-reveal-none]').checked, ticked: document.querySelectorAll('[data-new-sector]:checked').length }));
+        await p2.check('#sheet [data-new-sector="5"]');
+        await p2.click('#sheet [data-act=collect]'); await wroteOut(p2);
+        await openSheet('a2'); o.a2 = await asked(); await closeIt();
+        await openSheet('b1'); o.b1 = { asked: await asked(), legend: await p2.evaluate(() => /reveal a new sector/.test(document.querySelector('#sheet').textContent)) }; await closeIt();
+        await openSheet('c1'); o.c1 = await asked(); await closeIt();
+        await openSheet('c2'); o.c2 = await asked();
+        await p2.click('#sheet [data-act=collect]'); await wroteOut(p2); // nothing ticked: nothing is added, nothing is removed
+        const s2 = (await saved(p2)).submersibles;
+        o.saved = { fa: s2.fcs.fa.discovered, fc: s2.fcs.fc.discovered, tripA1: Object.values(s2.trips).filter((t) => t.s === 'a1').map((t) => t.newSectors), a1gone: !s2.subs.a1.voyage };
+        if (label === 'desktop') {
+          // Setup: a list to tick what is already discovered, reached from the Setup tab itself
+          await p2.click('[data-tab=setup]'); await p2.waitForSelector('[data-act=sectors][data-fc=fa]');
+          o.setupBtn = await p2.$eval('[data-act=sectors][data-fc=fa]', (b) => b.textContent.trim());
+          await p2.click('[data-act=sectors][data-fc=fa]'); await p2.waitForSelector('.wiz[data-step=sectors]');
+          o.wiz = await p2.evaluate(() => ({ seas: [...document.querySelectorAll('.wiz details.sea summary')].map((x) => x.textContent), ticked: [...document.querySelectorAll('[data-w=disc]:checked')].map((x) => +x.value).sort((a, b) => a - b), total: document.querySelectorAll('[data-w=disc]').length }));
+          await p2.evaluate(() => document.querySelector('.wiz details.sea').open = true);
+          await p2.check('[data-w=disc][value="3"]'); await p2.click('[data-act=wsave]'); await p2.waitForTimeout(900);
+          const s3 = (await saved(p2)).submersibles;
+          o.setupSaved = { fa: s3.fcs.fa.discovered, a2rank: s3.subs.a2.rank, a2name: s3.subs.a2.name, fcs: Object.keys(s3.fcs).length };
+          await p2.click('[data-tab=setup]');
+          o.setupBtn2 = await p2.$eval('[data-act=sectors][data-fc=fa]', (b) => b.textContent.trim());
+        }
+        o.errors = real(e2);
+        disc.push(o);
+        await c2.close();
+      }
+      const d = disc[0], ph = disc[1];
+      const allIds = (ids) => ids.slice().sort((a, b) => a - b).join();
+      const wantA = kids([1, 2]).filter((x) => ![1, 2].includes(x));
+      const asks = (o) => o.a1 && o.a1.legend === 'Did this voyage reveal a new sector?' && allIds(o.a1.ids) === allIds(wantA) && o.a1.ticked === 0 && o.a1.none === true && o.a1.noneText === 'None of these' && o.a1.inLoot === false && o.a1.side <= 0 &&
+        o.a1.ids.every((id) => o.a1.labels.some((l) => l.includes(data.sectors.find((x) => x.id === id).letter) && l.includes(seaName(data.sectors.find((x) => x.id === id).sea)))) &&
+        o.afterTick.none === false && o.afterTick.ticked.join() === '4' && o.afterNone.none === true && o.afterNone.ticked === 0 &&
+        o.a2 && allIds(o.a2.ids) === allIds(wantA.filter((x) => x !== 5)) && o.b1.asked === null && o.b1.legend === false &&
+        o.c1 && allIds(o.c1.ids) === allIds(kids([5])) && o.c1.labels.some((l) => l.includes('grants submarine slot 2')) && o.c2 && allIds(o.c2.ids) === allIds(kids([28])) && o.c2.labels.some((l) => l.includes('opens ' + seaName(data.unlocks[o.c2.ids[0]].opensSea))) &&
+        o.saved.fa.join() === '1,2,5' && o.saved.tripA1.join() === '5' && o.saved.a1gone && o.saved.fc.join() === '1,2,3,4,5,28' && o.errors.length === 0;
+      const eqg = (x) => x && x[0] === x[1] && !!x[0];
+      const g7ok = out.g7.groups.join() === 'Alpha Company,Bravo Company' && out.g7.rows.map((r) => r.join(':')).join() === 'a1:true,a2:true,b1:true' && out.g7.perGroup.join() === '2,1' && out.g7.side <= 0 &&
+        out.g7after.a1 === 1 && out.g7after.a2 === 1 && out.g7after.b1 === 0 && out.g7after.a1v && out.g7after.a2v && out.g7after.b1same && out.g7after.trips === 6 && out.g7same.a1 === out.g7same.b1 && out.g7same.a1.length > 10;
+      const g8ok = out.g8all.fcs === 2 && /Bravo/.test(out.g8all.next) && !out.g8all.note && out.g8all.fleetBtn && out.g8panel.boxes.map((b) => b.join(':')).join() === 'fa:true,fb:true' && /follows you to your other devices/.test(out.g8panel.text) &&
+        out.g8hidden.fcs.join() === 'fa' && /Alpha/.test(out.g8hidden.next) && !/Bravo/.test(out.g8hidden.next) && /1 free company is hidden/.test(out.g8hidden.note) && out.g8hidden.back === '2 back now' &&
+        out.g8sheet.groups.join() === 'Alpha Company' && out.g8sheet.rows.join() === 'a1,a2' && out.g8time.join() === 'Alpha Company' && out.g8reload.fcs.join() === 'fa' && out.g8reload.note &&
+        out.g8stored.hide === true && out.g8stored.keys.every((k) => /^hide-/.test(k) || ['fuel', 'giveUp', 'order'].includes(k) || /^(loot|use)\d$/.test(k)) && out.g8stored.fb && out.g8stored.same && out.g8alerts === 6 && out.g8back.fcs === 2 && !out.g8back.note;
+      const g9ok = /^Rank-up plan:/.test(out.g9.text) && out.g9.text.includes(out.g9.need + ' experience still needed to reach rank 145') && out.g9.text.includes('at least ' + out.g9.perVoyage) && /no more than [\d,]+ voyages, about [\d,.]+ days/.test(out.g9.text) && out.g9.side <= 0 &&
+        out.g9board.a1 === null && out.g9board.a4 === false && out.g9top === false; // the Board card has no rank-up line (it did not fit C25's 1080 px); the send window has the plan
+      const g10ok = out.g10.rows === out.g10.subs && eqg(out.g10.a1) && eqg(out.g10.a2) && eqg(out.g10.b1) && out.g10.a3[1] === '0 gil' && out.g10.a3[0] === '0 gil' && out.g10.sum && out.g10.heading.join() === 'By submarine' && out.side <= 0 && real(errors).length === 0;
+      record('C101', 'Design gaps B (G7 to G11): one sheet for the whole fleet sends exactly the ticked returned subs and logs them as the per-company sheet does; hiding a free company removes it from the Board, the next-back strip and the fleet-wide send, survives a reload and deletes nothing; the rank-up plan says "at least"; Earnings has totals by submarine; Setup has a list of discovered sectors and the return sheet asks which sectors the voyage revealed (only the ones it could have revealed, none ticked, "None of these", nothing when none)',
+        g7ok && g8ok && g9ok && g10ok && asks(d) && d.setupBtn === 'Sectors already discovered: 3 of 143' && d.wiz.seas.length === 7 && d.wiz.total === 143 && d.wiz.ticked.join() === '1,2,5' && d.setupSaved.fa.join() === '1,2,3,5' && d.setupSaved.a2rank === 40 && d.setupSaved.fcs === 3 && d.setupBtn2 === 'Sectors already discovered: 4 of 143' &&
+        asks(ph) && ph.a1.side <= 0, { g7ok, g8ok, g9ok, g10ok, out, desktop: d, phone: ph });
+      server32.close();
     });
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the

@@ -62,6 +62,7 @@
       setStatus('Recommendation settings not saved on this device: ' + msg + ' The panel shows the last saved settings again; make the change again if you still want it.');
     }
     if (JSON.stringify(recsNow()) !== RC.shown) redrawRecs();
+    if (!res.ok || res.merged) render(); // the shown-companies choice may have changed under it
   }
   RC.k = window.RECS.keeper(function (section, known) {
     return CC.writeSection(RECS_NAME, section, known).then(function (r) { SH.updated = r.doc.updated || Date.now(); return r; });
@@ -132,13 +133,13 @@
     CC.read().then(function (r) {
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
       if (SH.timer) return;
-      var before = JSON.stringify([SH.chars, S, recsNow()]);
+      var before = JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]);
       SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || SH.notify;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
       if (!RC.k.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
-        if (JSON.stringify([SH.chars, S, recsNow()]) !== before && !W) render();
+        if (JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]) !== before && !W) render();
         pushSync();
       });
     });
@@ -151,6 +152,19 @@
   function keepUi() { try { sessionStorage.setItem('eveniunt-subs-ui', JSON.stringify(UI)); } catch (e) { /* none */ } }
   function sortMode() { return (S.settings.prefs && S.settings.prefs.sort) || 'fc'; }
   function fcList() { return Object.keys(S.fcs).map(function (id) { return { id: id, fc: S.fcs[id] }; }).sort(function (a, b) { return (a.fc.order || 0) - (b.fc.order || 0) || String(a.fc.name || '').localeCompare(b.fc.name || ''); }); }
+  // G8 (gaps spec): which free companies the Board shows. A view preference stored in the module's own settings section (RECS.NAME), one flat key per company
+  // (hide-<id> = true); absent or false = shown. It hides a company from the Board, the next-back strip and the fleet-wide send only: alerts, Earnings,
+  // the Map and the company's data are untouched.
+  function hiddenSet() { return window.RECS.hidden(RC.k.raw); }
+  function shownFcs() { var h = hiddenSet(); return fcList().filter(function (f) { return !h[f.id]; }); }
+  function hiddenCount() { var h = hiddenSet(); return fcList().filter(function (f) { return h[f.id]; }).length; }
+  function shownFleet(now) { var h = hiddenSet(); return F.fleet(S, now).filter(function (x) { return !h[x.fcId]; }); }
+  function setFcShown(fcId, shown) {
+    var patch = {}; patch[window.RECS.hideKey(fcId)] = !shown;
+    if (shown && !hiddenSet()[fcId]) return; // already shown: nothing to store
+    RC.k.change(patch);
+    render();
+  }
   function subsOf(fcId) { var out = {}; Object.keys(S.subs).forEach(function (id) { var s = S.subs[id]; if (s.fcId === fcId && !out[s.slot]) out[s.slot] = { id: id, sub: s }; }); return out; }
   function charName(id) { var c = SH.chars.find(function (x) { return x.id === id; }); return c ? c.name : ''; }
 
@@ -180,8 +194,14 @@
   var lastStatus = '';
   function statusKey() { var now = Date.now(); return F.fleet(S, now).map(function (x) { return x.id + x.status; }).join(); }
 
+  // the next-back strip counts only the shown free companies (G8)
+  function shownSummary(now) {
+    var all = shownFleet(now), next = null, back = 0;
+    all.forEach(function (x) { if (x.status === 'back') back++; if (x.status === 'out' && (!next || x.sub.voyage.returnAt < next.sub.voyage.returnAt)) next = x; });
+    return { next: next, back: back, sendable: all.filter(function (x) { return x.status === 'back' || x.status === 'idle'; }).length };
+  }
   function strip(now) {
-    var sum = F.summary(S, now);
+    var sum = shownSummary(now);
     var next = sum.next ? '<b>Next back:</b> ' + esc(F.subLabel(sum.next)) + ' in <span data-until="' + sum.next.sub.voyage.returnAt + '">' + F.fmtDur(sum.next.sub.voyage.returnAt - now, true) + '</span>'
       : '<b>Next back:</b> none out';
     var sound = !!F.deviceSubs().sound;
@@ -190,6 +210,7 @@
       '<span class="strip-back' + (sum.back ? ' on' : '') + '"><b>' + sum.back + '</b> back now</span>' +
       '<span class="strip-tools">' +
         '<span class="seg" role="group" aria-label="Sort"><button type="button" data-sort="fc" aria-pressed="' + (sortMode() === 'fc') + '">By FC</button><button type="button" data-sort="time" aria-pressed="' + (sortMode() === 'time') + '">By return time</button></span>' +
+        (sum.sendable ? '<button type="button" class="btn sm" data-act="sendallfleet" title="One sheet for every shown free company: tick the submarines to send">Send all back, every free company</button>' : '') +
         '<button type="button" class="btn sm" data-act="sound" aria-pressed="' + sound + '" title="A sound with the banner when a sub comes back (this device only)">Sound ' + (sound ? 'on' : 'off') + '</button>' +
       '</span></div>';
   }
@@ -242,7 +263,7 @@
   // each plan's gil figure that rests on the second-item assumption
   function boardEstimateNote(now) {
     var shown = false, shares = [];
-    F.fleet(S, now).forEach(function (x) {
+    shownFleet(now).forEach(function (x) {
       if (x.status !== 'back' && x.status !== 'idle') return;
       var a = adviceFor(x.id); if (!a || !a.plan) return;
       if (/community drop records/.test(a.plan.why || '')) shown = true;
@@ -251,21 +272,22 @@
     return shown ? howEstimatedHtml(shares) : '';
   }
   function boardHtml() {
-    var now = Date.now(), fcs = fcList();
-    if (!fcs.length) {
+    var now = Date.now(), fcs = shownFcs(), nHidden = hiddenCount();
+    if (!fcList().length) {
       return '<section class="panel welcome"><h2>Set up your first free company</h2><p>Once per free company, about 3 to 5 minutes: its name, world and character, then each of its four submarine slots (name, rank, parts and any voyage under way) and the sectors already discovered.</p>' +
         '<p><button type="button" class="btn primary" data-act="new">Start the setup</button></p><p class="muted">Enter each sub\'s rank and four parts: the app then works out every return time from the route you tap, and suggests the next route following your order (unlock all four subs, discover every sector, farm gil).</p></section>';
     }
     var body;
     if (sortMode() === 'time') {
-      var all = F.fleet(S, now).filter(function (x) { return x.status !== 'locked'; });
+      var all = shownFleet(now).filter(function (x) { return x.status !== 'locked'; });
       var rank = { back: 0, out: 1, idle: 2 };
       all.sort(function (a, b) {
         return rank[a.status] - rank[b.status] || (a.status === 'back' ? a.sub.voyage.returnAt - b.sub.voyage.returnAt : a.status === 'out' ? a.sub.voyage.returnAt - b.sub.voyage.returnAt : 0) || String(F.subLabel(a)).localeCompare(F.subLabel(b));
       });
       body = '<section class="fc wide"><header class="fc-head"><h3>All submarines by return time</h3></header><div class="fc-subs list">' + all.map(function (x) { return subRow(x, now, true); }).join('') + '</div></section>';
     } else body = '<div class="fleet">' + fcs.map(function (f) { return fcCard(f, now); }).join('') + '</div>';
-    return strip(now) + body + boardEstimateNote(now) + '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
+    var hid = nHidden ? '<p class="hint hidden-note" data-hidden-note>' + nHidden + ' free compan' + (nHidden === 1 ? 'y is' : 'ies are') + ' hidden from this Board (their data and alerts are unchanged). <button type="button" class="link" data-tab="setup">Show ' + (nHidden === 1 ? 'it' : 'them') + ' in Setup</button></p>' : '';
+    return strip(now) + hid + body + boardEstimateNote(now) + '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
   }
   // how the worked-out times compare with the game's: every voyage or trip where the game's time was also entered
   function accuracyHtml() {
@@ -491,14 +513,25 @@
       '<ul class="fc-list">' + fcs.map(function (f) {
         var n = Object.keys(subsOf(f.id)).length;
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
-          '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span></li>';
+          '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span>' +
+          '<span class="fc-sectors"><button type="button" class="btn sm" data-act="sectors" data-fc="' + esc(f.id) + '" title="Opens the list of sectors to tick; Save keeps it">Sectors already discovered: <b>' + (f.fc.discovered || []).length + ' of ' + D.sectors.length + '</b></button></span></li>';
       }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
+      shownPanelHtml() +
       recsHtml() + accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><div class="muted" data-size>Measuring…</div></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
+  }
+
+  // G8: a tick per free company for the Board, the next-back strip and the fleet-wide send; all ticked until the player changes it
+  function shownPanelHtml() {
+    var fcs = fcList(), h = hiddenSet();
+    if (!fcs.length) return '';
+    return '<section class="panel" data-shown-panel><h2>Free companies on the Board</h2><p class="muted">Tick the free companies the Board, its next-back strip and “Send all back, every free company” show. Unticking only hides one: its data stays, its alerts still arrive and Earnings and the Map still include it. Kept in the save, so it follows you to your other devices.</p>' +
+      '<div class="ticks shown-ticks">' + fcs.map(function (f) { return '<label class="tick"><input type="checkbox" data-shown-fc="' + esc(f.id) + '"' + (h[f.id] ? '' : ' checked') + '> <b>' + esc(f.fc.name || 'Unnamed') + '</b></label>'; }).join('') + '</div>' +
+      '<p class="hint" data-shown-count>' + (hiddenCount() ? hiddenCount() + ' hidden from the Board.' : 'All shown.') + '</p></section>';
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
   var W = null; // { fcId, step, fc: {...}, subs: [ { id, unlocked, name, rank, parts: [..], voyMode, voyIn, voyAt, voyage } x4 ], disc: Set }
-  function startWizard(fcId) {
+  function startWizard(fcId, at) {
     var fc = fcId ? S.fcs[fcId] : null, subs = fcId ? subsOf(fcId) : {};
     var ui = {}; try { ui = (JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).ui || {}; } catch (e) { /* none */ }
     var liveWorld = ui.live && ui.live.world;
@@ -510,6 +543,7 @@
           parts: s && s.parts ? s.parts.slice() : [null, null, null, null], voyage: s ? s.voyage : null, voyMode: s && s.voyage ? 'keep' : 'none', voyIn: '', voyAt: '' };
       }),
       disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()) };
+    if (at === 'sectors') W.step = steps().length - 1; // straight to the list of sectors (the same step and the same Save)
     UI.tab = 'setup'; keepUi(); render(); focusWizard();
   }
   function focusWizard() { var el = $('#view .wiz input, #view .wiz select'); if (el) el.focus(); }
@@ -735,6 +769,27 @@
     if (x.own && x.perTrip > 0 && x.trips) out += (out ? ' · ' : '') + DR.fmt.about(DR.fmt.hour(x.perTrip / (x.ev.seconds / 3600))) + src('learned, ' + x.trips + ' voyage' + (x.trips === 1 ? '' : 's'));
     return out;
   }
+  // G9 (gaps spec): the rank-up plan of a submarine below the top rank (in the send window only: a line on the Board card made the 8 x 4 Board 1154 px tall at 1920 x 1080, over C25's 1080 limit): the experience still needed to the top rank (the game's rank table, the rank and the
+  // experience into it) and the days at the route it is on (its voyage under way) or the route suggested for it. Experience from a route is its base
+  // experience, a floor, so "at least". Nothing for a submarine at the top rank or without a known rank.
+  function rankPlanFor(id) {
+    var s = S.subs[id], fc = s && S.fcs[s.fcId]; if (!fc || !s.rank) return null;
+    var now = Date.now(), st = F.status(s, fc, now), v = s.voyage, route = null, seconds = 0, sub = s;
+    if (v && v.route && v.route.length) { // a voyage under way, or one that has come back: the route it is on; a returned one counts the rank it brings
+      route = v.route; seconds = (v.returnAt - (v.sentAt || v.returnAt)) / 1000;
+      if (v.returnAt <= now) { var up = ADV.afterVoyage(s, v.route); if (up) sub = Object.assign({}, s, { rank: up.rank, expIntoRank: up.into }); }
+    }
+    if (!route || !(seconds > 0)) { var a = st === 'back' || st === 'idle' ? adviceFor(id) : null; if (a && a.plan) { route = a.plan.route; seconds = a.plan.ev.seconds; } else { route = null; seconds = 0; } }
+    var plan = ADV.rankUpPlan(sub.rank, sub.expIntoRank || 0, route, seconds);
+    return plan ? Object.assign(plan, { route: route }) : null;
+  }
+  function rankPlanHtml(id) {
+    var p = rankPlanFor(id); if (!p) return '';
+    var n = function (x) { return Math.round(x).toLocaleString('en'); };
+    var days = p.days == null ? '' : p.days >= 10 ? 'about ' + n(p.days) + ' days' : 'about ' + (Math.round(p.days * 10) / 10) + ' days';
+    return '<p class="hint rank-plan" data-rank-plan><b>Rank-up plan:</b> ' + n(p.need) + ' experience still needed to reach rank ' + p.top + ' (from rank ' + p.rank + ' and your experience into it' + src('calculated').trimEnd() + ').' +
+      (p.perVoyage ? ' On the route ' + esc(ADV.routeText(p.route)) + ', a voyage gives <b>at least ' + n(p.perVoyage) + '</b> experience (base experience; the game adds more' + src('game data').trimEnd() + '), so the top rank comes in no more than ' + n(p.voyages) + ' voyages, ' + days + ' at that rate, sooner if the voyages give more.' : ' No route is planned for it yet, so no time can be given.') + '</p>';
+  }
   function adviceHtml(id) {
     var s = S.subs[id], a = adviceFor(id), now = Date.now();
     if (!a) return '';
@@ -794,6 +849,34 @@
   // The items the route can drop, grouped by sector, the ones logged most often on this route first, each with a
   // quantity; "Repeat last" fills in the previous return of this route; any other item can be added by name. New sectors
   // the report mentioned, and a new submarine slot, are ticked here and kept in the free company.
+  // G11 (gaps spec): the questions after a voyage, kept outside the collapsed "What came back" block. Which sector did it reveal: ONLY undiscovered sectors that a
+  // sector on this route can reveal (the unlock table), by name, letter and sea, none ticked, "None of these" the answer given until one is ticked; nothing at all
+  // when the route could reveal nothing new. Where the data says a sector grants a slot or opens the next sea, it is said beside it. A voyage's earlier answers
+  // (newSectors, when the Log tab opens an old voyage) stay listed and ticked. This sheet only ever adds to the free company's discoveries (applyFinds).
+  function discoveryHtml(subId, route, newSectors) {
+    var s = S.subs[subId], fc = S.fcs[s.fcId], disc = new Set(fc.discovered || []);
+    var list = ADV.revealable(route, disc); (newSectors || []).forEach(function (c) { if (SECTOR[c] && list.indexOf(c) < 0) list.push(c); });
+    var slotSector = (D.subSlots.find(function (u) { return u.slot === (fc.unlockedSlots || 1) + 1; }) || {}).sector;
+    var slotTick = slotSector && (route || []).indexOf(slotSector) >= 0, out = '';
+    if (list.length) {
+      out += '<fieldset class="loot-new" data-reveal><legend>Did this voyage reveal a new sector?</legend><p class="hint">Only sectors this route can reveal and that are not found yet are listed. Nothing is ticked for you, and this never removes a discovery.</p>' +
+        list.map(function (c) {
+          var x = SECTOR[c], n = ADV.revealNote(c);
+          return '<label class="opt"><input type="checkbox" data-new-sector="' + c + '"' + ((newSectors || []).indexOf(c) >= 0 ? ' checked' : '') + '> <b>' + esc(x.name.replace(/\s*\([A-Z]\)$/, '')) + '</b> <span class="muted">' + esc(ADV.sectorName(c)) + '</span>' +
+            (n.opens ? ' <span class="tag reveal-note">opens ' + esc(n.opens) + '</span>' : '') + (n.slot ? ' <span class="tag reveal-note">grants submarine slot ' + n.slot + '</span>' : '') + '</label>';
+        }).join('') +
+        '<label class="opt reveal-none"><input type="checkbox" data-reveal-none' + ((newSectors || []).length ? '' : ' checked') + '> <b>None of these</b></label></fieldset>';
+    }
+    if (slotTick) out += '<fieldset class="loot-new" data-slot-q><legend>Did this voyage unlock a new submarine slot?</legend><label class="opt"><input type="checkbox" data-new-slot> “Permission granted to register an additional submersible!” <span class="muted">slot ' + ((fc.unlockedSlots || 1) + 1) + '</span></label></fieldset>';
+    return out;
+  }
+  // keeps "None of these" and the sector ticks consistent: ticking a sector clears None, ticking None clears the sectors, nothing ticked means None
+  function syncReveal(t) {
+    var box = t.closest('[data-reveal]'); if (!box) return;
+    var none = $('[data-reveal-none]', box), ticks = $$('[data-new-sector]', box);
+    if (t === none) { if (none.checked) ticks.forEach(function (x) { x.checked = false; }); else if (!ticks.some(function (x) { return x.checked; })) none.checked = true; }
+    else none.checked = !ticks.some(function (x) { return x.checked; });
+  }
   function lootHtml(subId, route, items, newSectors, open) {
     var s = S.subs[subId], fc = S.fcs[s.fcId], disc = new Set(fc.discovered || []);
     var qty = {}; (items || []).forEach(function (x) { qty[x[0]] = x[1]; });
@@ -807,17 +890,11 @@
       return '<div class="loot-group"><div class="loot-h">' + esc(ADV.sectorName(g.sector)) + ' <span class="muted">· ' + list.length + ' possible items (community data)' + (avg ? '; ' + seen + ' with drop records, from ' + window.DROPS.fmt.count(avg.n) + ' community surveys' : '') + '</span></div>' + (list.length ? list.map(function (id) { return row(id, avg); }).join('') : '<p class="hint">No loot list for this sector yet.</p>') + '</div>';
     }).join('') : '<p class="hint">No route was recorded for this voyage, so add the items by name.</p>';
     var extra = Object.keys(qty).map(Number).filter(function (id) { return !listed[id]; });
-    var reveal = []; (route || []).forEach(function (sid) { ADV.children(sid).forEach(function (c) { if (!disc.has(c) && reveal.indexOf(c) < 0) reveal.push(c); }); });
-    (newSectors || []).forEach(function (c) { if (reveal.indexOf(c) < 0) reveal.push(c); });
-    var slotSector = (D.subSlots.find(function (u) { return u.slot === (fc.unlockedSlots || 1) + 1; }) || {}).sector;
-    var slotTick = slotSector && (route || []).indexOf(slotSector) >= 0;
     return '<details class="loot"' + (open ? ' open' : '') + '><summary>What came back <span class="muted">(optional: the quantities in the voyage report' + (open ? '' : '; can also be entered later in the Log tab') + ')</span></summary>' +
       '<p class="row">' + (hist.last ? '<button type="button" class="btn sm" data-act="loot-repeat" data-items="' + esc(JSON.stringify(hist.last)) + '">Repeat last</button>' : '') + '<button type="button" class="btn sm ghost" data-act="loot-clear">Clear</button></p>' +
       body + '<div class="loot-group" data-extra>' + (extra.length ? '<div class="loot-h">Other items</div>' + extra.map(function (id) { return row(id); }).join('') : '') + '</div>' +
       '<label class="field">Add another item <input class="inp" list="all-items" data-add-item placeholder="type a name"></label>' +
-      (reveal.length || slotTick ? '<fieldset class="loot-new"><legend>Did the report say…</legend>' + reveal.map(function (c) { var x = D.sectors.find(function (z) { return z.id === c; }); return '<label class="opt"><input type="checkbox" data-new-sector="' + c + '"' + ((newSectors || []).indexOf(c) >= 0 ? ' checked' : '') + '> “' + esc(x ? x.name.replace(/\s*\([A-Z]\)$/, '') : '') + ' discovered!” <span class="muted">' + esc(ADV.sectorName(c)) + '</span></label>'; }).join('') +
-        (slotTick ? '<label class="opt"><input type="checkbox" data-new-slot> “Permission granted to register an additional submersible!” <span class="muted">slot ' + ((fc.unlockedSlots || 1) + 1) + '</span></label>' : '') + '</fieldset>' : '') +
-      '</details>';
+      '</details>' + discoveryHtml(subId, route, newSectors);
   }
   function readLoot(form) {
     if (!form) return null;
@@ -918,7 +995,7 @@
   }
   function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
   // the send window and the planner (spec 6.5 item 2, 5.4, 5.5): the estimate for this submarine on the chosen route
-  function routeRatesHtml(s, st, ev, route) {
+  function routeRatesHtml(s, st, ev, route, once) { // once: the caller already heads the block "What this route usually brings" (the planner), so the list is not headed again
     var DR = window.DROPS, r = st && ev && ev.reachable ? DR.route(D, route, st) : null;
     if (!r) return '';
     var now = Date.now(), out = '<div class="rates" data-rates>';
@@ -935,9 +1012,9 @@
     });
     var price = DR.merchant(D), ids = Object.keys(r.items).map(Number).filter(function (id) { return r.items[id] > 0; });
     ids.sort(function (a, b) { return r.items[b] * price(b) - r.items[a] * price(a) || a - b; });
-    if (ids.length) out += '<details class="rates"><summary>What this route usually brings</summary>' + ids.slice(0, 8).map(function (id) {
+    if (ids.length) out += (once ? '<div class="rates-list" data-rates-list>' : '<details class="rates"><summary>What this route usually brings</summary>') + ids.slice(0, 8).map(function (id) {
       return '<p class="rate-item"><b>' + esc(EARN.name(id)) + '</b><span>about ' + DR.fmt.qty(r.items[id]) + ' a voyage</span></p>';
-    }).join('') + '</details>';
+    }).join('') + (once ? '</div>' : '</details>');
     var c = null; try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
     if (c && c.prices && ids.some(function (id) { return c.prices[id]; })) {
       var z = 0; ids.forEach(function (id) { z += r.items[id] * (EARN.unitValue(id, c.prices).each || 0); });
@@ -988,14 +1065,14 @@
     else {
       calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
       // G1 (gaps spec): what the chosen route usually brings, the same content as the send window, collapsed until the player opens it (kept open across redraws in this tab)
-      var rates = routeRatesHtml(s, st, ev, route);
+      var rates = routeRatesHtml(s, st, ev, route, true);
       if (rates) calc += '<details class="planner-rates" data-planner-rates' + (m.rates ? ' open' : '') + '><summary>What this route usually brings</summary>' + rates + '</details>';
     }
     var name = s.name || 'Sub ' + s.slot, out = status === 'out' || status === 'locked';
     var no = cannotMap(fc, m), why = m.sector && no[m.sector] ? SECTOR[m.sector].name + ' ' + no[m.sector] : '';
     return o + '<p class="route-line">Route: ' + (route.length ? '<b>' + esc(ADV.routeText(route)) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' +
       (common ? '<p class="hint">Community routes in this sea: ' + common + '</p>' : '') + calc +
-      '<p class="hint">A sector marked with a cross cannot be added, or would take the route out of range: tap or focus it to see why.</p><p class="cannot-line" data-cannot-line role="status">' + esc(why) + '</p>' +
+      '<p class="hint">A sector marked with a cross is found but above this submarine\'s rank. Tap or focus any sector that cannot be added (not found yet, above the rank, or out of range if added) to see why.</p><p class="cannot-line" data-cannot-line role="status">' + esc(why) + '</p>' +
       '<p><button type="button" class="btn primary" data-map-send="' + esc(m.sub) + '"' + (!route.length || out ? ' disabled' : '') + '>Send ' + esc(name) + ' on this route…</button>' +
       (status === 'out' && s.voyage ? ' <span class="muted">Out: back ' + esc(F.fmtClock(s.voyage.returnAt, now)) + '</span>' : status === 'locked' ? ' <span class="muted">Not unlocked yet</span>' : '') + '</p>' +
       '<p class="hint">Nothing is sent or saved here; the button opens the send window with this route.</p></div>';
@@ -1093,6 +1170,11 @@
       return bits.length ? '<tr class="earn-note"><td colspan="' + span + '"><span class="earn-note-text">' + bits.join(' ') + '</span></td></tr>' : '';
     };
     var anyNote = rk.ranked.concat(rk.thin).some(function (r) { return !!window.DROPS.route(D, r.route, null); });
+    var subRows = Object.keys(S.subs).concat(Object.keys(tot.bySub).filter(function (k) { return !S.subs[k]; })).map(function (k) {
+      var x = S.subs[k], fc = x && S.fcs[x.fcId], b = tot.bySub[k] || { gil: 0, trips: 0 };
+      return { id: k, name: x ? (fc && fc.name ? fc.name : 'Unnamed') + ' · ' + (x.name || 'Sub ' + x.slot) : 'Removed submarine', gil: b.gil, trips: b.trips };
+    }).sort(function (a, b) { return b.gil - a.gil || a.name.localeCompare(b.name); });
+    var maxSub = Math.max.apply(null, subRows.map(function (r) { return r.gil; }).concat([0]));
     var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
     var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
     var src = PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : PRICES.error ? 'Universalis could not be reached (' + esc(PRICES.error) + '): merchant prices only' : 'no market prices yet';
@@ -1105,6 +1187,7 @@
         (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr class="' + seaOf(r.route) + '"><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml(rk.ranked.concat(rk.thin).map(function (r) { var c = window.DROPS.route(D, r.route, null); return c ? c.secondShare : null; })) : '')
         : '<p class="hint">Log what came back from voyages with a route to see this.</p>') +
       '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, maxFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
+      '<h3>By submarine</h3><table class="earn-t" data-earn-subs><tbody>' + subRows.map(function (r) { return '<tr style="--p:' + ratio(r.gil, maxSub) + '"><td>' + esc(r.name) + (r.trips ? ' <span class="muted">' + r.trips + ' voyage' + (r.trips === 1 ? '' : 's') + ' logged</span>' : '') + '</td><td><b>' + fmtGil(r.gil) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
       '<h3>Top items</h3><table class="earn-t"><thead><tr><th>Item</th><th>Quantity</th><th>Value</th><th>Priced by</th></tr></thead><tbody>' + items.map(function (x) { return '<tr><td>' + esc(EARN.name(x[0])) + '</td><td>' + x[1].qty.toLocaleString('en') + '</td><td>' + fmtGil(x[1].gil) + '</td><td>' + (x[1].how || 'unknown') + '</td></tr>'; }).join('') + '</tbody></table></section>';
   }
 
@@ -1153,6 +1236,7 @@
         (v.calcAt && v.gameSaid && Math.abs(v.calcAt - v.returnAt) > 60000 ? '<dt>Worked out</dt><dd>' + esc(F.fmtClock(v.calcAt, now)) + ' (the game\'s time is used)</dd>' : '') +
         (v.gameSaid ? '<dt>You typed</dt><dd>' + esc(v.gameSaid) + '</dd>' : '') + (v.sentAt ? '<dt>Sent</dt><dd>' + esc(F.fmtClock(v.sentAt, now)) + '</dd>' : '') + (v.route && v.route.length ? '<dt>Route</dt><dd>' + esc(routeText(v.route)) + '</dd>' : '') + '</dl>' +
         (v.calcAt && !v.gameSaid ? '<details class="game-says"><summary>Check against the game <span class="muted">(optional: type the time the game shows)</span></summary>' + timeFields('t', 'in', '') + '<p><button type="button" class="btn" data-act="check" data-sub="' + esc(id) + '">Check</button></p></details><p class="wiz-err" data-err role="alert"></p>' : '') +
+        rankPlanHtml(id) +
         '<div class="sheet-actions"><button type="button" class="btn primary" data-act="ics" data-sub="' + esc(id) + '">Add to calendar</button><button type="button" class="btn" data-act="retime" data-sub="' + esc(id) + '">Change this voyage</button>' +
         '<button type="button" class="btn ghost" data-act="unsend" data-sub="' + esc(id) + '">Remove this voyage (sent by mistake)</button><button type="button" class="btn ghost" data-act="close">Close</button></div>');
       return;
@@ -1167,7 +1251,7 @@
     var head = retime ? 'Change this voyage' : 'Send ' + (s.name || 'Sub ' + s.slot);
     sheet('<h2>' + esc(head) + ' <span class="muted">' + esc(fc.name || '') + ' · rank ' + (s.rank || '?') + ' · ' + partsCode(s.parts) + '</span></h2>' +
       (st === 'back' && !retime ? '<p class="note">Back since ' + esc(F.fmtClock(v.returnAt, now)) + '. Sending again logs that voyage in the history, with what came back if you enter it here (or later, in the Log tab).</p>' + lootHtml(id, v.route, [], []) + itemsDatalist() + rankField(id) : '') +
-      (retime ? '' : adviceHtml(id)) + '<div data-picker>' + pickerHtml() + '</div>' +
+      (retime ? '' : adviceHtml(id) + rankPlanHtml(id)) + '<div data-picker>' + pickerHtml() + '</div>' +
       '<details class="game-says"' + (!subStats(s) ? ' open' : '') + '><summary>The game says… <span class="muted">(optional: type the game\'s return time to check the worked-out one)</span></summary>' + timeFields('t', 'in', '') + '</details>' +
       '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="' + (retime ? 'dore' : 'dosend') + '" data-sub="' + esc(id) + '">' + (retime ? 'Save' : st === 'back' ? 'Send again' : 'Send') + '</button>' +
       (st === 'back' && !retime ? '<button type="button" class="btn" data-act="collect" data-sub="' + esc(id) + '">Collected, not sent</button>' : '') +
@@ -1260,19 +1344,35 @@
     if (rank === 0) bad = bad || 'The rank is a whole number from 1 to 145.';
     return { rank: rank && rank >= 1 ? rank : 0, into: into, grade: ADV.GRADES.indexOf(g) >= 0 ? g : '', bad: bad };
   }
-  function sendAllSheet(fcId) {
+  // "Send all back": one sheet for one free company (fcIds = [id]) or, with `fleet`, for every shown free company (G7, gaps spec): the same rows, the same
+  // "Send" (dosendall, one code path), each submarine with its own tick, grouped by free company; nothing is sent until the player confirms.
+  // planGroups: the suggestions of several subs sent together, worked out per free company (a company's subs split its own discoveries; another company's do not count)
+  function planGroups(ids) {
+    var by = {}, order = [], out = {};
+    ids.forEach(function (id) { var f = S.subs[id].fcId; if (!by[f]) { by[f] = []; order.push(f); } by[f].push(id); });
+    order.forEach(function (f) { Object.assign(out, planAll(by[f])); });
+    return out;
+  }
+  function sendAllSheet(fcIds, fleet) {
     refreshLogged();
-    var fc = S.fcs[fcId], subs = subsOf(fcId), now = Date.now();
-    var list = Object.keys(subs).map(function (k) { return subs[k]; }).filter(function (e) { var st = F.status(e.sub, fc, now); return st === 'back' || st === 'idle'; });
-    var plans = planAll(list.map(function (e) { return e.id; }));
-    sheet('<h2>Send all back subs <span class="muted">' + esc(fc.name || '') + '</span></h2><p class="hint">Each goes on its suggested route, with its own worked-out time. Subs that are back have their voyage logged first. Change any one by tapping it on the board instead.</p>' +
-      '<div class="pick">' + list.map(function (e) {
-        var st = F.status(e.sub, fc, now), a = plans[e.id], plan = a && a.plan;
-        return '<label class="opt"><input type="checkbox" name="pick" value="' + esc(e.id) + '" checked> ' + esc(e.sub.name || 'Sub ' + e.sub.slot) + ' <span class="chip ' + st + '">' + F.LABEL[st] + '</span> <span class="muted">' +
-          (plan ? esc(ADV.routeText(plan.route)) + ' · back ' + esc(F.fmtClock(now + plan.ev.seconds * 1000, now)) : esc(a && a.blocked ? 'needs rank and parts: uses the time typed below' : 'no route')) + '</span></label>';
-      }).join('') + '</div>' +
+    var now = Date.now();
+    var groups = fcIds.map(function (fcId) {
+      var fc = S.fcs[fcId], subs = subsOf(fcId);
+      return { fcId: fcId, fc: fc, list: Object.keys(subs).map(function (k) { return subs[k]; }).filter(function (e) { var st = F.status(e.sub, fc, now); return st === 'back' || st === 'idle'; }) };
+    }).filter(function (g) { return g.list.length; });
+    var plans = planGroups([].concat.apply([], groups.map(function (g) { return g.list.map(function (e) { return e.id; }); })));
+    var row = function (g, e) {
+      var st = F.status(e.sub, g.fc, now), a = plans[e.id], plan = a && a.plan;
+      return '<label class="opt"><input type="checkbox" name="pick" value="' + esc(e.id) + '" checked> ' + esc(e.sub.name || 'Sub ' + e.sub.slot) + ' <span class="chip ' + st + '">' + F.LABEL[st] + '</span> <span class="muted">' +
+        (plan ? esc(ADV.routeText(plan.route)) + ' · back ' + esc(F.fmtClock(now + plan.ev.seconds * 1000, now)) : esc(a && a.blocked ? 'needs rank and parts: uses the time typed below' : 'no route')) + '</span></label>';
+    };
+    var head = fleet ? 'Send all back subs <span class="muted">every free company</span>' : 'Send all back subs <span class="muted">' + esc(groups.length ? groups[0].fc.name || '' : '') + '</span>';
+    sheet('<h2>' + head + '</h2><p class="hint">Each goes on its suggested route, with its own worked-out time. Subs that are back have their voyage logged first. ' + (fleet ? 'Untick any submarine to leave it out. ' : '') + 'Change any one by tapping it on the board instead.</p>' +
+      (groups.length ? groups.map(function (g) {
+        return (fleet ? '<h3 class="pick-fc" data-pick-fc="' + esc(g.fcId) + '">' + esc(g.fc.name || 'Unnamed free company') + '</h3>' : '') + '<div class="pick">' + g.list.map(function (e) { return row(g, e); }).join('') + '</div>';
+      }).join('') : '<p class="hint">No submarine is back or waiting to be sent.</p>') +
       '<details class="game-says"><summary>The game says… <span class="muted">(only for subs without rank and parts)</span></summary>' + timeFields('t', 'in', '') + '</details>' +
-      '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="dosendall" data-fc="' + esc(fcId) + '">Send</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>');
+      '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="dosendall">Send</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>');
     previewTime($('#sheet form'), 't');
   }
   function sheetError(text) { var p = $('#sheet [data-err]'); if (p) p.textContent = text; }
@@ -1316,6 +1416,7 @@
     switch (act) {
       case 'new': startWizard(null); break;
       case 'edit': closeSheet(); startWizard(b.dataset.fc); break;
+      case 'sectors': closeSheet(); startWizard(b.dataset.fc, 'sectors'); break;
       case 'remove': {
         var fc = S.fcs[b.dataset.fc];
         if (!fc || !confirm('Remove “' + (fc.name || 'this free company') + '” and its submarines from the board? Logged voyages stay in the history.')) break;
@@ -1348,13 +1449,14 @@
         if (last) calendar((fcx.name || 'Free company') + ' · last sub back (' + (last.name || 'Sub ' + last.slot) + ')', last.voyage.returnAt, b.dataset.fc + '-last-' + last.voyage.returnAt);
         break;
       }
-      case 'sendall': sendAllSheet(b.dataset.fc); break;
+      case 'sendall': sendAllSheet([b.dataset.fc], false); break;
+      case 'sendallfleet': sendAllSheet(shownFcs().map(function (f) { return f.id; }), true); break;
       case 'dosendall': {
         var picks = $$('input[name=pick]:checked', form).map(function (x) { return x.value; }), t = readTime(form, 't');
         if (!picks.length) { sheetError('Pick at least one submarine.'); break; }
         picks.forEach(function (pid) { var x = S.subs[pid]; if (x && x.voyage) logTrip(pid); }); // ranks move on first
         refreshLogged();
-        var plans = planAll(picks);
+        var plans = planGroups(picks);
         var missing = picks.filter(function (pid) { var a = plans[pid]; return !(a && a.plan); });
         if (missing.length && !t) { sheetError('Some subs have no worked-out route: type the time the game shows for them.'); break; }
         picks.forEach(function (pid) {
@@ -1418,13 +1520,15 @@
     }
     if (t.matches && t.matches('[data-map-fc]')) { var m2 = mapState(); m2.fc = t.value; m2.sector = null; m2.sub = null; m2.route = []; keepUi(); render(); return; }
     if (t.matches && t.matches('[data-map-sub]')) { var m5 = mapState(); m5.sub = t.value || null; m5.route = []; keepUi(); render(); return; }
+    if (t.dataset.shownFc && e.type === 'change') { setFcShown(t.dataset.shownFc, t.checked); var again = $('[data-shown-fc="' + t.dataset.shownFc + '"]'); if (again) again.focus(); return; }
     if (t.closest('#sheet')) {
       if (t.matches('[data-add-item]')) { // an item picked from the list joins "Other items" with a quantity of 1
         var nm = t.value.trim().toLowerCase(), id = Object.keys(D.items).find(function (k) { return D.items[k].toLowerCase() === nm; });
         if (id) { var f0 = t.closest('form'); if (!$('[data-qty="' + id + '"]', f0)) addLootRow(f0, +id); var q0 = $('[data-qty="' + id + '"]', f0); if (q0) { q0.value = q0.value || 1; q0.focus(); } t.value = ''; }
         return;
       }
-      if (t.matches('[data-qty], [data-new-sector], [data-new-slot]')) return;
+      if (t.matches('[data-new-sector], [data-reveal-none]')) { syncReveal(t); return; }
+      if (t.matches('[data-qty], [data-new-slot]')) return;
       if (t.name === 'sea') { if (PICK && e.type === 'change') { PICK.sea = +t.value; if (PICK.route.length && SECTOR[PICK.route[0]].sea !== PICK.sea) PICK.route = []; redrawPicker(); } return; }
       previewTime($('#sheet form'), 't');
       if (/^t(in|at|mode)$/.test(t.name)) redrawPicker();

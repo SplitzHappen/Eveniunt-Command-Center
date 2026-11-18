@@ -812,3 +812,13 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }
 .sea[class*="in-sea-"]:not([open]) > summary .muted { color: var(--ink); }
 @media (max-width: 700px) { .panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { --ringc: color-mix(in srgb, var(--ring) 32%, var(--slab)); } } /* W29: on a phone the rings cross the text, so they are fainter */
+
+/* gaps spec Part B (G7 to G11): minimal additions; the voices are the module's own (rank for rank-up figures, gil for earnings) */
+.pick-fc { font: 900 16px/1.2 var(--f-disp); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 2px; }
+.hidden-note { margin: 6px 0; }
+.fc-sectors { flex: 1 1 100%; }
+.shown-ticks { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.rank-plan { border-left: 8px solid var(--rank-g); padding-left: 10px; margin: 8px 0; }
+.rank-plan b { color: var(--rank-s); }
+.loot-new > legend { font-weight: 700; }
+.reveal-none { margin-top: 4px; }
