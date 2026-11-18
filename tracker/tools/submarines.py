@@ -14,6 +14,9 @@ under its own commit). Files are read as data; nothing from another repository i
   * Submarine Tracker (Infiziert90/SubmarineTracker, MIT): which sector reveals which, which visits grant submarine
     slots 2 to 4 and open the next sea (Data/Unlocks.cs); the travel-time and range formula (SubExplPretty.cs,
     Data/Voyage.cs); the community's named routes (Data/Voyage.cs). Community data, labelled as such.
+  * FFXIV Gacha Spreadsheet (Infiziert90/FFXIVGachaSpreadsheet, MIT): the community's submarine drop records
+    (website/static/data/Submarines.json) and its sector thresholds (website/src/lib/submarines/sector.ts), the latter
+    checked against Submarine Tracker's Data/Sectors.cs. Read as text; nothing from it is run.
 
 Nothing is typed by hand and no value is guessed. The build stops with a message when a count differs from the design
 (143 sectors, 7 seas, 40 parts, 145 ranks), when Teamcraft's parts differ from the game's, when the unlock table does
@@ -24,10 +27,13 @@ import csv, io, json, os, re, sys, tempfile, urllib.request
 DM_COMMIT = "44948e4cda5846eab0baa9872122a888fcc4f1b1"  # xivapi/ffxiv-datamining, game 7.57h1 (data/SOURCES.md)
 TC_COMMIT = "70429e214dc952be23114df514a18223dc429449"  # ffxiv-teamcraft/ffxiv-teamcraft, 2026-11-07 (MIT)
 ST_COMMIT = "04c54d770f815cd416bbade1ac5b178b551a32b5"  # Infiziert90/SubmarineTracker, 2026-10-03 (MIT)
+GC_COMMIT = "c7bd22537e3fdd1fce05d9d84250ba475a7bb6e5"  # Infiziert90/FFXIVGachaSpreadsheet, 2026-11-17 (MIT)
+GC_SNAPSHOT = "2026-11-17"
 
 DM_URL = "https://raw.githubusercontent.com/xivapi/ffxiv-datamining/%s/csv/en/%%s.csv" % DM_COMMIT
 TC_URL = "https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/%s/%%s" % TC_COMMIT
 ST_URL = "https://raw.githubusercontent.com/Infiziert90/SubmarineTracker/%s/%%s" % ST_COMMIT
+GC_URL = "https://raw.githubusercontent.com/Infiziert90/FFXIVGachaSpreadsheet/%s/%%s" % GC_COMMIT
 TC_JSON = "libs/data/src/lib/json/%s.json"
 
 EXPECT = {"sectors": 143, "seas": 7, "parts": 40, "ranks": 145, "per_sea": [30, 20, 20, 20, 20, 20, 13]}
@@ -75,6 +81,10 @@ def st(path):
     return fetch(ST_URL % path, "st-%s/%s" % (ST_COMMIT[:8], path.replace("/", "_")))
 
 
+def gc(path):
+    return fetch(GC_URL % path, "gc-%s/%s" % (GC_COMMIT[:8], path.replace("/", "_")))
+
+
 def i(v):
     return int(v) if str(v).lstrip("-").isdigit() else stop("not a whole number: %r" % (v,))
 
@@ -108,6 +118,12 @@ for label, url, key in (("Teamcraft", TC_URL % "LICENSE", "tc-%s/LICENSE" % TC_C
         stop("%s's LICENSE does not carry the MIT permission text" % label)
 TC_NOTICE = fetch(TC_URL % "LICENSE", "tc-%s/LICENSE" % TC_COMMIT[:8]).splitlines()[2].strip()
 ST_NOTICE = fetch(ST_URL % "LICENSE", "st-%s/LICENSE" % ST_COMMIT[:8]).splitlines()[2].strip()
+GC_LICENSE = gc("LICENSE")
+if not GC_LICENSE.lstrip().startswith("MIT License"):
+    stop("FFXIV Gacha Spreadsheet's LICENSE at the pinned commit is not the MIT licence")
+if MIT_PERMISSION.split(": The above")[0].replace('\\"', '"') not in re.sub(r"\s+", " ", GC_LICENSE):
+    stop("FFXIV Gacha Spreadsheet's LICENSE does not carry the MIT permission text")
+GC_NOTICE = GC_LICENSE.splitlines()[2].strip()
 
 # ------------------------------------------------------------------ seas and sectors (game data)
 EXPL = sheet("SubmarineExploration")
@@ -357,8 +373,8 @@ formula = {
     "experienceNote": "The game table gives each sector's base experience. Submarine Tracker (Data/Sectors.cs) adds 25%, 50%, "
                       "75% or 100% to a sector's experience when its survey goes well, judged against surveillance, retrieval "
                       "and favor thresholds that it takes from a community spreadsheet with no stated licence; those thresholds "
-                      "are not used here. By that source, base experience is the least a voyage gives, so a rank worked out "
-                      "from it is a floor; the return sheet's rank check shows the real figure (design assumption A4).",
+                      "are used for loot estimates only (table `breakpoints`); experience still shows the base value. By that source, base experience is the least a voyage "
+                      "gives, so a rank worked out from it is a floor; the return sheet's rank check shows the real figure (design assumption A4).",
     "precision": "The source computes in single precision (C# float); this file's checks use double precision. The two "
                  "can differ by one second only when a value falls a hair away from a whole second; the five test "
                  "voyages give the same seconds either way.",
@@ -375,6 +391,111 @@ for name, mp, ids in re.findall(r'\{\s*"([^"]+)",\s*new CommonRoute\((\d+),\s*([
 if not common:
     stop("no common routes found in Voyage.cs")
 
+
+# ------------------------------------------------------------------ community drop records and thresholds (Gacha Spreadsheet)
+GC_TOTAL, GC_O_RECORDS, GC_FEWEST = 205249206, 61069971, (92, 18474)  # spec section 4.3 (checks 2)
+GC = json.loads(gc("website/static/data/Submarines.json"))
+if not isinstance(GC, dict) or not isinstance(GC.get("Sectors"), dict):
+    stop("Submarines.json no longer has the shape {Total, Sectors{...}}")
+if sorted(int(k) for k in GC["Sectors"]) != sorted(SECTOR):
+    stop("the drop file's sector ids differ from the game's: %d in the file" % len(GC["Sectors"]))
+GC_BP_TS = {}
+for m in re.finditer(r"^\s*(\d+):\s*CreateBreakpoint\(\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*\)", gc("website/src/lib/submarines/sector.ts"), re.M):
+    if int(m.group(1)) in GC_BP_TS:
+        stop("sector.ts lists the thresholds of sector %s twice" % m.group(1))
+    GC_BP_TS[int(m.group(1))] = [int(m.group(n)) for n in range(2, 7)]
+GC_BP_CS = {}
+for m in re.finditer(r"\{\s*(\d+),\s*new Breakpoint\(\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\s*\)\s*\}", st("SubmarineTracker/Data/Sectors.cs")):
+    if int(m.group(1)) in GC_BP_CS:
+        stop("Sectors.cs lists the thresholds of sector %s twice" % m.group(1))
+    GC_BP_CS[int(m.group(1))] = [int(m.group(n)) for n in range(2, 7)]
+if sorted(GC_BP_TS) != sorted(SECTOR) or len(GC_BP_TS) != EXPECT["sectors"]:
+    stop("sector.ts has %d threshold rows, or ids that differ from the game's" % len(GC_BP_TS))
+if sorted(GC_BP_CS) != sorted(SECTOR):
+    stop("Sectors.cs has %d threshold rows, or ids that differ from the game's" % len(GC_BP_CS))
+for sid in sorted(SECTOR):
+    t2, t3, nor, opt, fav = GC_BP_TS[sid]
+    if t2 > t3 or nor > opt:
+        stop("thresholds of sector %d are not in order: %s" % (sid, GC_BP_TS[sid]))
+    if GC_BP_TS[sid] != GC_BP_CS[sid]:
+        stop("sector %d: sector.ts says %s, Sectors.cs @ %s says %s" % (sid, GC_BP_TS[sid], ST_COMMIT[:8], GC_BP_CS[sid]))
+breakpoints = {str(sid): GC_BP_TS[sid] for sid in sorted(SECTOR)}
+
+if GC.get("Total") != GC_TOTAL:
+    stop("the drop file's Total is %r, not %d" % (GC.get("Total"), GC_TOTAL))
+if sum(v["Records"] for v in GC["Sectors"].values()) != GC_TOTAL:
+    stop("the sectors' Records add up to %d, not Total %d" % (sum(v["Records"] for v in GC["Sectors"].values()), GC_TOTAL))
+if GC["Sectors"]["15"]["Records"] != GC_O_RECORDS:
+    stop("sector 15 has %d records, not %d" % (GC["Sectors"]["15"]["Records"], GC_O_RECORDS))
+fewest = min((v["Records"], int(k)) for k, v in GC["Sectors"].items())
+if fewest != (GC_FEWEST[1], GC_FEWEST[0]):
+    stop("the fewest records are %d (sector %d), not %d (sector %d)" % (fewest[0], fewest[1], GC_FEWEST[1], GC_FEWEST[0]))
+
+drop_all = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+drop_sectors, drop_items, no_tier, drop_rewards = {}, set(), {}, 0
+for sid in sorted(SECTOR):
+    v, g = GC["Sectors"][str(sid)], SECTOR[sid]
+    if v.get("Id") != sid or plain(v.get("Name")) != g["name"] or v.get("Rank") != g["rank"] or v.get("Stars") != g["stars"]:
+        stop("sector %d: the drop file says %r rank %r stars %r, the game's is %r rank %d stars %d"
+             % (sid, v.get("Name"), v.get("Rank"), v.get("Stars"), g["name"], g["rank"], g["stars"]))
+    if sorted(v["Pools"]) != ["Tier1", "Tier2", "Tier3"]:
+        stop("sector %d does not have the pools Tier1, Tier2, Tier3" % sid)
+    pools, favor, high_total, placed = [], [0, 0], 0, 0
+    for t in range(3):
+        pl = v["Pools"]["Tier%d" % (t + 1)]
+        st_, rec, where = pl["Stats"], pl["Records"], "sector %d tier %d" % (sid, t + 1)
+        band, ret = [st_["Min"], st_["Mid"], st_["High"]], [st_["Low"], st_["Normal"], st_["Optimal"]]
+        if sum(x["Amount"] for x in pl["Rewards"].values()) != rec:
+            stop("%s: item rolls add up to %d, not its %d records" % (where, sum(x["Amount"] for x in pl["Rewards"].values()), rec))
+        if sum(band) != rec:
+            stop("%s: Min + Mid + High is %d, not %d records" % (where, sum(band), rec))
+        if sum(ret) != rec:
+            stop("%s: Low + Normal + Optimal is %d, not %d records" % (where, sum(ret), rec))
+        if (t == 1 and band[0]) or (t == 2 and (band[0] or band[1])):
+            stop("%s has rolls of a band its tier cannot have: %s" % (where, band))
+        if not 0 <= st_["DoubleDips"] <= st_["Favor"] <= rec:
+            stop("%s: DoubleDips %d, Favor %d, Records %d are not in order" % (where, st_["DoubleDips"], st_["Favor"], rec))
+        rows = []
+        for key, x in sorted(pl["Rewards"].items(), key=lambda kv: int(kv[0])):
+            mm = [x["MinMax"][k] for k in ("Poor", "Normal", "Optimal")]
+            if int(key) != x["Id"] or x["Amount"] <= 0 or x["Total"] < x["Amount"]:
+                stop("%s item %s: Id %r, Amount %r, Total %r" % (where, key, x["Id"], x["Amount"], x["Total"]))
+            if any(len(r) != 2 or r[0] > r[1] for r in mm):
+                stop("%s item %s: a quantity range has min above max: %s" % (where, key, mm))
+            if not min(r[0] for r in mm) <= x["Total"] / x["Amount"] <= max(r[1] for r in mm):
+                stop("%s item %s: average %.3f lies outside the recorded ranges %s" % (where, key, x["Total"] / x["Amount"], mm))
+            rows.append([x["Id"], x["Amount"], x["Total"]] + [n for r in mm for n in r])
+            drop_items.add(x["Id"])
+        drop_rewards += len(rows)
+        for b in range(3):
+            drop_all[t][b] += band[b]
+        favor[0] += st_["Favor"]
+        favor[1] += st_["DoubleDips"]
+        high_total += band[2]
+        placed += rec
+        pools.append({"band": band, "ret": ret, "items": rows})
+    if v["T3Capable"] != high_total:
+        stop("sector %d: T3Capable is %d, the pools' High adds up to %d" % (sid, v["T3Capable"], high_total))
+    if placed > v["Records"]:
+        stop("sector %d: the pools hold %d records, more than the sector's %d" % (sid, placed, v["Records"]))
+    if placed < v["Records"]:
+        no_tier[str(sid)] = v["Records"] - placed
+    drop_sectors[str(sid)] = {"n": v["Records"], "favor": favor, "pools": pools}
+if len(drop_sectors) != EXPECT["sectors"]:
+    stop("the drop file has %d sectors" % len(drop_sectors))
+for it in sorted(drop_items):
+    if it not in ITEM or not ITEM[it]["Name"]:
+        stop("drop item %d has no name in the game's Item sheet" % it)
+drop_items_added = sorted(it for it in drop_items if str(it) not in items)
+for it in drop_items_added:
+    items[str(it)] = ITEM[it]["Name"]
+    item_info[str(it)] = [i(ITEM[it]["PriceLow"]), 0 if ITEM[it]["IsUntradable"] == "True" else 1]
+items = {k: items[k] for k in sorted(items, key=int)}
+item_info = {k: item_info[k] for k in sorted(item_info, key=int)}
+drop_rates = {"all": drop_all, "sectors": drop_sectors}
+print("drop records: %d sectors, %d records, %d item rows, %d items (%d new to `items`), %d records without a tier"
+      % (len(drop_sectors), GC_TOTAL, drop_rewards, len(drop_items), len(drop_items_added), sum(no_tier.values())))
+
 # ------------------------------------------------------------------ write
 src_game = {"repo": "xivapi/ffxiv-datamining", "commit": DM_COMMIT, "version": "7.57h1",
             "notice": "Game data (c) SQUARE ENIX CO., LTD.", "kind": "game data"}
@@ -382,6 +503,8 @@ src_tc = {"repo": "ffxiv-teamcraft/ffxiv-teamcraft", "commit": TC_COMMIT, "licen
           "kind": "community data", "permission": MIT_PERMISSION}
 src_st = {"repo": "Infiziert90/SubmarineTracker", "commit": ST_COMMIT, "licence": "MIT", "notice": ST_NOTICE,
           "kind": "community data", "permission": MIT_PERMISSION}
+src_gc = {"repo": "Infiziert90/FFXIVGachaSpreadsheet", "commit": GC_COMMIT, "snapshot": GC_SNAPSHOT, "licence": "MIT",
+          "notice": GC_NOTICE, "kind": "community data", "permission": MIT_PERMISSION}
 out = {
     "_about": "Submersibles data for the Eveniunt Command Center, built by tools/submarines.py from pinned sources "
               "(data/SOURCES.md). Ids are the game's row ids: sectors and seas from SubmarineExploration and SubmarineMap, "
@@ -389,7 +512,7 @@ out = {
               "ship names removed. Sector fields: rank = rank required, tanks = ceruleum tanks, "
               "survey = survey minutes, exp = experience reward (base value), surveyDistance = range the survey uses, "
               "x/y/z = position. Each table names its source and commit in 'tables'.",
-    "sources": {"game": src_game, "teamcraft": src_tc, "submarineTracker": src_st},
+    "sources": {"game": src_game, "teamcraft": src_tc, "submarineTracker": src_st, "gacha": src_gc},
     "tables": {
         "seas": {"source": "game", "commit": DM_COMMIT, "from": ["SubmarineMap", "SubmarineExploration (starting points)"]},
         "sectors": {"source": "game", "commit": DM_COMMIT, "from": ["SubmarineExploration"]},
@@ -420,10 +543,16 @@ out = {
                     "label": "calculated, not yet confirmed"},
         "commonRoutes": {"source": "submarineTracker", "commit": ST_COMMIT, "from": ["SubmarineTracker/Data/Voyage.cs"],
                          "label": "community data", "note": "Route names as the source gives them."},
+        "dropRates": {"source": "gacha", "commit": GC_COMMIT, "from": ["website/static/data/Submarines.json"],
+                      "label": "community drop records: first item of each survey; the second item is not in the records"},
+        "breakpoints": {"source": "gacha", "commit": GC_COMMIT, "from": ["website/src/lib/submarines/sector.ts"],
+                        "label": "community thresholds; used for loot estimates only"},
     },
     "counts": {"sectors": len(sectors), "seas": len(seas), "parts": len(parts), "classes": len(classes), "ranks": len(ranks),
                "expToMaxRank": exp_to_max, "lootPairs": len(pairs), "lootSectors": len(loot),
-               "lootItems": len({it for _, it in pairs}), "unlockNameChecks": name_checks},
+               "lootItems": len({it for _, it in pairs}), "unlockNameChecks": name_checks,
+               "dropSectors": len(drop_sectors), "dropRecords": GC_TOTAL, "breakpoints": len(breakpoints),
+               "dropRewards": drop_rewards, "dropItemsAdded": len(drop_items_added)},
     "statNames": stat_names,
     "seas": seas,
     "sectors": sectors,
@@ -438,6 +567,8 @@ out = {
     "subSlots": sub_slots,
     "formula": formula,
     "commonRoutes": common,
+    "breakpoints": breakpoints,
+    "dropRates": drop_rates,
     "dropped": {
         "emptySectorRows": empty_rows,
         "lootEntries": entries,
@@ -445,6 +576,7 @@ out = {
         "lootNotOnASector": not_sector,
         "lootRepeats": entries - len(no_sector) - len(not_sector) - len(pairs),
         "sectorsWithoutLoot": sectors_without_loot,
+        "dropRecordsWithoutTier": no_tier,
     },
 }
 def compact(v):
@@ -457,6 +589,14 @@ for n, k in enumerate(keys):
         lines.append(" %s:[" % compact(k))
         lines += ["  " + compact(x) + ("," if j < len(v) - 1 else "") for j, x in enumerate(v)]
         lines.append(" ]" + end)
+    elif k == "dropRates":
+        lines.append(" %s:{" % compact(k))
+        lines.append("  %s:%s," % (compact("all"), compact(v["all"])))
+        lines.append("  %s:{" % compact("sectors"))
+        sk = list(v["sectors"])
+        lines += ["   %s:%s" % (compact(a), compact(v["sectors"][a])) + ("," if j < len(sk) - 1 else "") for j, a in enumerate(sk)]
+        lines.append("  }")
+        lines.append(" }" + end)
     elif isinstance(v, dict) and k != "counts":
         lines.append(" %s:{" % compact(k))
         sub = list(v.items())

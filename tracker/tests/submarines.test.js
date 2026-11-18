@@ -52,7 +52,7 @@ test('counts match the design: 143 sectors in 7 seas, 40 parts, 145 ranks', () =
   assert.equal(D.classes.length, 10);
   assert.deepEqual(D.ranks.map((r) => r.rank), Array.from({ length: 145 }, (_, n) => n + 1));
   assert.equal(D.ranks.slice(0, -1).reduce((t, r) => t + r.expToNext, 0), 1829558717);
-  assert.deepEqual(D.counts, { sectors: 143, seas: 7, parts: 40, classes: 10, ranks: 145, expToMaxRank: 1829558717, lootPairs: 1085, lootSectors: 141, lootItems: 356, unlockNameChecks: 141 });
+  assert.deepEqual(D.counts, { sectors: 143, seas: 7, parts: 40, classes: 10, ranks: 145, expToMaxRank: 1829558717, lootPairs: 1085, lootSectors: 141, lootItems: 356, unlockNameChecks: 141, dropSectors: 143, dropRecords: 205249206, breakpoints: 143, dropRewards: 1353, dropItemsAdded: 57 });
 });
 
 test('sectors: unique ids, one letter per sea, ranks 1 to 145, whole-number fields', () => {
@@ -1295,4 +1295,93 @@ test('K9: check reads every row of the storage table; an old choices.loot array 
   assert.equal(RECS.held(null, 0), 0);
   assert.equal(RECS.rebase(null, []), null);
   assert.deepEqual(RECS.rebase({ choices: { a: 1 } }, [{ seq: 1, patch: { b: 2 } }, { seq: 2, patch: { a: 3 } }]), { choices: { a: 3, b: 2 } });
+});
+
+// ---------------------------------------------------------------- community drop records and thresholds (D1)
+test('drop records: 143 sectors and 143 threshold rows, on the game\'s sector ids', () => {
+  const ids = D.sectors.map((s) => String(s.id)).sort();
+  assert.deepEqual(Object.keys(D.dropRates.sectors).sort(), ids);
+  assert.deepEqual(Object.keys(D.breakpoints).sort(), ids);
+  assert.equal(D.counts.dropSectors, 143);
+  assert.equal(D.counts.breakpoints, 143);
+  assert.equal(D.counts.dropRecords, 205249206);
+  assert.equal(D.counts.dropRewards, 1353);
+  assert.equal(D.counts.dropItemsAdded, 57);
+});
+test('drop records: every pool\'s item rolls, band counts and retrieval counts agree', () => {
+  let records = 0, rows = 0;
+  for (const [id, s] of Object.entries(D.dropRates.sectors)) {
+    assert.equal(s.pools.length, 3, id);
+    let placed = 0;
+    s.pools.forEach((p, t) => {
+      const n = p.band.reduce((a, b) => a + b, 0);
+      assert.equal(p.ret.reduce((a, b) => a + b, 0), n, id + ' retrieval, tier ' + (t + 1));
+      assert.equal(p.items.reduce((a, r) => a + r[1], 0), n, id + ' items, tier ' + (t + 1));
+      if (t >= 1) assert.equal(p.band[0], 0, id + ' low rolls in tier ' + (t + 1));
+      if (t === 2) assert.equal(p.band[1], 0, id + ' mid rolls in tier 3');
+      for (let i = 1; i < p.items.length; i++) assert.ok(p.items[i - 1][0] < p.items[i][0], 'sorted by id');
+      for (const r of p.items) {
+        assert.equal(r.length, 9);
+        assert.ok(r[1] > 0 && r[2] >= r[1]);
+        for (let k = 3; k < 9; k += 2) assert.ok(r[k] <= r[k + 1]);
+        rows++;
+      }
+      placed += n;
+    });
+    assert.ok(s.favor[1] <= s.favor[0] && s.favor[0] <= placed);
+    assert.equal(s.n - placed, D.dropped.dropRecordsWithoutTier[id] || 0);
+    records += s.n;
+  }
+  assert.equal(records, D.counts.dropRecords);
+  assert.equal(rows, D.counts.dropRewards);
+  assert.equal(D.dropRates.sectors['92'].n, 18474);
+  const all = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (const s of Object.values(D.dropRates.sectors)) s.pools.forEach((p, t) => p.band.forEach((v, b) => { all[t][b] += v; }));
+  assert.deepEqual(D.dropRates.all, all);
+});
+test('drop records: sector 15 (O) matches the source\'s figures', () => {
+  const o = D.dropRates.sectors['15'];
+  assert.equal(o.n, 61069971);
+  assert.deepEqual(o.pools.map((p) => p.band[2]), [30745381, 19943663, 9385612]);
+  assert.deepEqual(o.favor, [60547216, 49900626]);
+  const t3 = new Map(o.pools[2].items.map((r) => [r[0], r[1]]));
+  assert.equal(t3.get(22504), 1642949);
+  assert.equal(t3.get(22505), 2580137);
+  assert.equal(t3.get(22506), 3053457);
+  assert.equal(t3.get(22507), 2109069);
+});
+test('thresholds: the community rows, in order', () => {
+  assert.deepEqual(D.breakpoints['15'], [80, 115, 120, 160, 90]);
+  assert.deepEqual(D.breakpoints['10'], [50, 115, 80, 110, 90]);
+  for (const b of Object.values(D.breakpoints)) {
+    assert.equal(b.length, 5);
+    assert.ok(b[0] <= b[1] && b[2] <= b[3]);
+  }
+});
+test('drop records: every drop item has a name and a price; the existing counts stay', () => {
+  for (const s of Object.values(D.dropRates.sectors)) {
+    for (const p of s.pools) {
+      for (const r of p.items) {
+        assert.ok(D.items[String(r[0])], 'name of ' + r[0]);
+        assert.ok(Array.isArray(D.itemInfo[String(r[0])]), 'price of ' + r[0]);
+      }
+    }
+  }
+  assert.equal(D.counts.lootPairs, 1085);
+  assert.equal(D.counts.lootSectors, 141);
+  assert.equal(D.counts.lootItems, 356);
+  assert.match(D.formula.experienceNote, /used for loot estimates only \(table `breakpoints`\); experience still shows the base value/);
+});
+test('drop records: the source, commit, licence, notice and permission are carried', () => {
+  const g = D.sources.gacha;
+  assert.equal(g.repo, 'Infiziert90/FFXIVGachaSpreadsheet');
+  assert.equal(g.commit, 'c7bd22537e3fdd1fce05d9d84250ba475a7bb6e5');
+  assert.equal(g.licence, 'MIT');
+  assert.equal(g.kind, 'community data');
+  assert.match(g.notice, /^Copyright \(c\) 2023 Infi /);
+  assert.equal(g.permission, D.sources.submarineTracker.permission);
+  assert.equal(D.tables.dropRates.commit, g.commit);
+  assert.equal(D.tables.breakpoints.commit, g.commit);
+  assert.match(D.tables.dropRates.label, /second item is not in the records/);
+  assert.match(D.tables.breakpoints.label, /used for loot estimates only/);
 });
