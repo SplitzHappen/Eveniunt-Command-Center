@@ -9,7 +9,7 @@
 // A check that needs an interface one engine lacks is recorded as not run, with the reason, never as passed.
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), http = require('http');
 const playwright = require('playwright');
-const { start, BASE, MOUNTS } = require('./serve');
+const { start: startServer, BASE, MOUNTS } = require('./serve');
 const { execFileSync } = require('child_process');
 const os = require('os');
 
@@ -24,6 +24,19 @@ const ROOT = 'http://127.0.0.1:' + PORT + BASE, ROOT2 = 'http://127.0.0.1:' + PO
 const DEVICE_KEY = 'eveniunt-command-center-device';
 const results = [];
 let browser;
+// Harness safety: every context and test server is registered, so a numbered check that throws can be recorded as a FAIL for
+// its own id, have what it opened closed, and let the run go on (see guard below).
+const openContexts = [], openServers = [];
+function start(port, opts) { return startServer(port, opts).then((s) => { openServers.push(s); return s; }); }
+async function closeServer(s) { try { if (s.closeAllConnections) s.closeAllConnections(); await new Promise((ok) => { try { s.close(() => ok()); } catch (e) { ok(); } }); } catch (e) { /* already closed */ } }
+async function guard(id, fn) {
+  const c0 = openContexts.length, s0 = openServers.length;
+  try { await fn(); } catch (err) {
+    record(id, 'check block stopped by an error before it finished (the run continues)', false, { error: String((err && err.message) || err).split('\n').slice(0, 4).join(' | ') });
+  }
+  for (const c of openContexts.splice(c0)) await c.close().catch(() => {});
+  for (const s of openServers.splice(s0)) await closeServer(s);
+}
 
 function record(id, title, pass, detail) {
   results.push({ id, title, pass: !!pass, detail });
@@ -42,6 +55,7 @@ async function context(opts = {}) {
     external.push(u); return r.abort();
   });
   ctx.on('page', (p) => watch(p, errors));
+  openContexts.push(ctx);
   return { ctx, errors, external };
 }
 function watch(page, errors) {
@@ -162,11 +176,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     console.error('NOT RUN (' + BROWSER + '): ' + reason + '; evidence/' + file + ' written');
     process.exit(3);
   }
-  const server = await start(PORT);
+  let server;
+  try { server = await start(PORT); } catch (err) { console.error(err.message); await browser.close(); process.exit(2); }
   const version = browser.version();
   try {
     // ── C1 the shell is not isolated, and its own worker controls it ──
-    {
+    await guard('C1', async () => {
       const { ctx, errors, external } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT); await shellControlled(page);
@@ -178,10 +193,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && again.cards === 3 && real(errors).length === 0;
       record('C1', 'The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it', ok, { first, again, errors: real(errors), external });
       await ctx.close();
-    }
+    });
 
     // ── C2 / C3 / C4: one browser profile, as a person would use it ──
-    {
+    await guard('C2-C4', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT); await shellControlled(page);
@@ -221,10 +236,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         { shell: sOff, tracker: tOff, atelier: aOff });
       record('C2-4 errors', 'No page or console errors in that profile', real(errors).length === 0, real(errors));
       await ctx.close();
-    }
+    });
 
     // ── C5 offline, a module never opened on this device: a clear note, not a browser error ──
-    {
+    await guard('C5', async () => {
       const { ctx } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT); await shellControlled(page);
@@ -236,10 +251,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const s = await shellState(page);
       record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 3, { note, shellAfter: s.url });
       await ctx.close();
-    }
+    });
 
     // ── C6 today's pages, opened directly as today (installed apps and bookmarks), with no shell involved ──
-    {
+    await guard('C6', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT + 'atelier/');
@@ -260,10 +275,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C6b', "Today's Tracker opened directly: works, and offline with its save", tOff.overview && tOff.isolated === false, tOff);
       record('C6 errors', 'No page or console errors', real(errors).length === 0, real(errors));
       await ctx.close();
-    }
+    });
 
     // ── C7 apps already installed before the shell existed: the shell's worker does not take them over ──
-    {
+    await guard('C7', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT + 'atelier/'); await atelierState(page, { expectIsolated: true }); await waitOwnWorker(page, 'atelier');
@@ -277,10 +292,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         aHand.back === ROOT && tHand.back === ROOT && real(errors).length === 0,
         { registrations: regs, atelier: a, tracker: t, waysBack: { atelier: aHand.back, tracker: tHand.back }, errors: real(errors) });
       await ctx.close();
-    }
+    });
 
     // ── C8 the shell is installable; C9 phone width has no sideways scrolling ──
-    {
+    await guard('C8-C9', async () => {
       if (BROWSER === 'chromium') {
         const { ctx } = await context();
         const page = await ctx.newPage();
@@ -307,11 +322,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C9', 'Phone width (390 px): no sideways scrolling in the shell or in the Tracker with its header link and hand-over notice',
         w.scroll <= w.client && tw.scroll <= tw.client && tw.back && tw.labelShown && tw.notice, { shell: w, tracker: tw });
       await ph.ctx.close();
-    }
+    });
 
     // ── C10 the test site serves both apps' current builds byte for byte, with no isolation headers from the server ──
     // (gate 1B checked that neither app changed; gates 1C and 1D change both on purpose)
-    {
+    await guard('C10', async () => {
       const served = [];
       for (const [prefix, dir] of MOUNTS.slice(0, 2)) {
         for (const f of ['index.html', 'sw.js', 'manifest.webmanifest']) {
@@ -320,10 +335,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         }
       }
       record('C10', 'The test site serves both apps\' current builds byte for byte, with no isolation headers from the server', served.every((x) => x.same && !x.isolationHeaders), { served });
-    }
+    });
 
     // ── C11 gate 1C: one save for the shell and both modules, moved in by copying ──
-    {
+    await guard('C11', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT); await shellControlled(page);
@@ -367,10 +382,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         ok, { tracker, atelier: { isolated: a.isolated, threads: a.threads, alba, brio }, shell: shown, oldDataUntouched: after.tracker === seeded.tracker && after.atelier === seeded.atelier,
           save: { chars: doc.chars.map((c) => c.name), modules: Object.keys(doc.modules), moved: Object.keys(doc.moved) }, errors: real(errors) });
       await ctx.close();
-    }
+    });
 
     // ── C12 gate 1D, rule 5: apps installed before the shell existed keep working offline after it arrives, and hand over ──
-    {
+    await guard('C12', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       // both apps installed on their own, before the shell: each under its own worker, with its offline copy
@@ -407,10 +422,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C12', 'Apps installed before the shell keep working offline after it arrives (own workers, save kept, Atelier isolated and multi-thread), show the way back and the hand-over notice; "Got it" or installing the Command Center ends the notice in both, and the link stays',
         ok, { offline: { tracker: tOff, atelier: aOff }, gotIt, afterGotIt: { tracker: tSeen, atelier: aSeen }, recordCleared: tAgain, afterInstall: { tracker: tInst, atelier: aInst }, errors: real(errors) });
       await ctx.close();
-    }
+    });
 
     // ── C13 gate 1D, F1 second half: the Atelier's reload rule under a root worker that does NOT isolate atelier/ ──
-    {
+    await guard('C13', async () => {
       const server2 = await start(PORT2, { rootSw: path.join(CC, 'fixtures', 'naive-root-sw.js') });
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -432,10 +447,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C13', 'Under a site-wide worker that does not isolate atelier/, the Atelier\'s first visit still ends isolated with more than one thread, under its own worker, after exactly one reload; a second tab needs none',
         ok, { rootWorkerProbe: probe, arrival: a, afterOwnWorker: after, navigationsToAtelier: navs, secondTab: Object.assign(b, { navigations: navs2 }), errors: real(errors) });
       await ctx.close(); server2.close();
-    }
+    });
 
     // ── C14 gate 1D: the way back to the shell from inside each app ──
-    {
+    await guard('C14', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT); await shellControlled(page);
@@ -462,10 +477,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C14', 'The header link brings the owner back to the shell from the Tracker and from the Atelier, also from an Atelier opened directly with the shell never visited; the shell is not isolated each time',
         ok, { fromTracker: { link: tHand.back, shell: s1 }, fromAtelier: { link: aHand.back, shell: s2 }, fromAtelierOpenedDirectly: { link: dHand.back, shell: s3 }, errors: real(errors).concat(real(c2.errors)) });
       await c2.ctx.close();
-    }
+    });
 
     // ── C15 gate 1E: the shell has its own icons and manifest, told apart from the Tracker's and the Atelier's ──
-    {
+    await guard('C15', async () => {
       const shellIcons = path.join(CC, 'site', 'icons'), trackerIcons = path.join(T, 'site', 'icons'), atelierIcons = path.join(ATELIER_SRC, 'site', 'icons');
       const names = ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
       const distinct = names.map((n) => ({ icon: n, present: fs.existsSync(path.join(shellIcons, n)),
@@ -481,11 +496,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ok = distinct.every((d) => d.present && d.differsFromTracker && d.differsFromAtelier) && manifest.name === 'Eveniunt Command Center' && manifest.icons.length === 3 &&
         served.every((x) => x.status === 200 && /image\/png/.test(x.type)) && head.icon === ROOT + 'icons/icon-192.png' && head.apple === ROOT + 'icons/apple-touch-icon.png' && head.manifest === ROOT + 'manifest.webmanifest';
       record('C15', "The shell has its own icons and manifest (gate 1E), different from the Tracker's and the Atelier's, and the browser can load every one", ok, { distinct, manifest: { name: manifest.name, icons: manifest.icons.map((i) => i.src) }, served, head });
-    }
+    });
 
     // ── C16 gate 1E, rule 10: the published layout. The repository's files (as Git would check them out) are copied to a
     //    scratch folder, the Pages workflow's own "Assemble the site" commands build _site from it, and a browser opens it. ──
-    {
+    await guard('C16', async () => {
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-publish-'));
       const detail = { scratch: tmp };
       let site = null, server3 = null;
@@ -554,11 +569,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 3 && detail.shell.controller === ROOT3 + 'sw.js' &&
         detail.links.broken.length === 0 && /Sinus Ardorum/.test(detail.cosmic.title) && detail.tracker.overview && detail.tracker.controller === ROOT3 + 'tracker/sw.js' && detail.errors.length === 0;
       record('C16', 'The published layout (gate 1E): the repository\'s files and the Pages workflow\'s own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it', ok, detail);
-    }
+    });
 
     // ── C17 to C19 gate 1E: cloud sync through OneDrive and the sync helper, against stand-ins for Microsoft's sign-in,
     //    the helper (the real helper/worker.js, in this process) and OneDrive (tests/standins.js) ──
-    {
+    await guard('C17-C19', async () => {
       const server4 = await start(PORT4, { standins: true });
       const st = server4.standins;
       const syncText = () => ((document.querySelector('#sync-state') || {}).textContent || '');
@@ -621,10 +636,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         /tap to sign in/.test(ended.status) && ended.devices === 0 && ended.deviceRecord === null && ended.file && ended.notSignedIn && ended.offersSignIn && ended.signedInAgain && ended.afterSignOut.devices === 0 && /Signed out/.test(ended.afterSignOut.status) && real(errors).length === 0,
         Object.assign(ended, { errors: real(errors) }));
       await ctx.close(); server4.close();
-    }
+    });
     // ── C20 to C25 Submersibles step S2: the module page in the shell's site, its setup, board, send, alerts, calendar
     //    entries and layouts. Invented names only. The page clock (Playwright page.clock) moves time past a return. ──
-    {
+    await guard('C20-C25', async () => {
       const SUBS = ROOT + 'submersibles/';
       const ready = (page) => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
       const subsState = (page) => page.evaluate(() => ({
@@ -863,10 +878,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           { fit, tablet, order, errors: real(errors) });
         await ctx.close();
       }
-    }
+    });
     // ── C27 the main Settings (owner request 2026-11-12): characters and their free companies, the night rule; the Tracker
     //    opens with those characters (no first-run window) and Submersibles shows the free company ──
-    {
+    await guard('C27', async () => {
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
       await page.goto(ROOT + '#settings'); await page.waitForFunction(() => window.__settings, null, { timeout: 10000 });
@@ -891,11 +906,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C27', 'The main Settings (owner request): opened from the main menu; characters and a character\'s free company typed there reach the Tracker (no first-run window) and Submersibles; the night rule is kept for every module',
         ok, { visible, chars: doc.chars.map((c) => c.name), fcs, notify: doc.modules.settings && doc.modules.settings.notify, trackerDialog, trackerText, subsFc, errors: real(errors) });
       await ctx.close();
-    }
+    });
 
     // ── C28 (owner reports 2026-11-12): an app icon installed from the Tracker's page opens on the main menu, and the Tracker
     //    still opens from there; the full appearance panel in the main Settings sets the theme of every page ──
-    {
+    await guard('C28', async () => {
       const { ctx, errors } = await context();
       await ctx.addInitScript(() => { const mm = window.matchMedia.bind(window); window.matchMedia = (q) => (/display-mode: standalone/.test(q) ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} } : mm(q)); });
       const page = await ctx.newPage();
@@ -918,13 +933,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C28', 'An app icon installed from the Tracker\'s page opens on the main menu and the Tracker still opens from there; the main Settings has the full appearance panel (21 themes), and a theme chosen there colours the main menu, Submersibles and the Tracker alike',
         ok, { landed, trackerAfter, themes, choices, shellPaper, subsPaper, trackerPaper, errors: real(errors) });
       await ctx.close();
-    }
+    });
 
     // ── C26 Submersibles step S7: phone notifications. The page works out the alerts (automatic grouping by stage), sends
     //    the schedule to the owner's helper (the real helper/worker.js, in-process with the stand-ins) and keeps the
     //    choices in the save. The browser's own push service cannot be reached from the session, so turning a device on
     //    and a real delivery are checked by tests/helper.test.js (encryption and signature) and by the owner's test button.
-    {
+    await guard('C26', async () => {
       const server5 = await start(PORT5, { standins: true });
       const st = server5.standins;
       const k = await crypto.webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
@@ -973,12 +988,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         ok, { stages, first: titles(first), firstPanel, duringWizard, status, nowLine, perSub: titles(perSub), prefs, errors: real(errors) });
       skip('C26b', 'Turning a device on and a real push delivery', 'the browser\'s push service (run by the browser maker) cannot be reached from the session; the helper\'s encryption and signature are checked by tests/helper.test.js, and the owner\'s "Send a test" button checks a real delivery');
       await ctx.close(); server5.close();
-    }
+    });
     // ── C29 to C40 (fault found 2026-11-13): in the main Settings, a character save must not remove free companies typed
     //    in the same visit, nor a change another page made meanwhile, nor bring back what another page changed or removed
     //    since; every order of edits. Each check compares the whole stored record (characters and every module's section).
     //    Invented names only. ──
-    {
+    await guard('C29-C40', async () => {
       const SUBS = ROOT + 'submersibles/';
       // the whole stored record, keys sorted: the characters and every module's section (Tracker ticks, Submersibles, settings)
       const whole = (page) => page.evaluate(async () => {
@@ -2314,13 +2329,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           ok && real(errors).length === 0, { msg, got, before, errors: real(errors) });
         await ctx.close();
       }
-    }
+    });
 
     // ── C29 Submersibles step S5: what came back, the log and earnings. A returned sub's send window lists the route's
     //    possible loot by sector; quantities, a new sector and the new-slot line are kept with the trip and in the free
     //    company; the Log tab reopens the trip to change it; Earnings shows totals, gil per hour per route with the trip
     //    count, and the CSV export. Universalis is answered by a stand-in (the session reaches no outside site).
-    {
+    await guard('C29', async () => {
       const server6 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2402,11 +2417,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C75', 'What came back (step S5): a returned sub\'s send window keeps "What came back" folded until tapped, then lists the route\'s possible loot by sector with "Repeat last"; typed and tapped quantities, an item added by name and a new sector are kept with the trip and in the free company; the Log tab lists every voyage and reopens one to change it; Setup\'s archive downloads the oldest voyages to a file, removes them only on confirming and loads them back from the file; Earnings totals the log at market prices after the 5% tax (Universalis stand-in) or the merchant price, shows gil per hour by route with the trip count and exports the log as CSV; the window and the tab fit a phone; the route picker shows the sectors full width under the sea list (not squeezed by the shared appearance styles)',
         ok, { closedAtFirst, pickerFull, archiveOk, arcCount: arc.count, afterArc: afterArc.length, afterLoad: afterLoad.length, groups: groups.slice(0, 3), firstRow, repeat, trip, newSector, slotLine, logRows, keptQty, edited, asked, earn: { cards: earn.cards, route: earn.route }, want, csvHead: csv.split('\r\n')[0], wideEarn, wideSheet, errors: real(errors) });
       await ctx.close(); server6.close();
-    }
+    });
     // ── C76 (owner request 2026-11-15): on return the owner notes the voyage grade and types the rank and experience the game
     //    shows; the app stores the experience really gained and learns per grade; a later return with the same grade and
     //    nothing typed moves the rank on by the learned amount; Setup shows what was learned.
-    {
+    await guard('C76', async () => {
       const server7 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2466,11 +2481,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C76', 'Rank and experience on return: with the voyage grade noted and the rank and experience the game shows typed, the trip keeps the grade, the base and the experience really gained, and the sub takes the typed rank and experience; a sub whose starting point was only an estimate takes the typed rank and experience but teaches nothing, and experience typed without its rank, or a rank above 145, is refused with a message; a voyage typed as a time only, collected with nothing typed, leaves the rank no longer exact; a later return with the same grade and nothing typed moves the rank on by what was learned; Setup shows the learned amount per grade',
         ok, { emptyRank, plan, t1, b1: { rank: s1.subs.b1.rank, into: s1.subs.b1.expIntoRank }, refused, refusedTop, t3, b3: s3.subs.b3, b4: s4.subs.b4, t2, b2: { rank: s2.subs.b2.rank, into: s2.subs.b2.expIntoRank }, setupLine, errors: real(errors) });
       await ctx.close(); server7.close();
-    }
+    });
     // ── C77 (cross-family review of PR 1036, 2026-11-15): entries the game cannot show are refused, never read as blank or
     //    stored as exact; removing a voyage, or reading an impossible saved point, ends exactness; a grade's value below the
     //    base is shown as what is used (the base).
-    {
+    await guard('C77', async () => {
       const server8 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2573,11 +2588,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C77', 'Return entries the game cannot show: a minus sign in a number box (read by the browser as blank) and a lower experience at the same exact rank, or a point that says the voyage gave less than half or more than four times the route base (an unchanged point included), are refused with a message and nothing is logged; the corrected entry is kept, exact, and teaches the experience really gained; removing a voyage ends exactness; an impossible saved point (more experience than its rank needs) teaches nothing; the starting rank typed without experience keeps the known progress, with or without a route; an impossible saved point is estimated from 0 progress, without a jump of ranks, and after a voyage without a route its progress is 0, rank typed or not; after a voyage without a route the very same exact point is refused; a rank changed in Setup starts with no known progress and is not exact; a grade whose learned value is below the base shows the base it uses',
         ok, { badInput, lower, unchanged, implausible, t1, e1: s6.subs.e1, e2: s6.subs.e2, sameRouteless, e3: s7.subs.e3, e4: s7.subs.e4, f1: s7.subs.f1, d1: s1.subs.d1, d2: s2.subs.d2, t3, d3: s3.subs.d3, d4: s4.subs.d4, d1AfterSetup: s5.subs.d1, setupLine, errors: real(errors) });
       await ctx.close(); server8.close();
-    }
+    });
 
     // ── C78 Submersibles step S6-1: Earnings ranks the routes with ten logged voyages (equal gil per hour share a position)
     //    and lists the others as "n of 10 voyages" without a position, under a line that says what the figure is.
-    {
+    await guard('C78', async () => {
       const server9 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2607,11 +2622,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C78', 'Earnings ranking (step S6-1): two routes with ten logged voyages and equal gil per hour are ranked and share position 1, a route with three voyages is listed apart as "3 of 10 voyages" without a position, a trip with nothing logged adds nothing, and a line says the figure is logged gil divided by logged hours at sea at the prices shown',
         ok, { got, errors: real(errors) });
       await ctx.close(); server9.close();
-    }
+    });
 
     // ── C81 Submersibles step S6-0: in the send window of a returned sub, "Send on this route" keeps what was typed above it
     //    (a quantity and a "discovered" tick) in the trip and the free company, as "Send again" does.
-    {
+    await guard('C81', async () => {
       const server10 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2643,11 +2658,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C81', 'Send on this route (step S6-0): in the send window of a returned sub, a quantity and a "discovered" tick entered before pressing "Send on this route" are kept in the trip and the free company, and the sub is sent again',
         ok, { hasQuick, newSector, itemId, trip, discovered: s1.fcs.fh.discovered, errors: real(errors) });
       await ctx.close(); server10.close();
-    }
+    });
 
     // ── C83 Submersibles step S6 review fix: "Send on this route" sends the route the window showed, even when a "discovered"
     //    tick entered in the same window would change the advice (rank 145, four slots, every sector found except 3).
-    {
+    await guard('C83', async () => {
       const server14 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2700,13 +2715,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C83', 'Send on this route (step S6 review): the button carries the route the window shows and sends exactly it, also when a "discovered" tick entered in the same window would change the advice (the fresh advice differs from the shown route); the return is logged once. Reopen path: when the shown route cannot be sent once the return is logged, exactly one trip is logged with its typed loot kept, nothing is sent, and the send window opens again with a sentence saying so',
         ok && ok2, { shown, sent, freshAfterTick, firstCase: ok, trips: tripList.length, keptLoot, voyage: s2.subs.l1.voyage || null, reopened, errors: real(errors) });
       await ctx.close(); server14.close();
-    }
+    });
 
     // ── C79 Submersibles step S6-2, as changed by the drop-rates work (owner decision Q3): the community estimate ranks the gil
     //    routes; once a route has ten logged voyages its own log (in merchant gil per hour) is compared with its estimate and
     //    ranks it, and the reason shows both figures and says which decided. Nine voyages do not count. On the Board and in the
     //    send window, without a reload, with nothing fetched and no new field in the stored section.
-    {
+    await guard('C79', async () => {
       const server11 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2756,11 +2771,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C79', 'Advice from the log (step S6-2, owner decision Q3): at the gil step the Board shows the best community route by estimate and, with nine logged voyages on it, "9 of 10 logged voyages" with the estimate deciding; once the tenth is logged through the page, another sub\'s Board button and send window show the same route with the log figure beside the community estimate and "Your own log decided", without a reload, with nothing fetched and no new field in the stored section',
         ok, { before, after, communityRoute, jorzText, sheetAdvice, trips: Object.keys(s1.trips).length, noNew, requests, errors: real(errors) });
       await ctx.close(); server11.close();
-    }
+    });
 
     // ── C80 Submersibles step S6-3: with a ranked logged route, a weak build gets a part note in gil ("more gil per hour")
     //    and its free company is at the gil stage; a build with no better part shows no note and its company is finished.
-    {
+    await guard('C80', async () => {
       const server12 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -2794,12 +2809,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C80', 'Part advice in gil (step S6-3): with a ranked logged route, a weak build shows a part note valued by the community estimate ("estimated to give about +N gil an hour", "counted as worth nothing") and its free company is at the gil stage; a build with no better part shows no part note and its company is finished',
         ok, { weak, goodBuild, stages, errors: real(errors) });
       await ctx.close(); server12.close();
-    }
+    });
 
     // ── C82 Submersibles step S4-1: the Map tab draws the sea chart (read-only): seven sea buttons, found counts, the
     //    Deep-sea Site with 30 sectors and Start, details of J with its slot, no sideways scrolling on a phone, and the
     //    stored section unchanged.
-    {
+    await guard('C82', async () => {
       const server13 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const page = await ctx.newPage();
@@ -2859,13 +2874,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C82', 'Sea chart (step S4-1): the Map tab no longer says it arrives in step S4; it has seven sea buttons with "found n of m"; the Deep-sea Site shows 30 sectors and Start; found counts follow the seeded free company and change with the selector; a sea with nothing found says "not opened yet"; tapping J shows its details with "slot 2"; at a phone width the page does not scroll sideways; the Setup sector step carries the new sentence; the stored section is unchanged',
         ok, { lima: { buttons: lima.buttons, sectors: lima.sectors, start: lima.start, found: lima.found, next: lima.next }, mike: { found: mike.found }, ash: { sectors: ash.sectors }, details, sideDesktop, sidePhone, svgWidth, hitMin, setupText: setupText.slice(-200), same: before === after, errors: real(errors) });
       await ctx.close().catch(() => {}); server13.close();
-    }
+    });
 
     // ── C84 Submersibles step S4-2: the route planner on the Map tab: figures equal ADVISOR.evalRoute for the chosen sub, a
     //    sixth sector cannot be added, a sector above the sub's rank cannot be tapped, a community route button loads its
     //    route, "Send ... on this route..." opens the send window with that route, Cancel leaves the stored section
     //    byte-for-byte as before, and a sub that is Out has the button disabled.
-    {
+    await guard('C84', async () => {
       const server14 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const page = await ctx.newPage();
@@ -2928,13 +2943,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C84', 'Route planner (step S4-2): choosing a sub and tapping two found sectors gives the figures ADVISOR.evalRoute gives for it, with the "calculated" label, and draws a numbered line; a sixth sector cannot be added and a sector above the sub\'s rank cannot be tapped into the route; a community route button loads its route (disabled when the rank or a sector is missing); "Send ... on this route..." opens the send window with that route selected; Cancel leaves the stored section byte-for-byte as before; a sub that is Out has the button disabled',
         ok, { kbFocus, noSub: noSub.slice(0, 120), planned: planned.slice(0, 300), want, drawn, dropped, five, afterSixth, afterHigh, community, loaded, sheetRoute, sheetOn, same: before === afterCancel, outBtn, wideDesktop, errors: real(errors) });
       await ctx.close().catch(() => {}); server14.close();
-    }
+    });
 
     // ── C85 Customizable Recommendations (R5): the panel shows the default order and the switch off; with nothing changed the
     //    save holds no new section; "Move up" by keyboard reorders, keeps focus and announces; the order survives a reload;
     //    with Gil first a sub in an unlocking free company shows another route on the Board button and in the send window (the
     //    same one); modules.submersibles is byte-for-byte unchanged.
-    {
+    await guard('C85', async () => {
       const server15 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const page = await ctx.newPage();
@@ -2989,12 +3004,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C85', 'Customizable Recommendations (R5): the Setup panel shows the default order and the fuel switch off; with nothing changed the save has no recommendations section; "Move up" by keyboard reorders, keeps focus and announces "Gil Farming is now 2 of 4"; the order survives a reload; with Gil first the Board button and the send window show the same route, different from the default one, under the header "Suggested · Gil Farming"; modules.submersibles is byte-for-byte unchanged',
         ok, { first, one, two, reloaded: reloaded.order, stored: stored.recs, boardDefault, boardGil, sheetRoute, sheetHead, unchanged: after.subs === baseline, errors: real(errors) });
       await ctx.close().catch(() => {}); server15.close();
-    }
+    });
 
     // ── C86 Customizable Recommendations (R5): the slider is disabled until the switch is on; the switch and the number are stored;
     //    on a seeded fleet where fuel changes the route the reason carries the fuel sentence; a second page that changed another
     //    field merges with no prompt.
-    {
+    await guard('C86', async () => {
       const server16 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const A = await ctx.newPage(), B = await ctx.newPage();
@@ -3070,14 +3085,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C86', 'Customizable Recommendations (R5): the slider (5 to 50, step 5) and "Use the default" are disabled until the fuel switch is on; the switch and the number are stored; a second page that changed another field from an older copy merges with no prompt, shows no clash or save problem and keeps the first page\'s order in the stored section together with its own change; after a setting change the notification stage logic makes one advice call per submarine, a second call with nothing changed makes none and a call after another change is fresh; on a seeded fleet where fuel changes the route the reason carries the fuel sentence',
         ok, { sliderOff, defaultBtnOff, afterA, sliderOn, afterMerge, statusA, statusB, cache, cacheAfterChange, orderOnB, afterSlider, shown, reloaded, reason, sheetHead, prompts, errors: real(errors) });
       await ctx.close().catch(() => {}); server16.close();
-    }
+    });
 
 
     // ── C87 Customizable Recommendations (R6): five loot pickers, the first without a switch; every list is the same items A to Z;
     //    typing narrows one list in place (text, caret and focus stay; the chosen item stays listed; no match says so; clearing
     //    restores the list) and is not saved; pickers 2 to 5 are disabled until switched on and keep their choice; an item chosen
     //    once is absent elsewhere; choices survive a reload; a stored duplicate shows "counted once"; no sideways scroll on a phone.
-    {
+    await guard('C87', async () => {
       const server17 = await start(PORT5);
       const DATA87 = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
@@ -3187,11 +3202,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C87', 'Customizable Recommendations (R6): Setup shows five loot pickers (a text box and a drop-down each), the first without a switch; every list holds the same items A to Z with "none" first; typing narrows one list in place (the text box keeps its text, caret and focus, the chosen item stays listed, no match shows a disabled "No item matches", clearing restores the list) and is not saved; pickers 2 to 5 are disabled until switched on and keep their choice when switched off; an item chosen in one picker is absent from the others; choices survive a reload; a stored duplicate shows "counted once" and choosing "none" there clears it; a picker that is switched off keeps its item in the other lists, and switching it on later shows "counted once"; no sideways page scroll at 360 px',
         ok, { pickers, empty, total, itemCount, start0: start0.map((s) => [s.sel, s.find]), typed, typed2, narrow: narrow.length, none, restored: restored.length, noteFire, findAfter, p1lack, off3: off3[2], storedNow, reloaded: reloaded.map((s) => [s.val, s.sw, s.sel]), typedGone, dup: dup[1], dupStored, dupAfter: dupAfter[1], offHeld: offHeld[1], offList0: offList0.length, offList2: offList2.length, onLater: onLater[1], onLaterStored, wide, errors: real(errors) });
       await ctx.close().catch(() => {}); server17.close();
-    }
+    });
 
     // ── C88 Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board suggests a route whose sectors
     //    list that item, the reason gives the expected quantity an hour from community drop records, and an item no reachable sector has a record for shows the skip sentence.
-    {
+    await guard('C88', async () => {
       const server18 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const page = await ctx.newPage();
@@ -3232,12 +3247,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C88', 'Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board button and the send window suggest a route whose sectors list that item and the reason gives the expected quantity an hour with its source ("estimate from community drop records"); with an item no sector this sub can reach has a drop record for, the reason names that Loot Farming was skipped for that cause',
         ok, { listing, reach, far, errors: real(errors) });
       await ctx.close().catch(() => {}); server18.close();
-    }
+    });
 
     // ── C89 Customizable Recommendations (R8): two tabs of one browser, one merge unit per control: A picks an item in picker 1 and it
     //    is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item: both choices are stored (with a key
     //    this build does not know, kept), B's picker 1 now shows A's item, neither page shows a save problem, no dialog, no page error.
-    {
+    await guard('C89', async () => {
       const server19 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const A = await ctx.newPage(), B = await ctx.newPage();
@@ -3285,13 +3300,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C89', 'Customizable Recommendations (R8): in two tabs of one browser, A picks an item in picker 1 and it is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item; the save then holds both items, picker 2\'s switch and a key this build does not know, with no old "loot" key; B\'s picker 1 shows A\'s item; A then moves Gil Farming up and "Use the default order" on B, which has not seen that, puts the default order back; neither page shows a save problem, no dialog and no page error',
         ok, { afterA, stored, orderAfterA, orderAfterB, picker1OnB, picker2OnB, statusA, statusB, liveB, prompts, errors: real(errors) });
       await ctx.close().catch(() => {}); server19.close();
-    }
+    });
 
     // ── C90 Submersibles drop rates, work item D3: a seeded rank-145 submarine (everything found, no log) at the gil step: the
     //    Board button and the send window show the same route, which is the best runnable community route by estimated merchant
     //    gil per hour (worked out here from the data); the reason says "Community gil route", "estimate from community drop
     //    records" and a record count, and no sentence is about sector stars.
-    {
+    await guard('C90', async () => {
       const server21 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -3321,12 +3336,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C90', 'Gil Farming (D3): a rank-145 submarine with everything found and no log: the Board button and the send window show the same route, the best runnable community route by estimated merchant gil per hour (worked out from the data), and the reason says "Community gil route", "an estimate from community drop records" with its record count and "not a promise", and says nothing about stars',
         ok, { best, bestText, btn, sheet, errors: real(errors) });
       server21.close();
-    }
+    });
 
     // ── C91 Submersibles drop rates, work item D3: a seeded rank-15 submarine (a few sectors found, Gil Farming first) cannot run
     //    a community route: "Found by the app from community drop rates", with the cause; with ten logged voyages on the route
     //    the log sentence stands beside the estimate and says which decided.
-    {
+    await guard('C91', async () => {
       const server22 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -3363,12 +3378,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C91', 'Gil Farming (D3): a rank-15 submarine with sectors A to I found and Gil Farming first cannot run a community route: the reason says "No community gil route can be run by this submarine now (sectors not found)" and "Found by the app from community drop rates", with an estimate and its record count; with ten seeded logged voyages on that route the log sentence stands beside the community estimate and says "Your own log decided", on the Board and in the send window',
         ok, { plain, logged, shown, errors: real(errors) });
       server22.close();
-    }
+    });
 
     // ── C92 Submersibles drop rates, work item D4: one submarine at the top rank and one at rank 60 in a seeded free company: the
     //    Setup line under the Leveling row names only the first; the Leveling row's buttons still work; the first shows a gil
     //    route, the second a levelling route; when every submarine is at the top rank the line says so.
-    {
+    await guard('C92', async () => {
       const server23 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -3411,13 +3426,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C92', 'The top rank (D4): with one submarine at rank 145 and one at rank 60, the Setup line under the Leveling row names only the first; the Leveling row\'s Move up and Move down still work and the line stays; the rank-145 submarine\'s Board button shows a community gil route with "Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank." and the rank-60 one a levelling route; with every submarine at 145 the line says "every submarine"',
         ok, { TOP, b1, l1, enabled, o1, o2, l2, b2, lAll, errors: real(errors) });
       server23.close();
-    }
+    });
 
     // ── C93 Submersibles drop rates, work item D5: a seeded rank-145 submarine, Loot Farming first and item 22507 (Extravagant
     //    Salvaged Necklace) chosen: the Board button's reason and the send window's reason start "Expected: about" and name the item,
     //    with the source and the record count; the Setup picker note says "Recorded in" (worked out here from the data); a second
     //    picker with an item that has no drop record shows "no drop record yet" and the plan does not count it.
-    {
+    await guard('C93', async () => {
       const server24 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -3448,12 +3463,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C93', 'Loot Farming with rates (D5): a rank-145 submarine, Loot Farming first and Extravagant Salvaged Necklace chosen: the Board button and the send window give a reason that starts "Expected: about", names the item and says "estimate from community drop records" with a record count; the Setup picker note says "Recorded in n sectors (community drop records). Most per survey: ..." (worked out from the data); an item with no drop record shows "no drop record yet" and is not counted in the plan',
         ok, { sheet, btn, notes, expected: [recNoteFor(data, 22507), recNoteFor(data, NONE)], errors: real(errors) });
       server24.close();
-    }
+    });
 
     // ── C94 Submersibles drop rates, work item D6: a seeded rank-85 submarine (Gil Farming first, everything found) whose plan is the
     //    community route OJ: the send window shows a part tip valued by the estimate, with the threshold sentence (retrieval becomes
     //    optimal at O, 160 needed, 148 now) and the "counted as worth nothing" sentence; no gil tip appears beside a non-gil plan.
-    {
+    await guard('C94', async () => {
       const server25 = await start(PORT5);
       const { ctx, errors } = await context();
       const page = await ctx.newPage();
@@ -3487,12 +3502,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C94', 'Part advice by estimate (D6): a rank-85 submarine with Gil Farming first shows a part tip valued by the community estimate that names the threshold crossed ("retrieval becomes optimal at O (160 needed, 148 now)") and says extra surveillance, retrieval or favor above a threshold is counted as worth nothing; with Leveling first the same submarine shows no gil tip',
         ok, { gil, lvl, tip, errors: real(errors) });
       server25.close();
-    }
+    });
 
     // ── C95 Submersibles drop rates, work item D7: at 360 px wide, selecting O on the Map shows "61,069,971 surveys", the
     //    thresholds line and three tier blocks (tier 3 first, the odds worked out here from the data) with a first item's
     //    share, quantities and merchant price; the page does not scroll sideways.
-    {
+    await guard('C95', async () => {
       const server26 = await start(PORT5);
       const { ctx, errors } = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
       const page = await ctx.newPage();
@@ -3523,12 +3538,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C95', 'Drop rates on the Map (D7): at 360 px wide, selecting O shows "Community drop records: 61,069,971 surveys.", the thresholds line (worked out from the data), three collapsed tier blocks with tier 3 first ("Tier 3: p% of surveys by submarines with surveillance 115 or more"), and per item its share of the tier, quantities by retrieval and merchant price; the old comma list is gone; the page does not scroll sideways',
         ok, { got: { tiers: got.tiers, side: got.side, open: got.open }, thr, firstWant, errors: real(errors) });
       server26.close();
-    }
+    });
 
     // ── C96 Submersibles drop rates, work item D7: the send window for OJ (opened from the Map planner) shows the estimate,
     //    one line per sector and the collapsed list of what the route usually brings; the Earnings row of a logged route shows
     //    "Community average for this route" and the own-log figure; the page does not scroll sideways at 360 px.
-    {
+    await guard('C96', async () => {
       const server27 = await start(PORT5);
       const { ctx, errors } = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
       const page = await ctx.newPage();
@@ -3566,12 +3581,65 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C96', 'Drop rates in the send window and Earnings (D7): the send window for OJ (from the Map planner) shows the estimate line, one line per sector ("O: tier 3 in reach, retrieval optimal, second item possible"), a collapsed "What this route usually brings" with the expected items (worked out from the data) and a collapsed "How this is estimated"; the Earnings row of a logged route shows "Community average for this route: about X gil a voyage at merchant prices (...)" and the own-log figure; no sideways scroll at 360 px',
         ok, { estWant, lines: sheet.lines, list: sheet.list, itemsWant, avgWant, earn, side: sheet.side, errors: real(errors) });
       server27.close();
-    }
+    });
+
+    // ── C97 Submersibles voyage gauge (W21): a submarine that is out shows a gauge filled to (now - sent) / (return - sent) from the stored times, named in words for a screen reader;
+    //    0 % at the send time, about half mid-voyage, the gauge follows the clock, none after the return or when a time is missing; not animated with reduced motion; rows do not grow, in the dense Board too ──
+    await guard('C97', async () => {
+      const server28 = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1920, height: 1080 }, reducedMotion: 'reduce' });
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const seed = (nfc) => page.evaluate(async (n) => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        for (let i = 0; i < n; i++) {
+          sec.fcs['f' + i] = { name: 'Co ' + i, world: 'Maduin', order: i, unlockedSlots: 4, discovered: [1, 2, 3] };
+          const base = { fcId: 'f' + i, rank: 50, parts: [3, 4, 1, 2] };
+          if (i === 0) {
+            sec.subs.zero = Object.assign({ slot: 1, name: 'Zero' }, base, { voyage: { sentAt: now + 1000, route: [1], returnAt: now + 4 * H } });
+            sec.subs.mid = Object.assign({ slot: 2, name: 'Mid' }, base, { voyage: { sentAt: now - 2 * H, route: [1], returnAt: now + 2 * H } });
+            sec.subs.fast = Object.assign({ slot: 3, name: 'Fast' }, base, { voyage: { sentAt: now - 40000, route: [1], returnAt: now + 60000 } });
+            sec.subs.nosent = Object.assign({ slot: 4, name: 'Nosent' }, base, { voyage: { route: [1], returnAt: now + 3 * H } });
+          } else {
+            sec.subs['o' + i] = Object.assign({ slot: 1, name: 'Out ' + i }, base, { voyage: { sentAt: now - H, route: [1], returnAt: now + 3 * H } });
+            sec.subs['i' + i] = Object.assign({ slot: 2, name: 'Idle ' + i }, base, { voyage: null });
+          }
+        }
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      }, nfc);
+      await seed(1); await page.reload(); await ready(); await page.waitForSelector('.sub[data-sub="zero"] .vgauge');
+      const read = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.sub[data-sub]')].map((el) => { const g = el.querySelector('.vgauge'); return [el.dataset.sub, g ? { p: +g.style.getPropertyValue('--p'), text: g.nextElementSibling.textContent, hidden: g.getAttribute('aria-hidden'), status: el.dataset.status } : { none: true, status: el.dataset.status }]; })));
+      const first = await read();
+      const mot = await page.evaluate(() => { const g = document.querySelector('.sub[data-sub="mid"] .vgauge'), a = getComputedStyle(g, '::after'), b = getComputedStyle(g, '::before'); return { g: getComputedStyle(g).animationName, a: a.animationName, b: b.animationName, tr: a.transitionDuration, h: Math.round(g.getBoundingClientRect().height) }; });
+      const fastP = first.fast.p;
+      await page.waitForFunction((p) => +document.querySelector('.sub[data-sub="fast"] .vgauge').style.getPropertyValue('--p') > p, fastP, { timeout: 10000 });
+      const followed = await page.evaluate(() => +document.querySelector('.sub[data-sub="fast"] .vgauge').style.getPropertyValue('--p'));
+      // after the return (60 s from the seed): the row turns Back and the gauge is gone
+      await page.waitForSelector('.sub[data-sub="fast"][data-status="back"]', { timeout: 90000 });
+      const after = await read();
+      // the row's height with and without the gauge (3 px in the dense Board), and the gauge inside the row
+      await seed(5); await page.reload(); await ready(); await page.waitForSelector('.sub[data-sub="o1"] .vgauge');
+      const dense = await page.evaluate(() => {
+        const row = document.querySelector('.sub[data-sub="o1"]'), g = row.querySelector('.vgauge'), h0 = row.getBoundingClientRect().height, gr = g.getBoundingClientRect(), rr = row.getBoundingClientRect();
+        g.style.display = 'none'; const h1 = row.getBoundingClientRect().height; g.style.display = '';
+        const subs = [...document.querySelectorAll('.fc .sub[data-status]')]; 
+        return { h0, h1, gaugeH: Math.round(gr.height), inside: gr.top >= rr.top && gr.bottom <= rr.bottom + 0.5, maxBottom: Math.round(Math.max(...subs.map((e) => e.getBoundingClientRect().bottom))), sideways: document.documentElement.scrollWidth - window.innerWidth };
+      });
+      await ctx.close();
+      const pct = (r) => Math.floor(r.p * 100);
+      const ok = first.zero.p === 0 && first.zero.text === 'Voyage 0 percent done' && Math.abs(first.mid.p - 0.5) < 0.01 && /^Voyage 4[89] percent done$|^Voyage 50 percent done$/.test(first.mid.text) && first.zero.hidden === 'true' &&
+        first.nosent.none === true && first.nosent.status === 'out' && followed > fastP && after.fast.none === true && after.fast.status === 'back' && !!after.mid.p &&
+        mot.g === 'none' && mot.a === 'none' && mot.b === 'none' && mot.h >= 3 && dense.h0 === dense.h1 && dense.gaugeH === 3 && dense.inside && dense.sideways <= 0 && dense.maxBottom <= 1080 && real(errors).length === 0;
+      record('C97', 'Voyage gauge (W21): an Out submarine shows a gauge from its stored send and return times: 0 % at the send time (Voyage 0 percent done in words, the bar hidden from screen readers), half mid-voyage, following the clock, absent after the return and when the send time is missing; no animation with reduced motion; the dense Board rows (5 companies) do not grow and stay inside 1920 x 1080',
+        ok, { first, mot, fastP, followed, after: { fast: after.fast, mid: after.mid }, dense, pct: pct(first.mid), errors: real(errors) });
+      server28.close();
+    });
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.
-    {
+    await guard('L1', async () => {
       const server20 = await start(PORT5);
       const seedL1 = (pg) => pg.evaluate(async () => {
         const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} }, parts = [3, 4, 1, 2];
@@ -3598,7 +3666,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const wide = [], shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); };
         const tab = async (t) => { await page.click('[data-tab=' + t + ']'); await page.waitForTimeout(250); };
         const out = {};
-        if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board'); }
+        if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board');
+          // W21: the Out row (Sub Two, sent an hour ago, back in 27 hours) carries one voyage gauge, drawn and named in words
+          out.gauge = await page.evaluate(() => { const r = document.querySelector('.sub[data-status="out"] .vgauge'); return { n: document.querySelectorAll('.sub[data-status="out"] .vgauge').length, h: r ? Math.round(r.getBoundingClientRect().height) : 0, text: r ? r.nextElementSibling.textContent : '' }; }); }
         if (screens.includes('sheet')) {
           await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet[open] .advice'); await page.waitForTimeout(250); await shot('sheet');
           // W20: the same window scrolled to the route, return time and reason (a picture only)
@@ -3641,11 +3711,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map'], false);
-      const ok = p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      const gaugeOk = [d, dd, da, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
+      const ok = gaugeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !p.errors.length && !pl.errors.length && !p390.errors.length;
       record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px',
-        ok, { sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart });
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart });
       server20.close();
-    }
+    });
 
   } finally {
     await browser.close(); server.close();

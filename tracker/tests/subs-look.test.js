@@ -114,6 +114,11 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
         need(k + ' on ' + k + '-bg (row edge, 3:1)', c('--' + k), c('--' + k + '-bg'), 3, where);
         note('ink-2 on ' + k + '-bg (shared ink, printed)', ratio(c('--ink-2'), c('--' + k + '-bg')), where);
       }
+      // W21 voyage gauge: the filled segments (--out) against the unfilled ones (--out at 12% over the row tint) and the row tint
+      const gaugeTrack = colour('color-mix(in srgb, var(--out) 12%, var(--out-bg))', env);
+      need('gauge fill (out) on gauge track (3:1)', c('--out'), gaugeTrack, 3, where);
+      need('gauge fill (out) on out-bg (3:1)', c('--out'), c('--out-bg'), 3, where);
+      note('gauge track on out-bg (printed; the unfilled segments are a guide, the figure is in words)', ratio(gaugeTrack, c('--out-bg')), where);
       // --on-seal: the shared token applyLook() picks through onSeal(), taken from the built look.js
       need('on-seal on seal (shared; primary buttons and .quick)', hexRgb(onSeal(ac)), c('--seal'), 4.5, where);
       // Revision 2 (W13): the inverted slab, the bar field and the card wash. The --back-bg pair above reads the new 16% value.

@@ -44,10 +44,15 @@ function start(port, opts = {}) {
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     fs.createReadStream(file).pipe(res);
   });
-  return new Promise((ok) => server.listen(port, '127.0.0.1', () => { server.standins = standins; ok(server); }));
+  return new Promise((ok, fail) => {
+    server.once('error', (err) => fail(err && err.code === 'EADDRINUSE'
+      ? new Error('Port ' + port + ' is already in use: another check run or test server may be using it. Stop it, or choose another port (PORT=... for check.js).')
+      : err));
+    server.listen(port, '127.0.0.1', () => { server.standins = standins; ok(server); });
+  });
 }
 module.exports = { start, BASE, MOUNTS };
 if (require.main === module) {
   const port = Number(process.argv[2]) || 8418;
-  start(port).then(() => console.log('Command Center test site on http://127.0.0.1:' + port + BASE));
+  start(port).then(() => console.log('Command Center test site on http://127.0.0.1:' + port + BASE)).catch((err) => { console.error(err.message); process.exit(1); });
 }

@@ -579,9 +579,9 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .chart-details .rate-item b { font: 900 17px/1.2 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; }
 .chart-details .rate-item span { font-size: 13px; }
 @media (min-width: 1100px) {
-  .map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 18px; align-items: start; }
+  .map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto minmax(0, 1fr); column-gap: 18px; align-items: start; }
   .map-grid > .planner { grid-column: 2; grid-row: 1; margin-top: 0; }
-  .map-grid > .chart-details { grid-column: 2; grid-row: 2; }
+  .map-grid > .chart-details { grid-column: 2; grid-row: 2 / span 2; }
   .map-grid > .chart-wrap { grid-column: 1; grid-row: 1 / 3; }
   .map-grid > .chart-key { grid-column: 1; grid-row: 3; }
 }
@@ -645,3 +645,13 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
   .subs-mast { padding-top: 6px; padding-bottom: 6px; }
 }
 @media (max-width: 700px) { .planner .route-line b { font-size: 26px; } }
+
+/* W21 voyage gauge: ten skewed segments along the bottom of an Out row, filled by --p (0 to 1, set from the stored send and return times); drawn inside the row's own padding, so rows do not grow; never animated */
+.vgauge { position: absolute; left: calc(var(--field) + 14px); right: 12px; bottom: 2px; height: 6px; pointer-events: none; transform: skewX(-25deg); }
+.vgauge::before, .vgauge::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, var(--out) 0 calc(10% - 3px), transparent calc(10% - 3px) 10%); }
+.vgauge::before { opacity: .12; }
+.vgauge::after { clip-path: inset(0 calc((1 - var(--p, 0)) * 100%) 0 0); }
+.vgauge-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 700px) { .vgauge { left: 12px; bottom: 1px; } }
+@media (min-width: 1400px) { .subs-main:has(.fleet > .fc:nth-child(5)) .vgauge { height: 3px; bottom: 0; left: calc(var(--field) + 10px); } }
+@media (min-width: 701px) { .fc-subs.list .vgauge { height: 3px; bottom: 0; left: calc(var(--field) + 10px); } }

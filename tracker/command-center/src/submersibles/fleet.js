@@ -52,6 +52,12 @@
     if (!sub.voyage) return 'idle';
     return sub.voyage.returnAt > now ? 'out' : 'back';
   };
+  // The share of a voyage already done, 0 to 1, from the send time and the return time already stored; null when either is
+  // missing or the times are not in order (then no gauge is drawn). Clamped: before the send time 0, after the return 1.
+  F.voyageProgress = function (v, now) {
+    if (!v || !(v.sentAt > 0) || !(v.returnAt > 0) || !(v.returnAt > v.sentAt)) return null;
+    return Math.min(1, Math.max(0, (now - v.sentAt) / (v.returnAt - v.sentAt)));
+  };
   F.LABEL = { back: 'Back', out: 'Out', idle: 'Idle', locked: 'Locked' };
   // up: round up to the minute, for time still to go (a countdown started from "2h 5m" reads 2 h 5 min, not 2 h 4 min)
   F.fmtDur = function (ms, up) {

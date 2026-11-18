@@ -1311,6 +1311,18 @@ test('Submersibles: typed game times, statuses and the calendar file (command-ce
   assert.ok(CC.safeKey(F.tripId(F.newId('s'), Date.now())), 'trip ids are valid save keys');
 });
 
+test('Submersibles: the voyage gauge share (W21) is worked out from the stored send and return times, clamped, and absent when either is missing', () => {
+  require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'fleet.js'));
+  const F = globalThis.FLEET, H = 3600000, v = { sentAt: 1000 * H, returnAt: 1004 * H };
+  assert.strictEqual(F.voyageProgress(v, 1000 * H), 0, 'at the send time');
+  assert.strictEqual(F.voyageProgress(v, 1001 * H), 0.25);
+  assert.strictEqual(F.voyageProgress(v, 1002 * H), 0.5, 'mid-voyage');
+  assert.strictEqual(F.voyageProgress(v, 1004 * H), 1, 'at the return time');
+  assert.strictEqual(F.voyageProgress(v, 1009 * H), 1, 'after the return: clamped');
+  assert.strictEqual(F.voyageProgress(v, 990 * H), 0, 'before the send time: clamped');
+  for (const bad of [null, undefined, {}, { returnAt: 5 }, { sentAt: 5 }, { sentAt: 0, returnAt: 5 }, { sentAt: 9, returnAt: 9 }, { sentAt: 9, returnAt: 3 }, { sentAt: 'x', returnAt: 5 }]) assert.strictEqual(F.voyageProgress(bad, 4), null, JSON.stringify(bad));
+});
+
 test('Submersibles: worked-out voyages match the five hand-worked voyages to the second (advisor.js)', () => {
   const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
   require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'advisor.js'));

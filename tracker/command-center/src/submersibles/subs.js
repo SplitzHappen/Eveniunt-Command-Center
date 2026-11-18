@@ -200,12 +200,14 @@
     else if (st === 'idle') info = '<span class="when">not sent</span>';
     var quick = '';
     if (st === 'back' || st === 'idle') { var a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
+    var gauge = '', vp = st === 'out' ? F.voyageProgress(v, now) : null;
+    if (vp !== null) gauge = '<span class="vgauge" aria-hidden="true" data-voy data-sent="' + v.sentAt + '" data-ret="' + v.returnAt + '" style="--p:' + vp.toFixed(4) + '"></span><span class="vgauge-sr" data-voy-text>Voyage ' + Math.floor(vp * 100) + ' percent done</span>';
     var route = v && v.route && v.route.length ? '<span class="route" title="Route as entered">' + esc(routeText(v.route)) + '</span>' : '';
     return '<div class="sub" role="button" tabindex="0" data-sub="' + esc(x.id) + '" data-status="' + st + '">' +
       '<span class="sub-top"><span class="sub-name">' + (withFc ? '<span class="sub-fc">' + esc(x.fc.name || 'Unnamed') + ' · </span>' : '') + esc(s.name || 'Sub ' + s.slot) + '</span>' +
       '<span class="chip ' + st + '">' + F.LABEL[st] + '</span></span>' +
       '<span class="sub-meta"><span title="Rank as you entered it">' + (s.rank ? 'Rank ' + s.rank : 'Rank ?') + '</span><span class="code" title="' + esc(partsTitle(s.parts)) + ' (as you entered them)">' + partsCode(s.parts) + '</span>' + route + '</span>' +
-      '<span class="sub-when">' + info + quick + '</span></div>';
+      '<span class="sub-when">' + info + quick + '</span>' + gauge + '</div>';
   }
   function lockedRow(slot) {
     var u = slotUnlock(slot);
@@ -1387,6 +1389,12 @@
     var now = Date.now();
     $$('[data-until]').forEach(function (el) { el.textContent = F.fmtDur(+el.dataset.until - now, true); });
     $$('[data-since]').forEach(function (el) { el.textContent = F.fmtDur(now - +el.dataset.since); });
+    $$('[data-voy]').forEach(function (el) {
+      var p = F.voyageProgress({ sentAt: +el.dataset.sent, returnAt: +el.dataset.ret }, now);
+      if (p === null) return;
+      el.style.setProperty('--p', p.toFixed(4));
+      var t = el.nextElementSibling; if (t && t.hasAttribute('data-voy-text')) t.textContent = 'Voyage ' + Math.floor(p * 100) + ' percent done';
+    });
   }
 
   // ------------------------------------------------------------------ start
