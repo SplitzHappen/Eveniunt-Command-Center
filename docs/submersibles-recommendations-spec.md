@@ -208,7 +208,7 @@ redrawn and focus returns to the control used (matched by its `data-rec` value);
    `loot`, by name A to Z, first option "none". Typing keeps the options whose name contains the text (case
    ignored); the chosen item always stays listed; no match shows a disabled "No item matches". The text is not
    saved. Pickers 2 to 5 each have a checkbox "Use picker n", off by default; off disables the two controls and
-   keeps the choice. An item chosen in a switched-on picker is left out of the other pickers' lists; a switched-off picker blocks nothing and counts for nothing, and keeps its choice untouched. Duplicates are judged among switched-on pickers only (the earlier one wins); a duplicate arriving from another device, or a picker holding an item an earlier switched-on picker uses being switched on, shows "same as picker n, counted once", and choosing "none" there clears it. Under a chosen item: "Possible in n sectors (community data; drop
+   keeps the choice. An item chosen in a switched-on picker is left out of the other pickers' lists; a switched-off picker blocks nothing and counts for nothing, and keeps its choice untouched. Duplicates are judged among switched-on pickers only (the earlier one wins); a duplicate arriving from another device or another tab, or a picker holding an item an earlier switched-on picker uses being switched on, shows "same as picker n, counted once", and choosing "none" there clears it. Under a chosen item: "Possible in n sectors (community data; drop
    odds are not known)."
 5. **States:** nothing chosen: "No item chosen: Loot Farming is skipped." A `details` block "How the recommendation
    is decided" states the rule of 4.4 in plain words, the 5%, what each objective measures and its limits (2.2), and
@@ -216,7 +216,7 @@ redrawn and focus returns to the control used (matched by its `data-rec` value);
 
 ## 6. Storage
 
-`modules['submersibles-recommendations'] = { choices: { fuel, giveUp, order, loot } }`, written through
+`modules['submersibles-recommendations'] = { choices: { fuel, giveUp, order, loot1 … loot5, use2 … use5 } }` (section 10.3), written through
 `CC.writeSection` with its own `{ rev, base }` (the Submersibles section's `SH.rev` is left alone, so its next write
 merges as it does after any other page's save).
 
@@ -225,15 +225,16 @@ merges as it does after any other page's save).
 | `fuel` | `true` or `false` | anything but `true` is off |
 | `giveUp` | whole number 5 to 50, multiple of 5 | `RECS.GIVE_UP` |
 | `order` | the four keys `unlock`, `level`, `gil`, `loot`, each once | the default order |
-| `loot` | five pairs `[itemId, on]`; 0 means none; the first is always on | unknown item or a later switched-on duplicate of a switched-on picker counts as none (a switched-off picker keeps its item and is not judged); missing pairs are `[0, false]`, the first `[0, true]` |
+| `loot1` … `loot5` | whole number: the item id of picker 1 to 5; 0 means none | none; an id the data does not know, or one an earlier switched-on picker already uses while this picker is on, reads as none and the stored number stays (a switched-off picker keeps its item and is not judged) |
+| `use2` … `use5` | `true` or `false`: picker 2 to 5 is switched on | anything but `true` is off; picker 1 is always on (`use1` is never written or read) |
 
-- Nothing is written until the player changes a setting; then the write is a copy of the stored section in which only the fields the player changed are replaced (within `loot`, only the changed picker's pair); everything else stays exactly as stored, including unknown fields, unknown keys and unknown item ids (`RECS.store`). A page that merged another page's write keeps that merged section plus only its own later changes. A field nobody stored stays absent, so a merge never sees a change that was not made; `RECS.check` fills in the rest when reading. A page that found no section has no merge base.
+- Nothing is written until the player changes a setting; then the write is a copy of the stored section in which only the keys the player changed are replaced (a picker's item and its switch are two keys); everything else stays exactly as stored, including unknown fields, unknown keys, an old `loot` array and unknown item ids (`RECS.store`). A page that merged another page's write keeps that merged section plus only its own later changes. A field nobody stored stays absent, so a merge never sees a change that was not made; `RECS.check` fills in the rest when reading. A page that found no section has no merge base.
   `RECS.check` only reads: a bad stored value is never rewritten on its own.
 - **Why no `save.js` change (read in the source, not run):** `checkModules` passes a section without a checker
   through `clean()` and keeps it; `lists` is such a section today and `tracker/tests/core.test.js` covers its
   survival in backups, merges and other modules' writes. Every embedded copy of `save.js`, old or new, therefore
   keeps the new section. An older Submersibles page ignores it and advises as today.
-- **Across devices:** each of the four fields is its own merge unit. Changed on one device: taken. Changed
+- **Across devices:** each stored key is its own merge unit. Changed on one device: taken. Changed
   differently on both: the existing "which one is right?" prompt, labelled "submersibles-recommendations: choices ›
   order" (a nicer label needs `save.js`; known limit). Nothing is deleted without the player's choice.
 

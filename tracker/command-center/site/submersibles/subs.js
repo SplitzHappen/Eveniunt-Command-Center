@@ -46,41 +46,26 @@
   // ------------------------------------------------------------------ the one save
   var SH = { rev: null, base: null, ready: false, timer: null, problem: null, chars: [], editSeq: 0 };
   var S = { fcs: {}, subs: {}, trips: {}, settings: {} };
-  // The player's recommendation settings: a save section of their own (spec section 6), with its own { rev, base }. Nothing is
-  // written until a setting changes; RECS.check only reads, so a bad stored value is replaced here and never rewritten.
-  var RC = { seq: 0, edits: [], raw: null, rev: null, base: null, choices: null, pending: 0, chain: Promise.resolve(), live: '', focus: null, find: ['', '', '', '', ''], items: null };
-  function recsRead(doc, rev) {
-    var sec = doc.modules[RECS_NAME];
-    RC.raw = sec ? JSON.parse(JSON.stringify(sec)) : null; RC.rev = rev; RC.choices = null; RC.edits = [];
-    // nothing stored: no base. A write holds only the fields stored or changed (RECS.store), so what another page stored meanwhile for any other field is kept
-    RC.base = sec ? JSON.parse(JSON.stringify(sec)) : null;
+  // The player's recommendation settings: a save section of their own (spec sections 6 and 10), one stored key per control. The write
+  // path is RECS.keeper (recs.js); the page keeps only what the panel needs. Nothing is written until a setting changes; RECS.check only reads.
+  var RC = { k: null, choices: null, shown: null, live: '', focus: null, find: ['', '', '', '', ''], items: null };
+  function recsRead(doc, rev) { RC.k.read(doc.modules[RECS_NAME], rev); RC.choices = null; }
+  function recsNow() { if (RC.choices) return RC.choices; var c = window.RECS.check(RC.k.raw, D); if (D) RC.choices = c; return c; }
+  // after every write attempt: success tells the other pages; a failure drops the changes it carried (the panel returns to the last saved settings)
+  function recsDone(res) {
+    RC.choices = null;
+    if (res.ok) pushSync();
+    else {
+      var msg = res.error && res.error.message ? res.error.message : String(res.error);
+      RC.live = 'Not saved. The panel shows the last saved settings again.';
+      var live = $('[data-recs-live]'); if (live) live.textContent = RC.live;
+      setStatus('Recommendation settings not saved on this device: ' + msg + ' The panel shows the last saved settings again; make the change again if you still want it.');
+    }
+    if (JSON.stringify(recsNow()) !== RC.shown) redrawRecs();
   }
-  function recsNow() { if (RC.choices) return RC.choices; var c = window.RECS.check(RC.raw, D); if (D) RC.choices = c; return c; }
-  function recsWrite() {
-    RC.pending++;
-    var snapSeq = 0;
-    RC.chain = RC.chain.then(function () {
-      snapSeq = RC.seq; // the changes up to here are in this write's snapshot
-      var snap = JSON.parse(JSON.stringify(RC.raw)); // only the fields stored or changed (set by recsChange)
-      return CC.writeSection(RECS_NAME, snap, { rev: RC.rev, base: RC.base }).then(function (r) {
-        RC.rev = r.rev; RC.base = JSON.parse(JSON.stringify(r.section)); SH.updated = r.doc.updated || Date.now();
-        var later = RC.edits.filter(function (e) { return e.seq > snapSeq; });
-        RC.edits = later;
-        if (r.merged) {
-          // our copy becomes the merged section plus only the fields changed here since the snapshot, so the next write
-          // (whose base is the merged section) cannot delete what another page stored
-          var was = JSON.stringify(recsNow()), raw = JSON.parse(JSON.stringify(r.section));
-          later.forEach(function (e) { raw = window.RECS.store(raw, e.next, e.fields, e.pickers); });
-          RC.raw = raw; RC.choices = null;
-          if (JSON.stringify(recsNow()) !== was) redrawRecs();
-        }
-        pushSync();
-      });
-    }).catch(function (e) {
-      RC.edits = RC.edits.filter(function (x) { return x.seq > snapSeq; });
-      setStatus('Recommendation settings not saved on this device: ' + e.message);
-    }).then(function () { RC.pending--; });
-  }
+  RC.k = window.RECS.keeper(function (section, known) {
+    return CC.writeSection(RECS_NAME, section, known).then(function (r) { SH.updated = r.doc.updated || Date.now(); return r; });
+  }, recsDone);
   function emptySection() { return { fcs: {}, subs: {}, trips: {}, settings: {} }; }
   function setSection(sec) { S = sec ? JSON.parse(JSON.stringify(sec)) : emptySection(); ['fcs', 'subs', 'trips', 'settings'].forEach(function (k) { if (!S[k]) S[k] = {}; }); }
   function loadSave() {
@@ -151,7 +136,7 @@
       SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || SH.notify;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
       setSection(doc.modules.submersibles);
-      if (!RC.pending) recsRead(doc, r.rev);
+      if (!RC.k.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
         if (JSON.stringify([SH.chars, S, recsNow()]) !== before && !W) render();
         pushSync();
@@ -352,8 +337,7 @@
   function sectorsWith(id) { return Object.keys(D.loot || {}).filter(function (k) { return (D.loot[k] || []).indexOf(id) >= 0; }).length; }
   // a stored duplicate: the item this picker holds in the save but which an earlier picker already counts (check() has set it to none)
   function recDupOf(i) {
-    var c = recsNow(), raw = RC.raw && RC.raw.choices && Array.isArray(RC.raw.choices.loot) ? RC.raw.choices.loot[i] : null;
-    var id = Array.isArray(raw) && Number.isInteger(raw[0]) ? raw[0] : 0;
+    var c = recsNow(), id = window.RECS.held(RC.k.raw, i);
     if (!id || c.loot[i][0] || !c.loot[i][1]) return null; // only a switched-on picker can be a duplicate
     for (var j = 0; j < i; j++) if (c.loot[j][1] && c.loot[j][0] === id) return { id: id, of: j + 1 };
     return null;
@@ -422,7 +406,7 @@
   }
   function redrawRecs(focus) {
     var body = $('[data-recs-body]'); if (!body) return;
-    body.innerHTML = recsBodyHtml();
+    body.innerHTML = recsBodyHtml(); RC.shown = JSON.stringify(recsNow());
     var live = $('[data-recs-live]'); if (live && RC.live != null) live.textContent = RC.live;
     if (focus) {
       var el = $('[data-rec="' + focus + '"]', body);
@@ -430,21 +414,18 @@
       if (el) el.focus();
     }
   }
-  // one setting changed: normalise, store the fields already stored plus the changed ones through the section's own write, redraw only this panel
+  // one setting changed: the patch of stored keys the change touched goes to the keeper, which writes it; only this panel is redrawn
   function recsChange(mut, focus, live, forcePicker) {
     var R = window.RECS, was = recsNow(), c = JSON.parse(JSON.stringify(was));
     mut(c);
-    var next = R.check({ choices: c }, D), it = R.intent(was, c);
+    var patch = R.intent(was, c);
     var force = typeof forcePicker === 'number' && forcePicker >= 0; // a stored duplicate cleared or replaced: a change although the settings read the same
-    if (force) { if (it.fields.indexOf('loot') < 0) it.fields.push('loot'); if (!it.pickers.some(function (p) { return p.i === forcePicker; })) it.pickers.push({ i: forcePicker, id: true, on: false }); }
-    var same = !it.fields.length || (!force && !R.changed(was, next).length);
-    if (!same) {
-      RC.raw = R.store(RC.raw, c, it.fields, it.pickers); RC.choices = null;
-      RC.edits.push({ seq: ++RC.seq, next: JSON.parse(JSON.stringify(c)), fields: it.fields, pickers: it.pickers });
-    }
+    if (force) patch['loot' + (forcePicker + 1)] = c.loot[forcePicker][0];
+    var none = !Object.keys(patch).length || (!force && JSON.stringify(R.check(R.store(RC.k.raw, patch), D)) === JSON.stringify(was));
+    if (!none) RC.k.change(patch);
+    RC.choices = null;
     RC.live = typeof live === 'function' ? live(recsNow()) : live || '';
     redrawRecs(focus);
-    if (!same) recsWrite();
   }
   function onRecsClick(b) {
     var R = window.RECS, v = b.dataset.rec, m = /^(up|down)-(.+)$/.exec(v);

@@ -1,8 +1,9 @@
 // Eveniunt Command Center, Submersibles: customizable recommendations (item R1, docs/submersibles-recommendations-spec.md).
-// - The player's settings { fuel, giveUp, order, loot }: defaults, checking what was stored, and a short signature.
+// - The player's settings { fuel, giveUp, order, loot }: defaults, checking what was stored (one stored key per control, spec
+//   section 10.3), the patch a change makes, the page's write path (RECS.keeper) and a short signature.
 // - The staged choice (RECS.pick): the player's ranking decides in order, each priority keeping the routes within a
 //   fixed 5% band of the best one for it; with fuel efficiency on, the top priority gets the player's allowance instead.
-// Pure: no page, no storage and no game data besides the loot lists it is handed. Nothing calls it yet.
+// No page and no storage of its own (the page hands the keeper its write function) and no game data besides the loot lists it is handed.
 // Plain script: attaches to globalThis.RECS, so the choice runs in Node tests too.
 (function () {
   'use strict';
@@ -43,7 +44,9 @@
     return out;
   };
 
-  // The stored section ({ choices }) read as settings. Only reads: a bad value is replaced here, never rewritten.
+  // The stored section ({ choices }) read as settings (spec 10.3). One key per control inside choices: fuel, giveUp, order,
+  // loot1 to loot5 (an item id; 0 is none) and use2 to use5 (picker n is on). Picker 1 is always on: use1 is never read or written.
+  // Only reads: a bad value is replaced here, never rewritten. An old choices.loot array is not read (spec D16).
   R.check = function (raw, data) {
     var d = R.defaults();
     var c = raw && typeof raw === 'object' && raw.choices && typeof raw.choices === 'object' && !Array.isArray(raw.choices) ? raw.choices : {};
@@ -51,66 +54,89 @@
     var g = c.giveUp;
     if (Number.isInteger(g) && g >= R.GIVE_MIN && g <= R.GIVE_MAX && g % R.GIVE_STEP === 0) out.giveUp = g;
     if (Array.isArray(c.order) && c.order.length === R.KEYS.length && R.KEYS.every(function (k) { return c.order.indexOf(k) >= 0; })) out.order = c.order.slice();
-    if (Array.isArray(c.loot)) {
-      var known = {}, taken = {};
-      R.items(data).forEach(function (it) { known[it.id] = 1; });
-      out.loot = d.loot.map(function (blank, i) {
-        var p = c.loot[i];
-        if (!Array.isArray(p)) return blank;
-        var on = i === 0 || p[1] === true;
-        // unknown, or a duplicate of an earlier switched-on picker: none. A switched-off picker keeps its stored choice and counts for nothing.
-        var id = Number.isInteger(p[0]) && known[p[0]] && !(on && taken[p[0]]) ? p[0] : 0;
-        if (id && on) taken[id] = 1;
-        return [id, on];
-      });
-    }
-    return out;
-  };
-
-  // The fields that differ between two settings objects, in the order of R.FIELDS.
-  R.FIELDS = ['fuel', 'giveUp', 'order', 'loot'];
-  R.changed = function (a, b) {
-    return R.FIELDS.filter(function (k) { return JSON.stringify(a && a[k]) !== JSON.stringify(b && b[k]); });
-  };
-
-  // What the player's change touched: the fields of R.FIELDS that differ between the settings read (was) and the settings
-  // after the change (now), and within loot the pickers that differ, each with which part (id, on) changed.
-  R.intent = function (was, now) {
-    var fields = R.changed(was, now), pickers = [];
-    if (fields.indexOf('loot') >= 0) {
-      for (var i = 0; i < R.PICKERS; i++) {
-        var a = was && was.loot && was.loot[i] || [], b = now && now.loot && now.loot[i] || [];
-        if (JSON.stringify(a) !== JSON.stringify(b)) pickers.push({ i: i, id: a[0] !== b[0], on: a[1] !== b[1] });
-      }
-    }
-    return { fields: fields, pickers: pickers };
-  };
-
-  // What a write stores: a deep copy of the stored section in which only the fields the player changed are replaced, each
-  // with its new value from `next` (the settings after the change). Everything else stays exactly as stored: unchanged
-  // fields (even bad or unknown values), unknown fields, unknown keys beside choices, unknown item ids. Within loot only
-  // the changed pickers' pairs are replaced (pickers: [{ i, id, on }] from R.intent; omitted: the whole list). A field
-  // nobody stored stays absent, so a merge never sees a change that was not made; R.check fills in the rest when reading.
-  var copy = function (v) { return JSON.parse(JSON.stringify(v)); };
-  R.store = function (raw, next, changed, pickers) {
-    var out = raw && typeof raw === 'object' && !Array.isArray(raw) ? copy(raw) : {};
-    if (!out.choices || typeof out.choices !== 'object' || Array.isArray(out.choices)) out.choices = {};
-    var ch = out.choices;
-    (changed || []).forEach(function (k) {
-      if (k === 'loot' && Array.isArray(pickers) && Array.isArray(ch.loot)) {
-        pickers.forEach(function (p) {
-          while (ch.loot.length < p.i) ch.loot.push(copy(next.loot[ch.loot.length]));
-          var pair = ch.loot[p.i];
-          if (!Array.isArray(pair)) pair = copy(next.loot[p.i]);
-          else {
-            if (p.id || pair[0] === undefined) pair[0] = next.loot[p.i][0];
-            if (p.on || pair[1] === undefined) pair[1] = next.loot[p.i][1];
-          }
-          ch.loot[p.i] = pair;
-        });
-      } else ch[k] = copy(next[k]);
+    var known = {}, taken = {};
+    R.items(data).forEach(function (it) { known[it.id] = 1; });
+    out.loot = d.loot.map(function (blank, i) {
+      var on = i === 0 || c['use' + (i + 1)] === true, v = c['loot' + (i + 1)];
+      // unknown, or a duplicate of an earlier switched-on picker: none. A switched-off picker keeps its stored choice and counts for nothing.
+      var id = Number.isInteger(v) && known[v] && !(on && taken[v]) ? v : 0;
+      if (id && on) taken[id] = 1;
+      return [id, on];
     });
     return out;
+  };
+
+  // The stored whole number for picker i (0 to 4), 0 if none: what the save holds, before check() judged it.
+  R.held = function (raw, i) {
+    var c = raw && typeof raw === 'object' && raw.choices && typeof raw.choices === 'object' ? raw.choices : null, v = c ? c['loot' + (i + 1)] : 0;
+    return Number.isInteger(v) && v > 0 ? v : 0;
+  };
+
+  var copy = function (v) { return JSON.parse(JSON.stringify(v)); };
+  var same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
+
+  // What the player's change touched: a patch { key: value } of the stored keys whose control differs between two settings
+  // objects (fuel, giveUp, order by value; per picker n, loot<n> when the item differs and, from n = 2, use<n> when the switch differs).
+  R.intent = function (was, now) {
+    var patch = {};
+    ['fuel', 'giveUp', 'order'].forEach(function (k) { if (!same(was && was[k], now && now[k])) patch[k] = copy(now[k]); });
+    for (var i = 0; i < R.PICKERS; i++) {
+      var a = was && was.loot && was.loot[i] || [], b = now && now.loot && now.loot[i] || [];
+      if (a[0] !== b[0]) patch['loot' + (i + 1)] = b[0];
+      if (i > 0 && a[1] !== b[1]) patch['use' + (i + 1)] = b[1];
+    }
+    return patch;
+  };
+
+  // What a write stores: a deep copy of the raw section (or {}) with choices[key] = value for each key of the patch. Nothing else
+  // is touched (unknown fields, keys and item ids stay as stored); the input is not modified. A key nobody stored stays absent.
+  R.store = function (raw, patch) {
+    var out = raw && typeof raw === 'object' && !Array.isArray(raw) ? copy(raw) : {};
+    if (!out.choices || typeof out.choices !== 'object' || Array.isArray(out.choices)) out.choices = {};
+    Object.keys(patch || {}).forEach(function (k) { out.choices[k] = copy(patch[k]); });
+    return out;
+  };
+
+  // The section with each edit's patch stored in order; null with no edits stays null.
+  R.rebase = function (section, edits) {
+    var out = section == null ? null : copy(section);
+    (edits || []).forEach(function (e) { out = R.store(out, e.patch); });
+    return out;
+  };
+
+  // This page's write path (spec 10.4). write(section, known) resolves { rev, section, merged } (the page hands in
+  // CC.writeSection); done(result) is called after every write attempt with { ok: true, merged } or { ok: false, error }.
+  // State: raw (what the panel reads), base and rev (what was last read or written), edits ({ seq, patch }: changes not yet
+  // stored) and pending (changes not yet settled). change(patch) never rejects; writes run one at a time, in order.
+  R.keeper = function (write, done) {
+    var K = { raw: null, base: null, rev: null, edits: [], pending: 0, seq: 0, chain: Promise.resolve() };
+    var tell = function (res) { try { if (typeof done === 'function') done(res); } catch (e) { /* the page's reporting must not break the queue */ } };
+    K.read = function (section, rev) {
+      K.base = section ? copy(section) : null; K.rev = rev;
+      K.raw = R.rebase(K.base, K.edits);
+    };
+    K.change = function (patch) {
+      if (!patch || !Object.keys(patch).length) return Promise.resolve();
+      K.raw = R.store(K.raw, patch);
+      K.edits.push({ seq: ++K.seq, patch: copy(patch) });
+      K.pending++;
+      K.chain = K.chain.then(function () {
+        if (!K.edits.length) return; // an earlier write carried this change
+        var snapSeq = K.edits[K.edits.length - 1].seq, upTo = function (e) { return e.seq > snapSeq; };
+        return Promise.resolve().then(function () { return write(copy(K.raw), { rev: K.rev, base: K.base }); }).then(function (r) {
+          K.rev = r.rev; K.base = copy(r.section);
+          K.edits = K.edits.filter(upTo);
+          K.raw = R.rebase(r.section, K.edits);
+          tell({ ok: true, merged: !!r.merged });
+        }, function (error) {
+          K.edits = K.edits.filter(upTo);
+          K.raw = R.rebase(K.base, K.edits);
+          tell({ ok: false, error: error });
+        });
+      }).then(function () { K.pending--; });
+      return K.chain;
+    };
+    return K;
   };
 
   // The chosen item ids: picker on and an item set, each once.

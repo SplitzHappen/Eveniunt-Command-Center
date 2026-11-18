@@ -56,6 +56,7 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   before it farms gil, until the player moves Gil Farming up.
 - The default fuel allowance was tuned on unlocking and levelling only, with four-slot test submarines; 10% is the first
   allowance at which a 5-point step stops paying, not the best value for every player.
-- The five loot pickers are one setting: two devices changing different pickers at once get the "which one is right?"
-  choice.
+- Each recommendation control is stored on its own, so different controls changed in two tabs or on two devices are
+  both kept. The same control changed in two tabs on one device takes the later change without asking, as every part
+  of the save does.
 - `check.js` check C26b (real push delivery) does not run in automated environments.

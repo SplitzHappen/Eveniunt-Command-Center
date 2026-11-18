@@ -3055,7 +3055,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const page = await ctx.newPage();
       const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
-      const stored = () => page.evaluate(async () => { const r = await CC.read(); const m = CC.checkDoc(r.raw).modules['submersibles-recommendations']; return m ? JSON.stringify(m.choices.loot) : null; });
+      const stored = () => page.evaluate(async () => { const r = await CC.read(); const m = CC.checkDoc(r.raw).modules['submersibles-recommendations']; return m ? JSON.stringify([1, 2, 3, 4, 5].map((n) => [m.choices['loot' + n] || 0, n === 1 || m.choices['use' + n] === true])) : null; });
       const toSetup = async () => { await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel] .rec-picker'); };
       const opts = (i) => page.$$eval('[data-rec="loot-' + i + '"] option', (os) => os.map((o) => ({ v: o.value, t: o.textContent, d: o.disabled })));
       const sorted = (list) => list.filter((o) => o.v !== '0' && o.v !== '-1').every((o, k, a) => k === 0 || o.t.toLowerCase() >= a[k - 1].t.toLowerCase());
@@ -3121,7 +3121,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const reNote = reloaded[0].note;
       const typedGone = await page.$eval('[data-rec-find="0"]', (e) => e.value);
       // a stored duplicate: picker 2 holds the item picker 1 already counts
-      await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot: [[12928, true], [12928, true], [0, false], [0, false], [0, false]] } }, { rev: r.rev, base: null }); });
+      await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['unlock', 'level', 'gil', 'loot'], loot1: 12928, loot2: 12928, use2: true, loot3: 0, use3: false, loot4: 0, use4: false, loot5: 0, use5: false } }, { rev: r.rev, base: null }); });
       await page.reload(); await ready(); await toSetup();
       const dup = await state();
       // a stored duplicate can be cleared: choosing "none" in that picker is a change
@@ -3129,7 +3129,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.waitForTimeout(800);
       const dupStored = JSON.parse(await stored()), dupAfter = await state();
       // a switched-off picker blocks nothing: its item stays in the other lists, and switching it on later shows the note
-      await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { loot: [[0, true], [12928, false], [0, false], [0, false], [0, false]] } }, { rev: r.rev, base: null }); });
+      await page.evaluate(async () => { const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { loot1: 0, loot2: 12928, use2: false, loot3: 0, use3: false, loot4: 0, use4: false, loot5: 0, use5: false } }, { rev: r.rev, base: null }); });
       await page.reload(); await ready(); await toSetup();
       const offHeld = await state(), offList0 = await opts(0), offList2 = await opts(2);
       await page.selectOption('[data-rec="loot-0"]', '12928');
@@ -3192,10 +3192,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       };
       await page.goto(ROOT5 + 'submersibles/'); await ready();
       const base = { fuel: false, giveUp: 10, order: ['loot', 'unlock', 'level', 'gil'] };
-      await seed(Object.assign({}, base, { loot: [[item, true], [0, false], [0, false], [0, false], [0, false]] }));
+      await seed(Object.assign({}, base, { loot1: item }));
       await page.reload(); await ready();
       const reach = await read();
-      await seed(Object.assign({}, base, { loot: [[2, true], [0, false], [0, false], [0, false], [0, false]] })); // Fire Shard: only a sector far out of this sub's reach
+      await seed(Object.assign({}, base, { loot1: 2 })); // Fire Shard: only a sector far out of this sub's reach
       await page.reload(); await ready();
       const far = await read();
       await ctx.close();
@@ -3204,6 +3204,50 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C88', 'Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board button and the send window suggest a route whose sectors list that item and the reason says "drop odds are not known"; with an item no sector this sub can reach lists, the reason names that Loot Farming was skipped for that cause',
         ok, { listing, reach, far, errors: real(errors) });
       await ctx.close().catch(() => {}); server18.close();
+    }
+
+    // ── C89 Customizable Recommendations (R8): two tabs of one browser, one merge unit per control: A picks an item in picker 1 and it
+    //    is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item: both choices are stored (with a key
+    //    this build does not know, kept), B's picker 1 now shows A's item, neither page shows a save problem, no dialog, no page error.
+    {
+      const server19 = await start(PORT5);
+      const { ctx, errors } = await context({ deviceScaleFactor: 2 });
+      const A = await ctx.newPage(), B = await ctx.newPage();
+      let prompts = 0;
+      for (const pg of [A, B]) pg.on('dialog', (d) => { prompts++; d.dismiss().catch(() => {}); });
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await A.goto(ROOT5 + 'submersibles/'); await ready(A);
+      await A.evaluate(async () => {
+        const r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { loot4: 999999999, use4: true } }, { rev: r.rev, base: null });
+      });
+      await A.reload(); await ready(A);
+      await B.goto(ROOT5 + 'submersibles/'); await ready(B);
+      for (const pg of [A, B]) { await pg.click('[data-tab=setup]'); await pg.waitForSelector('[data-recs-panel] .rec-picker'); }
+      const raw = () => A.evaluate(async () => { const r = await CC.read(); const m = CC.checkDoc(r.raw).modules['submersibles-recommendations']; return m || null; });
+      // B stops hearing A (same page id), so its writes really are writes from a stale copy
+      const aId = await A.evaluate(() => CC.PAGE_ID);
+      await B.evaluate((id) => { CC.PAGE_ID = id; }, aId);
+      await A.selectOption('[data-rec="loot-0"]', '12928'); // A: picker 1 gets Empty Crystal
+      await A.waitForTimeout(800);
+      const afterA = await raw();
+      await B.check('[data-rec="loot-on-1"]'); // B: picker 2 on
+      await B.waitForTimeout(800);
+      await B.selectOption('[data-rec="loot-1"]', '2'); // B: picker 2 gets Fire Shard
+      await B.waitForTimeout(800);
+      const stored = await raw();
+      const c = (stored && stored.choices) || {};
+      const picker1OnB = await B.$eval('[data-rec="loot-0"]', (el) => el.value);
+      const picker2OnB = await B.$eval('[data-rec="loot-1"]', (el) => ({ value: el.value, on: document.querySelector('[data-rec="loot-on-1"]').checked }));
+      const statusA = await A.$eval('#status', (el) => el.textContent), statusB = await B.$eval('#status', (el) => el.textContent);
+      const liveB = await B.$eval('[data-recs-live]', (el) => el.textContent);
+      await ctx.close();
+      const ok = afterA && afterA.choices.loot1 === 12928 &&
+        c.loot1 === 12928 && c.loot2 === 2 && c.use2 === true && c.loot4 === 999999999 && c.use4 === true && !('loot' in c) &&
+        picker1OnB === '12928' && picker2OnB.value === '2' && picker2OnB.on === true &&
+        statusA === '' && statusB === '' && !/Not saved/.test(liveB) && prompts === 0 && real(errors).length === 0;
+      record('C89', 'Customizable Recommendations (R8): in two tabs of one browser, A picks an item in picker 1 and it is saved; B, loaded earlier and not reloaded, switches picker 2 on and picks another item; the save then holds both items, picker 2\'s switch and a key this build does not know, with no old "loot" key; B\'s picker 1 shows A\'s item; neither page shows a save problem, no dialog and no page error',
+        ok, { afterA, stored, picker1OnB, picker2OnB, statusA, statusB, liveB, prompts, errors: real(errors) });
+      await ctx.close().catch(() => {}); server19.close();
     }
 
   } finally {

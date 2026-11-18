@@ -365,7 +365,7 @@ test('R1: the section submersibles-recommendations survives checkDoc, another mo
   CC.resetMemory();
   const NAME = 'submersibles-recommendations';
   assert.ok(CC.MODULE.test(NAME), 'the name is a valid module name');
-  const rec = { choices: { fuel: true, giveUp: 20, order: ['gil', 'unlock', 'level', 'loot'], loot: [[5665, true], [0, false], [0, false], [0, false], [0, false]] } };
+  const rec = { choices: { fuel: true, giveUp: 20, order: ['gil', 'unlock', 'level', 'loot'], loot1: 5665, loot2: 0, use2: false } };
   // checkDoc
   const doc = { app: CC.APP, v: CC.VERSION, updated: 1, chars: [], modules: { [NAME]: rec }, device: {}, moved: {} };
   assert.deepStrictEqual(CC.checkDoc(doc).modules[NAME], rec, 'checkDoc keeps it exactly');
@@ -430,19 +430,19 @@ test('R1: check reads every row of the storage table and never fails on rubbish'
   // order: the four keys, each once
   assert.deepEqual(RECS.check(sec({ order: ['gil', 'loot', 'level', 'unlock'] }), D).order, ['gil', 'loot', 'level', 'unlock']);
   for (const v of [['gil', 'gil', 'level', 'unlock'], ['gil', 'loot', 'level'], ['gil', 'loot', 'level', 'unlock', 'x'], ['a', 'b', 'c', 'd'], 'gil', null]) assert.deepEqual(RECS.check(sec({ order: v }), D).order, dflt.order);
-  // loot: five pairs; 0 is none; the first is always on; unknown item or later duplicate is none; missing pairs are [0, false]
-  assert.deepEqual(RECS.check(sec({ loot: [[a.id, false], [b.id, true]] }), D).loot, [[a.id, true], [b.id, true], [0, false], [0, false], [0, false]]);
-  assert.deepEqual(RECS.check(sec({ loot: [[a.id, true], [b.id, false], [c.id, 1], [0, true], [a.id, true]] }), D).loot, [[a.id, true], [b.id, false], [c.id, false], [0, true], [0, true]]);
-  assert.deepEqual(RECS.check(sec({ loot: [[999999999, true], 'x', null, [a.id], [1.5, true], [b.id, true]] }), D).loot, [[0, true], [0, false], [0, false], [a.id, false], [0, true]]);
-  assert.deepEqual(RECS.check(sec({ loot: 'x' }), D).loot, dflt.loot);
+  // loot1 to loot5 and use2 to use5: 0 is none; picker 1 is always on; unknown item or later duplicate is none; missing keys are none and off
+  assert.deepEqual(RECS.check(sec({ loot1: a.id, use2: true, loot2: b.id }), D).loot, [[a.id, true], [b.id, true], [0, false], [0, false], [0, false]]);
+  assert.deepEqual(RECS.check(sec({ use1: false, loot1: a.id, loot2: b.id, use2: false, loot3: c.id, use3: 1, use4: true, loot5: a.id, use5: true }), D).loot, [[a.id, true], [b.id, false], [c.id, false], [0, true], [0, true]], 'use1 is never read');
+  assert.deepEqual(RECS.check(sec({ loot1: 999999999, loot2: 'x', loot3: null, loot4: a.id, use4: 'true', loot5: 1.5, use5: true }), D).loot, [[0, true], [0, false], [0, false], [a.id, false], [0, true]]);
+  assert.deepEqual(RECS.check(sec({ loot1: 'x', loot2: [a.id], use2: [] }), D).loot, dflt.loot);
   // the same raw value gives the same result and the input is not touched
-  const raw = sec({ fuel: true, giveUp: 20, order: ['gil', 'loot', 'level', 'unlock'], loot: [[a.id, true]] });
+  const raw = sec({ fuel: true, giveUp: 20, order: ['gil', 'loot', 'level', 'unlock'], loot1: a.id });
   const before = JSON.stringify(raw); RECS.check(raw, D); assert.equal(JSON.stringify(raw), before);
 });
 
 test('R1: active and sig', () => {
   const [a, b, c] = RECS.items(D);
-  const ch = RECS.check({ choices: { loot: [[a.id, true], [b.id, false], [c.id, true]] } }, D);
+  const ch = RECS.check({ choices: { loot1: a.id, loot2: b.id, use2: false, loot3: c.id, use3: true } }, D);
   assert.deepEqual(RECS.active(ch), [a.id, c.id], 'a picker that is off is not chosen');
   assert.deepEqual(RECS.active(RECS.defaults()), []);
   assert.deepEqual(RECS.active({ loot: [[a.id, true], [0, true], [a.id, true]] }), [a.id], 'each item once');
@@ -918,14 +918,13 @@ function recsFixture() {
 function recsEdit(raw, mut) {
   const was = RECS.check(raw, D), c = JSON.parse(JSON.stringify(was));
   mut(c);
-  const it = RECS.intent(was, c);
-  return RECS.store(raw, c, it.fields, it.pickers);
+  return RECS.store(raw, RECS.intent(was, c));
 }
 const OTHER_ORDER = ['gil', 'unlock', 'level', 'loot'];
 
 test('Review fix 1: check of the defaults is the defaults, so a first write from defaults sees no change in loot', () => {
   assert.deepEqual(RECS.check({ choices: RECS.defaults() }, D), RECS.defaults());
-  assert.deepEqual(RECS.changed(RECS.check(null, D), RECS.defaults()), []);
+  assert.deepEqual(RECS.intent(RECS.check(null, D), RECS.defaults()), {});
 });
 
 test('Review fix 2: a write stores only the stored fields and the changed ones', () => {
@@ -933,9 +932,11 @@ test('Review fix 2: a write stores only the stored fields and the changed ones',
   assert.deepEqual(Object.keys(a.choices), ['order']);
   const b = recsEdit(a, (c) => { c.fuel = true; });
   assert.deepEqual(Object.keys(b.choices).sort(), ['fuel', 'order'], 'the stored one stays, the changed one is added');
+  assert.deepEqual(RECS.intent(RECS.defaults(), Object.assign(RECS.defaults(), { loot: [[0, true], [5, true], [0, false], [0, false], [0, false]] })), { loot2: 5, use2: true }, 'the item and the switch of one picker are two keys');
+  assert.deepEqual(RECS.intent(RECS.defaults(), Object.assign(RECS.defaults(), { loot: [[7, true], [0, false], [0, false], [0, false], [0, false]] })), { loot1: 7 }, 'picker 1 has no switch key');
   assert.deepEqual(RECS.check(b, D), Object.assign(RECS.defaults(), { fuel: true, order: OTHER_ORDER }), 'check fills in the rest');
   assert.deepEqual(recsEdit(null, (c) => { c.giveUp = 35; }).choices, { giveUp: 35 });
-  assert.deepEqual(RECS.store({ choices: { giveUp: 'x', order: ['a'] } }, RECS.defaults(), []).choices, { giveUp: 'x', order: ['a'] }, 'an unchanged stored field is kept exactly as stored');
+  assert.deepEqual(RECS.store({ choices: { giveUp: 'x', order: ['a'] } }, {}).choices, { giveUp: 'x', order: ['a'] }, 'an unchanged stored field is kept exactly as stored');
 });
 
 test('Review fix 2a: no section at the last sync, one device changes the order and the other the fuel switch: both kept, no clash', () => {
@@ -1056,83 +1057,242 @@ test('R4: the tuning document is the tool\'s output', () => {
 const BIG = 999999999; // an item id this build's data does not know (a newer data release on another device)
 
 test('Round 2, fix 2: a write replaces only what the player changed and keeps everything else exactly as stored', () => {
-  const [a] = RECS.items(D);
-  const raw = { future: 1, choices: { fuel: false, loot: [[a.id, true], [BIG, true], [0, false], [0, false], [0, false]], order: ['unlock', 'level', 'gil', 'loot', 'extra'], newer: { x: 1 } } };
+  const [a, b] = RECS.items(D);
+  const raw = { future: 1, choices: { fuel: false, loot1: a.id, loot2: BIG, use2: true, order: ['unlock', 'level', 'gil', 'loot', 'extra'], newer: { x: 1 }, loot: [[1, true]] } };
   const keep = JSON.stringify(raw);
   const fuel = recsEdit(raw, (c) => { c.fuel = true; });
   assert.equal(JSON.stringify(raw), keep, 'the input is not touched');
   assert.equal(fuel.choices.fuel, true);
-  assert.deepEqual(fuel.choices.loot, raw.choices.loot, 'the unknown item 99-like id stays through a fuel change');
+  assert.equal(fuel.choices.loot2, BIG, 'the unknown item id stays through a fuel change');
   assert.deepEqual(fuel.choices.order, raw.choices.order, 'an order with an unknown extra key stays through a fuel change');
   assert.equal(fuel.future, 1); assert.deepEqual(fuel.choices.newer, { x: 1 }, 'unknown field and unknown sibling of choices stay');
-  // picker 3 changed: only its pair is replaced; picker 2 keeps the unknown id
-  const [, b] = RECS.items(D);
+  assert.deepEqual(fuel.choices.loot, [[1, true]], 'an old loot array stays as stored');
+  // picker 3 changed: only its keys change; picker 2 keeps the unknown id
   const p3 = recsEdit(raw, (c) => { c.loot[2] = [b.id, true]; });
-  assert.deepEqual(p3.choices.loot, [[a.id, true], [BIG, true], [b.id, true], [0, false], [0, false]]);
+  assert.deepEqual([p3.choices.loot1, p3.choices.loot2, p3.choices.loot3, p3.choices.use3], [a.id, BIG, b.id, true]);
   // picker 1 changed: the others stay, including the unknown id
   const p1 = recsEdit(raw, (c) => { c.loot[0] = [b.id, true]; });
-  assert.deepEqual(p1.choices.loot, [[b.id, true], [BIG, true], [0, false], [0, false], [0, false]]);
+  assert.deepEqual([p1.choices.loot1, p1.choices.loot2, p1.choices.use2], [b.id, BIG, true]);
+  assert.ok(!('use1' in p1.choices), 'use1 is never written');
   // the unknown-id picker itself switched off: its id is kept, only the switch changes
   const off = recsEdit(raw, (c) => { c.loot[1][1] = false; });
-  assert.deepEqual(off.choices.loot[1], [BIG, false]);
-  for (const out of [fuel, p3, p1, off]) { assert.equal(out.future, 1); assert.deepEqual(out.choices.newer, { x: 1 }); }
-  // the unknown id with the [10,true] shape of the brief survives too
-  const r2 = { choices: { loot: [[10, true], [99, true]] } };
-  assert.deepEqual(recsEdit(r2, (c) => { c.fuel = true; }).choices.loot, [[10, true], [99, true]]);
-  assert.deepEqual(recsEdit(r2, (c) => { c.loot[0] = [a.id, true]; }).choices.loot, [[a.id, true], [99, true]]);
+  assert.deepEqual([off.choices.loot2, off.choices.use2], [BIG, false]);
+  for (const out of [fuel, p3, p1, off]) { assert.equal(out.future, 1); assert.deepEqual(out.choices.newer, { x: 1 }); assert.deepEqual(out.choices.loot, [[1, true]]); }
 });
 
 test('Round 2, fix 4: a switched-off picker blocks nothing and is not judged as a duplicate', () => {
   const [a, b] = RECS.items(D);
-  assert.deepEqual(RECS.check({ choices: { loot: [[0, true], [a.id, false], [a.id, true]] } }, D).loot, [[0, true], [a.id, false], [a.id, true], [0, false], [0, false]], 'a later switched-on picker keeps the item an off picker holds');
-  assert.deepEqual(RECS.check({ choices: { loot: [[a.id, true], [b.id, false], [a.id, false]] } }, D).loot, [[a.id, true], [b.id, false], [a.id, false], [0, false], [0, false]], 'off pickers keep their choice, even equal ones');
-  assert.deepEqual(RECS.check({ choices: { loot: [[a.id, true], [a.id, true]] } }, D).loot[1], [0, true], 'two switched-on: the earlier wins');
+  assert.deepEqual(RECS.check({ choices: { loot2: a.id, loot3: a.id, use3: true } }, D).loot, [[0, true], [a.id, false], [a.id, true], [0, false], [0, false]], 'a later switched-on picker keeps the item an off picker holds');
+  assert.deepEqual(RECS.check({ choices: { loot1: a.id, loot2: b.id, loot3: a.id } }, D).loot, [[a.id, true], [b.id, false], [a.id, false], [0, false], [0, false]], 'off pickers keep their choice, even equal ones');
+  assert.deepEqual(RECS.check({ choices: { loot1: a.id, loot2: a.id, use2: true } }, D).loot[1], [0, true], 'two switched-on: the earlier wins');
   assert.deepEqual(RECS.active({ loot: [[0, true], [a.id, false], [a.id, true]] }), [a.id]);
   // switching on the picker that holds a used item: stored as on, read as a duplicate (none)
-  const sw = recsEdit({ choices: { loot: [[a.id, true], [a.id, false]] } }, (c) => { c.loot[1][1] = true; });
-  assert.deepEqual(sw.choices.loot, [[a.id, true], [a.id, true]], 'the stored item is kept');
+  const sw = recsEdit({ choices: { loot1: a.id, loot2: a.id } }, (c) => { c.loot[1][1] = true; });
+  assert.deepEqual([sw.choices.loot2, sw.choices.use2], [a.id, true], 'the stored item is kept');
   assert.deepEqual(RECS.check(sw, D).loot[1], [0, true]);
-});
-
-test('Round 2, fix 1: a second quick change does not delete another page\'s setting (real CC.writeSection)', async () => {
-  for (const variant of ['no section', 'older value']) {
-    const results = {};
-    for (const mode of ['before', 'after']) {
-      const { CC, NAME } = recsFixture();
-      let start = null;
-      if (variant === 'older value') { const r = await CC.read(); const w = await CC.writeSection(NAME, { choices: { order: ['level', 'unlock', 'gil', 'loot'] } }, { rev: r.rev, base: null }); start = { sec: { choices: { order: ['level', 'unlock', 'gil', 'loot'] } }, rev: w.rev }; }
-      const r0 = start ? start : { sec: null, rev: (await CC.read()).rev };
-      // page A's copy and write state
-      let raw = r0.sec ? JSON.parse(JSON.stringify(r0.sec)) : null, rev = r0.rev, base = r0.sec ? JSON.parse(JSON.stringify(r0.sec)) : null, edits = [], seq = 0;
-      // page B (same copy) stores order
-      const b = recsEdit(r0.sec, (c) => { c.order = OTHER_ORDER.slice(); });
-      await CC.writeSection(NAME, b, { rev: r0.rev, base: r0.sec ? JSON.parse(JSON.stringify(r0.sec)) : null });
-      const change = (mut) => { const was = RECS.check(raw, D), c = JSON.parse(JSON.stringify(was)); mut(c); const it = RECS.intent(was, c); raw = RECS.store(raw, c, it.fields, it.pickers); edits.push({ seq: ++seq, next: c, fields: it.fields, pickers: it.pickers }); };
-      change((c) => { c.fuel = true; });                         // A's first change; write 1 starts
-      const snapSeq = seq, snap1 = JSON.parse(JSON.stringify(raw));
-      change((c) => { c.giveUp = 30; });                         // A's second change while write 1 is in progress
-      const w1 = await CC.writeSection(NAME, snap1, { rev, base });
-      assert.equal(w1.merged, true, 'write 1 merged B\'s order');
-      rev = w1.rev; base = JSON.parse(JSON.stringify(w1.section));
-      const later = edits.filter((e) => e.seq > snapSeq);
-      if (mode === 'after') { let n = JSON.parse(JSON.stringify(w1.section)); later.forEach((e) => { n = RECS.store(n, e.next, e.fields, e.pickers); }); raw = n; } // else: the old code kept its own copy
-      const w2 = await CC.writeSection(NAME, JSON.parse(JSON.stringify(raw)), { rev, base });
-      void w2;
-      results[mode] = RECS.check(CC.checkDoc((await CC.read()).raw).modules[NAME], D);
-      delete globalThis.localStorage; CC.resetMemory();
-    }
-    assert.deepEqual(results.after, Object.assign(RECS.defaults(), { fuel: true, giveUp: 30, order: OTHER_ORDER }), variant + ': nothing lost');
-    assert.notDeepEqual(results.before.order, OTHER_ORDER, variant + ': the old behaviour lost the other page\'s order');
-  }
 });
 
 test('Round 2, fix 3: an item held by an unrelated duplicate picker can be cleared by writing 0', () => {
   const [a] = RECS.items(D);
-  const raw = { choices: { loot: [[a.id, true], [a.id, true]] } };
+  const raw = { choices: { loot1: a.id, loot2: a.id, use2: true } };
   const was = RECS.check(raw, D); // [a,true],[0,true]
   const c = JSON.parse(JSON.stringify(was)); // the player picks "none": nothing differs ...
-  assert.deepEqual(RECS.intent(was, c).fields, []);
+  assert.deepEqual(RECS.intent(was, c), {});
+  assert.equal(RECS.held(raw, 1), a.id);
   // ... so the page forces picker 2 as changed
-  const out = RECS.store(raw, c, ['loot'], [{ i: 1, id: true, on: false }]);
-  assert.deepEqual(out.choices.loot, [[a.id, true], [0, true]]);
+  const out = RECS.store(raw, { loot2: 0 });
+  assert.deepEqual([out.choices.loot2, out.choices.use2], [0, true]);
+  assert.equal(RECS.held(out, 1), 0);
+});
+
+// ---------------------------------------------------------------- R8: one merge unit per control (spec section 10)
+const ALLKEYS = ['fuel', 'giveUp', 'order', 'loot1', 'loot2', 'loot3', 'loot4', 'loot5', 'use2', 'use3', 'use4', 'use5'];
+test('K1: every key of the stored shape is its own merge unit, and the section survives the shared save code', async () => {
+  const { CC, NAME } = recsFixture();
+  const choices = { fuel: true, giveUp: 20, order: ['gil', 'unlock', 'level', 'loot'], loot1: 5665, loot2: 5666, loot3: 0, loot4: 999999999, loot5: 5667, use2: true, use3: false, use4: true, use5: false };
+  assert.deepEqual(Object.keys(choices), ALLKEYS);
+  const sec = { choices };
+  const flat = CC.flatModules({ [NAME]: sec });
+  assert.deepEqual([...flat.keys()].sort(), ALLKEYS.map((k) => 'm|' + JSON.stringify([NAME, 'choices', k])).sort(), 'exactly one unit per key');
+  const doc = { app: CC.APP, v: CC.VERSION, updated: 1, chars: [], modules: { [NAME]: sec }, device: {}, moved: {} };
+  assert.deepStrictEqual(CC.checkDoc(doc).modules[NAME], sec, 'checkDoc keeps it');
+  const first = await CC.writeSection(NAME, sec, { rev: (await CC.read()).rev, base: null });
+  await CC.writeSection('lists', { lists: { l1: { name: 'Gear', items: {} } } }, { rev: first.rev, base: null });
+  assert.deepStrictEqual(CC.checkDoc((await CC.read()).raw).modules[NAME], sec, 'another module\'s write leaves it');
+  const other = { lists: { lists: { l2: { name: 'Food', items: {} } } } };
+  assert.deepStrictEqual(CC.mergeModules({ [NAME]: sec }, Object.assign({ [NAME]: sec }, other), { [NAME]: sec })[NAME], sec, 'a merge keeps it');
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+// A "page": the shipped keeper on the real save code, loaded with CC.read() and read(); changes go through RECS.intent and change.
+const stampOf = async (CC) => (await CC.read()).rev;
+async function openPage(CC, NAME, wrap) {
+  const results = [];
+  const k = RECS.keeper((s, known) => (wrap || ((w) => w()))(() => CC.writeSection(NAME, s, known)), (r) => results.push(r));
+  const r = await CC.read();
+  const doc = r.raw == null ? CC.emptyDoc() : CC.checkDoc(r.raw);
+  k.read(doc.modules[NAME], r.rev);
+  return { k, results, edit: (mut) => { const was = RECS.check(k.raw, D), c = JSON.parse(JSON.stringify(was)); mut(c); return k.change(RECS.intent(was, c)); } };
+}
+const savedChoices = async (CC, NAME) => { const m = CC.checkDoc((await CC.read()).raw).modules[NAME]; return m ? m.choices : null; };
+const pairsOf = async (CC, NAME) => RECS.check({ choices: await savedChoices(CC, NAME) }, D).loot;
+
+test('K2: the defect: a stale page switching picker 2 on and picking keeps the item another page chose in picker 1', async () => {
+  const [x, y] = RECS.items(D);
+  for (const seeded of [true, false]) {
+    const { CC, NAME } = recsFixture();
+    if (seeded) await CC.writeSection(NAME, { choices: { fuel: false } }, { rev: await stampOf(CC), base: null });
+    const A = await openPage(CC, NAME), B = await openPage(CC, NAME);
+    await A.edit((c) => { c.loot[0][0] = x.id; });
+    await B.edit((c) => { c.loot[1][1] = true; });
+    await B.edit((c) => { c.loot[1][0] = y.id; });
+    assert.deepEqual(await pairsOf(CC, NAME), [[x.id, true], [y.id, true], [0, false], [0, false], [0, false]], seeded ? 'section stored before both loaded' : 'no section');
+    assert.deepEqual(RECS.check(B.k.raw, D).loot[0], [x.id, true], 'the stale page now holds the other page\'s item');
+    assert.ok([...A.results, ...B.results].every((r) => r.ok));
+    delete globalThis.localStorage; CC.resetMemory();
+  }
+});
+
+test('K3: unknown keys and item ids survive a stale page\'s change to picker 2', async () => {
+  const [, y] = RECS.items(D);
+  const { CC, NAME } = recsFixture();
+  await CC.writeSection(NAME, { future: 1, choices: { loot3: BIG, mystery: { a: 1 }, loot: [[3, true]] } }, { rev: await stampOf(CC), base: null });
+  const B = await openPage(CC, NAME);
+  const other = await openPage(CC, NAME); // another save after B loaded writes an unknown loot4
+  await CC.writeSection(NAME, { future: 1, choices: { loot3: BIG, mystery: { a: 1 }, loot: [[3, true]], loot4: BIG + 1 } }, { rev: other.k.rev, base: other.k.base });
+  await B.edit((c) => { c.loot[1][0] = y.id; });
+  const ch = await savedChoices(CC, NAME);
+  assert.equal(ch.loot2, y.id);
+  assert.deepEqual([ch.loot3, ch.loot4, ch.mystery, ch.loot], [BIG, BIG + 1, { a: 1 }, [[3, true]]]);
+  assert.equal(CC.checkDoc((await CC.read()).raw).modules[NAME].future, 1);
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('K4: A picks an item for picker 2, stale B switches picker 2 off: the item is A\'s and the switch is off', async () => {
+  const [x] = RECS.items(D);
+  const { CC, NAME } = recsFixture();
+  await CC.writeSection(NAME, { choices: { use2: true } }, { rev: await stampOf(CC), base: null });
+  const A = await openPage(CC, NAME), B = await openPage(CC, NAME);
+  await A.edit((c) => { c.loot[1][0] = x.id; });
+  await B.edit((c) => { c.loot[1][1] = false; });
+  const ch = await savedChoices(CC, NAME);
+  assert.deepEqual([ch.loot2, ch.use2], [x.id, false]);
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('K5: two changes without waiting make one write; a change made during a write is put on top of another page\'s write', async () => {
+  const [x, y, z] = RECS.items(D);
+  const { CC, NAME } = recsFixture();
+  let writes = 0;
+  const P = await openPage(CC, NAME, (w) => { writes++; return w(); });
+  const p1 = P.edit((c) => { c.fuel = true; }), p2 = P.edit((c) => { c.giveUp = 30; });
+  await Promise.all([p1, p2]);
+  assert.equal(writes, 1, 'one write carried both');
+  assert.deepEqual((({ fuel, giveUp }) => ({ fuel, giveUp }))(await savedChoices(CC, NAME)), { fuel: true, giveUp: 30 });
+  // a second change while the first write is in progress, with another page's write landing in between
+  const other = await openPage(CC, NAME);
+  let first = true, mid = null;
+  const Q = await openPage(CC, NAME, (w) => {
+    if (!first) return w();
+    first = false;
+    // inside the write: Q makes its second change, and the other page's write lands
+    mid = Q.edit((c) => { c.order = ['gil', 'unlock', 'level', 'loot']; });
+    return other.edit((c) => { c.loot[0][0] = x.id; }).then(w);
+  });
+  const q1 = Q.edit((c) => { c.loot[1][0] = y.id; c.loot[1][1] = true; });
+  await q1; await mid; // mid is set while the first write runs
+  const ch = await savedChoices(CC, NAME);
+  assert.deepEqual([ch.loot1, ch.loot2, ch.use2, ch.order, ch.fuel, ch.giveUp], [x.id, y.id, true, ['gil', 'unlock', 'level', 'loot'], true, 30], 'all three changes stored');
+  assert.deepEqual(Q.k.edits, []);
+  assert.ok(z && Q.results.every((r) => r.ok));
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('K6: a write that rejects drops what it carried; the panel reads as before; later changes still store (D15)', async () => {
+  const [x, y] = RECS.items(D);
+  const { CC, NAME } = recsFixture();
+  await CC.writeSection(NAME, { choices: { giveUp: 25 } }, { rev: await stampOf(CC), base: null });
+  let calls = 0, queued = null;
+  const P = await openPage(CC, NAME, (w) => {
+    calls++;
+    if (calls === 1) { queued = P.edit((c) => { c.loot[0][0] = y.id; }); return Promise.reject(new Error('disk full')); }
+    return w();
+  });
+  const before = RECS.check(P.k.raw, D);
+  const failing = P.edit((c) => { c.fuel = true; c.loot[0][0] = x.id; });
+  assert.equal(RECS.check(P.k.raw, D).fuel, true, 'shown at once');
+  await failing; await queued; // queued is set while the failing write runs
+  assert.equal(P.results[0].ok, false);
+  assert.equal(P.results[0].error.message, 'disk full');
+  const ch = await savedChoices(CC, NAME);
+  assert.deepEqual([ch.fuel, ch.loot1, ch.giveUp], [undefined, y.id, 25], 'the failed write\'s changes are dropped, the queued one is stored');
+  assert.deepEqual(P.k.edits, []);
+  assert.equal(P.results[1].ok, true);
+  assert.equal(RECS.check(P.k.raw, D).fuel, before.fuel, 'reads as before the failed change');
+  await P.edit((c) => { c.giveUp = 40; });
+  assert.deepEqual((({ fuel, giveUp, loot1 }) => ({ fuel, giveUp, loot1 }))(await savedChoices(CC, NAME)), { fuel: undefined, giveUp: 40, loot1: y.id }, 'the next change stores only itself');
+  // a failing write alone: the section is unchanged and the panel reads as before
+  const F = await openPage(CC, NAME, () => Promise.reject(new Error('refused')));
+  const was = JSON.stringify(RECS.check(F.k.raw, D)), stored = JSON.stringify(CC.checkDoc((await CC.read()).raw).modules[NAME]);
+  await F.edit((c) => { c.fuel = true; });
+  assert.equal(JSON.stringify(RECS.check(F.k.raw, D)), was);
+  assert.equal(JSON.stringify(CC.checkDoc((await CC.read()).raw).modules[NAME]), stored, 'the save is unchanged');
+  assert.deepEqual(F.k.edits, []);
+  assert.equal(F.results[0].ok, false);
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('K7: the same control in two pages: the later write is stored, without asking (what remains)', async () => {
+  const [x, y] = RECS.items(D);
+  const { CC, NAME } = recsFixture();
+  const A = await openPage(CC, NAME), B = await openPage(CC, NAME);
+  await A.edit((c) => { c.loot[0][0] = x.id; });
+  await B.edit((c) => { c.loot[0][0] = y.id; });
+  assert.equal((await savedChoices(CC, NAME)).loot1, y.id);
+  await A.edit((c) => { c.order = ['gil', 'unlock', 'level', 'loot']; });
+  await B.edit((c) => { c.order = ['loot', 'gil', 'level', 'unlock']; });
+  assert.deepEqual((await savedChoices(CC, NAME)).order, ['loot', 'gil', 'level', 'unlock']);
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('K8: across devices (threeWay): different pickers merge, one picker\'s item and switch merge, the same item differently asks', () => {
+  const { CC, ET, NAME } = recsFixture();
+  const [x, y] = RECS.items(D);
+  const doc = (sec) => ({ modules: { [NAME]: sec } });
+  const base = { choices: { loot1: x.id } };
+  const edit = (raw, mut) => recsEdit(raw, mut);
+  const A = edit(base, (c) => { c.loot[1][0] = y.id; c.loot[1][1] = true; }), B = edit(base, (c) => { c.loot[2][0] = y.id; c.loot[2][1] = true; });
+  let res = ET.threeWay(doc(base), doc(A), doc(B));
+  assert.deepEqual(res.conflicts, [], 'two different pickers');
+  const m = CC.unflatModules(res.merged)[NAME].choices;
+  assert.deepEqual([m.loot2, m.use2, m.loot3, m.use3], [y.id, true, y.id, true]);
+  const I = edit(base, (c) => { c.loot[1][0] = y.id; }), S = edit(base, (c) => { c.loot[1][1] = true; });
+  res = ET.threeWay(doc(base), doc(I), doc(S));
+  assert.deepEqual(res.conflicts, [], 'the item and the switch of one picker');
+  const m2 = CC.unflatModules(res.merged)[NAME].choices;
+  assert.deepEqual([m2.loot2, m2.use2], [y.id, true]);
+  const D1 = edit(base, (c) => { c.loot[1][0] = y.id; }), D2 = edit(base, (c) => { c.loot[1][0] = RECS.items(D)[2].id; });
+  res = ET.threeWay(doc(base), doc(D1), doc(D2));
+  assert.equal(res.conflicts.length, 1);
+  assert.ok(res.conflicts[0].id.endsWith('"choices","loot2"]'), res.conflicts[0].id);
+  delete globalThis.localStorage; CC.resetMemory();
+});
+
+test('K9: check reads every row of the storage table; an old choices.loot array is ignored and stays after a write', () => {
+  const [a, b] = RECS.items(D);
+  const old = { choices: { loot: [[a.id, true], [b.id, true], [0, false], [0, false], [0, false]] } };
+  assert.deepEqual(RECS.check(old, D).loot, RECS.defaults().loot, 'not read');
+  const out = recsEdit(old, (c) => { c.fuel = true; });
+  assert.deepEqual(out.choices.loot, old.choices.loot, 'still there');
+  assert.equal(out.choices.fuel, true);
+  assert.equal(RECS.check(out, D).loot[0][0], 0);
+  // each row: whole numbers only; false and truthy non-true switches are off
+  assert.deepEqual(RECS.check({ choices: { loot1: a.id } }, D).loot[0], [a.id, true]);
+  assert.deepEqual(RECS.check({ choices: { loot1: String(a.id), loot2: -a.id, loot3: 0, use3: true } }, D).loot, [[0, true], [0, false], [0, true], [0, false], [0, false]]);
+  assert.deepEqual(RECS.check({ choices: { use2: 'true', use3: 1, use4: false, use5: true } }, D).loot.map((p) => p[1]), [true, false, false, false, true]);
+  assert.equal(RECS.held({ choices: { loot2: a.id } }, 1), a.id);
+  assert.equal(RECS.held({ choices: { loot2: 'x' } }, 1), 0);
+  assert.equal(RECS.held(null, 0), 0);
+  assert.equal(RECS.rebase(null, []), null);
+  assert.deepEqual(RECS.rebase({ choices: { a: 1 } }, [{ seq: 1, patch: { b: 2 } }, { seq: 2, patch: { a: 3 } }]), { choices: { a: 3, b: 2 } });
 });
