@@ -3825,7 +3825,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         document.querySelectorAll('.chart-svg .chart-rings circle').forEach((el) => { out.rings = Math.max(out.rings, px(getComputedStyle(el).strokeWidth)); });
         document.querySelectorAll('.chart-svg line.lead').forEach((el) => { out.nLead++; out.lead = Math.min(out.lead == null ? 99 : out.lead, px(getComputedStyle(el).strokeWidth)); });
         document.querySelectorAll('.chart-svg line.goal').forEach((el) => { out.nGoal++; out.goal = Math.min(out.goal == null ? 99 : out.goal, px(getComputedStyle(el).strokeWidth)); });
-        document.querySelectorAll('.chart-svg polyline.chart-route').forEach((el) => { out.route = px(getComputedStyle(el).strokeWidth); });
+        document.querySelectorAll('.chart-svg polyline.chart-route').forEach((el) => { const cs = getComputedStyle(el); out.route = px(cs.strokeWidth); out.routeColour = cs.stroke; });
+        // W29: the planned route's colour is used by nothing else on the chart except the route's own glow, the rings round its stops and the letters of those stops
+        out.routeShared = out.routeColour ? all.filter((el) => { const cls = el.getAttribute('class') || '', cs = getComputedStyle(el); if (/\bchart-(route|route-glow|routering)\b/.test(cls)) return false; if (/\bchart-letter\b/.test(cls) && el.closest('.chart-node.on-route')) return false; return (cs.stroke === out.routeColour && cs.strokeWidth !== '0px') || (cs.fill === out.routeColour && el.tagName.toLowerCase() !== 'svg'); }).map((el) => el.tagName + '.' + (el.getAttribute('class') || '')) : [];
         document.querySelectorAll('.chart-svg .chart-chev').forEach((el) => { if (getComputedStyle(el).display !== 'none') { out.chevShown++; if (!(el.classList.contains('lead') || el.classList.contains('goal'))) out.chevBad++; } });
         return out;
       });
@@ -3840,7 +3842,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.goto(ROOT5 + 'submersibles/'); await ready();
         await seedL1(page); await page.reload(); await ready();
-        const wide = [], fam = {}, scr = {}, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
+        const wide = [], wideNew = [], fam = {}, scr = {}, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); if (/^(wizard|empty)/.test(name)) wideNew.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
         const tab = async (t) => { await page.click('[data-tab=' + t + ']'); await page.waitForTimeout(250); if (pal) scr[t] = await readScr(page); };
         const out = {};
         if (pal) { // the palette sheet: before any screen, on the Board's page background, then removed
@@ -3855,6 +3857,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         }
         if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board');
           // W21: the Out row (Sub Two, sent an hour ago, back in 27 hours) carries one voyage gauge, drawn and named in words
+          out.lockedSea = await page.evaluate(() => document.querySelectorAll('.sub[data-status="locked"][class*="in-sea-"]').length); out.headBand = await page.evaluate(() => [...document.querySelectorAll('.fc-head')].filter((h) => /linear-gradient/.test(h.getAttribute('style') || '') && getComputedStyle(h).backgroundImage.includes('linear-gradient')).length);
           out.gauge = await page.evaluate(() => { const r = document.querySelector('.sub[data-status="out"] .vgauge'); return { n: document.querySelectorAll('.sub[data-status="out"] .vgauge').length, h: r ? Math.round(r.getBoundingClientRect().height) : 0, text: r ? r.nextElementSibling.textContent : '' }; }); }
         if (screens.includes('sheet')) {
           await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet[open] .advice'); await page.waitForTimeout(250); await shot('sheet');
@@ -3881,6 +3884,16 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-earnings-ranked-' + tag + '.png') }); }
         if (screens.includes('setup')) { await tab('setup'); await page.waitForSelector('[data-recs-panel]'); await shot('setup'); }
         if (screens.includes('recommendations')) { await page.$eval('[data-recs-panel]', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('recommendations'); }
+        if (screens.includes('wizard')) {
+          // W29: the setup wizard on its last step, where every sea is listed (the first one open); a picture, the sea rows counted, no sideways scroll
+          await tab('setup'); await page.click('[data-act="edit"][data-fc="fa"]'); await page.waitForSelector('.wiz-head');
+          for (let i = 0; i < 8 && !(await page.$('[data-step="sectors"]')); i++) { await page.click('[data-act="wnext"]'); await page.waitForTimeout(150); }
+          await page.waitForSelector('[data-step="sectors"] .sea'); await page.evaluate(() => { const el = document.querySelector('[data-step="sectors"] .sea'); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 150); }); await page.waitForTimeout(200);
+          out.wizScroll = await page.evaluate(() => [window.scrollY, document.documentElement.scrollHeight, document.querySelector('[data-step="sectors"] .sea').getBoundingClientRect().top, getComputedStyle(document.documentElement).overflow, getComputedStyle(document.body).overflow]);
+          await shot('wizard');
+          out.wizard = await page.evaluate(() => ({ seas: document.querySelectorAll('.sea[class*="in-sea-"]').length, open: document.querySelectorAll('.sea[open]').length }));
+          await page.click('[data-act="wcancel"]'); await page.waitForTimeout(200);
+        }
         if (checkPhone) {
           out.minHeights = await page.evaluate(() => {
             const sels = ['.btn', '.quick', '.tabs button', '[data-map-sea]', '.sector', '.qbtn', '.log-row', '.sub[data-sub]', '.rec-rank button'], res = {};
@@ -3917,28 +3930,50 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           delete out.palGot;
         }
         await ctx.close();
-        return { wide, fam, errors: real(errors), ...out };
+        return { wide, wideNew, fam, errors: real(errors), ...out };
       };
       const all8 = ['board', 'sheet', 'log', 'map', 'planner', 'earnings', 'setup', 'recommendations'];
-      const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8, false, null, null, { name: 'default', theme: 'crystarium-dawnglass', mode: 'light', follow: true, title: 'Palette: Crystarium Dawnglass, light (the default)' });
+      // W29: the empty states (a profile with nothing in it: the Board's welcome panel and the Log's empty-state panel) in a given theme; pictures look-empty-board-<tag>.png and look-empty-log-<tag>.png, the colour families recorded
+      const emptyWalk = async (opts, tag, theme, mode) => {
+        const { ctx, errors } = await context(opts), page = await ctx.newPage(), fam = {}, wide = [];
+        if (theme) {
+          await page.goto(ROOT5 + '#settings'); await page.waitForSelector('#s-appearance .look-card');
+          await page.click('#s-appearance [data-look=toggle][data-v="shared:theme"]');
+          await page.click('#s-appearance [data-look=theme][data-v="' + theme + '"]'); await page.click('#s-appearance [data-look=mode][data-v=' + mode + ']');
+        }
+        await page.goto(ROOT5 + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+        await page.waitForSelector('.panel.welcome'); await page.waitForTimeout(250);
+        const shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
+        await shot('empty-board');
+        await page.click('[data-tab=log]'); await page.waitForSelector('.panel.empty-state'); await page.waitForTimeout(250); await shot('empty-log');
+        await ctx.close();
+        return { fam, wide, errors: real(errors) };
+      };
+      const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8.concat('wizard'), false, null, null, { name: 'default', theme: 'crystarium-dawnglass', mode: 'light', follow: true, title: 'Palette: Crystarium Dawnglass, light (the default)' });
       const dd = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-dark', ['board', 'map'], false);
-      const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', all8, false, 'azure-dragoon', 'dark', { name: 'azure-dark', theme: 'azure-dragoon', mode: 'dark', title: 'Palette: Azure Dragoon, dark' });
-      const dm = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', all8, false, 'magitek-steel', 'light', { name: 'magitek-light', theme: 'magitek-steel', mode: 'light', title: 'Palette: Magitek Steel, light' });
+      const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', all8.concat('wizard'), false, 'azure-dragoon', 'dark', { name: 'azure-dark', theme: 'azure-dragoon', mode: 'dark', title: 'Palette: Azure Dragoon, dark' });
+      const dm = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', all8.concat('wizard'), false, 'magitek-steel', 'light', { name: 'magitek-light', theme: 'magitek-steel', mode: 'light', title: 'Palette: Magitek Steel, light' });
       const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
-      const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map'], false);
+      const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map', 'wizard'], false);
+      const e0 = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', null, null);
+      const ea = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark');
+      const em = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light');
+      const ep = await emptyWalk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', null, null);
       // W23: the chart reads by meaning (R3.6) and R3.7's measurable rule: the hue-family floor on the Map and the planner (default theme 5; Azure Dragoon dark and Magitek Steel light 4); other screens stay recorded only
-      const chartOk = [d, da, dm].every((w) => [w.chartMap, w.chartPlan].every((c) => c && c.dashBad.length === 0 && c.grid <= 1 && c.rings <= 1 && c.nLead >= 1 && c.lead >= 2.5 && c.nGoal >= 1 && c.goal >= 3 && c.chevBad === 0 && c.chevShown >= 1)) && [d, da, dm].every((w) => w.chartPlan.route >= 5);
+      const chartOk = [d, da, dm].every((w) => [w.chartMap, w.chartPlan].every((c) => c && c.dashBad.length === 0 && c.grid <= 1 && c.rings <= 1 && c.nLead >= 1 && c.lead >= 2.5 && c.nGoal >= 1 && c.goal >= 3 && c.chevBad === 0 && c.chevShown >= 1)) && [d, da, dm].every((w) => w.chartPlan.route >= 7 && w.chartPlan.routeShared.length === 0);
       const floorOk = d.fam.map.n >= 5 && d.fam.planner.n >= 5 && [da, dm].every((w) => w.fam.map.n >= 4 && w.fam.planner.n >= 4);
       // W25, W26 (R3.7): the Log's floor (default 5; Azure Dragoon dark and Magitek Steel light 4) and Earnings' (4; 3); the Log fixture exercises three seas, loot and no loot, a grade and none
       const logFloorOk = d.fam.log.n >= 5 && [da, dm].every((w) => w.fam.log.n >= 4) && d.fam.earnings.n >= 4 && [da, dm].every((w) => w.fam.earnings.n >= 3);
       const logProbeOk = [d, da, dm].every((w) => w.logProbe && w.logProbe.seas >= 3 && w.logProbe.logged >= 1 && w.logProbe.unlogged >= 1 && w.logProbe.graded >= 1 && w.logProbe.ungraded >= 1 && w.logProbe.cells >= 3);
       // W27, W28 (R3.7): the Board, Setup and recommendations hold their floors (default theme 4; Azure Dragoon dark and Magitek Steel light 3) and the send window holds 3 in all three
       const bsFloorOk = ['board', 'setup', 'recommendations'].every((k) => d.fam[k].n >= 4 && [da, dm].every((w) => w.fam[k].n >= 3)) && [d, da, dm].every((w) => w.fam.sheet.n >= 3);
+      // W29: the wizard lists all seven seas (the first open) and the empty states and the wizard do not scroll sideways at 360 px; a locked slot carries its sector's sea; a company head carries its status band
+      const finalOk = [d, da, dm].every((w) => w.wizard && w.wizard.seas === 7 && w.wizard.open === 1) && pl.wizard.seas === 7 && pl.wideNew.every((x) => x <= 0) && ep.wide.every((x) => x <= 0) && [e0, ea, em, ep].every((w) => !w.errors.length) && [d, da, dm].every((w) => w.lockedSea >= 1 && w.headBand >= 2);
       const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
-      const ok = gaugeOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supports === true && w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only',
-        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl]].map(([k, w]) => [k, w.fam])) });
+      const ok = finalOk && gaugeOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supports === true && w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band',
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors] });
       server20.close();
     });
 

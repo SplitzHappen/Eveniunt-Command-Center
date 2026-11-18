@@ -213,7 +213,7 @@
   }
   function lockedRow(slot) {
     var u = slotUnlock(slot);
-    return '<div class="sub" data-status="locked" data-slot="' + slot + '"><span class="sub-top"><span class="sub-name">Slot ' + slot + '</span><span class="chip locked">Locked</span></span>' +
+    return '<div class="sub' + (u && u.sea ? ' in-sea-' + u.sea : '') + '" data-status="locked" data-slot="' + slot + '"><span class="sub-top"><span class="sub-name">Slot ' + slot + '</span><span class="chip locked">Locked</span></span>' +
       '<span class="sub-meta">' + (u ? 'Unlocked by surveying ' + esc(sectorLabel(u)) + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span>' : 'unlock not known') + '</span></div>';
   }
   function fcCard(f, now) {
@@ -228,7 +228,12 @@
     var last = outs.sort(function (a, b) { return b.sub.voyage.returnAt - a.sub.voyage.returnAt; })[0];
     var sendable = Object.keys(subs).some(function (k) { var st = F.status(subs[k].sub, fc, now); return st === 'back' || st === 'idle'; });
     var where = [fc.world, charName(fc.charId)].filter(Boolean).join(' · ');
-    return '<section class="fc" data-fc="' + esc(f.id) + '"><header class="fc-head"><div><h3>' + esc(fc.name || 'Unnamed free company') + '</h3>' + (where ? '<span class="muted">' + esc(where) + '</span>' : '') + '</div>' +
+    // look only: a thin band across the head, one quarter per slot in the slot's status colour (Back green, Out blue, Idle amber, Locked neutral; a slot with no sub yet has no colour); the rows below carry the words
+    var band = [1, 2, 3, 4].map(function (sl, k) {
+      var e = subs[sl], c = sl > (fc.unlockedSlots || 1) ? 'var(--ink-3)' : e ? 'var(--' + F.status(e.sub, fc, now) + ')' : 'transparent';
+      return c + ' ' + k * 25 + '% ' + (k + 1) * 25 + '%';
+    }).join(', ');
+    return '<section class="fc" data-fc="' + esc(f.id) + '"><header class="fc-head" style="--band:linear-gradient(90deg, ' + band + ')"><div><h3>' + esc(fc.name || 'Unnamed free company') + '</h3>' + (where ? '<span class="muted">' + esc(where) + '</span>' : '') + '</div>' +
       '<div class="fc-tools">' + (sendable ? '<button type="button" class="btn sm" data-act="sendall" data-fc="' + esc(f.id) + '">Send all back</button>' : '') +
       (last ? '<button type="button" class="btn sm ghost" data-act="ics-fc" data-fc="' + esc(f.id) + '" title="Add the last return of this free company to your calendar">Calendar: last back ' + esc(F.fmtClock(last.sub.voyage.returnAt, now)) + '</button>' : '') +
       '</div></header><div class="fc-subs">' + rows + '</div></section>';

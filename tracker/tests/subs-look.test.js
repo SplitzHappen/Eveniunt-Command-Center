@@ -67,7 +67,8 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
         const w = where + ' sea ' + sea;
         const cc = (n) => colour('var(' + n + ')', cenv);
         for (const bgName of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) { // -hi: the lightest ground under any marker (scan line plus sweep), spec R5 W18
-          for (const k of ['--chart-ink', '--chart-ink-2', '--chart-found', '--chart-next', '--chart-hot']) need(k.slice(2) + ' on ' + bgName.slice(2), cc(k), cc(bgName), 4.5, w);
+          for (const k of ['--chart-ink', '--chart-ink-2', '--chart-found', '--chart-next', '--chart-hot-text']) need(k.slice(2) + ' on ' + bgName.slice(2), cc(k), cc(bgName), 4.5, w);
+          need('chart-hot (the route line itself, W29) on ' + bgName.slice(2) + ' (3:1)', cc('--chart-hot'), cc(bgName), 3, w); // the planned route is a line, a meaningful graphic: 3:1; the letters of its stops are text and stay at 4.5 (--chart-hot-text)
           need('chart-far on ' + bgName.slice(2), cc('--chart-far'), cc(bgName), 3, w);
         }
       }
@@ -365,7 +366,7 @@ test('chart (W23): ladder far < found < next, link colours and the receding back
     const d = Math.hypot(ax - bx, ay - by); if (d < wd) { wd = d; wdw = where + ' seas ' + (i + 1) + ' and ' + (j + 1); }
   }
   console.log('Chart (W23), lowest per pair:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v[0].toFixed(3).padStart(7) + '  at ' + v[1]).join('\n') + '\nHighest per pair:\n' + Object.entries(hi).map(([k, v]) => '  ' + k.padEnd(62) + v[0].toFixed(3).padStart(7) + '  at ' + v[1]).join('\n') + '\nSmallest chroma-plane distance between two seas\' water: ' + wd.toFixed(4) + ' (' + wdw + ')');
-  assert.ok(wd >= 0.012, 'two seas\' water too alike: ' + wd + ' ' + wdw);
+  assert.ok(wd >= 0.03, 'two seas\' water too alike: ' + wd + ' ' + wdw); // W29: the distance in the a-b plane of OKLab between the water of any two seas, every theme and mode, at least 0.030 (it was 0.0129 in Azure Dragoon dark: blue and indigo)
   assert.deepEqual(fail.slice(0, 20), [], fail.length + ' chart pairs outside their rules');
 });
 
@@ -420,7 +421,7 @@ test('Log and Earnings (W25, W26): subs.css and logHtml and earnHtml carry the r
     '.log-row[class*="in-sea-"] .log-when { --slab: var(--sea);', '.log-row:nth-child(even) { background: var(--paper-2); }',
     '.log-row.logged { border-right: 8px solid var(--loot-g); }', '.log-row.unlogged { border-right: 8px dashed var(--idle); }',
     '.log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }', '.log-what b { color: var(--gil-s); }', 'background: var(--gil-g); }',
-    '.earn-card:first-child { --slab: var(--gil-m);', 'var(--gil-bar) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);
+    '.earn-card:first-child { background-color: var(--gil-w); color: var(--ink);', 'var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);
   const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
   assert.ok(js.includes("' in-sea-' + sec.sea") && js.includes("(v.logged ? ' logged' : ' unlogged')") && js.includes('"--p:'), 'Log row classes');
   assert.ok(js.includes('class="log-grade g-') && js.includes("'>Grade ' + esc(t.grade)") === false && js.includes("Grade ' + esc(t.grade)"), 'the grade chip');
@@ -473,8 +474,67 @@ test('Board, send window, Setup, recommendations, empty states (W27, W28): subs.
     '.rate-item b { color: var(--loot-s); }', '.rankbox { border-left: 8px solid var(--rank-g); padding-left: 10px; }',
     'var(--route-m) 0 25%, var(--rank-m) 25% 50%, var(--gil-m) 50% 75%, var(--loot-m) 75%) 1', '.rec-picker { border-left: 8px solid var(--loot-g); }',
     '.rec-picker:has(.rec-find:disabled) { border-left-color: var(--ink-3); }', '.sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }',
-    '.tick b { color: var(--route-s); }', 'transparent 0 46px, var(--ring) 46px 48px']) assert.ok(css.includes(s), s);
+    '.tick b { color: var(--route-s); }', '--ringc: color-mix(in srgb, var(--ring) 60%, var(--slab)); background-image: radial-gradient(circle at 100% 0, transparent 0 46px, var(--ringc) 46px 48px,']) assert.ok(css.includes(s), s);
   for (const [k, v] of [['up-unlock', 'route'], ['up-level', 'rank'], ['up-gil', 'gil'], ['up-loot', 'loot']]) assert.ok(css.includes('li:has([data-rec="' + k + '"]) .rec-name b { --slab: var(--' + v + '-m);'), k);
   const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
   assert.ok(js.includes("'<div class=\"route-pick in-sea-' + PICK.sea") && js.includes("'<details class=\"sea in-sea-' + sea.id") && js.includes("U1: 'route'") && js.includes("X: 'rank', G: 'gil', L: 'loot'"), 'classes');
+});
+
+// ---- Revision 3 (W29): the final pass ----
+test('final pass (W29): the planned route, the stepped-back goal line, the gil washes, locked slots, the company head band and the rank plate reach their contrast in all 21 themes, light and dark (computed palette)', () => {
+  const fail = [], lo = {};
+  const need4 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const dk = mode === 'dark', th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), e0 = P.env(row, mode);
+    // the planned route (--chart-hot, a fixed hot pink no other chart mark uses, as the found green and the next amber are fixed) on every water of every sea, at the 3:1 asked for a meaningful graphic and at the 4.5 the chart holds for its marks
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, dk ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env), w = where + ' sea ' + n;
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) {
+        need4('route (hot) on ' + g.slice(2) + ' (3)', cc('--chart-hot'), cc(g), 3, w);
+        need4('route stop letter (hot-text) on ' + g.slice(2) + ' (4.5)', cc('--chart-hot-text'), cc(g), 4.5, w);
+        need4('goal line stepped back (ink 80%) on ' + g.slice(2) + ' (4.5)', cc('--chart-ink-step'), cc(g), 4.5, w);
+      }
+      // the route is not the colour of any other mark: its distance in OKLab from the found, next and ink colours (printed) and from the sea's own water
+      const hot = cc('--chart-hot');
+      for (const k of ['--chart-found', '--chart-next', '--chart-ink']) { const a = M.rgbToLch(P.rnd(hot)), b = M.rgbToLch(P.rnd(cc(k))), d = Math.hypot(a[1] * Math.cos(a[2] * Math.PI / 180) - b[1] * Math.cos(b[2] * Math.PI / 180), a[1] * Math.sin(a[2] * Math.PI / 180) - b[1] * Math.sin(b[2] * Math.PI / 180), a[0] - b[0]); lo['(printed, smallest) route to ' + k.slice(2) + ' (OKLab distance x100)'] = { min: Math.min(lo['(printed, smallest) route to ' + k.slice(2) + ' (OKLab distance x100)'] ? lo['(printed, smallest) route to ' + k.slice(2) + ' (OKLab distance x100)'].min : 999, d * 100), where: w }; }
+    }
+    // Earnings: the first card is a gil wash under ink and a gil-strong figure; the bar is a gil wash with a gil-graphic tip, figures in ink
+    need4('Earnings: ink on gil wash (first card, bars) (7)', ink, c('--gil-w'), 7, where);
+    need4('Earnings: gil-s figure on the other cards (slip) (4.5)', c('--gil-s'), hx(th.slip), 4.5, where);
+    for (const b of [th.slip, th.paper, th.paper2]) need4('Earnings: bar tip gil-g on the cell (3)', c('--gil-g'), hx(b), 3, where);
+    need4('Earnings: bar tip gil-g on the bar wash (printed)', c('--gil-g'), c('--gil-w'), 0, where);
+    // Board: a locked slot is a route wash fading to the slip, route stripes on its field, ink name and sector text and "community data" tag, and the sea's edge at the slip end
+    const stripes = { 'route wash': c('--route-w'), slip: hx(th.slip) };
+    for (const [n, b] of Object.entries(stripes)) {
+      need4('locked slot: ink name and sector text on ' + n + ' (7)', ink, b, 7, where);
+      if (n === 'slip') for (let s = 1; s <= 7; s++) need4('locked slot: sea edge (the right end of the row is the slip) on ' + n + ' (3)', c('--sea-' + s + '-g'), b, 3, where);
+      need4('locked slot: stripe route-g on ' + n + ' (printed)', c('--route-g'), b, 0, where);
+    }
+    // the company head: the status band sits on a 5 px strip in the page colour (the slab is light in a dark theme and the fixed status colours are not 3:1 on it); the gaps between its quarters are that strip
+    const st = (n) => hx(P.colour('var(' + n + ')', e0));
+    for (const k of ['--back', '--out', '--idle', '--locked']) need4('company head band: ' + k.slice(2) + ' on the page colour strip it sits on (3)', st(k), hx(th.paper), 3, where);
+    // the empty-state rings are drawn as the ring tone 60% over the slab (--slab is --ink): the page-colour text over them stays at 4.5
+    for (const v of ['rank', 'route', 'gil', 'loot']) need4('empty state: page-colour text on the softened ring (ring 60% in slab) (4.5)', hx(th.paper), mixRgb(c('--' + v + '-ring'), ink, 0.6), 4.5, where);
+    for (const v of ['rank', 'route', 'gil', 'loot']) need4('empty state, phone: page-colour text on the fainter ring (ring 32% in slab) (4.5)', hx(th.paper), mixRgb(c('--' + v + '-ring'), ink, 0.32), 4.5, where);
+    need4('empty state: page-colour text on the softened sea-1 ring (4.5)', hx(th.paper), mixRgb(c('--sea-1-ring'), ink, 0.6), 4.5, where);
+    for (let s = 1; s <= 7; s++) need4('Setup: ink (name and count) on a closed sea\'s wash (7)', ink, c('--sea-' + s + '-w'), 7, where);
+    // the rank plate: its rule above and below is on-mid on the rank field (the text pair, again)
+    need4('rank plate: on-mid rule and text on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+  }
+  console.log('Final pass (W29), lowest ratio per new pair over 21 themes x 2 modes (x 7 seas for the route):\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(70) + v.min.toFixed(2).padStart(7) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('final pass (W29): subs.css and subs.js carry the rules and the classes', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  for (const s of ['--chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc;', '.chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 7;', '.chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 4; }', '.chart-node.on-route .chart-letter { fill: var(--chart-hot-text); }',
+    '.chart-svg:has(.chart-route) .chart-lines line.goal:is(.open, .closed) { stroke: var(--chart-ink-step); }',
+    '.fc-head { background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 3px), var(--paper) calc(25% - 3px) 25%) 0 0 / 100% 5px no-repeat, var(--band, none) 0 0 / 100% 5px no-repeat, linear-gradient(var(--paper), var(--paper)) 0 0 / 100% 5px no-repeat, var(--slab); }',
+    '.sub[data-status="locked"] { color: var(--ink); background: linear-gradient(90deg, var(--route-w), var(--slip) 60%); }',
+    '.sub[data-status="locked"][class*="in-sea-"] { box-shadow: inset -10px 0 0 var(--sea-g); }', 'cursor: default; }', '.sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }']) assert.ok(css.includes(s), s);
+  assert.equal(css.split('--chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc;').length - 1, 3, 'all three chart token rules');
+  assert.ok(js.includes("(u && u.sea ? ' in-sea-' + u.sea : '')") && js.includes('style="--band:linear-gradient(90deg, '), 'locked row sea class and the head band');
+  // only the route (and its glow, rings and the letters of its stops) uses --chart-hot; the selection bracket, the focus ring and the start ping use the accent's pale tint
+  const hot = css.split('\n').filter((l) => /^\.chart-[\w-]+[^{]*\{[^}]*var\(--chart-hot(-text)?\)/.test(l)).map((l) => l.slice(0, l.indexOf(' {')));
+  assert.ok(hot.every((x) => ['.chart-route-glow', '.chart-route', '.chart-routering', '.chart-node.on-route .chart-letter'].includes(x)), 'only the route and its stops use --chart-hot: ' + hot.join(', '));
 });

@@ -37,9 +37,9 @@
 .in-sea-6, [data-map-sea="6"] { --sea: var(--sea-6); --sea-g: var(--sea-6-g); --sea-s: var(--sea-6-s); --sea-w: var(--sea-6-w); }
 .in-sea-7, [data-map-sea="7"] { --sea: var(--sea-7); --sea-g: var(--sea-7-g); --sea-s: var(--sea-7-s); --sea-w: var(--sea-7-w); }
 /* Chart tokens (declared here so the contrast test reads them; the chart itself is drawn in a later item). On .map-panel because they use var(). */
-.map-panel { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); --chart-bg: color-mix(in srgb, var(--ink) 82%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--ink) 76%, var(--sea)); --chart-ink: var(--paper); --chart-ink-2: color-mix(in srgb, var(--paper) 80%, var(--ink)); --chart-hot: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 82%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); } }
-:root[data-theme="dark"] .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 82%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); }
+.map-panel { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); --chart-bg: color-mix(in oklab, var(--sea) 46%, color-mix(in oklab, var(--ink) 20%, #000000)); --chart-bg-2: color-mix(in oklab, var(--sea) 46%, color-mix(in oklab, var(--ink) 22%, #000000)); --chart-ink: var(--paper); --chart-ink-2: color-mix(in srgb, var(--paper) 80%, var(--ink)); --chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc; --chart-sel: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-ink-step: color-mix(in srgb, var(--chart-ink) 80%, var(--chart-bg)); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map-panel { --chart-bg: color-mix(in oklab, var(--sea) 44%, color-mix(in oklab, var(--paper) 24%, #000000)); --chart-bg-2: color-mix(in oklab, var(--sea) 44%, color-mix(in oklab, var(--paper-3) 26%, #000000)); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc; --chart-sel: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-ink-step: color-mix(in srgb, var(--chart-ink) 80%, var(--chart-bg)); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); } }
+:root[data-theme="dark"] .map-panel { --chart-bg: color-mix(in oklab, var(--sea) 44%, color-mix(in oklab, var(--paper) 24%, #000000)); --chart-bg-2: color-mix(in oklab, var(--sea) 44%, color-mix(in oklab, var(--paper-3) 26%, #000000)); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc; --chart-sel: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-ink-step: color-mix(in srgb, var(--chart-ink) 80%, var(--chart-bg)); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); }
 .map-panel:has(.chart-svg[data-sea="1"]) { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); }
 .map-panel:has(.chart-svg[data-sea="2"]) { --sea: var(--sea-2); --sea-g: var(--sea-2-g); --sea-s: var(--sea-2-s); --sea-w: var(--sea-2-w); }
 .map-panel:has(.chart-svg[data-sea="3"]) { --sea: var(--sea-3); --sea-g: var(--sea-3-g); --sea-s: var(--sea-3-s); --sea-w: var(--sea-3-w); }
@@ -420,18 +420,21 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .chart-lines line.open.done { stroke: var(--chart-done); stroke-width: 1.5; }
 .chart-lines line.open.lead { stroke: var(--chart-next); stroke-width: 2.5; }
 .chart-lines line.goal:is(.open, .closed) { stroke: var(--chart-ink); stroke-width: 3; } /* (0,3,1), declared after lead and done, so a link that is both lead and goal is a goal link */
+/* W29: while a route is planned the way to the next slot or sea steps back a little (still 4.5:1 on the water) so the route, the only line in --chart-hot, is seen first */
+.chart-svg:has(.chart-route) .chart-lines line.goal:is(.open, .closed) { stroke: var(--chart-ink-step); }
+.chart-svg:has(.chart-route) .chart-chev.goal:not(.lead) { stroke: var(--chart-ink-step); }
 .chart-chev { display: none; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
 .chart-chev.lead { display: inline; stroke: var(--chart-next); }
 .chart-chev.goal:not(.lead) { display: inline; stroke: var(--chart-ink); stroke-width: 3; }
-.chart-route-glow { fill: none; stroke: var(--chart-hot); stroke-opacity: .3; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
-.chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 5; stroke-dasharray: 14 8; stroke-linejoin: round; filter: drop-shadow(0 0 6px var(--chart-glow)); animation: subs-march 1.2s linear infinite; }
+.chart-route-glow { fill: none; stroke: var(--chart-hot); stroke-opacity: .45; stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; }
+.chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 7; stroke-dasharray: 14 8; stroke-linejoin: round; filter: drop-shadow(0 0 8px var(--chart-glow)); animation: subs-march 1.2s linear infinite; }
 .chart-route-dir { fill: none; stroke: var(--chart-ink); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
 .chart-svg text { fill: var(--chart-ink); font-family: var(--f-body); font-weight: 700; paint-order: stroke fill; stroke: var(--chart-bg); stroke-width: .3em; stroke-linejoin: round; }
 .chart-svg .chart-letter { font-family: var(--f-disp); font-weight: 900; letter-spacing: .02em; }
 .chart-tag { fill: var(--chart-ink); }
 .chart-start rect { fill: var(--chart-ink); }
 .chart-start-ring { fill: none; stroke: var(--chart-ink); stroke-width: 2; }
-.chart-start-ping { fill: none; stroke: var(--chart-hot); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: subs-halo 2.4s ease-out infinite; }
+.chart-start-ping { fill: none; stroke: var(--chart-sel); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: subs-halo 2.4s ease-out infinite; }
 .chart-node { cursor: pointer; }
 .chart-node .hit { fill: transparent; stroke: none; }
 .chart-node:hover .hit { fill: color-mix(in srgb, var(--chart-ink) 10%, transparent); }
@@ -442,13 +445,13 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .chart-node.far .chart-letter { fill: var(--chart-ink-2); }
 .chart-overring { fill: none; stroke: var(--chart-far); stroke-width: 1; }
 .chart-node.over-rank .chart-letter { fill: var(--chart-far); }
-.chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 3; }
-.chart-node.on-route .chart-letter { fill: var(--chart-hot); }
-.chart-lock { fill: none; stroke: var(--chart-hot); stroke-width: 3; stroke-linecap: square; }
+.chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 4; }
+.chart-node.on-route .chart-letter { fill: var(--chart-hot-text); }
+.chart-lock { fill: none; stroke: var(--chart-sel); stroke-width: 3; stroke-linecap: square; }
 .chart-plus { fill: none; stroke: var(--chart-ink); stroke-width: 3; stroke-linecap: round; }
 .chart-ring2 { fill: none; stroke: var(--chart-ink); stroke-width: 2; }
 .chart-node:focus { outline: none; }
-.chart-node:focus-visible .hit, .chart-node:focus .hit { stroke: var(--chart-hot); stroke-width: 4; }
+.chart-node:focus-visible .hit, .chart-node:focus .hit { stroke: var(--chart-sel); stroke-width: 4; }
 .chart-key .key.found { color: var(--back); } .chart-key .key.next { color: var(--idle); } .chart-key .key.far { color: var(--locked); }
 .chart-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 14px; }
 .chart-facts dt { color: var(--ink-2); } .chart-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
@@ -732,11 +735,13 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .log-grade.g-s, .log-grade.g-ss { background: var(--rank-m); color: var(--on-mid); border-color: var(--ink); }
 @media (max-width: 700px) { .log-row.logged .log-what { min-width: 0; } .log-row.logged .log-what::after { margin-left: 0; } }
 /* W26: Earnings. Gil is the gold voice; a route carries its sea's colour; items brought back are the loot voice */
-.earn-card:first-child { --slab: var(--gil-m); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background-color: var(--slab); color: var(--on-slab); background-image: linear-gradient(var(--ink), var(--ink)); }
+/* W29: the head is the one full-strength gil field on the screen; the first card is a gil wash under a thick ink band, the others a wash-free slip under a gil band; the bars are washes with a graphic tip (never the field tone) */
+.earn-card:first-child { background-color: var(--gil-w); color: var(--ink); background-image: linear-gradient(var(--ink), var(--ink)); background-size: 100% 10px; }
+.earn-card:first-child span, .earn-card:first-child b { color: var(--ink); }
 .earn-card:not(:first-child) { background-image: linear-gradient(var(--gil-g), var(--gil-g)); }
-.earn-card:not(:first-child) b { color: var(--gil-s); }
+.earn-card b { color: var(--gil-s); }
 .earn-t td b { color: var(--gil-s); }
-.earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { background: linear-gradient(90deg, var(--gil-bar) calc(var(--p) * 100%), transparent 0); }
+.earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { background: linear-gradient(90deg, var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%), transparent 0); }
 .earn-ranked tr[style] > td:nth-child(3) b, .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child b { color: var(--ink); }
 .earn-ranked tr[data-pos] > td:nth-child(2), .earn-thin tr:not(.earn-note) > td:first-child { font: 600 14px var(--f-data); color: var(--route-s); border-left: 6px solid var(--sea-g, var(--route-g)); }
 .earn-ranked tr[data-pos] > td:nth-child(4) { color: var(--gil-s); }
@@ -775,4 +780,20 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }
 .sea[class*="in-sea-"][open] > summary { --slab: var(--sea); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background: var(--slab); color: var(--on-slab); }
 .tick b { color: var(--route-s); }
-.panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { background-image: repeating-radial-gradient(circle at 100% 0, transparent 0 46px, var(--ring) 46px 48px); }
+.panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { --ringc: color-mix(in srgb, var(--ring) 60%, var(--slab)); background-image: radial-gradient(circle at 100% 0, transparent 0 46px, var(--ringc) 46px 48px, transparent 48px 94px, var(--ringc) 94px 96px, transparent 96px 142px, var(--ringc) 142px 144px, transparent 144px 190px, var(--ringc) 190px 192px, transparent 192px 238px, var(--ringc) 238px 240px, transparent 240px 286px, var(--ringc) 286px 288px, transparent 288px); background-size: 100% 100%; background-position: 0 0; background-repeat: no-repeat; } /* W29: six soft rings in the top-right corner (the shared panel rule had sized this layer to the 6 px molten band, so they had shown only as ticks along the top edge; a repeating gradient across the panel put lines through the text) */
+
+/* W29: the final pass (colour only).
+   Board: a company head carries a thin band across its top, one quarter per slot in that slot's status colour (green Back, blue Out, amber Idle, neutral Locked; no colour for a slot with no sub yet), set from the card's data in --band; the words are on the rows below.
+   A locked slot is the route voice (unlocking is what Unlocking Routes is about): a route-tinted row with route stripes on its field, the unlocking sector in route text, and a right edge in the colour of the sea that sector lies in.
+   The rank plate keeps the rank voice but is a tag, not a button: a slanted label with a rule above and below, no pointer, no hover; the action button is a square slab with the molten band and chevrons. */
+.fc-head { background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 3px), var(--paper) calc(25% - 3px) 25%) 0 0 / 100% 5px no-repeat, var(--band, none) 0 0 / 100% 5px no-repeat, linear-gradient(var(--paper), var(--paper)) 0 0 / 100% 5px no-repeat, var(--slab); }
+.sub[data-status="locked"] { color: var(--ink); background: linear-gradient(90deg, var(--route-w), var(--slip) 60%); }
+.sub[data-status="locked"]::before { background-image: repeating-linear-gradient(-65deg, var(--route-g) 0 8px, transparent 8px 16px); }
+.sub[data-status="locked"] .sub-meta { color: var(--ink); font-weight: 700; }
+.sub[data-status="locked"] .tag { color: var(--ink); }
+.sub[data-status="locked"][class*="in-sea-"] { box-shadow: inset -10px 0 0 var(--sea-g); }
+.sub[data-sub] .sub-meta > span:first-child { box-shadow: inset 0 2px 0 var(--on-mid), inset 0 -2px 0 var(--on-mid); cursor: default; }
+/* W29: a closed sea in the wizard is its colour's wash (ink text, 7:1), an open one its field */
+.sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }
+.sea[class*="in-sea-"]:not([open]) > summary .muted { color: var(--ink); }
+@media (max-width: 700px) { .panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { --ringc: color-mix(in srgb, var(--ring) 32%, var(--slab)); } } /* W29: on a phone the rings cross the text, so they are fainter */
