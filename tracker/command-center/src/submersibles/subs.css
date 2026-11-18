@@ -37,16 +37,16 @@
 .in-sea-6, [data-map-sea="6"] { --sea: var(--sea-6); --sea-g: var(--sea-6-g); --sea-s: var(--sea-6-s); --sea-w: var(--sea-6-w); }
 .in-sea-7, [data-map-sea="7"] { --sea: var(--sea-7); --sea-g: var(--sea-7-g); --sea-s: var(--sea-7-s); --sea-w: var(--sea-7-w); }
 /* Chart tokens (declared here so the contrast test reads them; the chart itself is drawn in a later item). On .map-panel because they use var(). */
-.map-panel { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); --chart-bg: color-mix(in srgb, var(--ink) 90%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--ink) 84%, var(--sea)); --chart-ink: var(--paper); --chart-ink-2: color-mix(in srgb, var(--paper) 80%, var(--ink)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 86%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); } }
-:root[data-theme="dark"] .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 86%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 45%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #f0b347; --chart-far: color-mix(in srgb, var(--chart-ink) 58%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); }
-.map-panel:has(.chart-svg[data-sea="1"]) { --sea: var(--sea-1); }
-.map-panel:has(.chart-svg[data-sea="2"]) { --sea: var(--sea-2); }
-.map-panel:has(.chart-svg[data-sea="3"]) { --sea: var(--sea-3); }
-.map-panel:has(.chart-svg[data-sea="4"]) { --sea: var(--sea-4); }
-.map-panel:has(.chart-svg[data-sea="5"]) { --sea: var(--sea-5); }
-.map-panel:has(.chart-svg[data-sea="6"]) { --sea: var(--sea-6); }
-.map-panel:has(.chart-svg[data-sea="7"]) { --sea: var(--sea-7); }
+.map-panel { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); --chart-bg: color-mix(in srgb, var(--ink) 82%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--ink) 76%, var(--sea)); --chart-ink: var(--paper); --chart-ink-2: color-mix(in srgb, var(--paper) 80%, var(--ink)); --chart-hot: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 82%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); } }
+:root[data-theme="dark"] .map-panel { --chart-bg: color-mix(in srgb, var(--paper) 82%, var(--sea)); --chart-bg-2: color-mix(in srgb, var(--chart-bg) 50%, color-mix(in srgb, var(--paper-3) 90%, var(--sea))); --chart-ink: var(--ink); --chart-ink-2: color-mix(in srgb, var(--ink) 40%, var(--ink-2)); --chart-hot: color-mix(in srgb, var(--seal) 40%, white); --chart-line: color-mix(in srgb, var(--chart-ink) 20%, transparent); --chart-found: #4fd18b; --chart-next: #ffe38a; --chart-far: color-mix(in srgb, var(--chart-ink) 54%, var(--chart-bg)); --chart-glow: color-mix(in srgb, var(--chart-hot) 55%, transparent); --chart-bg-hi: color-mix(in srgb, var(--chart-ink) 4%, var(--chart-bg-2)); --chart-back: color-mix(in srgb, var(--sea) 22%, var(--chart-bg)); --chart-link: color-mix(in srgb, var(--chart-ink) 30%, var(--chart-bg)); --chart-done: color-mix(in srgb, var(--chart-found) 50%, var(--chart-bg)); }
+.map-panel:has(.chart-svg[data-sea="1"]) { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); }
+.map-panel:has(.chart-svg[data-sea="2"]) { --sea: var(--sea-2); --sea-g: var(--sea-2-g); --sea-s: var(--sea-2-s); --sea-w: var(--sea-2-w); }
+.map-panel:has(.chart-svg[data-sea="3"]) { --sea: var(--sea-3); --sea-g: var(--sea-3-g); --sea-s: var(--sea-3-s); --sea-w: var(--sea-3-w); }
+.map-panel:has(.chart-svg[data-sea="4"]) { --sea: var(--sea-4); --sea-g: var(--sea-4-g); --sea-s: var(--sea-4-s); --sea-w: var(--sea-4-w); }
+.map-panel:has(.chart-svg[data-sea="5"]) { --sea: var(--sea-5); --sea-g: var(--sea-5-g); --sea-s: var(--sea-5-s); --sea-w: var(--sea-5-w); }
+.map-panel:has(.chart-svg[data-sea="6"]) { --sea: var(--sea-6); --sea-g: var(--sea-6-g); --sea-s: var(--sea-6-s); --sea-w: var(--sea-6-w); }
+.map-panel:has(.chart-svg[data-sea="7"]) { --sea: var(--sea-7); --sea-g: var(--sea-7-g); --sea-s: var(--sea-7-s); --sea-w: var(--sea-7-w); }
 
 @keyframes subs-halo { from { transform: scale(.92); opacity: .9; } to { transform: scale(1.55); opacity: 0; } }
 @keyframes subs-march { to { stroke-dashoffset: -22; } }
@@ -407,18 +407,22 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 /* The chart is a dark deep-water sonar chart drawn by the app (not the game's map): water, scan lines, graticule, rings and a turning sweep around Start. Every stroke keeps its pixel width. */
 .chart-svg { display: block; width: 100%; height: auto; max-height: 80vh; background: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--chart-ink) 4%, transparent) 3px 4px), radial-gradient(120% 90% at 50% 0, var(--chart-bg-2), var(--chart-bg) 70%); box-shadow: inset 0 0 80px -10px var(--chart-bg); }
 .chart-svg :is(path, line, circle, polyline, rect) { vector-effect: non-scaling-stroke; }
-.chart-grid { fill: none; stroke: var(--chart-line); stroke-width: 1; }
-.chart-grid.major { stroke-width: 2; }
-.chart-rings circle { fill: none; stroke: color-mix(in srgb, var(--sea) 45%, var(--chart-ink)); stroke-opacity: .5; stroke-width: 1.5; }
-.chart-rings circle.dash { stroke-dasharray: 4 6; }
+/* R3.6: the background recedes in one faint colour (--chart-back), 1 px; nothing is dashed but the planned route */
+.chart-grid { fill: none; stroke: var(--chart-back); stroke-width: 1; stroke-opacity: .55; }
+.chart-grid.major { stroke-opacity: 1; }
+.chart-rings circle { fill: none; stroke: var(--chart-back); stroke-width: 1; }
 .chart-sweep { transform-box: view-box; animation: subs-turn 9s linear infinite; }
 /* W18 fallback (spec "Escalate if"): a filled fan would lighten the ground under the markers past the contrast test, so the fan is an outline only */
-.chart-sweep-fan { fill: none; stroke: var(--chart-hot); stroke-opacity: .28; stroke-width: 1; }
-.chart-sweep-edge { stroke: var(--chart-hot); stroke-opacity: .6; stroke-width: 2; }
-.chart-lines line.open { stroke: var(--chart-ink-2); stroke-width: 2; }
-.chart-lines line.closed { stroke: var(--chart-far); stroke-width: 1.5; stroke-dasharray: 5 5; }
-.chart-chev { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
-.chart-chev.open { stroke: var(--chart-ink-2); } .chart-chev.closed { stroke: var(--chart-far); }
+.chart-sweep-fan { display: none; }
+.chart-sweep-edge { stroke: var(--chart-back); stroke-width: 1.5; }
+/* links by meaning: between unfound sectors dim, between found ones dim green, found to next amber with the only arrowheads, the way to a slot or sea thickest (declared last) */
+.chart-lines line.closed { stroke: var(--chart-link); stroke-width: 1; }
+.chart-lines line.open.done { stroke: var(--chart-done); stroke-width: 1.5; }
+.chart-lines line.open.lead { stroke: var(--chart-next); stroke-width: 2.5; }
+.chart-lines line.goal:is(.open, .closed) { stroke: var(--chart-ink); stroke-width: 3; } /* (0,3,1), declared after lead and done, so a link that is both lead and goal is a goal link */
+.chart-chev { display: none; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+.chart-chev.lead { display: inline; stroke: var(--chart-next); }
+.chart-chev.goal:not(.lead) { display: inline; stroke: var(--chart-ink); stroke-width: 3; }
 .chart-route-glow { fill: none; stroke: var(--chart-hot); stroke-opacity: .3; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
 .chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 5; stroke-dasharray: 14 8; stroke-linejoin: round; filter: drop-shadow(0 0 6px var(--chart-glow)); animation: subs-march 1.2s linear infinite; }
 .chart-route-dir { fill: none; stroke: var(--chart-ink); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -432,16 +436,16 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .chart-node .hit { fill: transparent; stroke: none; }
 .chart-node:hover .hit { fill: color-mix(in srgb, var(--chart-ink) 10%, transparent); }
 .chart-node.found > circle:last-of-type { fill: var(--chart-found); stroke: var(--chart-bg); stroke-width: 6; paint-order: stroke fill; filter: drop-shadow(0 0 5px var(--chart-found)); }
-.chart-node.next > rect { fill: var(--chart-bg); stroke: var(--chart-next); stroke-width: 3; }
+.chart-node.next > rect { fill: var(--chart-next); stroke: var(--chart-bg); stroke-width: 6; paint-order: stroke fill; }
 .chart-halo { fill: none; stroke: var(--chart-next); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: subs-halo 2.4s ease-out infinite; }
-.chart-node.far > rect { fill: var(--chart-far); stroke: none; }
+.chart-node.far > rect { fill: var(--chart-bg); stroke: var(--chart-far); stroke-width: 2; }
 .chart-node.far .chart-letter { fill: var(--chart-ink-2); }
-.chart-overring { fill: none; stroke: var(--chart-far); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-overring { fill: none; stroke: var(--chart-far); stroke-width: 1; }
 .chart-node.over-rank .chart-letter { fill: var(--chart-far); }
 .chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 3; }
 .chart-node.on-route .chart-letter { fill: var(--chart-hot); }
 .chart-lock { fill: none; stroke: var(--chart-hot); stroke-width: 3; stroke-linecap: square; }
-.chart-plus { fill: none; stroke: var(--chart-next); stroke-width: 2.5; stroke-linecap: round; }
+.chart-plus { fill: none; stroke: var(--chart-ink); stroke-width: 3; stroke-linecap: round; }
 .chart-ring2 { fill: none; stroke: var(--chart-ink); stroke-width: 2; }
 .chart-node:focus { outline: none; }
 .chart-node:focus-visible .hit, .chart-node:focus .hit { stroke: var(--chart-hot); stroke-width: 4; }
@@ -556,23 +560,23 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .map-seas { gap: 8px; }
 .map-seas .btn[data-map-sea] { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 52px; padding: 6px 14px 14px; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); color: var(--ink); font: 900 16px/1.1 var(--f-disp); text-transform: uppercase; letter-spacing: .03em; text-align: left; overflow: hidden; }
 .map-seas .btn[data-map-sea] .muted { display: block; font: 400 11px/1.2 var(--f-data); text-transform: none; letter-spacing: 0; color: var(--ink-2); }
-.map-seas .btn[data-map-sea]::before, .map-seas .btn[data-map-sea]::after { content: ""; position: absolute; left: 10px; bottom: 4px; height: 6px; transform: skewX(-25deg); transform-origin: left bottom; }
-.map-seas .btn[data-map-sea]::before { right: 10px; background: var(--ink-2); }
-.map-seas .btn[data-map-sea]::after { width: calc((100% - 20px) * var(--p, 0)); background: var(--sea-1); }
-.map-seas .btn[data-map-sea="2"]::after { background: var(--sea-2); } .map-seas .btn[data-map-sea="3"]::after { background: var(--sea-3); }
-.map-seas .btn[data-map-sea="4"]::after { background: var(--sea-4); } .map-seas .btn[data-map-sea="5"]::after { background: var(--sea-5); }
-.map-seas .btn[data-map-sea="6"]::after { background: var(--sea-6); } .map-seas .btn[data-map-sea="7"]::after { background: var(--sea-7); }
-.map-seas .btn[data-map-sea][aria-pressed="true"] { background: var(--slab); border-color: var(--slab); color: var(--on-slab); }
+.map-seas .btn[data-map-sea]::before, .map-seas .btn[data-map-sea]::after { content: ""; position: absolute; left: 2px; bottom: 4px; height: 6px; transform: skewX(-25deg); transform-origin: left bottom; }
+.map-seas .btn[data-map-sea]::before { right: 10px; background: var(--rule); }
+.map-seas .btn[data-map-sea]::after { width: calc((100% - 12px) * var(--p, 0)); background: var(--sea-g); }
+/* W24: each sea is its own strong hue on its tab; the chosen sea is a field in that hue */
+.map-seas .btn[data-map-sea] { border-left: 10px solid var(--sea); padding-left: 6px; }
+.map-seas .btn[data-map-sea][aria-pressed="true"] { --slab: var(--sea); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background: var(--slab); border-color: var(--ink); color: var(--on-slab); }
 .map-seas .btn[data-map-sea][aria-pressed="true"] .muted { color: var(--on-slab-2); }
-.map-seas .btn[data-map-sea][aria-pressed="true"]::before { background: var(--on-slab-2); }
+.map-seas .btn[data-map-sea][aria-pressed="true"]::before { background: color-mix(in srgb, var(--on-mid) 25%, var(--sea)); }
+.map-seas .btn[data-map-sea][aria-pressed="true"]::after { background: var(--on-mid); }
 .map-seas .btn[data-map-sea]:focus-visible { outline-offset: 2px; }
 .map-seas .btn[data-map-sea][aria-pressed="true"]:focus-visible { outline-color: var(--seal); }
 .map-panel .field.inline, .planner .field.inline { font: 700 11px/1.2 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
 .map-panel .field.inline select { font-size: 16px; font-weight: 700; }
 .chart-wrap { border: var(--edge) solid var(--ink); border-radius: 0; box-shadow: var(--glow); }
-.chart-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; padding: 10px 14px; background: var(--chart-bg); border-bottom: 5px solid var(--sea); }
-.chart-sea { font: 900 34px/1 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; color: var(--chart-ink); }
-.chart-count { font: 600 14px var(--f-data); color: var(--chart-ink-2); }
+.chart-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; padding: 10px 14px; background: var(--sea); border-bottom: 6px solid var(--ink); }
+.chart-sea { font: 900 34px/1 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; color: var(--on-mid); }
+.chart-count { font: 600 14px var(--f-data); color: var(--on-mid); }
 .chart-key { display: block; margin: 0 0 12px; padding: 10px 14px; background: var(--chart-bg); color: var(--chart-ink); border: var(--edge) solid var(--ink); border-top: 0; font-size: 13px; line-height: 1.5; }
 .chart-key .key { display: inline-block; vertical-align: -3px; margin-right: 2px; line-height: 0; }
 .chart-key .key.found { color: var(--chart-found); } .chart-key .key.next { color: var(--chart-next); } .chart-key .key.far { color: var(--chart-far); }
@@ -626,6 +630,20 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
   .chart-sea { font-size: 24px; }
   .chart-details h3 .sd-letter { font-size: 52px; }
 }
+
+/* W24: sea colour and meaning in the Map tab's chrome and the sector details */
+.map-panel > h2:first-child { border-image: none; border-bottom-color: var(--sea); }
+.chart-details h3 { --slab: var(--sea); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); border-image: none; border-bottom-color: var(--ink); }
+.chart-details > .muted[class*="st-"] { border-left: 12px solid; padding-left: 10px; }
+.chart-details > .muted.st-found { color: var(--back-s); border-left-color: var(--back); }
+.chart-details > .muted.st-next { color: var(--idle-s); border-left-color: var(--idle); }
+.chart-details > .muted.st-far { color: var(--ink-2); border-left-color: var(--ink-2); }
+.chart-facts dd:nth-of-type(1) { color: var(--rank-s); }
+.chart-facts dd:nth-of-type(6), .chart-facts dd:nth-of-type(7) { color: var(--route-s); }
+.chart-details .rates-tier > summary::before { background: var(--loot-m); color: var(--on-mid); }
+.chart-details .rate-item b { color: var(--loot-s); }
+.map-grid > .planner { border-left: 10px solid var(--sea-g); }
+.planner .route-line b { color: var(--route-s); }
 
 /* W20: the final pass */
 /* Board: the recommended route is never cut. Hero and phone rows wrap it inside the slab; dense rows (5+ companies from 1400 px, the by-return-time list from 701 px) keep one line because C25 needs it, and the slab's title holds the full text */

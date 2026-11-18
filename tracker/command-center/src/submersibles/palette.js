@@ -19,6 +19,7 @@
   P.WASH_INK = 7.2;         // decision 2: ink on -w (the test asks 7)
   P.WASH_L = 0.90;          // lightness a wash aims for under dark ink (it is lowered, never raised, until ink reaches WASH_INK)
   P.WASH_L_DARK = 0.30;     // the same under light ink
+  P.WASH_CHROMA = 1 / 3;    // a wash is a quiet tint under text, not a field: its chroma is at most this share of its field's (every -w tone)
   P.ON_MID = 4.6;           // decision 2: --on-mid on every field
   P.NUDGE = 20;             // decision 4: degrees of hue kept between a voice and a status colour
   P.SEA_HUES = [250, 50, 165, 0, 315, 282, 215]; // sea 1 to 7 (blue, ember, jade, rose, lilac, indigo, ice), as in spec R3.4
@@ -163,8 +164,8 @@
       tokens[name.m] = toHex(m);
       tokens[name.g] = toHex(colourAt(fit(H, pages, P.GRAPHIC), H));
       tokens[name.s] = toHex(colourAt(fit(H, pages, P.STRONG), H));
-      var wl = fit(H, [T.ink], P.WASH_INK);
-      tokens[name.w] = toHex(colourAt(inkIsDark ? Math.max(P.WASH_L, wl) : Math.min(P.WASH_L_DARK, wl), H));
+      var wc = P.WASH_CHROMA * chromaAt(fieldL, H), wl = fit(H, [T.ink], P.WASH_INK, wc);
+      tokens[name.w] = toHex(colourAt(inkIsDark ? Math.max(P.WASH_L, wl) : Math.min(P.WASH_L_DARK, wl), H, wc));
       if (withRing) tokens[withRing] = toHex(colourAt(fit(H, [T.paper], P.STRONG), H)); // text in the page colour on a ring of this colour
     }
     P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], '--' + v + '-ring'); });

@@ -313,3 +313,69 @@ test('palette (W22b): the applier recomputes when the look changes and sets the 
     assert.ok(calls.length > n1 && second['--rank-m'] !== first['--rank-m'] && second['--on-mid'] !== undefined, 'a theme change sets new tokens without a reload');
   } finally { globalThis.document = saved.document; globalThis.getComputedStyle = saved.getComputedStyle; globalThis.MutationObserver = saved.MutationObserver; delete require.cache[key]; globalThis.PALETTE = had; }
 });
+
+// ---- Revision 3 (W23): the chart's lightness ladder, link colours and receding background; the wash cap ----
+test('palette (W23): a wash is a quiet tint, at most WASH_CHROMA of its field\'s chroma, with ink at 7:1 (21 themes, both modes)', () => {
+  const fail = []; let top = 0, low = 9, n = 0;
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens;
+    for (const v of PAL.VOICES.map((x) => '--' + x).concat([1, 2, 3, 4, 5, 6, 7].map((i) => '--sea-' + i))) {
+      const m = v.startsWith('--sea') ? v : v + '-m', fieldC = M.rgbToLch(hx(T[m]))[1], washC = M.rgbToLch(hx(T[v + '-w']))[1];
+      n++; top = Math.max(top, washC / fieldC); low = Math.min(low, washC);
+      if (washC > PAL.WASH_CHROMA * fieldC + 0.004) fail.push(v + ' wash chroma ' + washC.toFixed(3) + ' over ' + (PAL.WASH_CHROMA * fieldC).toFixed(3) + ' in ' + where);
+      if (washC < 0.02) fail.push(v + ' wash chroma ' + washC.toFixed(3) + ' under 0.02 (not tinted) in ' + where);
+      if (M.ratio(hx(th.ink), hx(T[v + '-w'])) < 7) fail.push(v + ' ink on wash under 7 in ' + where);
+    }
+  }
+  console.log('Wash chroma (' + n + ' washes): WASH_CHROMA ' + PAL.WASH_CHROMA.toFixed(3) + ', largest share of the field ' + top.toFixed(3) + ', smallest chroma ' + low.toFixed(3));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' washes outside the cap');
+});
+
+test('chart (W23): ladder far < found < next, link colours and the receding background, all 21 themes, both modes, 7 seas (the computed sea colours)', () => {
+  const fail = [], lo = {}, hi = {};
+  const mn = (k, v, w) => { if (!lo[k] || v < lo[k][0]) lo[k] = [v, w]; };
+  const mx = (k, v, w) => { if (!hi[k] || v > hi[k][0]) hi[k] = [v, w]; };
+  const waters = {};
+  for (const [row, mode, where] of rows) {
+    const dk = mode === 'dark', e0 = P.env(row, mode), T = PAL.compute(THEME_IN(row, mode)).tokens;
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, dk ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] });
+      const c = (x) => colour('var(' + x + ')', env), w = where + ' sea ' + n, L = (x) => lum(P.rnd(c(x)));
+      const bg = c('--chart-bg'), bg2 = c('--chart-bg-2'), bgh = c('--chart-bg-hi');
+      const need2 = (pair, v, min, max) => { if (min != null) mn(pair, v, w); if (max != null) mx(pair, v, w); if ((min != null && v < min) || (max != null && v > max)) fail.push(pair + ' ' + v.toFixed(2) + ' outside ' + (min == null ? '' : min) + '..' + (max == null ? '' : max) + ' in ' + w); };
+      // the background recedes: back at most 1.6 on every ground, and still there (1.15) on the plain water
+      for (const [g, b] of [['bg', bg], ['bg-2', bg2], ['bg-hi', bgh]]) need2('back on ' + g + ' (at most 1.6)', ratio(c('--chart-back'), b), null, 1.6);
+      need2('back on bg (at least 1.15)', ratio(c('--chart-back'), bg), 1.15, null);
+      need2('link on bg (1.8 to 3)', ratio(c('--chart-link'), bg), 1.8, 3); mx('link on bg (1.8 to 3)', ratio(c('--chart-link'), bg), w);
+      need2('done on bg-hi (at least 2)', ratio(c('--chart-done'), bgh), 2, null);
+      // the links that carry meaning: found to next (amber) and the way to a slot or sea (ink) read at 4.5 on every ground (the 3:1 of a meaningful graphic with room)
+      for (const [g, b] of [['bg', bg], ['bg-2', bg2], ['bg-hi', bgh]]) { need2('lead link (next) on ' + g + ' (4.5)', ratio(c('--chart-next'), b), 4.5, null); need2('goal link (ink) on ' + g + ' (4.5)', ratio(c('--chart-ink'), b), 4.5, null); need2('far outline on ' + g + ' (3)', ratio(c('--chart-far'), b), 3, null); need2('found on ' + g + ' (4.5)', ratio(c('--chart-found'), b), 4.5, null); }
+      // luminance order back < link < far < found < next, and the ratios a colour-blind player reads
+      const ord = ['--chart-back', '--chart-link', '--chart-far', '--chart-found', '--chart-next'].map(L);
+      for (let i = 0; i < 4; i++) { mn('luminance step ' + i + ' (back, link, far, found, next)', ord[i + 1] - ord[i], w); if (!(ord[i + 1] > ord[i])) fail.push('luminance order broken at step ' + i + ' in ' + w); }
+      need2('next against found (luminance, at least 1.5)', (ord[4] + 0.05) / (ord[3] + 0.05), 1.5, null);
+      need2('found against far (luminance, at least 1.3)', (ord[3] + 0.05) / (ord[2] + 0.05), 1.3, null);
+      (waters[where] = waters[where] || []).push(M.rgbToLch(P.rnd(bg)));
+    }
+  }
+  // the water of two seas can be told apart: smallest hue-and-chroma distance between two seas' water, per theme
+  let wd = 9, wdw = '';
+  for (const [where, ws] of Object.entries(waters)) for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) {
+    const a = ws[i], b = ws[j], ax = a[1] * Math.cos(a[2] * Math.PI / 180), ay = a[1] * Math.sin(a[2] * Math.PI / 180), bx = b[1] * Math.cos(b[2] * Math.PI / 180), by = b[1] * Math.sin(b[2] * Math.PI / 180);
+    const d = Math.hypot(ax - bx, ay - by); if (d < wd) { wd = d; wdw = where + ' seas ' + (i + 1) + ' and ' + (j + 1); }
+  }
+  console.log('Chart (W23), lowest per pair:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v[0].toFixed(3).padStart(7) + '  at ' + v[1]).join('\n') + '\nHighest per pair:\n' + Object.entries(hi).map(([k, v]) => '  ' + k.padEnd(62) + v[0].toFixed(3).padStart(7) + '  at ' + v[1]).join('\n') + '\nSmallest chroma-plane distance between two seas\' water: ' + wd.toFixed(4) + ' (' + wdw + ')');
+  assert.ok(wd >= 0.012, 'two seas\' water too alike: ' + wd + ' ' + wdw);
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' chart pairs outside their rules');
+});
+
+test('chart (W23): subs.css has the dash only on the route, chevrons hidden but lead and goal, the sweep fan hidden and a hollow far marker', () => {
+  const rules = css.split('\n').filter((l) => /stroke-dasharray/.test(l));
+  assert.equal(rules.length, 1); assert.ok(rules[0].startsWith('.chart-route {'));
+  assert.ok(/\.chart-chev \{ display: none;/.test(css) && css.includes('.chart-chev.lead { display: inline;') && css.includes('.chart-chev.goal:not(.lead) { display: inline;'));
+  assert.ok(css.includes('.chart-sweep-fan { display: none; }'));
+  assert.ok(css.includes('.chart-node.far > rect { fill: var(--chart-bg); stroke: var(--chart-far); stroke-width: 2; }'));
+  assert.ok(css.includes('.chart-node.next > rect { fill: var(--chart-next); stroke: var(--chart-bg); stroke-width: 6; paint-order: stroke fill; }'));
+  assert.ok(css.indexOf('.chart-lines line.goal:is(.open, .closed)') > css.indexOf('.chart-lines line.open.lead') && css.indexOf('.chart-lines line.open.lead') > css.indexOf('.chart-lines line.open.done'));
+  assert.equal(P.RULES.chartLight['--chart-next'], '#ffe38a'); assert.equal(P.RULES.chartDark['--chart-next'], '#ffe38a');
+});

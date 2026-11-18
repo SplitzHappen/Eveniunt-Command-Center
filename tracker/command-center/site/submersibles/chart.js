@@ -147,8 +147,18 @@
       var ux = dx / len, uy = dy / len, mx = (x1 + x2) / 2, my = (y1 + y2) / 2, px = -uy, py2 = ux;
       return '<path class="' + cls + '" aria-hidden="true" d="M' + num(mx - ux * size * 0.6 + px * size * 0.8) + ' ' + num(my - uy * size * 0.6 + py2 * size * 0.8) + 'L' + num(mx + ux * size) + ' ' + num(my + uy * size) + 'L' + num(mx - ux * size * 0.6 - px * size * 0.8) + ' ' + num(my - uy * size * 0.6 - py2 * size * 0.8) + '"/>';
     }
-    o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line class="' + (at[l.from].state === 'found' ? 'open' : 'closed') + '" x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
-    o += '<g class="chart-chevs" aria-hidden="true">' + view.lines.map(function (l) { return chev(l.x1, l.y1, l.x2, l.y2, r * 0.7, 'chart-chev ' + (at[l.from].state === 'found' ? 'open' : 'closed')); }).join('') + '</g>';
+    // The way to an unfound slot or next-sea sector (a class only): from each such sector, back along the reveal links while the sector is not found.
+    var byOf = {}; view.lines.forEach(function (l) { byOf[l.to] = l.from; });
+    var goal = {};
+    view.nodes.forEach(function (n) {
+      if (!(n.slot || n.opens) || n.state === 'found') return;
+      var id = n.id, i = 0;
+      while (id != null && at[id] && at[id].state !== 'found' && i++ < 64) { goal[id] = true; id = byOf[id]; }
+    });
+    // open or closed as before; done: both ends found; lead: only the from end found; goal: on the way to a slot or sea
+    function lcls(l) { return (at[l.from].state === 'found' ? 'open' : 'closed') + (at[l.from].state === 'found' && at[l.to].state === 'found' ? ' done' : '') + (at[l.from].state === 'found' && at[l.to].state !== 'found' ? ' lead' : '') + (goal[l.to] ? ' goal' : ''); }
+    o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line class="' + lcls(l) + '" x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
+    o += '<g class="chart-chevs" aria-hidden="true">' + view.lines.map(function (l) { return chev(l.x1, l.y1, l.x2, l.y2, r * 0.7, 'chart-chev ' + lcls(l)); }).join('') + '</g>';
     var path = [st].concat((route || []).filter(function (id) { return at[id]; }).map(function (id) { return at[id]; }));
     if (path.length > 1) {
       var pts = path.map(function (p) { return num(p.x) + ',' + num(p.y); }).join(' ');

@@ -2155,3 +2155,50 @@ test('D6: a non-gil lead never carries a gil tip; without settings the S6 tip is
   const plain = ADV.advise({ sub: { rank: 145, parts: SHARK }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, logged: [R3_LOGGED([1, 2], 14, 412000)], enough: 10 });
   assert.ok(plain.parts && plain.parts.estimate === undefined && /own log/.test(plain.parts.why));
 });
+
+// ---------------------------------------------------------------- W23: the chart's link classes (colour only; chart.js adds classes, no element)
+const linesOf = (svg) => [...svg.match(/<g class="chart-lines"[^>]*>(.*?)<\/g>/)[1].matchAll(/<line class="([^"]*)" x1="([-\d.]+)" y1="([-\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"\/>/g)].map((m) => ({ cls: m[1].split(' '), pts: [+m[2], +m[3], +m[4], +m[5]] }));
+const chevsOf = (svg) => [...svg.match(/<g class="chart-chevs"[^>]*>(.*?)<\/g>/)[1].matchAll(/<path class="([^"]*)"/g)].map((m) => m[1].split(' '));
+test('chart W23: every line has exactly one of open and closed; done and lead only with open, never both; chevrons carry the same classes', () => {
+  for (const sea of D.seas) for (const found of [[], [1], [1, 2, 3], D.sectors.filter((s) => s.sea === sea.id).slice(0, 5).map((s) => s.id), D.sectors.filter((s) => s.sea === sea.id).map((s) => s.id)]) {
+    const v = CH.view(sea.id, found), svg = CH.svg(v), ls = linesOf(svg), cv = chevsOf(svg);
+    assert.equal(ls.length, v.lines.length); assert.equal(cv.length, v.lines.length);
+    ls.forEach((l, i) => {
+      assert.equal(l.cls.filter((c) => c === 'open' || c === 'closed').length, 1);
+      if (l.cls.includes('done') || l.cls.includes('lead')) assert.ok(l.cls.includes('open'));
+      assert.ok(!(l.cls.includes('done') && l.cls.includes('lead')));
+      const ok = (x) => ['open', 'closed', 'done', 'lead', 'goal'].includes(x); assert.ok(l.cls.every(ok));
+      assert.deepEqual(cv[i], ['chart-chev'].concat(l.cls), 'chevron ' + i + ' has the line\'s classes');
+      const from = found.includes(v.lines[i].from), to = found.includes(v.lines[i].to);
+      assert.equal(l.cls.includes('open'), from); assert.equal(l.cls.includes('done'), from && to); assert.equal(l.cls.includes('lead'), from && !to);
+    });
+  }
+});
+test('chart W23: the goal links are the chain from each unfound slot or next-sea sector back to the first found one, walked over the data\'s unlock links', () => {
+  const slotSector = new Set(D.subSlots.map((u) => u.sector));
+  for (const sea of D.seas) {
+    const secs = D.sectors.filter((s) => s.sea === sea.id);
+    for (const found of [[], [1, 2, 3], secs.slice(0, 5).map((s) => s.id), secs.slice(0, 12).map((s) => s.id)]) {
+      const f = new Set(found), want = new Set();
+      for (const s of secs) {
+        const u = D.unlocks[s.id] || {};
+        if ((slotSector.has(s.id) || u.opensSea) && !f.has(s.id)) for (let id = s.id, n = 0; id != null && SECTOR_BY[id] && SECTOR_BY[id].sea === sea.id && !f.has(id) && n < 64; n++) { want.add(id); id = (D.unlocks[id] || {}).by; }
+      }
+      const v = CH.view(sea.id, found), ls = linesOf(CH.svg(v));
+      v.lines.forEach((l, i) => assert.equal(ls[i].cls.includes('goal'), want.has(l.to), 'sea ' + sea.id + ' found ' + found + ' line to ' + l.to));
+    }
+  }
+  // the first sea with 15 found and 20 not: the way to slot 4 and to the next sea
+  const v = CH.view(1, [1, 2, 3, 10, 15]), ls = linesOf(CH.svg(v));
+  assert.ok(ls.some((l) => l.cls.includes('goal')) && ls.some((l) => l.cls.includes('lead')));
+  assert.ok(ls.some((l) => l.cls.includes('goal') && l.cls.includes('lead')), 'the link from the found sector to the way is both');
+});
+const SECTOR_BY = Object.fromEntries(D.sectors.map((s) => [s.id, s]));
+test('chart W23: with every sector found there is no goal and no lead; svg called twice gives the same string', () => {
+  for (const sea of D.seas) {
+    const all = D.sectors.filter((s) => s.sea === sea.id).map((s) => s.id), v = CH.view(sea.id, all), svg = CH.svg(v, [all[0]], { selected: all[0] });
+    assert.ok(!/class="[^"]*\b(goal|lead)\b/.test(svg.slice(svg.indexOf('chart-lines'), svg.indexOf('chart-route-glow') > 0 ? svg.indexOf('chart-route-glow') : svg.indexOf('chart-start'))), 'sea ' + sea.id);
+    assert.equal(svg, CH.svg(v, [all[0]], { selected: all[0] }));
+  }
+  const v = CH.view(1, [1, 2, 3, 10, 15]); assert.equal(CH.svg(v, [1, 3]), CH.svg(v, [1, 3]));
+});

@@ -921,7 +921,7 @@
     var by = u.start ? 'open from the start' : u.by != null && SECTOR[u.by] ? esc(sectorLabel(SECTOR[u.by])) + (SECTOR[u.by].sea !== s.sea ? ' (in the previous sea)' : '') : 'not known';
     var reveals = D.sectors.filter(function (x) { return (D.unlocks[x.id] || {}).by === id; }).map(function (x) { return esc(sectorLabel(x)); });
     return '<section class="chart-details panel" aria-live="polite"><h3><span class="sd-letter" aria-hidden="true">' + esc(s.letter) + '</span><span class="sd-name">' + esc(s.name) + '</span></h3>' +
-      '<p class="muted">' + esc(CHART.stateText(node.state)) + (node.slot ? ' · <b>slot ' + node.slot + '</b>' : '') + (node.opens ? ' · <b>opens ' + esc(node.opens) + '</b>' : '') + '</p>' +
+      '<p class="muted st-' + node.state + '">' + esc(CHART.stateText(node.state)) + (node.slot ? ' · <b>slot ' + node.slot + '</b>' : '') + (node.opens ? ' · <b>opens ' + esc(node.opens) + '</b>' : '') + '</p>' +
       '<dl class="chart-facts"><dt>Rank needed</dt><dd>' + s.rank + '</dd><dt>Tanks</dt><dd>' + s.tanks + '</dd><dt>Survey</dt><dd>' + s.survey + ' min</dd>' +
       '<dt>Base experience</dt><dd>at least ' + Number(s.exp).toLocaleString('en') + '</dd><dt>Stars</dt><dd>' + s.stars + '</dd>' +
       '<dt>Revealed by</dt><dd>' + by + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span></dd>' +
@@ -978,7 +978,7 @@
       (nFound ? '' : '<p class="hint">This sea is not opened yet.</p>') +
       '<div class="map-grid">' + plannerHtml(fc, m) +
       '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '"><header class="chart-head"><span class="chart-sea">' + esc(seaName) + '</span><span class="chart-count">found ' + nFound + ' of ' + seaCount + '</span></header>' + CHART.svg(view, m.sub ? m.route : null, { selected: m.sector }) + '</div>' +
-      '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="none" stroke="currentColor" stroke-width="2.5"/>') + ' can be revealed next · ' + sw('far', '<rect x="3" y="3" width="10" height="10" fill="currentColor"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · dimmed: above this submarine\'s rank. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
+      '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="currentColor"/>') + ' can be revealed next · ' + sw('far', '<rect x="3" y="3" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · dimmed: above this submarine\'s rank · bright line: the way to the next slot or sea · amber arrow: can be revealed now. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
       (m.sector ? sectorDetails(m.sector, fc) : '') + '</div>' +
       '<p class="hint">Drawn by this app from the game\'s position numbers; this is not the game\'s map picture. Depth is not drawn. Which sector reveals which is community data.</p></section>';
   }

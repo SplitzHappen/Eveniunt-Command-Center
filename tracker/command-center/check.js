@@ -3815,6 +3815,18 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const kept = fams.filter((f) => f.w >= 300).map((f) => [Math.round((Math.atan2(f.y, f.x) * 180 / Math.PI + 360) % 360), Math.round(f.w)]);
         return { n: kept.length, f: kept };
       });
+      // W23 (spec R3.6): what the chart draws now, read from computed style: only the planned route is dashed, the background lines are thin, the links are weighted by meaning, only lead and goal arrowheads show
+      const chartProbe = (pg) => pg.evaluate(() => {
+        const px = (v) => parseFloat(v) || 0, all = [...document.querySelectorAll('.chart-svg *')], out = { dashBad: [], grid: 0, rings: 0, lead: null, goal: null, route: null, nLead: 0, nGoal: 0, chevBad: 0, chevShown: 0 };
+        all.forEach((el) => { const cs = getComputedStyle(el), cls = el.getAttribute('class') || ''; if (!/\bchart-route\b/.test(cls) && cs.strokeDasharray !== 'none' && cs.strokeDasharray !== '') out.dashBad.push(el.tagName + '.' + cls + ' ' + cs.strokeDasharray); });
+        document.querySelectorAll('.chart-svg .chart-grid').forEach((el) => { out.grid = Math.max(out.grid, px(getComputedStyle(el).strokeWidth)); });
+        document.querySelectorAll('.chart-svg .chart-rings circle').forEach((el) => { out.rings = Math.max(out.rings, px(getComputedStyle(el).strokeWidth)); });
+        document.querySelectorAll('.chart-svg line.lead').forEach((el) => { out.nLead++; out.lead = Math.min(out.lead == null ? 99 : out.lead, px(getComputedStyle(el).strokeWidth)); });
+        document.querySelectorAll('.chart-svg line.goal').forEach((el) => { out.nGoal++; out.goal = Math.min(out.goal == null ? 99 : out.goal, px(getComputedStyle(el).strokeWidth)); });
+        document.querySelectorAll('.chart-svg polyline.chart-route').forEach((el) => { out.route = px(getComputedStyle(el).strokeWidth); });
+        document.querySelectorAll('.chart-svg .chart-chev').forEach((el) => { if (getComputedStyle(el).display !== 'none') { out.chevShown++; if (!(el.classList.contains('lead') || el.classList.contains('goal'))) out.chevBad++; } });
+        return out;
+      });
       const walk = async (opts, tag, screens, checkPhone, theme, mode, pal) => {
         const { ctx, errors } = await context(opts);
         const page = await ctx.newPage();
@@ -3850,14 +3862,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]')).catch(() => {});
         }
         if (screens.includes('log')) { await tab('log'); await page.waitForSelector('.log-row[data-trip]'); await shot('log'); }
-        if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.waitForTimeout(250); await shot('map');
+        if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.waitForTimeout(250); await shot('map'); out.chartMap = await chartProbe(page);
           // W19: the sector console with the first tier block opened, scrolled to it (a picture only, no assertion)
           await page.$eval('.chart-details .rates-tier', (el) => { el.open = true; el.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(250);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-map-tiers-' + tag + '.png') });
           await page.$eval('.chart-details .rates-tier', (el) => { el.open = false; }); await page.evaluate(() => window.scrollTo(0, 0)); }
         if (screens.includes('planner')) {
           await page.selectOption('#map-sub', 'a1'); await page.click('.chart-svg [data-sector="1"]'); await page.click('.chart-svg [data-sector="3"]');
-          await page.waitForSelector('.planner .route-line'); await page.$eval('.planner', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('planner');
+          await page.waitForSelector('.planner .route-line'); await page.$eval('.planner', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('planner'); out.chartPlan = await chartProbe(page);
         }
         if (screens.includes('earnings')) { await tab('earn'); await page.waitForSelector('.earn-card b'); await shot('earnings');
           // W20: the ranked table scrolled into view (a picture only; at 360 px every figure shows with no inner scrolling)
@@ -3911,10 +3923,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map'], false);
+      // W23: the chart reads by meaning (R3.6) and R3.7's measurable rule: the hue-family floor on the Map and the planner (default theme 5; Azure Dragoon dark and Magitek Steel light 4); other screens stay recorded only
+      const chartOk = [d, da, dm].every((w) => [w.chartMap, w.chartPlan].every((c) => c && c.dashBad.length === 0 && c.grid <= 1 && c.rings <= 1 && c.nLead >= 1 && c.lead >= 2.5 && c.nGoal >= 1 && c.goal >= 3 && c.chevBad === 0 && c.chevShown >= 1)) && [d, da, dm].every((w) => w.chartPlan.route >= 5);
+      const floorOk = d.fam.map.n >= 5 && d.fam.planner.n >= 5 && [da, dm].every((w) => w.fam.map.n >= 4 && w.fam.planner.n >= 4);
       const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
-      const ok = gaugeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supports === true && w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded (not asserted)',
-        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl]].map(([k, w]) => [k, w.fam])) });
+      const ok = gaugeOk && chartOk && floorOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supports === true && w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); other screens recorded only',
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl]].map(([k, w]) => [k, w.fam])) });
       server20.close();
     });
 
