@@ -574,3 +574,11 @@ These settle the three owner questions above and override any wording in this sp
   wherever a logged route appears, and the reason says which one decided. Both figures must be in the same unit
   (merchant gil per hour) before they are compared; if the log cannot be expressed in that unit for a route, the
   estimate decides for it and the reason says so.
+
+- **Q4, after the review (2026-11-18): when an app-found route may lead Gil Farming.** Four of the ten pinned
+  community routes are early unlocking routes worth about 80 to 106 merchant gil an hour. The owner's choice:
+  community routes still come first, but an app-found route takes over as the plan whenever its estimate is at least
+  double the best community route this submarine can run (same unit: estimated merchant gil per hour for this
+  submarine). The reason then names both figures and says the route was found by the app from community drop
+  records. The search for app-found routes therefore runs in every sea the submarine can visit, not only where no
+  community route can be run. A figure under 10 gil is shown as "under 10", never "about 0".
