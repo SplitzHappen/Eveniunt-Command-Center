@@ -57,8 +57,7 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 
 ## Next
 
-1. The owner compares the Deep-sea Site chart with the game's map (one constant, `CHART.Y_DOWN`, flips it), then decides
-   whether the work above ships.
+1. The owner decides whether the work above ships.
 2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
    compared with the original design (kept outside this repository) and the gaps closed.
 
