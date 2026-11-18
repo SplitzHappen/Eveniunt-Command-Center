@@ -1,0 +1,213 @@
+// Eveniunt Command Center, Submersibles: the vivid palette (docs/submersibles-look-spec.md, "W22b decisions").
+// One plain script, loaded by the page and by the unit tests (no second model). PALETTE.compute(theme) is pure: from the
+// theme's own colours it returns every palette token as a hex string. PALETTE.apply() reads those colours from the root
+// element's computed style and sets the tokens as inline custom properties on the module's page element; it runs again
+// whenever the look changes (look.js sets the root's style and data-theme on every applyLook(), so those two attributes are
+// observed). Nothing is stored. subs.css keeps plain fallback tokens that apply until this script has run (or if it cannot).
+// Colour arithmetic: OKLab with the matrices CSS Color 4 uses. Deterministic: bisection only, no random numbers, no time.
+(function () {
+  'use strict';
+  var P = (globalThis.PALETTE = globalThis.PALETTE || {});
+
+  // ---- the named constants of the decisions ----
+  P.CAP = 0.21;             // decision 1: the most chroma any palette colour gets
+  P.EDGE = 0.94;            // decision 1: the share of the largest chroma inside sRGB at that hue and lightness
+  P.FIELD_L = 0.70;         // decision 2: lightness of a field (-m) in a light theme
+  P.FIELD_L_DARK = 0.74;    // decision 2: lightness of a field in a dark theme (against the page it is 7:1 or better, so it glows)
+  P.GRAPHIC = 3.1;          // decision 2: -g clears this against the worst of slip, paper, paper-2
+  P.STRONG = 4.6;           // decision 2: -s (and a status text tone) clears this
+  P.WASH_INK = 7.2;         // decision 2: ink on -w (the test asks 7)
+  P.WASH_L = 0.90;          // lightness a wash aims for under dark ink (it is lowered, never raised, until ink reaches WASH_INK)
+  P.WASH_L_DARK = 0.30;     // the same under light ink
+  P.ON_MID = 4.6;           // decision 2: --on-mid on every field
+  P.NUDGE = 20;             // decision 4: degrees of hue kept between a voice and a status colour
+  P.SEA_HUES = [250, 50, 165, 0, 315, 282, 215]; // sea 1 to 7 (blue, ember, jade, rose, lilac, indigo, ice), as in spec R3.4
+  P.VOICES = ['rank', 'gil', 'loot', 'route'];
+  P.STATUS = ['back', 'out', 'idle', 'bad'];
+  var BLUE = [0x2f, 0x7f, 0xd0];
+
+  // ---- colour arithmetic ----
+  function hexRgb(h) {
+    h = String(h).trim();
+    var m = /^#([0-9a-f]{3})$/i.exec(h);
+    if (m) return [parseInt(m[1][0] + m[1][0], 16), parseInt(m[1][1] + m[1][1], 16), parseInt(m[1][2] + m[1][2], 16)];
+    m = /^#([0-9a-f]{6})$/i.exec(h);
+    if (m) { var n = parseInt(m[1], 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+    m = /^rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/i.exec(h);
+    if (m) return [+m[1], +m[2], +m[3]];
+    return null;
+  }
+  function asRgb(v) { return Array.isArray(v) ? v : hexRgb(v); }
+  function rnd(r) { return r.map(function (x) { return Math.max(0, Math.min(255, Math.round(x))); }); }
+  function toHex(r) { return '#' + rnd(r).map(function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join(''); }
+  function lum(r) {
+    var c = r.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  // a contrast is measured on the painted bytes
+  function ratio(a, b) { var x = lum(rnd(a)), y = lum(rnd(b)); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function toLin(v) { v /= 255; var s = v < 0 ? -1 : 1; v = Math.abs(v); return s * (v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)); }
+  function fromLin(v) { var s = v < 0 ? -1 : 1; v = Math.abs(v); return 255 * s * (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055); }
+  function rgbToLab(rgb) {
+    var r = toLin(rgb[0]), g = toLin(rgb[1]), b = toLin(rgb[2]);
+    var l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    var m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    var s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+  }
+  function linOf(L, a, b) {
+    var l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3), m = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3), s = Math.pow(L - 0.0894841775 * a - 1.2914855480 * b, 3);
+    return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+  }
+  function labToRgb(L, a, b) { return linOf(L, a, b).map(fromLin); }
+  function rgbToLch(rgb) { var k = rgbToLab(rgb), h = Math.atan2(k[2], k[1]) * 180 / Math.PI; if (h < 0) h += 360; return [k[0], Math.hypot(k[1], k[2]), h]; }
+  function lchToRgb(L, C, H) { return labToRgb(L, C * Math.cos(H * Math.PI / 180), C * Math.sin(H * Math.PI / 180)); }
+  function hueGap(a, b) { var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+  function inGamut(L, C, H) {
+    var a = C * Math.cos(H * Math.PI / 180), b = C * Math.sin(H * Math.PI / 180), v = linOf(L, a, b);
+    return v[0] >= -0.0005 && v[0] <= 1.0005 && v[1] >= -0.0005 && v[1] <= 1.0005 && v[2] >= -0.0005 && v[2] <= 1.0005;
+  }
+  // the largest chroma inside sRGB at this lightness and hue (bisection)
+  function maxChroma(L, H) {
+    if (L <= 0.001 || L >= 0.999) return 0;
+    var lo = 0, hi = 0.4, i;
+    for (i = 0; i < 18; i++) { var mid = (lo + hi) / 2; if (inGamut(L, mid, H)) lo = mid; else hi = mid; }
+    return lo;
+  }
+  // decision 1
+  function chromaAt(L, H) { return Math.min(P.CAP, P.EDGE * maxChroma(L, H)); }
+  function colourAt(L, H, C) { return lchToRgb(L, C == null ? chromaAt(L, H) : Math.min(C, maxChroma(L, H) * 0.999), H); }
+
+  // The lightness at which a colour of this hue "just clears" a ratio against every background in bgs: the lightest one that
+  // does against light backgrounds, the darkest one against dark ones. Chroma follows the gamut at each step (or stays at c0).
+  function fit(H, bgs, target, c0) {
+    var mean = bgs.reduce(function (s, b) { return s + lum(b); }, 0) / bgs.length, lightBg = mean > 0.18;
+    function ok(L) { var c = rnd(colourAt(L, H, c0)); return bgs.every(function (b) { return ratio(c, b) >= target; }); }
+    var lo = 0.01, hi = 0.99, i, L;
+    for (i = 0; i < 20; i++) { var mid = (lo + hi) / 2; if (ok(mid)) { if (lightBg) lo = mid; else hi = mid; } else if (lightBg) hi = mid; else lo = mid; }
+    // lightBg: ok is true below the threshold, so lo is the largest L that clears. Dark: ok is true above it, so hi is the smallest.
+    L = lightBg ? lo : hi;
+    for (i = 0; i < 120 && !ok(L); i++) L += lightBg ? -0.002 : 0.002;
+    return L;
+  }
+
+  // decision 4: keep a voice 20 degrees of hue from every status colour, the four voices as evenly spaced as possible.
+  // A voice already 20 degrees clear stays. One that is closer may go to the edge of a status colour's window (the nearest hue 20 or more
+  // from all of them); of the ways to do that, the one that leaves the four gaps closest to 90 wins, provided no two voices are closer than
+  // 60 degrees. If no such way exists the others may move too, in steps of 5 degrees up to 50 (a deterministic search, smallest move first).
+  function evenness(hs) {
+    var s = hs.slice().sort(function (a, b) { return a - b; }), c = 0, i;
+    for (i = 0; i < 4; i++) { var g = (s[(i + 1) % 4] - s[i] + 360) % 360; c += (g - 90) * (g - 90); }
+    return c;
+  }
+  function nudge(base, avoid) {
+    var clear = function (x) { return avoid.every(function (s) { return hueGap(x, s) >= P.NUDGE - 1e-9; }); };
+    var edges = [];
+    avoid.forEach(function (s) { [s - P.NUDGE, s + P.NUDGE].forEach(function (c) { c = (c + 360) % 360; if (clear(c)) edges.push(c); }); });
+    function search(cands) {
+      var best = null, sel = [];
+      (function rec(i) {
+        if (i === 4) {
+          var g = 360, a, b;
+          for (a = 0; a < 4; a++) for (b = a + 1; b < 4; b++) g = Math.min(g, hueGap(sel[a], sel[b]));
+          if (g < 60) return;
+          var cost = evenness(sel), move = sel.reduce(function (t, h, k) { return t + hueGap(h, base[k]); }, 0);
+          if (!best || cost < best.cost - 1e-9 || (Math.abs(cost - best.cost) <= 1e-9 && move < best.move - 1e-9)) best = { cost: cost, move: move, hs: sel.slice() };
+          return;
+        }
+        cands[i].forEach(function (h) { sel[i] = h; rec(i + 1); });
+      })(0);
+      return best;
+    }
+    var first = base.map(function (h) { return clear(h) ? [h] : edges.slice(); });
+    var r = search(first);
+    if (!r) {
+      var wide = base.map(function (h) { var o = []; for (var d = -50; d <= 50; d += 5) { var c = (h + d + 360) % 360; if (clear(c)) o.push(c); } return o; });
+      r = search(wide);
+    }
+    return r ? r.hs : base;
+  }
+
+  // The hue the theme gives the voices (spec D28): the accent 90% and the progress colour 10%, then that 97% and a blue 3%, in OKLab.
+  function anchorHue(seal, ochre) {
+    var a = rgbToLab(seal), b = rgbToLab(ochre), c = rgbToLab(BLUE);
+    var m1 = a.map(function (x, i) { return x * 0.9 + b[i] * 0.1; });
+    var m2 = m1.map(function (x, i) { return x * 0.97 + c[i] * 0.03; });
+    var h = Math.atan2(m2[2], m2[1]) * 180 / Math.PI; return h < 0 ? h + 360 : h;
+  }
+
+  // theme: { paper, paper2, slip, ink, ink2, seal, ochre, back, out, idle, bad } as [r,g,b] or '#hex'. Returns { tokens, info }.
+  P.compute = function (theme) {
+    var T = {}, k;
+    for (k in theme) T[k] = asRgb(theme[k]);
+    var pages = [T.slip, T.paper, T.paper2], tokens = {}, info = {};
+    var dark = lum(T.paper) < lum(T.ink);
+    var fieldL = dark ? P.FIELD_L_DARK : P.FIELD_L;
+    var inkIsDark = lum(T.ink) <= 0.18;
+    info.dark = dark; info.fieldL = fieldL;
+
+    // hues: the four voices a quarter turn apart from the anchor, nudged off the status colours
+    var a = anchorHue(T.seal, T.ochre), sh = P.STATUS.map(function (s) { return rgbToLch(T[s])[2]; });
+    var base = [a, a + 90, a + 180, a + 270].map(function (h) { return (h + 360) % 360; });
+    var hues = nudge(base, sh);
+    info.anchor = a; info.statusHues = sh; info.baseHues = base; info.hues = hues;
+    function minTo(hs) { var m = 360; hs.forEach(function (h) { sh.forEach(function (s) { m = Math.min(m, hueGap(h, s)); }); }); return m; }
+    info.minStatusBefore = minTo(base); info.minStatusAfter = minTo(hues);
+    var mg = 360; for (var i = 0; i < 4; i++) for (var j = i + 1; j < 4; j++) mg = Math.min(mg, hueGap(hues[i], hues[j]));
+    info.minVoiceGap = mg;
+
+    var mids = [];
+    function family(name, H, withRing) {
+      var m = colourAt(fieldL, H);
+      mids.push(m);
+      tokens[name.m] = toHex(m);
+      tokens[name.g] = toHex(colourAt(fit(H, pages, P.GRAPHIC), H));
+      tokens[name.s] = toHex(colourAt(fit(H, pages, P.STRONG), H));
+      var wl = fit(H, [T.ink], P.WASH_INK);
+      tokens[name.w] = toHex(colourAt(inkIsDark ? Math.max(P.WASH_L, wl) : Math.min(P.WASH_L_DARK, wl), H));
+      if (withRing) tokens[withRing] = toHex(colourAt(fit(H, [T.paper], P.STRONG), H)); // text in the page colour on a ring of this colour
+    }
+    P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], '--' + v + '-ring'); });
+    P.SEA_HUES.forEach(function (h, i) { var n = i + 1; family({ m: '--sea-' + n, g: '--sea-' + n + '-g', s: '--sea-' + n + '-s', w: '--sea-' + n + '-w' }, h, n === 1 ? '--sea-1-ring' : null); });
+    tokens['--gil-bar'] = toHex(colourAt(fit(hues[1], [T.ink], P.ON_MID), hues[1]));
+
+    // the text on a field: the theme's ink, its page colour, black or white; the first that reaches ON_MID on every field
+    var cands = [T.ink, T.paper, [0, 0, 0], [255, 255, 255]], on = null;
+    for (i = 0; i < cands.length && !on; i++) if (mids.every(function (m) { return ratio(cands[i], m) >= P.ON_MID; })) on = cands[i];
+    tokens['--on-mid'] = toHex(on || [0, 0, 0]);
+    info.onMid = on ? (i - 1 === 0 ? 'ink' : i - 1 === 1 ? 'paper' : i - 1 === 2 ? 'black' : 'white') : 'none';
+
+    // decision 5: a text tone for each status colour, the status colour itself when it already clears
+    P.STATUS.forEach(function (s) {
+      var c = T[s], ok = pages.every(function (b) { return ratio(c, b) >= P.STRONG; });
+      if (ok) tokens['--' + s + '-s'] = toHex(c);
+      else { var l = rgbToLch(c); tokens['--' + s + '-s'] = toHex(colourAt(fit(l[2], pages, P.STRONG, l[1]), l[2], l[1])); }
+    });
+    return { tokens: tokens, info: info };
+  };
+
+  // ---- the page: read the theme from the root's computed style, set the tokens, follow the look ----
+  var NAMES = { paper: '--paper', paper2: '--paper-2', slip: '--slip', ink: '--ink', ink2: '--ink-2', seal: '--seal', ochre: '--ochre', back: '--back', out: '--out', idle: '--idle', bad: '--bad' };
+  var lastSig = '', lastTokens = [];
+  P.read = function () {
+    var cs = getComputedStyle(document.documentElement), t = {};
+    for (var k in NAMES) { var v = hexRgb(cs.getPropertyValue(NAMES[k])); if (!v) return null; t[k] = v; }
+    return t;
+  };
+  P.apply = function () {
+    var t = P.read(); if (!t) return false;
+    var sig = JSON.stringify(t); if (sig === lastSig) return false;
+    var t0 = Date.now(), el = document.querySelector('.subs-page') || document.body, r = P.compute(t), n;
+    for (n in r.tokens) el.style.setProperty(n, r.tokens[n]);
+    lastSig = sig; P.lastInfo = r.info; P.lastMs = Date.now() - t0;
+    return true;
+  };
+  if (typeof document !== 'undefined' && document.documentElement) {
+    var go = function () { try { P.apply(); } catch (e) { /* the fallback tokens in subs.css stay */ } };
+    go();
+    if (typeof MutationObserver !== 'undefined') new MutationObserver(go).observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'data-theme'] });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+  }
+  P.math = { hexRgb: hexRgb, rnd: rnd, toHex: toHex, lum: lum, ratio: ratio, rgbToLch: rgbToLch, lchToRgb: lchToRgb, hueGap: hueGap, maxChroma: maxChroma, toLin: toLin, inGamut: inGamut };
+  if (typeof module !== 'undefined' && module.exports) module.exports = P;
+})();

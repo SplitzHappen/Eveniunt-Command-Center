@@ -3732,22 +3732,113 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         sec.subs.a3 = { fcId: 'fa', slot: 3, name: 'Sub Three', rank: 30, parts };
         sec.subs.b1 = { fcId: 'fb', slot: 1, name: 'Sub B1', rank: 12, parts };
         for (let i = 1; i <= 11; i++) sec.trips['a1-' + i] = { s: 'a1', t: now - (40 + i * 30) * H, r: [1, 2], back: now - (40 + i * 30 - 29) * H, items: [[10099, 2]], newSectors: [] };
+        // W22: four more voyages, two on a route in sea 2 (sectors 32, 33) and two in sea 5 (95, 96; ids from data/submarines.json), one of each pair with no items
+        [[12, [32, 33], [[10099, 1]]], [13, [32, 33], []], [14, [95, 96], [[10099, 3]]], [15, [95, 96], []]].forEach(([i, r, items]) => { sec.trips['a1-' + i] = { s: 'a1', t: now - (40 + i * 30) * H, r, back: now - (40 + i * 30 - 29) * H, items, newSectors: [] }; });
         const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
       });
-      const walk = async (opts, tag, screens, checkPhone, theme) => {
+      // W22: the palette sheet (a temporary overlay made and removed here; nothing ships) and the measure of "how many colour families" (R3.7)
+      const PAL = require('../tests/subs-palette.js');
+      const VOICE_ROLE = [['rank', 'Rank', 'Leveling Submersible Rank: a submarine\'s rank and levelling'], ['gil', 'Gil', 'Gil Farming: gil figures and value'], ['loot', 'Loot', 'Loot Farming: items brought back'], ['route', 'Route', 'Unlocking Routes: routes, sector letters, unlocking']];
+      const SEA_HUE = ['blue', 'ember', 'jade', 'rose', 'lilac', 'indigo', 'ice'];
+      const paletteHtml = (title) => {
+        const sw = (token, fill, inner, role, sample) => '<div class="pl-sw" data-token="' + token + '"><div class="pl-fill" style="background:' + fill + '">' + (inner || '') + '</div><div class="pl-cap"><b>' + token.replace(/@.*/, '') + '</b> <span class="pl-role">' + role + '</span><br><span class="pl-hex"></span></div>' + (sample || '') + '</div>';
+        const tones = (x, wrapCls) => {
+          const v = x.v, pre = x.pre;
+          return '<div class="' + (wrapCls || '') + '" style="display:contents">' +
+            sw(x.m, 'var(' + pre + (x.sea ? '' : '-m') + ')', '<span style="color:var(--on-mid)">Field text in on-mid</span>', 'mid: a field, any mark', '') +
+            sw(x.g, 'var(' + pre + '-g)', '', 'graphic: bands, bars, borders', '<div class="pl-smp" style="background:var(--paper)"><i style="display:inline-block;width:70%;height:7px;background:var(' + pre + '-g)"></i> <span style="display:inline-block;width:18px;height:12px;border:3px solid var(' + pre + '-g);vertical-align:middle"></span></div>') +
+            sw(x.s, 'var(' + pre + '-s)', '', 'strong: coloured text', '<div class="pl-smp" style="background:var(--slip);color:var(' + pre + '-s)"><b>Strong on slip</b></div><div class="pl-smp" style="background:var(--paper);color:var(' + pre + '-s)"><b>Strong on page</b></div><div class="pl-smp" style="background:var(--paper-2);color:var(' + pre + '-s)"><b>Strong on paper-2</b></div>') +
+            sw(x.w, 'var(' + pre + '-w)', '<span style="color:var(--ink)">Ink text on the wash</span>', 'wash: a tint under ink text', '<div class="pl-smp" style="background:var(' + pre + '-w);color:var(' + pre + '-s)"><b>Strong on its wash</b></div>') +
+            (x.r ? sw(x.r, 'var(' + x.r + ')', '<span style="color:var(--paper)">Page-colour text on a ring</span>', 'ring: rings on an empty-state slab', '') : '<div></div>') + '</div>';
+        };
+        let h = '<style>#pl{position:absolute;top:0;left:0;right:0;z-index:99999;box-sizing:border-box;padding:14px 20px 20px;background:var(--paper);color:var(--ink);font:13px/1.35 var(--f-body, sans-serif)}#pl h2{font:900 22px/1 var(--f-disp, sans-serif);text-transform:uppercase;margin:14px 0 6px}#pl .pl-row{display:grid;grid-template-columns:190px repeat(5,minmax(0,1fr));gap:10px;align-items:start;margin:4px 0}#pl .pl-sw{min-width:0}#pl .pl-fill{height:44px;display:flex;align-items:center;padding:0 8px;font-weight:700;border:1px solid var(--ink-3)}#pl .pl-cap{font-size:11px;line-height:1.3;padding:2px 0}#pl .pl-role{color:var(--ink-2)}#pl .pl-hex{font-family:monospace}#pl .pl-smp{padding:2px 8px;font-size:12px}#pl .pl-seas{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}#pl .pl-seas .pl-sw .pl-fill{height:34px;font-size:12px}#pl .pl-st{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}#pl .pl-lab b{font-size:15px}</style>';
+        h += '<div id="pl"><h2 style="margin-top:0">' + title + '</h2><div>Palette tokens in this theme; the label under each swatch is the colour the browser computed.</div>';
+        h += '<h2>Four voices (the same kind of thing means the same colour on every screen)</h2>';
+        VOICE_ROLE.forEach(([k, name, role]) => { h += '<div class="pl-row"><div class="pl-lab"><b>' + name + ' voice</b><br>' + role + '</div>' + tones({ pre: '--' + k, m: '--' + k + '-m', g: '--' + k + '-g', s: '--' + k + '-s', w: '--' + k + '-w', r: '--' + k + '-ring' }) + '</div>'; });
+        h += '<div class="pl-row"><div class="pl-lab"><b>Bar and field text</b><br>gil bar behind figures; text colour on any field</div>' + sw('--gil-bar', 'var(--gil-bar)', '<span style="color:var(--ink)">Ink figure on the bar</span>', 'gil bar', '') + sw('--on-mid', 'var(--on-mid)', '', 'on-mid: text on a field', '') + sw('--scr@board', 'var(--scr)', '<span style="color:var(--on-mid)">Screen voice (Board: route)</span>', 'scr: the voice of the screen', '') + sw('--scr-g@board', 'var(--scr-g)', '', 'scr graphic', '') + '</div>';
+        h += '<div class="pl-row"><div class="pl-lab"></div>' + sw('--ring@board', 'var(--ring)', '<span style="color:var(--on-slab)">On-slab text on the ring colour</span>', 'ring: rings on an empty-state slab', '') + '</div>';
+        h += '<h2>Status colours (the same in every theme) and the seven sea colours</h2><div class="pl-st">';
+        [['back', 'Back'], ['out', 'Out'], ['idle', 'Idle'], ['bad', 'Error'], ['locked', 'Locked']].forEach(([k, n]) => { h += '<div><div class="pl-fill" style="background:var(--' + k + ');color:var(' + (k === 'bad' || k === 'locked' ? '--paper' : '--on-' + k) + ')">' + n + '</div><div class="pl-fill" style="background:var(' + (k === 'bad' || k === 'locked' ? '--slip' : '--' + k + '-bg') + ');color:var(--ink)">Ink on its wash</div><div class="pl-smp" style="color:var(--' + k + ')"><b>' + n + ' colour as text</b></div>' + (k === 'locked' ? '' : '<div class="pl-sw" data-token="--' + k + '-s"><div class="pl-fill" style="background:var(--' + k + '-s)"></div><div class="pl-cap"><b>--' + k + '-s</b> <span class="pl-role">text tone</span><br><span class="pl-hex"></span></div><div class="pl-smp" style="background:var(--paper-2);color:var(--' + k + '-s)"><b>' + n + ' text tone on paper-2</b></div><div class="pl-smp" style="background:var(--slip);color:var(--' + k + '-s)"><b>' + n + ' text tone on slip</b></div></div>') + '</div>'; });
+        h += '</div><div class="pl-seas" style="margin-top:10px">';
+        for (let n = 1; n <= 7; n++) h += '<div class="in-sea-' + n + '"><b>sea ' + n + ' ' + SEA_HUE[n - 1] + '</b>' + sw('--sea-' + n, 'var(--sea)', '<span style="color:var(--on-mid)">mid, on-mid text</span>', 'mid', '') + sw('--sea-' + n + '-g', 'var(--sea-g)', '', 'graphic', '') + sw('--sea-' + n + '-s', 'var(--sea-s)', '', 'strong', '<div class="pl-smp" style="background:var(--paper);color:var(--sea-s)"><b>Strong on page</b></div>') + sw('--sea-' + n + '-w', 'var(--sea-w)', '<span style="color:var(--ink)">ink on wash</span>', 'wash', '') + '</div>';
+        return h + '</div></div>';
+      };
+      // reads every labelled swatch's computed background through a 1 x 1 canvas, writes the hex under it, returns [token, bytes]
+      const readSwatches = (pg) => pg.evaluate(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+        const px = (c) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+        return [...document.querySelectorAll('#pl [data-token]')].map((el) => {
+          const f = el.querySelector('.pl-fill'), b = px(getComputedStyle(f).backgroundColor);
+          el.querySelector('.pl-hex').textContent = '#' + b.map((x) => x.toString(16).padStart(2, '0')).join('');
+          return [el.dataset.token, b];
+        });
+      });
+      // the screen voice as drawn now: a probe painted with var(--scr), read through the canvas
+      const readScr = (pg) => pg.evaluate(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+        const out = {};
+        [['--scr', 'scr'], ['--scr-g', 'scrg'], ['--ring', 'ring']].forEach(([v, k]) => {
+          const p = document.createElement('i'); p.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + v + ')'; document.body.appendChild(p);
+          cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = getComputedStyle(p).backgroundColor; cx.fillRect(0, 0, 1, 1); out[k] = [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); p.remove();
+        });
+        return out;
+      });
+      // R3.7 measure: colour families on the screen now (record only; nothing asserted in W22)
+      const families = (pg) => pg.evaluate(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+        const memo = new Map();
+        const px = (c) => { if (memo.has(c)) return memo.get(c); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data, r = [d[0], d[1], d[2], d[3] / 255]; memo.set(c, r); return r; };
+        const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        const lch = (r) => { const [R, G, B] = r.map(lin), l = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B), m = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B), s = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B), a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, b = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s; let h = Math.atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360; return [0, Math.hypot(a, b), h]; };
+        const samples = [];
+        const add = (c, w) => { if (!c || w <= 0 || /^url\(/.test(c) || c === 'none' || c === 'transparent') return; const p = px(c); if (p[3] < 0.5) return; const k = lch(p); if (k[1] >= 0.06) samples.push([k[2], w]); };
+        const sides = ['Top', 'Right', 'Bottom', 'Left'];
+        const one = (el, cs, svg, pseudo) => {
+          if (!svg) { const w = pseudo ? (parseFloat(cs.width) * parseFloat(cs.height) || 0) : (() => { const r = el.getBoundingClientRect(); return r.width * r.height; })(); add(cs.backgroundColor, w); }
+          const own = pseudo ? (cs.content && cs.content !== 'none' && cs.content !== 'normal' && cs.content !== '""') : [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+          if (own) add(cs.color, 300);
+          sides.forEach((sd) => { if (parseFloat(cs['border' + sd + 'Width']) >= 3 && cs['border' + sd + 'Style'] !== 'none' && cs['border' + sd + 'Style'] !== 'hidden') add(cs['border' + sd + 'Color'], 300); });
+          if (svg) { add(cs.fill, 300); add(cs.stroke, 300); }
+        };
+        document.querySelectorAll('.subs-main, .subs-main *, #sheet[open], #sheet[open] *').forEach((el) => {
+          if (!el.getClientRects().length) return;
+          const svg = el instanceof SVGElement && el.tagName.toLowerCase() !== 'svg';
+          one(el, getComputedStyle(el), svg, false);
+          if (!svg) ['::before', '::after'].forEach((ps) => { const cs = getComputedStyle(el, ps); if (cs.content && cs.content !== 'none' && cs.content !== 'normal') one(el, cs, false, true); });
+        });
+        // cut the wheel at its largest empty gap, then group greedily: a family ends when a hue is more than 30 degrees from its first
+        samples.sort((a, b) => a[0] - b[0]);
+        let at = 0, best = -1;
+        for (let i = 0; i < samples.length; i++) { const gap = (samples[(i + 1) % samples.length][0] - samples[i][0] + 360) % 360; if (gap > best) { best = gap; at = (i + 1) % samples.length; } }
+        const ord = samples.slice(at).concat(samples.slice(0, at)), fams = [];
+        ord.forEach((s) => { const f = fams[fams.length - 1]; if (f && (s[0] - f.h0 + 360) % 360 <= 30) { f.w += s[1]; f.x += Math.cos(s[0] * Math.PI / 180) * s[1]; f.y += Math.sin(s[0] * Math.PI / 180) * s[1]; } else fams.push({ h0: s[0], w: s[1], x: Math.cos(s[0] * Math.PI / 180) * s[1], y: Math.sin(s[0] * Math.PI / 180) * s[1] }); });
+        const kept = fams.filter((f) => f.w >= 300).map((f) => [Math.round((Math.atan2(f.y, f.x) * 180 / Math.PI + 360) % 360), Math.round(f.w)]);
+        return { n: kept.length, f: kept };
+      });
+      const walk = async (opts, tag, screens, checkPhone, theme, mode, pal) => {
         const { ctx, errors } = await context(opts);
         const page = await ctx.newPage();
         if (theme) { // as C28 chooses a theme: the main Settings, dark mode
           await page.goto(ROOT5 + '#settings'); await page.waitForSelector('#s-appearance .look-card');
           await page.click('#s-appearance [data-look=toggle][data-v="shared:theme"]');
-          await page.click('#s-appearance [data-look=theme][data-v="' + theme + '"]'); await page.click('#s-appearance [data-look=mode][data-v=dark]');
+          await page.click('#s-appearance [data-look=theme][data-v="' + theme + '"]'); await page.click('#s-appearance [data-look=mode][data-v=' + (mode || 'dark') + ']');
         }
         const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.goto(ROOT5 + 'submersibles/'); await ready();
         await seedL1(page); await page.reload(); await ready();
-        const wide = [], shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); };
-        const tab = async (t) => { await page.click('[data-tab=' + t + ']'); await page.waitForTimeout(250); };
+        const wide = [], fam = {}, scr = {}, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
+        const tab = async (t) => { await page.click('[data-tab=' + t + ']'); await page.waitForTimeout(250); if (pal) scr[t] = await readScr(page); };
         const out = {};
+        if (pal) { // the palette sheet: before any screen, on the Board's page background, then removed
+          await page.waitForSelector('.sub[data-sub]'); scr.board = await readScr(page);
+          await page.evaluate((html) => { const d = document.createElement('div'); d.id = 'pl-host'; d.innerHTML = html; document.body.appendChild(d); }, paletteHtml(pal.title));
+          await page.waitForTimeout(300);
+          const got = await readSwatches(page); await page.waitForTimeout(150);
+          if (SHOT) await page.screenshot({ path: path.join(ev, 'look-palette-' + pal.name + '.png'), fullPage: true });
+          await page.evaluate(() => document.getElementById('pl-host').remove());
+          out.support = await page.evaluate(() => CSS.supports('color', 'oklch(from red 0.7 0.1 calc(h + 90))'));
+          out.palGot = got;
+        }
         if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board');
           // W21: the Out row (Sub Two, sent an hour ago, back in 27 hours) carries one voyage gauge, drawn and named in words
           out.gauge = await page.evaluate(() => { const r = document.querySelector('.sub[data-status="out"] .vgauge'); return { n: document.querySelectorAll('.sub[data-status="out"] .vgauge').length, h: r ? Math.round(r.getBoundingClientRect().height) : 0, text: r ? r.nextElementSibling.textContent : '' }; }); }
@@ -3783,20 +3874,47 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           await tab('map'); await page.waitForSelector('.chart-svg');
           out.chart = await page.evaluate(() => ({ width: Math.round(document.querySelector('.chart-svg').getBoundingClientRect().width), hitMin: Math.round(Math.min(...[...document.querySelectorAll('.chart-svg .chart-node .hit')].map((e) => e.getBoundingClientRect().width))) }));
         }
+        if (pal) { // compare the browser with the model, per channel
+          const want = PAL.palette(PAL.THEMES.find((r) => r[0] === pal.theme), pal.mode, { supports: out.support });
+          let maxDiff = 0, worst = null, n = 0; const bad = [];
+          const cmp = (tok, g, w) => { const d = Math.max(...g.map((v, i) => Math.abs(v - w[i]))); n++; if (d > maxDiff) { maxDiff = d; worst = [tok, g, w]; } if (d > 2) bad.push(tok + ' ' + g + ' vs ' + w); };
+          out.palGot.forEach(([tok, g]) => { if (!(tok in want)) throw new Error('model has no ' + tok); cmp(tok, g, want[tok]); });
+          Object.keys(scr).forEach((t) => { const g = scr[t]; cmp('--scr@' + t, g.scr, want['--scr@' + t]); cmp('--scr-g@' + t, g.scrg, want['--scr-g@' + t]); cmp('--ring@' + t, g.ring, want['--ring@' + t]); });
+          out.pal = { theme: pal.theme, mode: pal.mode, supports: out.support, compared: n, maxDiff, worst, bad, hex: { rank: PAL.toHex(want['--rank-m']), gil: PAL.toHex(want['--gil-m']), loot: PAL.toHex(want['--loot-m']), route: PAL.toHex(want['--route-m']) } };
+          // the page's own timing of PALETTE.compute for this theme (the page reads the root's computed colours, then computes)
+          out.pal.ms = await page.evaluate(() => { const t = PALETTE.read(), t0 = performance.now(); for (let i = 0; i < 20; i++) PALETTE.compute(t); return Math.round((performance.now() - t0) / 20 * 100) / 100; });
+          out.pal.supportsPalette = await page.evaluate(() => typeof PALETTE === 'object' && typeof PALETTE.compute === 'function' && document.body.style.getPropertyValue('--rank-m').trim().startsWith('#'));
+          if (pal.follow) { // the palette follows a theme change made without a reload (as C28 changes it in Settings)
+            const probe = (names) => page.evaluate((ns) => {
+              const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true }), o = {};
+              ns.forEach((n) => { const p = document.createElement('i'); p.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + n + ')'; document.body.appendChild(p); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = getComputedStyle(p).backgroundColor; cx.fillRect(0, 0, 1, 1); o[n] = [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); p.remove(); });
+              return o;
+            }, names);
+            const names = ['--rank-m', '--gil-g', '--loot-s', '--route-w', '--on-mid', '--sea-1', '--idle-s'];
+            const before = await probe(names);
+            await page.evaluate(() => { const k = 'eveniunt-tracker-ui', d = JSON.parse(localStorage.getItem(k) || '{}'); d.theme = 'dark'; localStorage.setItem(k, JSON.stringify(d)); window.EVENIUNT_LOOK.apply(); });
+            await page.waitForTimeout(150);
+            const after = await probe(names), wantDark = PAL.palette(PAL.THEMES.find((r) => r[0] === pal.theme), 'dark');
+            let fd = 0; names.forEach((n) => { fd = Math.max(fd, ...after[n].map((v, i) => Math.abs(v - wantDark[n][i]))); });
+            out.pal.follow = { changed: names.filter((n) => before[n].join() !== after[n].join()).length, of: names.length, maxDiff: fd };
+          }
+          delete out.palGot;
+        }
         await ctx.close();
-        return { wide, errors: real(errors), ...out };
+        return { wide, fam, errors: real(errors), ...out };
       };
       const all8 = ['board', 'sheet', 'log', 'map', 'planner', 'earnings', 'setup', 'recommendations'];
-      const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8, false);
+      const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8, false, null, null, { name: 'default', theme: 'crystarium-dawnglass', mode: 'light', follow: true, title: 'Palette: Crystarium Dawnglass, light (the default)' });
       const dd = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-dark', ['board', 'map'], false);
-      const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', ['board'], false, 'azure-dragoon');
+      const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', all8, false, 'azure-dragoon', 'dark', { name: 'azure-dark', theme: 'azure-dragoon', mode: 'dark', title: 'Palette: Azure Dragoon, dark' });
+      const dm = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', all8, false, 'magitek-steel', 'light', { name: 'magitek-light', theme: 'magitek-steel', mode: 'light', title: 'Palette: Magitek Steel, light' });
       const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map'], false);
-      const gaugeOk = [d, dd, da, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
-      const ok = gaugeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !p.errors.length && !pl.errors.length && !p390.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px',
-        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart });
+      const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
+      const ok = gaugeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supports === true && w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded (not asserted)',
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl]].map(([k, w]) => [k, w.fam])) });
       server20.close();
     });
 

@@ -1128,7 +1128,7 @@ good to about two figures; W22's test and palette sheet are the authority. Brows
 | Token | Formula | Use | Must reach |
 | --- | --- | --- | --- |
 | `--X-m` (mid; a sea's is `--sea`) | the hue at OKLCH 0.70 / 0.10 (seas 0.10 to 0.13) | a field with `--on-mid` text; any mark on the chart | `--on-mid` on it 4.5; in sRGB |
-| `--X-g` (graphic) | `color-mix(in srgb, var(--X-m) 70%, var(--ink))` | bands, bars, borders, icons | 3 on `--slip`, `--paper`, `--paper-2` |
+| `--X-g` (graphic) | `color-mix(in srgb, var(--X-m) 66%, var(--ink))` | bands, bars, borders, icons | 3 on `--slip`, `--paper`, `--paper-2` |
 | `--X-s` (strong) | `color-mix(in srgb, var(--X-m) 46%, var(--ink))` | coloured text | 4.5 on `--slip`, `--paper`, `--paper-2`, its own wash |
 | `--X-w` (wash) | `color-mix(in srgb, var(--X-m) 14%, var(--slip))` | a tint under `--ink` text | `--ink` on it 4.5 |
 | `--on-mid` | light `var(--ink)`; dark `var(--paper)` | text and focus ring on a field | as above |
@@ -1138,20 +1138,20 @@ are deleted from them because they move here):
 
 ```css
 .subs-page { --rank-m: oklch(0.7 0.1 350); --gil-m: oklch(0.7 0.1 80); --loot-m: oklch(0.7 0.1 170); --route-m: oklch(0.7 0.1 260);
-  --rank-g: color-mix(in srgb, var(--rank-m) 70%, var(--ink)); --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip));
-  --gil-g: color-mix(in srgb, var(--gil-m) 70%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 46%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip));
-  --loot-g: color-mix(in srgb, var(--loot-m) 70%, var(--ink)); --loot-s: color-mix(in srgb, var(--loot-m) 46%, var(--ink)); --loot-w: color-mix(in srgb, var(--loot-m) 14%, var(--slip));
-  --route-g: color-mix(in srgb, var(--route-m) 70%, var(--ink)); --route-s: color-mix(in srgb, var(--route-m) 46%, var(--ink)); --route-w: color-mix(in srgb, var(--route-m) 14%, var(--slip));
+  --rank-g: color-mix(in srgb, var(--rank-m) 66%, var(--ink)); --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip));
+  --gil-g: color-mix(in srgb, var(--gil-m) 66%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 46%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip));
+  --loot-g: color-mix(in srgb, var(--loot-m) 66%, var(--ink)); --loot-s: color-mix(in srgb, var(--loot-m) 46%, var(--ink)); --loot-w: color-mix(in srgb, var(--loot-m) 14%, var(--slip));
+  --route-g: color-mix(in srgb, var(--route-m) 66%, var(--ink)); --route-s: color-mix(in srgb, var(--route-m) 46%, var(--ink)); --route-w: color-mix(in srgb, var(--route-m) 14%, var(--slip));
   --gil-bar: color-mix(in srgb, var(--gil-m) 26%, var(--slip));
   --sea-1: oklch(0.7 0.12 250); --sea-2: oklch(0.7 0.13 50); --sea-3: oklch(0.7 0.11 165); --sea-4: oklch(0.7 0.13 0); --sea-5: oklch(0.7 0.12 315); --sea-6: oklch(0.7 0.12 282); --sea-7: oklch(0.7 0.1 215);
-  --scr: var(--route-m); --scr-g: color-mix(in srgb, var(--scr) 70%, var(--ink)); --ring: color-mix(in srgb, var(--scr) 45%, var(--ink)); }
+  --scr: var(--route-m); --scr-g: color-mix(in srgb, var(--scr) 66%, var(--ink)); --ring: color-mix(in srgb, var(--scr) 45%, var(--ink)); }
 @supports (color: oklch(from red 0.7 0.1 calc(h + 90))) { .subs-page { --hue-src: color-mix(in oklab, color-mix(in oklab, var(--seal) 90%, var(--ochre)) 97%, #2f7fd0); --rank-m: oklch(from var(--hue-src) 0.7 0.1 h); --gil-m: oklch(from var(--hue-src) 0.7 0.1 calc(h + 90)); --loot-m: oklch(from var(--hue-src) 0.7 0.1 calc(h + 180)); --route-m: oklch(from var(--hue-src) 0.7 0.1 calc(h + 270)); } }
 .subs-page:has(.tabs [data-tab="log"][aria-current="page"]) { --scr: var(--loot-m); }
 .subs-page:has(.tabs [data-tab="earn"][aria-current="page"]) { --scr: var(--gil-m); }
 .subs-page:has(.tabs [data-tab="setup"][aria-current="page"]) { --scr: var(--rank-m); }
 .subs-page:has(.tabs [data-tab="map"][aria-current="page"]) { --scr: var(--sea-1); }
 .in-sea-1, [data-map-sea="1"] { --sea: var(--sea-1); }   /* and so on to 7 */
-[class*="in-sea-"], [data-map-sea], .map-panel { --sea-g: color-mix(in srgb, var(--sea) 70%, var(--ink)); --sea-s: color-mix(in srgb, var(--sea) 46%, var(--ink)); --sea-w: color-mix(in srgb, var(--sea) 14%, var(--slip)); }
+[class*="in-sea-"], [data-map-sea], .map-panel { --sea-g: color-mix(in srgb, var(--sea) 66%, var(--ink)); --sea-s: color-mix(in srgb, var(--sea) 46%, var(--ink)); --sea-w: color-mix(in srgb, var(--sea) 14%, var(--slip)); }
 ```
 
 The sea hues keep their names: blue 250°, ember 50°, jade 165°, rose 0°, lilac 315°, indigo 282°, ice 215°. `--scr`
@@ -1179,6 +1179,16 @@ breaking. Support, from memory and not checked: Chrome and Edge 119, Firefox 128
 | A voice beside a sea hue | a sea colour is used only where a sea is meant, with the sea's name or its sectors' letters beside it |
 | Engine without relative colour syntax | fixed hues 350°, 80°, 170°, 260° at the same tones |
 | Custom page or text colour | not covered, as in section 8 |
+
+**W22 findings (measured; they replace the hand figures above where they differ).** Model and browser agree (largest
+difference 1 per channel in the default theme, 0 in the other two; the check allows 2). The hex values printed by the test
+match the hand ones (default rank #d084a1, gil #ba9a51, loot #4fb39c, route #819ddd; the hue angles are 355.8, 85.8, 175.8
+and 265.8, not 356, 86, 176, 266). Two rules did not hold as written. (1) The graphic tone at 70% reached 3:1 on `--paper-2`
+only to 2.88 (Azure Dragoon light and others); by the change order it went 70, 68 (still 2.99), 66, which holds everywhere,
+including the hue sweep; `--X-g`, `--scr-g` and `--sea-g` now use 66%. (2) `--idle` on `--paper-2` is 3.95 to 4.37 in 18 light
+themes (Azure Dragoon light lowest), under the 4.5 asked for when `--idle` becomes text in the Log. That is the status
+colour's own value (D29, Q9), not a share of the palette, so it is reported in its own test and not changed here. The
+sRGB ceiling at lightness 0.70 is strength 0.119 (hue 200), as estimated.
 
 **Chart tokens** (the three `.map-panel` rules): `--chart-bg` light `color-mix(in srgb, var(--ink) 80%, var(--sea))`,
 dark `color-mix(in srgb, var(--paper) 80%, var(--sea))`; `--chart-bg-2` light `color-mix(in srgb, var(--ink) 74%,
@@ -1363,7 +1373,7 @@ passes and its table is in the hand-back; the item's floors of R3.7 hold; the co
 - Screen voice: `.panel:not(.welcome):not(.empty-state):not(.recs):not(.map-panel) > h2:first-child` and `.wiz-head`:
   a field in `--scr`. Section hatches (`.recs h3::after`, `.wide-panel > h3::after`) and `.panel h4`'s underline:
   `--scr-g`. Rail: the current tab is a field in `--scr`, its edge `::before` `--ink`; the other tabs' icons take
-  `--route-g` (Board), `--loot-g` (Log), `color-mix(in srgb, var(--sea-1) 70%, var(--ink))` (Map), `--gil-g`
+  `--route-g` (Board), `--loot-g` (Log), `color-mix(in srgb, var(--sea-1) 66%, var(--ink))` (Map), `--gil-g`
   (Earnings), `--rank-g` (Setup); labels as built.
 - `logHtml`: work out each row's value before building the rows; on `.log-row` add `in-sea-<id>` (the sea of the
   route's first sector, when there is a route), `logged` or `unlogged` (from the value's `logged`), and on logged rows
@@ -1493,3 +1503,63 @@ Q1 to Q7 stand as written. Four more:
   Cost: one sentence, in the next item that touches the Map. Risk: none.
 - Keep things as they are: the lines are understood from the markers they join.
 - Recommendation: add the clause. Fairly sure.
+
+### W22b decisions (orchestrator, 2026-11-18): a vivid palette
+
+The first palette sheet showed dusty pastels: voices at lightness 0.70 and strength 0.10 (#d084a1, #ba9a51, #4fb39c,
+#819ddd in the default theme) with graphic and strong tones made muddy by mixing into the ink (#8e627b, #674e65).
+The status colours and the accent beside them are far more saturated. The owner asked for "A LOT of contrast between
+colors while maintaining the same vibe of the chosen theme". These decisions override R3's fixed strength and its
+mixing rule; hues stay as R3 derives them.
+
+1. **Chroma at the edge of the gamut.** For every palette colour (the four voices and the seven sea hues, in every
+   tone) the chroma is `min(CAP, 0.94 x the largest chroma inside sRGB at that hue and lightness)`. `CAP` is one named
+   constant, starting at 0.21. Yardstick: a voice field looks as saturated as the Back or Out field beside it.
+2. **Tones by lightness, not by mixing with ink.** `-m` (field): lightness 0.70 in light themes; in dark themes the
+   value chosen by the same contrast rule against the page, so fields glow. `-g` (bands, bars, borders): the lightness,
+   searched, at which the colour just clears 3.1:1 against the worst of `--slip`, `--paper`, `--paper-2` of that theme
+   and mode, with gamut-edge chroma. `-s` (coloured text): the same search for 4.6:1. `-w` (wash under ink text):
+   visibly coloured, with ink text at 7:1 or better. `--on-mid`: the theme's ink, or black or white, whichever gives at
+   least 4.6:1 on every `-m` field.
+3. **Computed in JavaScript by the page, CSS as fallback.** One plain script, loaded by both the page and the tests
+   (no second model): `tracker/command-center/src/submersibles/palette.js`, exposing a pure
+   `PALETTE.compute(themeValues)` that returns every token, and an applier that reads the theme's colours from the
+   root's computed style, sets the tokens as inline custom properties on the module's page element, and re-applies
+   when the theme or mode changes. The tokens already in `subs.css` stay as the fallback. Nothing is stored;
+   `save.js`, `applyLook()` and every shared file stay untouched.
+4. **Keep apart what must not be confused.** Where a voice lands within 20 degrees of hue of a status colour that can
+   share a screen with it (loot against Idle, route against Back or Out), that voice is nudged away to 20 degrees
+   (one named constant), the others kept as evenly spaced as possible.
+5. **Status colours used as text.** `--idle` as text on `--paper-2` is 3.95 to 4.37:1 in 18 light themes. The field
+   colours do not change. Each status colour that is used as text gets a text tone (`--idle-s`, and likewise for any
+   other under 4.5:1 anywhere), found by the same lightness search at that status hue, and the CSS uses it wherever a
+   status colour is a text colour.
+6. **The contrast test** uses the shared script and asserts, in all 21 themes and both modes: every `-s` at 4.5:1 and
+   every `-g` at 3:1 on the three page colours; `--on-mid` on every `-m`; ink on every `-w` at 7:1; every colour
+   inside sRGB; the four voices pairwise at least 60 degrees apart after the nudge; chroma of every `-m` at least
+   0.11; the status text tones at 4.5:1. The browser's computed tokens are compared with the model on the built site
+   for the default theme, Azure Dragoon dark and Magitek Steel light (tolerance 2 per channel).
+7. The three palette sheets are regenerated: voices in all tones, status colours with their text tones, the seven
+   seas, text samples.
+
+#### W22b as built (builder, 2026-11-18)
+
+Built by `tracker/command-center/src/submersibles/palette.js` (one script, loaded by the page before `subs.js` and by the tests through
+`tracker/tests/subs-palette.js`, which is now only a loader plus the reader of the fallback tokens in `subs.css`). Figures are measured by
+`tracker/tests/subs-look.test.js`; these replace the R3.4 figures wherever they differ, and the R3.4 hand figures (lightness 0.70, strength
+0.10, mixing into the ink) now describe only the fallback in `subs.css`.
+- Constants: `CAP` 0.21 (never reached: the gamut edge at these lightnesses is lower); `EDGE` 0.94; field lightness 0.70 in light themes and
+  0.74 in dark ones (`FIELD_L_DARK`; the 7:1 against the page rule of point 2 is met by both; at 0.74 the smallest field chroma over all hues is 0.119; at 0.78 it
+  falls to 0.106, under the 0.11 asked for); graphic tone 3.1:1 and strong tone 4.6:1 (asked), washes 0.90 (light) or 0.30 (dark) lowered
+  until ink reaches 7.2:1; `NUDGE` 20 degrees. Tokens per voice: `-m -g -s -w` and `-ring` (the rings of an empty-state slab, text in the
+  page colour at 4.6:1); per sea: `--sea-N`, `-g`, `-s`, `-w`, and `--sea-1-ring`; `--gil-bar`; `--on-mid` (ink, page colour, black or
+  white, first that reaches 4.6 on every field); `--back-s`, `--out-s`, `--idle-s`, `--bad-s` (the status colour itself when it clears 4.6 on
+  all three page colours, else the same hue and chroma at the lightness that does). `subs.css` uses `--back-s` and `--bad-s` for the three text
+  rules that used a status colour as text; `--idle` is not used as text yet (the Log item will use `--idle-s`).
+- The per-sea tones are now per-sea tokens (`--sea-1-g` ... `--sea-7-w`) that `.in-sea-N` and `[data-map-sea="N"]` pick; the old mixing rule
+  on `--sea` is gone. `--scr`, `--scr-g` and `--ring` are set per screen from the voice tokens.
+- Nudge: all four status colours are avoided (not only Idle, Back and Out), by the nearest hue 20 degrees clear of all of them, searched so
+  that the four gaps stay closest to 90 and no two voices are closer than 60 degrees; if that fails the voices may move together by up to 50
+  degrees (Twelveswood Verdure light needs this; the hue sweep over every accent hue also keeps all gaps at 60 or more). The page learns of a theme change from a `MutationObserver` on the root's
+  `style` and `data-theme` attributes (look.js sets both in every `applyLook()`), and does nothing when the colours read are unchanged.
+- The earlier W22 finding on `--idle` as text is closed by `--idle-s`; the test for the raw `--idle` colour is replaced by the tone test.
