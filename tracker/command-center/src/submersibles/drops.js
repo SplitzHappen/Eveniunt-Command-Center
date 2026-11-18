@@ -36,12 +36,12 @@
 
   // A2: tier odds from the band's roll counts; { p: [p1, p2, p3], rolls, few }.
   function tierOdds(data, pools, band) {
-    var c = [pools[0].band[band], pools[1].band[band], pools[2].band[band]], sum = c[0] + c[1] + c[2], few = false;
+    var c = [pools[0].band[band], pools[1].band[band], pools[2].band[band]], sum = c[0] + c[1] + c[2], few = false, have = sum;
     if (sum < X.FEW) { // thin or empty band in this sector: the all-sector counts
       var all = data.dropRates.all; c = [all[0][band], all[1][band], all[2][band]]; sum = c[0] + c[1] + c[2]; few = true;
-      return { p: sum > 0 ? c.map(function (x) { return x / sum; }) : [0, 0, 0], rolls: 0, few: few };
+      return { p: sum > 0 ? c.map(function (x) { return x / sum; }) : [0, 0, 0], rolls: 0, have: have, few: few };
     }
-    return { p: c.map(function (x) { return x / sum; }), rolls: sum, few: few };
+    return { p: c.map(function (x) { return x / sum; }), rolls: sum, have: have, few: few };
   }
 
   // A5: quantity of every item of a pool at retrieval result r. rows: [id, Amount, Total, pmin, pmax, nmin, nmax, omin, omax].
@@ -76,9 +76,9 @@
   function compile(data, sectorId, stt) {
     var sec = data.dropRates && data.dropRates.sectors[sectorId];
     if (!sec) return null;
-    var pools = sec.pools, n = sec.n, few = false, second, tiers = [], items = {}, rolls = n, t, i;
+    var pools = sec.pools, n = sec.n, few = false, second, tiers = [], items = {}, rolls = n, have = n, t, i;
     if (stt) {
-      var od = tierOdds(data, pools, stt.band); few = od.few; rolls = od.few ? 0 : od.rolls;
+      var od = tierOdds(data, pools, stt.band); few = od.few; rolls = od.few ? 0 : od.rolls; have = od.have;
       second = stt.favor && sec.favor[0] > 0 ? sec.favor[1] / sec.favor[0] : 0; // A6
       for (t = 0; t < 3; t++) {
         var pi = poolItems(pools[t], stt.ret), list = [];
@@ -100,7 +100,7 @@
     // A7: the second item is drawn like the first, so every quantity is multiplied by 1 + second.
     var f = 1 + second;
     tiers.forEach(function (T) { if (T.p > 0) T.list.forEach(function (e) { addTo(items, e[0], e[1] * f); }); }); // a tier that cannot come adds no item
-    return { n: n, rolls: rolls, second: second, factor: f, tiers: tiers, items: items, state: stt, few: few };
+    return { n: n, rolls: rolls, have: have, second: second, factor: f, tiers: tiers, items: items, state: stt, few: few };
   }
 
   function stateKey(s) { return s ? s.band + '' + s.ret + (s.favor ? 'y' : 'n') : 'avg'; }
@@ -109,6 +109,8 @@
   //  gil    expected merchant gil (or of whatever `price` gives) of one survey, second item included
   //  items  { id: expected quantity of the survey, second item included } (shared with the cache: read only)
   //  n      the sector's records; rolls the records of the band used (0 when the all-sector counts stood in, or no build)
+//  have   the sector's own records the figure rests on: the build's band, even when too thin and the all-sector counts stood in
+//         (the true count, possibly 0); without a build, the sector's records
   //  second chance of a second item (0 when favor is short); tiers [{ p, gil }] gil per roll of that tier, first item only
   //  state  as X.state, null for the community average; few  a thin band or a missing range stood in
   X.sector = function (data, sectorId, st, price) {
@@ -124,21 +126,24 @@
       tiers.push({ p: T.p, gil: T.p > 0 ? g / T.p : 0 });
       gil += g;
     }
-    return { gil: gil * k.factor, items: k.items, n: k.n, rolls: k.rolls, second: k.second, tiers: tiers, state: k.state, few: k.few };
+    return { gil: gil * k.factor, items: k.items, n: k.n, rolls: k.rolls, have: k.have, second: k.second, tiers: tiers, state: k.state, few: k.few };
   };
 
   // A route: the sum of its sectors, each judged against its own thresholds (A8). null for an empty route or an unknown sector.
   X.route = function (data, route, st, price) {
     price = price || X.merchant(data);
     if (!route || !route.length) return null;
-    var gil = 0, items = {}, n = Infinity, few = false, sectors = [];
+    var gil = 0, items = {}, n = Infinity, count = Infinity, viaSecond = 0, few = false, sectors = [];
     for (var i = 0; i < route.length; i++) {
       var s = X.sector(data, route[i], st, price);
       if (!s) return null;
-      gil += s.gil; if (s.n < n) n = s.n; if (s.few) few = true; sectors.push(s);
+      gil += s.gil; if (s.n < n) n = s.n; if (s.have < count) count = s.have; if (s.few) few = true; sectors.push(s);
+      viaSecond += s.gil * s.second / (1 + s.second);
       for (var id in s.items) items[id] = (items[id] || 0) + s.items[id];
     }
-    return { gil: gil, items: items, n: n, few: few, sectors: sectors };
+    // count: the smallest number of records any sector of the route rests on (including a sector that fell back to pooled counts);
+    // secondShare: the part of the gil figure that is the assumed second item (A7), 0 to 1
+    return { gil: gil, items: items, n: n, count: count, secondShare: gil > 0 ? viaSecond / gil : 0, few: few, sectors: sectors };
   };
 
   // Per hour: gil over seconds / 3600, seconds from ADVISOR.evalRoute(...).seconds. null when seconds is not above zero.
@@ -148,8 +153,11 @@
   function sig2(x) { return isFinite(x) ? String(Number(x.toPrecision(2))) : ''; }
   function group(n) { return Math.round(n).toLocaleString('en'); }
   X.fmt = {
-    voyage: function (g) { return group(Math.round(g / 100) * 100); },     // a voyage to the nearest 100
-    hour: function (g) { return group(Math.round(g / 10) * 10); },         // an hour to the nearest 10
+    // a voyage to the nearest 100, an hour to the nearest 10; any figure under 10 is "under 10", never "about 0"
+    voyage: function (g) { return Math.abs(g) < 10 ? 'under 10' : group(Math.round(g / 100) * 100); },
+    hour: function (g) { return Math.abs(g) < 10 ? 'under 10' : group(Math.round(g / 10) * 10); },
+    // "about 5,700", but "under 10" stands alone
+    about: function (text) { return text === 'under 10' ? text : 'about ' + text; },
     qty: function (q) { return sig2(q); },                                  // two significant digits
     pct: function (p) { var v = p * 100; return (Math.abs(v) < 10 ? (Math.round(v * 10) / 10).toFixed(1) : String(Math.round(v))) + '%'; },
     count: function (n) { return n < 1e6 ? group(n) : (Math.round(n / 1e5) / 10).toFixed(1) + ' million'; }

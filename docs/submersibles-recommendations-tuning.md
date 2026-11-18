@@ -22,7 +22,7 @@ Everything comes from `tracker/data/submarines.json`: no number is invented and 
 - Scenario *unlocking*: every sector of rank at most R/2 (rounded down) is found, and always the two sectors A and B of the first sea; Unlocking is ranked first. Intended lead: new sectors (stage U2).
 - Scenario *gil*: every sector is found, Gil Farming is ranked first, ranks from 20. Intended lead: gil (stage G). The amount is the estimated merchant gil of the voyage for that build (`DROPS.route` with the build's own surveillance, retrieval and favor), per hour and per tank like the other amounts. Community routes come first, as in the advisor.
 - Scenarios: 211. With the intended lead: 201 (61 levelling, 71 unlocking, 69 gil). Only these are measured. The rest have another lead (for example no sector able to reveal a new one), which these tables do not describe.
-- Scenarios in which some allowance from 5 to 50 changed the route compared with fuel off: 111 of 201.
+- Scenarios in which some allowance from 5 to 50 changed the route compared with fuel off: 119 of 201.
 
 | Rank | Classes | Levelling lead | Unlocking lead | Gil lead |
 | --- | --- | --- | --- | --- |
@@ -48,16 +48,16 @@ For each allowance g the top priority may give up (fuel efficiency on), over the
 | g (%) | L(g) | E(g) | step cost (L) | step gain (E) | step pays (E gain >= L cost) | scenarios whose route changed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 (fuel off) | 0.00 | 0.00 | | | | |
-| 5 | 0.26 | 11.68 | 0.26 | 11.68 | yes | 48 |
-| 10 | 1.21 | 16.52 | 0.95 | 4.84 | yes | 70 |
-| 15 | 2.61 | 18.21 | 1.41 | 1.70 | yes | 83 |
-| 20 | 3.49 | 20.99 | 0.87 | 2.77 | yes | 89 |
-| 25 | 4.77 | 25.21 | 1.28 | 4.22 | yes | 94 |
-| 30 | 6.70 | 28.80 | 1.93 | 3.60 | yes | 104 |
-| 35 | 8.02 | 31.85 | 1.32 | 3.05 | yes | 109 |
-| 40 | 9.13 | 34.29 | 1.11 | 2.44 | yes | 111 |
-| 45 | 9.97 | 36.09 | 0.84 | 1.80 | yes | 111 |
-| 50 | 10.25 | 36.95 | 0.28 | 0.86 | yes | 111 |
+| 5 | 0.30 | 12.99 | 0.30 | 12.99 | yes | 55 |
+| 10 | 1.39 | 21.54 | 1.09 | 8.55 | yes | 78 |
+| 15 | 2.84 | 23.73 | 1.45 | 2.19 | yes | 91 |
+| 20 | 3.78 | 26.42 | 0.94 | 2.69 | yes | 97 |
+| 25 | 5.34 | 30.55 | 1.56 | 4.13 | yes | 102 |
+| 30 | 7.27 | 34.15 | 1.93 | 3.60 | yes | 112 |
+| 35 | 8.68 | 37.19 | 1.41 | 3.05 | yes | 117 |
+| 40 | 9.80 | 39.72 | 1.12 | 2.53 | yes | 119 |
+| 45 | 10.63 | 41.52 | 0.84 | 1.80 | yes | 119 |
+| 50 | 10.85 | 42.46 | 0.22 | 0.94 | yes | 119 |
 
 **The rule, in one sentence:** the default allowance is the largest g up to which every step of 5 points bought at least as much extra gain per tank as it cost in lost per-hour score (`E(g) - E(g-5) >= L(g) - L(g-5)`, with fuel off as `E = L = 0`).
 
@@ -72,7 +72,7 @@ The same rule on parts of the scenarios, to show where the answer comes from (fi
 | all three | 201 | none (no knee: every step paid, so the rule would return 50 and no allowance is chosen) | y y y y y y y y y y |
 | levelling and unlocking, ranks 1 to 130 (exactly the previous run's scenarios) | 122 | 10% | y y n y y y y y y y |
 | levelling and unlocking, ranks 1 to 145 | 132 | none (no knee: every step paid, so the rule would return 50 and no allowance is chosen) | y y y y y y y y y y |
-| gil only (ranks 20 to 145) | 69 | 15% | y y y n n n y y y y |
+| gil only (ranks 20 to 145) | 69 | 15% | y y y n n n n y y y |
 
 - Band between priorities (`RECS.BAND`): 5%, fixed (accepted by the table below).
 
@@ -83,11 +83,11 @@ Fuel off. The first priority is the scenario's lead (experience in a levelling s
 | Band | Mean loss on the first priority | Mean gain on the second priority |
 | --- | --- | --- |
 | 0% | 0.00 | 0.00 |
-| 2% | 0.12 | 2.01 |
-| 5% | 0.87 | 3.51 |
-| 10% | 2.43 | 6.06 |
+| 2% | 0.13 | 2.06 |
+| 5% | 0.97 | 3.89 |
+| 10% | 2.55 | 6.52 |
 
-Accepted at 5% when the second priority gains more than the first loses: 3.51 against 0.87, so accepted.
+Accepted at 5% when the second priority gains more than the first loses: 3.89 against 0.97, so accepted.
 
 ## What this does and does not show
 
@@ -290,6 +290,6 @@ The key numbers of the whole run and a SHA-256 of every table row above (all lin
     }
   ],
   "bandAccepted": true,
-  "tablesSha256": "414946afe8dfbc9bd7cf3622fd7368322b18b8edd50754506a32a62b02795aab"
+  "tablesSha256": "e79a500c4aea23fab16eea7878edeae4ea1ab4b871557e9a4bdfe4d24586f631"
 }
 ```

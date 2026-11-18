@@ -692,7 +692,13 @@ function brute(scn) {
   const left = slots < 4 || undiscovered.length > 0, top = rank >= TOP;
   // Gil (D3): estimated merchant gil of the route for this build; when a community route is among the routes in play, only those score
   const bst = stats(rank, sharkObj), commKey = new Set(D.commonRoutes.map((c) => c.route.join(','))), estG = (r) => DROPS.route(D, r.route, bst).gil;
-  const gilFor = (S) => (S.some((r) => commKey.has(r.route.join(','))) ? (r) => (commKey.has(r.route.join(',')) ? estG(r) : 0) : estG);
+  // owner decision Q4: an app-found route also scores (alone) when its estimate per hour is at least twice that of the best community route in play
+  const gilFor = (S) => {
+    const isC = (r) => commKey.has(r.route.join(',')), per = (r) => estG(r) / (r.seconds / 3600), comm = S.filter(isC);
+    if (!comm.length) return estG;
+    const base = Math.max(...comm.map(per)), win = (r) => !isC(r) && per(r) > 0 && per(r) >= 2 * base;
+    return S.some(win) ? (r) => (win(r) ? estG(r) : 0) : (r) => (isC(r) ? estG(r) : 0);
+  };
   const U1 = (r) => (visit && r.route.includes(visit) ? 1 : 0), U2 = (r) => (undiscovered.length ? newOf(r.route) : 0);
   const single = routes.filter((r) => r.route.length === 1), u1 = single.some((r) => U1(r) > 0), u2 = single.some((r) => U2(r) > 0);
   const U3 = (r) => (left && !top && !u1 && !u2 ? r.exp : 0), X = (r) => (top ? 0 : r.exp);
@@ -731,7 +737,7 @@ const SCENARIOS = [
   { name: 'rank 10, slot 2 held, Gil then Leveling', rank: 10, found: [1, 2, 3, 4, 5, 6, 7], slots: 2, order: ['gil', 'level', 'unlock', 'loot'], fuel: false, giveUp: 15 },
   { name: 'D8: rank 5, A to G found, Gil second', rank: 5, found: [1, 2, 3, 4, 5, 6, 7], slots: 1, order: ['unlock', 'gil', 'level', 'loot'], fuel: false, giveUp: 15 },
   { name: 'rank 14, Unlocking first, fuel at 10', rank: 14, found: [1, 2, 3, 4, 5, 6, 7, 8], slots: 1, order: ['unlock', 'level', 'gil', 'loot'], fuel: true, giveUp: 10 },
-  // D3: the Fight Club sectors M, R, O, J, Z found, so five community routes can be run; only they score for Gil
+  // D3: the Fight Club sectors M, R, O, J, Z found, so five community routes can be run; they score for Gil unless a found route is twice as good (Q4)
   { name: 'D3: rank 60, Fight Club sectors found, Gil first', rank: 60, found: [13, 18, 15, 10, 26], slots: 4, order: ['gil', 'unlock', 'level', 'loot'], fuel: false, giveUp: 15 },
   { name: 'D3: rank 60, Fight Club sectors found, Gil first, fuel at 25', rank: 60, found: [13, 18, 15, 10, 26], slots: 4, order: ['gil', 'unlock', 'level', 'loot'], fuel: true, giveUp: 25 },
   { name: 'D3: rank 60, Leveling first, Gil second', rank: 60, found: [13, 18, 15, 10, 26], slots: 4, order: ['level', 'gil', 'unlock', 'loot'], fuel: false, giveUp: 15 },
@@ -1740,33 +1746,161 @@ test('D3: no community route can be run: the plan is derived, and the sentence s
   assert.equal(big.lead, 'G'); assert.equal(big.plan.kind, 'derived'); assert.match(big.plan.why, /The best found, not proven best\./);
 });
 
-test('D3: a derived route only appears among the other routes, only above 5%, never as the plan while a community route can be run', () => {
+test('D3 (Q4): a community route leads unless an app-found route is at least twice as good; below that a derived route is only an other route, above 5%', () => {
   // item prices lowered for every item the two community seas drop, so the community routes get poorer and the app-found routes in the other seas
   // (whose own items keep their price) richer by comparison (a copy of the data; the advisor is set back after)
   const commSeas = new Set(D.commonRoutes.map((c) => SECTOR.get(c.route[0]).sea)), itemsOf = (sid) => new Set(D.dropRates.sectors[sid].pools.flatMap((p) => p.items.map((it) => it[0])));
   const inComm = new Set();
   for (const s of D.sectors) if (commSeas.has(s.sea)) for (const it of itemsOf(s.id)) inComm.add(it);
   const withPrices = (f) => { const info = Object.assign({}, D.itemInfo); for (const id of inComm) if (info[id]) info[id] = [info[id][0] * f].concat(info[id].slice(1)); return Object.assign({}, D, { itemInfo: info }); };
-  let derivedSeen = 0;
+  const st = ADV.stats(TOP, D3_PARTS);
+  let derivedAlt = 0, derivedPlan = 0, communityPlan = 0;
   try {
     for (const k of [1, 0.5, 0.2, 0.05, 0.01, 0.001]) {
-      ADV.init(withPrices(k));
+      const dk = withPrices(k); ADV.init(dk);
+      const base = Math.max(...D.commonRoutes.map((c) => DROPS.perHour(DROPS.route(dk, c.route, st).gil, ADV.evalRoute(c.route, st).seconds)));
       const a = gilAdvise(D3_FULL);
-      assert.equal(a.lead, 'G'); assert.equal(a.plan.kind, 'community', 'never the plan, k=' + k);
-      assert.ok(a.alts.length <= 2);
-      for (const x of a.alts) {
-        if (x.kind !== 'derived') continue;
-        derivedSeen++;
-        assert.ok(x.est.perHour > 1.05 * a.plan.est.perHour, `derived ${x.est.perHour} must beat the plan ${a.plan.est.perHour} by more than 5%`);
-        assert.equal(a.alts[0], x, 'second place');
-        assert.match(x.why, /^Found by the app in [A-Za-z -]+: about [\d,]+ gil an hour by the same estimate, \d+% more than the community route\. Community routes come first\./);
-        assert.ok(!commSeas.has(SECTOR.get(x.route[0]).sea), 'a sea where this sub can run no community route');
+      assert.equal(a.lead, 'G'); assert.ok(a.alts.length <= 2);
+      if (a.plan.kind === 'derived') {
+        derivedPlan++;
+        assert.ok(a.plan.est.perHour >= ADV.DERIVED_FACTOR * base - 1e-9, `k=${k}: the app-found plan ${a.plan.est.perHour} must be at least ${ADV.DERIVED_FACTOR} x ${base}`);
+        assert.ok(a.plan.why.startsWith('Found by the app from community drop records in '), a.plan.why);
+        assert.ok(a.plan.why.includes('The best community route this submarine can run is '), a.plan.why);
+        assert.ok(a.plan.why.includes(DROPS.fmt.about(DROPS.fmt.hour(base)) + ' an hour by the same estimate'), a.plan.why);
+        assert.ok(a.plan.why.includes('This one is at least twice as good, so it comes first. Community routes come first unless an app-found route is at least twice as good.'), a.plan.why);
+        assert.equal(a.alts[0].kind, 'community', 'the best community route is the first other route'); near(a.alts[0].est.perHour, base, 1e-9, 'community alt');
+      } else {
+        communityPlan++;
+        assert.equal(a.plan.kind, 'community'); near(a.plan.est.perHour, base, 1e-9, 'plan');
+        for (const x of a.alts) {
+          if (x.kind !== 'derived') continue;
+          derivedAlt++;
+          assert.ok(x.est.perHour > 1.05 * a.plan.est.perHour, `derived ${x.est.perHour} must beat the plan ${a.plan.est.perHour} by more than 5%`);
+          assert.ok(x.est.perHour < ADV.DERIVED_FACTOR * a.plan.est.perHour, 'below the takeover factor, else it would be the plan');
+          assert.equal(a.alts[0], x, 'second place');
+          // estimate against estimate (fix 6): the percentage is of the community route's estimate, which the sentence names
+          const more = Math.round((x.est.perHour / a.plan.est.perHour - 1) * 100);
+          assert.ok(x.why.includes(`by the same estimate, ${more}% more than the estimate for the community route (${DROPS.fmt.about(DROPS.fmt.hour(a.plan.est.perHour))} an hour). Community routes come first unless an app-found route is at least twice as good.`), x.why);
+          assert.match(x.why, /^Found by the app in [A-Za-z -]+: (about [\d,]+|under 10) gil an hour by the same estimate, /);
+        }
       }
       noStarsText(a);
-      if (k === 1) assert.ok(a.alts.every((x) => x.kind === 'community'), 'at the real prices no app-found route beats the community plan by 5%');
+      if (k === 1) assert.ok(a.plan.kind === 'community' && a.alts.every((x) => x.kind === 'community'), 'at the real prices no app-found route beats the community plan by 5%');
     }
   } finally { ADV.init(D); }
-  assert.ok(derivedSeen > 0, 'with poor enough community loot a derived route is shown');
+  assert.ok(communityPlan > 0 && derivedPlan > 0, 'both outcomes are reached: ' + communityPlan + ' community, ' + derivedPlan + ' app-found');
+  assert.ok(derivedAlt >= 0);
+});
+
+test('D3 (Q4): rank 60, everything found: an app-found route leads over weak early community routes, in Gil first and as Gil\'s narrowing step', () => {
+  const parts = (() => { const cls = D.classes.filter((c) => c.rank <= 60).sort((a, b) => b.rank - a.rank)[0]; return D.parts.filter((p) => p.class === cls.id).sort((a, b) => a.slot - b.slot).map((p) => p.id); })();
+  const inp = { sub: { rank: 60, parts }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, gilFirst = { order: ['gil', 'unlock', 'level', 'loot'] };
+  const st = ADV.stats(60, parts), ph = (r) => DROPS.perHour(DROPS.route(D, r, st).gil, ADV.evalRoute(r, st).seconds);
+  const runnable = D.commonRoutes.filter((c) => { const ev = ADV.evalRoute(c.route, st); return c.route.every((id) => SECTOR.get(id).rank <= 60) && ev && ev.reachable; });
+  const base = Math.max(...runnable.map((c) => ph(c.route)));
+  const a = gilAdvise(inp, gilFirst);
+  assert.equal(a.lead, 'G'); assert.equal(a.plan.kind, 'derived', 'a rank-60 submarine is not sent on a weak community route');
+  assert.ok(a.plan.est.perHour >= 2 * base, `${a.plan.est.perHour} against ${base}`);
+  assert.ok(a.plan.why.includes('found by the app') || a.plan.why.startsWith('Found by the app from community drop records'), a.plan.why);
+  assert.ok(a.plan.why.includes('an estimate from community drop records'), a.plan.why);
+  assert.ok(a.plan.why.includes(DROPS.fmt.about(DROPS.fmt.hour(base)) + ' an hour by the same estimate'), a.plan.why);
+  assert.equal(a.alts[0].kind, 'community');
+  // the same rule inside the narrowing step: Leveling first, Gil second; the sentence names both figures and says it was found by the app
+  const l = gilAdvise(inp, { order: ['level', 'gil', 'unlock', 'loot'] });
+  assert.equal(l.lead, 'X');
+  assert.ok(!/about 0 gil|about 0 an hour/.test(l.plan.why), l.plan.why);
+  // the sentence of the narrowing step names the found-by-the-app route and the best community figure
+  assert.match(l.plan.why, /Then Gil Farming: (about [\d,]+|under 10) gil an hour at merchant prices \(estimate from community drop records/);
+});
+
+const bestParts = (rank) => { const cls = D.classes.filter((c) => c.rank <= rank).sort((a, b) => b.rank - a.rank)[0]; return D.parts.filter((p) => p.class === cls.id).sort((a, b) => a.slot - b.slot).map((p) => p.id); };
+
+test('review fix 2: a gil figure under 10 is "under 10", never "about 0"', () => {
+  assert.equal(DROPS.fmt.hour(0), 'under 10'); assert.equal(DROPS.fmt.hour(9.4), 'under 10'); assert.equal(DROPS.fmt.voyage(9), 'under 10');
+  assert.equal(DROPS.fmt.hour(10), '10'); assert.equal(DROPS.fmt.voyage(149), '100'); assert.equal(DROPS.fmt.hour(5710), '5,710');
+  assert.equal(DROPS.fmt.about('under 10'), 'under 10'); assert.equal(DROPS.fmt.about('5,700'), 'about 5,700');
+  // in a reason: rank 85, Leveling first, Gil second picks a route near the best experience that earns almost nothing
+  const l = gilAdvise({ sub: { rank: 85, parts: bestParts(85) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, { order: ['level', 'gil', 'unlock', 'loot'] });
+  assert.ok(l.plan.why.includes('Then Gil Farming: under 10 gil an hour at merchant prices'), l.plan.why);
+  for (const x of [l.plan].concat(l.alts)) assert.doesNotMatch(x.why, /about 0\b|about under/, x.why);
+});
+
+test('review fix 4: DROPS gives the share of a figure that rests on the second item', () => {
+  near(DROPS.route(MINI, [1], { surveillance: 0, retrieval: 99, favor: 3 }).secondShare, 0.5 / 1.5, 1e-12, 'second 0.5: a third');
+  assert.equal(DROPS.route(MINI, [1], { surveillance: 0, retrieval: 99, favor: 0 }).secondShare, 0, 'no favor: nothing rests on it');
+  const oj = D.commonRoutes.find((c) => c.name === 'Fight Club - OJ').route, r = DROPS.route(D, oj, ADV.stats(TOP, D3_PARTS));
+  assert.equal(Math.round(r.secondShare * 100), 45, 'spec 5.2 A7: 45% of the O and J figures');
+  assert.equal(gilAdvise(D3_FULL).plan.est.secondShare > 0.4, true);
+});
+
+test('review fix 5: the record count is the true smallest over the route\'s sectors, a sector that fell back to pooled counts included', () => {
+  const hi = { surveillance: 50, retrieval: 50, favor: 0 };
+  assert.equal(DROPS.sector(MINI, 1, hi).have, 25, 'the thin high band: 25 records, though the all-sector counts stood in');
+  assert.equal(DROPS.sector(MINI, 1, { surveillance: 10, retrieval: 99, favor: 0 }).have, 90);
+  assert.equal(DROPS.sector(MINI, 1, { surveillance: 0, retrieval: 0, favor: 0 }).have, 200);
+  assert.equal(DROPS.sector(MINI, 1, null).have, 1000, 'no build: the sector\'s records');
+  assert.equal(DROPS.route(MINI, [1], hi).count, 25);
+  // the real data with sector O (15) thin in the high band: the route's count is 6, not the other sector's 60 million
+  const copy = JSON.parse(JSON.stringify({ breakpoints: D.breakpoints, itemInfo: D.itemInfo, dropRates: D.dropRates }));
+  copy.dropRates.sectors['15'].pools.forEach((p) => { p.band[2] = 2; });
+  const st = ADV.stats(TOP, D3_PARTS), oj = D.commonRoutes.find((c) => c.name === 'Fight Club - OJ').route;
+  const r = DROPS.route(copy, oj, st);
+  assert.equal(r.count, 6); assert.ok(r.sectors.some((x) => x.rolls === 0), 'O fell back'); assert.equal(DROPS.route(D, oj, st).count, 60042984, 'untouched data: the smaller of O and J');
+  // the advisor says so in the reason of a route through O
+  ADV.init(Object.assign({}, D, { dropRates: copy.dropRates }));
+  try {
+    const a = gilAdvise(D3_FULL);
+    for (const x of [a.plan].concat(a.alts)) {
+      const want = DROPS.route(copy, x.route, st).count;
+      assert.equal(x.est.n, want); assert.ok(x.why.includes('at least ' + DROPS.fmt.count(want) + ' surveys per sector'), x.why);
+      if (x.route.includes(15)) { assert.equal(want, 6); assert.equal(x.est.few, true); }
+    }
+  } finally { ADV.init(D); }
+});
+
+test('review fix 7: part tips need a minimum absolute gain besides 5%, and say long durations in hours and minutes', () => {
+  assert.equal(ADV.TIP_MIN_GAIN, 200);
+  const inp = (rank) => ({ sub: { rank, parts: bestParts(rank) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 });
+  // rank 50 Shark earns about 135 an hour and the best swap adds 19: no tip now; with the floor at 0 the old behaviour returns
+  const weak = { sub: { rank: 50, parts: [3, 4, 1, 2] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+  assert.equal(gilAdvise(weak, { order: ['gil', 'unlock', 'level', 'loot'] }).parts, null);
+  try {
+    ADV.TIP_MIN_GAIN = 0;
+    const old = gilAdvise(weak, { order: ['gil', 'unlock', 'level', 'loot'] }).parts;
+    assert.ok(old && old.gilGain < 200 && old.gilTo > 1.05 * old.gilFrom, 'the 5% rule alone let this one through');
+  } finally { ADV.TIP_MIN_GAIN = 200; }
+  let long = 0, tips = 0;
+  for (const [rank] of [[50], [60], [85], [90], [145]]) {
+    const a = gilAdvise(inp(rank), { order: ['gil', 'unlock', 'level', 'loot'] }); if (!a.parts) continue;
+    tips++;
+    assert.ok(a.parts.gilGain >= ADV.TIP_MIN_GAIN && a.parts.gilTo > 1.05 * a.parts.gilFrom, a.parts.why);
+    const m = /: (?:(\d+) hours?(?: (\d+) minutes?)?|(\d+) minutes?) (faster|slower)/.exec(a.parts.why);
+    assert.ok(m, a.parts.why);
+    if (m[1]) { long++; assert.ok(+m[1] * 60 + (+m[2] || 0) >= 90, a.parts.why); } else assert.ok(+m[3] < 90, a.parts.why);
+    assert.doesNotMatch(a.parts.why, /\b(9\d|[1-9]\d\d+) minutes/, a.parts.why);
+  }
+  assert.ok(tips > 0 && long > 0, 'some tips are shown and some are long: ' + tips + ', ' + long);
+  assert.match(gilAdvise(inp(85), { order: ['gil', 'unlock', 'level', 'loot'] }).parts.why, /: \d+ hours?( \d+ minutes?)? faster;/);
+});
+
+test('review fix 1: cost of the app-found search in every sea (route evaluations and time per submarine, everything found, Gil first)', () => {
+  for (const [rank, limit] of [[60, 14000], [85, 22000], [145, 45000]]) {
+    const t0 = Date.now(); gilAdvise({ sub: { rank, parts: bestParts(rank) }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 }, { order: ['gil', 'unlock', 'level', 'loot'] });
+    console.log('cost: rank %d, everything found, Gil first: %d route evaluations, %d ms', rank, ADV.lastEvals, Date.now() - t0);
+    assert.ok(ADV.lastEvals > 0 && ADV.lastEvals <= limit, 'evaluations ' + ADV.lastEvals); assert.ok(Date.now() - t0 < 5000);
+  }
+});
+
+
+test('D3 (Q4): the factor is one named constant and the rule moves with it', () => {
+  assert.equal(ADV.DERIVED_FACTOR, 2);
+  const parts = (() => { const cls = D.classes.filter((c) => c.rank <= 60).sort((a, b) => b.rank - a.rank)[0]; return D.parts.filter((p) => p.class === cls.id).sort((a, b) => a.slot - b.slot).map((p) => p.id); })();
+  const inp = { sub: { rank: 60, parts }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4 };
+  try {
+    ADV.DERIVED_FACTOR = 1e9; // nothing is ever "so much better": community routes always lead
+    assert.equal(gilAdvise(inp, { order: ['gil', 'unlock', 'level', 'loot'] }).plan.kind, 'community');
+  } finally { ADV.DERIVED_FACTOR = 2; }
+  assert.equal(gilAdvise(inp, { order: ['gil', 'unlock', 'level', 'loot'] }).plan.kind, 'derived');
 });
 
 test('D3: the own log (owner decision Q3): 10 voyages replace the estimate for that route only, both figures shown, the reason says which decided', () => {

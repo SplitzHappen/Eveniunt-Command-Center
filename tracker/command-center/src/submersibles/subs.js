@@ -231,6 +231,18 @@
       (last ? '<button type="button" class="btn sm ghost" data-act="ics-fc" data-fc="' + esc(f.id) + '" title="Add the last return of this free company to your calendar">Calendar: last back ' + esc(F.fmtClock(last.sub.voyage.returnAt, now)) + '</button>' : '') +
       '</div></header><div class="fc-subs">' + rows + '</div></section>';
   }
+  // once per Board: the collapsed "How this is estimated", when any suggestion on the screen rests on community drop records; with the part of
+  // each plan's gil figure that rests on the second-item assumption
+  function boardEstimateNote(now) {
+    var shown = false, shares = [];
+    F.fleet(S, now).forEach(function (x) {
+      if (x.status !== 'back' && x.status !== 'idle') return;
+      var a = adviceFor(x.id); if (!a || !a.plan) return;
+      if (/community drop records/.test(a.plan.why || '')) shown = true;
+      if (a.plan.est && typeof a.plan.est.secondShare === 'number') shares.push(a.plan.est.secondShare);
+    });
+    return shown ? howEstimatedHtml(shares) : '';
+  }
   function boardHtml() {
     var now = Date.now(), fcs = fcList();
     if (!fcs.length) {
@@ -246,7 +258,7 @@
       });
       body = '<section class="fc wide"><header class="fc-head"><h3>All submarines by return time</h3></header><div class="fc-subs list">' + all.map(function (x) { return subRow(x, now, true); }).join('') + '</div></section>';
     } else body = '<div class="fleet">' + fcs.map(function (f) { return fcCard(f, now); }).join('') + '</div>';
-    return strip(now) + body + '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
+    return strip(now) + body + boardEstimateNote(now) + '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
   }
   // how the worked-out times compare with the game's: every voyage or trip where the game's time was also entered
   function accuracyHtml() {
@@ -703,7 +715,16 @@
     var s = S.subs[id], a = adviceFor(id), now = Date.now();
     if (!a) return '';
     if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p></div>';
-    var alt = (a.alts || []).map(function (x, i) { return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' + (x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why) ? ' <span class="muted">' + esc(x.why.replace(/;.*$/, '')) + '</span>' : '') + '</li>'; }).join('');
+    // every other route says what it is (community route or found by the app), its figure and its reason (spec 6.1)
+    var alt = (a.alts || []).map(function (x) {
+      var kind = x.kind === 'community' ? 'Community route' : x.kind === 'derived' ? 'Found by the app' : '';
+      var fig = x.est ? window.DROPS.fmt.about(window.DROPS.fmt.hour(x.est.perHour)) + ' gil an hour (estimate)' : '';
+      var old = x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why); // the unchanged advisor's two short reasons
+      var why = x.why ? (old ? x.why.replace(/;.*$/, '') : x.why) : '';
+      return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' +
+        (kind ? ' <span class="tag" data-alt-kind>' + kind + '</span>' : '') + (fig ? ' <span class="muted" data-alt-figure>' + esc(fig) + '</span>' : '') +
+        (why ? '<br><span class="muted" data-alt-why>' + esc(why) + '</span>' : '') + '</li>';
+    }).join('');
     return '<div class="advice"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
       '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' +
@@ -817,10 +838,20 @@
   // ------------------------------------------------------------------ drop rates shown (spec 6.5, item D7): content only, one short line per figure
   function rangeText(lo, hi) { return !lo && !hi ? 'none' : lo === hi ? String(lo) : lo + ' to ' + hi; }
   // collapsed, once per screen that shows an estimate (spec 5.4)
-  function howEstimatedHtml() {
+  // shares: for each gil figure on the screen the part (0 to 1) that rests on the second-item assumption, computed by DROPS (secondShare); none
+  // when the screen has no gil figure of a plan. Said as one sentence: "about 45% of this figure" or the range over the figures shown.
+  function secondShareText(shares) {
+    var v = (shares || []).filter(function (x) { return typeof x === 'number' && isFinite(x); });
+    if (!v.length) return '';
+    var lo = Math.round(Math.min.apply(null, v) * 100), hi = Math.round(Math.max.apply(null, v) * 100);
+    return lo === hi ? 'About ' + lo + '% of ' + (v.length === 1 ? 'this figure' : 'each gil figure shown here') + ' rests on that assumption.'
+      : 'Between ' + lo + '% and ' + hi + '% of the gil figures shown here rest on that assumption.';
+  }
+  function howEstimatedHtml(shares) {
+    var share = secondShareText(shares);
     return '<details class="rates"><summary>How this is estimated</summary>' +
       '<p class="hint">For each sector on the route, the app takes the community\'s drop records and the thresholds the community worked out. A submarine whose surveillance reaches a sector\'s threshold is counted in the higher tier band, and one whose retrieval reaches it in the better quantity; that stat is counted the same however far above the threshold it is. The tier odds are the share of surveys of that band that landed in each tier. The odds of an item inside a tier are what the community recorded, and its quantity is the recorded range for this submarine\'s retrieval, scaled so the community\'s own average comes out. A second item is counted as often as the community recorded it when the favor is enough. Merchant prices are the game\'s. An estimate, not a promise.</p>' +
-      '<p class="hint">What the second item is, is not in the records; the estimate assumes it is drawn like the first.</p></details>';
+      '<p class="hint">What the second item is, is not in the records; the estimate assumes it is drawn like the first.' + (share ? ' ' + esc(share) : '') + '</p></details>';
   }
   // Map, the selected sector (spec 6.5 item 1): the record count, the thresholds, one collapsed block per tier with its items
   function sectorRatesHtml(id) {
@@ -837,7 +868,8 @@
       if (!rolls) continue;
       var head, low = '';
       if (b && bandSum(2) > 0) {
-        head = 'Tier ' + (t + 1) + ': ' + DR.fmt.pct(pool.band[2] / bandSum(2)) + ' of surveys by submarines with surveillance ' + b[1] + ' or more';
+        // what the tier needs (tier 1 needs nothing, tier 2 the lower threshold, tier 3 the higher) and how often a submarine in the strongest band lands in it
+        head = 'Tier ' + (t + 1) + (t === 0 ? ' (any surveillance)' : ' (surveillance ' + b[t - 1] + ' or more)') + ': ' + DR.fmt.pct(pool.band[2] / bandSum(2)) + ' of surveys by submarines with surveillance ' + b[1] + ' or more land here';
         var parts = [];
         if (bandSum(1) > 0 && pool.band[1] > 0) parts.push(DR.fmt.pct(pool.band[1] / bandSum(1)) + ' with surveillance ' + b[0] + ' to ' + (b[1] - 1));
         if (bandSum(0) > 0 && pool.band[0] > 0) parts.push(DR.fmt.pct(pool.band[0] / bandSum(0)) + ' with less than ' + b[0]);
@@ -852,14 +884,15 @@
     }
     var open = listed.filter(function (i) { return !recorded[i]; });
     if (open.length) out += '<p class="hint">Listed as possible, no drop record yet: ' + open.map(function (i) { return esc(EARN.name(i)); }).join(', ') + '.</p>';
-    return out + '</div>';
+    return out + howEstimatedHtml() + '</div>';
   }
+  function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
   // the send window and the planner (spec 6.5 item 2, 5.4, 5.5): the estimate for this submarine on the chosen route
   function routeRatesHtml(s, st, ev, route) {
     var DR = window.DROPS, r = st && ev && ev.reachable ? DR.route(D, route, st) : null;
     if (!r) return '';
     var now = Date.now(), out = '<div class="rates" data-rates>';
-    out += '<p class="hint">About ' + DR.fmt.voyage(r.gil) + ' gil a voyage at merchant prices (about ' + DR.fmt.hour(DR.perHour(r.gil, ev.seconds)) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(r.n) + ' surveys per sector on this route), not a promise.' + (r.few ? ' Few records for a submarine like this one.' : '') + '</p>';
+    out += '<p class="hint">' + cap(DR.fmt.about(DR.fmt.voyage(r.gil))) + ' gil a voyage at merchant prices (' + DR.fmt.about(DR.fmt.hour(DR.perHour(r.gil, ev.seconds))) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(r.count) + ' surveys per sector on this route), not a promise.' + (r.few ? ' Few records for a submarine like this one.' : '') + '</p>';
     route.forEach(function (sid, i) {
       var b = D.breakpoints && D.breakpoints[sid], x = r.sectors[i], stt = x.state, bits = [];
       if (!b || !stt) bits.push('no community thresholds, the community average is used');
@@ -878,9 +911,9 @@
     var c = null; try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
     if (c && c.prices && ids.some(function (id) { return c.prices[id]; })) {
       var z = 0; ids.forEach(function (id) { z += r.items[id] * (EARN.unitValue(id, c.prices).each || 0); });
-      out += '<p class="hint">At the market prices cached on this device (seen ' + esc(F.fmtClock(c.at, now)) + '): about ' + DR.fmt.voyage(z) + ' gil a voyage. Not used to choose the route.</p>';
+      out += '<p class="hint">At the market prices cached on this device (seen ' + esc(F.fmtClock(c.at, now)) + '): ' + DR.fmt.about(DR.fmt.voyage(z)) + ' gil a voyage. Not used to choose the route.</p>';
     }
-    return out + howEstimatedHtml() + '</div>';
+    return out + howEstimatedHtml([r.secondShare]) + '</div>';
   }
   function sectorDetails(id, fc) {
     var s = SECTOR[id], u = D.unlocks[id] || {}, found = (fc.discovered || []).indexOf(id) >= 0;
@@ -1002,8 +1035,8 @@
     Object.keys(S.trips).forEach(function (k) { var t = S.trips[k]; if (t.items && t.items.some(function (x) { return !(D && D.itemInfo && D.itemInfo[x[0]]); })) unpriced[(t.r || []).join(',')] = 1; });
     var noteRow = function (route, span) {
       var key = route.join(','), c = window.DROPS.route(D, route, null), m = mer.byRoute[key], bits = [];
-      if (c) bits.push('Community average for this route: about ' + window.DROPS.fmt.voyage(c.gil) + ' gil a voyage at merchant prices (what the community\'s submarines brought back; at least ' + window.DROPS.fmt.count(c.n) + ' surveys per sector).');
-      if (m && !unpriced[key]) bits.push('Your own log: about ' + window.DROPS.fmt.voyage(m.perTrip) + ' gil a voyage at merchant prices over ' + m.trips + ' voyage' + (m.trips === 1 ? '' : 's') + '.');
+      if (c) bits.push('Community average for this route: ' + window.DROPS.fmt.about(window.DROPS.fmt.voyage(c.gil)) + ' gil a voyage at merchant prices (what the community\'s submarines brought back; at least ' + window.DROPS.fmt.count(c.count) + ' surveys per sector).');
+      if (m && !unpriced[key]) bits.push('Your own log: ' + window.DROPS.fmt.about(window.DROPS.fmt.voyage(m.perTrip)) + ' gil a voyage at merchant prices over ' + m.trips + ' voyage' + (m.trips === 1 ? '' : 's') + '.');
       return bits.length ? '<tr class="earn-note"><td colspan="' + span + '"><span class="earn-note-text">' + bits.join(' ') + '</span></td></tr>' : '';
     };
     var anyNote = rk.ranked.concat(rk.thin).some(function (r) { return !!window.DROPS.route(D, r.route, null); });
@@ -1016,7 +1049,7 @@
       '<p class="row"><label class="field inline">Market prices from <select class="inp" data-pref="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' + dcs.map(function (d) { return '<option' + (S.settings.prefs && S.settings.prefs.priceWorld === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label><button type="button" class="btn sm" data-act="prices">Refresh prices</button><button type="button" class="btn sm" data-act="csv">Export the log (CSV)</button></p>' +
       '<h3>Gil per hour by route <span class="muted">(from your own log)</span></h3>' + (rk.ranked.length || rk.thin.length ? '<p class="hint">Logged gil divided by logged hours at sea, at the prices shown above.</p>' +
         (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked"><thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" style="--p:' + ratio(r.perHour, maxHr) + '"><td>' + r.pos + '</td><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>' + noteRow(r.route, 5); }).join('') + '</tbody></table>' : '') +
-        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml() : '')
+        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml(rk.ranked.concat(rk.thin).map(function (r) { var c = window.DROPS.route(D, r.route, null); return c ? c.secondShare : null; })) : '')
         : '<p class="hint">Log what came back from voyages with a route to see this.</p>') +
       '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, maxFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
       '<h3>Top items</h3><table class="earn-t"><thead><tr><th>Item</th><th>Quantity</th><th>Value</th><th>Priced by</th></tr></thead><tbody>' + items.map(function (x) { return '<tr><td>' + esc(EARN.name(x[0])) + '</td><td>' + x[1].qty.toLocaleString('en') + '</td><td>' + fmtGil(x[1].gil) + '</td><td>' + (x[1].how || 'unknown') + '</td></tr>'; }).join('') + '</tbody></table></section>';

@@ -3534,8 +3534,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const firstWant = data.items[top[0]] + DR.fmt.pct(top[1] / rolls3) + ' of this tier' + [rng(top[3], top[4]), rng(top[5], top[6]), rng(top[7], top[8])].join(' / ') + ' by retrieval (poor / normal / optimal)' + Math.round(data.itemInfo[top[0]][0]).toLocaleString('en') + ' gil each at a merchant';
       const thr = 'Thresholds (community): surveillance ' + bp[0] + ' for tier 2, ' + bp[1] + ' for tier 3; retrieval ' + bp[2] + ' for normal, ' + bp[3] + ' for optimal quantities; favor ' + bp[4] + ' for a possible second item (it came on ' + DR.fmt.pct(sec.favor[1] / sec.favor[0]) + ' of surveys with enough favor).';
       const ok = got.text.includes(sec.n.toLocaleString('en') + ' surveys') && got.text.includes('Community drop records: 61,069,971 surveys.') && got.text.includes(thr) && got.tiers.length === 3 && got.tiers.map((x) => x.tier).join() === '3,2,1' &&
-        got.tiers[0].summary === 'Tier 3: ' + DR.fmt.pct(band2(2) / sum2) + ' of surveys by submarines with surveillance ' + bp[1] + ' or more' && got.tiers[0].first === firstWant && got.open === 0 && !/Possible items/.test(got.text) && got.side <= 0 && real(errors).length === 0;
-      record('C95', 'Drop rates on the Map (D7): at 360 px wide, selecting O shows "Community drop records: 61,069,971 surveys.", the thresholds line (worked out from the data), three collapsed tier blocks with tier 3 first ("Tier 3: p% of surveys by submarines with surveillance 115 or more"), and per item its share of the tier, quantities by retrieval and merchant price; the old comma list is gone; the page does not scroll sideways',
+        got.tiers[0].summary === 'Tier 3 (surveillance ' + bp[1] + ' or more): ' + DR.fmt.pct(band2(2) / sum2) + ' of surveys by submarines with surveillance ' + bp[1] + ' or more land here' && got.tiers[1].summary.startsWith('Tier 2 (surveillance ' + bp[0] + ' or more): ') && got.tiers[2].summary.startsWith('Tier 1 (any surveillance): ') && (got.text.match(/How this is estimated/g) || []).length === 1 && got.tiers[0].first === firstWant && got.open === 0 && !/Possible items/.test(got.text) && got.side <= 0 && real(errors).length === 0;
+      record('C95', 'Drop rates on the Map (D7): at 360 px wide, selecting O shows "Community drop records: 61,069,971 surveys.", the thresholds line (worked out from the data), three collapsed tier blocks with tier 3 first, each heading saying what the tier needs ("Tier 3 (surveillance 115 or more): p% of surveys by submarines with surveillance 115 or more land here"), and one collapsed "How this is estimated" for the screen, and per item its share of the tier, quantities by retrieval and merchant price; the old comma list is gone; the page does not scroll sideways',
         ok, { got: { tiers: got.tiers, side: got.side, open: got.open }, thr, firstWant, errors: real(errors) });
       server26.close();
     });
@@ -3570,11 +3570,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.click('[data-tab=earn]'); await page.waitForSelector('.earn-note');
       const earn = await page.evaluate(() => ({ notes: [...document.querySelectorAll('.earn-note')].map((x) => x.textContent), side: document.documentElement.scrollWidth - window.innerWidth }));
       await ctx.close();
-      const estWant = 'About ' + DR.fmt.voyage(res.gil) + ' gil a voyage at merchant prices (about ' + DR.fmt.hour(DR.perHour(res.gil, ev.seconds)) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(res.n) + ' surveys per sector on this route), not a promise.' + (res.few ? ' Few records for a submarine like this one.' : '');
+      const estWant = 'About ' + DR.fmt.voyage(res.gil) + ' gil a voyage at merchant prices (about ' + DR.fmt.hour(DR.perHour(res.gil, ev.seconds)) + ' an hour for this submarine): an estimate from community drop records (at least ' + DR.fmt.count(res.count) + ' surveys per sector on this route), not a promise.' + (res.few ? ' Few records for a submarine like this one.' : '');
       const ids = Object.keys(res.items).map(Number).filter((id) => res.items[id] > 0).sort((a, b) => res.items[b] * price(b) - res.items[a] * price(a) || a - b).slice(0, 8);
       const itemsWant = ids.map((id) => data.items[id] + 'about ' + DR.fmt.qty(res.items[id]) + ' a voyage');
       const sectorLines = sheet.lines.filter((l) => /^[OJ]: /.test(l));
-      const avgWant = 'Community average for this route: about ' + DR.fmt.voyage(avg.gil) + ' gil a voyage at merchant prices (what the community\'s submarines brought back; at least ' + DR.fmt.count(avg.n) + ' surveys per sector).';
+      const avgWant = 'Community average for this route: about ' + DR.fmt.voyage(avg.gil) + ' gil a voyage at merchant prices (what the community\'s submarines brought back; at least ' + DR.fmt.count(avg.count) + ' surveys per sector).';
       const ok = sheet.lines[0] === estWant && sectorLines.length === 2 && /^O: tier 3 in reach, retrieval optimal, second item possible$/.test(sectorLines[0]) && /^J: tier 3 in reach, retrieval optimal, second item possible$/.test(sectorLines[1]) &&
         sheet.list.length === 2 && sheet.list[0].head === 'What this route usually brings' && !sheet.list[0].open && JSON.stringify(sheet.list[0].items) === JSON.stringify(itemsWant) && sheet.list[0].items.length <= 8 && sheet.list[1].head === 'How this is estimated' && !sheet.list[1].open &&
         sheet.side <= 0 && sheet.sheetSide <= 0 && earn.notes.length >= 1 && earn.notes[0].startsWith(avgWant) && /Your own log: about [\d,]+ gil a voyage at merchant prices over 1 voyage\./.test(earn.notes[0]) && earn.side <= 0 && real(errors).length === 0;
@@ -3634,6 +3634,60 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C97', 'Voyage gauge (W21): an Out submarine shows a gauge from its stored send and return times: 0 % at the send time (Voyage 0 percent done in words, the bar hidden from screen readers), half mid-voyage, following the clock, absent after the return and when the send time is missing; no animation with reduced motion; the dense Board rows (5 companies) do not grow and stay inside 1920 x 1080',
         ok, { first, mot, fastP, followed, after: { fast: after.fast, mid: after.mid }, dense, pct: pct(first.mid), errors: real(errors) });
       server28.close();
+    });
+
+    // ── C98 Submersibles drop rates (review fixes 3 and 4): two seeded submarines at the gil step. Sub Q1 (rank 85) has a community plan and, among
+    //    the other routes of the send window, one route found by the app and one community route; Sub Q2 (rank 30) has an app-found plan and a
+    //    community route among its other routes. Every other route says what it is, its figure and its reason (all worked out here with the
+    //    advisor from the data). The Board and the Map each show one collapsed "How this is estimated" with the share of the second-item assumption.
+    await guard('C98', async () => {
+      const server29 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      for (const f of ['recs.js', 'drops.js', 'advisor.js']) require(path.join(CC, 'src', 'submersibles', f));
+      const NA = globalThis.ADVISOR.init(data), DR = globalThis.DROPS, RC = globalThis.RECS, all = data.sectors.map((x) => x.id);
+      const SUBS = { q1: { rank: 85, parts: [27, 28, 25, 26] }, q2: { rank: 30, parts: [3, 4, 1, 2] } };
+      const want = {};
+      for (const id of Object.keys(SUBS)) {
+        const a = NA.advise({ sub: SUBS[id], fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 2, recs: Object.assign(RC.defaults(), { fuel: false, giveUp: 10, order: ['gil', 'unlock', 'level', 'loot'] }) });
+        want[id] = { plan: a.plan.kind, share: a.plan.est.secondShare, alts: a.alts.map((x) => ({ kind: x.kind === 'community' ? 'Community route' : 'Found by the app', fig: DR.fmt.about(DR.fmt.hour(x.est.perHour)) + ' gil an hour (estimate)', why: x.why })) };
+      }
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async ([allIds, subs]) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fq = { name: 'Quebec Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: allIds };
+        Object.keys(subs).forEach((id, i) => { sec.subs[id] = { fcId: 'fq', slot: i + 1, name: 'Sub ' + id.toUpperCase(), rank: subs[id].rank, parts: subs[id].parts }; });
+        let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['gil', 'unlock', 'level', 'loot'] } }, { rev: r.rev, base: null });
+      }, [all, SUBS]);
+      await page.reload(); await ready();
+      await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="q1"]');
+      const board = await page.evaluate(() => ({ notes: [...document.querySelectorAll('#view details.rates')].filter((d) => d.querySelector('summary').textContent === 'How this is estimated').map((d) => ({ open: d.open, text: d.textContent })) }));
+      const got = {};
+      for (const id of Object.keys(SUBS)) {
+        await page.click('.sub[data-sub="' + id + '"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+        got[id] = await page.evaluate(() => ({ title: document.querySelector('#sheet .advice-route + .hint').textContent,
+          alts: [...document.querySelectorAll('#sheet .alts li')].map((li) => ({ kind: (li.querySelector('[data-alt-kind]') || {}).textContent, fig: (li.querySelector('[data-alt-figure]') || {}).textContent, why: (li.querySelector('[data-alt-why]') || {}).textContent })) }));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 }).catch(() => {});
+      }
+      await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+      await page.click('.chart-svg [data-sector="15"]'); await page.waitForSelector('.chart-details .rates');
+      const map = await page.evaluate(() => ({ n: [...document.querySelectorAll('#view details.rates')].filter((d) => d.querySelector('summary').textContent === 'How this is estimated').length, open: [...document.querySelectorAll('#view details.rates')].some((d) => d.open) }));
+      await ctx.close();
+      const pcts = Object.keys(SUBS).map((id) => Math.round(want[id].share * 100)), lo = Math.min(...pcts), hi = Math.max(...pcts);
+      const shareWant = lo === hi ? 'About ' + lo + '% of each gil figure shown here rests on that assumption.' : 'Between ' + lo + '% and ' + hi + '% of the gil figures shown here rest on that assumption.';
+      const kinds = (id) => want[id].alts.map((x) => x.kind).join();
+      const ok = want.q1.plan === 'community' && kinds('q1') === 'Found by the app,Community route' && want.q2.plan === 'derived' && want.q2.alts.some((x) => x.kind === 'Community route') &&
+        JSON.stringify(got.q1.alts) === JSON.stringify(want.q1.alts) && JSON.stringify(got.q2.alts) === JSON.stringify(want.q2.alts) &&
+        got.q1.alts[0].why.startsWith('Found by the app in ') && got.q1.alts[0].why.includes('Community routes come first unless an app-found route is at least twice as good.') && got.q1.alts[1].why.startsWith('Community gil route ') &&
+        got.q2.title.startsWith('Found by the app from community drop records in ') && got.q2.alts.every((x) => x.kind && x.fig && x.why) &&
+        board.notes.length === 1 && !board.notes[0].open && board.notes[0].text.includes('What the second item is, is not in the records') && board.notes[0].text.includes(shareWant) && map.n === 1 && !map.open && real(errors).length === 0;
+      record('C98', 'Other routes and the uncertainty note (review fixes 3 and 4): in the send window of a rank-85 submarine with a community plan the other routes are one found by the app and one community route, each with what it is, its figure and its reason (as the advisor works them out from the data); a rank-30 submarine\'s app-found plan has a community route among its other routes; the Board and the Map each show exactly one collapsed "How this is estimated", the Board\'s with the share of the plans\' gil figures that rests on the second-item assumption',
+        ok, { want, got, board, shareWant, map, errors: real(errors) });
+      server29.close();
     });
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the

@@ -27,6 +27,10 @@
     return A;
   };
   A.LABEL = function () { return D ? D.formula.label : 'calculated'; };
+  // Owner decision Q4 (docs/submersibles-droprates-spec.md, Owner decisions): community gil routes come first, but a route the app found
+  // itself becomes the plan when its estimated merchant gil per hour for this submarine is at least this many times that of the best
+  // community route this submarine can run. The one place the factor is set.
+  A.DERIVED_FACTOR = 2;
   A.top = function () { return TOP; }; // the top rank: the last row of the data's ranks, never a typed number
 
   // ------------------------------------------------------------------ builds and voyages (game data + community formula)
@@ -318,9 +322,9 @@
     var DR = globalThis.DROPS, estMemo = {};
     var estOf = function (route, ev) {
       var k = route.join(','), m = estMemo[k]; if (m) return m;
-      var e = ev || A.evalRoute(route, st), r = DR.route(D, route, st), cnt = Infinity;
-      if (r) r.sectors.forEach(function (x) { if (x.rolls > 0 && x.rolls < cnt) cnt = x.rolls; }); // the band's records: what the estimate rests on
-      m = estMemo[k] = r ? { gil: r.gil, perHour: DR.perHour(r.gil, e.seconds), n: cnt === Infinity ? r.n : cnt, few: r.few } : { gil: 0, perHour: 0, n: 0, few: true };
+      var e = ev || A.evalRoute(route, st), r = DR.route(D, route, st);
+      // n: the fewest records any sector of the route rests on, a sector that fell back to pooled counts included (DROPS count)
+      m = estMemo[k] = r ? { gil: r.gil, perHour: DR.perHour(r.gil, e.seconds), n: r.count, few: r.few, secondShare: r.secondShare } : { gil: 0, perHour: 0, n: 0, few: true, secondShare: 0 };
       return m;
     };
     var ownBy = {}; // routes with enough logged voyages and a log that can be counted in merchant gil
@@ -328,9 +332,25 @@
       if (l.enough && Number.isFinite(l.merchantPerTrip) && l.merchantPerTrip >= 0 && allowed(l.route)) ownBy[l.route.join(',')] = l;
     });
     var gilAmount = function (r) { var o = ownBy[r.route.join(',')]; return o ? o.merchantPerTrip : estOf(r.route, r.ev).gil; };
+    // The best community route among `list` (by the figure the ranking uses: the own log where it decided, else the estimate), or null.
+    var commBestOf = function (list) {
+      var best = null, bs = -1;
+      list.forEach(function (r) { if (!r.label) return; var s = gilAmount(r) / (r.ev.seconds / 3600); if (s > bs) { bs = s; best = r; } });
+      return best;
+    };
+    // Owner decision Q4: an app-found route takes over when its estimate per hour is at least A.DERIVED_FACTOR times the ESTIMATE per hour
+    // of the best community route (the estimate, not the own log, so both are the same kind of figure).
+    var takesOver = function (r, comm) {
+      var e = estOf(r.route, r.ev).perHour;
+      return !r.label && e > 0 && e >= A.DERIVED_FACTOR * estOf(comm.route, comm.ev).perHour;
+    };
     var G = { key: 'G', objective: 'gil', rate: true, amount: gilAmount, prepare: function (S) {
-      if (S.some(function (r) { return r.label; })) return function (r) { return r.label ? gilAmount(r) : 0; };
-      return gilAmount;
+      var comm = commBestOf(S);
+      if (!comm) return gilAmount;
+      var win = {}, any = false;
+      S.forEach(function (r) { if (takesOver(r, comm)) { win[r.route.join(',')] = 1; any = true; } });
+      if (any) return function (r) { return win[r.route.join(',')] ? gilAmount(r) : 0; };
+      return function (r) { return r.label ? gilAmount(r) : 0; };
     } };
     // Loot Farming (spec 6.3, E13): for each chosen item the route's expected quantity per hour (DROPS, for this sub's build) as a
     // share of the best of the routes in play; the shares are added. An item with no reachable drop adds nothing.
@@ -338,9 +358,8 @@
     var lootMemo = {};
     var lootOf = function (route) {
       var k = route.join(','), m = lootMemo[k]; if (m) return m;
-      var r = DR.route(D, route, st), cnt = Infinity;
-      if (r) r.sectors.forEach(function (x) { if (x.rolls > 0 && x.rolls < cnt) cnt = x.rolls; });
-      return (lootMemo[k] = { items: r ? r.items : {}, n: r ? (cnt === Infinity ? r.n : cnt) : 0 });
+      var r = DR.route(D, route, st);
+      return (lootMemo[k] = { items: r ? r.items : {}, n: r ? r.count : 0 });
     };
     var qtyOf = function (r) { var m = lootOf(r.route).items, t = 0; items.forEach(function (id) { t += m[id] || 0; }); return t; };
     var L = { key: 'L', objective: 'loot', rate: false, reason: lootReason, amount: qtyOf, prepare: function (S) {
@@ -381,11 +400,11 @@
     var add = function (c) { var k = c.route.join(','); if (!cands.has(k)) cands.set(k, c); return cands.get(k); };
     singles.forEach(add);
     // always added: this sub's runnable community routes and routes with enough logged voyages, in their exact order
-    var commSea = {}, commCount = 0;
+    var commCount = 0;
     (D.commonRoutes || []).forEach(function (cr) {
       if (!allowed(cr.route)) return;
       var ev = cev(cr.route); if (!ev || !ev.reachable) return;
-      add(mk(cr.route, ev)).label = cr.name; commCount++; commSea[SECTOR[cr.route[0]].sea] = 1;
+      add(mk(cr.route, ev)).label = cr.name; commCount++;
     });
     (input.logged || []).forEach(function (l) {
       if (!l.enough || !allowed(l.route)) return;
@@ -393,7 +412,7 @@
       add(mk(l.route, ev));
     });
     // searched routes: every order of 1 to 5 sectors in a sea of at most 8 visitable sectors, else the bounded search on the lead.
-    // With Gil leading, only the seas where this sub can run no community route are searched (spec 6.1, E10)
+    // Every sea this submarine can visit is searched, also one where it can run a community route (owner decision Q4)
     {
       var bySea = {}, bySet = {}, num = function (a, b) { return a - b; };
       pool.forEach(function (s) { (bySea[s.sea] = bySea[s.sea] || []).push(s); });
@@ -405,7 +424,6 @@
       var amt = function (route, ev) { return searchLead.amount({ route: route, ev: ev }); };
       Object.keys(bySea).forEach(function (sea) {
         var secs = bySea[sea];
-        if (leadSt.key === 'G' && commSea[sea]) return;
         if (secs.length <= 8) {
           var ids = secs.map(function (s) { return s.id; });
           (function walk(route) {
@@ -482,7 +500,7 @@
     var kinds = function (n) { return n + ' community gil route' + (n === 1 ? '' : 's'); };
     var estText = function (x) {
       var e = estOf(x.route, x.ev);
-      return 'about ' + DR.fmt.voyage(e.gil) + ' gil a voyage at merchant prices (about ' + DR.fmt.hour(e.perHour) + ' an hour for this submarine): an estimate from community drop records (at least ' +
+      return DR.fmt.about(DR.fmt.voyage(e.gil)) + ' gil a voyage at merchant prices (' + DR.fmt.about(DR.fmt.hour(e.perHour)) + ' an hour for this submarine): an estimate from community drop records (at least ' +
         DR.fmt.count(e.n) + ' surveys per sector on this route), not a promise.' + (e.few ? ' Few records for a submarine like this one.' : '');
     };
     // the own-log part: which figure decided, and both figures
@@ -490,8 +508,8 @@
       var key = x.route.join(','), lg = byKey[key], ob = ownBy[key];
       if (!lg || !(lg.trips > 0)) return '';
       var e = estOf(x.route, x.ev);
-      if (ob) return ' Your own log on this route: about ' + DR.fmt.hour(ob.merchantPerTrip / hrs(x)) + ' gil an hour at merchant prices over ' + ob.trips + ' logged voyages (this submarine is back in ' + (Math.round(x.ev.seconds / 360) / 10) +
-        ' hours); the community estimate is about ' + DR.fmt.hour(e.perHour) + ' an hour. Your own log decided, because the route has ' + enough + ' or more logged voyages.';
+      if (ob) return ' Your own log on this route: ' + DR.fmt.about(DR.fmt.hour(ob.merchantPerTrip / hrs(x))) + ' gil an hour at merchant prices over ' + ob.trips + ' logged voyages (this submarine is back in ' + (Math.round(x.ev.seconds / 360) / 10) +
+        ' hours); the community estimate is ' + DR.fmt.about(DR.fmt.hour(e.perHour)) + ' an hour. Your own log decided, because the route has ' + enough + ' or more logged voyages.';
       if (lg.enough) return ' Your own log on this route (' + lg.trips + ' logged voyages) cannot be counted in merchant gil, because a logged item has no price in the data, so the estimate decided for it.';
       return ' Your own log on this route: ' + lg.trips + ' of ' + enough + ' logged voyages; the estimate decides until then.';
     };
@@ -503,6 +521,14 @@
       if (!found.length) return 'sectors not found';
       return found.some(function (cr) { return allowed(cr.route); }) ? 'range' : 'rank';
     };
+    // the best community route this submarine can run, over every candidate: what an app-found route is compared with (owner decision Q4)
+    var commBest = commBestOf(all);
+    var RULE = 'Community routes come first unless an app-found route is at least ' + (A.DERIVED_FACTOR === 2 ? 'twice' : A.DERIVED_FACTOR + ' times') + ' as good.';
+    // what the best community route is worth, as the comparison counts it: its estimate (said when the own log decided its own figure)
+    var commFigure = function (full) {
+      var e = estOf(commBest.route, commBest.ev), ob = ownBy[commBest.route.join(',')];
+      return commBest.label + ', ' + DR.fmt.about(DR.fmt.hour(e.perHour)) + ' an hour by the same estimate' + (full && ob ? ' (your own log decided that route\'s figure, but the comparison uses its estimate)' : '');
+    };
     var gilWhy = function (x, most) {
       var head, tail = '';
       if (x.label) {
@@ -511,13 +537,16 @@
       } else if (!commCount) {
         head = 'No community gil route can be run by this submarine now (' + noCommunity() + '). Found by the app from community drop rates: ';
         tail = bigSea(x) ? ' The best found, not proven best.' : '';
-      } else head = 'Found by the app in ' + seaOf(x).name + ': ';
+      } else {
+        head = 'Found by the app from community drop records in ' + seaOf(x).name + ': ';
+        tail = ' The best community route this submarine can run is ' + commFigure(true) + '. ' + (takesOver(x, commBest) ? 'This one is at least ' + (A.DERIVED_FACTOR === 2 ? 'twice' : A.DERIVED_FACTOR + ' times') + ' as good, so it comes first. ' : '') + RULE + (bigSea(x) ? ' The best found, not proven best.' : '');
+      }
       return head + estText(x) + logText(x) + tail;
     };
-    // a derived route that beats the community plan by more than 5%: shown among the other routes, labelled
+    // a derived route that beats the community plan by more than 5% (estimate against estimate): shown among the other routes, labelled
     var derivedWhy = function (x, plan) {
-      var g = gilAmount(x) / hrs(x), p = gilAmount(plan) / hrs(plan), more = Math.round((g / p - 1) * 100), e = estOf(x.route, x.ev);
-      return 'Found by the app in ' + seaOf(x).name + ': about ' + DR.fmt.hour(g) + ' gil an hour by the same estimate, ' + more + '% more than the community route. Community routes come first. An estimate from community drop records (at least ' +
+      var g = estOf(x.route, x.ev).perHour, p = estOf(plan.route, plan.ev).perHour, more = Math.round((g / p - 1) * 100), e = estOf(x.route, x.ev);
+      return 'Found by the app in ' + seaOf(x).name + ': ' + DR.fmt.about(DR.fmt.hour(g)) + ' gil an hour by the same estimate, ' + more + '% more than the estimate for the community route (' + DR.fmt.about(DR.fmt.hour(p)) + ' an hour). ' + RULE + ' An estimate from community drop records (at least ' +
         DR.fmt.count(e.n) + ' surveys per sector on this route), not a promise.' + (bigSea(x) ? ' The best found, not proven best.' : '') + logText(x);
     };
     // the lead's sentence for a route
@@ -540,7 +569,12 @@
       if (key === 'U1') return 'it surveys ' + name(visit) + (visit === target ? ', which can grant slot ' : ' on the way to slot ') + (slots + 1);
       if (key === 'U2') { var n = newOf(x.route); return 'it can reveal ' + n + ' new sector' + (n === 1 ? '' : 's'); }
       if (key === 'U3' || key === 'X') return 'at least ' + fmt(xph(x)) + ' experience an hour';
-      if (key === 'G') { var gp = ownBy[x.route.join(',')]; return gp ? 'about ' + DR.fmt.hour(gp.merchantPerTrip / hrs(x)) + ' gil an hour at merchant prices (your own log)' : 'about ' + DR.fmt.hour(estOf(x.route, x.ev).perHour) + ' gil an hour at merchant prices (estimate from community drop records)'; }
+      if (key === 'G') {
+        var gp = ownBy[x.route.join(',')];
+        if (gp) return DR.fmt.about(DR.fmt.hour(gp.merchantPerTrip / hrs(x))) + ' gil an hour at merchant prices (your own log)';
+        var ge = DR.fmt.about(DR.fmt.hour(estOf(x.route, x.ev).perHour)) + ' gil an hour at merchant prices (estimate from community drop records' + (!x.label && commBest ? '; found by the app; the best community route this submarine can run is ' + commFigure() : '') + ')';
+        return ge;
+      }
       var lr = lootRates(x).map(function (r) { return DR.fmt.qty(r.perHour) + ' ' + itemName(r.id); });
       return 'about ' + lr.join(', ') + ' an hour (estimate from community drop records)';
     };
@@ -579,7 +613,7 @@
       if (lead === 'G') {
         var ob = ownBy[x.route.join(',')], e = estOf(x.route, x.ev);
         o.kind = x.label ? 'community' : 'derived'; o.name = x.label || A.routeText(x.route);
-        o.est = { gil: e.gil, perHour: e.perHour, n: e.n, few: e.few };
+        o.est = { gil: e.gil, perHour: e.perHour, n: e.n, few: e.few, secondShare: e.secondShare };
         if (ob) { o.own = true; o.trips = ob.trips; o.perTrip = ob.merchantPerTrip; }
       }
       return o;
@@ -595,17 +629,21 @@
     seen[setKey(plan)] = 1;
     res.routes.slice(1).forEach(function (x) { var k = setKey(x); if (others.length >= 2 || seen[k] || !(leadScore(x) > 0)) return; seen[k] = 1; others.push(x); });
     out.alts = others.map(function (x) { return shape(x, false); });
-    // a derived route (searched in a sea with no community route) that beats a community plan by more than 5% takes second place
+    // Gil Farming with an alternative of the other kind (spec 6.1): a community plan gets the best app-found route that beats it by more than 5%
+    // (estimate against estimate) in second place; an app-found plan gets the best community route in second place
     if (lead === 'G' && plan.label) {
       var derived = null, bestD = 0;
       all.forEach(function (x) {
-        if (x.label || commSea[SECTOR[x.route[0]].sea] === 1) return;
-        var g = gilAmount(x) / hrs(x); if (g > bestD) { bestD = g; derived = x; }
+        if (x.label) return;
+        var g = estOf(x.route, x.ev).perHour; if (g > bestD) { bestD = g; derived = x; }
       });
-      if (derived && bestD > 1.05 * (gilAmount(plan) / hrs(plan))) {
+      if (derived && bestD > 1.05 * estOf(plan.route, plan.ev).perHour) {
         var dShape = shape(derived, false); dShape.why = derivedWhy(derived, plan);
         out.alts = [dShape].concat(out.alts).slice(0, 2);
       }
+    } else if (lead === 'G' && commBest) {
+      var cShape = shape(commBest, false);
+      out.alts = [cShape].concat(out.alts.filter(function (a) { return a.route.join(',') !== commBest.route.join(','); })).slice(0, 2);
     }
     // part advice only at step 3: gil by the S6 rule when Gil leads, else the quickest-return swap for this route
     out.parts = null;
@@ -623,6 +661,17 @@
   // gil per hour rises by more than 5% and the route stays within range. Largest gain wins; ties go to the lower slot, then the lower
   // part id. null when none. The tip names what changes at a threshold and says that it is an estimate.
   var TIP_MARGIN = 0.05;
+  // and the gain must also be at least this many merchant gil an hour (a swap that adds 150 an hour to a route worth about 3 is not
+  // worth a part). Chosen from the data: over every class at ranks 20 to 145 (gil scenario) the tips below 200 an hour were all on
+  // routes worth under 150 an hour (gains 19 to 81) or small gains (7 to 26%) on routes worth 560 to 1,830; every tip from 208 up
+  // is a real step. 200 clears the first group and the marginal ones, and 150 on a near-zero route.
+  A.TIP_MIN_GAIN = 200;
+  // a duration given in minutes, as the tip says it: minutes below 90, else hours and minutes
+  function durText(mins) {
+    if (mins < 90) return mins + ' minute' + (mins === 1 ? '' : 's');
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h + ' hour' + (h === 1 ? '' : 's') + (m ? ' ' + m + ' minute' + (m === 1 ? '' : 's') : '');
+  }
   function gilTipEst(sub, st, plan, DR, estOf) {
     var route = plan.route, base = estOf(route, plan.ev), curG = base.perHour, best = null;
     var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
@@ -634,7 +683,7 @@
         if (!ev || !ev.reachable) return;
         var r = DR.route(D, route, st2); if (!r) return;
         var g = DR.perHour(r.gil, ev.seconds), gain = g - curG;
-        if (!(g > 0) || !(g > curG * (1 + TIP_MARGIN))) return;
+        if (!(g > 0) || !(g > curG * (1 + TIP_MARGIN)) || gain < A.TIP_MIN_GAIN) return;
         if (!best || gain > best.gain) best = { slot: i, from: sub.parts[i], to: p.id, gain: gain, gph: g, st2: st2, ev: ev };
       });
     }
@@ -650,7 +699,7 @@
       if (n.favor !== o.favor) crossed.push('favor ' + (n.favor ? 'reaches' : 'falls below') + ' the second-item threshold at ' + sectorLabel(id) + ' (' + b[4] + ' needed, ' + (n.favor ? st.favor : best.st2.favor) + ' ' + (n.favor ? 'now' : 'after') + ')');
     });
     var mins = Math.round((plan.ev.seconds - best.ev.seconds) / 60);
-    var time = mins >= 1 ? ': ' + mins + ' minute' + (mins === 1 ? '' : 's') + ' faster' : mins <= -1 ? ': ' + (-mins) + ' minute' + (mins === -1 ? '' : 's') + ' slower' : '';
+    var time = mins >= 1 ? ': ' + durText(mins) + ' faster' : mins <= -1 ? ': ' + durText(-mins) + ' slower' : '';
     var what = crossed.length ? (time ? '; ' : ': ') + crossed.join('; ') + '.' : (time ? '; ' : ': ') + (allMax ? 'surveillance, retrieval and favor stay above every threshold of this route.' : 'no threshold of this route is crossed.');
     var fmt = DR.fmt;
     var tip = { slot: best.slot, from: best.from, to: best.to, gain: best.gain, gilGain: Math.round(best.gain), gilFrom: Math.round(curG), gilTo: Math.round(best.gph), estimate: true };
