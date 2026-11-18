@@ -99,6 +99,7 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
   for (const row of THEMES) {
     for (const mode of ['light', 'dark']) {
       const { dk, env: base } = shared(row, mode);
+      const ac = hexRgb((mode === 'dark' ? row[3] : row[2])[2]);
       const where = row[0] + ' ' + mode;
       const tokens = Object.assign({}, dk ? RULES.dark : RULES.light);
       const env = Object.assign({}, base, tokens);
@@ -106,7 +107,13 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
       for (const k of ['back', 'out', 'idle']) {
         need('on-' + k + ' on ' + k, c('--on-' + k), c('--' + k), 4.5, where);
         need(k + ' on slip (edge, 3:1)', c('--' + k), c('--slip'), 3, where);
+        // W3: the Board's row tints carry the row's text and its status edge
+        need('ink on ' + k + '-bg (row text)', c('--ink'), c('--' + k + '-bg'), 4.5, where);
+        need(k + ' on ' + k + '-bg (row edge, 3:1)', c('--' + k), c('--' + k + '-bg'), 3, where);
+        note('ink-2 on ' + k + '-bg (shared ink, printed)', ratio(c('--ink-2'), c('--' + k + '-bg')), where);
       }
+      // printed, not asserted: --on-seal is the shared token applyLook() picks (it falls under 4.5:1 in some themes; shared, so reported, not changed here)
+      note('on-seal on seal (shared, printed; primary buttons and .quick)', ratio(lum(ac) > 0.42 ? hexRgb('#111111') : hexRgb('#ffffff'), c('--seal')), where);
       need('bad on slip', c('--bad'), c('--slip'), 4.5, where);
       need('bad on paper', c('--bad'), c('--paper'), 4.5, where);
       // printed, not asserted: the shared ink-2
