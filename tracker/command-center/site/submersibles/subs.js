@@ -193,13 +193,15 @@
         '<button type="button" class="btn sm" data-act="sound" aria-pressed="' + sound + '" title="A sound with the banner when a sub comes back (this device only)">Sound ' + (sound ? 'on' : 'off') + '</button>' +
       '</span></div>';
   }
+  // the voice of the objective that chose the advice (look only): unlock = route, level = rank, gil = gil, loot = loot
+  function leadVoice(a) { var v = a && ({ U1: 'route', U2: 'route', U3: 'route', X: 'rank', G: 'gil', L: 'loot' })[a.lead]; return v ? ' lead-' + v : ''; }
   function subRow(x, now, withFc) {
     var s = x.sub, st = x.status, v = s.voyage, info = '';
     if (st === 'out') info = '<span class="when" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b> · ' + esc(F.fmtClock(v.returnAt, now)) + '</span>';
     else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back ' + esc(F.fmtClock(v.returnAt, now)) + (up && up.rank > s.rank ? ' · rank → ' + up.rank + '+' : '') + '</span>'; }
     else if (st === 'idle') info = '<span class="when">not sent</span>';
     var quick = '';
-    if (st === 'back' || st === 'idle') { var a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
+    if (st === 'back' || st === 'idle') { var a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
     var gauge = '', vp = st === 'out' ? F.voyageProgress(v, now) : null;
     if (vp !== null) gauge = '<span class="vgauge" aria-hidden="true" data-voy data-sent="' + v.sentAt + '" data-ret="' + v.returnAt + '" style="--p:' + vp.toFixed(4) + '"></span><span class="vgauge-sr" data-voy-text>Voyage ' + Math.floor(vp * 100) + ' percent done</span>';
     var route = v && v.route && v.route.length ? '<span class="route" title="Route as entered">' + esc(routeText(v.route)) + '</span>' : '';
@@ -557,7 +559,7 @@
         unlockNote(0) + D.seas.map(function (sea, k) {
           var list = D.sectors.filter(function (x) { return x.sea === sea.id; });
           var got = list.filter(function (x) { return W.disc.has(x.id); }).length;
-          return '<details class="sea"' + (k === 0 ? ' open' : '') + '><summary>' + esc(sea.name) + ' <span class="muted">' + got + ' of ' + list.length + '</span></summary><div class="ticks">' +
+          return '<details class="sea in-sea-' + sea.id + '"' + (k === 0 ? ' open' : '') + '><summary>' + esc(sea.name) + ' <span class="muted">' + got + ' of ' + list.length + '</span></summary><div class="ticks">' +
             list.map(function (x) { return '<label class="tick"><input type="checkbox" data-w="disc" value="' + x.id + '"' + (W.disc.has(x.id) ? ' checked' : '') + '> <b>' + esc(x.letter) + '</b> ' + esc(x.name.replace(/\s*\([A-Z]\)$/, '')) + ' <span class="muted">rank ' + x.rank + '</span></label>'; }).join('') + '</div></details>';
         }).join('');
     }
@@ -725,7 +727,7 @@
         (kind ? ' <span class="tag" data-alt-kind>' + kind + '</span>' : '') + (fig ? ' <span class="muted" data-alt-figure>' + esc(fig) + '</span>' : '') +
         (why ? '<br><span class="muted" data-alt-why>' + esc(why) + '</span>' : '') + '</li>';
     }).join('');
-    return '<div class="advice"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
+    return '<div class="advice' + leadVoice(a) + '"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
       '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' +
       (alt ? '<details><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
@@ -747,7 +749,7 @@
     else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out; until then, type the game\'s time below.</p>';
     else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
     else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>' + routeRatesHtml(s, st, ev, PICK.route);
-    return '<div class="route-pick"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
+    return '<div class="route-pick in-sea-' + PICK.sea + '"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
       '<div class="sectors">' + btns + '</div>' +
       '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + esc(ADV.routeText(PICK.route)) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' + calc + '</div>';
   }

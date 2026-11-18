@@ -742,3 +742,37 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .earn-ranked tr[data-pos] > td:nth-child(4) { color: var(--gil-s); }
 .earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:first-child { font-weight: 700; color: var(--loot-s); border-left: 6px solid var(--loot-g); }
 .earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:nth-child(3) { color: var(--gil-s); }
+
+/* W27 (spec R3.8): the Board and the send window. A rank is a rank-voice plate; routes and sector letters are route voice, a sector button carries its sea's colour, loot is loot voice. The objective that chose the advice (lead-*) marks its reason in its own voice, on the Board's quick button and in the send window. */
+.lead-route { --lv-m: var(--route-m); --lv-g: var(--route-g); }
+.lead-rank { --lv-m: var(--rank-m); --lv-g: var(--rank-g); }
+.lead-gil { --lv-m: var(--gil-m); --lv-g: var(--gil-g); }
+.lead-loot { --lv-m: var(--loot-m); --lv-g: var(--loot-g); }
+.sub[data-sub] .sub-meta > span:first-child { --slab: var(--rank-m); --on-slab: var(--on-mid); }
+.sub-meta .route { color: color-mix(in srgb, var(--route-s) 60%, var(--ink)); }
+.quick[class*="lead-"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; box-sizing: border-box; background: var(--lv-m); border-right: 2px solid var(--on-seal); }
+.advice[class*="lead-"] > .advice-route + .hint { border-left: 8px solid var(--lv-g); padding-left: 8px; }
+.sector { border-left: 8px solid var(--sea-g); padding-left: 4px; }
+.sector:not(.on) b { color: var(--route-s); }
+.route-pick .route-line { border-left: 8px solid var(--route-g); padding-left: 10px; }
+.route-line b { color: var(--route-s); }
+.loot-h { background: var(--loot-m); color: var(--on-mid); padding: 2px 10px; }
+.loot-h::after { background: repeating-linear-gradient(-65deg, var(--loot-g) 0 2px, transparent 2px 8px); }
+.loot-h .muted { color: inherit; }
+.rate-item b { color: var(--loot-s); }
+.rankbox { border-left: 8px solid var(--rank-g); padding-left: 10px; }
+
+/* W28: Setup, the recommendations panel and the empty states. Each of the four priorities is its own voice on its numbered slab (the panel is the legend); the loot pickers are loot voice; each sea in the discovered-sectors list is its colour. */
+.panel.recs > h2:first-child { border-image: linear-gradient(90deg, var(--route-m) 0 25%, var(--rank-m) 25% 50%, var(--gil-m) 50% 75%, var(--loot-m) 75%) 1; }
+.rec-rank li:has([data-rec="up-unlock"]) .rec-name b { --slab: var(--route-m); --on-slab: var(--on-mid); background: var(--route-m); color: var(--on-mid); }
+.rec-rank li:has([data-rec="up-level"]) .rec-name b { --slab: var(--rank-m); --on-slab: var(--on-mid); background: var(--rank-m); color: var(--on-mid); }
+.rec-rank li:has([data-rec="up-gil"]) .rec-name b { --slab: var(--gil-m); --on-slab: var(--on-mid); background: var(--gil-m); color: var(--on-mid); }
+.rec-rank li:has([data-rec="up-loot"]) .rec-name b { --slab: var(--loot-m); --on-slab: var(--on-mid); background: var(--loot-m); color: var(--on-mid); }
+.rec-rank li:first-child { border-left: 8px solid var(--seal); }
+[data-recs-body] > h3:nth-of-type(2) { color: var(--loot-s); }
+.rec-picker { border-left: 8px solid var(--loot-g); }
+.rec-picker:has(.rec-find:disabled) { border-left-color: var(--ink-3); }
+.sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }
+.sea[class*="in-sea-"][open] > summary { --slab: var(--sea); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background: var(--slab); color: var(--on-slab); }
+.tick b { color: var(--route-s); }
+.panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { background-image: repeating-radial-gradient(circle at 100% 0, transparent 0 46px, var(--ring) 46px 48px); }

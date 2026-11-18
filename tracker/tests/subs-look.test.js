@@ -426,3 +426,55 @@ test('Log and Earnings (W25, W26): subs.css and logHtml and earnHtml carry the r
   assert.ok(js.includes('class="log-grade g-') && js.includes("'>Grade ' + esc(t.grade)") === false && js.includes("Grade ' + esc(t.grade)"), 'the grade chip');
   assert.ok(js.includes("var seaOf = function (route)") && js.includes('<tr data-pos="\' + r.pos + \'" class="\' + seaOf(r.route)'), 'Earnings route rows carry the sea');
 });
+
+// ---- Revision 3 (W27, W28): the Board, the send window, Setup, the recommendations panel and the empty states ----
+test('Board, send window, Setup, recommendations, empty states (W27, W28): every new pair reaches its contrast in all 21 themes, light and dark (computed palette)', () => {
+  const fail = [], lo = {};
+  const need3 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), env = P.env(row, mode);
+    const st = (n) => P.colour('var(' + n + ')', env);
+    const pg = { slip: hx(th.slip), paper: hx(th.paper), 'paper-2': hx(th.paper2) };
+    for (const [n, b] of Object.entries(pg)) {
+      // text: sector letters, the route line and the sub's route (route-s), rates and the Loot Farming label (loot-s)
+      need3('route-s text (sector letter, route line, ticks) on ' + n + ' (4.5)', c('--route-s'), b, 4.5, where);
+      need3('loot-s text (rate figure, Loot Farming label) on ' + n + ' (4.5)', c('--loot-s'), b, 4.5, where);
+      // meaningful graphics: sea edge on a sector button and on a sea in Setup, the route line, rank box, reason and picker edges
+      for (const v of ['route', 'rank', 'loot', 'gil']) need3('edge: ' + v + '-g on ' + n + ' (3)', c('--' + v + '-g'), b, 3, where);
+      for (let s = 1; s <= 7; s++) need3('edge: sea -g on ' + n + ' (3)', c('--sea-' + s + '-g'), b, 3, where);
+    }
+    // the sub's route on the card's status tints: route-s mixed 60/40 into the ink (the CSS: color-mix(in srgb, var(--route-s) 60%, var(--ink)))
+    for (const k of ['back', 'out', 'idle']) {
+      const bg = hx(mixRgb(pg.slip, st('--' + k), k === 'back' ? 0.16 : 0.1)), rt = hx(mixRgb(ink, c('--route-s'), 0.6));
+      need3('Board: route text (route-s 60% in ink) on the ' + k + ' card tint (4.5)', rt, bg, 4.5, where);
+      need3('Board: ink on the ' + k + ' card tint (4.5)', ink, bg, 4.5, where);
+    }
+    // fields: the rank plate, the number slabs, the loot label, the open sea
+    for (const v of ['rank', 'route', 'gil', 'loot']) need3('field: on-mid on ' + v + ' (plate, number slab, label) (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where);
+    for (let s = 1; s <= 7; s++) need3('field: on-mid on sea (open sea in Setup) (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
+    // empty state: the rings sit behind the slab's text, which is in the page colour: it must reach 4.5 on every ring (R3.4); the ring is decoration
+    for (const v of ['rank', 'route', 'gil', 'loot']) need3('empty state: page colour on ' + v + '-ring (4.5)', hx(th.paper), c('--' + v + '-ring'), 4.5, where);
+    need3('empty state: page colour on sea-1-ring (4.5)', hx(th.paper), c('--sea-1-ring'), 4.5, where);
+    // the Board's quick band sits against the accent button: its edge (the colour the button's text uses) must stand out from the accent (4.5); the band's own colour is printed, a state is in the title and the send window's words
+    need3('quick band: on-seal edge on the accent button (4.5)', hexRgb(onSeal(hexRgb((mode === 'dark' ? row[3] : row[2])[2]))), st('--seal'), 4.5, where);
+    for (const v of ['rank', 'route', 'gil', 'loot']) lo['(printed) quick band: ' + v + ' field on the accent button'] = Math.min(lo['(printed) quick band: ' + v + ' field on the accent button'] ? lo['(printed) quick band: ' + v + ' field on the accent button'].min : 99, 99) && { min: Math.min((lo['(printed) quick band: ' + v + ' field on the accent button'] || { min: 99 }).min, M.ratio(c('--' + v + '-m'), st('--seal'))), where };
+    // the switched-off picker's ink-3 edge: printed (the disabled input and its unchecked box say it too)
+    lo['(printed) picker off: ink-3 edge on paper'] = { min: Math.min((lo['(printed) picker off: ink-3 edge on paper'] || { min: 99 }).min, M.ratio(st('--ink-3'), pg.paper)), where };
+  }
+  console.log('Board, send window, Setup, recommendations, empty states (W27, W28), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(70) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('Board, send window, Setup, recommendations, empty states (W27, W28): subs.css and subs.js carry the rules and the classes', () => {
+  for (const s of [
+    '.sub[data-sub] .sub-meta > span:first-child { --slab: var(--rank-m); --on-slab: var(--on-mid); }', '.sub-meta .route { color: color-mix(in srgb, var(--route-s) 60%, var(--ink)); }',
+    '.sector { border-left: 8px solid var(--sea-g); padding-left: 4px; }', '.sector:not(.on) b { color: var(--route-s); }',
+    '.route-pick .route-line { border-left: 8px solid var(--route-g); padding-left: 10px; }', '.loot-h { background: var(--loot-m); color: var(--on-mid); padding: 2px 10px; }',
+    '.rate-item b { color: var(--loot-s); }', '.rankbox { border-left: 8px solid var(--rank-g); padding-left: 10px; }',
+    'var(--route-m) 0 25%, var(--rank-m) 25% 50%, var(--gil-m) 50% 75%, var(--loot-m) 75%) 1', '.rec-picker { border-left: 8px solid var(--loot-g); }',
+    '.rec-picker:has(.rec-find:disabled) { border-left-color: var(--ink-3); }', '.sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }',
+    '.tick b { color: var(--route-s); }', 'transparent 0 46px, var(--ring) 46px 48px']) assert.ok(css.includes(s), s);
+  for (const [k, v] of [['up-unlock', 'route'], ['up-level', 'rank'], ['up-gil', 'gil'], ['up-loot', 'loot']]) assert.ok(css.includes('li:has([data-rec="' + k + '"]) .rec-name b { --slab: var(--' + v + '-m);'), k);
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  assert.ok(js.includes("'<div class=\"route-pick in-sea-' + PICK.sea") && js.includes("'<details class=\"sea in-sea-' + sea.id") && js.includes("U1: 'route'") && js.includes("X: 'rank', G: 'gil', L: 'loot'"), 'classes');
+});
