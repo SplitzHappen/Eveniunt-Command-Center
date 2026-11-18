@@ -433,6 +433,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const c2 = await context(); const p = await c2.ctx.newPage();
       await p.goto(ROOT + 'atelier/'); await p.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 });
       await p.waitForSelector('a[data-cc-back]');
+      // a first visit reloads the Atelier once, when its worker takes the page; a click before that reload is cancelled by it
+      await p.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 });
+      await p.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 });
+      await p.waitForSelector('a[data-cc-back]');
       const dHand = await handoverState(p);
       await p.click('a[data-cc-back]'); await p.waitForSelector('.modules'); const s3 = await shellState(p);
       const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 3 &&

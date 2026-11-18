@@ -67,7 +67,7 @@
           "error": null,
           "quality": 19710,
           "steps": 34,
-          "seconds": 16.7,
+          "seconds": 17.1,
           "threads": 4,
           "wantQuality": 19710
         },
@@ -313,7 +313,7 @@
           ],
           "ticks": 2,
           "moved": {
-            "at": 1794970861008,
+            "at": 1794971803246,
             "from": "indexeddb",
             "check": {
               "chars": 2,
@@ -386,7 +386,7 @@
           "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
           "notice": false,
           "device": {
-            "handoverSeen": 1794970864708
+            "handoverSeen": 1794971807220
           }
         },
         "afterGotIt": {
@@ -394,14 +394,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794970864708
+              "handoverSeen": 1794971807220
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "handoverSeen": 1794970864708
+              "handoverSeen": 1794971807220
             }
           }
         },
@@ -420,14 +420,14 @@
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794970866240
+              "installed": 1794971808801
             }
           },
           "atelier": {
             "back": "http://127.0.0.1:8418/Eveniunt-Command-Center/",
             "notice": false,
             "device": {
-              "installed": 1794970866240
+              "installed": 1794971808801
             }
           }
         },
@@ -594,8 +594,8 @@
       "title": "The published layout (gate 1E): the repository's files and the Pages workflow's own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it",
       "pass": true,
       "detail": {
-        "scratch": "/tmp/cc-publish-NpfpC8",
-        "copied": "353",
+        "scratch": "/tmp/cc-publish-MuofRf",
+        "copied": "354",
         "freshLists": {
           "workflowWrites": true,
           "trackerWorkerServes": true
@@ -662,11 +662,11 @@
             "authorization_code"
           ],
           "navs": [
-            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=bX2QWIMhmBVLE1dfUZrdbw",
+            "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/oauth.html?code=code1&state=PQMBb_fy3qlrYJYFsBe6sQ",
             "http://127.0.0.1:8421/Eveniunt-Command-Center/tracker/"
           ],
-          "status": "Synced 03:01 AM",
-          "device": "6ea0d728…"
+          "status": "Synced 03:16 AM",
+          "device": "8ff29479…"
         },
         "leaks": {
           "backup": false,
@@ -868,9 +868,9 @@
           ]
         ],
         "oneVoyage": {
-          "sentAt": 1794506400994,
+          "sentAt": 1794506401000,
           "route": [],
-          "returnAt": 1794604320994,
+          "returnAt": 1794604321000,
           "gameSaid": "1d 3h 12m"
         },
         "board": [
@@ -894,24 +894,24 @@
         "wantSecs": 54250,
         "quickLabel": "Send ▸ Deep-sea Site: H → I → E · back tomorrow 15:11",
         "afterQuick": {
-          "sentAt": 1794560716894,
+          "sentAt": 1794560717303,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669094894,
-          "calcAt": 1794669094894
+          "returnAt": 1794669095303,
+          "calcAt": 1794669095303
         },
         "checked": {
-          "sentAt": 1794560716894,
+          "sentAt": 1794560717303,
           "route": [
             8,
             9,
             5
           ],
-          "returnAt": 1794669257492,
-          "calcAt": 1794669094894,
+          "returnAt": 1794669257967,
+          "calcAt": 1794669095303,
           "gameSaid": "30h 9m"
         },
         "accuracy": " Check against the game. After 10 checks within a minute, the label says confirmed.SubWorked outGameDifferenceSub Twotomorrow 15:11tomorrow 15:14 (30h 9m)+3 min",
@@ -921,12 +921,12 @@
           10610
         ],
         "sent": {
-          "sentAt": 1794506402493,
+          "sentAt": 1794506402917,
           "route": [
             1
           ],
-          "returnAt": 1794560652493,
-          "calcAt": 1794560652493
+          "returnAt": 1794560652917,
+          "calcAt": 1794560652917
         },
         "beforeBack": [],
         "atBack": [
@@ -936,41 +936,41 @@
         "afterReload": [],
         "reloadRow": "back",
         "picked": [
-          "stxyx6fra",
-          "sxfwr89p2"
+          "swnjsbzs2",
+          "sdgl0o10z"
         ],
         "allOk": true,
         "sentAll": [
           {
-            "sentAt": 1794560718177,
+            "sentAt": 1794560718684,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794663240177,
-            "calcAt": 1794663240177
+            "returnAt": 1794663240684,
+            "calcAt": 1794663240684
           },
           {
-            "sentAt": 1794560718177,
+            "sentAt": 1794560718684,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794657594177,
-            "calcAt": 1794657594177
+            "returnAt": 1794657594684,
+            "calcAt": 1794657594684
           }
         ],
         "trips": [
           {
-            "s": "szhq1hsuu",
-            "t": 1794506402493,
+            "s": "s68ao2yt1",
+            "t": 1794506402917,
             "r": [
               1
             ],
-            "back": 1794560652493,
-            "calc": 1794560652493,
+            "back": 1794560652917,
+            "calc": 1794560652917,
             "items": [],
             "newSectors": [],
             "rankAfter": 40,
@@ -980,25 +980,25 @@
         ],
         "typed": [
           {
-            "sentAt": 1794560718177,
+            "sentAt": 1794560718684,
             "route": [
               9,
               7,
               8
             ],
-            "returnAt": 1794563465138,
-            "calcAt": 1794663240177,
+            "returnAt": 1794563465169,
+            "calcAt": 1794663240684,
             "gameSaid": "45m"
           },
           {
-            "sentAt": 1794560718177,
+            "sentAt": 1794560718684,
             "route": [
               7,
               5,
               3
             ],
-            "returnAt": 1794563465755,
-            "calcAt": 1794657594177,
+            "returnAt": 1794563465837,
+            "calcAt": 1794657594684,
             "gameSaid": "45m"
           }
         ],
@@ -1013,9 +1013,9 @@
       "pass": true,
       "detail": {
         "file": "alpha-renamed-sub-one-back.ics",
-        "want": "20261113T211200Z",
+        "want": "20261113T211201Z",
         "ics": [
-          "DTSTART:20261113T211200Z",
+          "DTSTART:20261113T211201Z",
           "SUMMARY:Alpha Renamed · Sub One back",
           "TRIGGER:PT0M"
         ]
@@ -1029,7 +1029,7 @@
         "board": 0,
         "tabbar": {
           "bottom": 844,
-          "height": 61,
+          "height": 66,
           "position": "fixed"
         },
         "sheet": 0,
@@ -1058,8 +1058,8 @@
             "locked",
             "out"
           ],
-          "maxBottom": 979,
-          "maxRight": 1895,
+          "maxBottom": 1020,
+          "maxRight": 1894,
           "columns": 4,
           "sideways": 0,
           "scrollY": 0
@@ -1170,7 +1170,7 @@
         ],
         "firstPanel": true,
         "duringWizard": true,
-        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 04:31.",
+        "status": "Off for this device. 0 devices turned on. 3 alerts scheduled, next 04:47.",
         "nowLine": "Now: Alpha Company: per submarine (still unlocking) · Bravo Company: per free company (farming gil). In the grouped modes, a sub back more than 30 minutes before the rest of its group still gets its own alert.",
         "perSub": [
           "Alpha Company · Sub A1 is back",
@@ -1217,17 +1217,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fjnsa7b0t": {
-                  "charId": "c2",
-                  "discovered": [
-                    1,
-                    2
-                  ],
-                  "name": "Bravo Company",
-                  "order": 1,
-                  "unlockedSlots": 1
-                },
-                "fys5r5ekr": {
+                "fdsvrrt9s": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1235,6 +1225,16 @@
                   ],
                   "name": "Alpha Company",
                   "order": 0,
+                  "unlockedSlots": 1
+                },
+                "fuyyo28gn": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Bravo Company",
+                  "order": 1,
                   "unlockedSlots": 1
                 }
               },
@@ -1286,17 +1286,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fjnsa7b0t": {
-                  "charId": "c2",
-                  "discovered": [
-                    1,
-                    2
-                  ],
-                  "name": "Bravo Company",
-                  "order": 1,
-                  "unlockedSlots": 1
-                },
-                "fys5r5ekr": {
+                "fdsvrrt9s": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1304,6 +1294,16 @@
                   ],
                   "name": "Alpha Company",
                   "order": 0,
+                  "unlockedSlots": 1
+                },
+                "fuyyo28gn": {
+                  "charId": "c2",
+                  "discovered": [
+                    1,
+                    2
+                  ],
+                  "name": "Bravo Company",
+                  "order": 1,
                   "unlockedSlots": 1
                 }
               },
@@ -1356,7 +1356,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fhqo9ly6i": {
+                "fwc9ydlh5": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1405,7 +1405,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fhqo9ly6i": {
+                "fwc9ydlh5": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1469,7 +1469,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "ftfgyqhl4": {
+                "f9cqmyo69": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1528,7 +1528,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "ftfgyqhl4": {
+                "f9cqmyo69": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1608,7 +1608,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "ftfgyqhl4": {
+                "f9cqmyo69": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1668,7 +1668,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f3wvog55u": {
+                "fc7b3rs7e": {
                   "charId": null,
                   "discovered": [
                     1,
@@ -1682,21 +1682,8 @@
               },
               "settings": {},
               "subs": {
-                "s3ua515qs": {
-                  "fcId": "f3wvog55u",
-                  "name": "Sub Four",
-                  "parts": [
-                    3,
-                    4,
-                    1,
-                    2
-                  ],
-                  "rank": 12,
-                  "slot": 4,
-                  "voyage": null
-                },
-                "s5gkvsx41": {
-                  "fcId": "f3wvog55u",
+                "sby0gtg9w": {
+                  "fcId": "fc7b3rs7e",
                   "name": "Sub Two",
                   "parts": [
                     3,
@@ -1708,21 +1695,8 @@
                   "slot": 2,
                   "voyage": null
                 },
-                "sh8vz5zvz": {
-                  "fcId": "f3wvog55u",
-                  "name": "Sub Three",
-                  "parts": [
-                    3,
-                    4,
-                    1,
-                    2
-                  ],
-                  "rank": 30,
-                  "slot": 3,
-                  "voyage": null
-                },
-                "smzksb9f8": {
-                  "fcId": "f3wvog55u",
+                "sld3ygbc7": {
+                  "fcId": "fc7b3rs7e",
                   "name": "Sub One",
                   "parts": [
                     3,
@@ -1732,6 +1706,32 @@
                   ],
                   "rank": 50,
                   "slot": 1,
+                  "voyage": null
+                },
+                "srlai08sw": {
+                  "fcId": "fc7b3rs7e",
+                  "name": "Sub Four",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 12,
+                  "slot": 4,
+                  "voyage": null
+                },
+                "stolhn1hi": {
+                  "fcId": "fc7b3rs7e",
+                  "name": "Sub Three",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 30,
+                  "slot": 3,
                   "voyage": null
                 }
               },
@@ -1771,7 +1771,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f3wvog55u": {
+                "fc7b3rs7e": {
                   "charId": null,
                   "discovered": [
                     1,
@@ -1785,21 +1785,8 @@
               },
               "settings": {},
               "subs": {
-                "s3ua515qs": {
-                  "fcId": "f3wvog55u",
-                  "name": "Sub Four",
-                  "parts": [
-                    3,
-                    4,
-                    1,
-                    2
-                  ],
-                  "rank": 12,
-                  "slot": 4,
-                  "voyage": null
-                },
-                "s5gkvsx41": {
-                  "fcId": "f3wvog55u",
+                "sby0gtg9w": {
+                  "fcId": "fc7b3rs7e",
                   "name": "Sub Two",
                   "parts": [
                     3,
@@ -1811,21 +1798,8 @@
                   "slot": 2,
                   "voyage": null
                 },
-                "sh8vz5zvz": {
-                  "fcId": "f3wvog55u",
-                  "name": "Sub Three",
-                  "parts": [
-                    3,
-                    4,
-                    1,
-                    2
-                  ],
-                  "rank": 30,
-                  "slot": 3,
-                  "voyage": null
-                },
-                "smzksb9f8": {
-                  "fcId": "f3wvog55u",
+                "sld3ygbc7": {
+                  "fcId": "fc7b3rs7e",
                   "name": "Sub One",
                   "parts": [
                     3,
@@ -1835,6 +1809,32 @@
                   ],
                   "rank": 50,
                   "slot": 1,
+                  "voyage": null
+                },
+                "srlai08sw": {
+                  "fcId": "fc7b3rs7e",
+                  "name": "Sub Four",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 12,
+                  "slot": 4,
+                  "voyage": null
+                },
+                "stolhn1hi": {
+                  "fcId": "fc7b3rs7e",
+                  "name": "Sub Three",
+                  "parts": [
+                    3,
+                    4,
+                    1,
+                    2
+                  ],
+                  "rank": 30,
+                  "slot": 3,
                   "voyage": null
                 }
               },
@@ -1882,7 +1882,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fgysoorfy": {
+                "fzq99elfo": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -1931,7 +1931,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fgysoorfy": {
+                "fzq99elfo": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -2380,7 +2380,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "flkfyu26e": {
+                "f0tox0daj": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -2429,7 +2429,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "flkfyu26e": {
+                "f0tox0daj": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -2840,7 +2840,7 @@
       "detail": {
         "shown": true,
         "added": [
-          "f8wtzv5k7"
+          "f11mi61o0"
         ],
         "got": {
           "chars": [
@@ -2862,7 +2862,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f8wtzv5k7": {
+                "f11mi61o0": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -2896,11 +2896,11 @@
                   "rank": 5,
                   "slot": 1,
                   "voyage": {
-                    "returnAt": 1794974545781,
+                    "returnAt": 1794975489461,
                     "route": [
                       1
                     ],
-                    "sentAt": 1794970945781
+                    "sentAt": 1794971889461
                   }
                 }
               },
@@ -2959,7 +2959,7 @@
                   "order": 0,
                   "unlockedSlots": 1
                 },
-                "f8wtzv5k7": {
+                "f11mi61o0": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -2984,11 +2984,11 @@
                   "rank": 5,
                   "slot": 1,
                   "voyage": {
-                    "returnAt": 1794974545781,
+                    "returnAt": 1794975489461,
                     "route": [
                       1
                     ],
-                    "sentAt": 1794970945781
+                    "sentAt": 1794971889461
                   }
                 }
               },
@@ -3449,7 +3449,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "famjb3o1o": {
+                "f8dsildwk": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -3530,7 +3530,7 @@
             },
             "submersibles": {
               "fcs": {
-                "famjb3o1o": {
+                "f8dsildwk": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -3552,7 +3552,7 @@
           "c2": "Brio Elsewhere",
           "fc": "Alpha Company"
         },
-        "msgAfter": "Synced 03:02 AM.",
+        "msgAfter": "Synced 03:18 AM.",
         "cloudSays": {
           "names": [
             [
@@ -3615,7 +3615,7 @@
             "modules": {
               "submersibles": {
                 "fcs": {
-                  "f5djt1a7u": {
+                  "fq61u5v2e": {
                     "charId": "c1",
                     "discovered": [
                       1,
@@ -3693,7 +3693,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f5djt1a7u": {
+                "fq61u5v2e": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -3755,7 +3755,7 @@
             "modules": {
               "submersibles": {
                 "fcs": {
-                  "f5djt1a7u": {
+                  "fq61u5v2e": {
                     "charId": "c1",
                     "discovered": [
                       1,
@@ -3814,7 +3814,7 @@
           }
         },
         "r3": {
-          "msg": "Synced 03:03 AM.",
+          "msg": "Synced 03:18 AM.",
           "etag": "e8",
           "got": {
             "chars": [
@@ -3836,7 +3836,7 @@
             "modules": {
               "submersibles": {
                 "fcs": {
-                  "f5djt1a7u": {
+                  "fq61u5v2e": {
                     "charId": "c1",
                     "discovered": [
                       1,
@@ -4094,7 +4094,7 @@
           ]
         },
         "r3": {
-          "msg": "Synced 03:03 AM.",
+          "msg": "Synced 03:18 AM.",
           "cloud": [
             [
               "c1",
@@ -4278,7 +4278,7 @@
       "pass": true,
       "detail": {
         "left": "http://127.0.0.1:8421/login/authorize",
-        "took": 6540,
+        "took": 6538,
         "begins": "1",
         "got": {
           "chars": [
@@ -4387,7 +4387,7 @@
       "pass": true,
       "detail": {
         "left": "http://127.0.0.1:8421/login/authorize",
-        "took": 5035,
+        "took": 5029,
         "got": {
           "chars": [
             {
@@ -4473,11 +4473,11 @@
           {
             "i": 0,
             "names": [
-              "Delta B 0"
+              "Delta A 0"
             ],
             "shown": {
-              "a": "Delta B 0",
-              "b": "Delta B 0"
+              "a": "Delta A 0",
+              "b": "Delta A 0"
             },
             "ok": true,
             "errors": []
@@ -4521,11 +4521,11 @@
           {
             "i": 4,
             "names": [
-              "Delta A 4"
+              "Delta B 4"
             ],
             "shown": {
-              "a": "Delta A 4",
-              "b": "Delta A 4"
+              "a": "Delta B 4",
+              "b": "Delta B 4"
             },
             "ok": true,
             "errors": []
@@ -4545,13 +4545,13 @@
         "onA": 1,
         "ids": {
           "a": [
-            "fcmekus7p"
+            "fbszlppp1"
           ],
           "b": [
-            "fcmekus7p"
+            "fbszlppp1"
           ],
           "cloud": [
-            "fcmekus7p"
+            "fbszlppp1"
           ]
         },
         "errors": []
@@ -4904,26 +4904,26 @@
         "s0": {
           "same": true,
           "boxes": 1,
-          "decoded": "{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fotrglh45\",\"Mike Company\",\"c1\"]]}",
-          "stored": "{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fotrglh45\",\"Mike Company\",\"c1\"]]}"
+          "decoded": "{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Character 1\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}"
         },
         "s1": {
           "same": true,
           "boxes": 1,
-          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fotrglh45\",\"Mike Company\",\"c1\"]]}",
-          "stored": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fotrglh45\",\"Mike Company\",\"c1\"]]}"
+          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}"
         },
         "s2": {
           "same": true,
           "boxes": 1,
-          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fotrglh45\",\"Mike Company\",\"c1\"]]}",
-          "stored": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fotrglh45\",\"Mike Company\",\"c1\"]]}"
+          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Alba Coded\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}"
         },
         "s3": {
           "same": true,
           "boxes": 1,
-          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded Twice\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fotrglh45\",\"Mike Company\",\"c1\"]]}",
-          "stored": "{\"chars\":[[\"c1\",\"Alba Coded Twice\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fotrglh45\",\"Mike Company\",\"c1\"]]}"
+          "decoded": "{\"chars\":[[\"c1\",\"Alba Coded Twice\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}",
+          "stored": "{\"chars\":[[\"c1\",\"Alba Coded Twice\"],[\"c2\",\"Character 2\"]],\"fcs\":[[\"fnov\",\"November Company\",\"c2\"],[\"fok2kxw7v\",\"Mike Company\",\"c1\"]]}"
         },
         "gone": true,
         "errors": []
@@ -4952,7 +4952,7 @@
         "startupStalled": true,
         "gets": 1,
         "left": true,
-        "took": 22,
+        "took": 25,
         "errors": []
       }
     },
@@ -4972,7 +4972,7 @@
           "Alba Test",
           "Brio Newer Cloud"
         ],
-        "msg": "Synced 03:04 AM.",
+        "msg": "Synced 03:19 AM.",
         "errors": []
       }
     },
@@ -5005,8 +5005,8 @@
       "detail": {
         "blockedEarly": true,
         "synced": true,
-        "msg": "Synced 03:04 AM.",
-        "msgAfter": "Synced 03:04 AM.",
+        "msg": "Synced 03:20 AM.",
+        "msgAfter": "Synced 03:20 AM.",
         "same": true,
         "cloudSame": true,
         "late": [],
@@ -5034,7 +5034,7 @@
           }
         ],
         "subIds": [
-          "s9h4u3akv"
+          "s9gqphhcn"
         ],
         "before": {
           "chars": [
@@ -5128,7 +5128,7 @@
               },
               "settings": {},
               "subs": {
-                "s9h4u3akv": {
+                "s9gqphhcn": {
                   "fcId": "fz",
                   "name": "Sub 1",
                   "rank": 1,
@@ -5351,10 +5351,10 @@
           ]
         },
         "a": [
-          "sxg1p5rg8"
+          "skdprvkol"
         ],
         "b": [
-          "sxg1p5rg8"
+          "skdprvkol"
         ],
         "board": 1,
         "errors": []
@@ -5461,7 +5461,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f2zurmf9w": {
+                "f90ub2mod": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -5510,7 +5510,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f2zurmf9w": {
+                "f90ub2mod": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -5585,7 +5585,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f5l3c721o": {
+                "fsb3370ya": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -5634,7 +5634,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "f5l3c721o": {
+                "fsb3370ya": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -5943,7 +5943,7 @@
           "modules": {
             "submersibles": {
               "fcs": {
-                "fj3hl5miu": {
+                "f6j85sa7x": {
                   "charId": "c1",
                   "discovered": [
                     1,
@@ -6033,12 +6033,12 @@
         "repeat": true,
         "trip": {
           "s": "a1",
-          "t": 1794863152551,
+          "t": 1794864097539,
           "r": [
             1,
             2
           ],
-          "back": 1794967552551,
+          "back": 1794968497539,
           "items": [
             [
               10099,
@@ -6098,12 +6098,12 @@
         },
         "t1": {
           "s": "b1",
-          "t": 1794863157004,
+          "t": 1794864101998,
           "r": [
             1,
             2
           ],
-          "back": 1794967557004,
+          "back": 1794968501998,
           "items": [],
           "newSectors": [],
           "rankAfter": 10,
@@ -6120,12 +6120,12 @@
         "refusedTop": "The rank is a whole number from 1 to 145.",
         "t3": {
           "s": "b3",
-          "t": 1794863157004,
+          "t": 1794864101998,
           "r": [
             1,
             2
           ],
-          "back": 1794967557004,
+          "back": 1794968501998,
           "items": [],
           "newSectors": [],
           "rankAfter": 10,
@@ -6164,12 +6164,12 @@
         },
         "t2": {
           "s": "b2",
-          "t": 1794863157004,
+          "t": 1794864101998,
           "r": [
             1,
             2
           ],
-          "back": 1794967557004,
+          "back": 1794968501998,
           "items": [],
           "newSectors": [],
           "rankAfter": 10,
@@ -6196,12 +6196,12 @@
         "implausible": "That would mean this voyage gave 1,000 experience; this route gives about 21,220 or more. Check the rank and experience the game shows.",
         "t1": {
           "s": "d1",
-          "t": 1794863161233,
+          "t": 1794864106266,
           "r": [
             1,
             2
           ],
-          "back": 1794967561233,
+          "back": 1794968506266,
           "items": [],
           "newSectors": [],
           "rankAfter": 10,
@@ -6312,12 +6312,12 @@
         },
         "t3": {
           "s": "d3",
-          "t": 1794863161233,
+          "t": 1794864106266,
           "r": [
             1,
             2
           ],
-          "back": 1794967561233,
+          "back": 1794968506266,
           "items": [],
           "newSectors": [],
           "rankAfter": 12,
@@ -6400,7 +6400,7 @@
               "3 of 10 voyages"
             ]
           ],
-          "text": "EarningsEstimated value of what you logged: the better of the merchant price (game data) and the market price after the 5% tax (Universalis, Aether, prices seen 03:06). Not yet sold; market prices are community reports, never a promise. 23 of 24 voyages logged.Today0 gilThis week1,900 gilThis month45,600 gilAll time62,700 gilMarket prices from Aether (shared place setting)JapanElementalGaiaManaMeteorNorth-AmericaAetherCrystalDynamisPrimalEuropeChaosLightShadowOceaniaMateriaRefresh pricesExport the log (CSV)Gil per hour by route (from your own log)Logged gil divided by logged hours at sea, at the prices shown above.RankedPositionRouteGil per hourGil per voyageVoyages1Deep-sea Site: A → B190 gil3,800 gil101Deep-sea Site: C190 gil1,900 gil10Not enough data yetRouteGil per hourVoyagesDeep-sea Site: B190 gil3 of 10 voyagesBy free companyGolf Company62,700 gilTop itemsItemQuantityValuePriced byUnaspected Crystal3362,700 gilmarket"
+          "text": "EarningsEstimated value of what you logged: the better of the merchant price (game data) and the market price after the 5% tax (Universalis, Aether, prices seen 03:21). Not yet sold; market prices are community reports, never a promise. 23 of 24 voyages logged.Today0 gilThis week1,900 gilThis month45,600 gilAll time62,700 gilMarket prices from Aether (shared place setting)JapanElementalGaiaManaMeteorNorth-AmericaAetherCrystalDynamisPrimalEuropeChaosLightShadowOceaniaMateriaRefresh pricesExport the log (CSV)Gil per hour by route (from your own log)Logged gil divided by logged hours at sea, at the prices shown above.RankedPositionRouteGil per hourGil per voyageVoyages1Deep-sea Site: A → B190 gil3,800 gil101Deep-sea Site: C190 gil1,900 gil10Not enough data yetRouteGil per hourVoyagesDeep-sea Site: B190 gil3 of 10 voyagesBy free companyGolf Company62,700 gilTop itemsItemQuantityValuePriced byUnaspected Crystal3362,700 gilmarket"
         },
         "errors": []
       }
@@ -6415,12 +6415,12 @@
         "itemId": 12923,
         "trip": {
           "s": "h1",
-          "t": 1794863171129,
+          "t": 1794864116767,
           "r": [
             1,
             2
           ],
-          "back": 1794967571129,
+          "back": 1794968516767,
           "items": [
             [
               12923,
@@ -6467,16 +6467,16 @@
       "pass": true,
       "detail": {
         "before": {
-          "text": "Send ▸ Deep-sea Site: J → O → R → Z · back tomorrow 09:22",
+          "text": "Send ▸ Deep-sea Site: J → O → R → Z · back tomorrow 09:37",
           "title": "Community gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. Your own log on this route: 9 of 10 logged voyages; the estimate decides until then. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank."
         },
         "after": {
-          "text": "Send ▸ Deep-sea Site: J → O → R → Z · back tomorrow 09:22",
+          "text": "Send ▸ Deep-sea Site: J → O → R → Z · back tomorrow 09:37",
           "title": "Community gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. Your own log on this route: about 113,990 gil an hour at merchant prices over 10 logged voyages (this submarine is back in 30.3 hours); the community estimate is about 6,940 an hour. Your own log decided, because the route has 10 or more logged voyages. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank."
         },
         "communityRoute": "Deep-sea Site: J → O → R → Z",
         "jorzText": "Deep-sea Site: J → O → R → Z",
-        "sheetAdvice": "Suggested · step 3 of 3: Farm gil (gil)Deep-sea Site: J → O → R → Z Send on this route Change it firstCommunity gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. Your own log on this route: about 113,990 gil an hour at merchant prices over 10 logged voyages (this submarine is back in 30.3 hours); the community estimate is about 6,940 an hour. Your own log decided, because the route has 10 or more logged voyages. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank.Back tomorrow 09:22 (in 1 d 6 h 16 min) · range 136 of 165 · 21 tanks · at least 1,111,120 expOther routesDeep-sea Site: M → R → O → J → Z back tomorrow 12:49Deep-sea Site: M → R → O → J back tomorrow 06:27",
+        "sheetAdvice": "Suggested · step 3 of 3: Farm gil (gil)Deep-sea Site: J → O → R → Z Send on this route Change it firstCommunity gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. Your own log on this route: about 113,990 gil an hour at merchant prices over 10 logged voyages (this submarine is back in 30.3 hours); the community estimate is about 6,940 an hour. Your own log decided, because the route has 10 or more logged voyages. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank.Back tomorrow 09:37 (in 1 d 6 h 16 min) · range 136 of 165 · 21 tanks · at least 1,111,120 expOther routesDeep-sea Site: M → R → O → J → Z back tomorrow 13:05Deep-sea Site: M → R → O → J back tomorrow 06:43",
         "trips": 10,
         "noNew": true,
         "requests": [],
@@ -6489,13 +6489,13 @@
       "pass": true,
       "detail": {
         "weak": {
-          "text": "Suggested · step 3 of 3: Farm gil (gil)Deep-sea Site: J → O → R → Z Send on this route Change it firstCommunity gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 5,920 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank.Back tomorrow 14:35 (in 1 d 11 h 30 min) · range 136 of 200 · 21 tanks · at least 1,111,120 expOther routesDeep-sea Site: M → R → O → J → Z back tomorrow 19:02Deep-sea Site: J → O → Z back tomorrow 08:43Swapping the hull for Modified Whale-class Pressure Hull would give more gil per hour: about 1 instead of about 1 on Deep-sea Site: A → B (calculated from your own log; it assumes the same items come back). It lowers none of surveillance, retrieval and favor. Only if you already have the part or plan to craft it.",
+          "text": "Suggested · step 3 of 3: Farm gil (gil)Deep-sea Site: J → O → R → Z Send on this route Change it firstCommunity gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 5,920 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank.Back tomorrow 14:51 (in 1 d 11 h 30 min) · range 136 of 200 · 21 tanks · at least 1,111,120 expOther routesDeep-sea Site: M → R → O → J → Z back tomorrow 19:17Deep-sea Site: J → O → Z back tomorrow 08:59Swapping the hull for Modified Whale-class Pressure Hull would give more gil per hour: about 1 instead of about 1 on Deep-sea Site: A → B (calculated from your own log; it assumes the same items come back). It lowers none of surveillance, retrieval and favor. Only if you already have the part or plan to craft it.",
           "notes": [
             "Swapping the hull for Modified Whale-class Pressure Hull would give more gil per hour: about 1 instead of about 1 on Deep-sea Site: A → B (calculated from your own log; it assumes the same items come back). It lowers none of surveillance, retrieval and favor. Only if you already have the part or plan to craft it."
           ]
         },
         "goodBuild": {
-          "text": "Suggested · step 3 of 3: Farm gil (gil)Deep-sea Site: J → O → R → Z Send on this route Change it firstCommunity gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank.Back tomorrow 09:22 (in 1 d 6 h 16 min) · range 136 of 165 · 21 tanks · at least 1,111,120 expOther routesDeep-sea Site: M → R → O → J → Z back tomorrow 12:49Deep-sea Site: M → R → O → J back tomorrow 06:27",
+          "text": "Suggested · step 3 of 3: Farm gil (gil)Deep-sea Site: J → O → R → Z Send on this route Change it firstCommunity gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank.Back tomorrow 09:37 (in 1 d 6 h 16 min) · range 136 of 165 · 21 tanks · at least 1,111,120 expOther routesDeep-sea Site: M → R → O → J → Z back tomorrow 13:05Deep-sea Site: M → R → O → J back tomorrow 06:43",
           "notes": []
         },
         "stages": {
@@ -6534,7 +6534,7 @@
         "details": "unidentified derelict (J)found · slot 2Rank needed20Tanks3Survey480 minBase experienceat least 146,210Stars2Revealed byDeep-sea Site E community dataRevealsDeep-sea Site NPossible itemsGold Ingot, Ruby, Diamond, Emerald, Sapphire, Platinum Ingot, Star Ruby, Star Sapphire, Salvaged Ring, Salvaged Bracelet, Salvaged Earring, Salvaged Necklace, Extravagant Salvaged Ring, Extravagant Salvaged Bracelet, Extravagant Salvaged Earring, Extravagant Salvaged Necklace",
         "sideDesktop": 0,
         "sidePhone": 0,
-        "svgWidth": 330,
+        "svgWidth": 328,
         "hitMin": 38,
         "setupText": "nt Dropoff rank 141 I Axeblade Bight rank 142 J the Puffin Assembly rank 143 K southern Aerslaent Plunge rank 144 L the Solkronn Gallery rank 145 M central Den of the Greatsword rank 145CancelBackSave",
         "same": true,
@@ -6548,7 +6548,7 @@
       "detail": {
         "kbFocus": "2",
         "noSub": "Plan for No submarine chosenSub L1Sub L2Choose a submarine to plan a route: tap found sectors in the order it should vis",
-        "planned": "Plan for No submarine chosenSub L1Sub L2Route: Deep-sea Site: A → C ClearCommunity routes in this sea: Fight Club - OJFight Club - JORZFight Club - MROJZFight Club - JOZFight Club - MROJFight Club - MOJZBack 22:27 (in 19 h 21 min) · range 36 of 70 · 2 tanks · at least 38,450 expcalculated, not yet c",
+        "planned": "Plan for No submarine chosenSub L1Sub L2Route: Deep-sea Site: A → C ClearCommunity routes in this sea: Fight Club - OJFight Club - JORZFight Club - MROJZFight Club - JOZFight Club - MROJFight Club - MOJZBack 22:43 (in 19 h 21 min) · range 36 of 70 · 2 tanks · at least 38,450 expcalculated, not yet c",
         "want": {
           "range": "range 36 of 70",
           "tanks": "2 tank",
@@ -6599,7 +6599,7 @@
         "same": true,
         "outBtn": {
           "disabled": true,
-          "text": "Send Sub L2 on this route… Out: back 04:06"
+          "text": "Send Sub L2 on this route… Out: back 04:22"
         },
         "wideDesktop": 0,
         "errors": []
@@ -6692,8 +6692,8 @@
             ]
           }
         },
-        "boardDefault": "Send ▸ Deep-sea Site: B · back 19:11",
-        "boardGil": "Send ▸ Deep-sea Site: A → B · back 21:35",
+        "boardDefault": "Send ▸ Deep-sea Site: B · back 19:26",
+        "boardGil": "Send ▸ Deep-sea Site: A → B · back 21:51",
         "sheetRoute": "Deep-sea Site: A → B",
         "sheetHead": "Suggested · Gil Farming (slot 2)",
         "unchanged": true,
@@ -6986,14 +6986,14 @@
           2
         ],
         "reach": {
-          "btn": "Send ▸ Deep-sea Site: B · back 19:11",
-          "sheet": "Suggested · Loot Farming (slot 2)Deep-sea Site: B Send on this route Change it firstCan bring back 1 of your 1 chosen item (Battledance Materia II); possible items only (community data), drop odds are not known. Then Loot Farming: 1 stop where a chosen item can drop (0.1 an hour).Back 19:11 (in 16 h 5 min) · range 22 of 70 · 1 tank · at least 10,610 exp, rank at least 2Other routesDeep-sea Site: A → B back 21:35",
+          "btn": "Send ▸ Deep-sea Site: B · back 19:27",
+          "sheet": "Suggested · Loot Farming (slot 2)Deep-sea Site: B Send on this route Change it firstCan bring back 1 of your 1 chosen item (Battledance Materia II); possible items only (community data), drop odds are not known. Then Loot Farming: 1 stop where a chosen item can drop (0.1 an hour).Back 19:27 (in 16 h 5 min) · range 22 of 70 · 1 tank · at least 10,610 exp, rank at least 2Other routesDeep-sea Site: A → B back 21:51",
           "head": "Suggested · Loot Farming (slot 2)",
           "route": "Deep-sea Site: B"
         },
         "far": {
-          "btn": "Send ▸ Deep-sea Site: B · back 19:11",
-          "sheet": "Suggested · step 1 of 3: Unlock all four submarines (slot 2)Deep-sea Site: B Send on this route Change it firstOn the way to Deep-sea Site J, which grants slot 2: surveying Deep-sea Site B can reveal Deep-sea Site E. Skipped Loot Farming: none of your chosen items can drop in a sector this sub can reach now.Back 19:11 (in 16 h 5 min) · range 22 of 70 · 1 tank · at least 10,610 exp, rank at least 2Other routesDeep-sea Site: A → B back 21:35",
+          "btn": "Send ▸ Deep-sea Site: B · back 19:27",
+          "sheet": "Suggested · step 1 of 3: Unlock all four submarines (slot 2)Deep-sea Site: B Send on this route Change it firstOn the way to Deep-sea Site J, which grants slot 2: surveying Deep-sea Site B can reveal Deep-sea Site E. Skipped Loot Farming: none of your chosen items can drop in a sector this sub can reach now.Back 19:27 (in 16 h 5 min) · range 22 of 70 · 1 tank · at least 10,610 exp, rank at least 2Other routesDeep-sea Site: A → B back 21:51",
           "head": "Suggested · step 1 of 3: Unlock all four submarines (slot 2)",
           "route": "Deep-sea Site: B"
         },
@@ -7052,7 +7052,7 @@
         },
         "bestText": "Deep-sea Site: J → O → R → Z",
         "btn": {
-          "text": "Send ▸ Deep-sea Site: J → O → R → Z · back tomorrow 09:22",
+          "text": "Send ▸ Deep-sea Site: J → O → R → Z · back tomorrow 09:38",
           "title": "Community gil route Fight Club - JORZ: about 210,100 gil a voyage at merchant prices (about 6,940 an hour for this submarine): an estimate from community drop records (at least 14.4 million surveys per sector on this route), not a promise. The best of the 10 community gil routes this submarine can run. Skipped Unlocking Routes: every sector is found. Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank."
         },
         "sheet": {
@@ -7071,7 +7071,7 @@
       "detail": {
         "plain": {
           "btn": {
-            "text": "Send ▸ Deep-sea Site: A → B → C → E · back tomorrow 05:22",
+            "text": "Send ▸ Deep-sea Site: A → B → C → E · back tomorrow 05:37",
             "title": "No community gil route can be run by this submarine now (sectors not found). Found by the app from community drop rates: about 3,400 gil a voyage at merchant prices (about 130 an hour for this submarine): an estimate from community drop records (at least 463,538 surveys per sector on this route), not a promise. Then Unlocking Routes: it can reveal 1 new sector."
           },
           "sheet": {
@@ -7082,7 +7082,7 @@
         },
         "logged": {
           "btn": {
-            "text": "Send ▸ Deep-sea Site: A → B → C → E · back tomorrow 05:22",
+            "text": "Send ▸ Deep-sea Site: A → B → C → E · back tomorrow 05:37",
             "title": "No community gil route can be run by this submarine now (sectors not found). Found by the app from community drop rates: about 3,400 gil a voyage at merchant prices (about 130 an hour for this submarine): an estimate from community drop records (at least 463,538 surveys per sector on this route), not a promise. Your own log on this route: about 7,620 gil an hour at merchant prices over 10 logged voyages (this submarine is back in 26.3 hours); the community estimate is about 130 an hour. Your own log decided, because the route has 10 or more logged voyages."
           },
           "sheet": {
@@ -7165,7 +7165,7 @@
         "minHeights360": {
           ".btn": 36,
           ".quick": null,
-          ".tabs button": 52,
+          ".tabs button": 56,
           "[data-map-sea]": null,
           ".sector": null,
           ".qbtn": null,
@@ -7174,8 +7174,8 @@
           ".rec-rank button": 36
         },
         "chart360": {
-          "width": 300,
-          "hitMin": 35
+          "width": 298,
+          "hitMin": 34
         }
       }
     }

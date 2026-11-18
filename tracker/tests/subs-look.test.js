@@ -116,6 +116,13 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
       }
       // --on-seal: the shared token applyLook() picks through onSeal(), taken from the built look.js
       need('on-seal on seal (shared; primary buttons and .quick)', hexRgb(onSeal(ac)), c('--seal'), 4.5, where);
+      // Revision 2 (W13): the inverted slab, the bar field and the card wash. The --back-bg pair above reads the new 16% value.
+      need('on-slab on slab (slab text)', c('--on-slab'), c('--slab'), 4.5, where);
+      need('on-slab-2 on slab (slab, secondary)', c('--on-slab-2'), c('--slab'), 4.5, where);
+      need('ink on bar (figures on a bar)', c('--ink'), c('--bar'), 4.5, where);
+      need('ink on hi-slip (text on the --hi wash)', c('--ink'), c('--hi-slip'), 4.5, where);
+      note('ink-2 on bar (shared ink, printed)', ratio(c('--ink-2'), c('--bar')), where);
+      note('ink-2 on hi-slip (shared ink, printed)', ratio(c('--ink-2'), c('--hi-slip')), where);
       need('bad on slip', c('--bad'), c('--slip'), 4.5, where);
       need('bad on paper', c('--bad'), c('--paper'), 4.5, where);
       // printed, not asserted: the shared ink-2
