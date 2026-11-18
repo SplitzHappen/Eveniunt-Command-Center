@@ -559,3 +559,18 @@ licence is not stated.
   routes.
 - How sure: high on what each does; the size of the swing is a calculation from the O and J records.
 - **Recommendation: the community estimate chooses.** Affects D3.
+
+## Owner decisions (2026-11-18)
+
+These settle the three owner questions above and override any wording in this spec that differs.
+
+- **Q1, thresholds:** use the community thresholds. The data notes name the source and the doubt about where the
+  numbers first came from.
+- **Q2, a rank-145 submarine that can still reveal sectors:** explore first, then gil. Leveling is skipped at rank 145
+  and the rest of the player's order applies.
+- **Q3, who picks the gil route:** the community estimate ranks routes. Once a route has 10 logged voyages, that
+  route's own-log figure is compared with its community estimate and the route is ranked by its own-log figure; routes
+  without 10 logged voyages keep the estimate. The best route by these figures is recommended. Both figures are shown
+  wherever a logged route appears, and the reason says which one decided. Both figures must be in the same unit
+  (merchant gil per hour) before they are compared; if the log cannot be expressed in that unit for a route, the
+  estimate decides for it and the reason says so.
