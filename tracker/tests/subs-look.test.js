@@ -123,6 +123,9 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
       need('ink on hi-slip (text on the --hi wash)', c('--ink'), c('--hi-slip'), 4.5, where);
       note('ink-2 on bar (shared ink, printed)', ratio(c('--ink-2'), c('--bar')), where);
       note('ink-2 on hi-slip (shared ink, printed)', ratio(c('--ink-2'), c('--hi-slip')), where);
+      // Revision 2 (W19, W20): the planner and the tier blocks sit on the paper, the phone Earnings labels use --ink on the bar (the pair above); the sea tab's fill on its track is decoration, its figure is the count in words, so it is printed, not asserted
+      need('ink on paper (planner, tier blocks, sea tabs)', c('--ink'), c('--paper'), 4.5, where);
+      for (let sea = 1; sea <= 7; sea++) note('sea ' + sea + ' fill on ink-2 track (printed; decoration)', ratio(c('--sea-' + sea), c('--ink-2')), where);
       need('bad on slip', c('--bad'), c('--slip'), 4.5, where);
       need('bad on paper', c('--bad'), c('--paper'), 4.5, where);
       // Revision 2 (W15, W16): labels and kickers in the sheet and the tables sit on the slip, the sector names on the paper, the Log's row hover on paper-2

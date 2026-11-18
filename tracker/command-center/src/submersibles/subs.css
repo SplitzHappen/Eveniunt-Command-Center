@@ -518,3 +518,130 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
   .when b { font-size: 46px; }
   .sub-when .quick { min-height: 48px; font-size: 15px; }
 }
+
+/* W19: the Map tab. Sea tabs, chart head, legend, planner controls and the sector console */
+.map-panel { max-width: 1400px; }
+.map-seas { gap: 8px; }
+.map-seas .btn[data-map-sea] { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 52px; padding: 6px 14px 14px; border: 2px solid var(--ink); border-radius: 0; background: var(--paper); color: var(--ink); font: 900 16px/1.1 var(--f-disp); text-transform: uppercase; letter-spacing: .03em; text-align: left; overflow: hidden; }
+.map-seas .btn[data-map-sea] .muted { display: block; font: 400 11px/1.2 var(--f-data); text-transform: none; letter-spacing: 0; color: var(--ink-2); }
+.map-seas .btn[data-map-sea]::before, .map-seas .btn[data-map-sea]::after { content: ""; position: absolute; left: 10px; bottom: 4px; height: 6px; transform: skewX(-25deg); transform-origin: left bottom; }
+.map-seas .btn[data-map-sea]::before { right: 10px; background: var(--ink-2); }
+.map-seas .btn[data-map-sea]::after { width: calc((100% - 20px) * var(--p, 0)); background: var(--sea-1); }
+.map-seas .btn[data-map-sea="2"]::after { background: var(--sea-2); } .map-seas .btn[data-map-sea="3"]::after { background: var(--sea-3); }
+.map-seas .btn[data-map-sea="4"]::after { background: var(--sea-4); } .map-seas .btn[data-map-sea="5"]::after { background: var(--sea-5); }
+.map-seas .btn[data-map-sea="6"]::after { background: var(--sea-6); } .map-seas .btn[data-map-sea="7"]::after { background: var(--sea-7); }
+.map-seas .btn[data-map-sea][aria-pressed="true"] { background: var(--slab); border-color: var(--slab); color: var(--on-slab); }
+.map-seas .btn[data-map-sea][aria-pressed="true"] .muted { color: var(--on-slab-2); }
+.map-seas .btn[data-map-sea][aria-pressed="true"]::before { background: var(--on-slab-2); }
+.map-seas .btn[data-map-sea]:focus-visible { outline-offset: 2px; }
+.map-seas .btn[data-map-sea][aria-pressed="true"]:focus-visible { outline-color: var(--seal); }
+.map-panel .field.inline, .planner .field.inline { font: 700 11px/1.2 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.map-panel .field.inline select { font-size: 16px; font-weight: 700; }
+.chart-wrap { border: var(--edge) solid var(--ink); border-radius: 0; box-shadow: var(--glow); }
+.chart-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; padding: 10px 14px; background: var(--chart-bg); border-bottom: 5px solid var(--sea); }
+.chart-sea { font: 900 34px/1 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; color: var(--chart-ink); }
+.chart-count { font: 600 14px var(--f-data); color: var(--chart-ink-2); }
+.chart-key { display: block; margin: 0 0 12px; padding: 10px 14px; background: var(--chart-bg); color: var(--chart-ink); border: var(--edge) solid var(--ink); border-top: 0; font-size: 13px; line-height: 1.5; }
+.chart-key .key { display: inline-block; vertical-align: -3px; margin-right: 2px; line-height: 0; }
+.chart-key .key.found { color: var(--chart-found); } .chart-key .key.next { color: var(--chart-next); } .chart-key .key.far { color: var(--chart-far); }
+.map-grid { display: block; }
+.map-grid > .planner { padding: 12px 14px 4px; margin: 10px 0; border: var(--edge) solid var(--ink); background: var(--paper); }
+.planner .route-line { border-width: 2px 0; }
+.planner .route-line b { font-size: 26px; }
+.planner .btn.sm[data-map-use] { min-height: 40px; padding: 0 12px; font-size: 13px; font-weight: 700; }
+.planner .calc-line { font-size: 15px; }
+.planner p > .btn.primary { max-width: 100%; height: auto; min-height: 48px; padding-top: 6px; line-height: 1.1; overflow-wrap: anywhere; }
+.map-grid > .chart-details { margin: 0 0 14px; --pad-x: 14px; padding: 0 var(--pad-x) 14px; background-image: none; max-width: none; }
+.chart-details h3 { display: flex; align-items: center; gap: 14px; margin: 0 calc(-1 * var(--pad-x)) 12px; padding: 10px var(--pad-x) 8px; background: var(--slab); color: var(--on-slab); font: 900 24px/1.05 var(--f-serif); border-bottom: 6px solid transparent; border-image: var(--molten) 1; overflow-wrap: anywhere; }
+.chart-details h3 .sd-letter { flex: none; min-width: 1.1ch; font: 900 64px/.9 var(--f-disp); letter-spacing: .02em; text-transform: uppercase; }
+.chart-details h3 .sd-name { min-width: 0; }
+.chart-details > .muted { font: 700 13px/1.3 var(--f-body); text-transform: uppercase; letter-spacing: .06em; color: var(--ink); }
+.chart-details > .muted b { font-weight: 900; }
+.chart-facts { grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; align-items: baseline; margin: 10px 0; }
+.chart-facts dt { grid-column: auto; font: 700 11px/1.2 var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.chart-facts dd { font: 14px/1.4 var(--f-body); }
+.chart-facts dd:nth-of-type(-n+5) { font: 900 22px/1.1 var(--f-disp); }
+.chart-details .hint { font-size: 14px; }
+/* tier blocks: heavy collapsible slabs, the tier number large */
+.chart-details .rates-tier { margin: 10px 0 0; border: var(--edge) solid var(--ink); background: var(--paper); }
+.chart-details .rates-tier > summary { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 12px 6px 0; list-style: none; font: 700 13px/1.35 var(--f-body); text-transform: none; letter-spacing: 0; }
+.chart-details .rates-tier > summary::-webkit-details-marker { display: none; }
+.chart-details .rates-tier > summary::before { flex: none; align-self: stretch; display: grid; place-items: center; width: 56px; margin: -6px 0; background: var(--slab); color: var(--on-slab); font: 900 40px/1 var(--f-disp); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); padding-right: 10px; box-sizing: border-box; }
+.chart-details .rates-tier[data-tier="1"] > summary::before { content: "1"; content: "1" / ""; }
+.chart-details .rates-tier[data-tier="2"] > summary::before { content: "2"; content: "2" / ""; }
+.chart-details .rates-tier[data-tier="3"] > summary::before { content: "3"; content: "3" / ""; }
+.chart-details .rates-tier > summary::after { content: "+"; margin-left: auto; flex: none; font: 900 28px/1 var(--f-disp); }
+.chart-details .rates-tier[open] > summary::after { content: "−"; }
+.chart-details .rates-tier[open] > summary { border-bottom: var(--edge) solid var(--ink); background: var(--hi-slip); }
+.chart-details .rates-tier > summary:focus-visible { outline-offset: 2px; }
+.chart-details .rates-tier > .hint, .chart-details .rates-tier > .rate-item { margin-left: 12px; margin-right: 12px; }
+.chart-details .rate-item { padding: 8px 0; }
+.chart-details .rate-item b { font: 900 17px/1.2 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; }
+.chart-details .rate-item span { font-size: 13px; }
+@media (min-width: 1100px) {
+  .map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 18px; align-items: start; }
+  .map-grid > .planner { grid-column: 2; grid-row: 1; margin-top: 0; }
+  .map-grid > .chart-details { grid-column: 2; grid-row: 2; }
+  .map-grid > .chart-wrap { grid-column: 1; grid-row: 1 / 3; }
+  .map-grid > .chart-key { grid-column: 1; grid-row: 3; }
+}
+@media (max-width: 700px) {
+  .map-panel { --pad-x: 8px; }
+  .map-seas { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+  .map-seas .btn[data-map-sea] { flex: none; min-height: 52px; }
+  .map-grid > .chart-wrap { max-width: none; margin: 0 calc(-1 * var(--pad-x)); border-left-width: 0; border-right-width: 0; }
+  .chart-key { margin: 0 calc(-1 * var(--pad-x)) 12px; border-left-width: 0; border-right-width: 0; }
+  .chart-sea { font-size: 24px; }
+  .chart-details h3 .sd-letter { font-size: 52px; }
+}
+
+/* W20: the final pass */
+/* Board: the recommended route is never cut. Hero and phone rows wrap it inside the slab; dense rows (5+ companies from 1400 px, the by-return-time list from 701 px) keep one line because C25 needs it, and the slab's title holds the full text */
+.sub-when .quick { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; text-align: left; line-height: 1.25; padding-top: 8px; padding-bottom: 12px; }
+.sub-when .quick::after { top: calc(50% - 8px); }
+@media (min-width: 1400px) {
+  .subs-main:has(.fleet > .fc:nth-child(5)) .sub-when .quick { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; padding-top: 0; padding-bottom: 4px; }
+}
+@media (min-width: 701px) {
+  .fc-subs.list .sub-when .quick { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; padding-top: 0; padding-bottom: 4px; }
+}
+/* Earnings: gil is the biggest thing on the screen (56 px; a long figure may take a second line at a space, never mid-number) */
+.earn-card b { font: 900 clamp(40px, 22cqi, 56px)/.95 var(--f-disp); overflow-wrap: normal; word-break: normal; }
+.earn-ranked tr[data-pos="1"] > td:nth-child(3) b { font-size: 40px; }
+.earn-ranked tr[data-pos="2"] > td:nth-child(3) b, .earn-ranked tr[data-pos="3"] > td:nth-child(3) b { font: 900 28px/1 var(--f-disp); }
+@media (max-width: 700px) {
+  /* Earnings tables: each row is a block, every figure visible at 360 px with no inner scrolling */
+  .earn-ranked, .earn-ranked tbody, .earn-thin, .earn-thin tbody { display: block; overflow: visible; }
+  .earn-ranked thead, .earn-thin thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .earn-ranked th, .earn-ranked td, .earn-thin th, .earn-thin td { white-space: normal; }
+  .earn-ranked tr[data-pos] { display: grid; grid-template-columns: 56px minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 1fr); height: auto; border-bottom: 1px dashed var(--rule); }
+  .earn-ranked tr[data-pos] > td { border-bottom: 0; padding-left: 6px; padding-right: 6px; }
+  .earn-ranked tr[data-pos] > td:first-child { grid-row: 1 / span 2; display: grid; place-items: center; }
+  .earn-ranked tr[data-pos] > td:nth-child(2) { grid-column: 2 / -1; font-weight: 700; }
+  .earn-ranked tr[data-pos] > td:nth-child(n+3)::before, .earn-thin tr > td:nth-child(n+2)::before { display: block; font: 700 11px/1.3 var(--f-body); text-transform: uppercase; letter-spacing: .03em; color: var(--ink); }
+  .earn-ranked tr[data-pos] > td:nth-child(3)::before { content: "Gil per hour"; }
+  .earn-ranked tr[data-pos] > td:nth-child(4)::before { content: "Gil per voyage"; }
+  .earn-ranked tr[data-pos] > td:nth-child(5)::before { content: "Voyages"; }
+  .earn-ranked tr[data-pos] > td:nth-child(n+3) { font-size: 14px; }
+  .earn-ranked tr[data-pos="1"] > td:nth-child(3) b { font-size: 28px; }
+  .earn-ranked tr[data-pos="2"] > td:nth-child(3) b, .earn-ranked tr[data-pos="3"] > td:nth-child(3) b { font-size: 24px; }
+  .earn-ranked tr.earn-note, .earn-ranked tr.earn-note > td, .earn-thin tr.earn-note, .earn-thin tr.earn-note > td { display: block; }
+  .earn-note-text { position: static; width: auto; }
+  .earn-thin tr:not(.earn-note) { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .earn-thin tr:not(.earn-note) > td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  .earn-thin tr > td:nth-child(2)::before { content: "Gil per hour"; }
+  .earn-thin tr > td:nth-child(3)::before { content: "Voyages"; }
+}
+/* the rank plate keeps its own height when the row is taller than its content */
+.sub[data-sub] .sub-meta { align-content: flex-start; align-items: center; }
+/* phone Board: a tighter header block so the first submarine row shows on a 390 x 844 screen */
+@media (max-width: 700px) {
+  .subs-main { --strip-fig: 38px; }
+  .strip-next { padding: 8px 14px; }
+  .strip-back { min-height: 44px; padding: 4px 14px; }
+  .strip-tools { padding: 6px 10px; }
+  .fc-head { padding: 6px 12px; gap: 4px 8px; }
+  .fc-head .btn { min-height: 40px; }
+  .subs-mast { padding-top: 6px; padding-bottom: 6px; }
+}
+@media (max-width: 700px) { .planner .route-line b { font-size: 26px; } }

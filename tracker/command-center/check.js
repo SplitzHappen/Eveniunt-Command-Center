@@ -3570,7 +3570,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
-    //    errors. Records (not asserted): the smallest tap-target heights and the chart's width and smallest tap circle at 360 px.
+    //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.
     {
       const server20 = await start(PORT5);
       const seedL1 = (pg) => pg.evaluate(async () => {
@@ -3601,15 +3601,25 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board'); }
         if (screens.includes('sheet')) {
           await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet[open] .advice'); await page.waitForTimeout(250); await shot('sheet');
+          // W20: the same window scrolled to the route, return time and reason (a picture only)
+          await page.$eval('#sheet .advice-route', (el) => el.scrollIntoView({ block: 'center' })); await page.waitForTimeout(250);
+          if (SHOT) await page.screenshot({ path: path.join(ev, 'look-sheet-route-' + tag + '.png') });
           await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]')).catch(() => {});
         }
         if (screens.includes('log')) { await tab('log'); await page.waitForSelector('.log-row[data-trip]'); await shot('log'); }
-        if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.waitForTimeout(250); await shot('map'); }
+        if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.waitForTimeout(250); await shot('map');
+          // W19: the sector console with the first tier block opened, scrolled to it (a picture only, no assertion)
+          await page.$eval('.chart-details .rates-tier', (el) => { el.open = true; el.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(250);
+          if (SHOT) await page.screenshot({ path: path.join(ev, 'look-map-tiers-' + tag + '.png') });
+          await page.$eval('.chart-details .rates-tier', (el) => { el.open = false; }); await page.evaluate(() => window.scrollTo(0, 0)); }
         if (screens.includes('planner')) {
           await page.selectOption('#map-sub', 'a1'); await page.click('.chart-svg [data-sector="1"]'); await page.click('.chart-svg [data-sector="3"]');
-          await page.waitForSelector('.planner .route-line'); await page.waitForTimeout(250); await shot('planner');
+          await page.waitForSelector('.planner .route-line'); await page.$eval('.planner', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('planner');
         }
-        if (screens.includes('earnings')) { await tab('earn'); await page.waitForSelector('.earn-card b'); await shot('earnings'); }
+        if (screens.includes('earnings')) { await tab('earn'); await page.waitForSelector('.earn-card b'); await shot('earnings');
+          // W20: the ranked table scrolled into view (a picture only; at 360 px every figure shows with no inner scrolling)
+          await page.waitForTimeout(800); await page.evaluate(() => { const el = document.querySelector('.earn-ranked'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 140, behavior: 'instant' }); }); await page.waitForTimeout(400);
+          if (SHOT) await page.screenshot({ path: path.join(ev, 'look-earnings-ranked-' + tag + '.png') }); }
         if (screens.includes('setup')) { await tab('setup'); await page.waitForSelector('[data-recs-panel]'); await shot('setup'); }
         if (screens.includes('recommendations')) { await page.$eval('[data-recs-panel]', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('recommendations'); }
         if (checkPhone) {
@@ -3628,10 +3638,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8, false);
       const dd = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-dark', ['board', 'map'], false);
       const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', ['board'], false, 'azure-dragoon');
+      const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map'], false);
-      const ok = p.wide.length === 8 && p.wide.every((w) => w <= 0) && !d.errors.length && !dd.errors.length && !da.errors.length && !p.errors.length && !pl.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: 21 look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; tap sizes at 360 px are recorded, not asserted',
+      const ok = p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px',
         ok, { sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart });
       server20.close();
     }

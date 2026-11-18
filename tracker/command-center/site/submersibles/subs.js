@@ -885,7 +885,7 @@
     var node = CHART.view(s.sea, fc.discovered || []).nodes.find(function (n) { return n.id === id; });
     var by = u.start ? 'open from the start' : u.by != null && SECTOR[u.by] ? esc(sectorLabel(SECTOR[u.by])) + (SECTOR[u.by].sea !== s.sea ? ' (in the previous sea)' : '') : 'not known';
     var reveals = D.sectors.filter(function (x) { return (D.unlocks[x.id] || {}).by === id; }).map(function (x) { return esc(sectorLabel(x)); });
-    return '<section class="chart-details panel" aria-live="polite"><h3>' + esc(s.name) + '</h3>' +
+    return '<section class="chart-details panel" aria-live="polite"><h3><span class="sd-letter" aria-hidden="true">' + esc(s.letter) + '</span><span class="sd-name">' + esc(s.name) + '</span></h3>' +
       '<p class="muted">' + esc(CHART.stateText(node.state)) + (node.slot ? ' · <b>slot ' + node.slot + '</b>' : '') + (node.opens ? ' · <b>opens ' + esc(node.opens) + '</b>' : '') + '</p>' +
       '<dl class="chart-facts"><dt>Rank needed</dt><dd>' + s.rank + '</dd><dt>Tanks</dt><dd>' + s.tanks + '</dd><dt>Survey</dt><dd>' + s.survey + ' min</dd>' +
       '<dt>Base experience</dt><dd>at least ' + Number(s.exp).toLocaleString('en') + '</dd><dt>Stars</dt><dd>' + s.stars + '</dd>' +
@@ -931,18 +931,20 @@
     var opts = fcs.map(function (f) { return '<option value="' + esc(f.id) + '"' + (f.id === m.fc ? ' selected' : '') + '>' + esc(f.fc.name || 'Unnamed free company') + '</option>'; }).join('');
     var seas = D.seas.map(function (sea) {
       var n = D.sectors.filter(function (s) { return s.sea === sea.id && disc.indexOf(s.id) >= 0; }).length;
-      return '<button type="button" class="btn sm" data-map-sea="' + sea.id + '" aria-pressed="' + (sea.id === m.sea) + '">' + esc(sea.name) + ' <span class="muted">found ' + n + ' of ' + sea.sectors + '</span></button>';
+      return '<button type="button" class="btn sm" data-map-sea="' + sea.id + '" style="--p:' + (sea.sectors ? Math.round(n / sea.sectors * 1000) / 1000 : 0) + '" aria-pressed="' + (sea.id === m.sea) + '">' + esc(sea.name) + ' <span class="muted">found ' + n + ' of ' + sea.sectors + '</span></button>';
     }).join('');
     var ps = m.sub && S.subs[m.sub], view = CHART.view(m.sea, disc, ps && ps.rank ? ps.rank : null), nFound = view.nodes.filter(function (n) { return n.state === 'found'; }).length;
+    var seaName = (D.seas.find(function (x) { return x.id === m.sea; }) || {}).name || '', seaCount = (D.seas.find(function (x) { return x.id === m.sea; }) || {}).sectors;
+    var sw = function (cls, shape) { return '<span class="key ' + cls + '"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">' + shape + '</svg></span>'; };
     return '<section class="panel wide-panel map-panel"><h2>Map</h2>' +
       '<label class="field inline">Free company <select id="map-fc" data-map-fc>' + opts + '</select></label>' +
       '<div class="map-seas" role="group" aria-label="Sea">' + seas + '</div>' +
       (disc.length ? '' : '<p class="note">Nothing is ticked as found for this free company yet. Tick the sectors in Setup (Edit the free company, sectors step) and they show here.</p>') +
       (nFound ? '' : '<p class="hint">This sea is not opened yet.</p>') +
-      plannerHtml(fc, m) +
-      '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '">' + CHART.svg(view, m.sub ? m.route : null) + '</div>' +
-      '<p class="hint chart-key"><span class="key found">●</span> found · <span class="key next">◆</span> can be revealed next · <span class="key far">▪</span> further away. Tap a sector for its details.</p>' +
-      (m.sector ? sectorDetails(m.sector, fc) : '') +
+      '<div class="map-grid">' + plannerHtml(fc, m) +
+      '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '"><header class="chart-head"><span class="chart-sea">' + esc(seaName) + '</span><span class="chart-count">found ' + nFound + ' of ' + seaCount + '</span></header>' + CHART.svg(view, m.sub ? m.route : null, { selected: m.sector }) + '</div>' +
+      '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="none" stroke="currentColor" stroke-width="2.5"/>') + ' can be revealed next · ' + sw('far', '<rect x="3" y="3" width="10" height="10" fill="currentColor"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · dimmed: above this submarine\'s rank. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
+      (m.sector ? sectorDetails(m.sector, fc) : '') + '</div>' +
       '<p class="hint">Drawn by this app from the game\'s position numbers; this is not the game\'s map picture. Depth is not drawn. Which sector reveals which is community data.</p></section>';
   }
   function mapPick(id) {
