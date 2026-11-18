@@ -265,7 +265,7 @@
   };
   // ------------------------------------------------------------------ the advisor with the player's settings (item R2)
   // input.recs = { fuel, giveUp, order, loot } (RECS.check). Candidates of spec 4.2, stages of 4.3, the choice RECS.pick (4.4).
-  // Returns today's shape plus lead (the stage key U1, U2, U3, X, G, L1 or L2), head (the header text), label, skipped and fuel;
+  // Returns today's shape plus lead (the stage key U1, U2, U3, X, G or L), head (the header text), label, skipped and fuel;
   // the reasons, the header and the part advice follow spec 4.5 and 4.7 (item R3).
   function adviseRecs(input, sub, st, disc, pool, undiscovered, newOf) {
     var R = globalThis.RECS, recs = input.recs, fc = input.fc;
@@ -332,18 +332,32 @@
       if (S.some(function (r) { return r.label; })) return function (r) { return r.label ? gilAmount(r) : 0; };
       return gilAmount;
     } };
-    var lootReason = items.length ? 'none of your chosen items can drop in a sector this sub can reach now' : 'no item chosen';
-    var L1 = { key: 'L1', objective: 'loot', rate: false, reason: lootReason, amount: function (r) {
-      var seen = {}, n = 0;
-      r.route.forEach(function (id) { lootAt(id).forEach(function (it) { if (chosen[it] && !seen[it]) { seen[it] = 1; n++; } }); });
-      return n;
+    // Loot Farming (spec 6.3, E13): for each chosen item the route's expected quantity per hour (DROPS, for this sub's build) as a
+    // share of the best of the routes in play; the shares are added. An item with no reachable drop adds nothing.
+    var lootReason = items.length ? 'none of your chosen items has a recorded drop this submarine can reach now' : 'no item chosen';
+    var lootMemo = {};
+    var lootOf = function (route) {
+      var k = route.join(','), m = lootMemo[k]; if (m) return m;
+      var r = DR.route(D, route, st), cnt = Infinity;
+      if (r) r.sectors.forEach(function (x) { if (x.rolls > 0 && x.rolls < cnt) cnt = x.rolls; });
+      return (lootMemo[k] = { items: r ? r.items : {}, n: r ? (cnt === Infinity ? r.n : cnt) : 0 });
+    };
+    var qtyOf = function (r) { var m = lootOf(r.route).items, t = 0; items.forEach(function (id) { t += m[id] || 0; }); return t; };
+    var L = { key: 'L', objective: 'loot', rate: false, reason: lootReason, amount: qtyOf, prepare: function (S) {
+      var best = {}, per = new Map(), perOf = function (r) {
+        var h = r.ev.seconds / 3600, m = lootOf(r.route).items, o = {};
+        items.forEach(function (id) { o[id] = (m[id] || 0) / h; });
+        return o;
+      };
+      items.forEach(function (id) { best[id] = 0; });
+      S.forEach(function (r) { var o = perOf(r); per.set(r, o); items.forEach(function (id) { if (o[id] > best[id]) best[id] = o[id]; }); });
+      return function (r) {
+        var o = per.get(r) || perOf(r), t = 0;
+        items.forEach(function (id) { if (best[id] > 0) t += o[id] / best[id]; });
+        return t;
+      };
     } };
-    var L2 = { key: 'L2', objective: 'loot', rate: true, reason: lootReason, amount: function (r) {
-      var n = 0;
-      r.route.forEach(function (id) { lootAt(id).forEach(function (it) { if (chosen[it]) n++; }); });
-      return n;
-    } };
-    var by = { unlock: [U1, U2, U3], level: [X], gil: [G], loot: [L1, L2] };
+    var by = { unlock: [U1, U2, U3], level: [X], gil: [G], loot: [L] };
     // spec 4.5: the cause named when a whole objective is skipped
     var causeOf = { unlock: !left ? 'every sector is found' : 'no sector this sub can visit now leads to what is left to unlock', level: topWhy, gil: null, loot: lootReason };
     var leadKey = null; // set once the choice is made: a stage ranked after it that still has routes over all candidates was emptied by the bands
@@ -405,7 +419,7 @@
           })([]);
         } else {
           var hrs = function (ev) { return ev.seconds / 3600; };
-          search(secs, st, function (r, ev) { return searchLead.rate ? amt(r, ev) / hrs(ev) : amt(r, ev); }).forEach(function (c) { keepSet(c.route, c.ev); });
+          search(secs, st, function (r, ev) { return searchLead.rate || searchLead.key === 'L' ? amt(r, ev) / hrs(ev) : amt(r, ev); }).forEach(function (c) { keepSet(c.route, c.ev); });
           if (fuel) search(secs, st, function (r, ev) { return amt(r, ev) / Math.max(1, ev.tanks); }).forEach(function (c) { keepSet(c.route, c.ev); });
         }
       });
@@ -423,12 +437,34 @@
     var one = function (n) { return (Math.round(n * 10) / 10).toLocaleString('en'); };
     var hrs = function (x) { return x.ev.seconds / 3600; };
     var tankText = function (n) { return n + (n === 1 ? ' tank' : ' tanks'); };
-    var lootNames = function (route) {
-      var seen = {}, out = [];
-      route.forEach(function (id) { lootAt(id).forEach(function (it) { if (chosen[it] && !seen[it]) { seen[it] = 1; out.push((D.items && D.items[it]) || 'Item ' + it); } }); });
-      return out;
+    var recorded = null; // every item id that has a drop record in some sector
+    var hasRecord = function (id) {
+      if (!recorded) {
+        recorded = {};
+        var sec = (D.dropRates && D.dropRates.sectors) || {};
+        Object.keys(sec).forEach(function (k) { sec[k].pools.forEach(function (pl) { pl.items.forEach(function (row) { recorded[row[0]] = 1; }); }); });
+      }
+      return !!recorded[id];
     };
-    var LOOT_NOTE = 'possible items only (community data), drop odds are not known';
+    var itemName = function (id) { return (D.items && D.items[id]) || 'Item ' + id; };
+    // the plan's expected quantities, most first: [{ id, perHour }] for the chosen items this route can bring back
+    var lootRates = function (x) {
+      var m = lootOf(x.route).items, h = hrs(x), out = [];
+      items.forEach(function (id) { if ((m[id] || 0) > 0) out.push({ id: id, perHour: m[id] / h }); });
+      return out.sort(function (a, b) { return b.perHour - a.perHour || a.id - b.id; });
+    };
+    var LOOT_UNKNOWN = ' What the second item of a survey is, is not in the records; the estimate assumes it is drawn like the first.';
+    var lootText = function (x, full) {
+      var list = lootRates(x).map(function (r) { return DR.fmt.qty(r.perHour) + ' ' + itemName(r.id) + ' an hour'; });
+      var txt = 'Expected: about ' + list.join(', ') + ' (estimate from community drop records, at least ' + DR.fmt.count(lootOf(x.route).n) + ' surveys per sector).';
+      if (full) {
+        var m = lootOf(x.route).items;
+        var open = items.filter(function (id) { return !(m[id] > 0) && !hasRecord(id) && x.route.some(function (sid) { return lootAt(sid).indexOf(id) >= 0; }); });
+        if (open.length) txt += ' Listed as possible, no drop record yet: ' + open.map(itemName).join(', ') + '.';
+        txt += LOOT_UNKNOWN;
+      }
+      return txt;
+    };
     var towards = function () {
       if (slots < 4) {
         if (!visitRaw) return null;
@@ -497,8 +533,7 @@
         return (most ? 'Most experience per hour within reach (at least ' + fmt(xph(x)) + ' an hour)' : 'At least ' + fmt(xph(x)) + ' experience an hour') + (tw ? ', ' + tw : '') + '.';
       }
       if (key === 'G') return gilWhy(x, most);
-      var names = lootNames(x.route);
-      return 'Can bring back ' + names.length + ' of your ' + items.length + ' chosen item' + (items.length === 1 ? '' : 's') + ' (' + names.join(', ') + '); ' + LOOT_NOTE + '.';
+      return lootText(x, most);
     };
     // the plan's figure for a stage that narrowed the choice after the lead: "Then <label>: <figure>."
     var figure = function (key, x) {
@@ -506,16 +541,13 @@
       if (key === 'U2') { var n = newOf(x.route); return 'it can reveal ' + n + ' new sector' + (n === 1 ? '' : 's'); }
       if (key === 'U3' || key === 'X') return 'at least ' + fmt(xph(x)) + ' experience an hour';
       if (key === 'G') { var gp = ownBy[x.route.join(',')]; return gp ? 'about ' + DR.fmt.hour(gp.merchantPerTrip / hrs(x)) + ' gil an hour at merchant prices (your own log)' : 'about ' + DR.fmt.hour(estOf(x.route, x.ev).perHour) + ' gil an hour at merchant prices (estimate from community drop records)'; }
-      var tail = leadObj === 'loot' ? '' : ' (' + LOOT_NOTE + ')';
-      if (key === 'L1') return 'it covers ' + lootNames(x.route).length + ' of your ' + items.length + ' chosen item' + (items.length === 1 ? '' : 's') + tail;
-      var stops = x.route.filter(function (id) { return lootAt(id).some(function (it) { return chosen[it]; }); }).length;
-      return stops + (stops === 1 ? ' stop' : ' stops') + ' where a chosen item can drop (' + one(stops / hrs(x)) + ' an hour)' + (leadObj === 'loot' ? '' : '; ' + LOOT_NOTE);
+      var lr = lootRates(x).map(function (r) { return DR.fmt.qty(r.perHour) + ' ' + itemName(r.id); });
+      return 'about ' + lr.join(', ') + ' an hour (estimate from community drop records)';
     };
     // the lead's score for a route, with the tier the lead itself used, and its name for the fuel sentence
     var leadFn = leadStage.prepare ? leadStage.prepare(all) : leadStage.amount;
     var leadScore = function (x) { var a = Number(leadFn(x)) || 0; return leadStage.rate ? a / hrs(x) : a; };
-    var unit = lead === 'U1' ? 'slot chances per hour' : lead === 'U2' ? 'reveal chances per hour' : lead === 'U3' || lead === 'X' ? 'experience per hour' : lead === 'L1' ? 'chosen items covered'
-      : lead === 'L2' ? 'item chances per hour' : 'merchant gil per hour';
+    var unit = lead === 'U1' ? 'slot chances per hour' : lead === 'U2' ? 'reveal chances per hour' : lead === 'U3' || lead === 'X' ? 'experience per hour' : lead === 'L' ? 'expected loot per hour' : 'merchant gil per hour';
     var bestLead = all.reduce(function (m, x) { return Math.max(m, leadScore(x)); }, 0);
     var isMost = function (x) { return leadScore(x) >= bestLead - 1e-9 * bestLead; }; // the route has the best lead score of all candidates
     var skippedKeys = {};
@@ -579,13 +611,52 @@
     out.parts = null;
     if (step === 3) {
       if (lead === 'G') {
-        var eligible = (logged || []).filter(function (l) { return l.enough && l.perTrip > 0 && allowed(l.route); });
-        out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, plan.route));
+        out.parts = gilTipEst(sub, st, plan, DR, estOf);
       } else out.parts = partTip(sub, st, plan.route);
     }
     out.own = !!plan.own;
     out.lead = lead; out.skipped = fixSkipped(res.skipped); out.fuel = fuel;
     return done(out);
+  }
+  // Part advice in gil, by the community estimate (docs/submersibles-droprates-spec.md 6.4, E14): each swap the sub's rank allows is
+  // valued by DROPS on the advised route for the changed build (time and all five stats). A swap is advised only when the estimated
+  // gil per hour rises by more than 5% and the route stays within range. Largest gain wins; ties go to the lower slot, then the lower
+  // part id. null when none. The tip names what changes at a threshold and says that it is an estimate.
+  var TIP_MARGIN = 0.05;
+  function gilTipEst(sub, st, plan, DR, estOf) {
+    var route = plan.route, base = estOf(route, plan.ev), curG = base.perHour, best = null;
+    var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
+    for (var i = 0; i < 4; i++) {
+      parts.forEach(function (p) {
+        if (p.slot !== i || p.id === sub.parts[i] || CLASS[p.class].rank > sub.rank) return;
+        var np = sub.parts.slice(); np[i] = p.id;
+        var st2 = A.stats(sub.rank, np), ev = st2 && A.evalRoute(route, st2);
+        if (!ev || !ev.reachable) return;
+        var r = DR.route(D, route, st2); if (!r) return;
+        var g = DR.perHour(r.gil, ev.seconds), gain = g - curG;
+        if (!(g > 0) || !(g > curG * (1 + TIP_MARGIN))) return;
+        if (!best || gain > best.gain) best = { slot: i, from: sub.parts[i], to: p.id, gain: gain, gph: g, st2: st2, ev: ev };
+      });
+    }
+    if (!best) return null;
+    var sectorLabel = function (id) { return SECTOR[id].letter; }, crossed = [], allMax = true;
+    var BAND = ['tier 1 only', 'tier 2', 'tier 3'], RES = ['poor', 'normal', 'optimal'];
+    route.forEach(function (id) {
+      var b = D.breakpoints && D.breakpoints[id], o = DR.state(D, id, st), n = DR.state(D, id, best.st2);
+      if (!b || !o || !n) return;
+      if (o.band < 2 || o.ret < 2 || !o.favor) allMax = false;
+      if (n.band !== o.band) crossed.push('surveillance ' + (n.band > o.band ? 'reaches' : 'falls to') + ' ' + BAND[n.band] + ' at ' + sectorLabel(id) + ' (' + (n.band > o.band ? b[n.band === 2 ? 1 : 0] : b[o.band === 2 ? 1 : 0]) + ' needed, ' + (n.band > o.band ? st.surveillance : best.st2.surveillance) + ' ' + (n.band > o.band ? 'now' : 'after') + ')');
+      if (n.ret !== o.ret) crossed.push('retrieval ' + (n.ret > o.ret ? 'becomes' : 'falls to') + ' ' + RES[n.ret] + ' at ' + sectorLabel(id) + ' (' + (n.ret > o.ret ? b[n.ret === 2 ? 3 : 2] : b[o.ret === 2 ? 3 : 2]) + ' needed, ' + (n.ret > o.ret ? st.retrieval : best.st2.retrieval) + ' ' + (n.ret > o.ret ? 'now' : 'after') + ')');
+      if (n.favor !== o.favor) crossed.push('favor ' + (n.favor ? 'reaches' : 'falls below') + ' the second-item threshold at ' + sectorLabel(id) + ' (' + b[4] + ' needed, ' + (n.favor ? st.favor : best.st2.favor) + ' ' + (n.favor ? 'now' : 'after') + ')');
+    });
+    var mins = Math.round((plan.ev.seconds - best.ev.seconds) / 60);
+    var time = mins >= 1 ? ': ' + mins + ' minute' + (mins === 1 ? '' : 's') + ' faster' : mins <= -1 ? ': ' + (-mins) + ' minute' + (mins === -1 ? '' : 's') + ' slower' : '';
+    var what = crossed.length ? (time ? '; ' : ': ') + crossed.join('; ') + '.' : (time ? '; ' : ': ') + (allMax ? 'surveillance, retrieval and favor stay above every threshold of this route.' : 'no threshold of this route is crossed.');
+    var fmt = DR.fmt;
+    var tip = { slot: best.slot, from: best.from, to: best.to, gain: best.gain, gilGain: Math.round(best.gain), gilFrom: Math.round(curG), gilTo: Math.round(best.gph), estimate: true };
+    tip.why = 'Swapping the ' + ['hull', 'stern', 'bow', 'bridge'][best.slot] + ' for ' + PART[best.to].name + ' is estimated to give about +' + fmt.hour(best.gain) + ' gil an hour on this route (estimate from community drop records, at merchant prices)' + time + what +
+      ' Above a threshold, extra surveillance, retrieval or favor is counted as worth nothing: the community\'s reading, not confirmed. Only if you already have the part or plan to craft it.';
+    return tip;
   }
   // the single part change that brings this route back soonest, among the parts the sub's rank allows (step 3 only)
   function partTip(sub, st, route) {

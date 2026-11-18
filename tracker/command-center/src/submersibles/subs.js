@@ -356,11 +356,30 @@
     if (!hits) out += '<option value="-1" disabled>No item matches</option>';
     return out;
   }
+  // Community drop records by item (docs/submersibles-droprates-spec.md 6.5 item 4): in how many sectors the item was recorded and
+  // where its share of a tier is highest (sector, tier, share, the tier's surveys). Built once from the data.
+  function dropIndex() {
+    if (RC.drops) return RC.drops;
+    var out = {}, sec = (D.dropRates && D.dropRates.sectors) || {};
+    Object.keys(sec).map(Number).sort(function (a, b) { return a - b; }).forEach(function (sid) {
+      sec[sid].pools.forEach(function (pool, t) {
+        var rolls = pool.band[0] + pool.band[1] + pool.band[2];
+        if (!rolls) return;
+        pool.items.forEach(function (row) {
+          var e = out[row[0]] || (out[row[0]] = { sectors: {}, count: 0, best: null }), p = row[1] / rolls;
+          if (!e.sectors[sid]) { e.sectors[sid] = 1; e.count++; }
+          if (!e.best || p > e.best.p) e.best = { sector: sid, tier: t + 1, p: p, rolls: rolls };
+        });
+      });
+    });
+    return (RC.drops = out);
+  }
   function recNoteHtml(i) {
     var c = recsNow(), dup = recDupOf(i), id = dup ? dup.id : c.loot[i][0];
     if (!id) return '';
-    var n = sectorsWith(id);
-    return (dup ? 'Same as picker ' + dup.of + ', counted once. ' : '') + 'Possible in ' + n + ' sector' + (n === 1 ? '' : 's') + ' (community data; drop odds are not known).';
+    var d = dropIndex()[id], pre = dup ? 'Same as picker ' + dup.of + ', counted once. ' : '';
+    if (!d) { var n = sectorsWith(id); return pre + 'Listed as possible in ' + n + ' sector' + (n === 1 ? '' : 's') + '; no drop record yet, so no rate.'; }
+    return pre + 'Recorded in ' + d.count + ' sector' + (d.count === 1 ? '' : 's') + ' (community drop records). Most per survey: ' + ADV.sectorName(d.best.sector) + ', tier ' + d.best.tier + ', ' + window.DROPS.fmt.pct(d.best.p) + ' of that tier, ' + window.DROPS.fmt.count(d.best.rolls) + ' surveys.';
   }
   function recPickersHtml() {
     var c = recsNow(), R = window.RECS, html = '';
@@ -409,7 +428,7 @@
       '<details><summary>How the recommendation is decided</summary>' +
       '<p class="hint">Your ranking decides in order. For the first objective the app finds the best route and keeps every route within ' + Math.round(window.RECS.BAND * 100) + '% of it; the next objective chooses among those, and so on. A route is never more than ' + Math.round(window.RECS.BAND * 100) + '% worse than the best for any objective above the one that chose it. An objective with nothing to offer here is skipped, and the reason is named when it ranks above the suggestion. Nothing is random: equal routes go to the quicker one, then the one with fewer tanks.</p>' +
       '<p class="hint">With fuel efficiency on, the first objective may give up to the percentage you set; among those routes the one that brings the most per ceruleum tank wins. Fuel is counted in tanks, not in gil, because the price of a tank is not in the data.</p>' +
-      '<p class="hint">What each objective measures, and its limits. Unlocking Routes: new submarine slots, then sectors that can still be revealed (community data; a reveal is not certain on every visit), then experience towards a needed rank. Leveling Submersible Rank: the base experience a voyage gives per hour, a floor only, because surveillance, retrieval and favor are not modelled. Gil Farming: the gil routes made by the community (loot sold to merchants) that this submarine can run, ranked by the gil per hour they are estimated to bring for this submarine, an estimate from community drop records; once a route has 10 logged voyages, your own log, counted in merchant gil per hour, replaces the estimate for that route, and the reason shows both figures. Loot Farming: where a chosen item can possibly drop; no drop odds or quantities are known.</p>' +
+      '<p class="hint">What each objective measures, and its limits. Unlocking Routes: new submarine slots, then sectors that can still be revealed (community data; a reveal is not certain on every visit), then experience towards a needed rank. Leveling Submersible Rank: the base experience a voyage gives per hour, a floor only, because surveillance, retrieval and favor are not modelled. Gil Farming: the gil routes made by the community (loot sold to merchants) that this submarine can run, ranked by the gil per hour they are estimated to bring for this submarine, an estimate from community drop records; once a route has 10 logged voyages, your own log, counted in merchant gil per hour, replaces the estimate for that route, and the reason shows both figures. Loot Farming: for each chosen item, the quantity per hour a route is expected to bring for this submarine, as a share of the best route for that item, added over your items; an estimate from community drop records. Unknown: what the second item of a survey is (the estimate assumes it is drawn like the first), the exact spread of quantities, and whether an item the community never recorded in a sector can drop there.</p>' +
       '<p class="hint">In a sea with more than 8 sectors you can visit, the route is the best one found by a bounded search, not proven best.</p></details></section>';
   }
   function redrawRecs(focus) {

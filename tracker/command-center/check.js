@@ -53,6 +53,23 @@ function watch(page, errors) {
 }
 // expected noise: requests to other sites are blocked on purpose and same-site files the test server lacks (the public
 // site's timers and news) answer 404; each browser reports those as console errors in its own words
+// the picker note the page shows for an item (spec 6.5 item 4), worked out here from the data alone
+function recNoteFor(data, id) {
+  let count = 0, best = null;
+  const grp = (n) => Math.round(n).toLocaleString('en');
+  for (const sid of Object.keys(data.dropRates.sectors).map(Number).sort((a, b) => a - b)) {
+    let here = false;
+    data.dropRates.sectors[sid].pools.forEach((pool, t) => {
+      const rolls = pool.band[0] + pool.band[1] + pool.band[2];
+      for (const row of pool.items) if (row[0] === id && rolls) { here = true; const p = row[1] / rolls; if (!best || p > best.p) best = { sid, tier: t + 1, p, rolls }; }
+    });
+    if (here) count++;
+  }
+  if (!best) { const n = Object.values(data.loot || {}).filter((l) => l.includes(id)).length; return 'Listed as possible in ' + n + ' sector' + (n === 1 ? '' : 's') + '; no drop record yet, so no rate.'; }
+  const sec = data.sectors.find((x) => x.id === best.sid), sea = data.seas.find((x) => x.id === sec.sea), v = best.p * 100;
+  const pct = (Math.abs(v) < 10 ? (Math.round(v * 10) / 10).toFixed(1) : String(Math.round(v))) + '%', cnt = best.rolls < 1e6 ? grp(best.rolls) : (Math.round(best.rolls / 1e5) / 10).toFixed(1) + ' million';
+  return 'Recorded in ' + count + ' sector' + (count === 1 ? '' : 's') + ' (community drop records). Most per survey: ' + sea.name + ' ' + sec.letter + ', tier ' + best.tier + ', ' + pct + ' of that tier, ' + cnt + ' surveys.';
+}
 const real = (errors) => errors.filter((e) => !/net::ERR_FAILED|Failed to load resource|NetworkError|NS_ERROR|status of 404|404 \(|was blocked|Load request cancelled/.test(e));
 
 const shellState = (page) => page.evaluate(async () => ({
@@ -2772,9 +2789,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const goodBuild = await advice('k1');
       const stages = await page.evaluate(() => ({ weak: window.__subs.stageOf('fj'), good: window.__subs.stageOf('fk') }));
       // the route is now chosen from the community estimate (the log is on a route that is not a community route), so the text names the community route
-      const ok = /Community gil route /.test(weak.text) && weak.notes.some((n) => /more gil per hour/.test(n) && /lowers none of surveillance, retrieval and favor/.test(n)) &&
+      const ok = /Community gil route /.test(weak.text) && weak.notes.some((n) => /estimated to give about \+[\d,]+ gil an hour on this route \(estimate from community drop records/.test(n) && /counted as worth nothing: the community's reading, not confirmed/.test(n)) &&
         /Community gil route /.test(goodBuild.text) && !goodBuild.notes.some((n) => /Swapping/.test(n)) && stages.weak === 'gil' && stages.good === 'final' && real(errors).length === 0;
-      record('C80', 'Part advice in gil (step S6-3): with a ranked logged route, a weak build shows a part note with "more gil per hour" that names no swap lowering surveillance, retrieval or favor and its free company is at the gil stage; a build with no better part shows no part note and its company is finished',
+      record('C80', 'Part advice in gil (step S6-3): with a ranked logged route, a weak build shows a part note valued by the community estimate ("estimated to give about +N gil an hour", "counted as worth nothing") and its free company is at the gil stage; a build with no better part shows no part note and its company is finished',
         ok, { weak, goodBuild, stages, errors: real(errors) });
       await ctx.close(); server12.close();
     }
@@ -3062,6 +3079,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     //    once is absent elsewhere; choices survive a reload; a stored duplicate shows "counted once"; no sideways scroll on a phone.
     {
       const server17 = await start(PORT5);
+      const DATA87 = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
       const page = await ctx.newPage();
       const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
@@ -3155,13 +3173,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ok = pickers.length === 5 && pickers[0].sw === false && pickers.slice(1).every((p) => p.sw) && pickers[1].label === 'Loot item 2' && pickers[1].find === 'Type to narrow the list for loot item 2' &&
         empty === 'No item chosen: Loot Farming is skipped.' && emptyAfter === '' && noneFirst && total >= 300 && sorted(full) &&
         start0[0].sel === false && start0[0].find === false && start0.slice(1).every((s) => s.sel && s.find && s.sw === false) &&
-        chosen1[0].val === '12928' && /^Possible in \d+ sectors \(community data; drop odds are not known\)\.$/.test(chosen1[0].note) && focusAfterChoice === 'loot-0' && lacks &&
+        chosen1[0].val === '12928' && chosen1[0].note === recNoteFor(DATA87, 12928) && /^Recorded in \d+ sectors \(community drop records\)\. Most per survey: /.test(chosen1[0].note) && focusAfterChoice === 'loot-0' && lacks &&
         typed.focus === '0' && typed.val === 'shard' && typed.caret === 5 && narrowOk && typed2.focus === '0' && typed2.val === 'shardzzq' && noMatch && restoredOk && docTyped === docBefore &&
         sh2.some((o) => o.t === 'Fire Shard') && sh2.length < full.length &&
-        on2[1].sel === false && on2[1].find === false && on2[1].sw === true && withFire[1].val === '2' && noteFire === 'Possible in 1 sector (community data; drop odds are not known).' && findAfter === 'fire' && p1lack &&
+        on2[1].sel === false && on2[1].find === false && on2[1].sw === true && withFire[1].val === '2' && noteFire === recNoteFor(DATA87, 2) && /^Recorded in 1 sector \(community drop records\)\./.test(noteFire) && findAfter === 'fire' && p1lack &&
         off3[2].sel === true && off3[2].find === true && off3[2].val === '3' && off3[2].sw === false &&
         JSON.parse(storedNow)[0][0] === 12928 && JSON.parse(storedNow)[1][0] === 2 && JSON.parse(storedNow)[1][1] === true && JSON.parse(storedNow)[2][0] === 3 && JSON.parse(storedNow)[2][1] === false &&
-        reloaded[0].val === '12928' && reloaded[1].val === '2' && reloaded[1].sw === true && reloaded[2].val === '3' && reloaded[2].sw === false && reloaded[2].sel === true && reloaded[0].find === false && typedGone === '' && /Possible in/.test(reNote) &&
+        reloaded[0].val === '12928' && reloaded[1].val === '2' && reloaded[1].sw === true && reloaded[2].val === '3' && reloaded[2].sw === false && reloaded[2].sel === true && reloaded[0].find === false && typedGone === '' && /^Recorded in/.test(reNote) &&
         dup[1].val === '12928' && /counted once/i.test(dup[1].note) && /picker 1/i.test(dup[1].note) &&
         dupStored[1][0] === 0 && dupAfter[1].val === '0' && !/counted once/i.test(dupAfter[1].note) &&
         offHeld[1].val === '12928' && offList0.some((o) => o.v === '12928') && offList2.some((o) => o.v === '12928') && onLater[1].val === '12928' && /counted once/i.test(onLater[1].note) && /picker 1/i.test(onLater[1].note) && onLaterStored[1][0] === 12928 && onLaterStored[1][1] === true &&
@@ -3172,7 +3190,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     }
 
     // ── C88 Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board suggests a route whose sectors
-    //    list that item, the reason says "drop odds are not known", and an item no reachable sector lists shows the skip sentence.
+    //    list that item, the reason gives the expected quantity an hour from community drop records, and an item no reachable sector has a record for shows the skip sentence.
     {
       const server18 = await start(PORT5);
       const { ctx, errors } = await context({ deviceScaleFactor: 2 });
@@ -3209,9 +3227,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.reload(); await ready();
       const far = await read();
       await ctx.close();
-      const ok = listing.length === 1 && reach.head.includes('Loot Farming') && reach.btn.includes(letterOf(listing[0])) && /drop odds are not known/.test(reach.sheet) && /Then Loot Farming: \d+ stops? where a chosen item can drop \([\d.,]+ an hour\)\./.test(reach.sheet) && !/item chances/.test(reach.sheet) && sea1.length === 2 &&
-        /none of your chosen items can drop in a sector this sub can reach now/.test(far.sheet) && !/Loot Farming\)?$/.test(far.head.trim()) && real(errors).length === 0;
-      record('C88', 'Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board button and the send window suggest a route whose sectors list that item and the reason says "drop odds are not known"; with an item no sector this sub can reach lists, the reason names that Loot Farming was skipped for that cause',
+      const ok = listing.length === 1 && reach.head.includes('Loot Farming') && reach.btn.includes(letterOf(listing[0])) && /^.*Expected: about [\d.]+ Battledance Materia II an hour \(estimate from community drop records, at least [\d,.]+( million)? surveys per sector\)\./.test(reach.sheet) && !/drop odds are not known|possible items only|stops? where/.test(reach.sheet) && sea1.length === 2 &&
+        /none of your chosen items has a recorded drop this submarine can reach now/.test(far.sheet) && !/Loot Farming\)?$/.test(far.head.trim()) && real(errors).length === 0;
+      record('C88', 'Customizable Recommendations (R6): with Loot Farming first and one item chosen, the Board button and the send window suggest a route whose sectors list that item and the reason gives the expected quantity an hour with its source ("estimate from community drop records"); with an item no sector this sub can reach has a drop record for, the reason names that Loot Farming was skipped for that cause',
         ok, { listing, reach, far, errors: real(errors) });
       await ctx.close().catch(() => {}); server18.close();
     }
@@ -3393,6 +3411,82 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       record('C92', 'The top rank (D4): with one submarine at rank 145 and one at rank 60, the Setup line under the Leveling row names only the first; the Leveling row\'s Move up and Move down still work and the line stays; the rank-145 submarine\'s Board button shows a community gil route with "Skipped Leveling Submersible Rank: this submarine is at rank 145, the top rank." and the rank-60 one a levelling route; with every submarine at 145 the line says "every submarine"',
         ok, { TOP, b1, l1, enabled, o1, o2, l2, b2, lAll, errors: real(errors) });
       server23.close();
+    }
+
+    // ── C93 Submersibles drop rates, work item D5: a seeded rank-145 submarine, Loot Farming first and item 22507 (Extravagant
+    //    Salvaged Necklace) chosen: the Board button's reason and the send window's reason start "Expected: about" and name the item,
+    //    with the source and the record count; the Setup picker note says "Recorded in" (worked out here from the data); a second
+    //    picker with an item that has no drop record shows "no drop record yet" and the plan does not count it.
+    {
+      const server24 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      const NONE = 9298; // Classic Spectacles: listed as possible by a sector, no drop record
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await page.evaluate(async ([all, none]) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fn = { name: 'November Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.n1 = { fcId: 'fn', slot: 1, name: 'Sub N1', rank: 145, parts: [31, 24, 25, 34] };
+        let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ['loot', 'unlock', 'level', 'gil'], loot1: 22507, loot2: none, use2: true } }, { rev: r.rev, base: null });
+      }, [data.sectors.map((x) => x.id), NONE]);
+      await page.reload(); await ready();
+      await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="n1"]');
+      const btn = await page.$eval('.quick[data-quick="n1"]', (b) => ({ text: b.textContent, title: b.getAttribute('title') }));
+      await page.click('.sub[data-sub="n1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+      const sheet = await page.evaluate(() => ({ head: document.querySelector('#sheet .advice-step').textContent, why: document.querySelector('#sheet .advice-route + .hint').textContent }));
+      await page.keyboard.press('Escape');
+      await page.click('[data-tab=setup]'); await page.waitForSelector('[data-rec-note="0"]');
+      const notes = await page.evaluate(() => [0, 1].map((i) => document.querySelector('[data-rec-note="' + i + '"]').textContent));
+      await ctx.close();
+      const reason = /^Expected: about [\d.]+ Extravagant Salvaged Necklace an hour \(estimate from community drop records, at least [\d,.]+( million)? surveys per sector\)\./;
+      const ok = /Loot Farming/.test(sheet.head) && reason.test(sheet.why) && btn.title === sheet.why && !/drop odds are not known|possible items only/.test(sheet.why + btn.title) &&
+        notes[0] === recNoteFor(data, 22507) && /^Recorded in \d+ sectors? \(community drop records\)\. Most per survey: /.test(notes[0]) &&
+        notes[1] === recNoteFor(data, NONE) && /no drop record yet/.test(notes[1]) && !sheet.why.includes('Classic Spectacles') && real(errors).length === 0;
+      record('C93', 'Loot Farming with rates (D5): a rank-145 submarine, Loot Farming first and Extravagant Salvaged Necklace chosen: the Board button and the send window give a reason that starts "Expected: about", names the item and says "estimate from community drop records" with a record count; the Setup picker note says "Recorded in n sectors (community drop records). Most per survey: ..." (worked out from the data); an item with no drop record shows "no drop record yet" and is not counted in the plan',
+        ok, { sheet, btn, notes, expected: [recNoteFor(data, 22507), recNoteFor(data, NONE)], errors: real(errors) });
+      server24.close();
+    }
+
+    // ── C94 Submersibles drop rates, work item D6: a seeded rank-85 submarine (Gil Farming first, everything found) whose plan is the
+    //    community route OJ: the send window shows a part tip valued by the estimate, with the threshold sentence (retrieval becomes
+    //    optimal at O, 160 needed, 148 now) and the "counted as worth nothing" sentence; no gil tip appears beside a non-gil plan.
+    {
+      const server25 = await start(PORT5);
+      const { ctx, errors } = await context();
+      const page = await ctx.newPage();
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const seed = (order) => page.evaluate(async ([all, ord]) => {
+        const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        sec.fcs.fo = { name: 'Oscar Company', world: 'Gilgamesh', unlockedSlots: 4, order: 0, discovered: all };
+        sec.subs.o1 = { fcId: 'fo', slot: 1, name: 'Sub O1', rank: 85, parts: [3, 4, 5, 14] };
+        let r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        r = await CC.read(); await CC.writeSection('submersibles-recommendations', { choices: { fuel: false, giveUp: 10, order: ord } }, { rev: r.rev, base: null });
+      }, [data.sectors.map((x) => x.id), order]);
+      const read = async () => {
+        await page.click('[data-tab=board]'); await page.waitForSelector('.quick[data-quick="o1"]');
+        await page.click('.sub[data-sub="o1"] .sub-top'); await page.waitForSelector('#sheet .advice-route');
+        const got = await page.evaluate(() => ({ route: document.querySelector('#sheet .advice-route b').textContent, notes: [...document.querySelectorAll('#sheet .advice .note')].map((n) => n.textContent) }));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 }).catch(() => {});
+        return got;
+      };
+      await seed(['gil', 'unlock', 'level', 'loot']); await page.reload(); await ready();
+      const gil = await read();
+      await seed(['level', 'unlock', 'gil', 'loot']); await page.reload(); await ready();
+      const lvl = await read();
+      await ctx.close();
+      const tip = gil.notes.find((n) => /^Swapping the /.test(n)) || '';
+      const ok = /estimated to give about \+[\d,]+ gil an hour on this route \(estimate from community drop records, at merchant prices\): \d+ minutes faster; retrieval becomes optimal at O \(160 needed, 148 now\)\./.test(tip) &&
+        /Above a threshold, extra surveillance, retrieval or favor is counted as worth nothing: the community's reading, not confirmed\./.test(tip) &&
+        lvl.notes.every((n) => !/estimated to give|counted as worth nothing/.test(n)) && real(errors).length === 0;
+      record('C94', 'Part advice by estimate (D6): a rank-85 submarine with Gil Farming first shows a part tip valued by the community estimate that names the threshold crossed ("retrieval becomes optimal at O (160 needed, 148 now)") and says extra surveillance, retrieval or favor above a threshold is counted as worth nothing; with Leveling first the same submarine shows no gil tip',
+        ok, { gil, lvl, tip, errors: real(errors) });
+      server25.close();
     }
 
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the

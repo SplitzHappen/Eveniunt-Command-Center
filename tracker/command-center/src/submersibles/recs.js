@@ -25,16 +25,17 @@
     return { fuel: false, giveUp: R.GIVE_UP, order: R.KEYS.slice(), loot: loot };
   };
 
-  // Every loot item of the data once, { id, name }, by name (case ignored) then id.
+  // Every item of `loot` (listed as possible) and of `dropRates` (community drop records) once, { id, name }, by name (case ignored) then id.
   R.items = function (data) {
     var seen = {}, out = [], loot = (data && data.loot) || {}, names = (data && data.items) || {};
-    Object.keys(loot).forEach(function (sid) {
-      (Array.isArray(loot[sid]) ? loot[sid] : []).forEach(function (id) {
-        if (!Number.isInteger(id) || id <= 0 || seen[id]) return;
-        seen[id] = 1;
-        out.push({ id: id, name: names[id] || 'Item ' + id });
-      });
-    });
+    var take = function (id) {
+      if (!Number.isInteger(id) || id <= 0 || seen[id]) return;
+      seen[id] = 1;
+      out.push({ id: id, name: names[id] || 'Item ' + id });
+    };
+    Object.keys(loot).forEach(function (sid) { (Array.isArray(loot[sid]) ? loot[sid] : []).forEach(take); });
+    var sec = (data && data.dropRates && data.dropRates.sectors) || {};
+    Object.keys(sec).forEach(function (sid) { ((sec[sid] && sec[sid].pools) || []).forEach(function (pool) { ((pool && pool.items) || []).forEach(function (row) { take(row[0]); }); }); });
     out.sort(function (a, b) {
       var x = a.name.toLowerCase(), y = b.name.toLowerCase();
       if (x !== y) return x < y ? -1 : 1;

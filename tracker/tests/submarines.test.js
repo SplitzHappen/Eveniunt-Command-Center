@@ -401,18 +401,19 @@ test('R1: constants, labels and defaults', () => {
   assert.deepEqual(RECS.check({ choices: RECS.defaults() }), RECS.defaults(), 'what check returns for the defaults is the defaults');
 });
 
-test('R1: items holds each loot item once, by name then id', () => {
+test('R1/D5: items holds each item of `loot` and of `dropRates` once, by name then id', () => {
   const items = RECS.items(D);
-  assert.equal(items.length, D.counts.lootItems);
   assert.equal(new Set(items.map((x) => x.id)).size, items.length);
   const all = new Set(); for (const l of Object.values(D.loot)) for (const id of l) all.add(id);
+  for (const sec of Object.values(D.dropRates.sectors)) for (const pool of sec.pools) for (const row of pool.items) all.add(row[0]);
+  assert.ok(items.length >= D.counts.lootItems, 'the loot items are all in the list');
   assert.deepEqual(items.map((x) => x.id).sort((a, b) => a - b), [...all].sort((a, b) => a - b));
   for (let i = 1; i < items.length; i++) {
     const a = items[i - 1], b = items[i];
     assert.ok(a.name.toLowerCase() < b.name.toLowerCase() || (a.name.toLowerCase() === b.name.toLowerCase() && (a.name < b.name || (a.name === b.name && a.id < b.id))), a.name + ' before ' + b.name);
   }
-  const small = { loot: { 1: [7, 3], 2: [3, 9] }, items: { 7: 'Beta', 3: 'alpha', 9: 'Beta' } };
-  assert.deepEqual(RECS.items(small), [{ id: 3, name: 'alpha' }, { id: 7, name: 'Beta' }, { id: 9, name: 'Beta' }]);
+  const small = { loot: { 1: [7, 3], 2: [3, 9] }, items: { 7: 'Beta', 3: 'alpha', 9: 'Beta', 4: 'Gamma' }, dropRates: { sectors: { 1: { pools: [{ items: [[4, 1, 1], [3, 1, 1]] }, { items: [] }, { items: [] }] } } } };
+  assert.deepEqual(RECS.items(small), [{ id: 3, name: 'alpha' }, { id: 7, name: 'Beta' }, { id: 9, name: 'Beta' }, { id: 4, name: 'Gamma' }]);
   assert.deepEqual(RECS.items(null), []);
 });
 
@@ -705,18 +706,17 @@ test('Submersibles advisor with settings (R2): each skip of 4.5 names its cause;
   const a = ADV.advise(Object.assign({}, full, { recs: RECS.defaults() }));
   const why = Object.fromEntries(a.skipped.map((s) => [s.key, s.reason]));
   assert.equal(why.U1, 'every sector is found'); assert.equal(why.U2, 'every sector is found'); assert.equal(why.U3, 'every sector is found');
-  assert.equal(why.X, `this submarine is at rank ${TOP}, the top rank`); assert.equal(why.L1, 'no item chosen'); assert.equal(why.L2, 'no item chosen');
+  assert.equal(why.X, `this submarine is at rank ${TOP}, the top rank`); assert.equal(why.L, 'no item chosen');
   // loot skipped because no chosen item can drop where this sub can go (rank 1, sectors A and B)
   const items = RECS.items(D);
   const lowDrop = (id) => D.sectors.some((s) => s.rank <= 1 && (D.loot[s.id] || []).includes(id));
   const far = items.find((i) => !lowDrop(i.id)), near = items.find((i) => (D.loot[1] || []).includes(i.id) && !(D.loot[2] || []).includes(i.id));
   const low = { sub: { rank: 1, parts: SHARK }, fc: { unlockedSlots: 1, discovered: [1, 2] }, slotsFilled: 1 };
   const b = ADV.advise(Object.assign({}, low, { recs: withRecs({ loot: [[far.id, true], [0, false], [0, false], [0, false], [0, false]] }) }));
-  assert.match(b.skipped.find((s) => s.key === 'L1').reason, /^none of your chosen items can drop in a sector this sub can reach now$/);
-  assert.ok(b.skipped.some((s) => s.key === 'L2'));
-  // with an item that can drop in A only, Loot first: coverage 1 for each route through A; per hour A alone wins
+  assert.match(b.skipped.find((s) => s.key === 'L').reason, /^none of your chosen items has a recorded drop this submarine can reach now$/);
+  // with an item that can drop in A only, Loot first: only routes through A bring it; per hour A alone wins
   const c = ADV.advise(Object.assign({}, low, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: [[near.id, true], [0, false], [0, false], [0, false], [0, false]] }) }));
-  assert.equal(c.lead, 'L1'); assert.deepEqual(c.plan.route, [1]);
+  assert.equal(c.lead, 'L'); assert.deepEqual(c.plan.route, [1]);
   // a sub with a range of nothing: blocked, today's sentence
   const weak = [0, 1, 2, 3].map((sl) => D.parts.filter((p) => p.slot === sl).sort((x, y) => x.range - y.range)[0].id);
   const d = ADV.advise({ sub: { rank: 1, parts: weak }, fc: { unlockedSlots: 1, discovered: [1, 2] }, recs: RECS.defaults() });
@@ -809,10 +809,10 @@ test('Submersibles advisor reasons (R3): skipped objectives above the lead are n
   const far = R3_ITEMS.find((i) => !D.sectors.some((s) => s.rank <= 1 && (D.loot[s.id] || []).includes(i.id)));
   const l = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(far.id) }) }));
   assert.equal(l.lead, 'U1');
-  assert.match(l.plan.why, /Skipped Loot Farming: none of your chosen items can drop in a sector this sub can reach now\./);
+  assert.match(l.plan.why, /Skipped Loot Farming: none of your chosen items has a recorded drop this submarine can reach now\./);
   // the 4.5 causes sit in the skipped list too
   const why = Object.fromEntries(a.skipped.map((s) => [s.key, s.reason]));
-  assert.equal(why.U1, 'every sector is found'); assert.equal(why.X, `this submarine is at rank ${TOP}, the top rank`); assert.equal(why.L1, 'no item chosen');
+  assert.equal(why.U1, 'every sector is found'); assert.equal(why.X, `this submarine is at rank ${TOP}, the top rank`); assert.equal(why.L, 'no item chosen');
 });
 
 test('Submersibles advisor header (R3): each case of spec 4.7', () => {
@@ -840,8 +840,11 @@ test('Submersibles advisor part advice (R3): none before step 3; a gil tip only 
   }
   const shark145 = Object.assign({}, R3_FULL, { sub: { rank: 145, parts: SHARK }, logged, enough: 10 });
   const g = ADV.advise(Object.assign({}, shark145, { recs: RECS.defaults() }));
-  assert.equal(g.lead, 'G'); assert.ok(g.parts && g.parts.gilGain > 0, 'with Gil leading the S6 gil tip stays');
-  assert.deepEqual(g.parts, ADV.advise(shark145).parts, 'the same tip as today');
+  // D6: with Gil leading the tip is valued by the community estimate (it no longer refuses swaps that lower a stat); without settings it is today's S6 tip
+  assert.equal(g.lead, 'G'); assert.ok(g.parts && g.parts.gilGain > 0 && g.parts.estimate === true, 'with Gil leading the tip is an estimate');
+  assert.match(g.parts.why, /estimate from community drop records/);
+  const today = ADV.advise(shark145).parts;
+  assert.ok(today && today.gilGain > 0 && today.estimate === undefined && /calculated from your own log/.test(today.why), 'no settings: today\'s tip');
   // a non-gil lead at step 3: never a gil tip, only the minutes tip on the suggested route
   for (const rank of [30, 60, 130]) {
     const x = ADV.advise(Object.assign({}, shark145, { sub: { rank, parts: SHARK }, recs: withRecs({ order: ['level', 'unlock', 'gil', 'loot'] }) }));
@@ -849,21 +852,22 @@ test('Submersibles advisor part advice (R3): none before step 3; a gil tip only 
     assert.ok(x.parts && x.parts.gilGain === undefined && x.parts.gilFrom === undefined, 'rank ' + rank);
     assert.match(x.parts.why, /min sooner \(calculated\)/);
   }
-  const l = ADV.advise(Object.assign({}, shark145, { sub: { rank: 30, parts: SHARK }, recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_ITEMS.find((i) => D.sectors.some((s) => s.rank <= 30 && (D.loot[s.id] || []).includes(i.id))).id) }) }));
-  assert.ok(l.lead === 'L1' && l.step === 3 && (l.parts === null || l.parts.gilGain === undefined));
+  // D5: Loot leads only for an item with a drop record this sub can reach; the first such item is chosen here
+  const lootAt30 = (id) => ADV.advise(Object.assign({}, shark145, { sub: { rank: 30, parts: SHARK }, recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(id) }) }));
+  const l = R3_ITEMS.map((i) => lootAt30(i.id)).find((x) => x.lead === 'L');
+  assert.ok(l && l.step === 3 && (l.parts === null || l.parts.gilGain === undefined));
 });
 
-test('Submersibles advisor reasons (R3): a loot reason says drop odds are not known and promises nothing', () => {
+test('Submersibles advisor reasons (R3, D5): a loot reason gives expected quantities per hour, names its source and promises nothing', () => {
   const a = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_NEAR.id) }) }));
-  assert.equal(a.lead, 'L1'); assert.equal(a.plan.route.length, 1);
-  assert.ok(a.plan.why.startsWith('Can bring back 1 of your 1 chosen item (' + R3_NEAR.name + '); possible items only (community data), drop odds are not known.'), a.plan.why);
-  assert.ok(!/will drop|guarantee|always/i.test(a.plan.why));
-  // L2 leads when coverage cannot tell routes apart
-  const l2 = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['loot', 'unlock', 'level', 'gil'], loot: R3_LOOT(R3_NEAR.id) }) }));
-  for (const x of [l2.plan].concat(l2.alts)) if (/Can bring back/.test(x.why)) assert.match(x.why, /drop odds are not known/);
-  // a loot plan on a later stage still carries the note
+  assert.equal(a.lead, 'L');
+  const head = new RegExp('^Expected: about [\\d.]+ ' + R3_NEAR.name + ' an hour \\(estimate from community drop records, at least [\\d,.]+( million)? surveys per sector\\)\\.');
+  assert.match(a.plan.why, head, a.plan.why);
+  assert.ok(!/will drop|guarantee|always|drop odds are not known|possible items only/i.test(a.plan.why));
+  for (const x of a.alts) assert.match(x.why, /^Expected: about /);
+  // a loot plan on a later stage carries its figure and the source
   const later = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs({ order: ['level', 'loot', 'unlock', 'gil'], loot: R3_LOOT(R3_NEAR.id) }) }));
-  if (/Then Loot Farming/.test(later.plan.why)) assert.match(later.plan.why, /drop odds are not known/);
+  if (/Then Loot Farming/.test(later.plan.why)) assert.match(later.plan.why, /Then Loot Farming: about [\d.]+ .+ an hour \(estimate from community drop records\)/);
 });
 
 test('Submersibles advisor blocked answer (R3): with settings it carries today\'s step, step name and sentence', () => {
@@ -986,11 +990,11 @@ test('Review fix 3: "most" only for the route with the best lead score; other ro
   for (const x of u2.alts) assert.match(x.why, /^Can reveal \d+ new sectors? \(.+ lead to them\)\.$/);
 });
 
-test('Review fix 3: the Loot follow-on says stops and an hourly figure in plain words', () => {
+test('Review fix 3 (D5): the Loot follow-on gives the expected quantity an hour and its source in plain words', () => {
   const found = D.sectors.filter((s) => s.rank <= 5).map((s) => s.id).slice(0, 4);
   const a = ADV.advise({ sub: { rank: 5, parts: SHARK }, fc: { unlockedSlots: 4, discovered: found }, slotsFilled: 4, recs: withRecs({ order: ['level', 'loot', 'unlock', 'gil'], loot: R3_LOOT(12586) }) });
-  assert.match(a.plan.why, / Then Loot Farming: \d+ stops? where a chosen item can drop \([\d.,]+ an hour\); possible items only \(community data\), drop odds are not known\.$/, a.plan.why);
-  assert.ok(!/sector and item chances/.test(a.plan.why));
+  assert.match(a.plan.why, / Then Loot Farming: about [\d.]+ .+ an hour \(estimate from community drop records\)\.$/, a.plan.why);
+  assert.ok(!/sector and item chances|possible items only|drop odds are not known/.test(a.plan.why));
 });
 
 test('Review fix 6a: no other route scores 0 for the lead', () => {
@@ -998,7 +1002,7 @@ test('Review fix 6a: no other route scores 0 for the lead', () => {
     const a = ADV.advise(Object.assign({}, R3_LOW, { recs: withRecs(o) }));
     assert.ok(a.alts.every((x) => x.route.length > 0));
     if (a.lead === 'U1') assert.ok(a.alts.every((x) => x.route.includes(2)), 'every other route surveys the sector on the way');
-    if (a.lead === 'L1') assert.ok(a.alts.every((x) => x.route.some((id) => (D.loot[id] || []).includes(R3_NEAR.id))));
+    if (a.lead === 'L') assert.ok(a.alts.every((x) => x.route.some((id) => (D.loot[id] || []).includes(R3_NEAR.id))));
   }
 });
 
@@ -1779,4 +1783,133 @@ test('D4: a top-rank submarine with nothing to reveal and no community route it 
   assert.match(a.plan.why, /^No community gil route can be run by this submarine now \(sectors not found\)\./);
   assert.ok(a.plan.why.includes(`Skipped Leveling Submersible Rank: this submarine is at rank ${TOP}, the top rank.`));
   assert.equal(ADV.top(), TOP);
+});
+
+// ---------------------------------------------------------------- D5: Loot Farming with rates (spec 6.3, owner decisions)
+const D5_FOUND = [13, 18, 15, 10, 26]; // M, R, O, J, Z: one sea, five sectors, every order of them is a candidate
+const D5_BEST = [31, 24, 25, 34];
+const D5_IN = (rank, parts, loot, order) => ({ sub: { rank, parts }, fc: { unlockedSlots: 4, discovered: D5_FOUND }, slotsFilled: 4, recs: withRecs({ order: order || ['loot', 'unlock', 'level', 'gil'], loot }) });
+// an independent reading of 6.3: every order of 1 to 5 sectors, expected quantity per hour of each item (DROPS), shares of the best, added
+function d5Brute(rank, parts, ids) {
+  const st = ADV.stats(rank, parts), pool = D.sectors.filter((s) => D5_FOUND.includes(s.id) && s.rank <= rank), routes = [];
+  (function walk(r) {
+    if (r.length >= 5) return;
+    for (const s of pool) { if (r.includes(s.id)) continue; const n = r.concat(s.id), ev = ADV.evalRoute(n, st); if (!ev || !ev.reachable) continue; routes.push({ route: n, ev, per: Object.fromEntries(ids.map((id) => [id, (DROPS.route(D, n, st).items[id] || 0) / (ev.seconds / 3600)])) }); walk(n); }
+  })([]);
+  const best = Object.fromEntries(ids.map((id) => [id, Math.max(...routes.map((r) => r.per[id]))]));
+  const score = (r) => ids.reduce((t, id) => t + (best[id] > 0 ? r.per[id] / best[id] : 0), 0);
+  return { routes, best, score, top: Math.max(...routes.map(score)), of: (route) => routes.find((r) => r.route.join() === route.join()) };
+}
+
+test('D5: one chosen item: the plan is the route with the highest expected quantity an hour (within the 5% band the next priority narrows)', () => {
+  for (const id of [22506, 5192]) { // Extravagant Salvaged Earring (tier 3), Sapphire (tier 1)
+    const a = ADV.advise(D5_IN(145, D5_BEST, [[id, true], [0, false], [0, false], [0, false], [0, false]]));
+    const b = d5Brute(145, D5_BEST, [id]), mine = b.of(a.plan.route);
+    assert.equal(a.lead, 'L'); assert.ok(mine, 'the plan is a route of the pool');
+    assert.ok(b.score(mine) >= 0.95 * b.top - 1e-9 && b.top > 0, 'item ' + id + ': ' + b.score(mine) + ' vs ' + b.top);
+    assert.ok(a.plan.why.startsWith('Expected: about ') && a.plan.why.includes(D.items[id]), a.plan.why);
+    assert.match(a.plan.why, /\(estimate from community drop records, at least [\d,.]+( million)? surveys per sector\)\./);
+    assert.match(a.plan.why, /What the second item of a survey is, is not in the records/);
+  }
+});
+
+test('D5: two chosen items: the score is the sum of each item\'s share of the best', () => {
+  const ids = [22506, 5192], a = ADV.advise(D5_IN(145, D5_BEST, [[ids[0], true], [ids[1], true], [0, false], [0, false], [0, false]]));
+  const b = d5Brute(145, D5_BEST, ids), mine = b.of(a.plan.route);
+  assert.equal(a.lead, 'L'); assert.ok(b.score(mine) >= 0.95 * b.top - 1e-9, b.score(mine) + ' vs ' + b.top);
+  // the sum of shares is not the share of either item alone: neither single-item best route need serve both
+  const s0 = b.routes.reduce((m, r) => (r.per[ids[0]] > m.per[ids[0]] ? r : m)), s1 = b.routes.reduce((m, r) => (r.per[ids[1]] > m.per[ids[1]] ? r : m));
+  assert.ok(b.score(s0) <= b.top + 1e-9 && b.score(s1) <= b.top + 1e-9);
+  assert.ok(b.top < 2 + 1e-9 && b.top >= Math.max(b.score(s0), b.score(s1)) - 1e-9);
+  assert.match(a.plan.why, /^Expected: about [\d.]+ .+ an hour, [\d.]+ .+ an hour \(estimate/);
+  assert.ok(a.plan.why.includes(D.items[ids[0]]) && a.plan.why.includes(D.items[ids[1]]));
+});
+
+test('D5: a tier 3 item with surveillance below the tier 3 threshold is out of reach and gives the skip sentence', () => {
+  const need = Math.min(...D5_FOUND.map((id) => D.breakpoints[id][1]));
+  const weakSt = ADV.stats(85, SHARK), strongSt = ADV.stats(85, [3, 4, 5, 14]);
+  assert.ok(weakSt.surveillance < need && strongSt.surveillance >= need, 'the two builds straddle the threshold');
+  const loot = [[22507, true], [0, false], [0, false], [0, false], [0, false]]; // Extravagant Salvaged Necklace: tier 3 only
+  const weak = ADV.advise(D5_IN(85, SHARK, loot));
+  assert.match(weak.skipped.find((x) => x.key === 'L').reason, /^none of your chosen items has a recorded drop this submarine can reach now$/);
+  assert.notEqual(weak.lead, 'L'); assert.match(weak.plan.why, /Skipped Loot Farming: none of your chosen items has a recorded drop this submarine can reach now\./);
+  const strong = ADV.advise(D5_IN(85, [3, 4, 5, 14], loot));
+  assert.equal(strong.lead, 'L'); assert.ok(strong.plan.why.includes('Extravagant Salvaged Necklace'));
+  // an item that is only listed as possible (no drop record) adds nothing; the plan says so
+  const spectacles = R3_ITEMS.find((i) => !D.dropRates.sectors[15].pools.some((pl) => pl.items.some((r) => r[0] === i.id)) && !Object.values(D.dropRates.sectors).some((sc) => sc.pools.some((pl) => pl.items.some((r) => r[0] === i.id))));
+  assert.ok(spectacles, 'the data has a loot item without any drop record');
+  const only = ADV.advise(Object.assign(D5_IN(145, D5_BEST, [[spectacles.id, true], [0, false], [0, false], [0, false], [0, false]]), {}));
+  assert.notEqual(only.lead, 'L');
+});
+
+test('D5: no reason, note or source text says drop odds are not known or possible items only', () => {
+  const src = ['advisor.js', 'subs.js', 'recs.js'].map((f) => fs.readFileSync(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', f), 'utf8')).join('\n');
+  assert.ok(!/drop odds are not known|possible items only|no drop odds/.test(src));
+  const a = ADV.advise(D5_IN(145, D5_BEST, [[22506, true], [5192, true], [0, false], [0, false], [0, false]]));
+  for (const x of [a.plan].concat(a.alts)) assert.ok(!/drop odds are not known|possible items only/.test(x.why), x.why);
+});
+
+// ---------------------------------------------------------------- D6: part advice by the community estimate (spec 6.4)
+const D6_IN = (rank, parts) => ({ sub: { rank, parts }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, recs: withRecs({ order: ['gil', 'unlock', 'level', 'loot'] }) });
+const D6_SLOT = (i, rank) => D.parts.filter((p) => p.slot === i && D.classes.find((c) => c.id === p.class).rank <= rank);
+// every swap the rank allows, valued independently by DROPS on the advised route: { slot, to, g, reachable }
+function d6Swaps(rank, parts, route) {
+  const st = ADV.stats(rank, parts), ev0 = ADV.evalRoute(route, st), cur = DROPS.perHour(DROPS.route(D, route, st).gil, ev0.seconds), out = [];
+  for (let i = 0; i < 4; i++) for (const p of D6_SLOT(i, rank)) {
+    if (p.id === parts[i]) continue;
+    const np = parts.slice(); np[i] = p.id;
+    const s2 = ADV.stats(rank, np), ev = ADV.evalRoute(route, s2);
+    out.push({ slot: i, to: p.id, g: DROPS.perHour(DROPS.route(D, route, s2).gil, ev.seconds), reachable: ev.reachable, lowers: ['surveillance', 'retrieval', 'favor'].some((k) => PART.get(p.id)[k] < PART.get(parts[i])[k]) });
+  }
+  return { cur, out };
+}
+
+test('D6: the rank-85 build on OJ: a swap that lifts retrieval to 160 is advised and names the threshold', () => {
+  const a = ADV.advise(D6_IN(85, [3, 4, 5, 14]));
+  assert.equal(a.lead, 'G'); assert.deepEqual(a.plan.route, [15, 10]);
+  const { cur, out } = d6Swaps(85, [3, 4, 5, 14], [15, 10]);
+  const best = out.filter((x) => x.reachable && x.g > cur * 1.05).sort((x, y) => y.g - x.g)[0];
+  assert.equal(a.parts.to, best.to); assert.equal(a.parts.slot, best.slot);
+  assert.equal(a.parts.to, 31, 'the Whale-class hull (retrieval 173 against 148 now)');
+  assert.match(a.parts.why, /Swapping the hull for Modified Whale-class Pressure Hull is estimated to give about \+[\d,]+ gil an hour on this route \(estimate from community drop records, at merchant prices\): \d+ minutes faster; retrieval becomes optimal at O \(160 needed, 148 now\)\./);
+  assert.match(a.parts.why, /Above a threshold, extra surveillance, retrieval or favor is counted as worth nothing: the community's reading, not confirmed\./);
+  assert.equal(a.parts.estimate, true);
+});
+
+test('D6: a swap that lowers a stat but keeps every threshold is advised when it gains more than 5%, and says so', () => {
+  const parts = [27, 28, 33, 6], a = ADV.advise(D6_IN(145, parts));
+  assert.equal(a.lead, 'G'); assert.ok(a.parts);
+  const old = PART.get(a.parts.from), nw = PART.get(a.parts.to);
+  assert.ok(nw.surveillance < old.surveillance, 'the chosen swap lowers surveillance (the old rule refused it)');
+  const { cur, out } = d6Swaps(145, parts, a.plan.route), mine = out.find((x) => x.slot === a.parts.slot && x.to === a.parts.to);
+  assert.ok(mine.g > cur * 1.05);
+  assert.match(a.parts.why, /surveillance, retrieval and favor stay above every threshold of this route\./);
+  assert.match(a.parts.why, /counted as worth nothing/);
+});
+
+test('D6: a gain under 5% gives no tip, and a swap that breaks the range is never advised', () => {
+  // the best build: no swap gains 5%
+  const top = ADV.advise(D6_IN(145, D5_BEST));
+  assert.equal(top.parts, null);
+  const t = d6Swaps(145, D5_BEST, top.plan.route); assert.ok(t.out.every((x) => !(x.g > t.cur * 1.05)));
+  // a build where the swaps that would gain more than 5% all break the range, and the reachable ones gain less
+  const a = ADV.advise(D6_IN(85, [39, 16, 25, 10])), s = d6Swaps(85, [39, 16, 25, 10], a.plan.route);
+  assert.ok(s.out.some((x) => !x.reachable && x.g > s.cur * 1.05), 'a tempting swap exists but leaves the range');
+  assert.ok(s.out.filter((x) => x.reachable).every((x) => !(x.g > s.cur * 1.05)));
+  assert.equal(a.parts, null);
+  // another build: the tip is the best reachable swap although an unreachable one would gain more
+  const b = ADV.advise(D6_IN(85, [39, 16, 37, 10])), u = d6Swaps(85, [39, 16, 37, 10], b.plan.route);
+  const bestAny = u.out.slice().sort((x, y) => y.g - x.g)[0], bestOk = u.out.filter((x) => x.reachable).sort((x, y) => y.g - x.g)[0];
+  assert.ok(!bestAny.reachable && b.parts.to === bestOk.to && b.parts.slot === bestOk.slot);
+  assert.ok(ADV.evalRoute(b.plan.route, ADV.stats(85, b.parts.slot === 0 ? [b.parts.to, 16, 37, 10] : b.parts.slot === 1 ? [39, b.parts.to, 37, 10] : b.parts.slot === 2 ? [39, 16, b.parts.to, 10] : [39, 16, 37, b.parts.to])).reachable);
+});
+
+test('D6: a non-gil lead never carries a gil tip; without settings the S6 tip is unchanged', () => {
+  for (const order of [['level', 'unlock', 'gil', 'loot'], ['loot', 'unlock', 'level', 'gil']]) {
+    const a = ADV.advise(Object.assign(D6_IN(85, [3, 4, 5, 14]), { recs: withRecs({ order, loot: R3_LOOT(22506) }) }));
+    assert.notEqual(a.lead, 'G');
+    assert.ok(a.parts === null || (a.parts.gilGain === undefined && a.parts.estimate === undefined), order[0]);
+  }
+  const plain = ADV.advise({ sub: { rank: 145, parts: SHARK }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, logged: [R3_LOGGED([1, 2], 14, 412000)], enough: 10 });
+  assert.ok(plain.parts && plain.parts.estimate === undefined && /own log/.test(plain.parts.why));
 });
