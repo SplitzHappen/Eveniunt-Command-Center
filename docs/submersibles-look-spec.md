@@ -1563,3 +1563,642 @@ Built by `tracker/command-center/src/submersibles/palette.js` (one script, loade
   degrees (Twelveswood Verdure light needs this; the hue sweep over every accent hue also keeps all gaps at 60 or more). The page learns of a theme change from a `MutationObserver` on the root's
   `style` and `data-theme` attributes (look.js sets both in every `applyLook()`), and does nothing when the colours read are unchanged.
 - The earlier W22 finding on `--idle` as text is closed by `--idle-s`; the test for the raw `--idle` colour is replaced by the tone test.
+
+## Revision 4: roles and the timeline
+
+Appended 2026-11-19. Everything above is unchanged; it records what W0 to W30, the W22b palette and the gaps work
+built. Where this section and the earlier ones disagree, this section wins. Its parts are numbered Rev4.1 to Rev4.10
+(R4 is Revision 2's kit). A builder of W31 onward reads section 5, R1, R4, then Rev4.3 to Rev4.7 and its own item.
+
+Why: the owner looked at the Revision 3 screens and said: "I still think they look AI bland-ish but better than
+before. I still think you can do a hell of a lot better … think outside the box to make it pop while also making sure
+it is completely useable." On empty screens: "it bothers me tremendously. They should be in harmony with the chosen
+theme." On colour: "is there a way that you can divide where coloring goes on each visual screen, see how many colors
+and tones are needed to populate everything and then you just have a list with all the colors for each section
+described earlier for each theme as for coloring to be consistent between themes because I feel like it is not at the
+moment." The owner then approved two drawn designs, the Board as a fleet timeline and the empty Board: "yes to both,
+build it across the whole module, making sure it respects the coloring for the themes."
+
+Read for this revision: `CLAUDE.md`; this spec; the brief with the owner's words and the orchestrator's four
+decisions; the two mock-ups (`Main.dc.html`, `Empty.dc.html`; drawings, not app code); `subs.css`, `palette.js` and
+`index.html` whole; in `subs.js` every function that writes markup (`render`, `strip`, `subRow`, `lockedRow`, `fcCard`,
+`boardHtml`, `accuracyHtml`, `notifyHtml`, the recommendations functions, `setupHtml`, `shownPanelHtml`, `wizardHtml`,
+`adviceHtml`, `pickerHtml`, `discoveryHtml`, `lootHtml`, `logHtml`, `sectorDetails`, `plannerHtml`, `mapHtml`,
+`tripSheet`, `earnHtml`, `openSub`, `sendSheet`, `sendAllSheet`, `tick`); `tracker/tests/subs-look.test.js` and
+`subs-palette.js` whole; C25, C97, the lines of the hidden-company check that read the strip, and block `L1` of
+`check.js`; three rows of `THEMES`. By search: `chart.js` and `subs.js` hold no colour literal; `build.js` copies the
+module's files from a list; no check or test asserts the welcome and empty texts; `test:unit` in `package.json`. Not
+read: `advisor.js`, `recs.js`, `earn.js`, `drops.js`, `fleet.js`, `push.js`, the rest of `chart.js`, `shared.css`,
+`shell.css`, the body of `applyLook()` (its tokens as section 2.1 and the test loader give them), `docs/STATE.md`,
+`evidence/checks.json`. Nothing was built or run and no picture was viewed. Every hue, gap, height and count below is
+hand arithmetic; W31's tests and the generated list are the authority.
+
+### Rev4.1 Goal and constraints
+
+- **Colour by role.** Every colour on every screen is one tone of one named role. The same role is the same kind of
+  colour in all 21 themes, light and dark. The theme owns the page, the panels, the text, the slab, the accent and the
+  gradient: that is what makes it recognisable.
+- **Layouts.** The Board becomes a fleet timeline; every screen and panel that can be empty uses one empty-state
+  pattern; each other screen gets one organising idea that makes it easier to use.
+- This revision is not "look only": it adds markup, and words and figures that are counts, sums or ratios of figures
+  already on the same screen, or times the app already holds. Each is named in its item (Q13). No behaviour, save or
+  data changes; nothing is automated; no number is invented; no game artwork; no new external resource.
+- Must hold: section 5 (texts change only where an item gives the exact new text), R1's list, the frozen chart rules
+  (D7, R3.6), all 21 themes in both modes, the contrast test as the authority, R3.7's floors in `L1`, C25 (limit
+  1,080; target 1,000 or less), C97, no sideways scroll at 360 px, both reduced-motion rules, visible keyboard focus,
+  targets of 36 px (40 px up to 700 px; the action on a compact lane 26 px, as built).
+- Not edited: `advisor.js`, `recs.js`, `earn.js`, `drops.js`, `fleet.js`, `push.js`, `save.js`, `shared.css`,
+  `shell.css`, `atelier.js`, the data file. `subs.js` is edited only in the functions an item names.
+- Built files that may change: `tracker/command-center/site/submersibles/{index.html,subs.css,subs.js,chart.js,
+  palette.js,timeline.js}` and `site/sw.js`. Anything else changed means stop.
+
+### Rev4.2 Findings
+
+- **Why a role changes colour today.** `palette.js` puts the four voices a quarter turn apart from the theme's accent
+  and then moves them 20° clear of the status colours. So gil is gold in the default theme and rose in Azure Dragoon
+  dark (R3.4's table). The mock-ups show the same: rank pink and route blue in one theme, rank blue and route teal in
+  the other.
+- **Hues already fixed** (OKLCH, worked out by hand from the hex values; light / dark where they differ): Back 153 /
+  156, Out 267 / 273, Idle 67 / 78, error 29 / 26; seas 250, 50, 165, 0, 315, 282, 215; on the chart found 156, next
+  `#ffe38a` 93, planned route `#ff6ec7` 345, cannot-add 26. Two seas already sit beside a status: jade and Back (9 to
+  12° apart), indigo and Out (9 to 15°).
+- **Colours outside the token rules in `subs.css`:** `rgba(0, 0, 0, .6)` on `.sheet::backdrop`; three mixes of two
+  tokens inside ordinary rules (`.sub-meta .route`, `--ringc`, the track of a pressed sea tab); `#2f7fd0` in the
+  `@supports` rule; `--chart-no` in a rule of its own.
+- **Tokens no rule uses** (by reading; W31 confirms by search): `--gil-bar`, `--chart-line`. `--bar` is used by one
+  rule that a later rule with the same selector overrides.
+- **What the checks read on the Board:** the text of `.strip-next`; the text of `.strip-back`, exactly "N back now";
+  the text of `.quick`; the centre of `.sub-top`; `.fc` in four columns at 1,920 px and two at 1,024 px; 31
+  `.fc.wide .sub` in status order; C97: on a dense Board the gauge is 3 px high, inside its row, and the row is as
+  tall without it.
+- **C25 today is 1,052** (the brief). Hand reconstruction, not measured: the fleet starts near 169 px, a card head is
+  near 56 px and a dense row near 88 px because its last line wraps (169 + 2 × 441.5 = 1,052).
+- **The mock-ups, read closely.** The track mixes two scales (the marker is placed by time, the fill by share done).
+  Discs spread along the track suggest when each sector is reached, which the app does not know. The sonar scope has
+  five square blips: the chart's "further away" marker at made-up places. The route colour is a sky blue between Out's
+  blue and the first sea's blue. Labels use a 700 weight of the display face, which the app does not ship (900 only).
+
+### Rev4.3 Decisions (alternatives rejected in brackets)
+
+- **D37 Colour is given out by role:** 27 roles with 102 tones (Rev4.4). A colour token is a tone of one role, or an
+  alias that points at one by context. [A palette per screen: the inconsistency the owner named.]
+- **D38 A meaning role has one hue in every theme, with no hue tint at all.** The theme reaches it through lightness
+  and chroma only (Rev4.5). [A lean of a few degrees toward the accent: invisible at 4°; at 10° it eats the 20° floors
+  and the list no longer shows one hue per role.]
+- **D39 The four hues: rank azure 232°, gil gold 100°, loot teal 188°, route pink 340°.** [The mock-up's route blue,
+  245°: 5° from the first sea and 22° from Out. Rank pink with route azure: pink would mean rank on the pages and the
+  planned route on the chart.] Q12.
+- **D40 The route role and the chart's planned route are one hue family** (340° and 345°). The chart keeps its tested
+  hex values.
+- **D41 Status, error, sea and chart colours keep their values.** [Moving jade and indigo away from Back and Out: the
+  chart's water and its tests reopen; Q14.]
+- **D42 Where hue cannot keep two things apart, form does** (the rules of Rev4.5).
+- **D43 The list of colours is generated,** by one tool, into one document, and a test fails when they differ. The map
+  of zones is data inside the tool and is checked against `subs.css`. [A table kept by hand in this spec: it drifts.]
+- **D44 No raw colour outside the token rules;** a mix of two tokens inside a rule becomes a token or goes.
+- **D45 On a lane only the bar and the marker are placed by time.** The route's discs sit on a row of their own, in
+  route order, at a fixed pitch. [Discs along the bar, as drawn: they would claim a time for each sector.]
+- **D46 The voyage gauge stays the share of the voyage done,** the same element, hooks and words, and moves under the
+  countdown. [Filling the track by share done, as drawn: two scales on one line.]
+- **D47 The axis starts at now and runs for the smallest of 12, 24, 48, 72 or 96 hours that holds every return shown
+  or suggested;** 48 hours when there is none; a later return runs off the end. [A fixed 48 hours: short fleets bunch
+  at the left, long voyages fall off. A logarithmic axis: the ticks stop meaning anything.]
+- **D48 Three lane forms, chosen by the lane's own width;** one column up to four companies, and from five companies
+  two columns from 701 px and four from 1,400 px. [One long timeline for eight companies: 32 lanes do not fit 1,080 px,
+  and C25 asserts four columns.]
+- **D49 The timeline's arithmetic lives in a new pure file, `timeline.js`,** loaded by the page and by a unit test.
+  [Inside `subs.js`: a unit test cannot load it.]
+- **D50 One empty-state pattern in two sizes** (Rev4.7). The scope is decoration drawn in the role colours and hidden
+  from screen readers; the five blips are not drawn. [Blips: a sector marker at an invented place.]
+- **D51 A route is drawn the same way on every screen:** its lettered discs in sea colours beside its text. One helper.
+- **D52 Rev 3's anchor, nudge, `@supports` rule and ring tokens are retired.** R3.7's measure and floors stay.
+
+### Rev4.4 The roles
+
+**Tones.** `field`: a solid ground that carries text. `on`: the text on that field. `graphic`: bands, bars, borders
+and marks (3:1 on the page colours). `text`: coloured text (4.5:1 on the page colours). `wash`: a tint under ink text
+(7:1).
+
+**The role list** (27 roles, 102 tones; every existing token is named once here; `new` marks a token W31 or W33 adds):
+
+| # | Role | Stands for | Tokens (tone) | Tones |
+| --- | --- | --- | --- | --- |
+| 1 | page | the ground of the screen | `--paper`, `--paper-2` (alternate row, hover), `--paper-3` (trough) (fields) | 3 |
+| 2 | panel | a raised surface | `--slip` (field) | 1 |
+| 3 | ink | reading text, edges | `--ink` (text, 2 px edge), `--ink-2` (secondary text), `--ink-3` (disabled, decoration) | 3 |
+| 4 | line | hairlines and texture | `--rule`, `--grid` (graphic) | 2 |
+| 5 | slab | structure with no kind of its own | `--slab` (field), `--on-slab`, `--on-slab-2` (on) | 3 |
+| 6 | accent | an action, the chosen thing, the best, focus | `--seal` (field), `--on-seal` (on), `--hi`, `--hi-slip` (wash) | 4 |
+| 7 | molten | the family's gradient | `--molten` (band), `--glow` | 2 |
+| 8 | overlay | shade over anything | `--shadow`, `--sweep`, `--scrim` (new) | 3 |
+| 9 | deep water | the dark panel of an empty state | `--deep`, `--deep-2` (fields), `--on-deep` (on), `--deep-line` (graphic) (all new) | 4 |
+| 10 | rank | a submarine's rank and levelling | `--rank-m` (field), `--rank-g` (graphic), `--rank-s` (text), `--rank-w` (wash) | 4 |
+| 11 | gil | gil and value | `--gil-m`, `--gil-g`, `--gil-s`, `--gil-w` | 4 |
+| 12 | loot | items brought back | `--loot-m`, `--loot-g`, `--loot-s`, `--loot-w` | 4 |
+| 13 | route | routes, sector letters, unlocking | `--route-m`, `--route-g`, `--route-s`, `--route-w`; on the chart `--chart-hot` (graphic), `--chart-hot-text` (text), `--chart-glow` | 7 |
+| 14 | back | Back: needs the player; found | `--back` (field), `--on-back` (on), `--back-s` (text), `--back-bg` (wash); on the chart `--chart-found`, `--chart-done` | 6 |
+| 15 | out | Out: at sea | `--out`, `--on-out`, `--out-s`, `--out-bg` | 4 |
+| 16 | idle | Idle: not sent; can be revealed next; not logged | `--idle`, `--on-idle`, `--idle-s`, `--idle-bg`; on the chart `--chart-next` | 5 |
+| 17 | locked | Locked; further away | `--locked` (graphic); on the chart `--chart-far` | 2 |
+| 18 | error | something is wrong; cannot be added | `--bad` (graphic), `--bad-s` (text); on the chart `--chart-no` | 3 |
+| 19 to 25 | sea 1 to sea 7 | that sea and nothing else | `--sea-N` (field), `--sea-N-g` (graphic), `--sea-N-s` (text), `--sea-N-w` (wash) | 28 |
+| 26 | water | the chart's ground, one per sea | `--chart-bg`, `--chart-bg-2`, `--chart-bg-hi` (fields), `--chart-back` (graphic) | 4 |
+| 27 | chart ink | neutral marks on the water | `--chart-ink`, `--chart-ink-2`, `--chart-ink-step`, `--chart-link`, `--chart-sel` (selection and focus: the accent's pale tint) | 5 |
+| | shared | the text on any field of roles 10 to 13 and 19 to 25 | `--on-mid` (on) | 1 |
+
+Roles 1 to 9 are theme roles (25 tones); roles 10 to 27 are meaning roles (77 tones with `--on-mid`). Focus is the
+accent's field colour as a 2 px outline (`--on-slab` on a slab or field); it is a use, not a role.
+- **Aliases** (pointers, no colour of their own, not counted): `--st`, `--on-st`, `--st-bg` (the lane's status);
+  `--sea`, `--sea-g`, `--sea-s`, `--sea-w` (the sea in scope); `--scr`, `--scr-g` (the screen's role: Board route, Log
+  loot, Earnings gil, Setup rank, Map sea 1); `--lv-m`, `--lv-g` (the role that chose a suggestion); `--ico`, `--band`,
+  `--hz`. `--hazard` is a pattern, not a colour.
+- **Retired:** by W31 `--bar`, `--gil-bar`, `--chart-line`, `--hue-src` and the `@supports` rule; by W33 `--rank-ring`,
+  `--gil-ring`, `--loot-ring`, `--route-ring`, `--sea-1-ring`, `--ring`, `--ringc`. A token is deleted only after a
+  search shows no rule uses it; otherwise it is kept, listed under its role and reported.
+
+**The zones** (role and tone per zone; "status" is back, out or idle by the lane's state; the tool's zone map starts
+from this table and each item keeps it in step):
+
+| Screen | Zone (selector) | Role and tone |
+| --- | --- | --- |
+| Board | ground, graph paper (`.subs-main`) | page field; line |
+| Board | next-back block (`.strip-next`, `.strip-more`) | slab field, on, on-2; ink-2 |
+| Board | tallies (`.strip-back`, `.strip-tally`) | status field and on when the count is above 0, else panel and ink-2; locked: panel, locked hatch, ink |
+| Board | tools (`.strip-tools`, `.seg`) | panel, ink; pressed: slab |
+| Board | axis (`.tl-axis`) | ink (rule, return notches); ink-2 (tick labels); slab (the count on a cluster) |
+| Board | group head (`.fc-head`) | slab field, on, on-2; molten band; status fields and ink-3 in the slot strip |
+| Board | lane ground (`.sub`) | status wash, else panel; ink edge; Back: a 2 px back field inset |
+| Board | status field and word (`.sub::before`, `.chip`) | status field and on; locked: locked hatch, ink on page |
+| Board | name, parts code, route caption | ink; ink-2; ink |
+| Board | rank plate | rank field, on-mid |
+| Board | discs (`.disc`) | sea field, on-mid; outlined: panel, sea graphic, ink; the gap ring is panel |
+| Board | trough, bar, marker (`.tl`, `.tl-bar`, `.tl-end`) | page field 3; out field (Back: back field); ink |
+| Board | countdown, clock (`.when`) | ink (Back: back text); ink-2 |
+| Board | voyage gauge (`.vgauge`) | out field on its own 12% track |
+| Board | action (`.quick`) | accent field, on; band: molten, or the choosing role's field over a 2 px accent-on line |
+| Board | locked lane | locked hatch on page field 3; one outlined disc; ink; tag ink-2 |
+| Board | empty slot (`.sub.empty`) | idle graphic (dashed edge, hatch); ink-2; link accent |
+| Board | notes (`.hint`, `.foot-note`, `.tl-key`) | ink-2; link accent |
+| Send window | scrim; sheet | overlay; panel, ink edge, molten band |
+| Send window | title (`.sheet h2`) | slab; a 12 px status field edge |
+| Send window | suggestion (`.advice`) | accent wash and field edge; ink; the reason's edge: the choosing role's graphic |
+| Send window | routes compared (`.advice .tl`, `.alts .tl`) | as the Board's trough and marker, outlined; discs sea |
+| Send window | actions | accent field, on, molten; other buttons ink edge on panel |
+| Send window | sector buttons (`.sector`) | page field, ink; sea graphic edge; letter route text; chosen: accent field, on, molten; order badge slab; disabled: line hatch |
+| Send window | route line (`.route-line`) | route graphic edge, route text; discs sea; ink rules |
+| Send window | figures, tags, hints | ink; ink-2; a failing line error text |
+| Send window | what came back (`.loot-h`, `.loot-row`, `.qbtn`, `.rate-item b`) | loot field, on-mid, loot graphic hatch; line; page field, ink; loot text |
+| Send window | rank box, rank-up plan | rank graphic edge, rank text |
+| Send window | questions after a voyage (`fieldset`, `legend`) | ink edge; slab |
+| Send window | send-all rows (`.pick .chip`, `.pick-fc`) | status field and on; ink |
+| Log | head | loot field, on-mid, ink band |
+| Log | day rule (`.log-day`) | slab field, on, on-2 |
+| Log | row (`.log-row`) | page field; hover page field 2; line |
+| Log | time cell (`.log-when`) | sea field, on-mid (no route: slab); hover accent field, on |
+| Log | who, route text, discs | ink; ink-2; sea |
+| Log | grade (`.log-grade`) | rank wash, rank graphic, ink; S and SS: rank field, on-mid |
+| Log | gil and heat line (`.log-what`) | gil text; gil graphic |
+| Log | logged or not (row edge) | loot graphic; idle graphic (dashed) and idle text |
+| Map | head | slab with the sea's graphic band |
+| Map | sea chain (`[data-map-sea]`) | page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2 |
+| Map | planner (`.planner`) | page field, ink edge, sea graphic edge; route text; discs; error text; action accent |
+| Map | chart head (`.chart-head`) | sea field, on-mid, ink band |
+| Map | chart (`.chart-svg`) | water; chart ink; back, idle, locked, route and error chart tones |
+| Map | legend (`.chart-key`) | water field, chart ink; swatches back, idle, locked chart tones |
+| Map | sector details (`.chart-details`) | panel; head sea field, on-mid; state line back text, idle text or ink-2 with its edge; labels ink-2; rank text; route text; tier number loot field, on-mid; open tier accent wash; rate loot text |
+| Earnings | head | gil field, on-mid |
+| Earnings | tallies (`.earn-card`) | first: gil wash, ink, ink band; others: panel, gil graphic band, gil text |
+| Earnings | section labels | ink; hatch and underline gil graphic |
+| Earnings | position block | 1: accent field, on; 2 and 3: slab; others ink-2 |
+| Earnings | route cell | route text, sea graphic edge, discs sea |
+| Earnings | bars | gil wash, gil graphic tip, quarter lines line, figures ink; other gil figures gil text |
+| Earnings | thin rows; top items | idle graphic hatch; loot text, loot graphic edge, gil text |
+| Setup | panel heads | rank field, on-mid (recommendations: slab and a band of the four role fields); head state on |
+| Setup | notifications, free companies, ticks | ink, ink-2, slab legend; page field, ink edge; link accent |
+| Setup | ranking (`.rec-rank`) | each rung: its role's wash, ink, its role's field and on-mid for the number; first rung accent field edge |
+| Setup | fuel; loot pickers | accent thumb, page field 3, ink; loot text, loot graphic edge, off: ink-3 |
+| Setup | accuracy (`.acc`) | ink-2 heads; agrees back text; differs error text |
+| Setup | guided setup (`.wiz`) | head rank field; steps: accent field (now), slab-on (done), outline; fields page and ink; note accent wash; a closed sea: sea wash and graphic edge; an open sea: sea field, on-mid; letters route text; error text |
+| Empty | full empty state (`.empty-state`) | page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band |
+| Empty | scope (`.es-scope`) | deep fields; rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on |
+| Empty | empty line (`.empty-line`) | page field, ink-2 dashed edge, ink; glyph: the screen's role, graphic |
+| Notices | notice (`.note`) | accent wash and field edge, ink |
+| Errors | block (`.note.bad`); text (`.hint.bad`, `.wiz-err`, `.cannot-line`, `.cannot-why`) | error graphic hatch on the accent wash; error text |
+
+### Rev4.5 The fixed hues
+
+| Role | Hue | Reads as | Nearest status | Nearest sea | Nearest other role |
+| --- | --- | --- | --- | --- | --- |
+| rank | 232° | azure | Out 35° (light), 41° (dark) | ice 17°, blue 18° | loot 44° |
+| gil | 100° | gold | Idle 33° (light), 22° (dark) | ember 50° | loot 88° |
+| loot | 188° | teal | Back 35° (light), 32° (dark) | jade 23°, ice 27° | rank 44° |
+| route | 340° | pink | error 49° (light), 46° (dark) | rose 20°, lilac 25° | rank 108° |
+
+Why these: with eleven hues already fixed, only four arcs of the wheel are 20° clear of every status colour: 98 to
+133°, 176 to 247°, 293 to 360° and 0 to 6°. Gold has to sit at the start of the first. The chart already draws the
+planned route in pink, so pink is the route. Teal and azure share the second arc, as far from Back, from Out and from
+each other as it allows; azure rather than violet for rank, because violet (298°) is 25° from Out in dark themes.
+
+**How a tone is fitted to a theme** (all in `palette.js`, as W22b built them; only the hue's source changes):
+- field: lightness 0.70 in a light theme, 0.74 in a dark one; chroma `min(0.21, 0.94 × the largest chroma inside sRGB
+  at that lightness and hue)`;
+- graphic: the lightest (light theme) or darkest (dark theme) lightness, found by bisection, at which the colour
+  reaches 3.1:1 against each of `--slip`, `--paper` and `--paper-2`; chroma by the same rule at that lightness;
+- text: the same search for 4.6:1;
+- wash: lightness 0.90 (light) or 0.30 (dark), chroma a third of the field's, moved until `--ink` on it reaches 7.2:1;
+- `--on-mid`: the first of ink, page colour, black, white that reaches 4.6:1 on all eleven fields;
+- a status text tone: the status colour itself when it reaches 4.6:1 on the three page colours, else the same hue and
+  chroma at the lightness that does.
+- **Tint toward the theme: none.** A role's field has the same hue in all 42 theme-and-mode pairs; the test allows
+  2.5° for rounding to screen values. If the owner later wants warmth, the windows that still keep every floor are
+  rank 229 to 235°, gil 100 to 106°, loot 185 to 191°, route 337 to 343°; that would be a new decision.
+- New, deep water (W33): let D be the darker of `--ink` and `--paper` and its hue h (the accent's hue when D's chroma
+  is under 0.02). `--deep` is OKLCH lightness of D less 0.04, held between 0.12 and 0.22, chroma at most 0.05, hue h.
+  `--deep-2` is lightness 0.34, chroma at most 0.09, hue h, lowered by 0.01 at a time until `--on-deep` reaches 7:1
+  on it. `--on-deep` is the lighter of ink and paper. `--deep-line` is `--on-deep` mixed 45% into `--deep-2` in OKLab.
+- New, `--scrim`: `rgba(0, 0, 0, .6)` in the three `:root` token rules.
+
+**Floors the test asserts in all 42 pairs** (hand minimum in brackets): a voice to any status 20° (22); a voice to a
+voice 40° (44); a voice to a sea 15° (17); a status to a status 35° (38); a sea to a sea 30° (32). A sea to a status
+is printed, not asserted. If a hand figure is wrong by more than 3° or a floor fails, W31 stops (Rev4.9).
+
+**The closest pairs, and what tells them apart besides hue:**
+
+| Pair | Apart | Told apart by |
+| --- | --- | --- |
+| route and the chart's planned route | 5° | nothing: they are the same thing |
+| gil and "can be revealed next" on the chart | 7° | never on one surface: gil is not used inside the Map tab; "next" exists only on the chart's water, as a diamond |
+| jade sea and Back; indigo sea and Out | 9 to 15° | a sea colour is only ever a round lettered disc with a gap ring, a sea tab, a time cell or an edge beside the sea's name; a status is a slanted field with its word |
+| rank and the ice and blue seas | 17°, 18° | the rank plate is a slanted label holding the word "Rank"; see the sea rule above |
+| route and the rose sea | 20° | the sea rule above; route is text, an edge or a band, never a disc |
+| gil and Idle | 22° dark, 33° light | Idle is a field with the word "Idle" (in light themes also much darker); gil is a figure, a bar or a 5 px band |
+| loot and rank | 44° | each is named where it stands (the ranking's labels, "Rank", item names) |
+| the accent and whichever role its theme sits on | any | the accent is only the fill of an action, the chosen thing and focus; a role is never a button's fill; a role band on a button is parted from it by a 2 px line in the button's text colour |
+
+**What stays the theme's:** roles 1 to 9: page and its two steps, panel, the three inks, lines, the slab, the accent
+with its text and wash, the gradient and glow, overlays, and the deep-water panel.
+
+**What this changes from Revision 3:** D24, D28 and W22b's point 4 no longer apply. `anchorHue`, `nudge` and
+`evenness` leave `palette.js`; `PALETTE.ROLE_HUE = { rank: 232, gil: 100, loot: 188, route: 340 }` takes their place;
+`compute()` still accepts the accent and the progress colour and ignores them. The fallback in `subs.css` becomes
+`oklch(0.7 0.1 232)`, `oklch(0.7 0.1 100)`, `oklch(0.7 0.1 188)`, `oklch(0.7 0.1 340)` and the `@supports` rule is
+deleted. In the default theme rank turns from rose to azure and route from blue-violet to pink; gil and loot move by
+about 14°.
+
+### Rev4.6 The generated list
+
+- **Tool:** new `tracker/tools/subs-roles.js`. It holds `ROLES` (the table of Rev4.4 as data: role, kind, meaning,
+  each token and its tone), `ALIASES`, and `ZONES` (screen, zone, the selector fragments that identify its rules, the
+  roles allowed there). It loads the themes and the model through `tracker/tests/subs-palette.js`.
+  `node tracker/tools/subs-roles.js` writes the document; with `--check` it writes nothing and exits 1 when the
+  document differs. No date or time is written, so the output is the same on every run.
+- **Document:** `docs/submersibles-colour-roles.md`, headed "Generated by tracker/tools/subs-roles.js. Do not edit."
+  Contents: (1) the role list with the count of roles and tones; (2) per role, a table of 42 rows (theme, mode) with
+  one column per tone as hex, and for a field its hue; a tone the model cannot compute (`--rule`, `--grid`, `--hi`,
+  `--molten`, `--glow`, `--shadow`, `--sweep`, `--scrim`) is printed as its formula or "set by the theme", never as a
+  typed value; (3) the hue gaps of Rev4.5 as measured, every gap under 25° named; (4) the zone map.
+- **Test:** new `tracker/tests/subs-roles.test.js`, added to `test:unit` after `subs-look.test.js`. It asserts: the
+  document equals what the tool would write; 27 roles and 102 tones; every colour token used in `subs.css` is in
+  `ROLES` or `ALIASES`, and every token in `ROLES` is used by a rule or listed in `UNUSED` with a reason; every rule
+  that uses a colour token matches a zone (longest selector fragment wins) whose roles include that token's role (an
+  alias counts as any role it can point at); gil is in no zone of the Map.
+- **Lint** (same test file), over `subs.css`, `chart.js` and `subs.js`. In `subs.css` a raw colour (`#` hex, `rgb(`,
+  `hsl(`, `oklch(`, `oklab(`, `lab(`, `lch(`, `hwb(`, `color(`, a colour name) may appear only in a custom-property
+  declaration inside a token rule: the three `:root` rules, `.subs-page`, and the three `.map-panel` token rules.
+  Everywhere else a colour is `var(--token)`, `transparent`, `currentColor`, or `color-mix(in srgb, var(--token) N%,
+  transparent)`. `chart.js` and `subs.js` hold no colour literal and no `fill="` or `stroke="` value other than `none`
+  and `currentColor`. Exceptions live in one list, `LINT_PENDING`, which must be empty after W36.
+- **Palette sheets:** `look-palette-{default,azure-dark,magitek-light}.png`, made by `L1` as today, regrouped by role:
+  each role a row, its tones as swatches with sample text, the hex the browser computed under each.
+- **In the browser:** `L1` gains `roleAudit()`: on each screen it walks, every opaque computed `color`,
+  `background-color`, border colour, `fill` and `stroke` inside `.subs-main` and `#sheet[open]` must equal a tone of
+  that theme's list within 2 per channel. W31 records the misses; W36 asserts there are none.
+
+### Rev4.7 The layouts
+
+**The Board: a fleet timeline.** One idea: every submarine is a lane on one shared time axis that starts now.
+
+- **Strip.** As built, plus: after `.strip-next`, only when other shown submarines return within 10 minutes of the
+  next one, `<span class="strip-more">and N more within 10 minutes</span>`; after `.strip-back`, three tallies
+  `<span class="strip-tally out"><b>N</b> out</span>`, the same with `idle` and `locked` (locked: for each shown
+  company, 4 less its unlocked slots). `.strip-next` and `.strip-back` keep their text to the letter. A tally is the
+  Board's count block: slanted ends, the figure in `900 var(--strip-fig)/.9 var(--f-disp)` over its word, in its
+  status field when the count is above 0. `--strip-fig`: 84 px from 1,100 px with up to four companies, else as built.
+- **Axis.** `timeline.js` exposes `TL.span(ms)` (the smallest of 12, 24, 48, 72, 96 hours that is at least `ms`; 48
+  for nothing; 96 for more), `TL.pos(ms, span)` (0 to 1, four decimals), `TL.ticks(hours)` (five labels: "now", then
+  "+N h" at each quarter) and `TL.marks(positions)` (returns closer than 0.02 of the axis become one mark with a
+  count). `ms` is the largest of: each shown Out submarine's time to return; each shown Back or Idle submarine's
+  suggested voyage length. The axis is the first child of every `.fc-subs`:
+  `<div class="tl-axis" aria-hidden="true" data-span="48">` holding five `<i style="--x:0">now</i>` ticks and one
+  `<i class="tl-mark" style="--x:.5625" data-n="1">` per mark (returns of Out submarines only). It has a 3 px ink rule,
+  tick labels `600 11px var(--f-data)`, and takes the same left and right insets as the lanes' track, so a tick stands
+  over the same moment in every lane. With one column every group shows its axis; with two or four columns only the
+  cards of the first row do. Nothing out: the strip says "Next back: none out" as today, the axis covers the longest
+  suggestion (48 hours when there is none), and no lane has a bar.
+- **Lane** (`subRow`): after `.sub-meta` add `<span class="tl" aria-hidden="true" style="--ret:F">` holding the discs
+  (`routeDiscs`, below), `<i class="tl-bar"></i>` and `<i class="tl-end"></i>`; wrap the clock in `.when` in
+  `<span class="when-at">` (the text does not change). Classes on `.tl`: `out` (bar from the left edge to `--ret` in
+  `--out`, a solid 4 px ink marker at `--ret`); `done` (Back: the whole trough in `--back`, no marker, the returned
+  voyage's discs); `ghost` (Back or Idle with a suggestion and no voyage to show: no bar, outlined discs of the
+  suggested route, an outlined marker at the suggested return); `over` (a return past the axis: the bar runs to the
+  right edge and ends in two chevrons, no marker; the countdown and clock say when). A locked lane's `.tl` is the
+  locked hatch with one outlined disc, the unlocking sector. An empty slot has no `.tl`. `tick()` sets `--ret` each
+  second from `data-ret` and the axis's `data-span`, and redraws when `TL.span` would change.
+- **Discs.** `routeDiscs(route)` returns `<span class="discs" aria-hidden="true">` with one
+  `<i class="disc in-sea-N" style="--i:K">LETTER</i>` per sector (five at most). A disc is round, its sea's field with
+  the letter in `--on-mid` (`900` display face, 0.55 of the disc), and a 2 px panel-coloured ring around it. On a
+  lane the discs stand on the top row of the track cell at a fixed pitch from the left; they are a label, not times.
+- **Three forms,** by the width of `.fc-subs` (a container query; `.fc-subs.list` becomes one column and uses the
+  compact form at any width from 400 px):
+
+  | | Hero (760 px and wider) | Compact (400 to 759 px) | Phone (under 400 px) |
+  | --- | --- | --- | --- |
+  | Lane | grid `220px minmax(0, 1fr) 320px`, gap 16 px, at least 84 px, padding `10px 14px 10px calc(var(--field) + 12px)`, 2 px ink border | two lines of 26 and 30 px, padding `4px 6px 4px 28px`: 64 px; line 2 is `minmax(0, 1fr) 190px`, gap 8 px; nothing wraps | stacked, padding `38px 10px 10px` |
+  | Status | 124 px slanted field, word 28 px (as built) | 18 px slanted edge, the word a 14 px chip at the right of line 1 (as built) | 30 px band, word 20 px (as built) |
+  | Line 1 / column 1 | name 26 px; under it rank plate, parts code, route text | name 17 px, chip, rank plate `13px/15px`, parts code; route text clipped out of sight, not removed | name 20 px and rank plate; then parts code and route text |
+  | Track cell | 46 px high: discs 28 px (pitch 34 px), bar 8 px at the bottom, marker 4 × 46 px | 30 px: discs 20 px (pitch 24 px), bar 6 px, marker 4 × 30 px | 34 px: discs 22 px (pitch 26 px), bar 6 px, marker 4 × 34 px |
+  | When | countdown 40 px, the sentence `600 13px var(--f-data)` | in the 190 px cell: countdown 20 px and, for Out, the clock in 12 px; the rest of the sentence at `font-size: 0`; Back: countdown, then the action | countdown 30 px, the sentence wraps |
+  | Action | 48 px high, as built | 26 px high, one line, ellipsis, full text in its title (as built) | 48 px high, full width |
+  | Gauge | 6 px, under the when column | 3 px, at the lane's bottom edge under the 190 px cell | as built |
+
+  Hero applies to `.fc-subs:not(.list)` only. In hero the group has no card frame; in compact and phone it keeps it.
+  Columns: `.fleet` is one column while it has four companies or fewer; from five, two columns from 701 px and four
+  from 1,400 px (as today).
+- **By return time.** One group, "All submarines by return time", one column of compact lanes in today's order (Back,
+  longest wait first; Out by return; Idle). The company name stays in `.sub-fc`. Sorted like this the markers of the
+  Out lanes step to the right, lane by lane.
+- **Dense, and C25.** At 1,920 px a card is (1,920 − 92 − 32 − 30) / 4 = 441.5 px, its lanes 421.5 px: compact. A
+  compact lane is 64 px by construction (4 + 26 + 30 + 4). With T the top of the fleet and H a card head (today near
+  169 and 56): a first-row card is 2 + H + 5 + 24 (axis 20, gap 4) + 4 × 64 + 3 × 5 + 8 + 2 = H + 312; a second-row
+  card down to its last lane is 2 + H + 5 + 4 × 64 + 3 × 5 = H + 278; the lowest lane ends at T + (H + 312) + 10 +
+  (H + 278) = T + 2H + 600, about 881 (today 1,052; limit 1,080). The track in a compact lane is 421.5 − 34 − 190 − 8
+  = 189.5 px; five discs need 116 px.
+- **Phone, 360 px.** The lane is 320 px wide and 300 px inside. Top to bottom: the status band with its word; name
+  and rank plate; parts code and route text; the track, full width (five discs need 126 px; five tick labels fit); the
+  countdown and its sentence; the action, full width and 48 px. Nothing is positioned wider than the lane.
+- **Key, exact new text,** a `<p class="foot-note tl-key">` before the existing foot note: "Letters: the route's
+  sectors, in order, in their sea's colour. Bar and marker: the time left and the return, on the line above. Outlined:
+  a suggestion, not sent."
+- **Keyboard and names.** The timeline adds no focus stop. Tab order is the page order: the strip's buttons, then per
+  group its head buttons, then each lane followed by its action. The axis, the track and the discs are hidden from
+  screen readers; everything they show is already in the lane's text (status word, countdown, clock, route, the
+  action's label) and in `.vgauge-sr`. The lane keeps `overflow: hidden`, so its action stays 4 px inside its edge
+  (D17). Motion: the bar and marker move once a second with no transition; the sweeps of R4 are as built.
+
+**Empty states.** One pattern, two sizes.
+- **Full** (helper `emptyHtml(o)`): `<section class="panel empty-state" data-empty="ID">` with `<div class="es-main">`
+  (`<p class="es-kick">`, `<h2>`, `<p class="es-text">`, `<ol class="es-steps">` of up to three `<li class="es-step
+  v-ROLE"><b>N</b><span><strong>TITLE</strong><span>TEXT</span></span></li>`, `<p class="es-act">` with one primary
+  button and an optional `<span class="es-aside">`, an optional `<p class="es-note">`) and `<div class="es-scope"
+  aria-hidden="true">` (one SVG and two labels). The Board's keeps the class `welcome` as well.
+- Rules: two columns `minmax(0, 1fr) minmax(280px, 44%)`, no padding, at most 1,400 px wide, page ground, 2 px ink
+  edge. Main: padding `48px 40px 48px 56px`; kicker a slab chip, `700 12px var(--f-kick)`, .24em; headline `900
+  clamp(44px, 7.2vw, 104px)/.88 var(--f-disp)`, uppercase, ink; sentence 18 px, `--ink-2`, at most 56ch; a step: panel
+  ground, 2 px ink edge, at least 64 px high, its number a block 86 px wide in its role's field with `--on-mid`, `900
+  44px var(--f-disp)`, right end slashed 30 px, title `900 22px var(--f-disp)` uppercase, text 15 px `--ink-2`; the
+  action 60 px high, `900 26px var(--f-disp)`, with a 7 px route band; aside `13px var(--f-data)`, `--ink-2`.
+- Scope: ground `linear-gradient(160deg, var(--deep-2), var(--deep))`, left edge slashed 90 px. The SVG (`viewBox="0 0
+  640 820"`, sliced to fill) draws, with classes and no colour attributes: five rings round (370, 430) of radius 90,
+  180, 270, 360 and 450 in the route, loot, gil and rank fields and `--deep-line`, 2 px; a cross in `--deep-line`; a
+  45° fan in the route field at 16% with a 4 px leading edge, turning once in 9 s (it stands still with reduced
+  motion); a diamond at the centre in `--on-deep` with a 4 px route edge. Labels in `--on-deep`: the screen's word in
+  `900 24px var(--f-disp)`, and "N seas, M sectors" from the data in `13px var(--f-data)`.
+- Up to 700 px: one column; the scope is a 140 px band on top with no slash; main padding `20px 16px`; the action full
+  width and 56 px.
+- **Line** (class `empty-line`, added to existing sentences; their text does not change): `display: flex; align-items:
+  center; gap: 12px; min-height: 48px; padding: 8px 14px; border: 2px dashed var(--ink-2); background: var(--paper)`,
+  14 px ink, with a 22 px ring glyph in `--scr-g` before it.
+
+| Where | Kicker | Headline | Sentence | Steps (role: title; text) | Action |
+| --- | --- | --- | --- | --- | --- |
+| Board, and Map, with no free company (`board-none`, also `welcome`) | The dock is empty | No submarines in the water | Add a free company and its submarines, and this Board shows who is out, who is back and what to send next. | route: Name the free company; Its world and the character it belongs to. rank: Add its submarines; Name, rank and the four parts of each one, and any voyage under way. loot: Tick what is discovered; One press can mark a whole sea. | `data-act="new"`, "Start the setup"; aside "about 3 to 5 minutes per free company"; note: today's second paragraph, unchanged |
+| Board, every company hidden (`board-hidden`; after the note and the empty `.fleet`) | Nothing on the Board | Every free company is hidden | Their data and alerts are unchanged. Tick one in Setup to see it here. | none | `data-tab="setup"`, "Show them in Setup" |
+| Log, no voyage (`log-none`) | The log is empty | No voyages yet | today's sentence, unchanged | route: Send a submarine; From the Board, on the suggested route or your own. loot: Log what came back; When it returns, enter the items in the send window or here. gil: See what it earned; Earnings adds it up by route, company and item. | `data-tab="board"`, "Go to the Board" |
+| Earnings, no voyage (`earn-none`) | No earnings yet | Nothing logged yet | today's sentence, unchanged | loot: Log a returned voyage; Enter what came back in the Log tab. gil: Prices are added; The better of the merchant price and the market price after tax. | `data-tab="log"`, "Go to the Log" |
+
+  Scope words: "Your dock", "Hidden", "Log", "Earnings". Lines: the fallback panel of `render()`; "Opening your
+  fleet…" (`index.html`); by return time with no submarine, new text "No submarine is in an unlocked slot yet."; Map:
+  "This sea is not opened yet.", the planner's two sentences for no submarine and none chosen; Earnings: "Log what
+  came back from voyages with a route to see this."; Setup: "No checks yet.", the loot pickers' line when it has
+  text; send window: "No discovered sectors entered…", "No loot list for this sector yet.", "No route was recorded…",
+  "No submarine is back or waiting to be sent.", "This submarine was removed…". Notices and errors keep R4's forms.
+
+**The other screens, one idea each.**
+- **Log: a ledger by day.** `logHtml` puts before the first row of each local day `<div class="log-day"><b>LABEL</b>
+  <span>N voyages · G gil logged</span></div>` ("1 voyage"; "nothing logged" in place of the gil when no row of that
+  day is logged). LABEL is "Today", "Yesterday", or the weekday, day and month in English (with the year when it is
+  not this year); the day is that of the time the row shows; G is the sum of the gil figures of that day's rows. Each
+  row gains `routeDiscs` before its who cell. Rules: the day rule is a slab strip, `position: sticky; top: 0`, label
+  `900 20px var(--f-disp)` uppercase, summary `600 13px var(--f-data)` in `--on-slab-2`; row columns `96px 150px
+  minmax(0, 1fr) auto` (phone: one column, discs after the time strip); figures right-aligned with tabular numerals;
+  the two zebra rules go; everything else as built.
+- **Earnings: a leaderboard on one printed scale.** `earnHtml` computes `scale`, the smallest of 1, 2, 2.5, 5 or 10
+  times a power of ten that is at least the largest gil per hour, sets each ranked row's `--p` to its gil per hour ÷
+  `scale`, and adds `<caption class="earn-scale">Bars run from 0 to SCALE an hour</caption>`; the same for the
+  by-company and by-submarine tables with their own scale and "Bars run from 0 to SCALE". Ranked and thin rows gain
+  `routeDiscs` in the route cell. Rules: bar cells get quarter lines in `--rule` under the bar; the four totals become
+  tallies, the Board's count block (slanted ends, figure over label), the first as built.
+- **Setup and recommendations: every head says its state; the ranking is a ladder.** After the `h2` of "Free
+  companies" and of "Free companies on the Board", and as the first child of `[data-recs-body]`, add `<p
+  class="head-state" aria-hidden="true">`: "N set up"; "All shown" or "N hidden"; "First: LABEL" plus " · fuel saving
+  on" when it is on. It sits at the right of the panel's head (`position: absolute; top: 14px; right: var(--pad-x)`,
+  `600 13px var(--f-data)`, the head's text colour); up to 700 px it is a plain line under the head in `--ink-2`.
+  `recsBodyHtml` adds `rung-1` to `rung-4` to the four ranking rows: at least 76, 68, 60 and 56 px high, number block
+  72, 64, 56 and 52 px wide with figures of 44, 38, 32 and 28 px, each row on its role's wash with ink text; the first
+  keeps the accent edge. `.tick b` takes the route text colour only inside `.wiz`.
+- **Send window: routes compared on one time axis.** `adviceHtml` computes one span for the suggestion and the other
+  routes (`TL.span` of the longest), puts a `.tl-axis` and the suggestion's discs and `.tl.ghost` under its route, and
+  discs and a `.tl.ghost` in each row of the other routes, so every return time lines up. `pickerHtml` and
+  `plannerHtml` put `routeDiscs` in their route line. `openSub` and `sendSheet` add `st-back`, `st-out` or `st-idle`
+  to the sheet's `h2`: a 12 px edge in that status field. `.sheet::backdrop` uses `--scrim`. Enter still presses the
+  first primary button.
+- **Map chrome: the seven seas as one chain.** `mapHtml` adds `closed` to a sea button with nothing found. Rules: the
+  buttons join with no gap; a chevron drawn as a background at each right edge points to the next sea (no `clip-path`:
+  the buttons take focus); closed: `var(--hazard)` with `--hz: var(--grid)` and `--ink-2` text; the chosen sea as
+  built; the pressed tab's track is `--on-mid` at `opacity: .3`. The chart, its legend and the details are untouched.
+
+### Rev4.8 Work items
+
+Order: W31, W32, W33, W34, W35, W36, W37. One builder at a time; each item leaves the app working and is committed on
+its own. Every item, as in section 6: a branch; only the files named; `npm run build` and commit the rebuilt files
+(Rev4.1's list); `npm run test:unit` and `npm run check`; report what was run and what was not; never merge or push to
+`main`. Every item's acceptance includes: C20, C24, C25, C28, C82, C97 pass; `L1` passes with R3.7's floors; the
+contrast tests and `subs-roles.test.js` pass; the generated document is regenerated and committed; the item's
+pictures exist in the tags `desktop`, `desktop-azure-dark`, `desktop-magitek-light` and `phone`.
+**Role review (required self-review, every item).** Open the item's pictures in the default theme, Azure Dragoon dark
+and Magitek Steel light, and the phone picture. Report per picture: (1) each colour seen and the role it stands for;
+(2) whether each role is the same kind of colour in all three (rank azure, gil gold, loot teal, route pink, Back
+green, Out blue, Idle amber); (3) any colour with no role, or one role in two colours; (4) any two neighbours that
+could be mixed up; (5) what tells this theme from the other two; (6) what the eye lands on first, and whether that is
+what the screen is for. Then one sentence: "consistent" or "inconsistent: <where>". R1's bold test still applies.
+Reported, never hidden.
+
+#### W31. Roles, the tool, the list, the tests, the sheets (Sonnet builder; first)
+- Files: `src/submersibles/palette.js`, `src/submersibles/subs.css` (token rules, and the four rules named below);
+  new `tracker/tools/subs-roles.js`; new `docs/submersibles-colour-roles.md` (written by the tool); new
+  `tracker/tests/subs-roles.test.js`; `tracker/tests/subs-palette.js`, `tracker/tests/subs-look.test.js`;
+  `package.json` (`test:unit` only); `check.js` (`L1` only).
+- Steps: (1) Before any edit, with the built `palette.js`, print the OKLCH hue of the four status colours in both
+  modes, of the seven seas and of `#ff6ec7` and `#ffe38a`, and the gaps of Rev4.5's two tables for the hues 232, 100,
+  188, 340. Compare with Rev4.2 and Rev4.5; stop on the "Escalate if" below. Record the family counts of `L1` as they
+  are. (2) `palette.js`: Rev4.5's change, nothing else; `info` gives `hues`, `statusHues`, `minStatus`, `minVoiceGap`,
+  `minSea`. (3) `subs.css`: the fallback hues; delete the `@supports` rule, `--bar` with the overridden rule that
+  used it, `--gil-bar`, `--chart-line`; add `--scrim` and use it on `.sheet::backdrop`; move `--chart-no` into the
+  three chart token rules; `.sub-meta .route { color: var(--ink) }`; the pressed sea tab's track as Rev4.7 says. (4)
+  The tool and the document (Rev4.6); `ZONES` describes the screens as they are now. (5) The two tests of Rev4.6;
+  `LINT_PENDING` may hold `--ringc` only. (6) `subs-palette.js`: drop the `@supports` reader and the `supports` and
+  `hue` options. `subs-look.test.js`: the fallback test runs once per pair with a voice gap of 40°; the two hue-sweep
+  tests and every `--gil-bar` pair go; add the test of Rev4.5's floors and of each field's hue within 2.5° of its
+  number; the nudge figures go. (7) `L1`: the palette sheets by role; `roleAudit()` recorded, not asserted.
+- Must not change: any layout, text or markup; `subs.js`; the status, sea and chart values; `compute()`'s arguments.
+- Pictures: the three `look-palette-*.png`; every `look-*.png` regenerates (four colours move).
+- Acceptance: as above; the browser's tokens equal the model within 2 in the three themes; the hand-back gives the
+  measured hue and gap tables, the counts (27 and 102, or what differs and why), the family counts before and after,
+  and the list `roleAudit()` recorded.
+- Escalate if: a hand hue of Rev4.2 or Rev4.5 is off by more than 3°; a floor of Rev4.5 fails; a floor of R3.7 fails
+  after the change (report the hues; do not lower a floor or move a hue); gold at 100° reads as olive on a sheet; a
+  token thought unused is used; the coverage rule cannot be met without loosening it.
+
+#### W32. The Board as a timeline (Sonnet builder; needs W31)
+- Files: new `src/submersibles/timeline.js`; `index.html` (one script tag, before `subs.js`); `build.js` (add the file
+  to the list that copies the module); `subs.js` in `shownSummary`, `strip`, `subRow`, `lockedRow`, `fcCard`,
+  `boardHtml`, `tick`, and the new helpers `routeDiscs` and `axisHtml`; `subs.css` (the Board's rules); new
+  `tracker/tests/subs-timeline.test.js` (added to `test:unit`); `subs-look.test.js`; the tool's `ZONES`; `check.js`
+  (new C103 to C106, and `L1`).
+- Steps: (1) Measure today's C25 parts on the eight-company seed: the top of the fleet, a card head, a row, the
+  strip; put them in the hand-back beside Rev4.7's figures. (2) Build Rev4.7's Board exactly. (3) Unit test: `TL.span`
+  at 0, 12 h, 12 h and a second, 96 h, 200 h; `TL.pos` clamps; `TL.ticks` for the five spans; `TL.marks` merges under
+  0.02 and counts. (4) Contrast pairs to add (all 42 pairs): `--out` and `--back` on `--paper-3` at 3; `--ink` on
+  `--paper-3` and on each status wash at 4.5; `--on-mid` on each sea field (exists); each sea's graphic on `--slip`
+  (exists). Update the tests that quote Board rules word for word.
+- Checks: C103: a seeded fleet with known returns: each Out lane's marker is at (return − now) ÷ span within 0.01, the
+  axis shows the span the rule gives and five ticks, tallies equal the counts, `.strip-back` and `.strip-next` read as
+  before. C104: a return 120 hours away runs off the end (`.tl.over`, no marker) with no sideways scroll; three
+  returns within 10 minutes give one mark with `data-n="3"` and "and 2 more within 10 minutes". C105: by return time
+  is one column, in today's order, and the Out lanes' markers never step back; with nothing out the strip says "none
+  out", no lane has a bar, and the axis follows the longest suggestion. C106: at 360 px no sideways scroll, the track
+  is at least 280 px wide, every lane and action is at least 40 px high; Tab goes from a lane to its action; a focused
+  lane and action show an outline; with reduced motion nothing inside a lane animates.
+- Must not change: what a press does; `.quick`'s text; section 5; `fleet.js`; the order by return time.
+- Pictures: `look-board-*`, `submersibles-board.png`, `-phone.png`, `-desktop.png` (the dense Board), and a new
+  `look-board-time-*` (by return time).
+- Acceptance: as above; C25 `fit.maxBottom` at most 1,000 with four columns and two at 1,024 px; the hand-back gives
+  T, H and the result beside T + 2H + 600.
+- Escalate if: C25 is over 1,000; a compact lane cannot stay at 64 px; C97 cannot hold with the gauge where Rev4.7
+  puts it; a check clicks something the new lane covers; hiding text with `font-size: 0` is read out wrongly or shows.
+
+#### W33. Empty states (Sonnet builder; needs W32)
+- Files: `palette.js` (the four deep-water tokens); `subs.css`; `subs.js` (new `emptyHtml`; `render`, `boardHtml`,
+  `logHtml`, `earnHtml`, and the functions that hold the sentences listed as lines, class only); `index.html` (the
+  loading line's class); `subs-look.test.js`; the tool's `ZONES`; `check.js` (new C107, and `L1`'s empty walk).
+- Steps: build Rev4.7's pattern and table exactly; retire the ring tokens and `--ringc` (W31's exception list is then
+  empty). Contrast pairs to add: `--on-deep` on `--deep-2` at 7; each of the four role fields on `--deep-2` at 3;
+  `--on-mid` on the three role fields used by steps (exist); the fallback values of the four new tokens.
+- Check C107: the four full empty states show their headline and action; each action does what its row says (the
+  setup opens; the tab changes); the scope is hidden from screen readers; no sideways scroll at 360 px; with reduced
+  motion the fan does not turn.
+- Must not change: what `data-act="new"` and `data-tab` do; `.panel.welcome` and `.panel.empty-state` exist where they
+  do today; `[data-hidden-note]`.
+- Pictures: `look-empty-{board,hidden,log,earnings}-*`.
+- Escalate if: a check or test turns out to read one of the replaced texts; a role ring is under 3:1 on the panel in
+  some theme; the headline does not fit at 360 px.
+
+#### W34. Log and Earnings (Sonnet builder; needs W32)
+- Files: `subs.css`; `subs.js` in `logHtml` and `earnHtml` only; `subs-look.test.js` (the rules it quotes); the tool's
+  `ZONES`; `check.js` (new C108, C109, and `L1`).
+- Steps: build Rev4.7's two paragraphs exactly.
+- Checks: C108: each day rule's count and gil equal the rows under it; the rows still open their voyage. C109: each
+  ranked bar's `--p` equals its gil per hour ÷ the printed scale, the scale is at least the largest figure, and C22
+  and C78 read what they read before.
+- Must not change: any figure, the order of rows and tables, `.log-row[data-trip]`, `.earn-card b`, `tr[data-pos]`.
+- Pictures: `look-log-*`, `look-earnings-*`, `look-earnings-ranked-*`.
+- Escalate if: the sticky day rule covers a row's focus ring; a table no longer fits at 360 px; a row grows at 360 px.
+
+#### W35. Send window, Setup and recommendations, Map chrome (Sonnet builder; needs W32)
+- Files: `subs.css`; `subs.js` in `adviceHtml`, `pickerHtml`, `plannerHtml`, `openSub`, `sendSheet`, `setupHtml`,
+  `shownPanelHtml`, `recsBodyHtml`, `mapHtml` only; `subs-look.test.js`; the tool's `ZONES`; `check.js` (new C110 to
+  C112, and `L1`).
+- Steps: build Rev4.7's last three paragraphs exactly.
+- Checks: C110: in the send window each route's marker is at its voyage length ÷ the shared span; Enter presses the
+  first primary button; C21 to C23 and C78 to C81 pass. C111: each head state equals what its panel says, and the
+  recommendations one follows a change of order without a reload; the four rungs step down in height. C112: a sea
+  button is `closed` exactly when nothing is found there; its text is unchanged; C82 and C84 pass.
+- Must not change: what the buttons, the slider and the pickers do; the chart; `sectorDetails`; section 5.
+- Pictures: `look-sheet-*`, `look-sheet-route-*`, `look-setup-*`, `look-recommendations-*`, `look-map-*`,
+  `look-planner-*`.
+- Escalate if: the head state overlaps a long head at 701 px; the chain cannot show focus without `clip-path`; a
+  recommendations check reads a style.
+
+#### W36. Final pass (Sonnet builder; needs W33 to W35)
+- Files: `subs.css`; the tool's `ZONES`; `check.js` (`L1`).
+- Steps: `LINT_PENDING` and `UNUSED` are empty or each entry is explained; `roleAudit()` is asserted with no miss in
+  the three themes; walk every screen at 360 × 800 in light and dark and fix clipped text, any target under its size,
+  any hidden focus ring; reduced motion stops every loop; run the role review and the bold test over every picture and
+  list every "inconsistent" and "still tame".
+- Acceptance: `npm run build`, `npm run test:unit`, `npm run test:browser`, `npm run check` pass; the hand-back gives
+  C25 `maxBottom`, C82 `hitMin`, the family counts, the measured gap table and the role and tone counts.
+- Escalate if: a miss of `roleAudit()` comes from a shared style outside this module; a fix needs markup outside the
+  functions named in W32 to W35.
+
+#### W37. Records (Haiku clerk; needs W36)
+- Files: `docs/STATE.md` (one entry naming Revision 4, the generated list and checks C103 to C112),
+  `tracker/command-center/README.md` (the new picture names and the tool). Acceptance: `git diff --stat` shows only
+  those two files.
+
+### Rev4.9 Risks, and the first thing to verify
+
+- **First:** this file was rewritten whole to append this section. `git diff --numstat docs/submersibles-look-spec.md`
+  must show additions only. Then W31's step 1: every hue and gap here is hand arithmetic from hex values; if one is
+  off by more than 3° or a floor fails, the four numbers of D39 come back to the architect before anything is built.
+- R3.7's family floors were set for rotating hues. By hand they hold with the fixed ones (the Log in the default theme
+  is the tightest, at exactly 5); W31 records them before the Board changes.
+- C25's 881 rests on a reconstruction of today's layout, not on a measurement. W32 measures first; the lane's 64 px is
+  fixed by construction, the top of the fleet and the card head are not.
+- A theme's accent can sit on a role's hue: the default theme's rose beside the route pink, Azure Dragoon's blue
+  beside Out, Magitek Steel's beside rank and the first sea. Form keeps them apart (Rev4.5); the role review asks.
+- Jade discs on a Back lane and indigo discs on an Out lane are close in colour to the bar under them; the discs sit
+  on their own row with a gap ring. Q14.
+- At 100° and lightness 0.70 gold may look olive on some pages; W31 looks at the sheets and stops if so.
+- The axis changes scale with the fleet (12 to 96 hours). Its ticks are labelled; a player comparing two days sees
+  two scales.
+- `font-size: 0` hides words on compact lanes for the eye only; screen readers still read them, which is intended.
+- The generated document is long (about 1,300 table rows). It is for looking things up, not for reading through.
+- Needed in the engines where the checks run, all already used by the module: `:has`, container queries, `color-mix`,
+  `position: sticky`. The risks of section 8, R6 and R3.9 stand (parallel work on the same files, custom colours,
+  light slabs and fields on dark themes, the unverified orientation).
+
+### Rev4.10 Owner questions
+
+Q1 to Q11 stand as written. Three more:
+
+**Q12. Which colour stands for which thing.**
+- Rank blue, gil gold, loot teal, routes pink, in every theme (what this revision builds). Pink already marks the
+  planned route on the map, so pink means "route" on every screen. Cost: none extra. Risk: the rank label is close in
+  colour to the first sea's blue discs (they differ in shape and wording), and in the default theme the pink sits near
+  the theme's own rose buttons. Fairly sure.
+- Rank pink, gil gold, loot teal, routes blue, as the first drawing showed. Cost: none extra. Risk: pink would mean
+  rank on the pages and the planned route on the map, and the route blue sits between the "Out" blue and the first
+  sea's blue. Moderately sure this reads worse.
+- Keep things as they are: the four colours keep changing with the theme (gil is gold in one theme and rose in
+  another). No work; the inconsistency you noticed stays.
+- Recommendation: the first. Fairly sure.
+
+**Q13. New words and figures on the screens.** The new layouts add short lines made only from what is already on the
+same screen: on the Board "3 out", "2 idle", "1 locked" and "and 2 more within 10 minutes"; in the Log a heading per
+day with that day's voyages and gil; in Earnings "Bars run from 0 to 50,000 gil an hour"; in Setup the current setting
+beside three panel titles; on empty screens a new headline and up to three short steps.
+- Add them all (what this revision builds). Cost: none extra. Risk: more words on screen; each is a count or a sum,
+  never a new estimate. Fairly sure.
+- Layout and colour only: no day headings, tallies, scale lines or head settings, and empty screens keep today's
+  sentences. Cost: a little less work. You give up most of what makes the Log and Earnings easier to read.
+- Keep things as they are: these screens keep today's layout.
+- Recommendation: add them all. Fairly sure.
+
+**Q14. Two sea colours that sit close to a status colour.** The Sea of Jade's green is close to the "Back" green, and
+the indigo sea's blue is close to the "Out" blue.
+- Keep the sea colours (this is also "keep things as they are", and what this revision builds). A sea is always a
+  round lettered disc, a tab or a cell beside the sea's name; a status is always a slanted block with its word. Cost:
+  none. Risk: at a glance a jade disc on a "Back" lane is green beside green. Fairly sure it is fine.
+- Move those two sea colours a little (jade toward teal, indigo toward violet). Cost: one extra item; the map's water
+  for those two seas changes and its checks are redone. Risk: jade then sits nearer the loot teal. Moderately sure.
+- Recommendation: keep them, and look again at the Board pictures of W32. Fairly sure.
