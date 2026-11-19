@@ -624,3 +624,46 @@ test('empty states (W33) and the Log and Earnings (W34): subs.css, subs.js and i
   assert.ok(html.includes('<p class="muted empty-line">Opening your fleet…</p>'), 'the loading line');
   assert.ok(js.includes('No submarine is in an unlocked slot yet.'), 'the new line');
 });
+
+// ---- Revision 4 (W35): the send window's one axis, Setup's head states and ladder, the Map's chain of seas ----
+test('send window, Setup and Map chain (W35): every new pair reaches its contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need9 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), slip = hx(th.slip), paper = hx(th.paper);
+    const e0 = P.env(row, mode), st = (n) => P.colour('var(' + n + ')', e0), p3 = st('--paper-3');
+    // the one axis: the bar of the suggestion (accent) and of the other routes (ink-2) on the trough (page field 3), the marker (ink) on the plate
+    need9('send window axis: the suggestion bar (ink) on the trough, page field 3 (3)', ink, p3, 3, where);
+    need9('send window axis: another route bar (ink-2) on the trough, page field 3 (3)', hx(th.ink2), p3, 3, where);
+    need9('send window axis: the marker (ink) on the plate (3)', ink, slip, 3, where);
+    need9('send window axis: tick labels (ink-2) on the plate (4.5)', hx(th.ink2), slip, 4.5, where);
+    need9('send window axis: the chosen route plate edge (seal) on the sheet (printed)', st('--seal'), slip, 0, where);
+    need9('send window axis: the trough (page field 3) on the plate (printed; the hairlines and the bar carry the scale)', p3, slip, 0, where);
+    for (let s = 1; s <= 7; s++) { need9('send window axis: outlined disc, sea graphic on the plate (3)', c('--sea-' + s + '-g'), slip, 3, where); need9('send window axis: the chosen route disc, on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where); }
+    // the title's 12 px status edge against the slab it borders
+    for (const k of ['back', 'out', 'idle']) need9('sheet title edge: ' + k + ' field on the slab (printed; the word is in the title and the lane)', st('--' + k), st('--slab'), 0, where);
+    // Setup: the head state on the rank field and on the slab; the four rungs: ink on each role's wash (7), the number on the role's field (4.5)
+    need9('head state: on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    need9('head state (recommendations): on-slab on slab (4.5)', st('--on-slab'), st('--slab'), 4.5, where);
+    need9('head state (plain line): ink-2 on slip (4.5)', hx(th.ink2), slip, 4.5, where);
+    for (const v of ['route', 'rank', 'gil', 'loot']) { need9('ladder rung: ink on ' + v + ' wash (7)', ink, c('--' + v + '-w'), 7, where); need9('ladder rung: on-mid on ' + v + ' field (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where); }
+    // the Map's chain: ink rule and arrow on the panel (3); a closed sea's text (ink-2) on the page colour under its hatch (4.5); the caption (ink-2) on the panel (4.5); the chosen, closed sea is the sea field with on-mid (4.5)
+    need9('sea chain: the link (ink) on the panel (3)', ink, slip, 3, where);
+    need9('sea chain: a closed sea, ink-2 on page colour (4.5)', hx(th.ink2), paper, 4.5, where);
+    need9('sea chain (narrow): link caption ink-2 on the panel (4.5)', hx(th.ink2), slip, 4.5, where);
+    for (let s = 1; s <= 7; s++) need9('sea chain: chosen sea, on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
+  }
+  console.log('Send window, Setup and Map chain (W35), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(100) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('send window, Setup and Map chain (W35): subs.css and subs.js carry the rules and the markup', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  for (const s of ['.sheet h2.st-back { --st: var(--back); }', '.sheet h2.st-out { --st: var(--out); }', '.sheet h2.st-idle { --st: var(--idle); }', '.cmp-lane.pick .tl-bar { height: 8px;', '.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }',
+    '.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }', '.rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }',
+    '.rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }', '.rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }', '.rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }', '.rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }',
+    '.wiz .tick b { color: var(--route-s); }', '.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, var(--rule) 0 2px, transparent 2px 9px), var(--paper); color: var(--ink-2); }', '.map-panel { container: mappanel / inline-size; }']) assert.ok(css.includes(s), s);
+  assert.ok(!/\.map-seas \{ flex-wrap: nowrap; overflow-x: auto/.test(css), 'the phone strip that scrolled sideways is gone');
+  assert.ok(!/clip-path[^;]*;[^}]*data-map-sea|data-map-sea[^}]*clip-path/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'the sea buttons are not cut with clip-path (they take focus)');
+  for (const t of ['function cmpLane(', 'function cmpAxis(', 'TL.span(Math.max.apply(null, [a.plan.ev.seconds]', '<h2 class="st-out">', "'<h2 class=\"st-' + st + '\">'", '<p class="head-state" aria-hidden="true">', '<li class="rung-', "(n ? '' : ' closed')", 'class="sea-link"', '<div class="route-row">']) assert.ok(js.includes(t), t);
+});

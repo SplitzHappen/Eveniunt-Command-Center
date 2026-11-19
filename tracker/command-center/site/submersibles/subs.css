@@ -601,8 +601,6 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 }
 @media (max-width: 700px) {
   .map-panel { --pad-x: 8px; }
-  .map-seas { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
-  .map-seas .btn[data-map-sea] { flex: none; min-height: 52px; }
   .map-grid > .chart-wrap { max-width: none; margin: 0 calc(-1 * var(--pad-x)); border-left-width: 0; border-right-width: 0; }
   .chart-key { margin: 0 calc(-1 * var(--pad-x)) 12px; border-left-width: 0; border-right-width: 0; }
   .chart-sea { font-size: 24px; }
@@ -739,7 +737,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .rec-picker:has(.rec-find:disabled) { border-left-color: var(--ink-3); }
 .sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }
 .sea[class*="in-sea-"][open] > summary { --slab: var(--sea); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background: var(--slab); color: var(--on-slab); }
-.tick b { color: var(--route-s); }
+.wiz .tick b { color: var(--route-s); }
 
 /* W29: the final pass (colour only).
    Board: a company head carries a thin band across its top, one quarter per slot in that slot's status colour (green Back, blue Out, amber Idle, neutral Locked; no colour for a slot with no sub yet), set from the card's data in --band; the words are on the rows below.
@@ -934,3 +932,77 @@ div.sub { cursor: default; }
 .empty-line, .hint.empty-line, .muted.empty-line { display: flex; align-items: center; gap: 12px; min-height: 48px; margin: 8px 0; padding: 8px 14px; border: 2px dashed var(--ink-2); background: var(--paper); color: var(--ink); font-size: 14px; }
 .empty-line::before { content: ""; flex: none; box-sizing: border-box; width: 22px; height: 22px; border: 3px solid var(--scr-g); border-radius: 50%; background: radial-gradient(circle, var(--scr-g) 0 3px, transparent 4px); }
 .empty-line:empty { display: none; }
+
+/* ===== W35 (Rev4.7): the send window, Setup and the recommendations panel, the Map's chain of seas ===== */
+/* the send window: the title carries a 12 px edge in the submarine's status field */
+.sheet h2.st-back, .sheet h2.st-out, .sheet h2.st-idle { padding-left: 14px; border-left: 12px solid var(--st); }
+.sheet h2.st-back { --st: var(--back); }
+.sheet h2.st-out { --st: var(--out); }
+.sheet h2.st-idle { --st: var(--idle); }
+/* the suggestion and the other routes on ONE time axis (the Board's axis component): two plates of the same width, so every return time lines up; the chosen route's plate has the accent edge */
+.cmp, .cmp + details { --d: 22px; --pitch: 26px; --th: 32px; --bar: 6px; --row-gap: 4px; box-sizing: border-box; margin: 10px 0 0; padding: 8px 10px 6px; background: var(--slip); color: var(--ink); border: 2px solid var(--ink); border-left-width: 8px; }
+.cmp { border-left-color: var(--seal); }
+.cmp:has(+ details) { border-bottom: 0; padding-bottom: 2px; }
+.cmp + details { margin: 0 0 8px; padding-top: 0; padding-bottom: 4px; border-left-color: var(--ink-2); border-top: 2px dashed var(--ink-2); }
+.cmp:not(:has(+ details)) { margin-bottom: 8px; }
+.cmp .tl-axis, .alts .tl-axis { --ax-l: 0px; --ax-r: 0px; }
+.cmp .tl-axis > i { font-size: 11px; }
+.cmp-lane { display: block; }
+.cmp-lane::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); pointer-events: none; }
+.cmp-lane .tl-bar { background: linear-gradient(var(--ink-2), var(--ink-2)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }
+.cmp-lane.over .tl-bar { background: var(--ink-2); }
+.cmp-lane .tl-bar { outline: 1px solid var(--ink-3); outline-offset: -1px; }
+.cmp-lane.pick .tl-bar { height: 8px; background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }
+.cmp-lane.pick.over .tl-bar { background: var(--ink); }
+.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }
+.cmp-lane.pick.over .tl-end { background: none; }
+.cmp-lane.pick .disc { background: var(--sea); color: var(--on-mid); box-shadow: 0 0 0 2px var(--slip); }
+.alts li { padding: 8px 0 6px; }
+.alts li > .cmp-lane { margin: 0 0 6px; }
+.alts .link { min-height: 36px; }
+@media (max-width: 480px) { .cmp, .cmp + details { padding-left: 8px; padding-right: 8px; --pitch: 24px; --d: 20px; } .cmp .tl-axis > i { font-size: 10px; } }
+/* a route line is its lettered discs beside its text (the same discs as the Board) */
+.route-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 8px 0; padding: 8px 0; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.route-pick .route-row { border-left: 8px solid var(--route-g); padding-left: 10px; }
+.route-row > .route-line { flex: 1 1 200px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.route-row .discs { display: inline-flex; flex: none; gap: 6px; --d: 26px; }
+.route-row .disc { position: relative; left: auto; top: auto; flex: none; }
+.planner .route-row > .discs { flex: 1 1 100%; }
+/* Setup: every panel head says its state. Beside a long head (the panel is wide enough) it sits at the head's right, else it is a plain line under the head */
+.panel:has(.head-state) { position: relative; container: hpanel / inline-size; }
+.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }
+@container hpanel (min-width: 520px) { .panel:not(.recs):not([data-shown-panel]) > .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 40%; text-align: right; color: var(--on-mid); } }
+@container hpanel (min-width: 700px) { [data-shown-panel] > .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 30%; text-align: right; color: var(--on-mid); } }
+@container hpanel (min-width: 840px) { .recs .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 300px; text-align: right; color: var(--on-slab); } }
+/* the ranking is a ladder: four rungs that step down in height and width, each on its role's wash with the number on the role's field */
+.rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }
+.rec-rank .rung-1 .rec-name b { width: 72px; font-size: 44px; } .rec-rank .rung-2 .rec-name b { width: 64px; font-size: 38px; }
+.rec-rank .rung-3 .rec-name b { width: 56px; font-size: 32px; } .rec-rank .rung-4 .rec-name b { width: 52px; font-size: 28px; }
+.rec-rank .rung-1 .rec-name { font-size: 18px; }
+.rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }
+.rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }
+.rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }
+.rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }
+/* the Map: the seven seas as one chain in unlock order. Each sea is its colour; a sea with nothing found is hatched; the link between two seas carries the sector that opens the next */
+.map-seas { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; margin: 10px 0 12px; }
+.map-seas .btn[data-map-sea] { flex: 1 1 0; min-width: 0; padding-right: 8px; font-size: 15px; }
+.sea-link { position: relative; flex: none; display: grid; place-items: center; width: 40px; min-height: 52px; color: var(--ink-2); font: 600 11px/1.2 var(--f-data); }
+.sea-link::before { content: ""; position: absolute; left: 0; right: 7px; top: calc(50% - 2px); height: 4px; background: var(--ink); }
+.sea-link::after { content: ""; position: absolute; right: 0; top: calc(50% - 7px); border: 7px solid transparent; border-right-width: 0; border-left: 8px solid var(--ink); }
+.sea-link .discs { position: relative; z-index: 1; display: inline-flex; --d: 24px; }
+.sea-link .disc { position: relative; left: auto; top: auto; }
+.sea-link-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, var(--rule) 0 2px, transparent 2px 9px), var(--paper); color: var(--ink-2); }
+.map-seas .btn[data-map-sea][aria-pressed="true"].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--on-mid) 30%, transparent) 0 2px, transparent 2px 9px), var(--sea); color: var(--on-mid); }
+/* narrow: the chain stands upright (no sideways scroll): the seas one under another, the link a caption between them that says which sector opens the next */
+@container mappanel (max-width: 1079px) {
+  .map-seas { flex-direction: column; margin: 10px 0 12px; }
+  .map-seas .btn[data-map-sea] { flex: none; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 4px 12px 12px 6px; }
+  .map-seas .btn[data-map-sea] .muted { text-align: right; }
+  .sea-link { width: auto; min-height: 30px; justify-items: start; padding-left: 40px; }
+  .sea-link::before { left: 16px; right: auto; top: 0; bottom: 8px; width: 4px; height: auto; }
+  .sea-link::after { left: 11px; right: auto; top: auto; bottom: 0; border: 7px solid transparent; border-bottom-width: 0; border-top: 9px solid var(--ink); }
+  .sea-link .discs { position: absolute; left: 6px; top: 50%; transform: translateY(-50%) scale(.8); }
+  .sea-link-t { position: static; width: auto; height: auto; clip-path: none; overflow: visible; white-space: normal; padding: 3px 0 5px; }
+}
+.map-panel { container: mappanel / inline-size; }

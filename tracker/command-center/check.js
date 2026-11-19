@@ -4326,6 +4326,133 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C110 to C112 Submersibles send window, Setup and recommendations, Map chain (W35, Rev4.7) ──
+    const SEA_FC = "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 3, discovered: [1, 2, 3, 10, 15] }; sec.fcs.fb = { name: 'Bravo Company', world: 'Maduin', order: 1, unlockedSlots: 1, discovered: [1] };";
+    await guard('C110', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      // an idle submarine (its suggestion and the other routes are worked out at its own rank) and one that is Back (for Enter)
+      await tlSeed(page, SEA_FC + "sec.subs.i1 = { fcId: 'fa', slot: 1, name: 'Sub I1', rank: 60, parts: [3, 4, 1, 2] }; sec.subs.a1 = { fcId: 'fa', slot: 2, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };");
+      await page.reload(); await ready(); await page.waitForSelector('.sub[data-sub="i1"]');
+      await page.click('.sub[data-sub="i1"] .sub-top'); await page.waitForSelector('#sheet[open] .cmp');
+      const g = await page.evaluate(() => {
+        const st = ADVISOR.stats(60, [3, 4, 1, 2]), secs = (ids) => ADVISOR.evalRoute(ids, st).seconds, ids = (t) => String(t).split(',').map(Number);
+        const cmp = document.querySelector('#sheet .cmp'), ax = cmp.querySelector('.tl-axis'), span = +cmp.dataset.span;
+        const lanes = [{ kind: 'pick', ids: ids(document.querySelector('#sheet [data-act=quick]').dataset.route), el: cmp.querySelector('.cmp-lane') }].concat([...document.querySelectorAll('#sheet .alts li')].map((li) => ({ kind: 'alt', ids: ids(li.querySelector('[data-use]').dataset.use), el: li.querySelector('.cmp-lane') })));
+        const rows = lanes.map((l) => { const r = l.el.getBoundingClientRect(), e = l.el.querySelector('.tl-end').getBoundingClientRect(), want = secs(l.ids) / 3600 / span; return { kind: l.kind, want: +want.toFixed(4), ret: +l.el.style.getPropertyValue('--ret'), share: +((e.left + e.width / 2 - r.left) / r.width).toFixed(4), left: Math.round(r.left), right: Math.round(r.right), discs: l.el.querySelectorAll('.disc').length, ghost: l.el.classList.contains('ghost') }; });
+        const need = Math.max(...lanes.map((l) => secs(l.ids))) / 3600, wantSpan = [12, 24, 48, 72, 96].find((x) => x >= need) || 96, axr = ax.getBoundingClientRect();
+        const first = document.querySelector('#sheet .btn.primary');
+        return { span, wantSpan, spanAttr: ax.dataset.span, ticks: [...ax.querySelectorAll('i')].map((i) => i.textContent), aria: ax.getAttribute('aria-hidden'), axes: document.querySelectorAll('#sheet .tl-axis').length, rows, axisL: Math.round(axr.left), axisR: Math.round(axr.right), firstPrimary: first && first.dataset.act, step: !!document.querySelector('#sheet .advice-step'), hint: !!document.querySelector('#sheet .advice .hint'), tags: document.querySelectorAll('#sheet .advice .tag.src').length, altKinds: document.querySelectorAll('#sheet .alts [data-alt-kind], #sheet .alts [data-alt-figure]').length, open: document.querySelector('#sheet .cmp + details').open, side: document.documentElement.scrollWidth - innerWidth };
+      });
+      await page.keyboard.press('Escape');
+      // Enter in a field of the window presses the first primary button: the Back submarine goes out on the suggested route
+      await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet[open] .cmp');
+      const want = await page.$eval('#sheet [data-act=quick]', (b) => b.dataset.route);
+      const first = await page.$eval('#sheet .btn.primary', (b) => b.dataset.act);
+      await page.focus('#sheet input[data-reveal-none]'); await page.keyboard.press('Enter');
+      await page.waitForFunction(() => !document.querySelector('#sheet[open]'), null, { timeout: 5000 }).catch(() => {});
+      await page.waitForTimeout(900);
+      const after = await page.evaluate(async (id) => { const r = await CC.read(); const sub = (CC.checkDoc(r.raw).modules.submersibles || {}).subs; return sub && sub[id] && sub[id].voyage ? sub[id].voyage.route.join(',') : null; }, 'a1').catch(() => null);
+      await ctx.close();
+      const near = (a, b, t) => Math.abs(a - b) <= t;
+      const ok = g.span === g.wantSpan && g.spanAttr === String(g.span) && JSON.stringify(g.ticks) === JSON.stringify(['now', '+' + g.span / 4 + ' h', '+' + g.span / 2 + ' h', '+' + g.span * 3 / 4 + ' h', '+' + g.span + ' h']) && g.aria === 'true' && g.axes === 1 && g.rows.length >= 2 && g.rows.every((r) => r.ghost && r.discs >= 1 && near(r.ret, r.want, 0.001) && near(r.share, r.want, 0.01) && r.left === g.rows[0].left && r.right === g.rows[0].right) && g.axisL === g.rows[0].left && g.axisR === g.rows[0].right &&
+        g.firstPrimary === 'quick' && g.step && g.hint && g.tags >= 2 && g.open && g.side <= 0 && first === 'quick' && after === want && real(errors).length === 0;
+      record('C110', 'Send window (W35): the suggestion and the other routes are lanes on one shared axis (the Board\'s axis, five ticks, the span the rule gives): each lane\'s marker stands at its voyage length over the shared span within 0.01, all lanes and the axis have the same edges, each lane has its discs; the first primary button is the suggestion\'s, and Enter in a field of the window presses it', ok, { g, first, want, after, errors: real(errors) });
+      server.close();
+    });
+    await guard('C111', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await tlSeed(page, SEA_FC + "sec.fcs.fc = { name: 'Cedar Company', world: 'Maduin', order: 2, unlockedSlots: 1, discovered: [1] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };");
+      await page.reload(); await ready(); await page.click('[data-tab=setup]'); await page.waitForSelector('[data-recs-panel]'); await page.waitForTimeout(300);
+      const read = () => page.evaluate(() => {
+        const st = (sel) => { const e = document.querySelector(sel); return e ? e.textContent : null; };
+        const rungs = [1, 2, 3, 4].map((n) => { const li = document.querySelector('.rec-rank .rung-' + n), b = li && li.querySelector('.rec-name b'); return li ? { h: Math.round(li.getBoundingClientRect().height), w: Math.round(b.getBoundingClientRect().width), fs: parseFloat(getComputedStyle(b).fontSize) } : null; });
+        const first = (document.querySelector('.rec-rank li .rec-name') || {}).textContent || '';
+        return {
+          fcHead: st('.panel:not(.recs):not([data-shown-panel]) > .head-state'), fcCount: document.querySelectorAll('.fc-list > li').length, fcSays: (document.querySelector('.fc-list').closest('.panel').querySelector('.muted') || {}).textContent.split(' ')[0],
+          shownHead: st('[data-shown-panel] > .head-state'), shownSays: st('[data-shown-count]'),
+          recHead: st('[data-recs-body] > .head-state:first-child'), recFirst: first.replace(/^\d+\.\s*/, '').trim(), fuel: document.querySelector('[data-rec=fuel]').checked, rungs,
+          aria: [...document.querySelectorAll('.head-state')].map((e) => e.getAttribute('aria-hidden')).join(), n: document.querySelectorAll('.head-state').length,
+          wash: [...document.querySelectorAll('.rec-rank li[class^="rung-"]')].map((l) => getComputedStyle(l).backgroundColor), nums: [...document.querySelectorAll('.rec-rank li .rec-name b')].map((b) => getComputedStyle(b).backgroundColor)
+        };
+      });
+      const a = await read();
+      await page.uncheck('[data-shown-fc=fb]'); await page.waitForTimeout(700); await page.waitForSelector('[data-shown-panel]');
+      const b = await read();
+      await page.uncheck('[data-shown-fc=fc]'); await page.waitForTimeout(700);
+      const b2 = await read();
+      // the recommendations head follows a change of order and of fuel without a reload: Unlocking down puts Leveling first, then fuel on adds its words
+      await page.click('[data-rec="down-unlock"]'); await page.waitForTimeout(500);
+      const c = await read();
+      await page.check('[data-rec=fuel]'); await page.waitForTimeout(500);
+      const d = await read();
+      await page.click('[data-rec="order-default"]'); await page.waitForTimeout(500);
+      const e = await read();
+      // the head state beside or under its head at 1,440 and at 701 px: it never covers the head's text
+      const overlap = async () => page.evaluate(() => [...document.querySelectorAll('.head-state')].map((hs) => {
+        const h2 = hs.closest('.panel').querySelector('h2'), range = document.createRange(); range.selectNodeContents(h2);
+        const rs = [...range.getClientRects()].filter((r) => r.width > 2), q = hs.getBoundingClientRect(), pos = getComputedStyle(hs).position;
+        const hit = pos === 'absolute' && rs.some((r) => r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top);
+        return { pos, hit, w: Math.round(q.width), inside: q.right <= h2.closest('.panel').getBoundingClientRect().right + 1 };
+      }));
+      await page.$eval('[data-shown-panel]', (el) => el.scrollIntoView());
+      const ov1440 = await overlap();
+      await page.setViewportSize({ width: 701, height: 900 }); await page.waitForTimeout(300);
+      const ov701 = await overlap();
+      await page.setViewportSize({ width: 360, height: 800 }); await page.waitForTimeout(300);
+      const ov360 = await overlap(), side360 = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      await ctx.close();
+      const down = a.rungs.every((r, i) => i === 0 || r.h < a.rungs[i - 1].h) && a.rungs[0].h >= 76 && a.rungs[1].h >= 68 && a.rungs[2].h >= 60 && a.rungs[3].h >= 56 && a.rungs.map((r) => r.w).join() === '72,64,56,52' && a.rungs.map((r) => r.fs).join() === '44,38,32,28';
+      const ok = a.n === 3 && a.aria === 'true,true,true' && a.fcHead === '3 set up' && +a.fcSays === a.fcCount && a.fcCount === 3 && a.shownHead === 'All shown' && a.shownSays === 'All shown.' && b.shownHead === '1 hidden' && b.shownSays === '1 hidden from the Board.' && b2.shownHead === '2 hidden' && b2.shownSays === '2 hidden from the Board.' &&
+        a.recHead === 'First: ' + a.recFirst && !a.fuel && a.recFirst === 'Unlocking Routes' && c.recHead === 'First: ' + c.recFirst && c.recFirst !== a.recFirst && d.fuel && d.recHead === 'First: ' + d.recFirst + ' · fuel saving on' && e.recHead === 'First: ' + e.recFirst + ' · fuel saving on' && e.recFirst === 'Unlocking Routes' &&
+        down && new Set(a.wash).size === 4 && new Set(a.nums).size === 4 && ov1440.every((o) => !o.hit && o.inside) && ov701.every((o) => !o.hit && o.inside) && ov360.every((o) => o.pos !== 'absolute' && o.inside) && side360 <= 0 && real(errors).length === 0;
+      record('C111', 'Setup heads (W35): "Free companies" says "N set up" (the list has N), "Free companies on the Board" says "All shown" or "N hidden" as its own line does, and the recommendations head says "First: LABEL" (plus " · fuel saving on") and follows a change of order and of fuel without a reload; the four rungs step down in height (76, 68, 60, 56 at least; number blocks 72, 64, 56, 52 px with figures 44, 38, 32, 28) on four different washes with four different number fields; the head state never covers its head at 1,440 or 701 px and is a plain line at 360 px with no sideways scroll', ok, { a, b, b2, c, d, e, ov1440, ov701, ov360, side360, errors: real(errors) });
+      server.close();
+    });
+    await guard('C112', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await tlSeed(page, SEA_FC + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };");
+      await page.reload(); await ready(); await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+      const chain = (pg) => pg.evaluate(() => {
+        const bs = [...document.querySelectorAll('[data-map-sea]')], links = [...document.querySelectorAll('.map-seas .sea-link')], box = document.querySelector('.map-seas').getBoundingClientRect();
+        const cs = getComputedStyle(document.querySelector('.map-seas'));
+        return { n: bs.length, flex: cs.flexDirection, tops: [...new Set(bs.map((b) => Math.round(b.getBoundingClientRect().top)))].length, rows: bs.map((b) => { const t = b.textContent, m = /^(.+?) found (\d+) of (\d+)$/.exec(t.trim()); return { name: m && m[1], n: m && +m[2], of: m && +m[3], closed: b.classList.contains('closed'), pressed: b.getAttribute('aria-pressed'), h: Math.round(b.getBoundingClientRect().height), clip: getComputedStyle(b).clipPath, tabindex: b.getAttribute('tabindex') }; }),
+          links: links.map((l) => ({ t: l.textContent.trim(), disc: (l.querySelector('.disc') || {}).textContent, aria: (l.querySelector('.discs') || {}).getAttribute && l.querySelector('.discs').getAttribute('aria-hidden'), tab: l.tabIndex, vis: l.querySelector('.sea-link-t').getBoundingClientRect().width > 20 })), kids: [...document.querySelector('.map-seas').children].map((c) => c.tagName.toLowerCase() + (c.classList.contains('sea-link') ? '.l' : '')).join(' '), side: document.documentElement.scrollWidth - innerWidth, boxW: Math.round(box.width) };
+      });
+      const wide = await chain(page);
+      await page.selectOption('#map-fc', 'fb'); await page.waitForTimeout(300);
+      const fb = await chain(page);
+      await page.selectOption('#map-fc', 'fa');
+      await page.click('[data-map-sea="2"]'); await page.waitForTimeout(250);
+      const pressedClosed = await page.evaluate(() => { const b = document.querySelector('[data-map-sea="2"]'); return { cls: b.className, pressed: b.getAttribute('aria-pressed'), text: b.textContent.trim() }; });
+      await page.click('[data-map-sea="1"]');
+      // keyboard: a sea button shows a focus outline
+      await page.focus('[data-map-sea="3"]'); await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+      const focus = await page.evaluate(() => { const a = document.activeElement, c = getComputedStyle(a); return { sea: a.dataset.mapSea, w: parseFloat(c.outlineWidth), s: c.outlineStyle }; });
+      await ctx.close();
+      const ph = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      const pp = await ph.ctx.newPage(); await pp.goto(ROOT5 + 'submersibles/'); await pp.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await tlSeed(pp, SEA_FC + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };");
+      await pp.reload(); await pp.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await pp.click('[data-tab=map]'); await pp.waitForSelector('.chart-svg');
+      const ph1 = await chain(pp);
+      await ph.ctx.close();
+      const exactly = (c) => c.rows.every((r) => r.closed === (r.n === 0)) && c.rows.every((r) => r.name && r.of > 0 && r.tabindex === null && r.clip === 'none');
+      const ok = wide.n === 7 && exactly(wide) && wide.rows.map((r) => r.closed).join() === 'false,true,true,true,true,true,true' && wide.rows.map((r) => r.n).join() === '5,0,0,0,0,0,0' && exactly(fb) && fb.rows.map((r) => r.closed).join() === 'false,true,true,true,true,true,true' && fb.rows[0].n === 1 &&
+        wide.flex === 'row' && wide.tops === 1 && wide.links.length === 6 && wide.links.every((l, i) => new RegExp('^.+ opens ' + wide.rows[i + 1].name + '$').test(l.t) && l.disc && l.aria === 'true' && l.tab === -1 && !l.vis) && wide.kids === 'button span.l button span.l button span.l button span.l button span.l button span.l button' && wide.side <= 0 &&
+        pressedClosed.cls.includes('closed') && pressedClosed.pressed === 'true' && /^Sea of Ash found 0 of 20$/.test(pressedClosed.text) && focus.sea === '3' && focus.w >= 2 && focus.s !== 'none' &&
+        ph1.n === 7 && ph1.flex === 'column' && exactly(ph1) && ph1.rows.every((r) => r.h >= 40) && ph1.links.every((l) => l.vis) && ph1.side <= 0 && real(errors).length === 0 && real(ph.errors).length === 0;
+      record('C112', 'Map chain (W35): a sea button is "closed" exactly when nothing is found there (seven buttons, each still "NAME found n of m", none focusable except as a button, no clip-path); the seas stand in one row at 1,440 px joined by six links, each a disc of the sector that opens the next sea with the words "SECTOR opens SEA"; the chosen sea can be closed and stays chosen; a sea button shows a focus outline; at 360 px the chain stands upright (no sideways scroll, every button 40 px or more, the link words shown)', ok, { wide, fb, pressedClosed, focus, ph1, errors: real(errors) });
+      server.close();
+    });
+
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.
@@ -4510,15 +4637,15 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         if (screens.includes('board') && !checkPhone) { await page.click('[data-sort=time]'); await page.waitForSelector('.fc.wide .tl-axis'); await page.waitForTimeout(250); await shot('board-time'); out.timeLanes = await page.evaluate(() => document.querySelectorAll('.fc.wide .sub[data-sub]').length); await page.click('[data-sort=fc]'); await page.waitForSelector('.fleet'); }
         if (screens.includes('sheet')) {
           await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet[open] .advice'); await page.waitForTimeout(250); await shot('sheet');
-          // W20: the same window scrolled to the route, return time and reason (a picture only)
-          await page.$eval('#sheet .advice-route', (el) => el.scrollIntoView({ block: 'center' })); await page.waitForTimeout(250);
+          // W20, W35: the same window scrolled to the comparison, the suggestion and the other routes on one axis (a picture only)
+          await page.$eval('#sheet .cmp', (el) => el.scrollIntoView({ block: 'center' })); await page.waitForTimeout(250);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-sheet-route-' + tag + '.png') });
           await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]')).catch(() => {});
         }
         if (screens.includes('log')) { await tab('log'); await page.waitForSelector('.log-row[data-trip]'); await shot('log');
           // W25: the Log's rows carry their sea, whether loot is logged and the grade chip (read from the page; the colours are measured by the family count)
           out.logProbe = await page.evaluate(() => { const rows = [...document.querySelectorAll('.log-row')]; return { n: rows.length, seas: [...new Set(rows.map((r) => (r.className.match(/in-sea-\d/) || [''])[0]).filter(Boolean))].length, logged: rows.filter((r) => r.classList.contains('logged')).length, unlogged: rows.filter((r) => r.classList.contains('unlogged')).length, graded: rows.filter((r) => r.querySelector('.log-grade')).length, ungraded: rows.filter((r) => !r.querySelector('.log-grade')).length, chips: [...new Set([...document.querySelectorAll('.log-grade')].map((c) => c.textContent))].join('|'), cells: [...new Set(rows.map((r) => getComputedStyle(r.querySelector('.log-when')).backgroundColor))].length }; }); }
-        if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.waitForTimeout(250); await shot('map'); out.chartMap = await chartProbe(page);
+        if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(250); await shot('map'); out.chartMap = await chartProbe(page);
           // W19: the sector console with the first tier block opened, scrolled to it (a picture only, no assertion)
           await page.$eval('.chart-details .rates-tier', (el) => { el.open = true; el.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(250);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-map-tiers-' + tag + '.png') });
@@ -4674,7 +4801,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const denseOk = [n0, na, nm].every((w) => w.m.fcs === 8 && w.m.maxBottom <= 1080 && w.m.sideways <= 0 && !w.errors.length) && [d, da, dm].every((w) => w.timeLanes === 4);
       const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
       const ok = finalOk && gaugeOk && denseOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band; W32: the Board by return time (look-board-time-*.png) and the dense Board of eight companies in three themes (look-board-dense-*.png, lowest lane bottom at most 1,080 px, no sideways scroll)',
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band; W32: the Board by return time (look-board-time-*.png) and the dense Board of eight companies in three themes (look-board-dense-*.png, lowest lane bottom at most 1,080 px, no sideways scroll); W35: the send window (look-sheet-*.png at the top, look-sheet-route-*.png scrolled to the comparison on its one axis), Setup and the recommendations panel with their head states and the ladder, and the Map with the chain of seas at its top (look-map-*.png), in three themes and on a phone',
         ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], dense: [n0.m, na.m, nm.m], denseFamilies: [n0.fam, na.fam, nm.fam], roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit } });
       server20.close();
     });

@@ -1441,11 +1441,12 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | scrim; sheet | overlay; panel, ink edge, molten band | `.sheet::backdrop`, `=.sheet`, `.sheet-actions` | overlay, panel, ink |
-| title (`.sheet h2`) | slab; a 12 px status field edge | `.sheet h2` | slab |
+| title (`.sheet h2`) | slab; a 12 px status field edge | `.sheet h2` | slab, back, out, idle |
 | suggestion (`.advice`) | accent wash and field edge; ink; the reason's edge: the choosing role's graphic | `.advice`, `.advice-step`, `.lead-` | accent, ink, rank, gil, loot, route |
 | actions | accent field, on, molten; other buttons ink edge on panel | `.btn.primary:hover`, `.btn.primary[disabled]:hover` | accent, molten |
 | sector buttons (`.sector`) | page field, ink; sea graphic edge; letter route text; chosen: accent field, on, molten; order badge slab; disabled: line hatch | `.sector` | page, ink, sea, route, accent, molten, slab, line |
-| route line (`.route-line`) | route graphic edge, route text; discs sea; ink rules | `.route-line`, `.route-pick .route-line`, `.planner .route-line b`, `.alts` | route, ink, sea, line |
+| routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`) | one axis: the suggestion and the other routes as lanes: page field 3 trough, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea | `.cmp`, `.cmp-lane` | panel, page, ink, accent, line, sea, shared |
+| route line (`.route-line`) | route graphic edge, route text; discs sea; ink rules | `.route-line`, `.route-pick .route-line`, `.planner .route-line b`, `.alts`, `.route-row` | route, ink, sea, line |
 | what came back (`.loot-h`, `.loot-row`, `.qbtn`, `.rate-item b`) | loot field, on-mid, loot graphic hatch; line; page field, ink; loot text | `.loot-h`, `.loot-row`, `.qbtn`, `.rate-item`, `.rates-tier`, `.loot-name` | loot, shared, ink, line, page, accent |
 | rank box, rank-up plan | rank graphic edge, rank text | `.rankbox`, `.rank-plan`, `.facts dt` | rank, ink |
 | questions after a voyage (`fieldset`, `legend`) | ink edge; slab | `=fieldset`, `=legend` | ink, slab |
@@ -1469,7 +1470,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | head | slab with the sea's graphic band | `.map-panel > h2:first-child` | sea |
-| sea chain (`[data-map-sea]`) | page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2 | `.map-seas` | page, ink, sea, line, shared, slab, accent |
+| sea chain (`[data-map-sea]`) | page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2; the link between two seas: ink rule and arrow, the opening sector as a disc in its sea | `.map-seas`, `.sea-link` | page, ink, sea, line, shared, slab, accent |
 | planner (`.planner`) | page field, ink edge, sea graphic edge; route text; discs; error text; action accent | `.map-grid > .planner`, `.map-panel .field.inline` | page, ink, sea |
 | chart head (`.chart-head`) | sea field, on-mid, ink band | `.chart-head`, `.chart-sea`, `.chart-count` | sea, shared, ink |
 | chart (`.chart-svg`) | water; chart ink; back, idle, locked, route and error chart tones | `.chart-` | water, chartink, back, idle, locked, route, error, line, ink, molten |
@@ -1493,7 +1494,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
-| panel heads | rank field, on-mid (recommendations: slab and a band of the four role fields); head state on | `.panel.recs > h2:first-child` | route, rank, gil, loot, slab |
+| panel heads | rank field, on-mid (recommendations: slab and a band of the four role fields); head state on | `.panel.recs > h2:first-child`, `.head-state` | route, rank, gil, loot, slab, ink, shared |
 | notifications, free companies, ticks | ink, ink-2, slab legend; page field, ink edge; link accent | `.tick b`, `.wiz-foot` | route, ink |
 | ranking (`.rec-rank`) | each rung: its role's wash, ink, its role's field and on-mid for the number; first rung accent field edge | `.rec-rank`, `.rec-name`, `.recs .btn:focus-visible`, `.recs select:focus-visible`, `.rec-note`, `.rec-give`, `[data-recs-body]` | accent, ink, slab, route, rank, gil, loot, shared, page |
 | fuel; loot pickers | accent thumb, page field 3, ink; loot text, loot graphic edge, off: ink-3 | `.rec-picker`, `.rec-pick-row` | loot, ink, page |

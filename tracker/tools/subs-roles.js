@@ -59,8 +59,6 @@ const NON_COLOUR = new Set(['--f-disp', '--f-body', '--f-data', '--f-serif', '--
 // role tokens no rule of subs.css uses yet, each with its reason (the test fails when one is used, or when an unused one is missing here)
 const UNUSED = {
   '--out-s': 'Out is not used as text on any screen yet; the tone exists so that a later rule has one',
-  '--loot-w': 'no rule paints a loot wash; the tone is kept with its role',
-  '--route-w': 'the locked lane is the locked hatch on page field 3 since W32; no rule paints a route wash now; the tone is kept with its role',
   '--chart-bg-hi': 'the lightest ground under a marker; read by the contrast test, painted by no rule'
 };
 // colour literals that may stay outside a token rule until the item named finishes (Rev4.6); must be empty after W36
@@ -99,11 +97,12 @@ const ZONES = [
   Z('Board', 'notes (`.hint`, `.foot-note`, `.tl-key`)', 'ink-2; link accent', ['.foot-note'], ['ink']),
   // ---- Send window ----
   Z('Send window', 'scrim; sheet', 'overlay; panel, ink edge, molten band', ['.sheet::backdrop', '=.sheet', '.sheet-actions'], ['overlay', 'panel', 'ink']),
-  Z('Send window', 'title (`.sheet h2`)', 'slab; a 12 px status field edge', ['.sheet h2'], ['slab']),
+  Z('Send window', 'title (`.sheet h2`)', 'slab; a 12 px status field edge', ['.sheet h2'], ['slab', 'back', 'out', 'idle']),
   Z('Send window', 'suggestion (`.advice`)', 'accent wash and field edge; ink; the reason\'s edge: the choosing role\'s graphic', ['.advice', '.advice-step', '.lead-'], ['accent', 'ink', 'rank', 'gil', 'loot', 'route']),
   Z('Send window', 'actions', 'accent field, on, molten; other buttons ink edge on panel', ['.btn.primary:hover', '.btn.primary[disabled]:hover'], ['accent', 'molten']),
   Z('Send window', 'sector buttons (`.sector`)', 'page field, ink; sea graphic edge; letter route text; chosen: accent field, on, molten; order badge slab; disabled: line hatch', ['.sector'], ['page', 'ink', 'sea', 'route', 'accent', 'molten', 'slab', 'line']),
-  Z('Send window', 'route line (`.route-line`)', 'route graphic edge, route text; discs sea; ink rules', ['.route-line', '.route-pick .route-line', '.planner .route-line b', '.alts'], ['route', 'ink', 'sea', 'line']),
+  Z('Send window', 'routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`)', 'one axis: the suggestion and the other routes as lanes: page field 3 trough, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea', ['.cmp', '.cmp-lane'], ['panel', 'page', 'ink', 'accent', 'line', 'sea', 'shared']),
+  Z('Send window', 'route line (`.route-line`)', 'route graphic edge, route text; discs sea; ink rules', ['.route-line', '.route-pick .route-line', '.planner .route-line b', '.alts', '.route-row'], ['route', 'ink', 'sea', 'line']),
   Z('Send window', 'what came back (`.loot-h`, `.loot-row`, `.qbtn`, `.rate-item b`)', 'loot field, on-mid, loot graphic hatch; line; page field, ink; loot text', ['.loot-h', '.loot-row', '.qbtn', '.rate-item', '.rates-tier', '.loot-name'], ['loot', 'shared', 'ink', 'line', 'page', 'accent']),
   Z('Send window', 'rank box, rank-up plan', 'rank graphic edge, rank text', ['.rankbox', '.rank-plan', '.facts dt'], ['rank', 'ink']),
   Z('Send window', 'questions after a voyage (`fieldset`, `legend`)', 'ink edge; slab', ['=fieldset', '=legend'], ['ink', 'slab']),
@@ -119,7 +118,7 @@ const ZONES = [
   Z('Log', 'logged or not (row edge)', 'loot graphic; idle graphic (dashed) and idle text', ['.log-row.logged', '.log-row.unlogged'], ['loot', 'idle']),
   // ---- Map ----
   Z('Map', 'head', 'slab with the sea\'s graphic band', ['.map-panel > h2:first-child'], ['sea']),
-  Z('Map', 'sea chain (`[data-map-sea]`)', 'page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2', ['.map-seas'], ['page', 'ink', 'sea', 'line', 'shared', 'slab', 'accent']),
+  Z('Map', 'sea chain (`[data-map-sea]`)', 'page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2; the link between two seas: ink rule and arrow, the opening sector as a disc in its sea', ['.map-seas', '.sea-link'], ['page', 'ink', 'sea', 'line', 'shared', 'slab', 'accent']),
   Z('Map', 'planner (`.planner`)', 'page field, ink edge, sea graphic edge; route text; discs; error text; action accent', ['.map-grid > .planner', '.map-panel .field.inline'], ['page', 'ink', 'sea']),
   Z('Map', 'chart head (`.chart-head`)', 'sea field, on-mid, ink band', ['.chart-head', '.chart-sea', '.chart-count'], ['sea', 'shared', 'ink']),
   Z('Map', 'chart (`.chart-svg`)', 'water; chart ink; back, idle, locked, route and error chart tones', ['.chart-'], ['water', 'chartink', 'back', 'idle', 'locked', 'route', 'error', 'line', 'ink', 'molten']),
@@ -135,7 +134,7 @@ const ZONES = [
   Z('Earnings', 'bars', 'gil wash, gil graphic tip, quarter lines line, figures ink; other gil figures gil text', ['.earn-ranked tr[style]', '.earn-ranked tr[data-pos] > td:nth-child(4)', '.earn-t td b', '.earn-ranked tr[data-pos]', '.earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:nth-child(3)'], ['gil', 'ink', 'line']),
   Z('Earnings', 'thin rows; top items', 'idle graphic hatch; loot text, loot graphic edge, gil text', ['.earn-thin', '.earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:first-child', '.earn-t .earn-note td'], ['idle', 'loot', 'ink', 'route', 'sea']),
   // ---- Setup ----
-  Z('Setup', 'panel heads', 'rank field, on-mid (recommendations: slab and a band of the four role fields); head state on', ['.panel.recs > h2:first-child'], ['route', 'rank', 'gil', 'loot', 'slab']),
+  Z('Setup', 'panel heads', 'rank field, on-mid (recommendations: slab and a band of the four role fields); head state on', ['.panel.recs > h2:first-child', '.head-state'], ['route', 'rank', 'gil', 'loot', 'slab', 'ink', 'shared']),
   Z('Setup', 'notifications, free companies, ticks', 'ink, ink-2, slab legend; page field, ink edge; link accent', ['.tick b', '.wiz-foot'], ['route', 'ink']),
   Z('Setup', 'ranking (`.rec-rank`)', 'each rung: its role\'s wash, ink, its role\'s field and on-mid for the number; first rung accent field edge', ['.rec-rank', '.rec-name', '.recs .btn:focus-visible', '.recs select:focus-visible', '.rec-note', '.rec-give', '[data-recs-body]'], ['accent', 'ink', 'slab', 'route', 'rank', 'gil', 'loot', 'shared', 'page']),
   Z('Setup', 'fuel; loot pickers', 'accent thumb, page field 3, ink; loot text, loot graphic edge, off: ink-3', ['.rec-picker', '.rec-pick-row'], ['loot', 'ink', 'page']),

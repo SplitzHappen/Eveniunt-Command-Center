@@ -529,11 +529,13 @@
     var R = window.RECS, c = recsNow(), n = c.order.length;
     var rows = c.order.map(function (k, i) {
       var name = R.LABEL[k];
-      return '<li><span class="rec-name"><b>' + (i + 1) + '.</b> ' + esc(name) + '</span><span class="row">' +
+      return '<li class="rung-' + (i + 1) + '"><span class="rec-name"><b>' + (i + 1) + '.</b> ' + esc(name) + '</span><span class="row">' +
         '<button type="button" class="btn sm" data-rec="up-' + esc(k) + '" aria-label="' + esc('Move up: ' + name) + '"' + (i === 0 ? ' disabled' : '') + '>Move up</button>' +
         '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move down: ' + name) + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>' + (k === 'level' ? topSkipHtml() : '');
     }).join('');
-    return '<label class="opt big"><input type="checkbox" data-rec="fuel"' + (c.fuel ? ' checked' : '') + '> <span>Prioritise fuel efficiency</span></label>' +
+    // W35 (Rev4.7): the panel's head says its state, here the objective that decides first and whether fuel saving is on (redrawn with the body, so a change of order shows at once)
+    return '<p class="head-state" aria-hidden="true">First: ' + esc(R.LABEL[c.order[0]]) + (c.fuel ? ' · fuel saving on' : '') + '</p>' +
+      '<label class="opt big"><input type="checkbox" data-rec="fuel"' + (c.fuel ? ' checked' : '') + '> <span>Prioritise fuel efficiency</span></label>' +
       '<p class="rec-give"><label for="rec-give">To save fuel, give up at most <b>' + c.giveUp + '%</b> of the best result for my top priority</label><br>' +
       '<input type="range" id="rec-give" data-rec="giveUp" min="' + R.GIVE_MIN + '" max="' + R.GIVE_MAX + '" step="' + R.GIVE_STEP + '" value="' + c.giveUp + '"' + (c.fuel ? '' : ' disabled') + '> ' +
       '<span class="rec-give-text" data-rec-give-text>' + c.giveUp + '%</span> <button type="button" class="btn sm ghost" data-rec="give-default"' + (c.fuel ? '' : ' disabled') + '>Use the default (' + R.GIVE_UP + '%)</button></p>' +
@@ -586,7 +588,7 @@
   }
   function setupHtml() {
     var fcs = fcList();
-    return '<section class="panel"><h2>Free companies</h2><p class="muted">' + fcs.length + ' set up' + (fcs.length < MAX_SUGGESTED_FCS ? ' (room on the board for ' + MAX_SUGGESTED_FCS + ' side by side; more also work)' : '') + '. Everything stays editable: rename, change rank or parts, move a free company to another character.</p>' +
+    return '<section class="panel"><h2>Free companies</h2><p class="head-state" aria-hidden="true">' + fcs.length + ' set up</p><p class="muted">' + fcs.length + ' set up' + (fcs.length < MAX_SUGGESTED_FCS ? ' (room on the board for ' + MAX_SUGGESTED_FCS + ' side by side; more also work)' : '') + '. Everything stays editable: rename, change rank or parts, move a free company to another character.</p>' +
       '<ul class="fc-list">' + fcs.map(function (f) {
         var n = Object.keys(subsOf(f.id)).length;
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
@@ -601,7 +603,7 @@
   function shownPanelHtml() {
     var fcs = fcList(), h = hiddenSet();
     if (!fcs.length) return '';
-    return '<section class="panel" data-shown-panel><h2>Free companies on the Board</h2><p class="muted">Tick the free companies the Board, its next-back strip and “Send all back, every free company” show. Unticking only hides one: its data stays, its alerts still arrive and Earnings and the Map still include it. Kept in the save, so it follows you to your other devices.</p>' +
+    return '<section class="panel" data-shown-panel><h2>Free companies on the Board</h2><p class="head-state" aria-hidden="true">' + (hiddenCount() ? hiddenCount() + ' hidden' : 'All shown') + '</p><p class="muted">Tick the free companies the Board, its next-back strip and “Send all back, every free company” show. Unticking only hides one: its data stays, its alerts still arrive and Earnings and the Map still include it. Kept in the save, so it follows you to your other devices.</p>' +
       '<div class="ticks shown-ticks">' + fcs.map(function (f) { return '<label class="tick"><input type="checkbox" data-shown-fc="' + esc(f.id) + '"' + (h[f.id] ? '' : ' checked') + '> <b>' + esc(f.fc.name || 'Unnamed') + '</b></label>'; }).join('') + '</div>' +
       '<p class="hint" data-shown-count>' + (hiddenCount() ? hiddenCount() + ' hidden from the Board.' : 'All shown.') + '</p></section>';
   }
@@ -894,17 +896,28 @@
     return '<p class="hint rank-plan" data-rank-plan><b>Rank-up plan:</b> ' + n(p.need) + ' experience still needed to reach rank ' + p.top + ' (from rank ' + p.rank + ' and your experience into it' + src('calculated').trimEnd() + ').' +
       (p.perVoyage ? ' On the route ' + esc(ADV.routeText(p.route)) + ', a voyage gives <b>at least ' + n(p.perVoyage) + '</b> experience (base experience; the game adds more' + src('game data').trimEnd() + '), so the top rank comes in no more than ' + n(p.voyages) + ' voyages, ' + days + ' at that rate, sooner if the voyages give more.' : ' No route is planned for it yet, so no time can be given.') + '</p>';
   }
+  // W35 (Rev4.7): the suggestion and the other routes are lanes on ONE time axis (the Board's axis component, timeline.js): the discs of the route, a bar to its return and the marker at it.
+  // seconds is the voyage length; span is the shared axis in hours; pick: the suggested route (a solid marker and an accent bar), the others are outlined
+  function cmpLane(route, seconds, span, pick) {
+    var ms = seconds * 1000, over = ms > span * HOUR_MS;
+    return '<span class="tl ghost cmp-lane' + (pick ? ' pick' : '') + (over ? ' over' : '') + '" aria-hidden="true" style="--ret:' + TL.pos(ms, span) + '">' + routeDiscs(route) + '<i class="tl-bar"></i><i class="tl-end"></i></span>';
+  }
+  function cmpAxis(span) {
+    return '<div class="tl-axis cmp-axis" aria-hidden="true" data-span="' + span + '">' + TL.ticks(span).map(function (t) { return '<i style="--x:' + t.x + '">' + t.label + '</i>'; }).join('') + '</div>';
+  }
   function adviceHtml(id) {
     var s = S.subs[id], a = adviceFor(id), now = Date.now();
     if (!a) return '';
     if (a.blocked) return '<div class="advice"><p class="hint">' + esc(a.blocked) + '</p>' + (a.parts ? '<p class="note" data-range-tip>' + esc(a.parts.why) + '</p>' : '') + '</div>';
+    // one span for the suggestion and every other route: the smallest of 12 to 96 hours that holds the longest, so every return time lines up
+    var span = TL.span(Math.max.apply(null, [a.plan.ev.seconds].concat((a.alts || []).map(function (x) { return x.ev.seconds; }))) * 1000);
     // every other route says what it is (community route or found by the app), its figure and its reason (spec 6.1)
     var alt = (a.alts || []).map(function (x) {
       var kind = x.kind === 'community' ? 'Community route' : x.kind === 'derived' ? 'Found by the app' : '';
       var fig = x.est ? window.DROPS.fmt.about(window.DROPS.fmt.hour(x.est.perHour)) + ' gil an hour (estimate)' : '';
       var old = x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why); // the unchanged advisor's two short reasons
       var why = x.why ? (old ? x.why.replace(/;.*$/, '') : x.why) : '';
-      return '<li><button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' +
+      return '<li>' + cmpLane(x.route, x.ev.seconds, span, false) + '<button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' +
         (kind ? ' <span class="tag" data-alt-kind>' + kind + '</span>' : '') + (fig ? ' <span class="muted" data-alt-figure>' + esc(fig) + '</span>' + src('community estimate') : '') +
         (x.own && x.perTrip > 0 && x.trips ? ' <span class="muted" data-alt-own>' + esc(window.DROPS.fmt.about(window.DROPS.fmt.hour(x.perTrip / (x.ev.seconds / 3600))) + ' gil an hour from your log') + '</span>' + src('learned, ' + x.trips + ' voyage' + (x.trips === 1 ? '' : 's')) : '') +
         (x.vs ? '<br><span class="muted" data-alt-vs>' + esc(x.vs.text + ' (' + F.fmtClock(now + x.ev.seconds * 1000, now) + ')') + '</span>' : '') +
@@ -913,7 +926,8 @@
     return '<div class="advice' + leadVoice(a) + '"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
       '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' + (a.lead === 'G' && gilSources(a.plan) ? '<p class="src-line" data-src>Gil an hour: ' + gilSources(a.plan) + '</p>' : '') +
-      (alt ? '<details><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
+      '<div class="cmp" data-cmp data-span="' + span + '">' + cmpAxis(span) + cmpLane(a.plan.route, a.plan.ev.seconds, span, true) + '</div>' +
+      (alt ? '<details open><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
       (a.parts ? '<p class="note">' + esc(a.parts.why) + '</p>' : '') + (a.note ? '<p class="note">' + esc(a.note) + '</p>' : '') + '</div>';
   }
   function pickerHtml() {
@@ -934,7 +948,7 @@
     else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>' + routeRatesHtml(s, st, ev, PICK.route);
     return '<div class="route-pick in-sea-' + PICK.sea + '"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
       '<div class="sectors">' + btns + '</div>' +
-      '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + esc(ADV.routeText(PICK.route)) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' + calc + '</div>';
+      '<div class="route-row">' + routeDiscs(PICK.route) + '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + esc(ADV.routeText(PICK.route)) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p></div>' + calc + '</div>';
   }
   function redrawPicker() { var box = $('#sheet [data-picker]'); if (box) box.innerHTML = pickerHtml(); }
   function readRoute() { return PICK ? PICK.route.slice() : []; }
@@ -1184,7 +1198,7 @@
     }
     var name = s.name || 'Sub ' + s.slot, out = status === 'out' || status === 'locked';
     var no = cannotMap(fc, m), why = m.sector && no[m.sector] ? SECTOR[m.sector].name + ' ' + no[m.sector] : '';
-    return o + '<p class="route-line">Route: ' + (route.length ? '<b>' + esc(ADV.routeText(route)) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p>' +
+    return o + '<div class="route-row">' + routeDiscs(route) + '<p class="route-line">Route: ' + (route.length ? '<b>' + esc(ADV.routeText(route)) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p></div>' +
       (common ? '<p class="hint">Community routes in this sea: ' + common + '</p>' : '') + calc +
       '<p class="hint">A sector marked with a cross is found but above this submarine\'s rank. Tap or focus any sector that cannot be added (not found yet, above the rank, or out of range if added) to see why.</p><p class="cannot-line" data-cannot-line role="status">' + esc(why) + '</p>' +
       '<p><button type="button" class="btn primary" data-map-send="' + esc(m.sub) + '"' + (!route.length || out ? ' disabled' : '') + '>Send ' + esc(name) + ' on this route…</button>' +
@@ -1204,9 +1218,11 @@
     if (!fcs.length) return boardHtml();
     var m = mapState(), fc = S.fcs[m.fc], disc = fc.discovered || [];
     var opts = fcs.map(function (f) { return '<option value="' + esc(f.id) + '"' + (f.id === m.fc ? ' selected' : '') + '>' + esc(f.fc.name || 'Unnamed free company') + '</option>'; }).join('');
-    var seas = D.seas.map(function (sea) {
-      var n = D.sectors.filter(function (s) { return s.sea === sea.id && disc.indexOf(s.id) >= 0; }).length;
-      return '<button type="button" class="btn sm" data-map-sea="' + sea.id + '" style="--p:' + (sea.sectors ? Math.round(n / sea.sectors * 1000) / 1000 : 0) + '" aria-pressed="' + (sea.id === m.sea) + '">' + esc(sea.name) + ' <span class="muted">found ' + n + ' of ' + sea.sectors + '</span></button>';
+    // W35 (Rev4.7): the seven seas as one chain in unlock order; a sea with nothing found is closed; the link before a sea names the sector that opens it
+    var seas = D.seas.map(function (sea, i) {
+      var n = D.sectors.filter(function (s) { return s.sea === sea.id && disc.indexOf(s.id) >= 0; }).length, op = i ? openerOf(sea) : null;
+      var link = op ? '<span class="sea-link">' + routeDiscs([op.id]) + '<span class="sea-link-t">' + esc(ADV.sectorName(op.id)) + ' opens ' + esc(sea.name) + '</span></span>' : '';
+      return link + '<button type="button" class="btn sm' + (n ? '' : ' closed') + '" data-map-sea="' + sea.id + '" style="--p:' + (sea.sectors ? Math.round(n / sea.sectors * 1000) / 1000 : 0) + '" aria-pressed="' + (sea.id === m.sea) + '">' + esc(sea.name) + ' <span class="muted">found ' + n + ' of ' + sea.sectors + '</span></button>';
     }).join('');
     var ps = m.sub && S.subs[m.sub], view = CHART.view(m.sea, disc, ps && ps.rank ? ps.rank : null), nFound = view.nodes.filter(function (n) { return n.state === 'found'; }).length;
     var seaName = (D.seas.find(function (x) { return x.id === m.sea; }) || {}).name || '', seaCount = (D.seas.find(function (x) { return x.id === m.sea; }) || {}).sectors;
@@ -1352,7 +1368,7 @@
     var s = S.subs[id], fc = s && S.fcs[s.fcId]; if (!fc) return;
     var now = Date.now(), st = F.status(s, fc, now), v = s.voyage, name = esc((s.name || 'Sub ' + s.slot) + ' · ' + (fc.name || ''));
     if (st === 'out') {
-      sheet('<h2>' + name + '</h2><dl class="facts"><dt>Back</dt><dd>' + esc(F.fmtClock(v.returnAt, now)) + ', in ' + F.fmtDur(v.returnAt - now, true) + ' <span class="tag">' + (v.gameSaid ? 'from the game (typed)' : esc(confirmation().text)) + '</span></dd>' +
+      sheet('<h2 class="st-out">' + name + '</h2><dl class="facts"><dt>Back</dt><dd>' + esc(F.fmtClock(v.returnAt, now)) + ', in ' + F.fmtDur(v.returnAt - now, true) + ' <span class="tag">' + (v.gameSaid ? 'from the game (typed)' : esc(confirmation().text)) + '</span></dd>' +
         (v.calcAt && v.gameSaid && Math.abs(v.calcAt - v.returnAt) > 60000 ? '<dt>Worked out</dt><dd>' + esc(F.fmtClock(v.calcAt, now)) + ' (the game\'s time is used)</dd>' : '') +
         (v.gameSaid ? '<dt>You typed</dt><dd>' + esc(v.gameSaid) + '</dd>' : '') + (v.sentAt ? '<dt>Sent</dt><dd>' + esc(F.fmtClock(v.sentAt, now)) + '</dd>' : '') + (v.route && v.route.length ? '<dt>Route</dt><dd>' + esc(routeText(v.route)) + '</dd>' : '') + '</dl>' +
         (v.calcAt && !v.gameSaid ? '<details class="game-says"><summary>Check against the game <span class="muted">(optional: type the time the game shows)</span></summary>' + timeFields('t', 'in', '') + '<p><button type="button" class="btn" data-act="check" data-sub="' + esc(id) + '">Check</button></p></details><p class="wiz-err" data-err role="alert"></p>' : '') +
@@ -1369,7 +1385,7 @@
     var s = S.subs[id], fc = S.fcs[s.fcId], now = Date.now(), st = F.status(s, fc, now), v = s.voyage;
     PICK = { id: id, route: retime && v ? (v.route || []).slice() : [], sea: null };
     var head = retime ? 'Change this voyage' : 'Send ' + (s.name || 'Sub ' + s.slot);
-    sheet('<h2>' + esc(head) + ' <span class="muted">' + esc(fc.name || '') + ' · rank ' + (s.rank || '?') + ' · ' + partsCode(s.parts) + '</span></h2>' +
+    sheet('<h2 class="st-' + st + '">' + esc(head) + ' <span class="muted">' + esc(fc.name || '') + ' · rank ' + (s.rank || '?') + ' · ' + partsCode(s.parts) + '</span></h2>' +
       (st === 'back' && !retime ? '<p class="note">Back since ' + esc(F.fmtClock(v.returnAt, now)) + '. Sending again logs that voyage in the history, with what came back if you enter it here (or later, in the Log tab).</p>' + lootHtml(id, v.route, [], []) + itemsDatalist() + rankField(id) : '') +
       (retime ? '' : adviceHtml(id) + rankPlanHtml(id)) + '<div data-picker>' + pickerHtml() + '</div>' +
       '<details class="game-says"' + (!subStats(s) ? ' open' : '') + '><summary>The game says… <span class="muted">(optional: type the game\'s return time to check the worked-out one)</span></summary>' + timeFields('t', 'in', '') + '</details>' +
