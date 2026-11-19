@@ -28,11 +28,13 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 
 ## Submersibles: the look
 
-- **The "Dive console" look:** slab heads (each panel's title on an inverted block), slanted state fields, display numerals as the largest figure on each screen, the action slab (primary and quick buttons), the sonar sea chart on the Map, and the voyage gauge on an Out row.
-- **Tokens and rules** are in `subs.css`: the tokens in its three token blocks, then the base rules.
-- **Contrast test:** `tracker/tests/subs-look.test.js` asserts the module's text and status pairs at 4.5:1 in all 21 themes, in light and dark.
-- **Evidence:** block `L1` in `check.js` walks one seeded profile through every screen and writes the `look-*.png` screenshots to `evidence/` (32 files at this build).
-- **Browser check C97:** the voyage gauge.
+- **Colour by role** (revision 4, `docs/submersibles-look-spec.md`): 27 roles. Roles with a meaning (rank, gil, loot, route, the statuses, the seven seas, the chart's markers) keep one hue in every theme; page, panel, text, slab, accent and focus come from the theme. `src/submersibles/palette.js` computes every tone from the theme (and follows a theme change); `subs.css` and `chart.js` use only role tokens.
+- **The list of roles** for all 21 themes, light and dark, and which role each zone of each screen uses: `docs/submersibles-colour-roles.md`, written by `tracker/tools/subs-roles.js`. `tracker/tests/subs-roles.test.js` fails when the document is out of date or a raw colour appears in `subs.css`, `chart.js` or the page's scripts.
+- **Screens:** the Board is a fleet timeline on one shared time axis (`timeline.js`; a dense mode for many companies); the Log is a ledger by day (`ledger.js`); Earnings is a leaderboard on one scale; the send window compares routes on one axis; each Setup head states its panel's state; the Map has a sea chain (one scrolling row on a phone) and a chart whose labels avoid every mark; every screen that can be empty has an empty state (`emptyHtml` in `subs.js`) with a sonar scope in the theme's colours.
+- **Contrast test:** `tracker/tests/subs-look.test.js` asserts the module's text, field and status pairs in all 21 themes, in light and dark, and the hue separations between roles.
+- **Evidence:** block `L1` in `check.js` walks one seeded profile through every screen in the default theme, Azure Dragoon dark, Magitek Steel light and at phone widths, writes the `look-*.png` screenshots to `evidence/`, and fails if a colour on a pictured screen is outside the roles.
+- **Browser checks:** C97 (the voyage gauge), C103 to C112 (the timeline Board, empty states, ledger, leaderboard, send window, Setup heads, sea chain), C114 and C115.
+- **One check at a time:** `CHECK_ONLY=C103,C104 npm run check` runs only those checks and writes `evidence/checks-only.json` (not committed).
 
 ## Submersibles step S6: gil advice from the player's own log
 
@@ -119,10 +121,10 @@ Gate 1E (round 1) puts the shell at the root of the public site.
 | `src/index.html`, `src/shell.css`, `src/shell.js` | The shell page: header, module switcher, home screen with the two modules, the Cosmic Exploration guides, the coming modules in the owner's order, the offline-file downloads, the credits, and an install button |
 | `src/icons/`, `make-icons.js` | The Command Center's own icons (gate 1E) and the script that draws them |
 | `src/sw.js` | The site-wide service worker (template; `build.js` fills in the build id and file list) |
-| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings), `drops.js` (the community drop-rate estimate) |
+| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings), `drops.js` (the community drop-rate estimate), `earn.js` (loot values, prices, earnings), `palette.js` (the colour roles computed from the theme), `timeline.js` (the Board's time axis and lanes), `ledger.js` (the Log by day) |
 | `site/save.js` | The one save (gate 1C), copied from `src/core/save.js` by `build.js` |
 | `restore-build-inputs.js` | Recovers the fonts, the Atelier's solver and its action icons from the committed single-file builds, so both apps can be rebuilt in a session without the toolchain (`--verify` rebuilds and compares byte for byte) |
-| `build.js` | Builds the shell and the Submersibles page into `site/` (59 files; the icons are most of it) |
+| `build.js` | Builds the shell and the Submersibles page into `site/` (62 files; the icons are most of it) |
 | `site/` | The built shell. On the public site it is the root, next to `tracker/`, `atelier/` and `cosmic/` (gate 1E) |
 | `serve.js` | Test server: the published layout under `/Eveniunt-Command-Center/`, assembled on the fly from the shell, today's `site/` (Tracker) and `../ffxiv-cosmic-crafting-solver/atelier/site/` (Atelier), with no isolation headers, like GitHub Pages |
 | `check.js` | The browser checks (`BROWSER=chromium|firefox|webkit`); writes `evidence/checks*.json` and the screenshots. C16 also runs the publish script and the Pages workflow's assemble step into a scratch clone |

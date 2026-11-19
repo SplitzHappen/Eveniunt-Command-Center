@@ -1,6 +1,6 @@
 # Where the Command Center stands
 
-Last updated: 2026-11-17.
+Last updated: 2026-11-19.
 
 ## Recently shipped
 
@@ -17,7 +17,8 @@ Last updated: 2026-11-17.
 ## Built, waiting for the owner's `ship`
 
 All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.md`,
-`docs/submersibles-recommendations-spec.md`, `docs/submersibles-droprates-spec.md` and `docs/submersibles-look-spec.md`.
+`docs/submersibles-recommendations-spec.md`, `docs/submersibles-droprates-spec.md`, `docs/submersibles-look-spec.md`,
+`docs/submersibles-design-gaps-spec.md` and `docs/submersibles-merge-spec.md`.
 
 - **Submersibles step S6: gil advice from the player's own log** (built 2026-11-17). Earnings ranks routes by gil per
   hour once a route has 10 logged voyages; the Board then advises routes from the log, using the prices cached on the
@@ -40,26 +41,49 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   Farming ranks by expected quantity per hour; part advice is valued by the estimate. Rates are shown on the Map, the
   send window and Earnings. This replaces S6's rules that the own log alone picks the gil route and that part advice
   refuses swaps lowering a stat. Browser checks C90 to C96, C98 and C99.
-- **Submersibles: the new look** (built 2026-11-18). The whole module restyled to match the shell, Tracker and Atelier
-  ("Dive console", revision 2): slab heads, slanted state fields, display numerals, the action slab, a sonar sea chart
-  drawn by the app, and a voyage gauge on submarines that are out. Screenshots of every screen:
-  `tracker/command-center/evidence/look-*.png`. Browser check C97 and the evidence block L1.
+- **Submersibles: the new look** (built 2026-11-18, revision 4 on 2026-11-19; `docs/submersibles-look-spec.md`). The
+  whole module restyled to match the shell, Tracker and Atelier. Colour goes by role: 27 roles, listed for every
+  theme in `docs/submersibles-colour-roles.md` (generated; a test fails when it is out of date). Roles with a meaning
+  (rank, gil, loot, route, the statuses, the seven seas, the chart's markers) keep the same hue in every theme;
+  page, panel, text and accent come from the theme. The Board is a fleet timeline on one shared time axis; the Log is
+  a ledger by day; Earnings is a leaderboard on one scale; every screen that can be empty has an empty state in the
+  theme's colours; the Map has a sea chain and a chart where no label meets a mark. A check fails if any colour on a
+  pictured screen is outside the roles. Screenshots of every screen in three themes and at phone width:
+  `tracker/command-center/evidence/look-*.png`. Browser checks C97, C103 to C112, C114, C115 and the evidence block
+  L1.
 - **Submersibles: gaps against the original design** (built 2026-11-18; `docs/submersibles-design-gaps-spec.md`). The
   planner lists what a route can bring and says why a sector cannot be taken; every figure is labelled game data,
   calculated, learned or community estimate; alternatives say how they differ from the plan; part advice appears only
   when Gil Farming leads or a build is stuck; "Send all back" for the whole fleet; which free companies to show; a
   rank-up plan per submarine; earnings by submarine; the return sheet asks which sectors a voyage revealed, offering
   only the ones it could have. By the owner's decision the sea map stays read-only and there is no availability
-  window. Browser checks C100 and C101.
-- **Shared fixes** (built 2026-11-18). Text on the accent colour now reaches 4.5:1 in all 21 themes, light and dark
-  (Tracker, Atelier and Command Center rebuilt). The Atelier no longer reloads over a first-visit click on Command
-  Center. A failing browser check no longer ends the whole check run.
+  window. Discoveries can also be ticked in a list in Setup, where one press marks or clears a whole sea. Browser
+  checks C100 to C102.
+- **Submersibles: fixes from two reviews** (built 2026-11-19). The market-price fetch no longer loops when the price
+  service fails or leaves an item out: one automatic attempt per 15 minutes per price place, a plain message on
+  failure, and a fetch time per item (C113, C117). The Setup form writes only what the player changed in it, on top
+  of what is saved at that moment, so it no longer undoes a discovery, a slot, a rank or a voyage recorded since it
+  was opened, and a free company removed elsewhere stays removed (C116, C120, C121). The Board's one-second tick no
+  longer rebuilds advice (C118).
+- **Saves: a free company changed in two places at once is combined** (built 2026-11-19;
+  `docs/submersibles-merge-spec.md`, with the owner's decisions). Discoveries recorded for one free company on two
+  devices or in two tabs are combined and a sync never removes a sector; the higher slot count is kept; a question is
+  asked only when the name, the world or the linked character differ, and it says what differs. No stored field
+  changed; a device still on the old version behaves as before. `save.js` and `merge.js` changed, so the Tracker, the
+  Command Center and the Atelier were rebuilt. Browser checks C119 and C122.
+- **Shared fixes** (built 2026-11-18 and 2026-11-19). Text on the accent colour now reaches 4.5:1 in all 21 themes,
+  light and dark (Tracker, Atelier and Command Center rebuilt). The Atelier no longer reloads over a first-visit click
+  on Command Center. A failing browser check no longer ends the whole check run, and `CHECK_ONLY=<ids> npm run check`
+  runs single checks. The crafting solver's "next craft" button waits for a running solve; its resume test no longer
+  depends on the test browser keeping storage across a reload.
 
 ## Next
 
 1. The owner decides whether the work above ships.
 2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
    compared with the original design (kept outside this repository) and the gaps closed.
+3. Not planned, by the owner's decision of 2026-11-19: combining a submarine's own record when it was renamed on one
+   device and sent on the other (still asked between devices; the later save wins between tabs).
 
 ## Parked by the owner
 
@@ -79,6 +103,11 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 - The default fuel allowance (15%) is the owner's choice; the tuning rule gives no single answer over the whole fleet.
 - With the default ranking, a submarine below the top rank in a free company that has found everything is levelled
   before it farms gil, until the player moves Gil Farming up.
+- A sync never removes a discovered sector (the owner's choice): a sector unticked on one device comes back if the
+  other device changed the same free company before they met; the app says so and it can be unticked again.
+- The reviews of this work were made by Claude on Claude-built work: same-family, not independent.
+- The crafting solver's resume test once found the test browser's storage empty after a reload; the cause was not
+  found. The app saves on every step and the test now restores from what the page saved.
 - Each recommendation control is stored on its own, so different controls changed in two tabs or on two devices are
   both kept. The same control changed in two tabs on one device takes the later change without asking, as every part
   of the save does.
