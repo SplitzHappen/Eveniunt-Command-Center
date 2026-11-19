@@ -4008,6 +4008,82 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server32.close();
     });
 
+    // ── C102 Submersibles, Sectors list: "Mark every sector in <sea> as discovered" and "Clear every sector in <sea>" tick or untick one sea in the form
+    //    only; Save stores exactly the ticked list; Clear keeps the two sectors open from the start; other seas are untouched; a later sea whose opening
+    //    sector is not ticked says so (information only); no sideways scroll at 360 px.
+    await guard('C102', async () => {
+      const server33 = await start(PORT5);
+      const data = JSON.parse(fs.readFileSync(path.join(CC, '..', 'data', 'submarines.json'), 'utf8'));
+      const ids = (sea) => data.sectors.filter((x) => x.sea === sea).map((x) => x.id);
+      const sea1 = data.seas[0], sea2 = data.seas[1], sea3 = data.seas[2];
+      const keep3 = ids(sea3.id)[0], opener3 = +Object.keys(data.unlocks).find((k) => data.unlocks[k].opensSea === sea3.id);
+      const opener2 = +Object.keys(data.unlocks).find((k) => data.unlocks[k].opensSea === sea2.id);
+      const opener3Name = data.sectors.find((x) => x.id === opener3);
+      const numeric = (a) => a.slice().sort((x, y) => x - y);
+      const ready = (page) => page.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+      const saved = (page) => page.evaluate(async () => { const r = await CC.read(); return CC.checkDoc(r.raw).modules; });
+      const out = {};
+      for (const [label, opts] of [['desktop', { viewport: { width: 1280, height: 1000 } }], ['phone', { viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
+        const { ctx: c3, errors: e3 } = await context(opts);
+        const p3 = await c3.newPage();
+        await p3.goto(ROOT5 + 'submersibles/'); await ready(p3);
+        await p3.evaluate(async (keep) => {
+          const sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+          sec.fcs.fa = { name: 'Alpha Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2, 3, keep] };
+          sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };
+          const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        }, keep3);
+        await p3.reload(); await ready(p3);
+        const open = async () => { await p3.click('[data-tab=setup]'); await p3.waitForSelector('[data-act=sectors][data-fc=fa]'); await p3.click('[data-act=sectors][data-fc=fa]'); await p3.waitForSelector('.wiz[data-step=sectors]'); await p3.evaluate(() => document.querySelectorAll('.wiz details.sea').forEach((d) => { d.open = true; })); };
+        const ticked = () => p3.evaluate(() => [...document.querySelectorAll('[data-w=disc]:checked')].map((x) => +x.value).sort((a, b) => a - b));
+        const sum = (n) => p3.evaluate((n) => document.querySelectorAll('.wiz details.sea summary')[n].textContent.replace(/\s+/g, ' ').trim(), n);
+        const note = (n) => p3.$eval('[data-sea-note="' + n + '"]', (e) => e.textContent);
+        const o = { label };
+        await open();
+        const mark = '[data-act=seaall][data-sea="' + sea1.id + '"]', clear = '[data-act=seanone][data-sea="' + sea1.id + '"]';
+        o.names = await p3.evaluate(([m, c]) => [document.querySelector(m).textContent, document.querySelector(m).getAttribute('aria-label'), document.querySelector(c).textContent, document.querySelector(c).getAttribute('aria-label'), document.querySelector(m).getBoundingClientRect().height, document.querySelector(c).getBoundingClientRect().height], [mark, clear]);
+        o.note2before = await note(sea2.id); o.note3before = await note(sea3.id);
+        await p3.click(mark);
+        o.focus = await p3.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-act'));
+        o.live = await p3.$eval('[data-sea-live]', (e) => e.textContent);
+        o.sum1 = await sum(0); o.sum3 = await sum(2);
+        o.afterMark = await ticked();
+        o.note2after = await note(sea2.id); o.note3after = await note(sea3.id);
+        o.noteSea1 = await note(sea1.id);
+        o.wide = await p3.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+        if (SHOT) { await p3.evaluate(() => document.querySelector('.wiz').scrollIntoView()); await p3.screenshot({ path: path.join(ev, 'submersibles-sectors-bulk-' + label + '.png'), fullPage: false }); }
+        if (label === 'desktop') {
+          await p3.click('[data-act=wsave]'); await p3.waitForTimeout(900);
+          o.saved1 = numeric((await saved(p3)).submersibles.fcs.fa.discovered);
+          await p3.reload(); await ready(p3);
+          o.reloaded1 = numeric((await saved(p3)).submersibles.fcs.fa.discovered);
+          await open(); await p3.click(clear);
+          o.liveClear = await p3.$eval('[data-sea-live]', (e) => e.textContent); o.sum1c = await sum(0); o.focusClear = await p3.evaluate(() => document.activeElement.getAttribute('data-act'));
+          o.afterClear = await ticked(); o.note2clear = await note(sea2.id);
+          await p3.click('[data-act=wsave]'); await p3.waitForTimeout(900);
+          await p3.reload(); await ready(p3);
+          o.reloaded2 = numeric((await saved(p3)).submersibles.fcs.fa.discovered);
+          await open(); await p3.click(clear); await p3.click('[data-act=wcancel]'); await p3.waitForTimeout(300);
+          o.cancelled = numeric((await saved(p3)).submersibles.fcs.fa.discovered); // Clear then Cancel: nothing was stored
+        }
+        o.errors = real(e3);
+        out[label] = o;
+        await c3.close();
+      }
+      const d = out.desktop, p = out.phone, s1 = ids(sea1.id), n1 = s1.length, start2 = [1, 2];
+      const want1 = numeric(Array.from(new Set(s1.concat([keep3]))));
+      const op3 = 'This sea is opened by ' + opener3Name.name.replace(/\s*\([A-Z]\)$/, '') + ' ' + opener3Name.letter + ' in ' + data.seas.find((x) => x.id === opener3Name.sea).name + ', which is not ticked.';
+      const ok = (o) => o.names[0] === 'Mark every sector in ' + sea1.name + ' as discovered' && o.names[1].includes(sea1.name) && o.names[2] === 'Clear every sector in ' + sea1.name && o.names[3].includes(sea1.name) && o.names[4] >= 36 && o.names[5] >= 36 &&
+        o.focus === 'seaall' && o.live === 'All ' + n1 + ' sectors of ' + sea1.name + ' ticked' && o.sum1 === sea1.name + ' ' + n1 + ' of ' + n1 && o.sum3.endsWith('1 of ' + ids(sea3.id).length) &&
+        allSame(o.afterMark, want1) && o.note2before.startsWith('This sea is opened by ') && o.note3before === op3 && o.note3after === op3 && o.noteSea1 === '' && o.wide <= 0 && o.errors.length === 0;
+      function allSame(a, b) { return a.join() === b.join(); }
+      const okD = ok(d) && d.note2after === '' && d.saved1.join() === want1.join() && d.reloaded1.join() === want1.join() && d.focusClear === 'seanone' && d.sum1c === sea1.name + ' 2 of ' + n1 && d.afterClear.join() === numeric(start2.concat([keep3])).join() && d.note2clear.startsWith('This sea is opened by ') &&
+        d.reloaded2.join() === numeric(start2.concat([keep3])).join() && d.cancelled.join() === d.reloaded2.join() && d.liveClear.includes('open from the start');
+      record('C102', 'Sectors list: "Mark every sector in <sea> as discovered" ticks that sea only in the form (count at once, announced politely, focus stays on the button, taps at least 36 px), Save keeps exactly that sea plus what was there, "Clear every sector in <sea>" removes them but keeps the two sectors open from the start, other seas are untouched, a later sea whose opening sector is not ticked says so, no sideways scroll at 360 px',
+        okD && ok(p), { out, opener2 });
+      server33.close();
+    });
+
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.

@@ -238,6 +238,13 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .sea[open] > summary .muted { color: var(--on-slab-2); }
 .sea summary:focus-visible { outline-offset: -4px; }
 .sea[open] > summary:focus-visible { outline-color: var(--on-slab); }
+.sea-bulk { padding: 6px 0 2px; }
+.sea-bulk .row { display: flex; }
+.sea-bulk .btn { min-height: 36px; max-width: 100%; white-space: normal; text-align: left; }
+.sea-bulk .btn:focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
+.sea-bulk .hint { margin: 6px 0 0; }
+.sea-bulk .hint:empty { display: none; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .ticks { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 2px 12px; padding: 4px 0 8px; }
 .tick { display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 3px 0; }
 .wiz-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 4px double var(--ink); }

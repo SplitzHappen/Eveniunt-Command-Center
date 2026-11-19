@@ -546,6 +546,33 @@
     if (at === 'sectors') W.step = steps().length - 1; // straight to the list of sectors (the same step and the same Save)
     UI.tab = 'setup'; keepUi(); render(); focusWizard();
   }
+  // Sectors step: a pair of buttons per sea ticks or unticks that sea in the form only (nothing is saved until Save). Clear keeps the
+  // sectors that are open from the start. A later sea says, as information only, when the sector that opens it is not ticked.
+  function openerOf(sea) { var id = Object.keys(D.unlocks).find(function (k) { return D.unlocks[k].opensSea === sea.id; }); return id ? SECTOR[+id] : null; }
+  function seaNoteText(sea) {
+    var o = openerOf(sea); if (!o || W.disc.has(o.id)) return '';
+    return 'This sea is opened by ' + o.name.replace(/\s*\([A-Z]\)$/, '') + ' ' + o.letter + ' in ' + SEA[o.sea].name + ', which is not ticked.';
+  }
+  function seaControls(sea, list) {
+    var n = list.length;
+    return '<div class="sea-bulk" data-sea-bulk="' + sea.id + '"><div class="row">' +
+      '<button type="button" class="btn sm" data-act="seaall" data-sea="' + sea.id + '" aria-label="Mark every sector in ' + esc(sea.name) + ' as discovered (' + n + ' sectors)">Mark every sector in ' + esc(sea.name) + ' as discovered</button>' +
+      '<button type="button" class="btn sm ghost" data-act="seanone" data-sea="' + sea.id + '" aria-label="Clear every sector in ' + esc(sea.name) + ' (' + n + ' sectors)">Clear every sector in ' + esc(sea.name) + '</button></div>' +
+      '<p class="hint" data-sea-note="' + sea.id + '">' + esc(seaNoteText(sea)) + '</p></div>';
+  }
+  function refreshSeaNotes() {
+    $$('[data-sea-note]').forEach(function (el) { el.textContent = seaNoteText(SEA[+el.dataset.seaNote]); });
+  }
+  function seaBulk(btn, on) {
+    var sea = SEA[+btn.dataset.sea], det = btn.closest('details'), start = startSectors(), live = $('[data-sea-live]');
+    var list = D.sectors.filter(function (x) { return x.sea === sea.id; });
+    list.forEach(function (x) { if (on) W.disc.add(x.id); else if (start.indexOf(x.id) < 0) W.disc.delete(x.id); });
+    $$('.ticks input', det).forEach(function (b) { b.checked = W.disc.has(+b.value); });
+    var got = list.filter(function (x) { return W.disc.has(x.id); }).length;
+    det.querySelector('summary .muted').textContent = got + ' of ' + list.length;
+    refreshSeaNotes();
+    if (live) live.textContent = on ? 'All ' + list.length + ' sectors of ' + sea.name + ' ticked' : (got ? 'Cleared; ' + got + ' of ' + list.length + ' sectors of ' + sea.name + ' stay ticked because they are open from the start' : 'All sectors of ' + sea.name + ' cleared');
+  }
   function focusWizard() { var el = $('#view .wiz input, #view .wiz select'); if (el) el.focus(); }
   function steps() { var out = ['fc']; for (var i = 0; i < 4; i++) { if (i === 0 || W.subs[i].unlocked || (i > 0 && W.subs[i - 1].unlocked)) out.push('sub' + (i + 1)); if (i > 0 && !W.subs[i].unlocked) break; } out.push('sectors'); return out; }
   function worldOptions(sel) {
@@ -595,10 +622,10 @@
       }
     } else {
       body = '<h3>Sectors already discovered</h3><p class="hint">Tick what this free company has found; discoveries are shared by all its submarines. The first two sectors of the Deep-sea Site are open from the start. The Map tab shows them on a chart.</p>' +
-        unlockNote(0) + D.seas.map(function (sea, k) {
+        '<p class="visually-hidden" role="status" aria-live="polite" data-sea-live></p>' + unlockNote(0) + D.seas.map(function (sea, k) {
           var list = D.sectors.filter(function (x) { return x.sea === sea.id; });
           var got = list.filter(function (x) { return W.disc.has(x.id); }).length;
-          return '<details class="sea in-sea-' + sea.id + '"' + (k === 0 ? ' open' : '') + '><summary>' + esc(sea.name) + ' <span class="muted">' + got + ' of ' + list.length + '</span></summary><div class="ticks">' +
+          return '<details class="sea in-sea-' + sea.id + '"' + (k === 0 ? ' open' : '') + '><summary>' + esc(sea.name) + ' <span class="muted">' + got + ' of ' + list.length + '</span></summary>' + seaControls(sea, list) + '<div class="ticks">' +
             list.map(function (x) { return '<label class="tick"><input type="checkbox" data-w="disc" value="' + x.id + '"' + (W.disc.has(x.id) ? ' checked' : '') + '> <b>' + esc(x.letter) + '</b> ' + esc(x.name.replace(/\s*\([A-Z]\)$/, '')) + ' <span class="muted">rank ' + x.rank + '</span></label>'; }).join('') + '</div></details>';
         }).join('');
     }
@@ -1429,6 +1456,7 @@
       case 'wback': W.step = Math.max(0, W.step - 1); render(); focusWizard(); break;
       case 'wnext': { var err = checkStep(); if (err) { $('.wiz-err').textContent = err; break; } W.step++; render(); focusWizard(); break; }
       case 'wsave': saveWizard(); break;
+      case 'seaall': case 'seanone': if (W) seaBulk(b, b.dataset.act === 'seaall'); break;
       case 'dosend': case 'dore': {
         var id = b.dataset.sub, s = S.subs[id];
         var sentAt = act === 'dore' && s.voyage && s.voyage.sentAt ? s.voyage.sentAt : now;
@@ -1552,7 +1580,7 @@
     if (key === 'fc.name') W.fc.name = t.value;
     else if (key === 'fc.world') W.fc.world = t.value;
     else if (key === 'fc.charId') W.fc.charId = t.value;
-    else if (key === 'disc') { if (t.checked) W.disc.add(+t.value); else W.disc.delete(+t.value); var sum = t.closest('details').querySelector('summary .muted'); var all = t.closest('.ticks').querySelectorAll('input'); sum.textContent = Array.prototype.filter.call(all, function (x) { return x.checked; }).length + ' of ' + all.length; }
+    else if (key === 'disc') { if (t.checked) W.disc.add(+t.value); else W.disc.delete(+t.value); var sum = t.closest('details').querySelector('summary .muted'); var all = t.closest('.ticks').querySelectorAll('input'); sum.textContent = Array.prototype.filter.call(all, function (x) { return x.checked; }).length + ' of ' + all.length; refreshSeaNotes(); }
     else if (s && key === 'unlocked') { s.unlocked = t.checked; if (!t.checked) for (var k = W.subs.indexOf(s) + 1; k < 4; k++) W.subs[k].unlocked = false; render(); }
     else if (s && key === 'name') s.name = t.value;
     else if (s && key === 'rank') {
