@@ -46,15 +46,22 @@ The session's main model orchestrates: it decomposes the request, delegates, tra
 summary. It delegates only to these tier agents (`.claude/agents/`, generated from `.claude/agent-sets/`), which need no
 per-task permission from the owner:
 
-- `architect` (Fable; Opus on the pro plan): architecture and difficult planning; one written spec.
-- `builder` (Sonnet): implementation and testing of a fully specified item.
-- `clerk` (Haiku): routine and repetitive work, file discovery, log reading.
-- `reviewer` (Opus): independent review and debugging, read-only.
+- `architect` (Fable; Opus on the pro plan; high effort): architecture and difficult planning; one written spec.
+- `builder` (Sonnet; medium effort): implementation and testing of a fully specified item; always the shared save,
+  service workers, build scripts, workflows and `.claude/`.
+- `clerk` (Haiku; low effort): routine and repetitive work, file discovery, running suites, log reading, one piece of a
+  split check, and a small build item that is fully specified, covered by a named test, inside one module and outside
+  the builder's list above. One failed attempt goes to the builder.
+- `reviewer` (Opus; high effort): review and debugging, read-only; briefed with the request and the diff, never with
+  the builder's own summary.
 
-Do small work (about three tool calls) yourself. Plan once. Escalate clerk, then builder, then reviewer, then architect.
-Keep briefs under 6,000 characters and results to a few lines. A Claude review of Claude-built work is same-family,
-never called independent. The plan (max or pro) follows `.claude/model-plan.json` and drops to pro on a Sonnet or Haiku
-start. `.claude/hooks/tier_guard.py` refuses any other launch.
+Do small work (about three tool calls) yourself. Plan once. Split a wide check into small pieces across clerks and
+confirm each claim. Escalate clerk, then builder, then reviewer, then architect. Keep briefs under 6,000 characters and
+results to a few lines. A Claude review of Claude-built work is same-family, never called independent. The plan (max or
+pro) follows `.claude/model-plan.json` and drops to pro on a Sonnet or Haiku start; a session started on the
+architect's model plans for itself. `.claude/hooks/tier_guard.py` refuses any other launch. Before the final report run
+`python3 .claude/hooks/tier_usage.py` (`--session <id>` for one session) and put its lines (model, effort and tokens really used per tier) in the report
+and the pull request.
 
 ## Rules
 

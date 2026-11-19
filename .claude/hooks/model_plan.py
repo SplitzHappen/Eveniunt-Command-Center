@@ -93,6 +93,11 @@ def drift(root: Path, plan: str) -> list[str]:
     return [n for n in AGENTS if not (dst / f"{n}.md").exists() or (dst / f"{n}.md").read_bytes() != (src / f"{n}.md").read_bytes()]
 
 
+def _family(model: str) -> str:
+    low = model.lower()
+    return next((f for f in ("fable", "opus", "sonnet", "haiku") if f in low), low)
+
+
 def session_start(event: dict[str, Any]) -> dict[str, Any]:
     root = root_dir()
     plan, reason = resolve(root, event.get("model"), str(event.get("source") or "startup"))
@@ -102,7 +107,16 @@ def session_start(event: dict[str, Any]) -> dict[str, Any]:
         return {"systemMessage": f"Model plan {plan} chosen ({reason}) but .claude/agents could not be updated: {exc}"}
     orch = "Opus" if plan == "max" else "Sonnet"
     arch = "Fable" if plan == "max" else "Opus"
-    note = f"Continuity model plan: {plan} ({reason}). Orchestrator {orch}; architect {arch}; builder Sonnet; clerk Haiku; reviewer Opus. Routing: docs/model-tiers.md."
+    model = str(event.get("model") or "")
+    note = f"Continuity model plan: {plan} ({reason}). Planned orchestrator {orch}; architect {arch}; builder Sonnet; clerk Haiku; reviewer Opus. Routing: docs/model-tiers.md."
+    if not model:
+        note += " Session model not reported."
+    elif _family(model) == orch.lower():
+        note += f" Session model: {model}."
+    else:
+        note += f" Session model: {model}, not the plan's {orch} orchestrator: every orchestrator turn runs on this model."
+        if _family(model) == arch.lower():
+            note += " Plan in this session instead of launching the architect."
     if changed:
         note += f" Agent files switched: {', '.join(changed)}."
     return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": note}}

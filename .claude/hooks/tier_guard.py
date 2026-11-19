@@ -4,7 +4,8 @@
 PreToolUse (Agent or Task): allow only the four tier agents, refuse a per-call
 `model` override (it would beat the model pinned in the agent file), refuse `name`, `team_name` and `effort` (routes to a teammate session or an effort change), refuse remote isolation
 and oversized briefs, and repair stale agent files. SubagentStop: append one line to a local
-ledger. `tier_guard.py --report` summarises the ledger. A strong check, not a proof.
+ledger. `tier_guard.py --report` summarises the ledger; `tier_usage.py` reports the models, efforts and tokens
+really used, from the transcripts. A strong check, not a proof.
 """
 
 from __future__ import annotations
@@ -100,7 +101,7 @@ def report(session: str | None = None) -> str:
     if not counts:
         return "no delegations recorded" + (f" for session {session}" if session else "")
     head = f"observed delegations (not verified spend), plan {'/'.join(sorted(plans))}" + (f", session {session}" if session else ", all sessions in this checkout")
-    return head + "\n" + "\n".join(f"{k}: {len(v)} delegations, {sum(v) // max(len(v), 1)} chars average result" for k, v in sorted(counts.items()))
+    return head + "\n" + "\n".join(f"{k}: {len(v)} delegations, {sum(v) // max(len(v), 1)} chars average result" for k, v in sorted(counts.items())) + "\nmodels and tokens really used: python3 .claude/hooks/tier_usage.py"
 
 
 def main(argv: list[str]) -> int:
