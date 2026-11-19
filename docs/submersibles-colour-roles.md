@@ -8,7 +8,7 @@ Source: docs/submersibles-look-spec.md, Revision 4 (Rev4.4 to Rev4.6). The palet
 
 Tones: `field` a solid ground that carries text; `on` the text on that field; `graphic` bands, bars, borders and marks (3:1 on the page colours); `text` coloured text (4.5:1 on the page colours); `wash` a tint under ink text (7:1); `band` a gradient band; `glow` a glow; `shade` a shade over anything.
 
-**27 roles, 102 tones** (9 theme roles with 25 tones; 18 meaning roles with 77 tones, counting the shared `--on-mid`). A theme role comes from the theme. A meaning role has one hue family in every theme (rank 232 degrees, gil 100, loot 188, route 340; the statuses, error, the seven seas and the chart keep the hues they always had) and reaches the theme through lightness and chroma only.
+**27 roles, 102 tones** (9 theme roles with 25 tones; 18 meaning roles with 77 tones, counting the shared `--on-mid`). A theme role comes from the theme. A meaning role has one hue family in every theme (rank 232 degrees, gil 92, loot 188, route 340; the statuses, error, the seven seas and the chart keep the hues they always had) and reaches the theme through lightness and chroma only.
 
 | # | Role | Kind | Stands for | Tokens (tone) |
 | --- | --- | --- | --- | --- |
@@ -523,48 +523,48 @@ One table per role: 21 themes in light and dark, a hex value per token, and the 
 
 | Theme | Mode | `--gil-m` (field) | `--gil-g` (graphic) | `--gil-s` (text) | `--gil-w` (wash) | Hue |
 | --- | --- | --- | --- | --- | --- | --- |
-| Crystarium Dawnglass | light | #b39f20 | #8a7b16 | #6c600e | #e5dfbd | 100° |
-| Crystarium Dawnglass | dark | #c0ac23 | #887a16 | #aa981e | #332e0f | 100° |
-| Ishgard Hoarfrost | light | #b39f20 | #867715 | #695d0e | #e5dfbd | 100° |
-| Ishgard Hoarfrost | dark | #c0ac23 | #908118 | #b39f20 | #332e0f | 100° |
-| Limsa Brineward | light | #b39f20 | #857615 | #675c0d | #e5dfbd | 100° |
-| Limsa Brineward | dark | #c0ac23 | #837514 | #a3921c | #332e0f | 100° |
-| Ul'dah Sultanate Gilt | light | #b39f20 | #867715 | #685c0d | #e5dfbd | 100° |
-| Ul'dah Sultanate Gilt | dark | #c0ac23 | #867815 | #a7951d | #332e0f | 100° |
-| Twelveswood Verdure | light | #b39f20 | #8a7b16 | #6c600e | #e5dfbd | 100° |
-| Twelveswood Verdure | dark | #c0ac23 | #867815 | #a8951d | #332e0f | 100° |
-| Allagan Circuitry | light | #b39f20 | #877815 | #695d0e | #e5dfbd | 100° |
-| Allagan Circuitry | dark | #c0ac23 | #857715 | #a6951d | #332e0f | 100° |
-| Magitek Steel | light | #b39f20 | #847615 | #675b0d | #e5dfbd | 100° |
-| Magitek Steel | dark | #c0ac23 | #807113 | #9f8e1b | #332e0f | 100° |
-| Umbral Ice, Astral Fire | light | #b39f20 | #857615 | #675c0d | #e5dfbd | 100° |
-| Umbral Ice, Astral Fire | dark | #c0ac23 | #7b6d12 | #9a8a1a | #332e0f | 100° |
-| Lily of the Healer | light | #b39f20 | #897a16 | #6b5f0e | #e5dfbd | 100° |
-| Lily of the Healer | dark | #c0ac23 | #857615 | #a5941d | #332e0f | 100° |
-| Azure Dragoon | light | #b39f20 | #827414 | #65590c | #e5dfbd | 100° |
-| Azure Dragoon | dark | #c0ac23 | #8d7e17 | #af9c1f | #332e0f | 100° |
-| Abyssal Oath | light | #b39f20 | #847514 | #665b0d | #e5dfbd | 100° |
-| Abyssal Oath | dark | #c0ac23 | #796c12 | #988819 | #332e0f | 100° |
-| Moonfire Faire | light | #b39f20 | #847615 | #675b0d | #e5dfbd | 100° |
-| Moonfire Faire | dark | #c0ac23 | #807213 | #a08f1b | #332e0f | 100° |
-| Starlight Celebration | light | #b39f20 | #8e7f17 | #70630f | #e5dfbd | 100° |
-| Starlight Celebration | dark | #c0ac23 | #857715 | #a6951d | #332e0f | 100° |
-| Aetheryte Glow | light | #b39f20 | #8d7d17 | #6f620f | #e5dfbd | 100° |
-| Aetheryte Glow | dark | #c0ac23 | #8b7b16 | #ac991e | #332e0f | 100° |
-| First World Twilight | light | #b39f20 | #867715 | #685c0d | #e5dfbd | 100° |
-| First World Twilight | dark | #c0ac23 | #8b7b16 | #ac991e | #332e0f | 100° |
-| Ascian Crimson | light | #b39f20 | #857615 | #685c0d | #e5dfbd | 100° |
-| Ascian Crimson | dark | #c0ac23 | #7c6f12 | #9c8c1b | #332e0f | 100° |
-| Sharlayan Lore | light | #b39f20 | #867815 | #695d0e | #e5dfbd | 100° |
-| Sharlayan Lore | dark | #c0ac23 | #827414 | #a3911c | #332e0f | 100° |
-| Radz-at-Han Jewel | light | #b39f20 | #877815 | #695d0e | #e5dfbd | 100° |
-| Radz-at-Han Jewel | dark | #c0ac23 | #8a7b16 | #ab991e | #332e0f | 100° |
-| Doman Sakura | light | #b39f20 | #877915 | #695e0e | #e5dfbd | 100° |
-| Doman Sakura | dark | #c0ac23 | #857715 | #a5941d | #332e0f | 100° |
-| Ultima Thule | light | #b39f20 | #847514 | #665a0d | #e5dfbd | 100° |
-| Ultima Thule | dark | #c0ac23 | #796c12 | #988819 | #332e0f | 100° |
-| Electrope Skyline | light | #b39f20 | #8d7d17 | #6f620f | #e5dfbd | 100° |
-| Electrope Skyline | dark | #c0ac23 | #776911 | #958519 | #332e0f | 100° |
+| Crystarium Dawnglass | light | #e1b929 | #9b7416 | #795b0e | #eadeb8 | 92° |
+| Crystarium Dawnglass | dark | #f0c62c | #917716 | #b4941e | #382d08 | 92° |
+| Ishgard Hoarfrost | light | #e1b929 | #977115 | #76580e | #eadeb8 | 92° |
+| Ishgard Hoarfrost | dark | #f0c62c | #997e18 | #bd9c20 | #382d08 | 92° |
+| Limsa Brineward | light | #e1b929 | #967015 | #74570d | #eadeb8 | 92° |
+| Limsa Brineward | dark | #f0c62c | #8b7214 | #ad8e1c | #382d08 | 92° |
+| Ul'dah Sultanate Gilt | light | #e1b929 | #967115 | #75570d | #eadeb8 | 92° |
+| Ul'dah Sultanate Gilt | dark | #f0c62c | #8f7515 | #b1921d | #382d08 | 92° |
+| Twelveswood Verdure | light | #e1b929 | #9b7416 | #795b0e | #eadeb8 | 92° |
+| Twelveswood Verdure | dark | #f0c62c | #8f7515 | #b1921d | #382d08 | 92° |
+| Allagan Circuitry | light | #e1b929 | #977215 | #77580e | #eadeb8 | 92° |
+| Allagan Circuitry | dark | #f0c62c | #8d7415 | #b0911d | #382d08 | 92° |
+| Magitek Steel | light | #e1b929 | #947015 | #74560d | #eadeb8 | 92° |
+| Magitek Steel | dark | #f0c62c | #876f13 | #a98b1b | #382d08 | 92° |
+| Umbral Ice, Astral Fire | light | #e1b929 | #967015 | #74570d | #eadeb8 | 92° |
+| Umbral Ice, Astral Fire | dark | #f0c62c | #836a12 | #a3861a | #382d08 | 92° |
+| Lily of the Healer | light | #e1b929 | #997316 | #785a0e | #eadeb8 | 92° |
+| Lily of the Healer | dark | #f0c62c | #8d7415 | #af901d | #382d08 | 92° |
+| Azure Dragoon | light | #e1b929 | #926d14 | #71540d | #eadeb8 | 92° |
+| Azure Dragoon | dark | #f0c62c | #967b17 | #ba981f | #382d08 | 92° |
+| Abyssal Oath | light | #e1b929 | #946f15 | #73560d | #eadeb8 | 92° |
+| Abyssal Oath | dark | #f0c62c | #816912 | #a2851a | #382d08 | 92° |
+| Moonfire Faire | light | #e1b929 | #947015 | #74560d | #eadeb8 | 92° |
+| Moonfire Faire | dark | #f0c62c | #896f14 | #aa8c1c | #382d08 | 92° |
+| Starlight Celebration | light | #e1b929 | #a07817 | #7e5e10 | #eadeb8 | 92° |
+| Starlight Celebration | dark | #f0c62c | #8d7415 | #b0911d | #382d08 | 92° |
+| Aetheryte Glow | light | #e1b929 | #9d7717 | #7c5d0f | #eadeb8 | 92° |
+| Aetheryte Glow | dark | #f0c62c | #937816 | #b6961e | #382d08 | 92° |
+| First World Twilight | light | #e1b929 | #967115 | #75570d | #eadeb8 | 92° |
+| First World Twilight | dark | #f0c62c | #937816 | #b6961e | #382d08 | 92° |
+| Ascian Crimson | light | #e1b929 | #967015 | #75570d | #eadeb8 | 92° |
+| Ascian Crimson | dark | #f0c62c | #856c13 | #a6881b | #382d08 | 92° |
+| Sharlayan Lore | light | #e1b929 | #977115 | #76580e | #eadeb8 | 92° |
+| Sharlayan Lore | dark | #f0c62c | #8a7114 | #ad8d1c | #382d08 | 92° |
+| Radz-at-Han Jewel | light | #e1b929 | #977115 | #77580e | #eadeb8 | 92° |
+| Radz-at-Han Jewel | dark | #f0c62c | #927816 | #b6951e | #382d08 | 92° |
+| Doman Sakura | light | #e1b929 | #987216 | #77580e | #eadeb8 | 92° |
+| Doman Sakura | dark | #f0c62c | #8d7415 | #b0901d | #382d08 | 92° |
+| Ultima Thule | light | #e1b929 | #946f15 | #73550d | #eadeb8 | 92° |
+| Ultima Thule | dark | #f0c62c | #806912 | #a18419 | #382d08 | 92° |
+| Electrope Skyline | light | #e1b929 | #9d7717 | #7c5d0f | #eadeb8 | 92° |
+| Electrope Skyline | dark | #f0c62c | #7e6711 | #9e8219 | #382d08 | 92° |
 
 ### 12. loot: items brought back
 
@@ -1372,7 +1372,7 @@ The statuses, the error colour and the chart marks are the same in all themes; t
 | Role | Hue | Nearest status | Nearest sea | Nearest other role |
 | --- | --- | --- | --- | --- |
 | rank | 232° | out 35° (light), out 41° (dark) | ice 17°, blue 18° | loot 44° |
-| gil | 100° | idle 33° (light), idle 22° (dark) | ember 50°, jade 65° | loot 88° |
+| gil | 92° | idle 25° (light), idle 14° (dark) | ember 42°, jade 73° | loot 96° |
 | loot | 188° | back 35° (light), back 32° (dark) | jade 23°, ice 27° | rank 44° |
 | route | 340° | bad 49° (light), bad 46° (dark) | rose 20°, lilac 25° | rank 108° |
 
@@ -1380,14 +1380,15 @@ Every gap under 25 degrees between two different things (24):
 
 - 0.0°: status back (dark) and chart found
 - 0.0°: status bad (dark) and chart cannot-add
+- 0.5°: role gil and chart next
 - 2.6°: status bad (light) and chart cannot-add
 - 2.9°: status back (light) and chart found
 - 5.3°: role route and chart planned route
-- 7.5°: role gil and chart next
 - 8.8°: sea 3 jade and chart found
 - 8.8°: status back (dark) and sea 3 jade
 - 9.1°: status out (dark) and sea 6 indigo
 - 11.7°: status back (light) and sea 3 jade
+- 13.6°: role gil and status idle (dark)
 - 14.1°: status idle (dark) and chart next
 - 14.7°: sea 4 rose and chart planned route
 - 15.3°: status out (light) and sea 6 indigo
@@ -1397,7 +1398,6 @@ Every gap under 25 degrees between two different things (24):
 - 18.0°: role rank and sea 1 blue
 - 20.0°: role route and sea 4 rose
 - 21.3°: status bad (light) and sea 2 ember
-- 21.6°: role gil and status idle (dark)
 - 22.9°: status out (dark) and sea 1 blue
 - 23.0°: role loot and sea 3 jade
 - 23.9°: sea 2 ember and chart cannot-add

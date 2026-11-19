@@ -233,12 +233,17 @@ test('palette (W22b): contrast, gamut, chroma and hue rules hold in all 21 theme
     // Revision 4 (Rev4.5): the floors, and each field's own hue within 2.5 degrees of its fixed number
     const fl = (pair, v, min) => { if (!floors[pair] || v < floors[pair][0]) floors[pair] = [v, where]; if (v < min) vivid.fail.push(pair + ' ' + v.toFixed(1) + ' < ' + min + ' in ' + where); };
     const sh = r.info.statusHues, vh = r.info.hues, seaH = PAL.SEA_HUES, gp = M.hueGap;
-    for (const x of vh) for (const y of sh) fl('hue gap voice to status (20)', gp(x, y), 20);
+    // W31 gold correction: gil sits near Idle amber, so the one pair gil-to-Idle has a floor of 12 (every gil tone against Idle) instead of 20. Why: gil is only ever a figure,
+    // a bar or a field with the word "gil" or a number beside it; Idle is a status field with its word. Every other voice-to-status pair keeps 20.
+    PAL.VOICES.forEach((v, vi) => sh.forEach((y, si) => { if (v === 'gil' && PAL.STATUS[si] === 'idle') return; fl('hue gap voice to status (20)', gp(vh[vi], y), 20); }));
+    for (const n of ['--gil-m', '--gil-g', '--gil-s', '--gil-w']) fl('hue gap gil tone to Idle (12)', gp(M.rgbToLch(hx(T[n]))[2], sh[PAL.STATUS.indexOf('idle')]), 12);
+    // the darker gil tones sit at the bronze-gold hue (84 in light themes; 92 in dark ones, to keep 12 degrees from Idle), within 2.5 degrees
+    for (const n of ['--gil-g', '--gil-s']) { const d = gp(M.rgbToLch(hx(T[n]))[2], PAL.GIL_TONE_HUE[r.info.dark ? 1 : 0]); if (d > 2.5) vivid.fail.push(n + ' hue ' + d.toFixed(1) + ' deg off ' + PAL.GIL_TONE_HUE[r.info.dark ? 1 : 0] + ' (2.5) in ' + where); }
     for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) fl('hue gap voice to voice (40)', gp(vh[i], vh[j]), 40);
     for (const x of vh) for (const y of seaH) fl('hue gap voice to sea (15)', gp(x, y), 15);
     for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) fl('hue gap status to status (35)', gp(sh[i], sh[j]), 35);
     for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) fl('hue gap sea to sea (30)', gp(seaH[i], seaH[j]), 30);
-    if (r.info.minVoiceGap < 40 || r.info.minStatus < 20 || r.info.minSea < 30) vivid.fail.push('info gaps ' + [r.info.minVoiceGap, r.info.minStatus, r.info.minSea].join(' ') + ' in ' + where);
+    if (r.info.minVoiceGap < 40 || r.info.minSea < 30) vivid.fail.push('info gaps ' + [r.info.minVoiceGap, r.info.minStatus, r.info.minSea].join(' ') + ' in ' + where);
     const off = (name, rgb, h) => { const d = gp(M.rgbToLch(rgb)[2], h); if (d > hueOff[0]) hueOff = [d, where + ' ' + name]; if (d > 2.5) vivid.fail.push(name + ' field hue ' + d.toFixed(1) + ' deg off its number (2.5) in ' + where); };
     PAL.VOICES.forEach((v) => off(v, c('--' + v + '-m'), PAL.ROLE_HUE[v]));
     seaH.forEach((h, i) => off('sea ' + (i + 1), c('--sea-' + (i + 1)), h));

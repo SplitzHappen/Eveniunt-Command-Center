@@ -24,7 +24,11 @@
   P.WASH_CHROMA = 1 / 3;    // a wash is a quiet tint under text, not a field: its chroma is at most this share of its field's (every -w tone)
   P.ON_MID = 4.6;           // decision 2: --on-mid on every field
   // Revision 4 (spec Rev4.5, D38 to D40): the four meaning roles that used to follow the theme's accent have one fixed hue each, in every theme.
-  P.ROLE_HUE = { rank: 232, gil: 100, loot: 188, route: 340 }; // azure, gold, teal, pink
+  P.ROLE_HUE = { rank: 232, gil: 92, loot: 188, route: 340 }; // azure, gold, teal, pink
+  // W31 gold correction (spec Rev4.5): gold is a yellow at high lightness. The gil field has its own, higher lightness at hue 92 (light, dark); its two darker
+  // tones (-g, -s, and the ring) move to the bronze-gold hue 84 so that they do not turn olive; the wash keeps the field's hue.
+  P.GIL_FIELD_L = [0.80, 0.84];
+  P.GIL_TONE_HUE = [84, 92]; // light, dark: in a dark theme Idle sits at hue 78, so a tone at 84 would be 6 degrees from it (floor 12): there the tones keep the field's hue 92
   P.SEA_HUES = [250, 50, 165, 0, 315, 282, 215]; // sea 1 to 7 (blue, ember, jade, rose, lilac, indigo, ice), as in spec R3.4
   P.VOICES = ['rank', 'gil', 'loot', 'route'];
   P.STATUS = ['back', 'out', 'idle', 'bad'];
@@ -115,17 +119,18 @@
     info.minSea = mn;
 
     var mids = [];
-    function family(name, H, withRing) {
-      var m = colourAt(fieldL, H);
+    function family(name, H, withRing, fL, TH) {
+      fL = fL || fieldL; TH = TH == null ? H : TH; // fL: the field's lightness; TH: the hue of the darker tones (graphic, text, ring)
+      var m = colourAt(fL, H);
       mids.push(m);
       tokens[name.m] = toHex(m);
-      tokens[name.g] = toHex(colourAt(fit(H, pages, P.GRAPHIC), H));
-      tokens[name.s] = toHex(colourAt(fit(H, pages, P.STRONG), H));
-      var wc = P.WASH_CHROMA * chromaAt(fieldL, H), wl = fit(H, [T.ink], P.WASH_INK, wc);
+      tokens[name.g] = toHex(colourAt(fit(TH, pages, P.GRAPHIC), TH));
+      tokens[name.s] = toHex(colourAt(fit(TH, pages, P.STRONG), TH));
+      var wc = P.WASH_CHROMA * chromaAt(fL, H), wl = fit(H, [T.ink], P.WASH_INK, wc);
       tokens[name.w] = toHex(colourAt(inkIsDark ? Math.max(P.WASH_L, wl) : Math.min(P.WASH_L_DARK, wl), H, wc));
-      if (withRing) tokens[withRing] = toHex(colourAt(fit(H, [T.paper], P.STRONG), H)); // text in the page colour on a ring of this colour
+      if (withRing) tokens[withRing] = toHex(colourAt(fit(TH, [T.paper], P.STRONG), TH)); // text in the page colour on a ring of this colour
     }
-    P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], '--' + v + '-ring'); });
+    P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], '--' + v + '-ring', v === 'gil' ? P.GIL_FIELD_L[dark ? 1 : 0] : null, v === 'gil' ? P.GIL_TONE_HUE[dark ? 1 : 0] : null); });
     P.SEA_HUES.forEach(function (h, i) { var n = i + 1; family({ m: '--sea-' + n, g: '--sea-' + n + '-g', s: '--sea-' + n + '-s', w: '--sea-' + n + '-w' }, h, n === 1 ? '--sea-1-ring' : null); });
 
     // the text on a field: the theme's ink, its page colour, black or white; the first that reaches ON_MID on every field

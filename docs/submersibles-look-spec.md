@@ -1790,7 +1790,7 @@ from this table and each item keeps it in step):
 | Role | Hue | Reads as | Nearest status | Nearest sea | Nearest other role |
 | --- | --- | --- | --- | --- | --- |
 | rank | 232° | azure | Out 35° (light), 41° (dark) | ice 17°, blue 18° | loot 44° |
-| gil | 100° | gold | Idle 33° (light), 22° (dark) | ember 50° | loot 88° |
+| gil | 92° (field); 84° tones in light themes, 92° in dark | gold | Idle 25° (light), 14° (dark) for the field | ember 50° | loot 96° |
 | loot | 188° | teal | Back 35° (light), 32° (dark) | jade 23°, ice 27° | rank 44° |
 | route | 340° | pink | error 49° (light), 46° (dark) | rose 20°, lilac 25° | rank 108° |
 
@@ -1798,6 +1798,19 @@ Why these: with eleven hues already fixed, only four arcs of the wheel are 20° 
 133°, 176 to 247°, 293 to 360° and 0 to 6°. Gold has to sit at the start of the first. The chart already draws the
 planned route in pink, so pink is the route. Teal and azure share the second arc, as far from Back, from Out and from
 each other as it allows; azure rather than violet for rank, because violet (298°) is 25° from Out in dark themes.
+
+**W31 gold correction (owner's orchestrator, overrides the figures above for the gil role only).** At hue 100 and lightness
+0.70 the gil field read as mustard and its dark tones as olive; gold is a yellow at high lightness (metallic gold
+`#D4AF37` is about OKLCH 0.76 / 0.14 / 88, web gold `#FFD700` about 0.89 / 0.18 / 95). So: the gil field `--gil-m` has hue
+92° and its own lightness, 0.80 in a light theme and 0.84 in a dark one (chroma at the gamut edge as for the other roles;
+`--on-mid` on it still reaches 4.6:1). The darker tones `--gil-g` (3.1:1), `--gil-s` (4.6:1) and `--gil-ring` move to the
+bronze-gold hue 84° in light themes, lightness searched as before; `--gil-w` keeps the field's hue. In a dark theme Idle
+sits at 78°, so tones at 84° would be 6° from it and break the new floor: there the tones keep 92° (reading as gold
+already, being light). Floor: every gil tone is at least 12° from Idle in every theme and mode, replacing the 20° voice-to-status
+floor for this one pair (gil is only ever a figure, a bar or a field with the word "gil" or a number beside it; Idle is a
+status field with its word); every other floor is unchanged, and gil stays at least 7° from the chart's "next" yellow
+(gil is in no Map zone). Constants: `P.ROLE_HUE.gil` 92, `P.GIL_FIELD_L` [0.80, 0.84], `P.GIL_TONE_HUE` [84, 92]. The
+fallback in `subs.css` is `--gil-m: oklch(0.8 0.15 92)` with the tones mixed 56% (graphic), 38% (text) and 36% (ring) into ink.
 
 **How a tone is fitted to a theme** (all in `palette.js`, as W22b built them; only the hue's source changes):
 - field: lightness 0.70 in a light theme, 0.74 in a dark one; chroma `min(0.21, 0.94 × the largest chroma inside sRGB

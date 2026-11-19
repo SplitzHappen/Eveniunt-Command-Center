@@ -7,9 +7,9 @@
 /* Revision 3 palette, vivid (spec W22b). palette.js computes every token below from the theme and sets it inline on the page element; what stands here is the fallback
    (the fixed hues 232, 100, 188 and 340 of Revision 4 at one lightness, tones by mixing) that applies until the script has run or if it cannot. Tones: -m a field, -g bands and borders,
    -s coloured text, -w a wash under ink text, -ring the rings on an empty-state slab. Status colours used as text have -s tones (--back-s, --out-s, --idle-s, --bad-s). */
-.subs-page { --rank-m: oklch(0.7 0.1 232); --gil-m: oklch(0.7 0.1 100); --loot-m: oklch(0.7 0.1 188); --route-m: oklch(0.7 0.1 340);
+.subs-page { --rank-m: oklch(0.7 0.1 232); --gil-m: oklch(0.8 0.15 92); --loot-m: oklch(0.7 0.1 188); --route-m: oklch(0.7 0.1 340);
   --rank-g: color-mix(in srgb, var(--rank-m) 66%, var(--ink)); --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip)); --rank-ring: color-mix(in srgb, var(--rank-m) 45%, var(--ink));
-  --gil-g: color-mix(in srgb, var(--gil-m) 66%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 46%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip)); --gil-ring: color-mix(in srgb, var(--gil-m) 45%, var(--ink));
+  --gil-g: color-mix(in srgb, var(--gil-m) 56%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 38%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip)); --gil-ring: color-mix(in srgb, var(--gil-m) 36%, var(--ink));
   --loot-g: color-mix(in srgb, var(--loot-m) 66%, var(--ink)); --loot-s: color-mix(in srgb, var(--loot-m) 46%, var(--ink)); --loot-w: color-mix(in srgb, var(--loot-m) 14%, var(--slip)); --loot-ring: color-mix(in srgb, var(--loot-m) 45%, var(--ink));
   --route-g: color-mix(in srgb, var(--route-m) 66%, var(--ink)); --route-s: color-mix(in srgb, var(--route-m) 46%, var(--ink)); --route-w: color-mix(in srgb, var(--route-m) 14%, var(--slip)); --route-ring: color-mix(in srgb, var(--route-m) 45%, var(--ink));
   --sea-1: oklch(0.7 0.12 250); --sea-2: oklch(0.7 0.13 50); --sea-3: oklch(0.7 0.11 165); --sea-4: oklch(0.7 0.13 0); --sea-5: oklch(0.7 0.12 315); --sea-6: oklch(0.7 0.12 282); --sea-7: oklch(0.7 0.1 215);
