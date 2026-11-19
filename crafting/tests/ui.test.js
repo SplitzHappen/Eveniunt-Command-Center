@@ -315,14 +315,22 @@ test('finished craft -> next craft carries mission charges; reload restores the 
   // Restore: a new browser profile opened on the same file with the storage this page has saved. (page.reload(), and a second page of the same
   // profile, sometimes met empty storage when the full file ran, about 3 runs in 10: the browser's own storage hand-over, not the app, whose
   // save() is synchronous; the start-up script above then wrote the defaults and no craft came back.)
+  // The page goes through its own unload path first, as a real reload does (pagehide, then beforeunload), and is closed; only then is the
+  // storage read, and the second profile is seeded with exactly what the first one left.
+  await page.evaluate(() => { window.dispatchEvent(new Event('pagehide')); window.dispatchEvent(new Event('beforeunload')); });
   const stored = await page.evaluate(() => localStorage.getItem('cosmic-solver-v1'));
+  await page.close({ runBeforeUnload: true });
   assert.ok(stored && JSON.parse(stored).oizys.craft, 'the craft is saved in browser storage');
   const second = await open('oizys', { seed: stored, fastThink: false });
   await second.page.waitForSelector('#craft:not(.hidden)');
   await idle(second.page);
   const restored = await pageState(second.page);
-  assert.deepEqual(restored.state, mid.state, 'reload restores the same state');
-  assert.equal(restored.history.length, mid.history.length, 'reload restores the history');
+  // field by field against what was saved (the save leaves out what the app rebuilds: pending, chosen and the history's per-step Material Miracle time)
+  const savedCraft = JSON.parse(stored).oizys.craft, fields = Object.keys(savedCraft).filter((k) => k !== 'session' && k !== 'recipeKey');
+  assert.ok(fields.length >= 8, 'the saved craft has its fields: ' + fields.join(','));
+  for (const k of fields) assert.deepEqual(JSON.parse(JSON.stringify(restored[k])), savedCraft[k], `reload restores the saved craft field "${k}"`);
+  assert.deepEqual(restored.state, mid.state, 'and it is the state the first page showed');
+  assert.equal(restored.history.length, mid.history.length, 'and its history');
   assert.deepEqual(errors, []);
   assert.deepEqual(second.errors, []);
   await second.ctx.close();

@@ -139,6 +139,7 @@
       setSection(doc.modules.submersibles);
       if (!RC.k.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
+        syncTicks();
         if (JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]) !== before && !W) render();
         pushSync();
       });
@@ -235,12 +236,17 @@
     return '<span class="discs" aria-hidden="true">' + r.map(function (id, k) { var sc = SECTOR[id]; return '<i class="disc in-sea-' + sc.sea + '" style="--i:' + k + '">' + esc(sc.letter) + '</i>'; }).join('') + '</span>';
   }
   // the axis of the whole Board: the smallest span that holds every shown Out return and every suggested voyage (48 hours when there is none)
-  function boardAxis(now) {
-    var ms = 0;
+  // K3.8: a drawing works the advice out (it is kept while its inputs are unchanged); the one-second tick only reuses the longest suggestion of the last drawing
+  // (reuse = true): the advice cannot change between two drawings, because a change of a submarine's state, of the save or of the recommendations draws again.
+  var ADVICE_MS = 0;
+  function boardAxis(now, reuse) {
+    var ms = 0, adv = 0;
     shownFleet(now).forEach(function (x) {
       if (x.status === 'out') ms = Math.max(ms, x.sub.voyage.returnAt - now);
-      else if (x.status === 'back' || x.status === 'idle') { var a = adviceFor(x.id); if (a && a.plan) ms = Math.max(ms, a.plan.ev.seconds * 1000); }
+      else if (!reuse && (x.status === 'back' || x.status === 'idle')) { var a = adviceFor(x.id); if (a && a.plan) adv = Math.max(adv, a.plan.ev.seconds * 1000); }
     });
+    if (!reuse) ADVICE_MS = adv;
+    ms = Math.max(ms, ADVICE_MS);
     return { span: TL.span(ms) };
   }
   // the marks of an axis: the returns of Out submarines that fall inside it, returns closer than 2% of it merged into one counted mark
@@ -620,7 +626,7 @@
   }
 
   // ------------------------------------------------------------------ guided setup (design 3.6)
-  var W = null; // { fcId, step, fc: {...}, subs: [ { id, unlocked, name, rank, parts: [..], voyMode, voyIn, voyAt, voyage } x4 ], disc: Set }
+  var W = null; // { fcId, step, fc: {...}, subs: [ { id, unlocked, name, rank, parts: [..], voyMode, voyIn, voyAt, voyage, t: {name, rank, parts, voyage} } x4 ], disc: Set, off: Set, slotOff, t }
   function startWizard(fcId, at) {
     var fc = fcId ? S.fcs[fcId] : null, subs = fcId ? subsOf(fcId) : {};
     var ui = {}; try { ui = (JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).ui || {}; } catch (e) { /* none */ }
@@ -630,9 +636,10 @@
       subs: [1, 2, 3, 4].map(function (slot) {
         var e = subs[slot], s = e ? e.sub : null;
         return { id: e ? e.id : null, unlocked: slot === 1 || (fc ? slot <= (fc.unlockedSlots || 1) : false), name: s ? s.name || '' : '', rank: s && s.rank ? s.rank : 1,
-          parts: s && s.parts ? s.parts.slice() : [null, null, null, null], voyage: s ? s.voyage : null, voyMode: s && s.voyage ? 'keep' : 'none', voyIn: '', voyAt: '' };
+          parts: s && s.parts ? s.parts.slice() : [null, null, null, null], voyage: s ? s.voyage : null, voyMode: s && s.voyage ? 'keep' : 'none', voyIn: '', voyAt: '', t: {} };
       }),
-      disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()) };
+      disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()),
+      off: new Set(), slotOff: false, t: {} }; // off: sectors the player unticked in this form; slotOff: a slot was switched off here; t: fields of the company the player changed here
     if (at === 'sectors') W.step = steps().length - 1; // straight to the list of sectors (the same step and the same Save)
     UI.tab = 'setup'; keepUi(); render(); focusWizard();
   }
@@ -656,7 +663,7 @@
   function seaBulk(btn, on) {
     var sea = SEA[+btn.dataset.sea], det = btn.closest('details'), start = startSectors(), live = $('[data-sea-live]');
     var list = D.sectors.filter(function (x) { return x.sea === sea.id; });
-    list.forEach(function (x) { if (on) W.disc.add(x.id); else if (start.indexOf(x.id) < 0) W.disc.delete(x.id); });
+    list.forEach(function (x) { if (on) { W.disc.add(x.id); W.off.delete(x.id); } else if (start.indexOf(x.id) < 0 && W.disc.has(x.id)) { W.disc.delete(x.id); W.off.add(x.id); } });
     $$('.ticks input', det).forEach(function (b) { b.checked = W.disc.has(+b.value); });
     var got = list.filter(function (x) { return W.disc.has(x.id); }).length;
     det.querySelector('summary .muted').textContent = got + ' of ' + list.length;
@@ -750,23 +757,41 @@
     }
     return '';
   }
+  // K1: what the form writes over the saved copy is worked out against the copy saved NOW (another tab, a cloud sync or the return sheet
+  // may have saved since the form opened): a field the player did not change in this form keeps its saved-now value, discoveries are
+  // the saved-now list plus what the form ticks minus what the player unticked, and the slot count never goes down unless a slot was switched off here.
   function saveWizard() {
-    var fcId = W.fcId || F.newId('f');
+    var fcId = W.fcId || F.newId('f'), now = W.fcId ? S.fcs[W.fcId] : null; // the free company as saved now (none for a new one)
     var order = W.fcId && S.fcs[fcId] ? S.fcs[fcId].order : fcList().reduce(function (m, f) { return Math.max(m, (f.fc.order || 0) + 1); }, 0);
     var unlocked = 1; for (var i = 1; i < 4 && W.subs[i].unlocked; i++) unlocked = i + 1;
-    var fc = { name: W.fc.name.trim(), unlockedSlots: unlocked, order: order || 0, discovered: Array.from(W.disc).sort(function (a, b) { return a - b; }), charId: W.fc.charId || null };
-    if (W.fc.world) fc.world = W.fc.world;
+    if (now && !W.slotOff) unlocked = Math.max(unlocked, Math.min(4, now.unlockedSlots || 1));
+    var fc = { name: now && !W.t.name ? now.name : W.fc.name.trim(), unlockedSlots: unlocked, order: order || 0, discovered: F.mergeTicks(now && now.discovered, Array.from(W.disc), Array.from(W.off)), charId: (now && !W.t.charId ? now.charId : W.fc.charId) || null };
+    var world = now && !W.t.world ? now.world : W.fc.world;
+    if (world) fc.world = world;
     S.fcs[fcId] = fc;
     W.subs.forEach(function (s, j) {
       if (!s.unlocked) return; // a slot switched off keeps its sub record; it shows as Locked and nothing is deleted
-      var id = s.id || F.newId('s'), prev = S.subs[id] || {};
-      var rec = { fcId: fcId, slot: j + 1, name: s.name.trim() || 'Sub ' + (j + 1), rank: +s.rank, voyage: readVoyage(s).voyage || null };
+      var id = s.id || F.newId('s'), prev = S.subs[id] || {}, had = !!S.subs[id], t = s.t || {};
+      var rank = had && !t.rank && prev.rank ? prev.rank : +s.rank;
+      var rec = { fcId: fcId, slot: j + 1, name: had && !t.name ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
       if (prev.expIntoRank != null && prev.rank === rec.rank) rec.expIntoRank = prev.expIntoRank; // a new rank starts with no known progress
-      if (prev.expExact && prev.rank === rec.rank && (s.voyMode === 'keep' || !prev.voyage)) rec.expExact = true; // a rank changed in Setup, or a voyage replaced unlogged, is no longer the game's exact point
-      if (s.parts.every(function (p) { return p && PART[p] && CLASS[PART[p].class].rank <= rec.rank; })) rec.parts = s.parts.slice();
+      if (prev.expExact && prev.rank === rec.rank && (s.voyMode === 'keep' || !prev.voyage || !t.voyage)) rec.expExact = true; // a rank changed in Setup, or a voyage replaced unlogged, is no longer the game's exact point
+      var parts = had && !t.parts ? prev.parts : s.parts;
+      if (parts && parts.length === 4 && parts.every(function (p) { return p && PART[p] && CLASS[PART[p].class].rank <= rec.rank; })) rec.parts = parts.slice();
       S.subs[id] = rec;
     });
     W = null; UI.tab = 'board'; keepUi(); schedule();
+  }
+  // the form's ticks follow discoveries that arrive while it is open (never one the player unticked here); the boxes change in place, so focus and scroll stay
+  function syncTicks() {
+    if (!W) return;
+    var now = W.fcId ? S.fcs[W.fcId] : null;
+    if (now) (now.discovered || []).forEach(function (id) { if (!W.off.has(id)) W.disc.add(id); });
+    $$('.wiz details.sea').forEach(function (det) {
+      var boxes = $$('.ticks input', det); boxes.forEach(function (b) { b.checked = W.disc.has(+b.value); });
+      var sum = det.querySelector('summary .muted'); if (sum) sum.textContent = boxes.filter(function (b) { return b.checked; }).length + ' of ' + boxes.length;
+    });
+    if ($('[data-sea-note]')) refreshSeaNotes();
   }
 
   // ------------------------------------------------------------------ the sheet (send, details, send all)
@@ -826,7 +851,7 @@
   function refreshLogged() {
     var now = Date.now(), c = null;
     try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
-    var tot = EARN.totals(S, c ? c.prices : {}, now);
+    var tot = EARN.totals(S, c ? c.prices : {}, now), seen = c ? EARN.oldest(c, loggedIds()) : null; // the oldest fetch time among the logged items
     // the same log in merchant gil only (item sheet prices, no market price): the unit the community estimate is in, so the two
     // can be compared (drop-rates spec, owner decision Q3). A route with a logged item that has no price entry in the data
     // cannot be counted that way: merchantPerTrip is null and the estimate decides for it.
@@ -841,8 +866,8 @@
     });
     LOGGED = {
       list: list,
-      note: c && c.at ? 'Market prices seen ' + F.fmtClock(c.at, now) + ' on this device.' : 'Merchant prices only; open Earnings to load market prices.',
-      sig: JSON.stringify([c && c.at || 0, list.map(function (l) { return [l.route.join(','), l.trips, Math.round(l.perTrip), l.merchantPerTrip == null ? null : Math.round(l.merchantPerTrip)]; })])
+      note: seen ? 'Market prices seen ' + F.fmtClock(seen, now) + ' on this device.' : 'Merchant prices only; open Earnings to load market prices.',
+      sig: JSON.stringify([seen || 0, list.map(function (l) { return [l.route.join(','), l.trips, Math.round(l.perTrip), l.merchantPerTrip == null ? null : Math.round(l.merchantPerTrip)]; })])
     };
     return LOGGED;
   }
@@ -1052,10 +1077,10 @@
       steps: [['route', 'Send a submarine', 'From the Board, on the suggested route or your own.'], ['loot', 'Log what came back', 'When it returns, enter the items in the send window or here.'], ['gil', 'See what it earned', 'Earnings adds it up by route, company and item.']],
       act: '<button type="button" class="btn primary" data-tab="board">Go to the Board</button>' });
     // look only (R3, W25): each row's value is worked out first so the row can carry its sea, whether loot is logged and its gil against the largest shown
-    var shown = list.slice(0, LOGSHOW).map(function (x) { return { x: x, v: EARN.tripValue(x.t, prices) }; });
+    var everyRow = list.map(function (x) { return { x: x, v: EARN.tripValue(x.t, prices) }; }), shown = everyRow.slice(0, LOGSHOW);
     var maxGil = Math.max.apply(null, shown.map(function (r) { return r.v.logged ? +r.v.gil || 0 : 0; }).concat([0]));
     // W34 (Rev4.7): a ledger by day. Before the first row of each local day (the day of the time the row shows) a day rule says the day, its voyages and the gil of its logged rows
-    var days = LEDGER.days(shown.map(function (r) { r.at = r.x.t.back || r.x.t.t; return r; }));
+    var days = LEDGER.days(shown.map(function (r) { r.at = r.x.t.back || r.x.t.t; return r; })), dayAll = LEDGER.dayInfo(everyRow.map(function (r) { return { at: r.x.t.back || r.x.t.t, logged: r.v.logged, gil: r.v.gil }; })); // a heading counts the whole day, not the rows drawn
     var rowHtml = function (r) {
       var x = r.x, t = x.t, sub = S.subs[t.s] || {}, fc = S.fcs[sub.fcId] || {}, v = r.v, sec = t.r && t.r.length ? SECTOR[t.r[0]] : null;
       var cls = 'log-row' + (sec && sec.sea ? ' in-sea-' + sec.sea : '') + (v.logged ? ' logged' : ' unlogged'), st = v.logged ? ' style="--p:' + (maxGil > 0 ? Math.max(0, (+v.gil || 0) / maxGil).toFixed(3) : '0') + '"' : '';
@@ -1063,8 +1088,8 @@
         '<span class="log-what">' + (t.grade && ADV.GRADES.indexOf(t.grade) >= 0 ? '<span class="log-grade g-' + t.grade.toLowerCase() + '">Grade ' + esc(t.grade) + '</span> ' : '') + (v.logged ? t.items.length + ' item' + (t.items.length === 1 ? '' : 's') + ' · <b>' + fmtGil(v.gil) + '</b>' + (v.unknown.length ? ' + unpriced' : '') : '<span class="muted">nothing logged · tap to add</span>') + '</span></button>';
     };
     var ledger = days.map(function (d) {
-      var logged = d.rows.filter(function (r) { return r.v.logged; }), gil = logged.reduce(function (n, r) { return n + Math.round(+r.v.gil || 0); }, 0);
-      return '<div class="log-day" data-day="' + d.key + '"><b>' + esc(LEDGER.dayLabel(d.at, now)) + '</b> <span>' + d.rows.length + ' voyage' + (d.rows.length === 1 ? '' : 's') + ' · ' + (logged.length ? fmtGil(gil) + ' logged' : 'nothing logged') + '</span></div>' + d.rows.map(rowHtml).join('');
+      var all = dayAll[d.key], more = LEDGER.shownNote(all.n, d.rows.length);
+      return '<div class="log-day" data-day="' + d.key + '"><b>' + esc(LEDGER.dayLabel(d.at, now)) + '</b> <span>' + all.n + ' voyage' + (all.n === 1 ? '' : 's') + ' · ' + (all.logged ? fmtGil(all.gil) + ' logged' : 'nothing logged') + (more ? ' · ' + more : '') + '</span></div>' + d.rows.map(rowHtml).join('');
     }).join('');
     return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p>' + (priceNote() ? '<p class="hint" data-price-note>' + esc(priceNote()) + '</p>' : '') + '<div class="log-list">' + ledger + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
   }
@@ -1156,8 +1181,9 @@
     }).join('') + (once ? '</div>' : '</details>');
     var c = null; try { c = EARN.cached(priceScope()); } catch (e) { c = null; }
     if (c && c.prices && ids.some(function (id) { return c.prices[id]; })) {
+      var seenAt = EARN.oldest(c, ids);
       var z = 0; ids.forEach(function (id) { z += r.items[id] * (EARN.unitValue(id, c.prices).each || 0); });
-      out += '<p class="hint">At the market prices cached on this device (seen ' + esc(F.fmtClock(c.at, now)) + '): ' + DR.fmt.about(DR.fmt.voyage(z)) + ' gil a voyage. Not used to choose the route.</p>';
+      out += '<p class="hint">At the market prices cached on this device (seen ' + esc(F.fmtClock(seenAt, now)) + '): ' + DR.fmt.about(DR.fmt.voyage(z)) + ' gil a voyage. Not used to choose the route.</p>';
     }
     return out + howEstimatedHtml([r.secondShare]) + '</div>';
   }
@@ -1273,7 +1299,9 @@
   }
 
   // ------------------------------------------------------------------ the Earnings tab (design 3.5)
-  var PRICES = { scope: null, at: 0, prices: {}, busy: false, error: null, tried: null, drawn: '' };
+  // at: the time of the last answered fetch; seen: the OLDEST fetch time among the logged items that have a price (what "prices seen" says); partial: some batches failed;
+  // tried: the last automatic attempt of each price place; running: the place being fetched; queued: the one follow-up request made while a fetch ran.
+  var PRICES = { scope: null, at: 0, seen: null, prices: {}, busy: false, error: null, partial: false, tried: {}, running: null, queued: null, drawn: '' };
   function priceScope() { return (S.settings.prefs && S.settings.prefs.priceWorld) || sharedScope(); }
   function sharedScope() { // the place the Tracker's live prices use, else the first free company's world
     try { // the same rule as the Tracker's Market Board: one world, one data centre or (default) the region
@@ -1286,19 +1314,24 @@
   }
   function loggedIds() { var ids = {}; Object.keys(S.trips).forEach(function (k) { (S.trips[k].items || []).forEach(function (x) { ids[x[0]] = 1; }); }); return Object.keys(ids).map(Number); }
   // What the price lines of a drawn screen show: a fetch redraws only when this changes.
-  function priceSig() { return JSON.stringify([PRICES.scope, PRICES.at, PRICES.busy, priceNote(), PRICES.prices]); }
+  function priceSig() { return JSON.stringify([PRICES.scope, PRICES.at, PRICES.seen, PRICES.busy, priceNote(), PRICES.prices]); }
   // The plain message for a failed fetch (only for the place being shown), with the time of the last real fetch if there is one.
-  function priceNote() { return PRICES.error && PRICES.tried && PRICES.tried.scope === priceScope() ? EARN.failureNote(PRICES.at, function (t) { return F.fmtClock(t, Date.now()); }) : ''; }
+  function priceNote() { return PRICES.error && PRICES.tried[priceScope()] ? EARN.failureNote(PRICES.at, function (t) { return F.fmtClock(t, Date.now()); }) : PRICES.partial && PRICES.tried[priceScope()] ? EARN.PARTIAL_NOTE : ''; }
   // An automatic attempt happens at most once in 15 minutes per price place, whatever its outcome; Refresh (force) tries at once.
+  // A Refresh or a change of price place while a fetch runs is not dropped: one follow-up request is kept (the latest) and runs when the running one ends.
+  // The result of a fetch for a place that is no longer the chosen one is cached by the fetch but not shown.
   function loadPrices(force) {
     var scope = priceScope(), ids = loggedIds(), now = Date.now();
-    if (!ids.length || PRICES.busy) return;
-    var c = EARN.cached(scope); if (c) { PRICES.scope = scope; PRICES.at = c.at; PRICES.prices = c.prices; }
+    if (!ids.length) return;
+    if (PRICES.busy) { if (force || scope !== PRICES.running) PRICES.queued = { force: !!(force || (PRICES.queued && PRICES.queued.force)) }; return; }
+    var c = EARN.cached(scope); if (c) { PRICES.scope = scope; PRICES.at = c.at; PRICES.seen = EARN.oldest(c, ids); PRICES.prices = c.prices; }
     if (!force && (!EARN.mayTry(PRICES.tried, scope, now, false) || (c && !EARN.needed(c, ids, now).length))) return;
-    PRICES.busy = true; PRICES.tried = { scope: scope, at: now };
-    EARN.fetchPrices(scope, ids, !!force).then(function (r) { PRICES.scope = scope; PRICES.at = r.at; PRICES.prices = r.prices; PRICES.error = r.error || null; })
-      .catch(function (e) { PRICES.error = e.message || String(e); }).then(function () {
-        PRICES.busy = false;
+    PRICES.busy = true; PRICES.running = scope; PRICES.tried[scope] = { at: now };
+    EARN.fetchPrices(scope, ids, !!force).then(function (r) { if (scope !== priceScope()) return; PRICES.scope = scope; PRICES.at = r.at; PRICES.seen = EARN.oldest(r, ids); PRICES.prices = r.prices; PRICES.error = r.error || null; PRICES.partial = !!r.partial; })
+      .catch(function (e) { if (scope === priceScope()) PRICES.error = e.message || String(e); }).then(function () {
+        PRICES.busy = false; PRICES.running = null;
+        var q = PRICES.queued; PRICES.queued = null;
+        if (q) loadPrices(q.force); // the one follow-up starts before the redraw, so the redraw does not start another
         if ((UI.tab === 'earn' || UI.tab === 'log') && priceSig() !== PRICES.drawn) { var y = window.scrollY, x = window.scrollX; render(); if (window.scrollY !== y) window.scrollTo(x, y); }
       });
   }
@@ -1332,7 +1365,7 @@
     var scaleCap = function (txt) { return '<caption class="earn-scale">' + txt + '</caption>'; };
     var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
     var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
-    var src = priceNote() ? esc(priceNote()) : PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : 'no market prices yet';
+    var seenTxt = PRICES.seen ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.seen, now)) : '', pn = priceNote(), src = pn && !(PRICES.partial && !PRICES.error) ? esc(pn) : pn && seenTxt ? seenTxt + ' (' + esc(pn) + ')' : pn ? esc(pn) : seenTxt ? seenTxt : PRICES.busy ? 'Universalis prices loading…' : 'no market prices yet';
     return '<section class="panel wide-panel"><h2>Earnings</h2><p class="muted">Estimated value of what you logged: the better of the merchant price (game data) and the market price after the 5% tax (' + src + '). Not yet sold; market prices are community reports, never a promise. ' + tot.logged + ' of ' + tot.trips + ' voyages logged.</p>' +
       '<div class="earn-cards">' + [['Today', tot.day], ['This week', tot.week], ['This month', tot.month], ['All time', tot.all]].map(function (x) { return '<div class="earn-card"><span>' + x[0] + '</span><b>' + fmtGil(x[1]) + '</b></div>'; }).join('') + '</div>' +
       (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +
@@ -1705,22 +1738,22 @@
     }
     if (!W || !t.dataset.w) return;
     var key = t.dataset.w, st = steps(), step = st[Math.min(W.step, st.length - 1)], s = /^sub/.test(step) ? W.subs[+step.slice(3) - 1] : null;
-    if (key === 'fc.name') W.fc.name = t.value;
-    else if (key === 'fc.world') W.fc.world = t.value;
-    else if (key === 'fc.charId') W.fc.charId = t.value;
-    else if (key === 'disc') { if (t.checked) W.disc.add(+t.value); else W.disc.delete(+t.value); var sum = t.closest('details').querySelector('summary .muted'); var all = t.closest('.ticks').querySelectorAll('input'); sum.textContent = Array.prototype.filter.call(all, function (x) { return x.checked; }).length + ' of ' + all.length; refreshSeaNotes(); }
-    else if (s && key === 'unlocked') { s.unlocked = t.checked; if (!t.checked) for (var k = W.subs.indexOf(s) + 1; k < 4; k++) W.subs[k].unlocked = false; render(); }
-    else if (s && key === 'name') s.name = t.value;
+    if (key === 'fc.name') { W.fc.name = t.value; W.t.name = true; }
+    else if (key === 'fc.world') { W.fc.world = t.value; W.t.world = true; }
+    else if (key === 'fc.charId') { W.fc.charId = t.value; W.t.charId = true; }
+    else if (key === 'disc') { if (t.checked) { W.disc.add(+t.value); W.off.delete(+t.value); } else { W.disc.delete(+t.value); W.off.add(+t.value); } var sum = t.closest('details').querySelector('summary .muted'); var all = t.closest('.ticks').querySelectorAll('input'); sum.textContent = Array.prototype.filter.call(all, function (x) { return x.checked; }).length + ' of ' + all.length; refreshSeaNotes(); }
+    else if (s && key === 'unlocked') { s.unlocked = t.checked; if (!t.checked) { W.slotOff = true; for (var k = W.subs.indexOf(s) + 1; k < 4; k++) W.subs[k].unlocked = false; } render(); }
+    else if (s && key === 'name') { s.name = t.value; s.t.name = true; }
     else if (s && key === 'rank') {
-      s.rank = t.value === '' ? '' : +t.value;
+      s.rank = t.value === '' ? '' : +t.value; s.t.rank = true; s.t.parts = true; // a new rank refreshes the parts lists, so the form then writes the parts
       if (e.type === 'change' && Number.isInteger(s.rank) && s.rank >= 1) { // refresh the parts lists for the new rank
         $$('select[data-w=part]').forEach(function (sel) { var j = +sel.dataset.j; sel.innerHTML = partOptions(j, s.rank, s.parts[j]); s.parts[j] = sel.value ? +sel.value : null; });
       }
     }
-    else if (s && key === 'part') s.parts[+t.dataset.j] = t.value ? +t.value : null;
-    else if (s && key === 'voyMode') { s.voyMode = t.value; var fs = t.closest('fieldset'); fs.querySelector('.voy-in').hidden = t.value !== 'in'; fs.querySelector('.voy-at').hidden = t.value !== 'at'; voyHint(s, fs); }
-    else if (s && key === 'voyIn') { s.voyIn = t.value; voyHint(s, t.closest('fieldset')); }
-    else if (s && key === 'voyAt') { s.voyAt = t.value; voyHint(s, t.closest('fieldset')); }
+    else if (s && key === 'part') { s.parts[+t.dataset.j] = t.value ? +t.value : null; s.t.parts = true; }
+    else if (s && key === 'voyMode') { s.voyMode = t.value; s.t.voyage = true; var fs = t.closest('fieldset'); fs.querySelector('.voy-in').hidden = t.value !== 'in'; fs.querySelector('.voy-at').hidden = t.value !== 'at'; voyHint(s, fs); }
+    else if (s && key === 'voyIn') { s.voyIn = t.value; s.t.voyage = true; voyHint(s, t.closest('fieldset')); }
+    else if (s && key === 'voyAt') { s.voyAt = t.value; s.t.voyage = true; voyHint(s, t.closest('fieldset')); }
   }
   function voyHint(s, fs) {
     var p = fs.querySelector('[data-voy-hint]'), r = readVoyage(s), now = Date.now();
@@ -1735,7 +1768,7 @@
     var now = Date.now();
     // the axis changes its span when the longest return or suggestion crosses 12, 24, 48 or 72 hours: redraw then
     var ax = $('.tl-axis'), T = null;
-    if (ax) { T = boardAxis(now); if (+ax.dataset.span !== T.span) { if (!(dlg && dlg.open)) render(); return; } }
+    if (ax) { T = boardAxis(now, true); if (+ax.dataset.span !== T.span) { if (!(dlg && dlg.open)) render(); return; } }
     $$('[data-until]').forEach(function (el) { el.textContent = F.fmtDur(+el.dataset.until - now, true); });
     $$('[data-since]').forEach(function (el) { el.textContent = F.fmtDur(now - +el.dataset.since); });
     $$('[data-voy]').forEach(function (el) {

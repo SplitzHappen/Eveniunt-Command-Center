@@ -13,6 +13,15 @@
   var MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
   F.DEVICE_KEY = 'eveniunt-command-center-device';
 
+  // The sectors a free company ends with when the Setup form is saved: what is saved now plus what the form ticks, minus what the player
+  // unticked in the form (a sector the form never showed as ticked is never removed). Sorted whole numbers, no repeats.
+  F.mergeTicks = function (saved, ticked, off) {
+    var gone = {}, seen = {}, out = [];
+    (off || []).forEach(function (id) { gone[id] = true; });
+    (saved || []).concat(ticked || []).forEach(function (id) { if (Number.isInteger(id) && !gone[id] && !seen[id]) { seen[id] = true; out.push(id); } });
+    return out.sort(function (a, b) { return a - b; });
+  };
+
   // ------------------------------------------------------------------ typed game times
   // A duration as the game shows it, or as the owner writes it: "1d 3h 12m", "3h", "45 min", "27:45" (hours:minutes),
   // "27:45:10". Returns milliseconds, or null when the text cannot be read without guessing.

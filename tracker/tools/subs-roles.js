@@ -201,20 +201,25 @@ function zoneOf(selector) {
   }));
   return best == null ? null : ZONES[best];
 }
-// the rules of subs.css: { sel, body } (comments removed; @media and @supports blocks entered; @keyframes and the like skipped)
-function cssRules(src) {
+// the rules of subs.css: { sel, body } (comments removed; @media, @supports, @container and @layer blocks entered). The zone tests leave @keyframes
+// and the other at-rules out; the lint (all = true) takes them in too: a keyframe step is a rule of its own, a rule such as @font-face is one body.
+function cssRules(src, all) {
   const text = (src || P.css).replace(/\/\*[\s\S]*?\*\//g, ''), out = [];
-  (function parse(s) {
+  (function parse(s, within) {
     let i = 0;
     while (i < s.length) {
       const o = s.indexOf('{', i); if (o < 0) break;
-      const sel = s.slice(i, o).trim(); let d = 1, j = o + 1;
+      let sel = s.slice(i, o).trim(); let d = 1, j = o + 1;
+      while (/^@[\w-]+[^{;]*;/.test(sel)) sel = sel.replace(/^@[\w-]+[^{;]*;\s*/, ''); // a statement such as "@layer a, b;" is no rule
       while (j < s.length && d > 0) { if (s[j] === '{') d++; else if (s[j] === '}') d--; j++; }
       const body = s.slice(o + 1, j - 1);
-      if (/^@(media|supports|container)/.test(sel)) parse(body); else if (!sel.startsWith('@')) out.push({ sel, body });
+      if (/^@(media|supports|container|layer|scope)/.test(sel)) parse(body, within);
+      else if (/^@(-\w+-)?keyframes/.test(sel)) { if (all) parse(body, sel); }
+      else if (sel.startsWith('@')) { if (all) out.push({ sel, body }); }
+      else out.push({ sel: within ? within + ' > ' + sel : sel, body });
       i = j;
     }
-  })(text);
+  })(text, '');
   return out;
 }
 const usedTokens = (body) => [...new Set([...body.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]))];

@@ -30,6 +30,7 @@ const openContexts = [], openServers = [];
 function start(port, opts) { return startServer(port, opts).then((s) => { openServers.push(s); return s; }); }
 async function closeServer(s) { try { if (s.closeAllConnections) s.closeAllConnections(); await new Promise((ok) => { try { s.close(() => ok()); } catch (e) { ok(); } }); } catch (e) { /* already closed */ } }
 async function guard(id, fn) {
+  if (process.env.CHECK_ONLY && !process.env.CHECK_ONLY.split(',').includes(id)) return; // development aid: run only the listed checks (writes evidence/checks-only.json)
   const c0 = openContexts.length, s0 = openServers.length;
   try { await fn(); } catch (err) {
     record(id, 'check block stopped by an error before it finished (the run continues)', false, { error: String((err && err.message) || err).split('\n').slice(0, 4).join(' | ') });
@@ -167,7 +168,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
 (async () => {
   if (!fs.existsSync(path.join(CC, 'site', 'sw.js'))) { console.error('run node command-center/build.js first'); process.exit(2); }
   const ev = path.join(CC, 'evidence'); fs.mkdirSync(ev, { recursive: true });
-  const file = BROWSER === 'chromium' ? 'checks.json' : 'checks-' + BROWSER + '.json';
+  const file = process.env.CHECK_ONLY ? 'checks-only.json' : BROWSER === 'chromium' ? 'checks.json' : 'checks-' + BROWSER + '.json';
   try { browser = await engine.launch(); } catch (err) {
     // an engine Playwright knows but that is not installed here: record the attempt plainly, never as a pass
     const reason = 'engine not installed in this session: ' + String(err.message || err).split('\n')[0];
@@ -502,7 +503,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     //    scratch folder, the Pages workflow's own "Assemble the site" commands build _site from it, and a browser opens it. ──
     await guard('C16', async () => {
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-publish-'));
-      const detail = { scratch: tmp };
+      const detail = { scratch: path.basename(tmp) }; // the folder's own name only: no absolute path in the evidence
       let site = null, server3 = null;
       try {
         const REPO = path.join(T, '..');
@@ -4470,11 +4471,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const MSG = 'Market prices could not be fetched; showing merchant prices';
       const run = async (mode, tab) => {
         const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
-        const page = await ctx.newPage(); let attempts = 0;
+        const page = await ctx.newPage(); let attempts = 0; const asked = [];
         const cors = { 'access-control-allow-origin': '*' };
         await page.route('https://universalis.app/**', (r) => {
           attempts++;
-          const ids = new URL(r.request().url()).pathname.split('/').pop().split(',');
+          const ids = new URL(r.request().url()).pathname.split('/').pop().split(','); asked.push(ids.join(','));
           if (mode === 'blocked') return r.abort('failed');
           if (ids.length === 1 && ids[0] === '4') return r.fulfill({ status: 404, contentType: 'application/json', headers: cors, body: '{}' });
           const items = {}; ids.filter((id) => id !== '4').forEach((id) => { items[id] = { itemID: +id, averagePrice: 2000 }; });
@@ -4482,24 +4483,93 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         });
         const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.goto(ROOT5 + 'submersibles/'); await ready();
-        await tlSeed(page, SEED); await page.reload(); await ready();
+        await tlSeed(page, SEED);
+        // single-404: a cache seeded with every price but item 4's (and no "no market price" record), so the only item asked for is item 4, alone, and the service answers 404 for it
+        // (in one-404 the item is left out of the batch reply and is recorded from that, so its own request never happens). The cache has no per-item times: an older cache.
+        if (mode === 'single-404') await page.evaluate(() => localStorage.setItem('eveniunt-subs-prices', JSON.stringify({ scope: 'Maduin', at: Date.now(), prices: { 2: 2000, 3: 2000, 10099: 2000 }, none: {} })));
+        await page.reload(); await ready();
         await page.evaluate(() => { window.__redraws = 0; new MutationObserver((m) => { window.__redraws += m.length; }).observe(document.querySelector('#view'), { childList: true }); });
         attempts = 0;
         await page.click('[data-tab=' + tab + ']'); await page.waitForSelector(tab === 'earn' ? '.earn-cards' : '.log-list');
         if (tab === 'earn') await page.evaluate(() => document.querySelector('[data-pref=priceWorld]').focus());
         await page.waitForTimeout(5000);
         const got = await page.evaluate(() => ({ text: document.querySelector('#view').textContent, focus: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.pref) || null, redraws: window.__redraws }));
-        const out = { mode, tab, attempts, redraws: got.redraws, message: got.text.includes(MSG), seen: /prices seen/.test(got.text), focus: got.focus, extra: null };
+        const cacheNone = await page.evaluate(() => { const c = JSON.parse(localStorage.getItem('eveniunt-subs-prices') || 'null'); return c && c.none ? Object.keys(c.none) : null; });
+        const out = { mode, tab, attempts, asked: asked.slice(), cacheNone, redraws: got.redraws, message: got.text.includes(MSG), seen: /prices seen/.test(got.text), focus: got.focus, extra: null };
         if (tab === 'earn') { const before = attempts; await page.evaluate(() => document.querySelector('[data-act=prices]').click()); await page.waitForTimeout(1500); out.extra = attempts - before; }
         out.errors = real(errors);
         await ctx.close();
         return out;
       };
       const rows = [];
-      for (const mode of ['blocked', 'one-404']) for (const tab of ['earn', 'log']) rows.push(await run(mode, tab));
+      for (const mode of ['blocked', 'one-404', 'single-404']) for (const tab of ['earn', 'log']) rows.push(await run(mode, tab));
       const ok = rows.every((r) => r.attempts <= 2 && r.redraws <= 3 && r.errors.length === 0 && (r.tab === 'log' || (r.focus === 'priceWorld' && r.extra === 1))) &&
-        rows.filter((r) => r.mode === 'blocked').every((r) => r.message && !r.seen) && rows.filter((r) => r.mode === 'one-404').every((r) => !r.message && (r.tab === 'log' || r.seen));
-      record('C113', 'Market prices do not loop (fix list F1): with the price host blocked, and with one item the service leaves out and answers 404 for on its own, over five seconds on Earnings and on the Log there are at most two fetch attempts and three redraws; a failed fetch says "' + MSG + '" and shows no "prices seen" time, a 404 for one item is only "no market price" (no message; the real fetch is timed); focus stays on the price-place picker; Refresh makes exactly one more attempt', ok, { rows });
+        rows.filter((r) => r.mode === 'blocked').every((r) => r.message && !r.seen) && rows.filter((r) => r.mode !== 'blocked').every((r) => !r.message && (r.tab === 'log' || r.seen)) &&
+        rows.filter((r) => r.mode === 'single-404').every((r) => r.attempts === 1 && JSON.stringify(r.asked) === '["4"]' && JSON.stringify(r.cacheNone) === '["4"]'); // the single-item 404 branch is reached: item 4 alone was asked, answered 404 and is only "no market price"
+      record('C113', 'Market prices do not loop (fix list F1): with the price host blocked, and with one item the service leaves out and answers 404 for on its own, over five seconds on Earnings and on the Log there are at most two fetch attempts and three redraws; a failed fetch says "' + MSG + '" and shows no "prices seen" time, a 404 for one item is only "no market price" (no message; the real fetch is timed); in a third mode a seeded cache leaves item 4 as the only item asked for, on its own, and its 404 is recorded as "no market price" with no message (K3.7); focus stays on the price-place picker; Refresh makes exactly one more attempt', ok, { rows });
+      server.close();
+    });
+
+    // ── C117 (fix list K3.2) A Refresh or a change of price place made while a price fetch is running is not dropped: exactly one follow-up fetch,
+    //    for the latest request, runs when the running one ends; the answer for a place that is no longer chosen is not shown. ──
+    await guard('C117', async () => {
+      const server = await start(PORT5);
+      const SEED = FCS('fa', 'Alpha Company', 0, 2) + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] }; sec.trips.t1 = { s: 'a1', t: now - 40 * H, r: [1, 2], back: now - 10 * H, items: [[2, 3], [3, 1], [10099, 5]], newSectors: [] };";
+      const run = async (kind) => {
+        const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+        const page = await ctx.newPage(), asked = [];
+        await page.route('https://universalis.app/**', async (r) => {
+          const u = new URL(r.request().url()), scope = decodeURIComponent(u.pathname.split('/')[3]), ids = u.pathname.split('/').pop().split(',');
+          asked.push(scope);
+          await new Promise((ok) => setTimeout(ok, asked.length === 1 ? 2000 : 800)); // the first fetch is slow, so the later requests arrive while it runs
+          const items = {}; ids.forEach((id) => { items[id] = { itemID: +id, averagePrice: scope === 'Crystal' ? 3000 : 2000 }; });
+          r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ items }) });
+        });
+        const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+        await page.goto(ROOT5 + 'submersibles/'); await ready();
+        await tlSeed(page, SEED); await page.reload(); await ready();
+        await page.evaluate(() => { window.__sawFirst = false; new MutationObserver(() => { if (/Maduin, prices seen/.test(document.querySelector('#view').textContent)) window.__sawFirst = true; }).observe(document.querySelector('#view'), { childList: true, subtree: true, characterData: true }); });
+        await page.click('[data-tab=earn]'); await page.waitForSelector('.earn-cards');
+        await page.waitForTimeout(400);
+        const first = asked.slice();
+        if (kind === 'refresh') { await page.click('[data-act=prices]'); await page.click('[data-act=prices]'); }
+        else { await page.selectOption('[data-pref=priceWorld]', 'Aether'); await page.waitForTimeout(100); await page.selectOption('[data-pref=priceWorld]', 'Crystal'); await page.waitForTimeout(100); await page.click('[data-act=prices]'); }
+        const during = asked.length;
+        await page.waitForFunction((k) => new RegExp((k === 'refresh' ? 'Maduin' : 'Crystal') + ', prices seen').test(document.querySelector('#view').textContent), kind, { timeout: 15000 });
+        await page.waitForTimeout(2500);
+        const text = await page.evaluate(() => document.querySelector('#view').textContent), sawFirst = await page.evaluate(() => window.__sawFirst), settled = asked.slice();
+        await ctx.close();
+        return { kind, first, during, settled, sawFirst, seenText: (/Universalis, [A-Za-z-]+, prices seen/.exec(text) || [''])[0], errors: real(errors) };
+      };
+      const A = await run('refresh'), B = await run('place');
+      const ok = JSON.stringify(A.first) === '["Maduin"]' && A.during === 1 && JSON.stringify(A.settled) === '["Maduin","Maduin"]' && A.errors.length === 0 &&
+        JSON.stringify(B.first) === '["Maduin"]' && B.during === 1 && JSON.stringify(B.settled) === '["Maduin","Crystal"]' && /^Universalis, Crystal,/.test(B.seenText) && B.sawFirst === false && B.errors.length === 0;
+      record('C117', 'A Refresh or a change of price place during a running price fetch is not dropped (fix list K3.2): with the first fetch slow, two presses of Refresh make exactly one follow-up fetch of the same place after it ends; a change to two other places and a Refresh make exactly one follow-up, for the place chosen last, and the page never shows the first place\'s answer as the prices seen', ok, { A, B });
+      server.close();
+    });
+
+    // ── C118 (fix list K3.8) The Board's one-second tick only moves countdown text and time-line positions: it does not build the advice keys of the
+    //    Back and Idle submarines again (that work is done when a drawing is made or a submarine's state changes). Over four seconds with six Back or Idle
+    //    submarines the advisor's key function is not called by the ticks, and a submarine coming back still redraws the Board. ──
+    await guard('C118', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } }), page = await ctx.newPage();
+      const IDLE = (id, fc, slot) => "sec.subs['" + id + "'] = { fcId: '" + fc + "', slot: " + slot + ", name: '" + id + "', rank: 50, parts: [3, 4, 1, 2] };";
+      const BACK = (id, fc, slot) => "sec.subs['" + id + "'] = { fcId: '" + fc + "', slot: " + slot + ", name: '" + id + "', rank: 50, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };";
+      const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await tlSeed(page, FCS('fa', 'Alpha Company', 0, 4) + FCS('fb', 'Bravo Company', 1, 4) + OUT('o1', 'fa', 1, 'Sub O1', '6 * H') + BACK('b1', 'fa', 2) + BACK('b2', 'fa', 3) + IDLE('i1', 'fa', 4) + BACK('b3', 'fb', 1) + IDLE('i2', 'fb', 2) +
+        "sec.subs.o2 = { fcId: 'fb', slot: 3, name: 'Sub O2', rank: 50, parts: [3, 4, 1, 2], voyage: { sentAt: now - 3600000, route: [1, 2], returnAt: now + 12000 } };");
+      await page.reload(); await ready(); await page.waitForSelector('.tl.out');
+      const m = await page.evaluate(async () => {
+        let n = 0; const orig = window.RECS.sig; window.RECS.sig = function () { n++; return orig.apply(this, arguments); };
+        await new Promise((ok) => setTimeout(ok, 4200)); // four ticks, no change of any submarine's state
+        return { sigCalls: n, shown: document.querySelectorAll('.fc .sub').length };
+      });
+      // the submarine due in twelve seconds comes back: its lane becomes Back (a redraw)
+      await page.waitForFunction(() => document.querySelectorAll('.fc .sub[data-status="back"]').length >= 4, null, { timeout: 20000 });
+      await ctx.close();
+      record('C118', 'The Board tick does only clock work (fix list K3.8): over four seconds with six Back or Idle submarines the advisor\'s key function is not called by the ticks (' + m.sigCalls + ' calls), and a submarine coming back still redraws the Board', m.sigCalls === 0 && m.shown >= 8 && errors.filter((e) => !/net::ERR|Failed to load/.test(e)).length === 0, { m, errors });
       server.close();
     });
 
@@ -4579,6 +4649,48 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ok = tallyOk(tallies.light) && tallyOk(tallies.dark) && !tallies.light.errors.length && !tallies.dark.errors.length &&
         hatch.px >= 1 && !hatch.wide && dense.n >= 20 && dense.bad === 0 && dense.bottom <= 1080 && real(errors).length === 0 && real(ph.errors).length === 0;
       record('C115', 'Earnings tallies, the closed-sea hatch and the dense Board button (fix list W-c, W-d, W-e): in a light and a dark scheme each of the three plain tallies is a block at least 1.4:1 from its panel with figure and label at least 7:1 on it; a closed sea on the phone Map is hatched with 1 px lines; at 1920 x 1080 every dense action button is 26 px high, shows no route and no ellipsis, never a half-cut time, and its accessible name is "Send ▸ route · back time" in full, the page still ends at 1080 px', ok, { ratios, light: tallies.light.cards.map((c) => c.bg), hatch, dense, errors: [real(errors), real(ph.errors)] });
+      server.close();
+    });
+
+    // ── C116 (fix list K1) Saving the Setup sector list never undoes a discovery made elsewhere while the form was open: another tab saves a
+    //    newer list; the open form shows it ticked (focus and scroll unmoved) and Save writes the union minus what the player unticked; Clear every
+    //    sector in a sea removes only what was ticked there; a slot unlocked elsewhere and a rank or voyage changed elsewhere survive an untouched form. ──
+    await guard('C116', async () => {
+      const server = await start(PORT5);
+      const SEC = (extra) => "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3" + (extra || '') + "] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };";
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const stored = (pg) => pg.evaluate(async () => { const r = await CC.read(); const s = CC.checkDoc(r.raw).modules.submersibles; return { disc: s.fcs.fa.discovered, slots: s.fcs.fa.unlockedSlots, rank: s.subs.a1.rank, voyage: !!s.subs.a1.voyage, parts: s.subs.a1.parts }; });
+      const scenario = async (name, build, act, other) => {
+        const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, build); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=sectors][data-fc=fa]'); await p1.waitForSelector('[data-act=wsave]');
+        if (act) await act(p1);
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        await p2.evaluate(async (src) => {
+          const r = await CC.read(), doc = CC.checkDoc(r.raw), sec = JSON.parse(JSON.stringify(doc.modules.submersibles)), base = JSON.parse(JSON.stringify(sec)), now = Date.now();
+          new Function('sec', 'now', src)(sec, now); await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+        }, other);
+        const mid = await stored(p2);
+        await p1.bringToFront(); await p1.evaluate(() => window.scrollTo(0, 150));
+        await p1.waitForTimeout(1500);
+        const shown = await p1.evaluate(() => ({ ticked: [...document.querySelectorAll('.wiz input[data-w=disc]')].filter((b) => b.checked).map((b) => +b.value), focus: document.activeElement && document.activeElement.value, y: Math.round(window.scrollY) }));
+        await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+        const after = await stored(p1);
+        await p2.close();
+        return { name, mid, shown, after, errors: real(errors) };
+      };
+      const A = await scenario('stale form keeps a newer discovery', SEC(), async (p) => { await p.focus('.wiz input[data-w=disc][value="2"]'); await p.evaluate(() => window.scrollTo(0, 150)); }, 'sec.fcs.fa.discovered = [1, 2, 3, 4];');
+      const B = await scenario('an untick is honoured', SEC(), (p) => p.uncheck('.wiz input[data-w=disc][value="3"]'), 'sec.fcs.fa.discovered = [1, 2, 3, 4];');
+      const C = await scenario('Clear a sea, a newer discovery in that sea and another sea stays', SEC(', 32, 33'), async (p) => { await p.click('.in-sea-2 summary'); await p.click('[data-act=seanone][data-sea="2"]'); }, 'sec.fcs.fa.discovered = [1, 2, 3, 4, 32, 33, 34];');
+      const D = await scenario('a slot, a rank and a voyage changed elsewhere survive an untouched form', SEC(), null, "sec.fcs.fa.unlockedSlots = 2; sec.subs.a1.rank = 60; sec.subs.a1.voyage = { sentAt: now - 3600000, route: [1, 2], returnAt: now + 7200000 };");
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const ok = same(A.mid.disc, [1, 2, 3, 4]) && A.shown.ticked.includes(4) && A.shown.focus === '2' && A.shown.y === 150 && same(A.after.disc, [1, 2, 3, 4]) &&
+        same(B.after.disc, [1, 2, 4]) && same(C.after.disc, [1, 2, 3, 4, 34]) &&
+        D.after.slots === 2 && D.after.rank === 60 && D.after.voyage === true && same(D.after.parts, [3, 4, 1, 2]) &&
+        [A, B, C, D].every((x) => x.errors.length === 0);
+      record('C116', 'Setup sector list does not undo discoveries (fix list K1): with the sector step open, another tab saves a newer list [1, 2, 3, 4]; the form shows sector 4 ticked with focus and scroll unmoved and Save leaves [1, 2, 3, 4]; an untick in the form is honoured ([1, 2, 4]); after "Clear every sector in" a sea, a newer discovery in that sea and one in another sea stay ([1, 2, 3, 4, 34]); a slot, a rank and a voyage saved elsewhere survive an untouched form', ok, { A, B, C, D });
       server.close();
     });
 

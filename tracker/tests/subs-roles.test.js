@@ -13,7 +13,7 @@ const P = require('./subs-palette.js');
 
 const SRC = path.join(P.CC, 'src', 'submersibles');
 const css = P.css, subsJs = fs.readFileSync(path.join(SRC, 'subs.js'), 'utf8'), chartJs = fs.readFileSync(path.join(SRC, 'chart.js'), 'utf8');
-const rules = T.cssRules(css);
+const rules = T.cssRules(css), lintRules = T.cssRules(css, true); // the lint also reads @keyframes, @layer and the other at-rule bodies
 
 test('the committed document is what the tool writes (no date, no machine text)', () => {
   const have = fs.readFileSync(T.DOC, 'utf8');
@@ -99,9 +99,9 @@ function mixes(v) { // the color-mix( ... ) expressions of a value, balanced
   while (i >= 0) { let d = 0, j = i + 9; for (; j < v.length; j++) { if (v[j] === '(') d++; else if (v[j] === ')') { d--; if (d === 0) break; } } out.push(v.slice(i, j + 1)); i = v.indexOf('color-mix(', j); }
   return out;
 }
-function lintCss() {
+function lintCss(list) {
   const found = [];
-  for (const r of rules) {
+  for (const r of list || lintRules) {
     const tokenRule = TOKEN_RULES.has(r.sel);
     for (const d of r.body.split(';')) {
       const k = d.indexOf(':'); if (k < 0) continue;
@@ -127,11 +127,33 @@ test('lint: subs.css holds no raw colour outside the token definitions', () => {
   for (const p of ['color: var(--ink)', 'background: transparent', 'color: currentColor', 'background: color-mix(in srgb, var(--chart-ink) 4%, transparent)', 'white-space: nowrap']) { const [prop, val] = p.split(/:\s(.*)/s), v = bare(val), ms = mixes(v), rest = ms.reduce((s, m) => s.replace(m, ''), v).replace(/transparent|currentcolor/gi, ''); assert.ok(ms.every((m) => MIX_OK.test(m)) && !hexRe.test(rest) && !fnRe.test(rest) && !nameRe.test(rest), p); }
 });
 
-test('lint: chart.js and subs.js hold no colour literal and no fill or stroke value other than none and currentColor', () => {
-  for (const [name, text] of [['chart.js', chartJs], ['subs.js', subsJs]]) {
-    const noEntity = text.replace(/&#\d+;|&#x[0-9a-f]+;/gi, '');
-    assert.ok(!/(^|[^\w&])#[0-9a-f]{6}\b|(^|[^\w&])#[0-9a-f]{3}\b(?![\w-])/i.test(noEntity.replace(/href="#[^"]*"|'#[\w-]*'|"#[\w-]*"/g, '')), name + ' holds a hex colour');
-    assert.ok(!/\b(rgba?|hsla?|hwb|oklab|oklch|lch)\(/i.test(text), name + ' holds a colour function');
-    for (const m of text.matchAll(/\b(fill|stroke)=\\?["']([^"'\\]*)/g)) assert.ok(['none', 'currentColor'].includes(m[2]) || /^'? ?\+/.test(m[2]) || m[2] === '', name + ' has ' + m[1] + '="' + m[2] + '"');
-  }
+// ---- the lint of the scripts: comments are stripped, quoted colours are not ----
+// A hex colour is a token definition only when palette.js defines it (the one place that holds colours); any other one is raw.
+const PALETTE_HEX = new Set([...fs.readFileSync(path.join(SRC, 'palette.js'), 'utf8').matchAll(/#[0-9a-f]{3,8}\b/gi)].map((m) => m[0].toLowerCase()));
+const stripJsComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[\s;{}()])\/\/[^\n]*/g, '$1');
+const STYLE_NAME = new RegExp('(?:color|background|fill|stroke|border|outline|shadow)[\\w-]*[\'"]?\\s*[:=,]\\s*[\'"]?\\s*(' + NAMES.join('|') + ')(?![\\w-])', 'i');
+function lintJs(text) {
+  const t = stripJsComments(text).replace(/&#\d+;|&#x[0-9a-f]+;/gi, '').replace(/href="#[^"]*"/g, ''), found = [];
+  for (const m of t.matchAll(/(^|[^\w&])(#[0-9a-f]{8}|#[0-9a-f]{6}|#[0-9a-f]{3,4})(?![\w-])/gi)) if (!PALETTE_HEX.has(m[2].toLowerCase())) found.push('hex ' + m[2]);
+  for (const m of t.matchAll(/\b(rgba?|hsla?|hwb|oklab|oklch|lch)\(/gi)) found.push('function ' + m[1]);
+  for (const m of t.matchAll(/\b(fill|stroke)=\\?["']([^"'\\]*)/g)) if (!(['none', 'currentColor'].includes(m[2]) || /^'? ?\+/.test(m[2]) || m[2] === '')) found.push(m[1] + '=' + m[2]);
+  const n = STYLE_NAME.exec(t); if (n) found.push('named colour ' + n[1]);
+  return found;
+}
+test('lint: chart.js and subs.js hold no colour literal (hex, function or named, quoted or not) and no fill or stroke value other than none and currentColor', () => {
+  for (const [name, text] of [['chart.js', chartJs], ['subs.js', subsJs]]) assert.deepEqual(lintJs(text), [], name + ' holds a raw colour');
+});
+
+test('lint: a raw colour planted in each place the lint reads is caught, and plain code is not', () => {
+  // 1. a quoted colour in a script (it used to be skipped whenever it stood alone in quotes)
+  for (const p of ["const c = '#fff';", 'const c = "#ff0000";', "el.setAttribute('fill', '#abc');", "x.style.color = '#123456';"]) assert.ok(lintJs(p).length, p);
+  // 2. a named colour in a style context of a script
+  for (const p of ["el.style.color = 'red';", "svg += '<rect fill=\"tomato\"/>';", "el.setAttribute('stroke', 'navy');", "h += '<i style=\"background:white\">';", "box.style.backgroundColor = 'gold';"]) assert.ok(lintJs(p).length, p);
+  // 3. a raw colour inside @keyframes, @layer, @media and @supports bodies of a stylesheet
+  const sheets = ['@keyframes k { to { color: #fff; } }', '@layer base { .a { color: red; } }', '@media (min-width: 1px) { .a { background: rgba(0, 0, 0, .5); } }', '@supports (display: grid) { .a { border-color: blue; } }', '@keyframes k { from { background: color-mix(in srgb, red 50%, blue); } }', '@layer a, b; .z { color: #000; }'];
+  for (const p of sheets) assert.ok(lintCss(T.cssRules(p, true)).length, p);
+  assert.deepEqual(lintCss(T.cssRules('@keyframes k { to { transform: rotate(360deg); opacity: 0; } } @layer base { .a { color: var(--ink); background: transparent; } }', true)), []);
+  assert.deepEqual(T.cssRules('@keyframes k { to { color: red; } }').length, 0, 'the zone tests still leave @keyframes out');
+  // plain code and plain selectors are not colours
+  for (const p of ["$('#status').focus();", "const a = 'color: var(--ink)';", "// el.style.color = '#fff' (a comment)", "/* fill: red */ x = 1;", "svg += '<path fill=\"none\" stroke=\"currentColor\"/>';", "a.href = '#sheet'; h += 'href=\"#id\"';", "const bg = 'Gold coins';"]) assert.deepEqual(lintJs(p), [], p);
 });

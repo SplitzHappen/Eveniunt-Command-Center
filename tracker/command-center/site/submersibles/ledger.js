@@ -26,6 +26,18 @@
     });
     return out;
   };
+  // K3.4: a day heading counts and totals ALL of that day's voyages, whatever part of the list is drawn.
+  // rows: [{ at, logged: whether loot is logged, gil: its value }] (every voyage, not only the drawn ones). Returns { <day start>: { n, logged, gil } }.
+  LEDGER.dayInfo = function (rows) {
+    var out = {};
+    (rows || []).forEach(function (r) {
+      var k = LEDGER.dayStart(r.at), d = out[k] = out[k] || { n: 0, logged: 0, gil: 0 };
+      d.n++; if (r.logged) { d.logged++; d.gil += Math.round(+r.gil || 0); }
+    });
+    return out;
+  };
+  // "showing 3 of 8" when some of the day's n voyages are not drawn, else ""
+  LEDGER.shownNote = function (n, shown) { return shown < n ? 'showing ' + shown + ' of ' + n : ''; };
   if (typeof window !== 'undefined') window.LEDGER = LEDGER;
   if (typeof module !== 'undefined' && module.exports) module.exports = LEDGER;
 })();

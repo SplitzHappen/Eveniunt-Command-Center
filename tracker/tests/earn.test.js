@@ -123,7 +123,7 @@ test('G10: totals per submarine: the same gil as the totals by free company, sum
 
 // F1: the market-price fetch. The attempt gate, the report of failed batches and the "no market price" record are pure functions.
 test('F1 attempt gate: one automatic attempt per price place in 15 minutes whatever the outcome; Refresh always tries', () => {
-  const now = 10 * H, tried = { scope: 'Aether', at: now - 60000 };
+  const now = 10 * H, tried = { Aether: { at: now - 60000 } }; // one entry per price place (K3.3)
   assert.equal(E.mayTry(null, 'Aether', now, false), true, 'never tried');
   assert.equal(E.mayTry(tried, 'Aether', now, false), false, 'a minute after an attempt');
   assert.equal(E.mayTry(tried, 'Aether', now + E.GATE_MS - 60001, false), false, 'just under 15 minutes');
@@ -144,7 +144,8 @@ test('F1 failed batches: a refused or failing service sets an error and does not
   const good = E.settle(c, [[2, 3]], [{ ok: true, json: { items: { 2: { averagePrice: 200.4 }, 3: { averagePrice: 0 } } } }], now);
   assert.equal(good.error, null); assert.equal(good.cache.at, now); assert.deepEqual(good.cache.prices, { 2: 200, 3: 0 });
   const part = E.settle(c, [[2], [3]], [{ ok: true, json: { averagePrice: 50 } }, { ok: false, status: 0 }], now);
-  assert.equal(part.failed, 1); assert.equal(part.error, null, 'one batch answered: stamped, the failed batch is retried on the next attempt'); assert.equal(part.cache.at, now); assert.deepEqual(part.cache.prices, { 2: 50 });
+  assert.equal(part.failed, 1); assert.equal(part.error, null, 'one batch answered: no all-failed error'); assert.equal(part.partial, true, 'but the failure is reported as partial'); assert.equal(part.cache.at, now); assert.deepEqual(part.cache.prices, { 2: 50 });
+  assert.equal(part.cache.seen[2], now, 'the answered item is stamped fresh'); assert.equal(3 in part.cache.seen, false, 'the item of the failed batch is not');
   assert.equal(E.settle(c, [], [], now).error, null, 'nothing asked, nothing failed');
   assert.match(E.failureNote(0, String), /^Market prices could not be fetched; showing merchant prices$/);
   assert.equal(E.failureNote(7, (t) => 'T' + t), 'Market prices could not be fetched; showing merchant prices (last fetched T7)');
@@ -162,4 +163,54 @@ test('F1 no market price: an item left out of a reply, or answered 404 on its ow
   assert.deepEqual(E.needed(null, [2, 37487], now), [2], 'untradable items are never asked for');
   const back = E.settle(left.cache, [[4]], [{ ok: true, json: { averagePrice: 9 } }], now + 5);
   assert.deepEqual(back.cache.none, {}); assert.equal(back.cache.prices[4], 9, 'a later price clears the record');
+});
+
+// K2: a partly failed fetch is not hidden and does not stamp old prices as fresh; freshness is judged per item.
+test('K2 per-item fetch times: an old cache reads every item as fetched at "at"; an item of a failed batch keeps its old price and time and is asked again, the others are not', () => {
+  const old = { scope: 'Aether', at: 1 * H, prices: { 2: 100, 3: 200, 5: 300 }, none: {} }; // an old cache: no "seen"
+  assert.equal(E.seenAt(old, 2), 1 * H); assert.equal(E.seenAt({ at: 4, seen: { 2: 9 } }, 2), 9); assert.equal(E.seenAt({ at: 4, seen: { 2: 9 } }, 3), 4);
+  const now = 2 * H + 1; // the list is older than an hour: every item is stale
+  assert.deepEqual(E.needed(old, [2, 3, 5], now), [2, 3, 5]);
+  // one batch answered (item 2), one failed (item 3), item 5 was not asked for
+  const s = E.settle(old, [[2], [3]], [{ ok: true, json: { averagePrice: 150 } }, { ok: false, status: 500 }], now);
+  assert.equal(s.partial, true); assert.equal(s.error, null);
+  assert.deepEqual(s.cache.prices, { 2: 150, 3: 200, 5: 300 }, 'the failed item keeps its old price');
+  assert.deepEqual(s.cache.seen, { 2: now, 3: 1 * H, 5: 1 * H }, 'the failed item and the one not asked keep the old time; the answered one is fresh');
+  assert.equal(s.cache.at, now);
+  const next = now + 20 * 60000; // the next allowed attempt, 20 minutes later
+  assert.deepEqual(E.needed(s.cache, [2, 3, 5], next), [3, 5], 'the answered item is not asked again; the stale ones are');
+  assert.equal(E.oldest(s.cache, [2, 3, 5]), 1 * H, 'the "prices seen" time is the oldest among the items');
+  assert.equal(E.oldest(s.cache, [2]), now, 'and the answered one alone is fresh');
+  assert.equal(E.oldest(s.cache, [99]), null, 'no price among the items: no claim');
+  assert.match(E.PARTIAL_NOTE, /^Some market prices could not be fetched; those items show their last known or merchant price\.$/);
+  // every batch answered: all stamped; every batch failed: nothing changes (the old cache is kept as it is)
+  const all = E.settle(old, [[2, 3, 5]], [{ ok: true, json: { items: { 2: { averagePrice: 1 }, 3: { averagePrice: 2 }, 5: { averagePrice: 3 } } } }], now);
+  assert.equal(all.partial, false); assert.deepEqual(all.cache.seen, { 2: now, 3: now, 5: now });
+  const none = E.settle(old, [[2, 3, 5]], [{ ok: false, status: 0 }], now);
+  assert.equal(none.partial, false); assert.equal(none.cache.at, 1 * H); assert.deepEqual(none.cache.prices, old.prices);
+  assert.deepEqual(E.needed(none.cache, [2, 3, 5], next), [2, 3, 5], 'all of them are asked for again');
+});
+
+test('K3.1 clock moved backwards: a stored time more than a minute in the future counts as expired; within a minute it is still fresh', () => {
+  const now = 10 * H;
+  assert.equal(E.aged(now + 30000, now, E.FRESH_MS), false, 'half a minute ahead: normal clock jitter');
+  assert.equal(E.aged(now + 60000, now, E.FRESH_MS), false, 'exactly a minute ahead');
+  assert.equal(E.aged(now + 60001, now, E.FRESH_MS), true, 'more than a minute ahead: the clock was moved back');
+  assert.equal(E.mayTry({ Aether: { at: now + 5 * 60000 } }, 'Aether', now, false), true, 'an attempt "in the future" does not block the gate');
+  assert.equal(E.mayTry({ Aether: { at: now + 30000 } }, 'Aether', now, false), false, 'a few seconds ahead still does');
+  const c = { scope: 'Aether', at: now + 3 * H, prices: { 2: 100 }, none: { 3: now + 3 * H } };
+  assert.deepEqual(E.needed(c, [2, 3], now), [2, 3], 'a price and a "no market price" record stamped in the future are asked for again');
+  const ok = { scope: 'Aether', at: now - 60000, prices: { 2: 100 }, none: { 3: now - 60000 } };
+  assert.deepEqual(E.needed(ok, [2, 3], now), [], 'a recent cache is left alone');
+});
+
+test('K3.3 the attempt gate keeps one entry per price place', () => {
+  const now = 10 * H, tried = {};
+  assert.equal(E.mayTry(tried, 'Aether', now, false), true);
+  tried.Aether = { at: now }; tried.Crystal = { at: now + 5 * 60000 };
+  assert.equal(E.mayTry(tried, 'Aether', now + 6 * 60000, false), false, 'trying Crystal did not erase the Aether attempt');
+  assert.equal(E.mayTry(tried, 'Crystal', now + 6 * 60000, false), false);
+  assert.equal(E.mayTry(tried, 'Aether', now + E.GATE_MS, false), true, 'each place opens 15 minutes after its own attempt');
+  assert.equal(E.mayTry(tried, 'Crystal', now + E.GATE_MS, false), false);
+  assert.equal(E.mayTry(tried, 'Primal', now, false), true, 'a place never tried');
 });
