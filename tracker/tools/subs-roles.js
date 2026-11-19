@@ -55,11 +55,12 @@ const ALIASES = {
 // tokens Revision 3 built that W33 retires (spec Rev4.4, "Retired"); they are used by rules and are in no role
 const RETIRING = { '--rank-ring': ['rank'], '--gil-ring': ['gil'], '--loot-ring': ['loot'], '--route-ring': ['route'], '--sea-1-ring': ['sea'], '--ring': ['route', 'loot', 'gil', 'rank', 'sea'], '--ringc': ['route', 'loot', 'gil', 'rank', 'sea'] };
 // custom properties that are sizes, fonts or patterns, not colours
-const NON_COLOUR = new Set(['--f-disp', '--f-body', '--f-data', '--f-serif', '--f-kick', '--edge', '--pad-x', '--p', '--field', '--row-pad', '--row-gap', '--r', '--cut', '--cols', '--strip-fig', '--state-fs', '--name-fs', '--fig-fs', '--head-fs', '--quick-h', '--hazard']);
+const NON_COLOUR = new Set(['--f-disp', '--f-body', '--f-data', '--f-serif', '--f-kick', '--edge', '--pad-x', '--p', '--field', '--row-pad', '--row-gap', '--r', '--cut', '--cols', '--strip-fig', '--state-fs', '--name-fs', '--fig-fs', '--head-fs', '--quick-h', '--hazard', '--ax-l', '--ax-r', '--x', '--nfs', '--sfs', '--th', '--bar', '--ret', '--i', '--pitch', '--d']);
 // role tokens no rule of subs.css uses yet, each with its reason (the test fails when one is used, or when an unused one is missing here)
 const UNUSED = {
   '--out-s': 'Out is not used as text on any screen yet; the tone exists so that a later rule has one',
   '--loot-w': 'no rule paints a loot wash; the tone is kept with its role',
+  '--route-w': 'the locked lane is the locked hatch on page field 3 since W32; no rule paints a route wash now; the tone is kept with its role',
   '--chart-bg-hi': 'the lightest ground under a marker; read by the contrast test, painted by no rule',
   '--deep': 'added by W33 (the empty states); not computed yet', '--deep-2': 'added by W33; not computed yet', '--on-deep': 'added by W33; not computed yet', '--deep-line': 'added by W33; not computed yet'
 };
@@ -81,20 +82,23 @@ const ZONES = [
   Z('Token rules', 'the token definitions (`:root`, `.subs-page`, the sea and chart token rules)', 'where every colour is declared', ['=:root', '=:root:not([data-theme="light"])', '=:root[data-theme="dark"]', '=.subs-page', '.subs-page:has(.tabs [data-tab=', '.in-sea-', '=.map-panel', '=:root:not([data-theme="light"]) .map-panel', '=:root[data-theme="dark"] .map-panel', '.map-panel:has(.chart-svg[data-sea='], [ALLROLES]),
   // ---- Board ----
   Z('Board', 'ground, graph paper (`.subs-main`)', 'page field; line', ['=.subs-main'], ['page', 'line']),
-  Z('Board', 'next-back block (`.strip-next`; `.strip-more` arrives with W32)', 'slab field, on, on-2; ink-2', ['.strip-next'], ['slab', 'ink', 'accent']),
-  Z('Board', 'tallies (`.strip-back`; `.strip-tally` arrives with W32)', 'status field and on when the count is above 0, else panel and ink-2; locked: panel, locked hatch, ink', ['.strip-back'], ['back', 'out', 'idle', 'locked', 'panel', 'ink', 'overlay']),
+  Z('Board', 'next-back block (`.strip-next`, `.strip-more`)', 'slab field, on, on-2; ink-2', ['.strip-next', '.strip-more'], ['slab', 'ink', 'accent']),
+  Z('Board', 'tallies (`.strip-back`, `.strip-tally`)', 'status field and on when the count is above 0, else panel and ink-2; locked: panel, locked hatch, ink', ['.strip-back', '.strip-tally'], ['back', 'out', 'idle', 'locked', 'panel', 'ink', 'overlay']),
   Z('Board', 'tools (`.strip-tools`, `.seg`)', 'panel, ink; pressed: slab', ['.seg', '.strip-tools'], ['panel', 'page', 'ink', 'slab']),
+  Z('Board', 'axis (`.tl-axis`)', 'ink (rule, return notches); ink-2 (tick labels); slab (the count on a cluster)', ['.tl-axis'], ['ink', 'slab']),
   Z('Board', 'group head (`.fc-head`)', 'slab field, on, on-2; molten band; status fields and ink-3 in the slot strip', ['.fc-head', '.fc-list'], ['slab', 'molten', 'page', 'back', 'out', 'idle', 'locked', 'ink']),
-  Z('Board', 'lane ground (`.sub`)', 'status wash, else panel; ink edge; Back: a 2 px back field inset', ['.sub:focus-visible', '=.sub', '.sub[data-status="back"]', '.sub[data-status="out"]', '.sub[data-status="idle"]', '.sub[data-sub]:hover', '=.sub::before', '.sub[data-status="back"]::before'], ['back', 'out', 'idle', 'page', 'panel', 'ink', 'accent', 'overlay']),
+  Z('Board', 'lane ground (`.sub`)', 'status wash, else panel; ink edge; Back: a 2 px back field inset', ['=.fc-subs:not(.list) .sub', '.sub:focus-visible', '=.sub', '.sub[data-status="back"]', '.sub[data-status="out"]', '.sub[data-status="idle"]', '.sub[data-sub]:hover', '=.sub::before', '.sub[data-status="back"]::before'], ['back', 'out', 'idle', 'page', 'panel', 'ink', 'accent', 'overlay']),
   Z('Board', 'status field and word (`.sub::before`, `.chip`)', 'status field and on; locked: locked hatch, ink on page', ['.chip', '.sub[data-status] .chip', '.sub[data-status="locked"] .chip', '.sub[data-status="locked"]::before'], ['back', 'out', 'idle', 'locked', 'ink', 'page', 'route']),
-  Z('Board', 'name, parts code, route caption', 'ink; ink-2; ink', ['.sub-fc', '.sub-meta', '.sub-when', '.sub-name'], ['ink']),
+  Z('Board', 'name, parts code, route caption', 'ink; ink-2; ink', ['.sub-fc', '.sub-meta', '.sub-when', '.sub-name', '.sub-top'], ['ink']),
   Z('Board', 'rank plate', 'rank field, on-mid', ['.sub[data-sub] .sub-meta > span:first-child'], ['rank', 'slab', 'shared']),
   Z('Board', 'countdown, clock (`.when`)', 'ink (Back: back text); ink-2', ['=.when', '.when'], ['ink', 'back']),
+  Z('Board', 'discs (`.disc`)', 'sea field, on-mid; outlined: panel, sea graphic, ink; the gap ring is panel', ['.disc'], ['sea', 'shared', 'panel', 'ink']),
+  Z('Board', 'trough, bar, marker (`.tl`, `.tl-bar`, `.tl-end`)', 'page field 3; out field (Back: back field); ink', ['.tl', '.tl-bar', '.tl-end'], ['page', 'out', 'back', 'ink', 'locked', 'line']),
   Z('Board', 'voyage gauge (`.vgauge`)', 'out field on its own 12% track', ['.vgauge'], ['out']),
   Z('Board', 'action (`.quick`)', 'accent field, on; band: molten, or the choosing role\'s field over a 2 px accent-on line', ['.quick', '.btn.primary, .quick', '.sub-when .quick'], ['accent', 'molten', 'rank', 'gil', 'loot', 'route']),
-  Z('Board', 'locked lane', 'locked hatch on page field 3; one outlined disc; ink; tag ink-2', ['.sub[data-status="locked"]', '.sub[data-status="locked"] .sub-meta', '.sub[data-status="locked"] .tag', '.sub[data-status="locked"][class*="in-sea-"]'], ['locked', 'route', 'sea', 'ink', 'page', 'panel', 'line']),
+  Z('Board', 'locked lane', 'locked hatch on page field 3; one outlined disc; ink; tag ink-2', ['.sub[data-status="locked"]', '.sub[data-status="locked"] .sub-meta', '.sub[data-status="locked"] .tag'], ['locked', 'route', 'sea', 'ink', 'page', 'panel', 'line']),
   Z('Board', 'empty slot (`.sub.empty`)', 'idle graphic (dashed edge, hatch); ink-2; link accent', ['.sub.empty'], ['idle']),
-  Z('Board', 'notes (`.hint`, `.foot-note`; `.tl-key` arrives with W32)', 'ink-2; link accent', ['.foot-note'], ['ink']),
+  Z('Board', 'notes (`.hint`, `.foot-note`, `.tl-key`)', 'ink-2; link accent', ['.foot-note'], ['ink']),
   // ---- Send window ----
   Z('Send window', 'scrim; sheet', 'overlay; panel, ink edge, molten band', ['.sheet::backdrop', '=.sheet', '.sheet-actions'], ['overlay', 'panel', 'ink']),
   Z('Send window', 'title (`.sheet h2`)', 'slab; a 12 px status field edge', ['.sheet h2'], ['slab']),

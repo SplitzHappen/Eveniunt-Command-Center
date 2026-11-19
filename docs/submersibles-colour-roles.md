@@ -1420,20 +1420,23 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | ground, graph paper (`.subs-main`) | page field; line | `=.subs-main` | page, line |
-| next-back block (`.strip-next`; `.strip-more` arrives with W32) | slab field, on, on-2; ink-2 | `.strip-next` | slab, ink, accent |
-| tallies (`.strip-back`; `.strip-tally` arrives with W32) | status field and on when the count is above 0, else panel and ink-2; locked: panel, locked hatch, ink | `.strip-back` | back, out, idle, locked, panel, ink, overlay |
+| next-back block (`.strip-next`, `.strip-more`) | slab field, on, on-2; ink-2 | `.strip-next`, `.strip-more` | slab, ink, accent |
+| tallies (`.strip-back`, `.strip-tally`) | status field and on when the count is above 0, else panel and ink-2; locked: panel, locked hatch, ink | `.strip-back`, `.strip-tally` | back, out, idle, locked, panel, ink, overlay |
 | tools (`.strip-tools`, `.seg`) | panel, ink; pressed: slab | `.seg`, `.strip-tools` | panel, page, ink, slab |
+| axis (`.tl-axis`) | ink (rule, return notches); ink-2 (tick labels); slab (the count on a cluster) | `.tl-axis` | ink, slab |
 | group head (`.fc-head`) | slab field, on, on-2; molten band; status fields and ink-3 in the slot strip | `.fc-head`, `.fc-list` | slab, molten, page, back, out, idle, locked, ink |
-| lane ground (`.sub`) | status wash, else panel; ink edge; Back: a 2 px back field inset | `.sub:focus-visible`, `=.sub`, `.sub[data-status="back"]`, `.sub[data-status="out"]`, `.sub[data-status="idle"]`, `.sub[data-sub]:hover`, `=.sub::before`, `.sub[data-status="back"]::before` | back, out, idle, page, panel, ink, accent, overlay |
+| lane ground (`.sub`) | status wash, else panel; ink edge; Back: a 2 px back field inset | `=.fc-subs:not(.list) .sub`, `.sub:focus-visible`, `=.sub`, `.sub[data-status="back"]`, `.sub[data-status="out"]`, `.sub[data-status="idle"]`, `.sub[data-sub]:hover`, `=.sub::before`, `.sub[data-status="back"]::before` | back, out, idle, page, panel, ink, accent, overlay |
 | status field and word (`.sub::before`, `.chip`) | status field and on; locked: locked hatch, ink on page | `.chip`, `.sub[data-status] .chip`, `.sub[data-status="locked"] .chip`, `.sub[data-status="locked"]::before` | back, out, idle, locked, ink, page, route |
-| name, parts code, route caption | ink; ink-2; ink | `.sub-fc`, `.sub-meta`, `.sub-when`, `.sub-name` | ink |
+| name, parts code, route caption | ink; ink-2; ink | `.sub-fc`, `.sub-meta`, `.sub-when`, `.sub-name`, `.sub-top` | ink |
 | rank plate | rank field, on-mid | `.sub[data-sub] .sub-meta > span:first-child` | rank, slab, shared |
 | countdown, clock (`.when`) | ink (Back: back text); ink-2 | `=.when`, `.when` | ink, back |
+| discs (`.disc`) | sea field, on-mid; outlined: panel, sea graphic, ink; the gap ring is panel | `.disc` | sea, shared, panel, ink |
+| trough, bar, marker (`.tl`, `.tl-bar`, `.tl-end`) | page field 3; out field (Back: back field); ink | `.tl`, `.tl-bar`, `.tl-end` | page, out, back, ink, locked, line |
 | voyage gauge (`.vgauge`) | out field on its own 12% track | `.vgauge` | out |
 | action (`.quick`) | accent field, on; band: molten, or the choosing role's field over a 2 px accent-on line | `.quick`, `.btn.primary, .quick`, `.sub-when .quick` | accent, molten, rank, gil, loot, route |
-| locked lane | locked hatch on page field 3; one outlined disc; ink; tag ink-2 | `.sub[data-status="locked"]`, `.sub[data-status="locked"] .sub-meta`, `.sub[data-status="locked"] .tag`, `.sub[data-status="locked"][class*="in-sea-"]` | locked, route, sea, ink, page, panel, line |
+| locked lane | locked hatch on page field 3; one outlined disc; ink; tag ink-2 | `.sub[data-status="locked"]`, `.sub[data-status="locked"] .sub-meta`, `.sub[data-status="locked"] .tag` | locked, route, sea, ink, page, panel, line |
 | empty slot (`.sub.empty`) | idle graphic (dashed edge, hatch); ink-2; link accent | `.sub.empty` | idle |
-| notes (`.hint`, `.foot-note`; `.tl-key` arrives with W32) | ink-2; link accent | `.foot-note` | ink |
+| notes (`.hint`, `.foot-note`, `.tl-key`) | ink-2; link accent | `.foot-note` | ink |
 
 ### Send window
 

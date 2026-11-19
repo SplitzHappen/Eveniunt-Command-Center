@@ -482,13 +482,13 @@ test('final pass (W29): the planned route, the stepped-back goal line, the gil w
     need4('Earnings: gil-s figure on the other cards (slip) (4.5)', c('--gil-s'), hx(th.slip), 4.5, where);
     for (const b of [th.slip, th.paper, th.paper2]) need4('Earnings: bar tip gil-g on the cell (3)', c('--gil-g'), hx(b), 3, where);
     need4('Earnings: bar tip gil-g on the bar wash (printed)', c('--gil-g'), c('--gil-w'), 0, where);
-    // Board: a locked slot is a route wash fading to the slip, route stripes on its field, ink name and sector text and "community data" tag, and the sea's edge at the slip end
-    const stripes = { 'route wash': c('--route-w'), slip: hx(th.slip) };
-    for (const [n, b] of Object.entries(stripes)) {
-      need4('locked slot: ink name and sector text on ' + n + ' (7)', ink, b, 7, where);
-      if (n === 'slip') for (let s = 1; s <= 7; s++) need4('locked slot: sea edge (the right end of the row is the slip) on ' + n + ' (3)', c('--sea-' + s + '-g'), b, 3, where);
-      need4('locked slot: stripe route-g on ' + n + ' (printed)', c('--route-g'), b, 0, where);
-    }
+    // Board (W32): a locked lane is the locked hatch on page field 3 with ink text; the trough is page field 3, the Out bar and the Back bar on it reach 3:1; ink on the trough and on each status wash reaches 4.5
+    const p3 = hx(P.colour('var(--paper-3)', e0)), sw = (n) => hx(P.colour('var(' + n + ')', e0));
+    need4('locked lane: ink name and sector text on page field 3 (4.5)', ink, p3, 4.5, where);
+    need4('trough: out bar on page field 3 (3)', sw('--out'), p3, 3, where);
+    need4('trough: back bar on page field 3 (3)', sw('--back'), p3, 3, where);
+    for (const k of ['back', 'out', 'idle']) need4('lane: ink on the ' + k + ' wash (4.5)', ink, hx(P.colour('var(--' + k + '-bg)', e0)), 4.5, where);
+    for (let s = 1; s <= 7; s++) { need4('disc: on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where); need4('outlined disc: sea graphic on the slip (3)', c('--sea-' + s + '-g'), hx(th.slip), 3, where); }
     // the company head: the status band sits on a 5 px strip in the page colour (the slab is light in a dark theme and the fixed status colours are not 3:1 on it); the gaps between its quarters are that strip
     const st = (n) => hx(P.colour('var(' + n + ')', e0));
     for (const k of ['--back', '--out', '--idle', '--locked']) need4('company head band: ' + k.slice(2) + ' on the page colour strip it sits on (3)', st(k), hx(th.paper), 3, where);
@@ -509,8 +509,8 @@ test('final pass (W29): subs.css and subs.js carry the rules and the classes', (
   for (const s of ['--chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc;', '.chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 7;', '.chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 4; }', '.chart-node.on-route .chart-letter { fill: var(--chart-hot-text); }',
     '.chart-svg:has(.chart-route) .chart-lines line.goal:is(.open, .closed) { stroke: var(--chart-ink-step); }',
     '.fc-head { background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 3px), var(--paper) calc(25% - 3px) 25%) 0 0 / 100% 5px no-repeat, var(--band, none) 0 0 / 100% 5px no-repeat, linear-gradient(var(--paper), var(--paper)) 0 0 / 100% 5px no-repeat, var(--slab); }',
-    '.sub[data-status="locked"] { color: var(--ink); background: linear-gradient(90deg, var(--route-w), var(--slip) 60%); }',
-    '.sub[data-status="locked"][class*="in-sea-"] { box-shadow: inset -10px 0 0 var(--sea-g); }', 'cursor: default; }', '.sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }']) assert.ok(css.includes(s), s);
+    '.sub[data-status="locked"] { color: var(--ink); background: var(--paper-3); }',
+    '.tl.out .tl-bar { background: linear-gradient(var(--out), var(--out)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }', '.tl.done .tl-bar { background: var(--back); }', '.tl.ghost .disc, .tl.locked .disc {', 'cursor: default; }', '.sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }']) assert.ok(css.includes(s), s);
   assert.equal(css.split('--chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc;').length - 1, 3, 'all three chart token rules');
   assert.ok(js.includes("(u && u.sea ? ' in-sea-' + u.sea : '')") && js.includes('style="--band:linear-gradient(90deg, '), 'locked row sea class and the head band');
   // only the route (and its glow, rings and the letters of its stops) uses --chart-hot; the selection bracket, the focus ring and the start ping use the accent's pale tint

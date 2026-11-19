@@ -9,7 +9,7 @@
 (function () {
   'use strict';
   var RECS_NAME = window.RECS.NAME;
-  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH, EARN = window.EARN, CHART = window.CHART;
+  var CC = window.CC, F = window.FLEET, ADV = window.ADVISOR, PUSH = window.PUSH, EARN = window.EARN, CHART = window.CHART, TL = window.TL;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -195,58 +195,115 @@
   function statusKey() { var now = Date.now(); return F.fleet(S, now).map(function (x) { return x.id + x.status; }).join(); }
 
   // the next-back strip counts only the shown free companies (G8)
+  var MORE_MS = 10 * 60000; // "and N more within 10 minutes" (Rev4.7)
   function shownSummary(now) {
-    var all = shownFleet(now), next = null, back = 0;
-    all.forEach(function (x) { if (x.status === 'back') back++; if (x.status === 'out' && (!next || x.sub.voyage.returnAt < next.sub.voyage.returnAt)) next = x; });
-    return { next: next, back: back, sendable: all.filter(function (x) { return x.status === 'back' || x.status === 'idle'; }).length };
+    var all = shownFleet(now), next = null, back = 0, out = 0, idle = 0;
+    all.forEach(function (x) {
+      if (x.status === 'back') back++; else if (x.status === 'out') out++; else if (x.status === 'idle') idle++;
+      if (x.status === 'out' && (!next || x.sub.voyage.returnAt < next.sub.voyage.returnAt)) next = x;
+    });
+    // locked: for each shown company, 4 less its unlocked slots
+    var locked = shownFcs().reduce(function (n, f) { return n + Math.max(0, 4 - (f.fc.unlockedSlots || 1)); }, 0);
+    var more = next ? all.filter(function (x) { return x !== next && x.status === 'out' && x.sub.voyage.returnAt - next.sub.voyage.returnAt <= MORE_MS; }).length : 0;
+    return { next: next, back: back, out: out, idle: idle, locked: locked, more: more, sendable: all.filter(function (x) { return x.status === 'back' || x.status === 'idle'; }).length };
   }
   function strip(now) {
     var sum = shownSummary(now);
     var next = sum.next ? '<b>Next back:</b> ' + esc(F.subLabel(sum.next)) + ' in <span data-until="' + sum.next.sub.voyage.returnAt + '">' + F.fmtDur(sum.next.sub.voyage.returnAt - now, true) + '</span>'
       : '<b>Next back:</b> none out';
     var sound = !!F.deviceSubs().sound;
+    var tally = function (cls, n, word) { return '<span class="strip-tally ' + cls + (n ? ' on' : '') + '"><b>' + n + '</b> ' + word + '</span>'; };
     return '<div class="strip">' +
       '<span class="strip-next">' + next + '</span>' +
+      (sum.more ? '<span class="strip-more">and ' + sum.more + ' more within 10 minutes</span>' : '') +
       '<span class="strip-back' + (sum.back ? ' on' : '') + '"><b>' + sum.back + '</b> back now</span>' +
+      tally('out', sum.out, 'out') + tally('idle', sum.idle, 'idle') + tally('locked', sum.locked, 'locked') +
       '<span class="strip-tools">' +
         '<span class="seg" role="group" aria-label="Sort"><button type="button" data-sort="fc" aria-pressed="' + (sortMode() === 'fc') + '">By FC</button><button type="button" data-sort="time" aria-pressed="' + (sortMode() === 'time') + '">By return time</button></span>' +
         (sum.sendable ? '<button type="button" class="btn sm" data-act="sendallfleet" title="One sheet for every shown free company: tick the submarines to send">Send all back, every free company</button>' : '') +
         '<button type="button" class="btn sm" data-act="sound" aria-pressed="' + sound + '" title="A sound with the banner when a sub comes back (this device only)">Sound ' + (sound ? 'on' : 'off') + '</button>' +
       '</span></div>';
   }
+  // ---- the Board's timeline (W32, Rev4.7): one shared axis that starts now; all of its arithmetic is in timeline.js ----
+  var HOUR_MS = 3600000;
+  // a route as lettered discs in their sea's colour: a label, never a time (at most five)
+  function routeDiscs(route) {
+    var r = (route || []).filter(function (id) { return SECTOR[id]; }).slice(0, 5);
+    if (!r.length) return '';
+    return '<span class="discs" aria-hidden="true">' + r.map(function (id, k) { var sc = SECTOR[id]; return '<i class="disc in-sea-' + sc.sea + '" style="--i:' + k + '">' + esc(sc.letter) + '</i>'; }).join('') + '</span>';
+  }
+  // the axis of the whole Board: the smallest span that holds every shown Out return and every suggested voyage (48 hours when there is none)
+  function boardAxis(now) {
+    var ms = 0;
+    shownFleet(now).forEach(function (x) {
+      if (x.status === 'out') ms = Math.max(ms, x.sub.voyage.returnAt - now);
+      else if (x.status === 'back' || x.status === 'idle') { var a = adviceFor(x.id); if (a && a.plan) ms = Math.max(ms, a.plan.ev.seconds * 1000); }
+    });
+    return { span: TL.span(ms) };
+  }
+  // the marks of an axis: the returns of Out submarines that fall inside it, returns closer than 2% of it merged into one counted mark
+  function axisMarksHtml(rets, span, now) {
+    var xs = rets.filter(function (t) { return t - now <= span * HOUR_MS; }).map(function (t) { return TL.pos(t - now, span); });
+    return TL.marks(xs).map(function (m) { return '<i class="tl-mark" style="--x:' + m.x + '" data-n="' + m.n + '"></i>'; }).join('');
+  }
+  function axisHtml(T, outs, now) {
+    var rets = outs.map(function (x) { return x.sub.voyage.returnAt; });
+    return '<div class="tl-axis" aria-hidden="true" data-span="' + T.span + '" data-rets="' + rets.join(',') + '">' +
+      TL.ticks(T.span).map(function (t) { return '<i style="--x:' + t.x + '">' + t.label + '</i>'; }).join('') + axisMarksHtml(rets, T.span, now) + '</div>';
+  }
+  // the track of a lane: out (bar to the return, marker at it), over (the return is past the axis), done (Back), ghost (a suggestion, outlined)
+  function laneTl(x, now, a, T) {
+    var v = x.sub.voyage, st = x.status, bar = '<i class="tl-bar"></i><i class="tl-end"></i>';
+    if (st === 'out') {
+      var ms = v.returnAt - now, over = ms > T.span * HOUR_MS;
+      return '<span class="tl ' + (over ? 'over' : 'out') + '" aria-hidden="true" data-ret="' + v.returnAt + '" style="--ret:' + TL.pos(ms, T.span) + '">' + routeDiscs(v.route) + bar + '</span>';
+    }
+    var plan = a && a.plan;
+    if (st === 'back' && v && v.route && v.route.length) return '<span class="tl done" aria-hidden="true">' + routeDiscs(v.route) + bar + '</span>';
+    if (plan) { var gm = plan.ev.seconds * 1000; return '<span class="tl ghost' + (gm > T.span * HOUR_MS ? ' over' : '') + '" aria-hidden="true" style="--ret:' + TL.pos(gm, T.span) + '">' + routeDiscs(plan.route) + bar + '</span>'; }
+    return '<span class="tl' + (st === 'back' ? ' done' : '') + '" aria-hidden="true">' + bar + '</span>';
+  }
   // the voice of the objective that chose the advice (look only): unlock = route, level = rank, gil = gil, loot = loot
   function leadVoice(a) { var v = a && ({ U1: 'route', U2: 'route', U3: 'route', X: 'rank', G: 'gil', L: 'loot' })[a.lead]; return v ? ' lead-' + v : ''; }
-  function subRow(x, now, withFc) {
-    var s = x.sub, st = x.status, v = s.voyage, info = '';
-    if (st === 'out') info = '<span class="when" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b> · ' + esc(F.fmtClock(v.returnAt, now)) + '</span>';
-    else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back ' + esc(F.fmtClock(v.returnAt, now)) + (up && up.rank > s.rank ? ' · rank → ' + up.rank + '+' : '') + '</span>'; }
-    else if (st === 'idle') info = '<span class="when">not sent</span>';
-    var quick = '';
-    if (st === 'back' || st === 'idle') { var a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
+  // a lane is one labelled group: the submarine, its state, its route and its return in words (the clock in tick() keeps the return current)
+  function laneLabel(x, now, a, whenText) {
+    var s = x.sub, v = s.voyage, route = v && v.route && v.route.length ? routeText(v.route) : (a && a.plan ? routeText(a.plan.route) : '');
+    return (s.name || 'Sub ' + s.slot) + ', ' + F.LABEL[x.status] + (route ? ', route ' + route + (x.status === 'idle' || !(v && v.route && v.route.length) ? ' (suggested)' : '') : '');
+  }
+  function subRow(x, now, withFc, T) {
+    var s = x.sub, st = x.status, v = s.voyage, info = '', said = '';
+    if (st === 'out') { info = '<span class="when" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b> · <span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span></span>'; said = 'back in ' + F.fmtDur(v.returnAt - now, true) + ' · ' + F.fmtClock(v.returnAt, now); }
+    else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back <span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span>' + (up && up.rank > s.rank ? ' · rank → ' + up.rank + '+' : '') + '</span>'; said = 'waiting ' + F.fmtDur(now - v.returnAt) + ' · back ' + F.fmtClock(v.returnAt, now); }
+    else if (st === 'idle') { info = '<span class="when">not sent</span>'; said = 'not sent'; }
+    var quick = '', a = null;
+    if (st === 'back' || st === 'idle') { a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
     var gauge = '', vp = st === 'out' ? F.voyageProgress(v, now) : null;
     if (vp !== null) gauge = '<span class="vgauge" aria-hidden="true" data-voy data-sent="' + v.sentAt + '" data-ret="' + v.returnAt + '" style="--p:' + vp.toFixed(4) + '"></span><span class="vgauge-sr" data-voy-text>Voyage ' + Math.floor(vp * 100) + ' percent done</span>';
     var route = v && v.route && v.route.length ? '<span class="route" title="Route as entered">' + esc(routeText(v.route)) + '</span>' : '';
-    return '<div class="sub" role="button" tabindex="0" data-sub="' + esc(x.id) + '" data-status="' + st + '">' +
+    var lbl = laneLabel(x, now, a);
+    return '<div class="sub" role="group" tabindex="0" data-sub="' + esc(x.id) + '" data-status="' + st + '" data-lbl="' + esc(lbl) + '" aria-label="' + esc(lbl + '; ' + said + '. Press Enter to open it.') + '">' +
       '<span class="sub-top"><span class="sub-name">' + (withFc ? '<span class="sub-fc">' + esc(x.fc.name || 'Unnamed') + ' · </span>' : '') + esc(s.name || 'Sub ' + s.slot) + '</span>' +
       '<span class="chip ' + st + '">' + F.LABEL[st] + '</span></span>' +
       '<span class="sub-meta"><span title="Rank as you entered it">' + (s.rank ? 'Rank ' + s.rank : 'Rank ?') + '</span><span class="code" title="' + esc(partsTitle(s.parts)) + ' (as you entered them)">' + partsCode(s.parts) + '</span>' + route + '</span>' +
+      laneTl(x, now, a, T) +
       '<span class="sub-when">' + info + quick + '</span>' + gauge + '</div>';
   }
   function lockedRow(slot) {
-    var u = slotUnlock(slot);
-    return '<div class="sub' + (u && u.sea ? ' in-sea-' + u.sea : '') + '" data-status="locked" data-slot="' + slot + '"><span class="sub-top"><span class="sub-name">Slot ' + slot + '</span><span class="chip locked">Locked</span></span>' +
-      '<span class="sub-meta">' + (u ? 'Unlocked by surveying ' + esc(sectorLabel(u)) + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span>' : 'unlock not known') + '</span></div>';
+    var u = slotUnlock(slot), lbl = 'Slot ' + slot + ', Locked' + (u ? '; unlocked by surveying ' + sectorLabel(u) : '');
+    var tl = '<span class="tl locked" aria-hidden="true">' + (u && SECTOR[u.id] ? routeDiscs([u.id]) : '') + '<i class="tl-bar"></i></span>';
+    return '<div class="sub' + (u && u.sea ? ' in-sea-' + u.sea : '') + '" role="group" aria-label="' + esc(lbl) + '" data-status="locked" data-slot="' + slot + '"><span class="sub-top"><span class="sub-name">Slot ' + slot + '</span><span class="chip locked">Locked</span></span>' +
+      '<span class="sub-meta">' + (u ? 'Unlocked by surveying ' + esc(sectorLabel(u)) + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span>' : 'unlock not known') + '</span>' + tl + '</div>';
   }
-  function fcCard(f, now) {
+  function fcCard(f, now, T) {
     var fc = f.fc, subs = subsOf(f.id), rows = '', outs = [];
     for (var slot = 1; slot <= 4; slot++) {
       var e = subs[slot];
       if (slot > (fc.unlockedSlots || 1) || !e) { rows += slot > (fc.unlockedSlots || 1) ? lockedRow(slot) : '<div class="sub empty" data-status="idle"><span class="sub-meta">Slot ' + slot + ' is unlocked but has no sub yet. <button type="button" class="link" data-act="edit" data-fc="' + esc(f.id) + '">Add it in Setup</button></span></div>'; continue; }
       var x = { id: e.id, sub: e.sub, fc: fc, fcId: f.id, status: F.status(e.sub, fc, now) };
       if (x.status === 'out') outs.push(x);
-      rows += subRow(x, now, false);
+      rows += subRow(x, now, false, T);
     }
-    var last = outs.sort(function (a, b) { return b.sub.voyage.returnAt - a.sub.voyage.returnAt; })[0];
+    var last = outs.slice().sort(function (a, b) { return b.sub.voyage.returnAt - a.sub.voyage.returnAt; })[0];
     var sendable = Object.keys(subs).some(function (k) { var st = F.status(subs[k].sub, fc, now); return st === 'back' || st === 'idle'; });
     var where = [fc.world, charName(fc.charId)].filter(Boolean).join(' · ');
     // look only: a thin band across the head, one quarter per slot in the slot's status colour (Back green, Out blue, Idle amber, Locked neutral; a slot with no sub yet has no colour); the rows below carry the words
@@ -257,7 +314,7 @@
     return '<section class="fc" data-fc="' + esc(f.id) + '"><header class="fc-head" style="--band:linear-gradient(90deg, ' + band + ')"><div><h3>' + esc(fc.name || 'Unnamed free company') + '</h3>' + (where ? '<span class="muted">' + esc(where) + '</span>' : '') + '</div>' +
       '<div class="fc-tools">' + (sendable ? '<button type="button" class="btn sm" data-act="sendall" data-fc="' + esc(f.id) + '">Send all back</button>' : '') +
       (last ? '<button type="button" class="btn sm ghost" data-act="ics-fc" data-fc="' + esc(f.id) + '" title="Add the last return of this free company to your calendar">Calendar: last back ' + esc(F.fmtClock(last.sub.voyage.returnAt, now)) + '</button>' : '') +
-      '</div></header><div class="fc-subs">' + rows + '</div></section>';
+      '</div></header><div class="fc-subs">' + axisHtml(T, outs, now) + rows + '</div></section>';
   }
   // once per Board: the collapsed "How this is estimated", when any suggestion on the screen rests on community drop records; with the part of
   // each plan's gil figure that rests on the second-item assumption
@@ -277,17 +334,18 @@
       return '<section class="panel welcome"><h2>Set up your first free company</h2><p>Once per free company, about 3 to 5 minutes: its name, world and character, then each of its four submarine slots (name, rank, parts and any voyage under way) and the sectors already discovered.</p>' +
         '<p><button type="button" class="btn primary" data-act="new">Start the setup</button></p><p class="muted">Enter each sub\'s rank and four parts: the app then works out every return time from the route you tap, and suggests the next route following your order (unlock all four subs, discover every sector, farm gil).</p></section>';
     }
-    var body;
+    var body, T = boardAxis(now);
     if (sortMode() === 'time') {
       var all = shownFleet(now).filter(function (x) { return x.status !== 'locked'; });
       var rank = { back: 0, out: 1, idle: 2 };
       all.sort(function (a, b) {
         return rank[a.status] - rank[b.status] || (a.status === 'back' ? a.sub.voyage.returnAt - b.sub.voyage.returnAt : a.status === 'out' ? a.sub.voyage.returnAt - b.sub.voyage.returnAt : 0) || String(F.subLabel(a)).localeCompare(F.subLabel(b));
       });
-      body = '<section class="fc wide"><header class="fc-head"><h3>All submarines by return time</h3></header><div class="fc-subs list">' + all.map(function (x) { return subRow(x, now, true); }).join('') + '</div></section>';
-    } else body = '<div class="fleet">' + fcs.map(function (f) { return fcCard(f, now); }).join('') + '</div>';
+      body = '<section class="fc wide"><header class="fc-head"><h3>All submarines by return time</h3></header><div class="fc-subs list">' + axisHtml(T, all.filter(function (x) { return x.status === 'out'; }), now) + all.map(function (x) { return subRow(x, now, true, T); }).join('') + '</div></section>';
+    } else body = '<div class="fleet">' + fcs.map(function (f) { return fcCard(f, now, T); }).join('') + '</div>';
     var hid = nHidden ? '<p class="hint hidden-note" data-hidden-note>' + nHidden + ' free compan' + (nHidden === 1 ? 'y is' : 'ies are') + ' hidden from this Board (their data and alerts are unchanged). <button type="button" class="link" data-tab="setup">Show ' + (nHidden === 1 ? 'it' : 'them') + ' in Setup</button></p>' : '';
-    return strip(now) + hid + body + boardEstimateNote(now) + '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
+    return strip(now) + hid + body + boardEstimateNote(now) + '<p class="foot-note tl-key">Letters: the route\'s sectors, in order, in their sea\'s colour. Bar and marker: the time left and the return, on the line above. Outlined: a suggestion, not sent.</p>' +
+      '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
   }
   // how the worked-out times compare with the game's: every voyage or trip where the game's time was also entered
   function accuracyHtml() {
@@ -1605,6 +1663,9 @@
     if (!D || UI.tab !== 'board') return;
     if (statusKey() !== lastStatus) { if (!(dlg && dlg.open)) render(); return; }
     var now = Date.now();
+    // the axis changes its span when the longest return or suggestion crosses 12, 24, 48 or 72 hours: redraw then
+    var ax = $('.tl-axis'), T = null;
+    if (ax) { T = boardAxis(now); if (+ax.dataset.span !== T.span) { if (!(dlg && dlg.open)) render(); return; } }
     $$('[data-until]').forEach(function (el) { el.textContent = F.fmtDur(+el.dataset.until - now, true); });
     $$('[data-since]').forEach(function (el) { el.textContent = F.fmtDur(now - +el.dataset.since); });
     $$('[data-voy]').forEach(function (el) {
@@ -1613,6 +1674,16 @@
       el.style.setProperty('--p', p.toFixed(4));
       var t = el.nextElementSibling; if (t && t.hasAttribute('data-voy-text')) t.textContent = 'Voyage ' + Math.floor(p * 100) + ' percent done';
     });
+    if (!T) return;
+    // the bar and the marker of each Out lane, and the notches of each axis, follow the clock (no transition: one step a second)
+    $$('.tl[data-ret]').forEach(function (el) { var ms = +el.dataset.ret - now, over = ms > T.span * HOUR_MS; el.style.setProperty('--ret', String(TL.pos(ms, T.span))); el.classList.toggle('over', over); el.classList.toggle('out', !over); });
+    $$('.tl-axis').forEach(function (a) {
+      var html = axisMarksHtml((a.dataset.rets || '').split(',').filter(Boolean).map(Number), T.span, now);
+      if (a.__marks === html) return;
+      a.__marks = html; $$('.tl-mark', a).forEach(function (m) { m.remove(); }); a.insertAdjacentHTML('beforeend', html);
+    });
+    // each lane's accessible name keeps its return current
+    $$('.sub[data-lbl]').forEach(function (el) { var w = el.querySelector('.when'), t = el.dataset.lbl + '; ' + (w ? w.textContent : '') + '. Press Enter to open it.'; if (el.getAttribute('aria-label') !== t) el.setAttribute('aria-label', t); });
   }
 
   // ------------------------------------------------------------------ start

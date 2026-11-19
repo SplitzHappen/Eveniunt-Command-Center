@@ -3636,6 +3636,91 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server28.close();
     });
 
+    // ── C103 to C106 Submersibles Board as a timeline (W32, Rev4.7): the axis, the markers, the tallies, by return time, the phone ──
+    const tlSeed = (pg, build) => pg.evaluate(async (src) => {
+      const now = Date.now(), H = 3600000, M = 60000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+      new Function('sec', 'now', 'H', 'M', src)(sec, now, H, M);
+      const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+    }, build);
+    const OUT = (id, fc, slot, name, ms) => "sec.subs['" + id + "'] = { fcId: '" + fc + "', slot: " + slot + ", name: '" + name + "', rank: 50, parts: [3, 4, 1, 2], voyage: { sentAt: now - H, route: [1, 2], returnAt: now + " + ms + " } };";
+    const FCS = (id, name, order, unlocked) => "sec.fcs['" + id + "'] = { name: '" + name + "', world: 'Maduin', order: " + order + ", unlockedSlots: " + unlocked + ", discovered: [1, 2, 3] };";
+    // markers: each Out lane's marker as a share of its track, read from the page
+    const markers = (pg) => pg.evaluate(() => [...document.querySelectorAll('.fc .sub[data-status="out"] .tl')].map((tl) => { const e = tl.querySelector('.tl-end'), r = tl.getBoundingClientRect(), q = e.getBoundingClientRect(); return { cls: tl.className, share: (q.left + q.width / 2 - r.left) / r.width, ret: +tl.style.getPropertyValue('--ret'), at: +tl.dataset.ret, shown: getComputedStyle(e).display !== 'none' }; }));
+    await guard('C103', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await tlSeed(page, FCS('fa', 'Alpha Company', 0, 4) + FCS('fb', 'Bravo Company', 1, 2) + OUT('o1', 'fa', 1, 'Sub O1', '6 * H') + OUT('o2', 'fa', 2, 'Sub O2', '20 * H') + OUT('o3', 'fa', 3, 'Sub O3', '30 * H') + OUT('o4', 'fa', 4, 'Sub O4', '10 * H') + OUT('p1', 'fb', 1, 'Sub P1', '15 * H') + OUT('p2', 'fb', 2, 'Sub P2', '8 * H')); // 30 h longest: span 48
+      await page.reload(); await ready(); await page.waitForSelector('.tl.out');
+      const got = await page.evaluate(() => { const ax = document.querySelector('.tl-axis'); return { span: ax.dataset.span, ticks: [...ax.querySelectorAll('i:not(.tl-mark)')].map((i) => i.textContent), axes: document.querySelectorAll('.tl-axis').length, aria: ax.getAttribute('aria-hidden'), next: document.querySelector('.strip-next').textContent, back: document.querySelector('.strip-back').textContent, tallies: Object.fromEntries([...document.querySelectorAll('.strip-tally')].map((t) => [t.classList[1], t.querySelector('b').textContent + '|' + t.textContent.trim()])), more: !!document.querySelector('.strip-more'), labels: [...document.querySelectorAll('.fc .sub[data-sub]')].map((l) => l.getAttribute('aria-label')).slice(0, 2) }; });
+      const mk = await markers(page), now = await page.evaluate(() => Date.now());
+      const off = mk.map((m) => Math.abs(m.share - (m.at - now) / (48 * 3600000)));
+      await ctx.close();
+      const ok = got.span === '48' && JSON.stringify(got.ticks) === '["now","+12 h","+24 h","+36 h","+48 h"]' && got.axes === 2 && got.aria === 'true' && mk.length === 6 && off.every((x) => x < 0.01) && mk.every((m) => m.shown && /\bout\b/.test(m.cls)) &&
+        /^Next back: Alpha Company · Sub O1 in (5 h \d+ min|6 h)$/.test(got.next) && got.back === '0 back now' && got.tallies.out === '6|6 out' && got.tallies.idle === '0|0 idle' && got.tallies.locked === '2|2 locked' && !got.more && got.labels.every((l) => /Sub O\d, Out, route Deep-sea Site: A → B; back in .* · .*Press Enter/.test(l)) && real(errors).length === 0;
+      record('C103', 'Board timeline (W32): a seeded fleet with known returns: each Out lane\'s marker stands at (return minus now) over the span within 0.01, the axis shows the span the rule gives (48 hours for a longest return of 30) and five ticks (now, +12 h, +24 h, +36 h, +48 h), the tallies equal the counts (6 out, 0 idle, 2 locked), "N back now" and "Next back: ..." read as before, and each lane is a labelled group that says the submarine, its state, route and return', ok, { got, off: off.map((x) => +x.toFixed(4)), errors: real(errors) });
+      server.close();
+    });
+    await guard('C104', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      await tlSeed(page, FCS('fa', 'Alpha Company', 0, 4) + OUT('o1', 'fa', 1, 'Sub O1', '5 * H') + OUT('o2', 'fa', 2, 'Sub O2', '5 * H + 4 * M') + OUT('o3', 'fa', 3, 'Sub O3', '5 * H + 8 * M') + OUT('o4', 'fa', 4, 'Sub O4', '120 * H'));
+      await page.reload(); await ready(); await page.waitForSelector('.tl.over');
+      const got = await page.evaluate(() => { const ax = document.querySelector('.tl-axis'), over = document.querySelector('.tl.over'); return { span: ax.dataset.span, marks: [...ax.querySelectorAll('.tl-mark')].map((m) => m.dataset.n), over: document.querySelectorAll('.tl.over').length, overMarker: getComputedStyle(over.querySelector('.tl-end'), '::after').content, overIsOut: over.classList.contains('out'), more: (document.querySelector('.strip-more') || {}).textContent, sideways: document.documentElement.scrollWidth - innerWidth, when: over.closest('.sub').querySelector('.when').textContent }; });
+      await ctx.close();
+      const ok = got.span === '96' && JSON.stringify(got.marks) === '["3"]' && got.over === 1 && !got.overIsOut && /»/.test(got.overMarker) && got.more === 'and 2 more within 10 minutes' && got.sideways <= 0 && /5 d/.test(got.when) && real(errors).length === 0;
+      record('C104', 'Board timeline (W32): a return 120 hours away runs off the end of the 96 hour axis (a tl.over lane with chevrons and no marker; the countdown still says when) with no sideways scroll; three returns within ten minutes are one axis mark with data-n="3" and the strip says "and 2 more within 10 minutes"', ok, { got, errors: real(errors) });
+      server.close();
+    });
+    await guard('C105', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await page.goto(ROOT5 + 'submersibles/'); await ready();
+      const idleSub = (id, fc, slot, name) => "sec.subs['" + id + "'] = { fcId: '" + fc + "', slot: " + slot + ", name: '" + name + "', rank: 60, parts: [3, 4, 1, 2], voyage: null };";
+      const backSub = (id, fc, slot, name, agoMin) => "sec.subs['" + id + "'] = { fcId: '" + fc + "', slot: " + slot + ", name: '" + name + "', rank: 60, parts: [3, 4, 1, 2], voyage: { sentAt: now - 5 * H, route: [1, 2], returnAt: now - " + agoMin + " * M, gameSaid: '1h' } };";
+      await tlSeed(page, FCS('fa', 'Alpha Company', 0, 4) + FCS('fb', 'Bravo Company', 1, 4) + OUT('o1', 'fa', 1, 'Sub O1', '9 * H') + OUT('o2', 'fa', 2, 'Sub O2', '3 * H') + backSub('b1', 'fa', 3, 'Sub B1', 30) + idleSub('i1', 'fa', 4, 'Sub I1') + OUT('o3', 'fb', 1, 'Sub O3', '20 * H') + OUT('o4', 'fb', 2, 'Sub O4', '1 * H') + backSub('b2', 'fb', 3, 'Sub B2', 90) + idleSub('i2', 'fb', 4, 'Sub I2'));
+      await page.reload(); await ready(); await page.click('[data-sort=time]'); await page.waitForSelector('.fc.wide .tl-axis');
+      const a = await page.evaluate(() => { const subs = [...document.querySelectorAll('.fc.wide .fc-subs.list .sub[data-sub]')]; return { groups: document.querySelectorAll('.fc.wide').length, order: subs.map((x) => x.dataset.status), lefts: [...new Set(subs.map((x) => Math.round(x.getBoundingClientRect().left)))].length, fcName: subs[0].querySelector('.sub-fc').textContent, backFirst: subs.slice(0, 2).map((x) => x.dataset.sub), outs: [...document.querySelectorAll('.fc.wide .sub[data-status="out"] .tl')].map((tl) => { const q = tl.querySelector('.tl-end').getBoundingClientRect(), r = tl.getBoundingClientRect(); return (q.left + q.width / 2 - r.left) / r.width; }) }; });
+      // nothing out: the strip says none out, no lane has a bar, the axis follows the longest suggestion (48 hours when there is none)
+      await tlSeed(page, FCS('fa', 'Alpha Company', 0, 4) + FCS('fb', 'Bravo Company', 1, 4) + backSub('b1', 'fa', 1, 'Sub B1', 30) + idleSub('i1', 'fa', 2, 'Sub I1') + idleSub('i3', 'fa', 3, 'Sub I3') + idleSub('i2', 'fb', 1, 'Sub I2'));
+      await page.reload(); await ready(); await page.waitForSelector('.sub[data-sub]');
+      const n = await page.evaluate(() => { const ax = document.querySelector('.tl-axis'), span = +ax.dataset.span, gh = [...document.querySelectorAll('.tl.ghost')].map((t) => +t.style.getPropertyValue('--ret') * span); const longest = Math.max(0, ...gh); const prev = [12, 24, 48, 72, 96].filter((x) => x < span).pop() || 0; return { next: document.querySelector('.strip-next').textContent, outLanes: document.querySelectorAll('.tl.out, .tl.over').length, bars: document.querySelectorAll('.tl.out .tl-bar, .tl.over .tl-bar').length, span, ghosts: gh.length, longest: +longest.toFixed(2), holds: longest <= span + 0.01 && (gh.length === 0 ? span === 48 : span === 12 || longest > prev) }; });
+      await ctx.close();
+      const nonDec = a.outs.every((x, i) => i === 0 || x >= a.outs[i - 1] - 1e-9);
+      const ok = a.groups === 1 && a.lefts === 1 && JSON.stringify(a.order) === '["back","back","out","out","out","out","idle","idle"]' && /Alpha Company|Bravo Company/.test(a.fcName) && a.backFirst.join() === 'b2,b1' && a.outs.length === 4 && nonDec && n.next === 'Next back: none out' && n.outLanes === 0 && n.bars === 0 && n.holds && real(errors).length === 0;
+      record('C105', 'Board timeline (W32): by return time is one column in today\'s order (Back with the longest wait first, then Out by return time, then Idle) with the company name beside each submarine, and the markers of the Out lanes never step back; with nothing out the strip says "Next back: none out", no lane has a bar and the axis follows the longest suggestion (48 hours when there is none)', ok, { a, n, errors: real(errors) });
+      server.close();
+    });
+    await guard('C106', async () => {
+      const server = await start(PORT5);
+      const phone = { viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
+      const seedPhone = async (pg, ready) => { await pg.goto(ROOT5 + 'submersibles/'); await ready(); await tlSeed(pg, FCS('fa', 'Alpha Company', 0, 3) + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub One', rank: 50, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } }; sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub Two', rank: 40, parts: [3, 4, 1, 2], voyage: { sentAt: now - H, route: [1, 3], returnAt: now + 27 * H } }; sec.subs.a3 = { fcId: 'fa', slot: 3, name: 'Sub Three', rank: 30, parts: [3, 4, 1, 2] };"); await pg.reload(); await ready(); await pg.waitForSelector('.sub[data-sub]'); };
+      const { ctx, errors } = await context(phone);
+      const page = await ctx.newPage(); const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      await seedPhone(page, ready);
+      const m = await page.evaluate(() => ({ sideways: document.documentElement.scrollWidth - innerWidth, track: Math.round(Math.min(...[...document.querySelectorAll('.sub[data-sub] .tl')].map((t) => t.getBoundingClientRect().width))), lanes: Math.round(Math.min(...[...document.querySelectorAll('.sub[data-sub]')].map((t) => t.getBoundingClientRect().height))), quick: Math.round(Math.min(...[...document.querySelectorAll('.quick')].map((t) => t.getBoundingClientRect().height))), axisW: Math.round(document.querySelector('.tl-axis').getBoundingClientRect().width) }));
+      // keyboard: Tab until a lane has focus, one more Tab reaches its action; both show an outline
+      let lane = null, laneOutline = null;
+      for (let i = 0; i < 60 && !lane; i++) { await page.keyboard.press('Tab'); lane = await page.evaluate(() => { const a = document.activeElement; return a && a.matches('.sub[data-sub]') ? a.dataset.sub : null; }); }
+      if (lane) laneOutline = await page.evaluate(() => { const c = getComputedStyle(document.activeElement); return { w: parseFloat(c.outlineWidth), s: c.outlineStyle }; });
+      await page.keyboard.press('Tab');
+      const act = await page.evaluate((id) => { const a = document.activeElement, c = getComputedStyle(a); return { inLane: !!a.closest('.sub[data-sub="' + id + '"]'), quick: a.matches('.quick'), w: parseFloat(c.outlineWidth), s: c.outlineStyle }; }, lane);
+      await ctx.close();
+      // reduced motion: nothing inside a lane animates or transitions (the lane itself and its pseudo-elements included)
+      const { ctx: c2, errors: e2 } = await context(Object.assign({ reducedMotion: 'reduce' }, phone));
+      const p2 = await c2.newPage();
+      await seedPhone(p2, () => p2.waitForSelector('html[data-ready="1"]', { timeout: 20000 }));
+      const rm = await p2.evaluate(() => { const bad = []; document.querySelectorAll('.sub, .sub *').forEach((e) => ['', '::before', '::after'].forEach((ps) => { const c = getComputedStyle(e, ps); if ((c.animationName !== 'none' && c.animationDuration !== '0s') || (c.transitionDuration.split(',').some((d) => parseFloat(d) > 0))) bad.push(e.tagName + '.' + (e.className || '') + ps); })); return bad.slice(0, 5); });
+      await c2.close();
+      const ok = m.sideways <= 0 && m.track >= 280 && m.lanes >= 40 && m.quick >= 40 && m.axisW > 200 && !!lane && laneOutline.w >= 2 && laneOutline.s !== 'none' && act.inLane && act.quick && act.w >= 2 && act.s !== 'none' && rm.length === 0 && real(errors).length === 0 && real(e2).length === 0;
+      record('C106', 'Board timeline on a phone (W32): at 360 px no sideways scroll, the track is at least 280 px wide, every lane and action is at least 40 px high; Tab goes from a lane to its own action; a focused lane and its action show an outline; with reduced motion nothing inside a lane animates or transitions', ok, { m, lane, laneOutline, act, rm, errors: real(errors) });
+      server.close();
+    });
+
     // ── C98 Submersibles drop rates (review fixes 3 and 4): two seeded submarines at the gil step. Sub Q1 (rank 85) has a community plan and, among
     //    the other routes of the send window, one route found by the app and one community route; Sub Q2 (rank 30) has an app-found plan and a
     //    community route among its other routes. Every other route says what it is, its figure and its reason (all worked out here with the
@@ -4266,6 +4351,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           // W21: the Out row (Sub Two, sent an hour ago, back in 27 hours) carries one voyage gauge, drawn and named in words
           out.lockedSea = await page.evaluate(() => document.querySelectorAll('.sub[data-status="locked"][class*="in-sea-"]').length); out.headBand = await page.evaluate(() => [...document.querySelectorAll('.fc-head')].filter((h) => /linear-gradient/.test(h.getAttribute('style') || '') && getComputedStyle(h).backgroundImage.includes('linear-gradient')).length);
           out.gauge = await page.evaluate(() => { const r = document.querySelector('.sub[data-status="out"] .vgauge'); return { n: document.querySelectorAll('.sub[data-status="out"] .vgauge').length, h: r ? Math.round(r.getBoundingClientRect().height) : 0, text: r ? r.nextElementSibling.textContent : '' }; }); }
+        // W32: the Board by return time (one column of compact lanes on the shared axis); a picture, the colour families recorded, the sort put back
+        if (screens.includes('board') && !checkPhone) { await page.click('[data-sort=time]'); await page.waitForSelector('.fc.wide .tl-axis'); await page.waitForTimeout(250); await shot('board-time'); out.timeLanes = await page.evaluate(() => document.querySelectorAll('.fc.wide .sub[data-sub]').length); await page.click('[data-sort=fc]'); await page.waitForSelector('.fleet'); }
         if (screens.includes('sheet')) {
           await page.click('.sub[data-sub="a1"] .sub-top'); await page.waitForSelector('#sheet[open] .advice'); await page.waitForTimeout(250); await shot('sheet');
           // W20: the same window scrolled to the route, return time and reason (a picture only)
@@ -4357,6 +4444,30 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await ctx.close();
         return { fam, wide, errors: real(errors) };
       };
+      // W32: the dense Board (eight companies of four submarines at 1920 x 1080) in a theme: the picture look-board-dense-<tag>.png, the lowest lane bottom, no sideways scroll, the colour families recorded
+      const denseWalk = async (opts, tag, theme, mode) => {
+        const { ctx, errors } = await context(opts), page = await ctx.newPage();
+        if (theme) {
+          await page.goto(ROOT5 + '#settings'); await page.waitForSelector('#s-appearance .look-card');
+          await page.click('#s-appearance [data-look=toggle][data-v="shared:theme"]');
+          await page.click('#s-appearance [data-look=theme][data-v="' + theme + '"]'); await page.click('#s-appearance [data-look=mode][data-v=' + mode + ']');
+        }
+        await page.goto(ROOT5 + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+        await page.evaluate(async () => {
+          const now = Date.now(), sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+          ['Alpha', 'Bravo', 'Cedar', 'Delta', 'Ember', 'Fable', 'Garnet', 'Harbor'].forEach((n, i) => {
+            sec.fcs['f' + i] = { name: n + ' Company', world: 'Maduin', order: i, unlockedSlots: i === 7 ? 3 : 4, discovered: [1, 2, 3] };
+            for (let s = 1; s <= 4; s++) { const kind = (i + s) % 3, ret = kind === 0 ? now + (i * 4 + s) * 600000 : kind === 1 ? now - 600000 : null; sec.subs['s' + i + s] = { fcId: 'f' + i, slot: s, name: 'Sub ' + n[0] + s, rank: 60 + s, parts: [3, 4, 1, 2], voyage: ret ? { sentAt: now - 3600000, route: [1, 2], returnAt: ret, gameSaid: '1h' } : null }; }
+          });
+          const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        });
+        await page.reload(); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await page.waitForSelector('.fc .sub[data-sub]'); await page.waitForTimeout(300);
+        if (SHOT) await page.screenshot({ path: path.join(ev, 'look-board-dense-' + tag + '.png') });
+        const m = await page.evaluate(() => ({ maxBottom: Math.round(Math.max(...[...document.querySelectorAll('.fc .sub[data-status]')].map((e) => e.getBoundingClientRect().bottom))), sideways: document.documentElement.scrollWidth - innerWidth, fcs: document.querySelectorAll('.fc').length }));
+        const fam = await families(page);
+        await ctx.close();
+        return { m, fam, errors: real(errors) };
+      };
       const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8.concat('wizard'), false, null, null, { name: 'default', theme: 'crystarium-dawnglass', mode: 'light', follow: true, title: 'Palette: Crystarium Dawnglass, light (the default)' });
       const dd = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-dark', ['board', 'map'], false);
       const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', all8.concat('wizard'), false, 'azure-dragoon', 'dark', { name: 'azure-dark', theme: 'azure-dragoon', mode: 'dark', title: 'Palette: Azure Dragoon, dark' });
@@ -4364,6 +4475,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map', 'wizard'], false);
+      const n0 = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'light' }, 'desktop', null, null);
+      const na = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark');
+      const nm = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light');
       const e0 = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', null, null);
       const ea = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark');
       const em = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light');
@@ -4397,10 +4511,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const bsFloorOk = ['board', 'setup', 'recommendations'].every((k) => d.fam[k].n >= 4 && [da, dm].every((w) => w.fam[k].n >= 3)) && [d, da, dm].every((w) => w.fam.sheet.n >= 3);
       // W29: the wizard lists all seven seas (the first open) and the empty states and the wizard do not scroll sideways at 360 px; a locked slot carries its sector's sea; a company head carries its status band
       const finalOk = [d, da, dm].every((w) => w.wizard && w.wizard.seas === 7 && w.wizard.open === 1) && pl.wizard.seas === 7 && pl.wideNew.every((x) => x <= 0) && ep.wide.every((x) => x <= 0) && [e0, ea, em, ep].every((w) => !w.errors.length) && [d, da, dm].every((w) => w.lockedSea >= 1 && w.headBand >= 2);
+      const denseOk = [n0, na, nm].every((w) => w.m.fcs === 8 && w.m.maxBottom <= 1080 && w.m.sideways <= 0 && !w.errors.length) && [d, da, dm].every((w) => w.timeLanes === 4);
       const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
-      const ok = finalOk && gaugeOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band',
-        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit } });
+      const ok = finalOk && gaugeOk && denseOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band; W32: the Board by return time (look-board-time-*.png) and the dense Board of eight companies in three themes (look-board-dense-*.png, lowest lane bottom at most 1,080 px, no sideways scroll)',
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], dense: [n0.m, na.m, nm.m], denseFamilies: [n0.fam, na.fam, nm.fam], roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit } });
       server20.close();
     });
 
