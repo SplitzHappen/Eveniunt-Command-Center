@@ -4106,39 +4106,50 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       });
       // W22: the palette sheet (a temporary overlay made and removed here; nothing ships) and the measure of "how many colour families" (R3.7)
       const PAL = require('../tests/subs-palette.js');
-      const VOICE_ROLE = [['rank', 'Rank', 'Leveling Submersible Rank: a submarine\'s rank and levelling'], ['gil', 'Gil', 'Gil Farming: gil figures and value'], ['loot', 'Loot', 'Loot Farming: items brought back'], ['route', 'Route', 'Unlocking Routes: routes, sector letters, unlocking']];
-      const SEA_HUE = ['blue', 'ember', 'jade', 'rose', 'lilac', 'indigo', 'ice'];
+      // Revision 4 (W31): the palette sheet is grouped by role (tools/subs-roles.js holds the list); each role is a row, each tone a swatch with a sample and the hex the browser computed under it
+      const ROLE = require('../tools/subs-roles.js');
+      const SPECIAL = new Set(['--molten', '--glow', '--hi', '--shadow', '--sweep', '--scrim', '--chart-glow', '--rule', '--grid']); // set by the theme or alpha: shown, not read as a hex
+      const NOT_YET = new Set(['--deep', '--deep-2', '--on-deep', '--deep-line']); // W33
+      const ON_OF = { '--paper': '--ink', '--paper-2': '--ink', '--paper-3': '--ink', '--slip': '--ink', '--slab': '--on-slab', '--seal': '--on-seal', '--back': '--on-back', '--out': '--on-out', '--idle': '--on-idle', '--chart-bg': '--chart-ink', '--chart-bg-2': '--chart-ink', '--chart-bg-hi': '--chart-ink' };
       const paletteHtml = (title) => {
-        const sw = (token, fill, inner, role, sample) => '<div class="pl-sw" data-token="' + token + '"><div class="pl-fill" style="background:' + fill + '">' + (inner || '') + '</div><div class="pl-cap"><b>' + token.replace(/@.*/, '') + '</b> <span class="pl-role">' + role + '</span><br><span class="pl-hex"></span></div>' + (sample || '') + '</div>';
-        const tones = (x, wrapCls) => {
-          const v = x.v, pre = x.pre;
-          return '<div class="' + (wrapCls || '') + '" style="display:contents">' +
-            sw(x.m, 'var(' + pre + (x.sea ? '' : '-m') + ')', '<span style="color:var(--on-mid)">Field text in on-mid</span>', 'mid: a field, any mark', '') +
-            sw(x.g, 'var(' + pre + '-g)', '', 'graphic: bands, bars, borders', '<div class="pl-smp" style="background:var(--paper)"><i style="display:inline-block;width:70%;height:7px;background:var(' + pre + '-g)"></i> <span style="display:inline-block;width:18px;height:12px;border:3px solid var(' + pre + '-g);vertical-align:middle"></span></div>') +
-            sw(x.s, 'var(' + pre + '-s)', '', 'strong: coloured text', '<div class="pl-smp" style="background:var(--slip);color:var(' + pre + '-s)"><b>Strong on slip</b></div><div class="pl-smp" style="background:var(--paper);color:var(' + pre + '-s)"><b>Strong on page</b></div><div class="pl-smp" style="background:var(--paper-2);color:var(' + pre + '-s)"><b>Strong on paper-2</b></div>') +
-            sw(x.w, 'var(' + pre + '-w)', '<span style="color:var(--ink)">Ink text on the wash</span>', 'wash: a tint under ink text', '<div class="pl-smp" style="background:var(' + pre + '-w);color:var(' + pre + '-s)"><b>Strong on its wash</b></div>') +
-            (x.r ? sw(x.r, 'var(' + x.r + ')', '<span style="color:var(--paper)">Page-colour text on a ring</span>', 'ring: rings on an empty-state slab', '') : '<div></div>') + '</div>';
+        const MODEL = new Set(['--on-mid']); // tokens the model computes (compared with the browser); the others are read and shown only
+        ROLE.ROLES.forEach((r) => r.tokens.forEach(([t]) => { if (/^--(rank|gil|loot|route)-[mgsw]$/.test(t) || /^--sea-\d(-[gsw])?$/.test(t) || /^--(back|out|idle|bad)-s$/.test(t)) MODEL.add(t); }));
+        const swatch = (t, tone) => {
+          const free = !MODEL.has(t) || undefined;
+          if (NOT_YET.has(t)) return '<div class="pl-sw"><div class="pl-fill" style="background:repeating-linear-gradient(-45deg,var(--paper-2) 0 6px,var(--paper-3) 6px 12px);font-weight:400">added by W33</div><div class="pl-cap"><b>' + t + '</b> <span class="pl-role">' + tone + '</span></div></div>';
+          const special = SPECIAL.has(t), solid = !special;
+          const fill = t === '--molten' ? 'background:var(--molten)' : special ? 'background:var(--paper) linear-gradient(var(' + t + '),var(' + t + '))' : 'background:var(' + t + ')';
+          let inner = '', samp = '';
+          const on = ON_OF[t] || (tone === 'field' ? '--on-mid' : null);
+          if (tone === 'field' && on) inner = '<span style="color:var(' + on + ')">Text on this field</span>';
+          if (tone === 'on') samp = '<div class="pl-smp" style="background:var(' + ({ '--on-slab': '--slab', '--on-slab-2': '--slab', '--on-seal': '--seal', '--on-back': '--back', '--on-out': '--out', '--on-idle': '--idle', '--on-mid': '--rank-m' }[t] || '--slab') + ');color:var(' + t + ')"><b>Text on its field</b></div>';
+          if (tone === 'graphic') samp = '<div class="pl-smp" style="background:var(--paper)"><i style="display:inline-block;width:62%;height:7px;background:var(' + t + ')"></i> <span style="display:inline-block;width:16px;height:11px;border:3px solid var(' + t + ');vertical-align:middle"></span></div>';
+          if (tone === 'text') samp = '<div class="pl-smp" style="background:var(--slip);color:var(' + t + ')"><b>On the panel</b></div><div class="pl-smp" style="background:var(--paper);color:var(' + t + ')"><b>On the page</b></div>';
+          if (tone === 'wash') inner = '<span style="color:var(--ink)">Ink on the wash</span>';
+          if (tone === 'text' || tone === 'graphic') inner = '';
+          const own = '<div class="pl-fill" style="' + fill + '">' + inner + '</div>';
+          return '<div class="pl-sw" data-token="' + t + '"' + (free ? ' data-free="1"' : '') + (solid ? '' : ' data-special="1"') + '>' + own + '<div class="pl-cap"><b>' + t + '</b> <span class="pl-role">' + tone + '</span><br><span class="pl-hex">' + (solid ? '' : 'set by the theme') + '</span></div>' + samp + '</div>';
         };
-        let h = '<style>#pl{position:absolute;top:0;left:0;right:0;z-index:99999;box-sizing:border-box;padding:14px 20px 20px;background:var(--paper);color:var(--ink);font:13px/1.35 var(--f-body, sans-serif)}#pl h2{font:900 22px/1 var(--f-disp, sans-serif);text-transform:uppercase;margin:14px 0 6px}#pl .pl-row{display:grid;grid-template-columns:190px repeat(5,minmax(0,1fr));gap:10px;align-items:start;margin:4px 0}#pl .pl-sw{min-width:0}#pl .pl-fill{height:44px;display:flex;align-items:center;padding:0 8px;font-weight:700;border:1px solid var(--ink-3)}#pl .pl-cap{font-size:11px;line-height:1.3;padding:2px 0}#pl .pl-role{color:var(--ink-2)}#pl .pl-hex{font-family:monospace}#pl .pl-smp{padding:2px 8px;font-size:12px}#pl .pl-seas{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}#pl .pl-seas .pl-sw .pl-fill{height:34px;font-size:12px}#pl .pl-st{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}#pl .pl-lab b{font-size:15px}</style>';
-        h += '<div id="pl"><h2 style="margin-top:0">' + title + '</h2><div>Palette tokens in this theme; the label under each swatch is the colour the browser computed.</div>';
-        h += '<h2>Four voices (the same kind of thing means the same colour on every screen)</h2>';
-        VOICE_ROLE.forEach(([k, name, role]) => { h += '<div class="pl-row"><div class="pl-lab"><b>' + name + ' voice</b><br>' + role + '</div>' + tones({ pre: '--' + k, m: '--' + k + '-m', g: '--' + k + '-g', s: '--' + k + '-s', w: '--' + k + '-w', r: '--' + k + '-ring' }) + '</div>'; });
-        h += '<div class="pl-row"><div class="pl-lab"><b>Bar and field text</b><br>gil bar behind figures; text colour on any field</div>' + sw('--gil-bar', 'var(--gil-bar)', '<span style="color:var(--ink)">Ink figure on the bar</span>', 'gil bar', '') + sw('--on-mid', 'var(--on-mid)', '', 'on-mid: text on a field', '') + sw('--scr@board', 'var(--scr)', '<span style="color:var(--on-mid)">Screen voice (Board: route)</span>', 'scr: the voice of the screen', '') + sw('--scr-g@board', 'var(--scr-g)', '', 'scr graphic', '') + '</div>';
-        h += '<div class="pl-row"><div class="pl-lab"></div>' + sw('--ring@board', 'var(--ring)', '<span style="color:var(--on-slab)">On-slab text on the ring colour</span>', 'ring: rings on an empty-state slab', '') + '</div>';
-        h += '<h2>Status colours (the same in every theme) and the seven sea colours</h2><div class="pl-st">';
-        [['back', 'Back'], ['out', 'Out'], ['idle', 'Idle'], ['bad', 'Error'], ['locked', 'Locked']].forEach(([k, n]) => { h += '<div><div class="pl-fill" style="background:var(--' + k + ');color:var(' + (k === 'bad' || k === 'locked' ? '--paper' : '--on-' + k) + ')">' + n + '</div><div class="pl-fill" style="background:var(' + (k === 'bad' || k === 'locked' ? '--slip' : '--' + k + '-bg') + ');color:var(--ink)">Ink on its wash</div><div class="pl-smp" style="color:var(--' + k + ')"><b>' + n + ' colour as text</b></div>' + (k === 'locked' ? '' : '<div class="pl-sw" data-token="--' + k + '-s"><div class="pl-fill" style="background:var(--' + k + '-s)"></div><div class="pl-cap"><b>--' + k + '-s</b> <span class="pl-role">text tone</span><br><span class="pl-hex"></span></div><div class="pl-smp" style="background:var(--paper-2);color:var(--' + k + '-s)"><b>' + n + ' text tone on paper-2</b></div><div class="pl-smp" style="background:var(--slip);color:var(--' + k + '-s)"><b>' + n + ' text tone on slip</b></div></div>') + '</div>'; });
-        h += '</div><div class="pl-seas" style="margin-top:10px">';
-        for (let n = 1; n <= 7; n++) h += '<div class="in-sea-' + n + '"><b>sea ' + n + ' ' + SEA_HUE[n - 1] + '</b>' + sw('--sea-' + n, 'var(--sea)', '<span style="color:var(--on-mid)">mid, on-mid text</span>', 'mid', '') + sw('--sea-' + n + '-g', 'var(--sea-g)', '', 'graphic', '') + sw('--sea-' + n + '-s', 'var(--sea-s)', '', 'strong', '<div class="pl-smp" style="background:var(--paper);color:var(--sea-s)"><b>Strong on page</b></div>') + sw('--sea-' + n + '-w', 'var(--sea-w)', '<span style="color:var(--ink)">ink on wash</span>', 'wash', '') + '</div>';
-        return h + '</div></div>';
+        const row = (r, n) => '<div class="pl-row"><div class="pl-lab"><b>' + (n ? n + '. ' : '') + r.name + '</b><br>' + r.stands + '</div><div class="pl-tones">' + r.tokens.map(([t, tone]) => swatch(t, tone)).join('') + '</div></div>';
+        const chart = (html) => '<div class="map-panel" style="display:contents">' + html + '</div>';
+        let h = '<style>#pl{position:absolute;top:0;left:0;right:0;z-index:99999;box-sizing:border-box;padding:14px 20px 20px;background:var(--paper);color:var(--ink);font:13px/1.35 var(--f-body, sans-serif)}#pl h2{font:900 22px/1 var(--f-disp, sans-serif);text-transform:uppercase;margin:14px 0 6px}#pl .pl-row{display:grid;grid-template-columns:170px minmax(0,1fr);gap:10px;align-items:start;margin:6px 0;padding-top:6px;border-top:1px solid var(--ink-3)}#pl .pl-tones{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}#pl .pl-sw{min-width:0}#pl .pl-fill{height:42px;display:flex;align-items:center;padding:0 8px;font-weight:700;border:1px solid var(--ink-3)}#pl .pl-cap{font-size:11px;line-height:1.3;padding:2px 0}#pl .pl-role{color:var(--ink-2)}#pl .pl-hex{font-family:monospace}#pl .pl-smp{padding:2px 8px;font-size:12px}#pl .pl-lab b{font-size:15px}</style>';
+        h += '<div id="pl"><h2 style="margin-top:0">' + title + '</h2><div>Every colour role of the Submersibles module in this theme, by name: its tones, a sample of each, and under each swatch the hex the browser computed. Theme roles come from the theme; meaning roles keep one hue in every theme.</div>';
+        h += '<h2>Theme roles (9 roles, 25 tones)</h2>';
+        ROLE.ROLES.filter((r) => r.kind === 'theme').forEach((r, i) => { h += row(r, i + 1); });
+        h += '<h2>Meaning roles (18 roles, 77 tones with the shared on-mid)</h2>';
+        let n = 9;
+        ROLE.ROLES.filter((r) => r.kind === 'meaning').forEach((r) => { n++; h += r.tokens.some((x) => x[0].startsWith('--chart-')) ? chart(row(r, n)) : row(r, n); });
+        h += row(ROLE.SHARED, '');
+        return h + '</div>';
       };
       // reads every labelled swatch's computed background through a 1 x 1 canvas, writes the hex under it, returns [token, bytes]
       const readSwatches = (pg) => pg.evaluate(() => {
         const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
         const px = (c) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); };
-        return [...document.querySelectorAll('#pl [data-token]')].map((el) => {
+        return [...document.querySelectorAll('#pl [data-token]:not([data-special])')].map((el) => {
           const f = el.querySelector('.pl-fill'), b = px(getComputedStyle(f).backgroundColor);
           el.querySelector('.pl-hex').textContent = '#' + b.map((x) => x.toString(16).padStart(2, '0')).join('');
-          return [el.dataset.token, b];
+          return [el.dataset.token, b, !!el.dataset.free];
         });
       });
       // the screen voice as drawn now: a probe painted with var(--scr), read through the canvas
@@ -4183,6 +4194,37 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const kept = fams.filter((f) => f.w >= 300).map((f) => [Math.round((Math.atan2(f.y, f.x) * 180 / Math.PI + 360) % 360), Math.round(f.w)]);
         return { n: kept.length, f: kept };
       });
+      // Revision 4 (W31): the role audit. Every opaque computed colour (text of an element's own text, background, border of 1 px or more, fill and stroke of a drawn shape) inside .subs-main and #sheet[open]
+      // should equal a tone in that theme's generated list (docs/submersibles-colour-roles.md) within 2 per channel. W31 records the misses (distinct colours, with the property and element they were first seen on); W36 asserts there are none.
+      const rolePalette = (theme, mode) => {
+        const row = PAL.THEMES.find((r) => r[0] === theme), ctx = ROLE.envOf(row, mode), list = [];
+        const add = (v) => { if (/^#[0-9a-f]{6}$/i.test(v)) list.push(PAL.hexRgb(v)); };
+        ROLE.ROLES.concat([ROLE.SHARED]).forEach((r) => r.tokens.forEach(([t]) => { if (t.startsWith('--chart-')) for (let s = 1; s <= 7; s++) add(ROLE.valueOf(t, ctx, s)); else add(ROLE.valueOf(t, ctx)); }));
+        Object.values(ctx.T).forEach(add);
+        return list;
+      };
+      const roleAudit = (pg, list) => pg.evaluate((list) => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true }), memo = new Map();
+        const px = (c) => { if (memo.has(c)) return memo.get(c); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data, r = [d[0], d[1], d[2], d[3] / 255]; memo.set(c, r); return r; };
+        const miss = new Map(); let n = 0;
+        const hex = (r) => '#' + r.slice(0, 3).map((x) => x.toString(16).padStart(2, '0')).join('');
+        const check = (c, what, el) => {
+          if (!c || c === 'none' || /^url\(/.test(c) || c === 'transparent') return;
+          const p = px(c); if (p[3] < 0.99) return; n++;
+          if (list.some((t) => Math.max(Math.abs(t[0] - p[0]), Math.abs(t[1] - p[1]), Math.abs(t[2] - p[2])) <= 2)) return;
+          const k = hex(p), e = miss.get(k) || { n: 0, first: what + ' ' + el.tagName.toLowerCase() + '.' + String(el.getAttribute('class') || '').split(' ')[0] }; e.n++; miss.set(k, e);
+        };
+        const sides = ['Top', 'Right', 'Bottom', 'Left'];
+        document.querySelectorAll('.subs-main, .subs-main *, #sheet[open], #sheet[open] *').forEach((el) => {
+          if (!el.getClientRects().length) return;
+          const cs = getComputedStyle(el), svg = el instanceof SVGElement && el.tagName.toLowerCase() !== 'svg';
+          if (svg) { check(cs.fill, 'fill', el); check(cs.stroke, 'stroke', el); return; }
+          check(cs.backgroundColor, 'background', el);
+          if ([...el.childNodes].some((nd) => nd.nodeType === 3 && nd.textContent.trim())) check(cs.color, 'color', el);
+          sides.forEach((sd) => { if (parseFloat(cs['border' + sd + 'Width']) >= 1 && cs['border' + sd + 'Style'] !== 'none' && cs['border' + sd + 'Style'] !== 'hidden') check(cs['border' + sd + 'Color'], 'border', el); });
+        });
+        return { n, miss: miss.size, top: [...miss.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 6).map(([k, v]) => k + ' x' + v.n + ' ' + v.first) };
+      }, list);
       // W23 (spec R3.6): what the chart draws now, read from computed style: only the planned route is dashed, the background lines are thin, the links are weighted by meaning, only lead and goal arrowheads show
       const chartProbe = (pg) => pg.evaluate(() => {
         const px = (v) => parseFloat(v) || 0, all = [...document.querySelectorAll('.chart-svg *')], out = { dashBad: [], grid: 0, rings: 0, lead: null, goal: null, route: null, nLead: 0, nGoal: 0, chevBad: 0, chevShown: 0 };
@@ -4208,7 +4250,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.goto(ROOT5 + 'submersibles/'); await ready();
         await seedL1(page); await page.reload(); await ready();
-        const wide = [], wideNew = [], fam = {}, scr = {}, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); if (/^(wizard|empty)/.test(name)) wideNew.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
+        const wide = [], wideNew = [], fam = {}, scr = {}, audit = {}, aud = pal ? rolePalette(pal.theme, pal.mode) : null, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); if (/^(wizard|empty)/.test(name)) wideNew.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); if (aud) audit[name] = await roleAudit(page, aud); };
         const tab = async (t) => { await page.click('[data-tab=' + t + ']'); await page.waitForTimeout(250); if (pal) scr[t] = await readScr(page); };
         const out = {};
         if (pal) { // the palette sheet: before any screen, on the Board's page background, then removed
@@ -4218,7 +4260,6 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           const got = await readSwatches(page); await page.waitForTimeout(150);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-palette-' + pal.name + '.png'), fullPage: true });
           await page.evaluate(() => document.getElementById('pl-host').remove());
-          out.support = await page.evaluate(() => CSS.supports('color', 'oklch(from red 0.7 0.1 calc(h + 90))'));
           out.palGot = got;
         }
         if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board');
@@ -4270,12 +4311,13 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           out.chart = await page.evaluate(() => ({ width: Math.round(document.querySelector('.chart-svg').getBoundingClientRect().width), hitMin: Math.round(Math.min(...[...document.querySelectorAll('.chart-svg .chart-node .hit')].map((e) => e.getBoundingClientRect().width))) }));
         }
         if (pal) { // compare the browser with the model, per channel
-          const want = PAL.palette(PAL.THEMES.find((r) => r[0] === pal.theme), pal.mode, { supports: out.support });
+          const want = PAL.palette(PAL.THEMES.find((r) => r[0] === pal.theme), pal.mode);
           let maxDiff = 0, worst = null, n = 0; const bad = [];
           const cmp = (tok, g, w) => { const d = Math.max(...g.map((v, i) => Math.abs(v - w[i]))); n++; if (d > maxDiff) { maxDiff = d; worst = [tok, g, w]; } if (d > 2) bad.push(tok + ' ' + g + ' vs ' + w); };
-          out.palGot.forEach(([tok, g]) => { if (!(tok in want)) throw new Error('model has no ' + tok); cmp(tok, g, want[tok]); });
+          const roleCtx = ROLE.envOf(PAL.THEMES.find((r) => r[0] === pal.theme), pal.mode); // the tones the model does not compute are compared with the generated list's values
+          out.palGot.forEach(([tok, g, free]) => { if (free) cmp(tok, g, PAL.hexRgb(ROLE.valueOf(tok, roleCtx))); else { if (!(tok in want)) throw new Error('model has no ' + tok); cmp(tok, g, want[tok]); } });
           Object.keys(scr).forEach((t) => { const g = scr[t]; cmp('--scr@' + t, g.scr, want['--scr@' + t]); cmp('--scr-g@' + t, g.scrg, want['--scr-g@' + t]); cmp('--ring@' + t, g.ring, want['--ring@' + t]); });
-          out.pal = { theme: pal.theme, mode: pal.mode, supports: out.support, compared: n, maxDiff, worst, bad, hex: { rank: PAL.toHex(want['--rank-m']), gil: PAL.toHex(want['--gil-m']), loot: PAL.toHex(want['--loot-m']), route: PAL.toHex(want['--route-m']) } };
+          out.pal = { theme: pal.theme, mode: pal.mode, compared: n, maxDiff, worst, bad, hex: { rank: PAL.toHex(want['--rank-m']), gil: PAL.toHex(want['--gil-m']), loot: PAL.toHex(want['--loot-m']), route: PAL.toHex(want['--route-m']) } };
           // the page's own timing of PALETTE.compute for this theme (the page reads the root's computed colours, then computes)
           out.pal.ms = await page.evaluate(() => { const t = PALETTE.read(), t0 = performance.now(); for (let i = 0; i < 20; i++) PALETTE.compute(t); return Math.round((performance.now() - t0) / 20 * 100) / 100; });
           out.pal.supportsPalette = await page.evaluate(() => typeof PALETTE === 'object' && typeof PALETTE.compute === 'function' && document.body.style.getPropertyValue('--rank-m').trim().startsWith('#'));
@@ -4296,7 +4338,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           delete out.palGot;
         }
         await ctx.close();
-        return { wide, wideNew, fam, errors: real(errors), ...out };
+        return { wide, wideNew, fam, audit, errors: real(errors), ...out };
       };
       const all8 = ['board', 'sheet', 'log', 'map', 'planner', 'earnings', 'setup', 'recommendations'];
       // W29: the empty states (a profile with nothing in it: the Board's welcome panel and the Log's empty-state panel) in a given theme; pictures look-empty-board-<tag>.png and look-empty-log-<tag>.png, the colour families recorded
@@ -4326,6 +4368,25 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ea = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark');
       const em = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light');
       const ep = await emptyWalk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', null, null);
+      // Revision 4 (W31): the comparison sheet look-palette-compare.png: the meaning roles of the three evidence themes side by side, one row per role, one column per theme, so that sameness across themes can be seen at a glance.
+      // Drawn from the generated list's values (which the three palette sheets above compare with the browser), on each theme's own page colour, in a page of its own.
+      if (SHOT) {
+        const cmpThemes = [['crystarium-dawnglass', 'light', 'Crystarium Dawnglass, light (default)'], ['azure-dragoon', 'dark', 'Azure Dragoon, dark'], ['magitek-steel', 'light', 'Magitek Steel, light']];
+        const cctx = cmpThemes.map(([t, m]) => ROLE.envOf(PAL.THEMES.find((r) => r[0] === t), m));
+        const val = (t, k) => ROLE.valueOf(t, cctx[k]), hexOk = (v) => /^#[0-9a-f]{6}$/i.test(v);
+        const chip = (r, [t, tone], k) => { const v = val(t, k); if (!hexOk(v)) return ''; const onF = val('--on-mid', k), ink = val('--ink', k), paper = val('--paper', k);
+          const inner = tone === 'field' ? '<span style="color:' + (/^--chart-bg/.test(t) ? val('--chart-ink', k) : /^--sea-\d$|^--(rank|gil|loot|route)-m$/.test(t) ? onF : r.kind === 'meaning' && /^--(back|out|idle)$/.test(t) ? val('--on-' + t.slice(2), k) : ink) + '">Aa</span>' : tone === 'text' ? '<span style="color:' + v + '">Aa</span>' : tone === 'wash' ? '<span style="color:' + ink + '">Aa</span>' : tone === 'on' ? '<span style="color:' + v + '">Aa</span>' : '';
+          const bg = tone === 'text' ? paper : tone === 'on' ? val(t === '--on-mid' ? '--rank-m' : '--' + t.slice(5), k) : v;
+          return '<div class="ch"><div class="sw" style="background:' + bg + ';border-color:' + ink + '">' + inner + '</div><div class="hx">' + t.replace(/^--/, '') + '<br>' + v + '</div></div>'; };
+        const rows = ROLE.ROLES.filter((r) => r.kind === 'meaning').concat([ROLE.SHARED]);
+        let h = '<style>body{margin:0;font:12px/1.3 sans-serif;background:#fff;color:#111}table{border-collapse:collapse;width:100%}th,td{vertical-align:top;padding:6px 8px;border-top:1px solid #bbb}th{text-align:left;font-weight:700}h1{font:700 20px sans-serif;margin:12px 8px 2px}p{margin:2px 8px 8px}.lab{width:150px}.ch{display:inline-block;width:68px;margin:0 4px 0 0;vertical-align:top}.sw{height:34px;border:1px solid;display:flex;align-items:center;justify-content:center;font:700 15px sans-serif}.hx{font:10px/1.2 monospace;word-break:break-all;padding-top:2px}</style>';
+        h += '<h1>Meaning roles in three themes (the same role, one row; one column per theme)</h1><p>Each cell sits on that theme\'s own page colour. Under each swatch: the tone and its hex. A role should read as the same colour across a row.</p><table><tr><th class="lab">Role</th>' + cmpThemes.map((c) => '<th>' + c[2] + '</th>').join('') + '</tr>';
+        rows.forEach((r) => { h += '<tr><th class="lab">' + r.name + '<br><span style="font-weight:400">' + r.stands + '</span></th>' + cmpThemes.map((c, k) => '<td style="background:' + val('--paper', k) + ';color:' + val('--ink', k) + '">' + r.tokens.map((x) => chip(r, x, k)).join('') + '</td>').join('') + '</tr>'; });
+        h += '</table>';
+        const { ctx: cc } = await context({ viewport: { width: 1540, height: 900 }, colorScheme: 'light' }), cp = await cc.newPage();
+        await cp.setContent('<!doctype html><html><body>' + h + '</body></html>'); await cp.waitForTimeout(150);
+        await cp.screenshot({ path: path.join(ev, 'look-palette-compare.png'), fullPage: true }); await cc.close();
+      }
       // W23: the chart reads by meaning (R3.6) and R3.7's measurable rule: the hue-family floor on the Map and the planner (default theme 5; Azure Dragoon dark and Magitek Steel light 4); other screens stay recorded only
       const chartOk = [d, da, dm].every((w) => [w.chartMap, w.chartPlan].every((c) => c && c.dashBad.length === 0 && c.grid <= 1 && c.rings <= 1 && c.nLead >= 1 && c.lead >= 2.5 && c.nGoal >= 1 && c.goal >= 3 && c.chevBad === 0 && c.chevShown >= 1)) && [d, da, dm].every((w) => w.chartPlan.route >= 7 && w.chartPlan.routeShared.length === 0);
       const floorOk = d.fam.map.n >= 5 && d.fam.planner.n >= 5 && [da, dm].every((w) => w.fam.map.n >= 4 && w.fam.planner.n >= 4);
@@ -4337,9 +4398,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       // W29: the wizard lists all seven seas (the first open) and the empty states and the wizard do not scroll sideways at 360 px; a locked slot carries its sector's sea; a company head carries its status band
       const finalOk = [d, da, dm].every((w) => w.wizard && w.wizard.seas === 7 && w.wizard.open === 1) && pl.wizard.seas === 7 && pl.wideNew.every((x) => x <= 0) && ep.wide.every((x) => x <= 0) && [e0, ea, em, ep].every((w) => !w.errors.length) && [d, da, dm].every((w) => w.lockedSea >= 1 && w.headBand >= 2);
       const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
-      const ok = finalOk && gaugeOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supports === true && w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      const ok = finalOk && gaugeOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
       record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band',
-        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors] });
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit } });
       server20.close();
     });
 

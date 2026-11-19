@@ -4,6 +4,8 @@
 // element's computed style and sets the tokens as inline custom properties on the module's page element; it runs again
 // whenever the look changes (look.js sets the root's style and data-theme on every applyLook(), so those two attributes are
 // observed). Nothing is stored. subs.css keeps plain fallback tokens that apply until this script has run (or if it cannot).
+// Revision 4 (spec Rev4.5): the four voices (rank, gil, loot, route) have one fixed hue each in every theme (P.ROLE_HUE); the theme reaches them through
+// lightness and chroma only. The tones, their contrast rules and the lists in docs/submersibles-colour-roles.md are produced from this one model.
 // Colour arithmetic: OKLab with the matrices CSS Color 4 uses. Deterministic: bisection only, no random numbers, no time.
 (function () {
   'use strict';
@@ -21,11 +23,11 @@
   P.WASH_L_DARK = 0.30;     // the same under light ink
   P.WASH_CHROMA = 1 / 3;    // a wash is a quiet tint under text, not a field: its chroma is at most this share of its field's (every -w tone)
   P.ON_MID = 4.6;           // decision 2: --on-mid on every field
-  P.NUDGE = 20;             // decision 4: degrees of hue kept between a voice and a status colour
+  // Revision 4 (spec Rev4.5, D38 to D40): the four meaning roles that used to follow the theme's accent have one fixed hue each, in every theme.
+  P.ROLE_HUE = { rank: 232, gil: 100, loot: 188, route: 340 }; // azure, gold, teal, pink
   P.SEA_HUES = [250, 50, 165, 0, 315, 282, 215]; // sea 1 to 7 (blue, ember, jade, rose, lilac, indigo, ice), as in spec R3.4
   P.VOICES = ['rank', 'gil', 'loot', 'route'];
   P.STATUS = ['back', 'out', 'idle', 'bad'];
-  var BLUE = [0x2f, 0x7f, 0xd0];
 
   // ---- colour arithmetic ----
   function hexRgb(h) {
@@ -92,51 +94,6 @@
     return L;
   }
 
-  // decision 4: keep a voice 20 degrees of hue from every status colour, the four voices as evenly spaced as possible.
-  // A voice already 20 degrees clear stays. One that is closer may go to the edge of a status colour's window (the nearest hue 20 or more
-  // from all of them); of the ways to do that, the one that leaves the four gaps closest to 90 wins, provided no two voices are closer than
-  // 60 degrees. If no such way exists the others may move too, in steps of 5 degrees up to 50 (a deterministic search, smallest move first).
-  function evenness(hs) {
-    var s = hs.slice().sort(function (a, b) { return a - b; }), c = 0, i;
-    for (i = 0; i < 4; i++) { var g = (s[(i + 1) % 4] - s[i] + 360) % 360; c += (g - 90) * (g - 90); }
-    return c;
-  }
-  function nudge(base, avoid) {
-    var clear = function (x) { return avoid.every(function (s) { return hueGap(x, s) >= P.NUDGE - 1e-9; }); };
-    var edges = [];
-    avoid.forEach(function (s) { [s - P.NUDGE, s + P.NUDGE].forEach(function (c) { c = (c + 360) % 360; if (clear(c)) edges.push(c); }); });
-    function search(cands) {
-      var best = null, sel = [];
-      (function rec(i) {
-        if (i === 4) {
-          var g = 360, a, b;
-          for (a = 0; a < 4; a++) for (b = a + 1; b < 4; b++) g = Math.min(g, hueGap(sel[a], sel[b]));
-          if (g < 60) return;
-          var cost = evenness(sel), move = sel.reduce(function (t, h, k) { return t + hueGap(h, base[k]); }, 0);
-          if (!best || cost < best.cost - 1e-9 || (Math.abs(cost - best.cost) <= 1e-9 && move < best.move - 1e-9)) best = { cost: cost, move: move, hs: sel.slice() };
-          return;
-        }
-        cands[i].forEach(function (h) { sel[i] = h; rec(i + 1); });
-      })(0);
-      return best;
-    }
-    var first = base.map(function (h) { return clear(h) ? [h] : edges.slice(); });
-    var r = search(first);
-    if (!r) {
-      var wide = base.map(function (h) { var o = []; for (var d = -50; d <= 50; d += 5) { var c = (h + d + 360) % 360; if (clear(c)) o.push(c); } return o; });
-      r = search(wide);
-    }
-    return r ? r.hs : base;
-  }
-
-  // The hue the theme gives the voices (spec D28): the accent 90% and the progress colour 10%, then that 97% and a blue 3%, in OKLab.
-  function anchorHue(seal, ochre) {
-    var a = rgbToLab(seal), b = rgbToLab(ochre), c = rgbToLab(BLUE);
-    var m1 = a.map(function (x, i) { return x * 0.9 + b[i] * 0.1; });
-    var m2 = m1.map(function (x, i) { return x * 0.97 + c[i] * 0.03; });
-    var h = Math.atan2(m2[2], m2[1]) * 180 / Math.PI; return h < 0 ? h + 360 : h;
-  }
-
   // theme: { paper, paper2, slip, ink, ink2, seal, ochre, back, out, idle, bad } as [r,g,b] or '#hex'. Returns { tokens, info }.
   P.compute = function (theme) {
     var T = {}, k;
@@ -147,15 +104,15 @@
     var inkIsDark = lum(T.ink) <= 0.18;
     info.dark = dark; info.fieldL = fieldL;
 
-    // hues: the four voices a quarter turn apart from the anchor, nudged off the status colours
-    var a = anchorHue(T.seal, T.ochre), sh = P.STATUS.map(function (s) { return rgbToLch(T[s])[2]; });
-    var base = [a, a + 90, a + 180, a + 270].map(function (h) { return (h + 360) % 360; });
-    var hues = nudge(base, sh);
-    info.anchor = a; info.statusHues = sh; info.baseHues = base; info.hues = hues;
-    function minTo(hs) { var m = 360; hs.forEach(function (h) { sh.forEach(function (s) { m = Math.min(m, hueGap(h, s)); }); }); return m; }
-    info.minStatusBefore = minTo(base); info.minStatusAfter = minTo(hues);
-    var mg = 360; for (var i = 0; i < 4; i++) for (var j = i + 1; j < 4; j++) mg = Math.min(mg, hueGap(hues[i], hues[j]));
+    // hues: the four voices keep their fixed hue; the theme reaches them through lightness and chroma only (the accent and the progress colour are ignored)
+    var hues = P.VOICES.map(function (v) { return P.ROLE_HUE[v]; }), sh = P.STATUS.map(function (s) { return rgbToLch(T[s])[2]; }), i, j;
+    info.statusHues = sh; info.hues = hues;
+    var ms = 360; hues.forEach(function (h) { sh.forEach(function (s) { ms = Math.min(ms, hueGap(h, s)); }); });
+    info.minStatus = ms;
+    var mg = 360; for (i = 0; i < 4; i++) for (j = i + 1; j < 4; j++) mg = Math.min(mg, hueGap(hues[i], hues[j]));
     info.minVoiceGap = mg;
+    var mn = 360; for (i = 0; i < 7; i++) for (j = i + 1; j < 7; j++) mn = Math.min(mn, hueGap(P.SEA_HUES[i], P.SEA_HUES[j]));
+    info.minSea = mn;
 
     var mids = [];
     function family(name, H, withRing) {
@@ -170,7 +127,6 @@
     }
     P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], '--' + v + '-ring'); });
     P.SEA_HUES.forEach(function (h, i) { var n = i + 1; family({ m: '--sea-' + n, g: '--sea-' + n + '-g', s: '--sea-' + n + '-s', w: '--sea-' + n + '-w' }, h, n === 1 ? '--sea-1-ring' : null); });
-    tokens['--gil-bar'] = toHex(colourAt(fit(hues[1], [T.ink], P.ON_MID), hues[1]));
 
     // the text on a field: the theme's ink, its page colour, black or white; the first that reaches ON_MID on every field
     var cands = [T.ink, T.paper, [0, 0, 0], [255, 255, 255]], on = null;

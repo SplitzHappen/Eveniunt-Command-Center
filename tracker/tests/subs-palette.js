@@ -55,12 +55,6 @@ function block(selector) {
   assert.ok(start >= 0, 'rule not found in subs.css: ' + selector);
   return declsAt(css.indexOf('{', start));
 }
-// the declarations of the rule inside the @supports block of the palette
-function supportsBlock() {
-  const i = css.indexOf('@supports (color: oklch(from red 0.7 0.1 calc(h + 90))) { .subs-page {');
-  assert.ok(i >= 0, 'the @supports form of R3.4 is not in subs.css');
-  return declsAt(css.indexOf('{', css.indexOf('.subs-page', i)));
-}
 const SCREENS = ['log', 'earn', 'setup', 'map']; // the Board keeps the default --scr (the route voice)
 const scrRule = (tab) => block('.subs-page:has(.tabs [data-tab="' + tab + '"][aria-current="page"])');
 const RULES = {
@@ -69,7 +63,6 @@ const RULES = {
   chartLight: block('.map-panel'),
   chartDark: block(':root[data-theme="dark"] .map-panel'),
   page: block('.subs-page'),
-  pageSupports: supportsBlock(),
   scr: Object.fromEntries(SCREENS.map((t) => [t, scrRule(t)]))
 };
 
@@ -130,15 +123,11 @@ function shared(row, mode) {
 }
 
 // The module's token environment for one theme row and mode.
-// opts.supports (default true): the relative-colour branch of the palette; false gives the fixed-hue fallback.
-// opts.hue: force the anchor hue (degrees), as for any accent, preset or custom colour.
 // opts.scr: the screen whose --scr applies ('board' default, or log, earn, setup, map).
 function env(row, mode, opts) {
   opts = opts || {};
   const { dk, env: base } = shared(row, mode);
   const e = Object.assign({}, base, dk ? RULES.dark : RULES.light, RULES.page);
-  if (opts.supports !== false) Object.assign(e, RULES.pageSupports);
-  if (opts.hue != null) e['--hue-src'] = 'oklch(0.7 0.1 ' + opts.hue + ')';
   if (opts.scr && RULES.scr[opts.scr]) Object.assign(e, RULES.scr[opts.scr]);
   return e;
 }

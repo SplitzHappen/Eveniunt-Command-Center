@@ -48,9 +48,7 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
       // Revision 2 (W13): the inverted slab, the bar field and the card wash. The --back-bg pair above reads the new 16% value.
       need('on-slab on slab (slab text)', c('--on-slab'), c('--slab'), 4.5, where);
       need('on-slab-2 on slab (slab, secondary)', c('--on-slab-2'), c('--slab'), 4.5, where);
-      need('ink on bar (figures on a bar)', c('--ink'), c('--bar'), 4.5, where);
       need('ink on hi-slip (text on the --hi wash)', c('--ink'), c('--hi-slip'), 4.5, where);
-      note('ink-2 on bar (shared ink, printed)', ratio(c('--ink-2'), c('--bar')), where);
       note('ink-2 on hi-slip (shared ink, printed)', ratio(c('--ink-2'), c('--hi-slip')), where);
       // Revision 2 (W19, W20): the planner and the tier blocks sit on the paper, the phone Earnings labels use --ink on the bar (the pair above); the sea tab's fill on its track is decoration, its figure is the count in words, so it is printed, not asserted
       need('ink on paper (planner, tier blocks, sea tabs)', c('--ink'), c('--paper'), 4.5, where);
@@ -150,15 +148,12 @@ function checkTones(e, mid, tones, label, where) {
   pneed('ink on ' + label + ' wash (4.5)', c('--ink'), c(tones.w), 4.5, where);
 }
 function checkPalette(row, mode, o) {
-  const where = row[0] + ' ' + mode + (o.supports === false ? ' (fallback hues)' : '') + (o.hue != null ? ' hue ' + o.hue : '');
+  const where = row[0] + ' ' + mode;
   const e = P.env(row, mode, o), c = (n) => colour('var(' + n + ')', e);
-  const voices = o.hue != null ? ['rank'] : P.VOICES;
-  for (const v of voices) {
+  for (const v of P.VOICES) {
     checkTones(e, '--' + v + '-m', { g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, v, where);
-    if (o.hue == null) pnote('ink-2 on ' + v + '-wash (printed, not asserted)', ratio(c('--ink-2'), c('--' + v + '-w')), where);
+    pnote('ink-2 on ' + v + '-wash (printed, not asserted)', ratio(c('--ink-2'), c('--' + v + '-w')), where);
   }
-  if (o.hue != null) return;
-  pneed('ink on gil-bar (4.5)', c('--ink'), c('--gil-bar'), 4.5, where);
   for (const k of ['--back-bg', '--out-bg', '--idle-bg']) pneed('route-s on ' + k.slice(2) + ' (4.5)', c('--route-s'), c(k), 4.5, where);
   // W22b decision 5: the fallback text tones of the status colours (the page replaces them with the computed ones)
   for (const k of status) for (const pg of ['slip', 'paper', 'paper-2']) pneed(k.slice(2) + '-s (text tone) on ' + pg + ' (4.5)', c(k + '-s'), c('--' + pg), 4.5, where);
@@ -173,13 +168,13 @@ function checkPalette(row, mode, o) {
     for (const s of ['--slip', '--paper', '--paper-2']) pneed('scr graphic on ' + s.slice(2) + ' (3)', cc('--scr-g'), cc(s), 3, where);
     pneed('on-slab on ring, screen ' + scr + ' (4.5)', colour('var(--on-slab)', ee), colour('var(--ring)', ee), 4.5, where);
   }
-  // the four voice hues differ pairwise by at least 80 degrees
+  // the four fixed voice hues of the fallback (Revision 4) differ pairwise by at least 40 degrees
   const hues = P.VOICES.map((v) => P.rgbToLch(c('--' + v + '-m'))[2]);
   let minGap = 360;
   for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) minGap = Math.min(minGap, P.hueGap(hues[i], hues[j]));
-  if (minGap < 80) palFail.push('voice hues ' + minGap.toFixed(1) + ' deg apart in ' + where);
+  if (minGap < 40) palFail.push('voice hues ' + minGap.toFixed(1) + ' deg apart in ' + where);
   // printed: each voice's hue against the nearest status hue
-  if (o.supports !== false) {
+  {
     const sh = status.map((k) => [k.slice(2), P.rgbToLch(c(k))[2]]);
     palPrint.push(where.padEnd(38) + P.VOICES.map((v, i) => { const n = sh.reduce((a, b) => P.hueGap(hues[i], b[1]) < P.hueGap(hues[i], a[1]) ? b : a); return v + ' ' + hues[i].toFixed(0) + ' (' + n[0] + ' ' + P.hueGap(hues[i], n[1]).toFixed(0) + ')'; }).join('  '));
   }
@@ -188,22 +183,14 @@ function checkPalette(row, mode, o) {
 test('fallback palette in subs.css (R3.4): every voice, sea and screen colour is in sRGB and reaches its contrast in all 21 themes, light and dark', () => {
   for (const row of THEMES) for (const mode of ['light', 'dark']) {
     checkPalette(row, mode, {});
-    checkPalette(row, mode, { supports: false }); // an engine without relative colour syntax: the fixed hues 350, 80, 170, 260
   }
   const rows = Object.entries(palStat).map(([k, v]) => '  ' + k.padEnd(46) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where);
-  console.log('Palette contrast, lowest ratio per pair (21 themes x light/dark, relative and fallback hues; sea pairs x 7 seas):\n' + rows.join('\n'));
+  console.log('Palette contrast, lowest ratio per pair (21 themes x light/dark; sea pairs x 7 seas):\n' + rows.join('\n'));
   console.log('Voice hue and nearest status hue (status colours: back, out, idle, bad):\n  ' + palPrint.join('\n  '));
   const hex = (th, mode) => { const p = P.palette(THEMES.find((r) => r[0] === th), mode); return th + ' ' + mode + '\n' + P.VOICES.map((v) => '  ' + v.padEnd(6) + P.toHex(p['--' + v + '-m']) + ' mid  ' + P.toHex(p['--' + v + '-g']) + ' graphic  ' + P.toHex(p['--' + v + '-s']) + ' strong  ' + P.toHex(p['--' + v + '-w']) + ' wash').join('\n') + '\n  seas  ' + P.SEAS.map((n) => P.toHex(p['--sea-' + n])).join(' '); };
   console.log('Palette in hex, the three evidence themes:\n' + [hex('crystarium-dawnglass', 'light'), hex('azure-dragoon', 'dark'), hex('magitek-steel', 'light')].join('\n'));
   assert.deepEqual(palFail.slice(0, 20), [], palFail.length + ' palette pairs outside their rules');
 });
-
-test('fallback palette in subs.css (R3.4): a voice at any accent hue (0 to 355 degrees in steps of 5) is in sRGB and reaches its contrast in all 21 themes', () => {
-  const before = palFail.length;
-  for (const row of THEMES) for (const mode of ['light', 'dark']) for (let h = 0; h < 360; h += 5) checkPalette(row, mode, { hue: h });
-  assert.deepEqual(palFail.slice(before, before + 20), [], (palFail.length - before) + ' hue-sweep pairs outside their rules');
-});
-
 
 // ---- W22b: the vivid palette, computed by src/submersibles/palette.js (the script the page loads) ----
 const PAL = P.PALETTE, M = PAL.math;
@@ -224,7 +211,7 @@ test('palette (W22b): the shared script is deterministic and its cost is small',
   assert.ok(ms < 40, 'compute takes ' + ms + ' ms');
 });
 
-const vivid = { fail: [], stat: {}, nudge: [], hex: [] };
+const vivid = { fail: [], stat: {}, nudge: [], hex: [] }, floors = {}; let hueOff = [0, ''];
 const vneed = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!vivid.stat[pair] || r < vivid.stat[pair].min) vivid.stat[pair] = { min: r, where }; if (r < min) vivid.fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
 
 test('palette (W22b): contrast, gamut, chroma and hue rules hold in all 21 themes, light and dark', () => {
@@ -243,38 +230,26 @@ test('palette (W22b): contrast, gamut, chroma and hue rules hold in all 21 theme
     for (const [v, m] of mids) vneed('on-mid on ' + (v.startsWith('sea') ? v : v + ' field') + ' (4.5)', c('--on-mid'), m, 4.5, where);
     for (const k of PAL.STATUS) pg.forEach((b) => vneed('status text tone ' + k + '-s (4.5)', c('--' + k + '-s'), b, 4.5, where));
     for (const k of PAL.VOICES.map((v) => '--' + v + '-ring')) vneed('on-slab (page colour) on ring (4.5)', hx(th.paper), c(k), 4.5, where);
-    vneed('ink on gil-bar (4.5)', hx(th.ink), c('--gil-bar'), 4.5, where);
-    if (r.info.minVoiceGap < 60) vivid.fail.push('voices ' + r.info.minVoiceGap.toFixed(1) + ' deg apart in ' + where);
-    if (r.info.minStatusAfter < PAL.NUDGE - 0.01) vivid.fail.push('voice ' + r.info.minStatusAfter.toFixed(1) + ' deg from a status colour in ' + where);
-    vivid.nudge.push([where, r.info.minStatusBefore, r.info.minStatusAfter, r.info.minVoiceGap, r.info.fieldL, r.info.onMid]);
+    // Revision 4 (Rev4.5): the floors, and each field's own hue within 2.5 degrees of its fixed number
+    const fl = (pair, v, min) => { if (!floors[pair] || v < floors[pair][0]) floors[pair] = [v, where]; if (v < min) vivid.fail.push(pair + ' ' + v.toFixed(1) + ' < ' + min + ' in ' + where); };
+    const sh = r.info.statusHues, vh = r.info.hues, seaH = PAL.SEA_HUES, gp = M.hueGap;
+    for (const x of vh) for (const y of sh) fl('hue gap voice to status (20)', gp(x, y), 20);
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) fl('hue gap voice to voice (40)', gp(vh[i], vh[j]), 40);
+    for (const x of vh) for (const y of seaH) fl('hue gap voice to sea (15)', gp(x, y), 15);
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) fl('hue gap status to status (35)', gp(sh[i], sh[j]), 35);
+    for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) fl('hue gap sea to sea (30)', gp(seaH[i], seaH[j]), 30);
+    if (r.info.minVoiceGap < 40 || r.info.minStatus < 20 || r.info.minSea < 30) vivid.fail.push('info gaps ' + [r.info.minVoiceGap, r.info.minStatus, r.info.minSea].join(' ') + ' in ' + where);
+    const off = (name, rgb, h) => { const d = gp(M.rgbToLch(rgb)[2], h); if (d > hueOff[0]) hueOff = [d, where + ' ' + name]; if (d > 2.5) vivid.fail.push(name + ' field hue ' + d.toFixed(1) + ' deg off its number (2.5) in ' + where); };
+    PAL.VOICES.forEach((v) => off(v, c('--' + v + '-m'), PAL.ROLE_HUE[v]));
+    seaH.forEach((h, i) => off('sea ' + (i + 1), c('--sea-' + (i + 1)), h));
+    vivid.nudge.push([where, r.info.minStatus, r.info.minVoiceGap, r.info.fieldL, r.info.onMid]);
   }
   console.log('Vivid palette, lowest ratio per pair over 21 themes x 2 modes:\n' + Object.entries(vivid.stat).map(([k, v]) => '  ' + k.padEnd(46) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
-  const min = (i) => vivid.nudge.reduce((a, b) => (b[i] < a[i] ? b : a));
-  console.log('Smallest hue distance voice to status colour: before the nudge ' + min(1)[1].toFixed(1) + ' (' + min(1)[0] + '), after ' + min(2)[2].toFixed(1) + ' (' + min(2)[0] + '); smallest voice to voice after ' + min(3)[3].toFixed(1) + ' (' + min(3)[0] + '); nudged: ' + vivid.nudge.filter((x) => x[1] < PAL.NUDGE).length + ' of ' + vivid.nudge.length);
-  console.log('Hue distance per theme and mode (before, after, voice gap, on-mid):\n  ' + vivid.nudge.map((x) => x[0].padEnd(34) + x[1].toFixed(1).padStart(6) + x[2].toFixed(1).padStart(6) + x[3].toFixed(1).padStart(6) + ' ' + x[5]).join('\n  '));
+  console.log('Hue floors of Rev4.5 (lowest value over 21 themes x 2 modes):\n' + Object.entries(floors).map(([k, v]) => '  ' + k.padEnd(40) + v[0].toFixed(1).padStart(7) + '  lowest at ' + v[1]).join('\n') + '\n  largest field hue error (limit 2.5): ' + hueOff[0].toFixed(2) + ' at ' + hueOff[1]);
+  console.log('Hue distance per theme and mode (voice to status, voice to voice, on-mid):\n  ' + vivid.nudge.map((x) => x[0].padEnd(34) + x[1].toFixed(1).padStart(6) + x[2].toFixed(1).padStart(6) + ' ' + x[4]).join('\n  '));
   const hex = (th, mode) => { const p = PAL.compute(THEME_IN(THEMES.find((r) => r[0] === th), mode)).tokens; return th + ' ' + mode + '\n' + PAL.VOICES.map((v) => '  ' + v.padEnd(6) + p['--' + v + '-m'] + ' m  ' + p['--' + v + '-g'] + ' g  ' + p['--' + v + '-s'] + ' s  ' + p['--' + v + '-w'] + ' w').join('\n') + '\n  on-mid ' + p['--on-mid'] + '  status text ' + PAL.STATUS.map((k) => k + ' ' + p['--' + k + '-s']).join(' ') + '\n  seas  ' + [1, 2, 3, 4, 5, 6, 7].map((n) => p['--sea-' + n]).join(' '); };
   console.log('Vivid palette in hex, the three evidence themes:\n' + [hex('crystarium-dawnglass', 'light'), hex('azure-dragoon', 'dark'), hex('magitek-steel', 'light')].join('\n'));
   assert.deepEqual(vivid.fail.slice(0, 20), [], vivid.fail.length + ' vivid palette pairs outside their rules');
-});
-
-test('palette (W22b): every colour is inside sRGB before rounding, and any accent hue keeps the rules (hue sweep, all themes, both modes)', () => {
-  const fail = [];
-  for (const [row, mode, where] of rows) for (let h = 0; h < 360; h += 5) {
-    const th = THEME_IN(row, mode), acc = M.rnd(M.lchToRgb(0.7, 0.1, h));
-    th.seal = acc; th.ochre = acc; // the anchor takes the swept hue
-    const r = PAL.compute(th), T = r.tokens, pg = pages(th);
-    for (const n of Object.keys(T)) {
-      const rgb = hx(T[n]);
-      if (n.endsWith('-m') || /^--sea-\d$/.test(n)) { const ch = M.rgbToLch(rgb)[1]; if (ch < 0.11) fail.push(n + ' chroma ' + ch.toFixed(3) + ' hue ' + h + ' in ' + where); }
-    }
-    for (const v of PAL.VOICES) {
-      pg.forEach((b) => { if (M.ratio(hx(T['--' + v + '-s']), b) < 4.5) fail.push(v + ' strong hue ' + h + ' ' + where); if (M.ratio(hx(T['--' + v + '-g']), b) < 3) fail.push(v + ' graphic hue ' + h + ' ' + where); });
-      if (M.ratio(hx(T['--on-mid']), hx(T['--' + v + '-m'])) < 4.5) fail.push(v + ' on-mid hue ' + h + ' ' + where);
-      if (M.ratio(M.rnd(th.ink), hx(T['--' + v + '-w'])) < 7) fail.push(v + ' wash hue ' + h + ' ' + where);
-    }
-    if (r.info.minVoiceGap < 60) fail.push('voice gap ' + r.info.minVoiceGap.toFixed(1) + ' hue ' + h + ' ' + where);
-  }
-  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' failures in the hue sweep');
 });
 
 test('palette (W22b): the status text tones are used by the CSS wherever a status colour is a text colour', () => {
@@ -400,7 +375,6 @@ test('Log and Earnings (W25, W26): every new pair reaches its contrast in all 21
     }
     need3('Log chip: ink on rank wash (7)', ink, c('--rank-w'), 7, where);
     need3('Log chip (S, SS): on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
-    need3('Earnings: ink figure on gil bar (4.5)', ink, c('--gil-bar'), 4.5, where);
     need3('Earnings card and head: on-mid on gil field (4.5)', c('--on-mid'), c('--gil-m'), 4.5, where);
     need3('Log head: on-mid on loot field (4.5)', c('--on-mid'), c('--loot-m'), 4.5, where);
     need3('Setup head: on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
@@ -446,8 +420,8 @@ test('Board, send window, Setup, recommendations, empty states (W27, W28): every
     }
     // the sub's route on the card's status tints: route-s mixed 60/40 into the ink (the CSS: color-mix(in srgb, var(--route-s) 60%, var(--ink)))
     for (const k of ['back', 'out', 'idle']) {
-      const bg = hx(mixRgb(pg.slip, st('--' + k), k === 'back' ? 0.16 : 0.1)), rt = hx(mixRgb(ink, c('--route-s'), 0.6));
-      need3('Board: route text (route-s 60% in ink) on the ' + k + ' card tint (4.5)', rt, bg, 4.5, where);
+      const bg = hx(mixRgb(pg.slip, st('--' + k), k === 'back' ? 0.16 : 0.1)), rt = ink; // Revision 4: .sub-meta .route is plain ink
+      need3('Board: route text (ink, Revision 4) on the ' + k + ' card tint (4.5)', rt, bg, 4.5, where);
       need3('Board: ink on the ' + k + ' card tint (4.5)', ink, bg, 4.5, where);
     }
     // fields: the rank plate, the number slabs, the loot label, the open sea
@@ -468,7 +442,7 @@ test('Board, send window, Setup, recommendations, empty states (W27, W28): every
 
 test('Board, send window, Setup, recommendations, empty states (W27, W28): subs.css and subs.js carry the rules and the classes', () => {
   for (const s of [
-    '.sub[data-sub] .sub-meta > span:first-child { --slab: var(--rank-m); --on-slab: var(--on-mid); }', '.sub-meta .route { color: color-mix(in srgb, var(--route-s) 60%, var(--ink)); }',
+    '.sub[data-sub] .sub-meta > span:first-child { --slab: var(--rank-m); --on-slab: var(--on-mid); }', '.sub-meta .route { color: var(--ink); }',
     '.sector { border-left: 8px solid var(--sea-g); padding-left: 4px; }', '.sector:not(.on) b { color: var(--route-s); }',
     '.route-pick .route-line { border-left: 8px solid var(--route-g); padding-left: 10px; }', '.loot-h { background: var(--loot-m); color: var(--on-mid); padding: 2px 10px; }',
     '.rate-item b { color: var(--loot-s); }', '.rankbox { border-left: 8px solid var(--rank-g); padding-left: 10px; }',
@@ -543,8 +517,8 @@ test('final pass (W29): subs.css and subs.js carry the rules and the classes', (
 test('gaps G2, G3: the cannot ring and cross (error colour) on every water, the reason text and the source tags reach their contrast in all 21 themes, light and dark', () => {
   const fail = [], lo = {};
   const need5 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
-  const no = /\.map-panel \{ --chart-no: (#[0-9a-f]{6}); \}/.exec(css);
-  assert.ok(no, 'subs.css has the one --chart-no token'); assert.equal(css.split('--chart-no:').length - 1, 1);
+  const no = /--chart-no: (#[0-9a-f]{6});/.exec(css);
+  assert.ok(no, 'subs.css has the --chart-no token'); assert.equal(css.split('--chart-no: ' + no[1] + ';').length - 1, 3, 'in the three chart token rules (Revision 4)'); assert.equal(css.split('--chart-no:').length - 1, 3);
   for (const [row, mode, where] of rows) {
     const dk = mode === 'dark', th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), e0 = P.env(row, mode);
     // the ring and the cross are meaningful graphics (3:1) on every ground of every sea; the cross is also a shape, so the colour never carries the meaning alone
