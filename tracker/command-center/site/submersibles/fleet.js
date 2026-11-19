@@ -230,6 +230,9 @@
     b.querySelector('.fleet-banner-x').addEventListener('click', function () { b.remove(); });
     box.appendChild(b);
     while (box.children.length > 4) box.removeChild(box.firstChild);
+    // M15: the banner stands below the page's top navigation and never covers it (at least 8 px under the header when it is in view)
+    var head = document.querySelector('header'), hb = head ? head.getBoundingClientRect().bottom : 0;
+    box.style.top = Math.round(Math.max(0, hb) + 8) + 'px';
     return text;
   }
   // opts: { link (the module's address, shown on the shell's banner), section() → the current section or null }

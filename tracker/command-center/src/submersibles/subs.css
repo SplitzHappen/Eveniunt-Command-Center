@@ -104,7 +104,7 @@
 .panel > h2:first-child { margin: 0 calc(-1 * var(--pad-x)) 14px; padding: 14px var(--pad-x) 12px; background: var(--slab); color: var(--on-slab); font: 900 40px/.95 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; border-bottom: 6px solid transparent; border-image: var(--molten) 1; }
 .panel > h2::after { content: ""; display: block; width: 84px; height: 10px; margin-top: 10px; background: repeating-linear-gradient(90deg, var(--on-slab) 0 22px, transparent 22px 28px); transform: skewX(-25deg); transform-origin: left bottom; }
 .panel > h2 .muted, .panel > h2 .tag, .sheet h2 .muted { font: 400 13px var(--f-body); text-transform: none; letter-spacing: 0; }
-@media (max-width: 700px) { .panel > h2:first-child { font-size: 30px; } }
+@media (max-width: 700px) { .panel > h2:first-child { font-size: clamp(16px, 5.6vw, 30px); } } /* M18: the longest Setup title stays on one line at 360 px, so every head has one height */
 /* on any slab */
 :is(.panel > h2:first-child, .fc-head, .strip-next) .muted, :is(.panel > h2:first-child, .fc-head, .strip-next) .tag { color: var(--on-slab-2); }
 :is(.panel > h2:first-child, .fc-head, .strip-next) .link { color: var(--on-slab); }
@@ -172,6 +172,13 @@
   .strip-back:first-of-type { margin-left: 0; }
   .strip-tools { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; padding: 6px 10px; }
 }
+
+/* M2: nothing out: the next-return slab is one compact line and the tools stand under it, so there is no blank band */
+.strip-next.none { align-self: start; flex-wrap: nowrap; align-items: center; padding: 8px 52px 8px 16px; }
+.strip-next.none > b { flex: none; white-space: nowrap; }
+.strip-next.none::after { display: none; }
+.strip:has(.strip-next.none) .strip-tools { grid-column: 1; grid-row: 2; justify-self: start; align-self: end; }
+@media (max-width: 700px) { .strip-next.none { padding: 8px 14px; } .strip:has(.strip-next.none) .strip-tools { grid-column: 1 / -1; grid-row: auto; justify-self: stretch; } }
 
 /* the fleet: one column up to four companies; from five, two columns from 701 px and four from 1,400 px. In one wide column the group has no frame (hero lanes) */
 .fleet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; container: fleet / inline-size; }
@@ -244,7 +251,7 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .sea[open] > summary:focus-visible { outline-color: var(--on-slab); }
 .sea-bulk { padding: 6px 0 2px; }
 .sea-bulk .row { display: flex; }
-.sea-bulk .btn { min-height: 36px; max-width: 100%; white-space: normal; text-align: left; }
+.sea-bulk .btn { min-height: 36px; max-width: 100%; white-space: normal; text-align: left; transition: none; } /* M15: no colour transition: a picture or a glance taken just after a tap used to catch the hover colours half way, grey on slate */
 .sea-bulk .btn:focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
 .sea-bulk .hint { margin: 6px 0 0; }
 .sea-bulk .hint:empty { display: none; }
@@ -482,10 +489,13 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 4; }
 .chart-node.on-route .chart-letter { fill: var(--chart-hot-text); }
 .chart-lock { fill: none; stroke: var(--chart-sel); stroke-width: 3; stroke-linecap: square; }
-.chart-plus { fill: none; stroke: var(--chart-ink); stroke-width: 3; stroke-linecap: round; }
+.chart-plus { fill: none; stroke: var(--chart-ink); stroke-width: 3; stroke-linecap: round; stroke-opacity: 1; opacity: 1; }
 .chart-ring2 { fill: none; stroke: var(--chart-ink); stroke-width: 2; }
 .chart-node:focus { outline: none; }
-.chart-node:focus-visible .hit, .chart-node:focus .hit { stroke: var(--chart-sel); stroke-width: 4; }
+/* M17: keyboard focus is a ring that hugs the selection bracket (not the tap circle, which is far larger and used to run through the "+" mark); the "+" has a water halo and its full strength */
+.chart-focus { display: none; fill: none; stroke: var(--chart-sel); stroke-width: 3; }
+.chart-node:focus-visible .chart-focus { display: inline; }
+.chart-plus-halo { fill: none; stroke: var(--chart-bg); stroke-width: 8; stroke-linecap: round; opacity: 1; }
 .chart-key .key.found { color: var(--back); } .chart-key .key.next { color: var(--idle); } .chart-key .key.far { color: var(--locked); }
 .chart-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0 0; font-size: 14px; }
 .chart-facts dt { color: var(--ink-2); } .chart-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
@@ -517,7 +527,9 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .rec-give input[type="range"]::-moz-range-track { height: 10px; background: var(--paper-3); border: 2px solid var(--ink); border-radius: 0; }
 .rec-give input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 32px; margin-top: -11px; background: var(--seal); border: 2px solid var(--ink); border-radius: 0; box-sizing: border-box; }
 .rec-give input[type="range"]::-moz-range-thumb { width: 24px; height: 32px; background: var(--seal); border: 2px solid var(--ink); border-radius: 0; box-sizing: border-box; }
-.rec-give input[type="range"][disabled] { opacity: .5; }
+.rec-give input[type="range"][disabled] { opacity: 1; cursor: not-allowed; } /* M10: the thumb stays the accent with its ink edge, so the slider never reads as broken; the track says it is off */
+.rec-give input[type="range"][disabled]::-webkit-slider-runnable-track { background: var(--paper-2); border-color: var(--ink-2); }
+.rec-give input[type="range"][disabled]::-moz-range-track { background: var(--paper-2); border-color: var(--ink-2); }
 .rec-give .rec-give-text { display: inline-block; min-width: 3ch; font: 900 40px/1 var(--f-disp); vertical-align: middle; }
 .rec-rank { list-style: none; margin: 8px 0; padding: 0; border: 2px solid var(--ink); }
 .rec-rank li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; min-height: 64px; padding: 0 10px 0 0; border-top: 2px solid var(--ink); }
@@ -606,18 +618,17 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .chart-details .rates-tier[data-tier="3"] > summary::before { content: "3"; content: "3" / ""; }
 .chart-details .rates-tier > summary::after { content: "+"; margin-left: auto; flex: none; font: 900 28px/1 var(--f-disp); }
 .chart-details .rates-tier[open] > summary::after { content: "−"; }
-.chart-details .rates-tier[open] > summary { border-bottom: var(--edge) solid var(--ink); background: var(--hi-slip); }
+.chart-details .rates-tier[open] > summary { border-bottom: var(--edge) solid var(--ink); background: var(--route-w); } /* M15: the route wash in every theme */
 .chart-details .rates-tier > summary:focus-visible { outline-offset: 2px; }
 .chart-details .rates-tier > .hint, .chart-details .rates-tier > .rate-item { margin-left: 12px; margin-right: 12px; }
 .chart-details .rate-item { padding: 8px 0; }
 .chart-details .rate-item b { font: 900 17px/1.2 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; }
 .chart-details .rate-item span { font-size: 13px; }
 @media (min-width: 1100px) {
-  .map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto minmax(0, 1fr); column-gap: 18px; align-items: start; }
-  .map-grid > .planner { grid-column: 2; grid-row: 1; margin-top: 0; }
-  .map-grid > .chart-details { grid-column: 2; grid-row: 2 / span 2; }
-  .map-grid > .chart-wrap { grid-column: 1; grid-row: 1 / 3; }
-  .map-grid > .chart-key { grid-column: 1; grid-row: 3; }
+  /* M7: two columns that stack on their own (the chart and its legend on the left, the planner and the details on the right), so the legend sits directly under the chart and both columns start at the top whatever the height of the other */
+  .map-grid { display: flow-root; }
+  .map-grid > .chart-wrap, .map-grid > .chart-key { float: left; clear: left; width: calc(100% - 378px); box-sizing: border-box; }
+  .map-grid > .planner, .map-grid > .chart-details { float: right; clear: right; width: 360px; box-sizing: border-box; margin-top: 0; }
 }
 @media (max-width: 700px) {
   /* W36: on a phone the chart comes straight after the seas, so it is on the first screen; the planner, the key and the details follow it */
@@ -765,7 +776,7 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .rec-rank li:has([data-rec="up-level"]) .rec-name b { --slab: var(--rank-m); --on-slab: var(--on-mid); background: var(--rank-m); color: var(--on-mid); }
 .rec-rank li:has([data-rec="up-gil"]) .rec-name b { --slab: var(--gil-m); --on-slab: var(--on-mid); background: var(--gil-m); color: var(--on-mid); }
 .rec-rank li:has([data-rec="up-loot"]) .rec-name b { --slab: var(--loot-m); --on-slab: var(--on-mid); background: var(--loot-m); color: var(--on-mid); }
-.rec-rank li:first-child { border-left: 8px solid var(--seal); }
+.rec-rank li { border-left: 8px solid transparent; } .rec-rank li:first-child { border-left: 8px solid var(--seal); }
 [data-recs-body] > h3:nth-of-type(2) { color: var(--loot-s); }
 .rec-picker { border-left: 8px solid var(--loot-g); }
 .rec-picker:has(.rec-find:disabled) { border-left-color: var(--ink-3); }
@@ -962,7 +973,7 @@ div.sub { cursor: default; }
 .es-aside { font: 13px/1.4 var(--f-data); color: var(--ink-2); }
 .es-note { margin: 0; max-width: 56ch; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 /* the scope: a sonar drawn in the theme's own roles on the deep-water panel, hidden from screen readers */
-.es-scope { position: relative; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%); color: var(--on-deep); }
+.es-scope { position: relative; container-type: size; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%); color: var(--on-deep); }
 /* W36: the drawing stops 40 px above the scope's foot; the foot is a strip of its own for the labels that are not part of the drawing, so no ring runs through a word */
 .es-scope svg { position: absolute; inset: 0; width: 100%; height: calc(100% - 40px); }
 .es-scope::after { content: ""; position: absolute; left: 0; right: 0; bottom: 40px; height: 2px; background: var(--deep-line); }
@@ -977,13 +988,13 @@ div.sub { cursor: default; }
 .es-scope .es-fan { fill: var(--route-m); fill-opacity: .16; }
 .es-scope .es-edge { stroke: var(--route-m); stroke-width: 4; }
 .es-scope .es-dia { fill: var(--on-deep); stroke: var(--route-m); stroke-width: 4; }
-.es-scope .es-word { position: absolute; left: calc(58% - 52px); top: calc((100% - 40px) * .524 + 36px); font: 900 24px/1 var(--f-disp); letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep); }
+.es-scope .es-word { position: absolute; left: calc(50cqw + 50 * max(calc(100cqw / 640), calc((100cqh - 40px) / 820))); transform: translateX(-50%); white-space: nowrap; top: calc((100cqh - 40px) / 2 + 20 * max(calc(100cqw / 640), calc((100cqh - 40px) / 820)) + 36px); font: 900 24px/1 var(--f-disp); letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep); }
 .es-scope .es-count { position: absolute; right: 28px; bottom: 11px; font: 13px/1.3 var(--f-data); color: var(--on-deep); }
 @media (max-width: 700px) {
   .panel.empty-state[data-empty] { grid-template-columns: minmax(0, 1fr); }
   /* on a phone the band is 180 px and the word joins the count in the strip */
   .es-scope { order: -1; min-height: 0; height: 180px; clip-path: none; }
-  .es-scope .es-word { left: 16px; top: auto; bottom: 8px; }
+  .es-scope .es-word { left: 16px; top: auto; bottom: 8px; transform: none; }
   .es-scope .es-count { right: 14px; }
   .es-main { gap: 18px; padding: 20px 16px; }
   .es-act { display: grid; width: 100%; }
@@ -1036,9 +1047,9 @@ div.sub { cursor: default; }
 @container hpanel (min-width: 700px) { [data-shown-panel] > .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 30%; text-align: right; color: var(--on-mid); } }
 @container hpanel (min-width: 960px) { .recs .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 480px; text-align: right; color: var(--on-slab); } }
 /* the ranking is a ladder: four rungs that step down in height and width, each on its role's wash with the number on the role's field */
-.rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }
-.rec-rank .rung-1 .rec-name b { width: 72px; font-size: 44px; } .rec-rank .rung-2 .rec-name b { width: 64px; font-size: 38px; }
-.rec-rank .rung-3 .rec-name b { width: 56px; font-size: 32px; } .rec-rank .rung-4 .rec-name b { width: 52px; font-size: 28px; }
+.rec-rank .rung-1, .rec-rank .rung-2, .rec-rank .rung-3, .rec-rank .rung-4 { min-height: 76px; } /* M9: every rung is as tall as the tallest, every number badge is as wide, so the labels share one left edge */
+.rec-rank .rung-1 .rec-name b { width: 72px; font-size: 44px; } .rec-rank .rung-2 .rec-name b { width: 72px; font-size: 38px; }
+.rec-rank .rung-3 .rec-name b { width: 72px; font-size: 32px; } .rec-rank .rung-4 .rec-name b { width: 72px; font-size: 28px; }
 .rec-rank .rung-1 .rec-name { font-size: 18px; }
 .rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }
 .rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }
@@ -1110,4 +1121,59 @@ div.sub { cursor: default; }
   .map-seas[data-more="both"] { -webkit-mask-image: linear-gradient(90deg, transparent, var(--ink) 36px, var(--ink) calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, var(--ink) 36px, var(--ink) calc(100% - 36px), transparent); }
   .map-panel > h2:first-child { font-size: 26px; padding-top: 6px; padding-bottom: 4px; margin-bottom: 8px; }
   .map-panel > h2:first-child::after { display: none; }
+}
+
+/* ===== Visual fixes, part 2 (M1 to M19) ===== */
+/* M3, M4: a sector letter outside the chart is a disc in its sea's colour (the Board's disc); the rank never splits, the name wraps; the cells of a line share a height */
+.sector .disc, .tick .disc { position: relative; left: auto; top: auto; flex: none; }
+.sector { --d: 30px; } .tick { --d: 26px; }
+.sector > b, .tick > b { display: grid; place-items: center; line-height: 0; }
+.tick .tk-name { min-width: 0; overflow-wrap: anywhere; }
+.ticks { align-items: stretch; grid-auto-rows: minmax(40px, auto); }
+@media (max-width: 479px) { .ticks { grid-template-columns: minmax(0, 1fr); } } /* M12: one column on a phone */
+/* M5: a heading never leaves one word alone on its last line */
+.planner-rates > summary, .rates > summary, .route-pick summary { text-wrap: balance; }
+/* M11: the company line in Setup is units that never split */
+.fc-list li > span > .muted.units { display: flex; }
+/* M12: the send window's subtitle is one line under the title; only the company's name may be cut (its full text is in the title attribute) */
+.sheet h2 .sheet-sub { display: flex; flex-wrap: nowrap; gap: 0 .4em; min-width: 0; margin-top: 2px; font: 400 13px/1.3 var(--f-body); white-space: nowrap; }
+.sheet h2 .sheet-sub .sheet-fc { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sheet h2 .sheet-sub .nb { flex: none; }
+/* M8: the Log and Earnings are as wide as the Board; from 1,400 px Setup is two columns, tops aligned */
+.wide-panel:not(.map-panel) { max-width: none; }
+@media (min-width: 1400px) {
+  .setup-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
+  .setup-col > .panel { max-width: none; }
+}
+/* M13: in the dense Board every company head has the same two rows (name, then the buttons), so no head is taller than another; a locked slot says in full where it opens, on up to two lines */
+@media (min-width: 701px) {
+  .fleet:has(> .fc:nth-child(5)) .fc-head { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 4px 0; }
+  .fleet:has(> .fc:nth-child(5)) .fc-head > div:first-child { min-height: 38px; }
+  .fleet:has(> .fc:nth-child(5)) .fc-tools { flex-wrap: nowrap; align-items: center; min-height: 32px; }
+}
+@container fcsubs (min-width: 400px) {
+  .sub[data-status="locked"] .sub-meta { grid-row: 1 / span 2; align-self: center; display: block; white-space: normal; overflow: visible; text-overflow: clip; font-size: 11px; line-height: 14px; }
+  .sub[data-status="locked"] .sub-meta .tag { font-size: 9px; padding: 0 3px; letter-spacing: .02em; }
+  /* M14: the send bar of a dense or by-return-time lane: "Send" centred, 13 px bold; the rank chip bigger */
+  .sub-when .quick { font-size: 13px; font-weight: 900; justify-content: center; }
+  .sub[data-sub] .sub-meta > span:first-child { font: 900 15px/18px var(--f-disp); }
+}
+/* M15 */
+.sheet-actions .btn.primary[data-act="dosendall"] { flex: 1 1 100%; min-height: 56px; font-size: 22px; }
+.sea-bulk .btn:disabled { --hz: var(--ink-2); opacity: 1; cursor: not-allowed; color: var(--ink-2); padding-left: 26px; background: var(--hazard) 0 0 / 14px 100% no-repeat, var(--paper); }
+.sea-bulk .btn:disabled:hover { color: var(--ink-2); background: var(--hazard) 0 0 / 14px 100% no-repeat, var(--paper); }
+.sector .ord { top: -8px; right: 2px; }
+.rec-picker:has(.rec-find:disabled) .rec-sel, .rec-picker:has(.rec-find:disabled) .rec-note { color: var(--ink-2); }
+.rec-pick-row select:disabled { background-color: var(--paper); color: var(--ink-2); }
+.rec-off { flex: none; align-self: center; color: var(--ink-2); }
+.subs-page .inp:focus { outline: 2px solid var(--seal); outline-offset: 1px; border-color: var(--ink); background: var(--paper); } /* one focus mark: the outline (the shared style adds a seal border and an inner bar as well) */
+/* M19: the chain's chips on a phone are 56 px tall */
+@container mappanel (max-width: 479px) { .map-seas .btn[data-map-sea] { height: 56px; min-height: 44px; padding-top: 4px; padding-bottom: 14px; } }
+/* M12: the "did this voyage reveal a new sector" checklist: the sector's name is never split from its letter, and under 480 px each row is one column (the name, then the sea and letter under it) */
+.loot-new .opt { flex-wrap: wrap; }
+.loot-new .opt .muted { white-space: nowrap; }
+@media (max-width: 479px) {
+  .loot-new .opt { align-items: flex-start; }
+  .loot-new .opt > b { flex: 1 1 calc(100% - 40px); min-width: 0; }
+  .loot-new .opt > .muted { flex: 1 1 100%; margin-left: 30px; }
 }

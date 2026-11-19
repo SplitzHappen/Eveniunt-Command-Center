@@ -620,7 +620,7 @@ test('empty states (W33) and the Log and Earnings (W34): subs.css, subs.js and i
     '.es-main > h2 { margin: 0; padding: 0; font: 900 clamp(44px, 7.2vw, 104px)/.88 var(--f-disp);', '.es-step { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: stretch; min-height: 64px; background: var(--slip); border: 2px solid var(--ink); }',
     '.es-step.v-route > b { background: var(--route-m); }', '.es-step.v-rank > b { background: var(--rank-m); }', '.es-step.v-loot > b { background: var(--loot-m); }', '.es-step.v-gil > b { background: var(--gil-m); }',
     'font: 900 26px/1 var(--f-disp); letter-spacing: .06em; background: linear-gradient(var(--route-m), var(--route-m)) 0 100% / 100% 7px no-repeat, linear-gradient(var(--on-seal), var(--on-seal)) 0 calc(100% - 7px) / 100% 2px no-repeat, var(--seal);',
-    '.es-scope { position: relative; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%);',
+    '.es-scope { position: relative; container-type: size; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%);',
     '.es-scope .r1 { stroke: var(--route-m); }', '.es-scope .r2 { stroke: var(--loot-m); }', '.es-scope .r3 { stroke: var(--gil-m); }', '.es-scope .r4 { stroke: var(--rank-m); }', '.es-scope .r5, .es-scope .es-cross { stroke: var(--deep-line); }',
     '.es-scope .es-fan { fill: var(--route-m); fill-opacity: .16; }', '.es-scope .es-edge { stroke: var(--route-m); stroke-width: 4; }', '.es-scope .es-dia { fill: var(--on-deep); stroke: var(--route-m); stroke-width: 4; }', 'animation: subs-turn 9s linear infinite; }',
     '.empty-line, .hint.empty-line, .muted.empty-line { display: flex; align-items: center; gap: 12px; min-height: 48px;', 'border: 2px dashed var(--ink-2); background: var(--paper); color: var(--ink);', 'border: 3px solid var(--scr-g); border-radius: 50%;',
@@ -680,7 +680,7 @@ test('send window, Setup and Map chain (W35): every new pair reaches its contras
 test('send window, Setup and Map chain (W35): subs.css and subs.js carry the rules and the markup', () => {
   const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
   for (const s of ['.sheet h2.st-back { --st: var(--back); }', '.sheet h2.st-out { --st: var(--out); }', '.sheet h2.st-idle { --st: var(--idle); }', '.cmp-lane.pick .tl-bar { height: 12px;', '.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }',
-    '.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }', '.rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }',
+    '.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }', '.rec-rank .rung-1, .rec-rank .rung-2, .rec-rank .rung-3, .rec-rank .rung-4 { min-height: 76px; }',
     '.rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }', '.rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }', '.rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }', '.rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }',
     '.wiz .tick b { color: var(--route-s); }', '.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--rule) 25%, transparent) 0 1px, transparent 1px 11px), var(--paper); color: var(--ink-2); }', '.map-panel { container: mappanel / inline-size; }']) assert.ok(css.includes(s), s);
   assert.ok(!/\.map-seas \{ flex-wrap: nowrap; overflow-x: auto/.test(css), 'the phone strip that scrolled sideways is gone');
@@ -766,4 +766,49 @@ test('visual fixes part 1: subs.css and the scripts carry the rules', () => {
   for (const sx of ['stroke-dasharray="4 3"', 'chart-cannot-halo', 'C.marks = function']) assert.ok(ch.includes(sx), sx);
   assert.ok(!/chart-overring/.test(css) && !/chart-overring/.test(ch), 'the old ring on an above-rank node is gone');
   assert.equal(css.split('\n').filter((l) => /stroke-dasharray/.test(l)).length, 1, 'the route is still the only dash in the stylesheet');
+});
+
+// ---- Visual fixes, part 2 (M1 to M19) ----
+test('visual fixes part 2: every new text and field pairing reaches its contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), ink2 = hx(th.ink2), paper = hx(th.paper), paper2 = hx(th.paper2), e0 = P.env(row, mode), paper3 = hx(P.colour('var(--paper-3)', e0));
+    // M4: a sector letter outside the chart is a disc in its sea's colour (the picker's tile, the wizard's list): on-mid on every sea field
+    for (let n = 1; n <= 7; n++) need('M4 sector disc (picker, wizard list): on-mid on the sea field (4.5)', c('--on-mid'), c('--sea-' + n), 4.5, where);
+    // M15: the disabled "Mark every sector" button (B1's style): ink-2 on the plain button; a loot picker that is off: its item and record line ink-2 on the picker (paper) and the select (paper-2)
+    need('M15 disabled bulk button: ink-2 on the plain button (4.5)', ink2, paper, 4.5, where);
+    need('M15 loot picker off: the item (ink-2) on the switched-off select (paper) (4.5)', ink2, paper, 4.5, where);
+    need('M15 loot picker off: the record line (ink-2) on the picker (paper) (4.5)', ink2, paper, 4.5, where);
+    need('M15 loot picker off: the word "off" (ink-2) on the picker (paper) (4.5)', ink2, paper, 4.5, where);
+    // M15: the open tier header is the route wash with ink text
+    need('M15 open tier header: ink on the route wash (4.5)', ink, c('--route-w'), 4.5, where);
+    // M10: the slider's thumb: its 2 px ink edge on the track (paper-3) and the accent field against the ink edge
+    need('M10 slider thumb: the ink edge on the track (3)', ink, paper3, 3, where);
+    { const k = '(printed) M10 slider thumb: the accent field against the track (paper-3); the ink edge carries the 3:1 above', r = M.ratio(P.colour('var(--seal)', e0), paper3); if (!lo[k] || r < lo[k].min) lo[k] = { min: r, where }; }
+    // M15: one focus mark on a field: the accent outline on the page and on the panel (3)
+    need('M15 focus outline (accent) on the page (3)', P.colour('var(--seal)', e0), paper, 3, where);
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, mode === 'dark' ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env);
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) {
+        // M17: the "+" mark (chart-ink) and the keyboard focus ring (chart-sel) on every water, 3:1 as marks
+        need('M17 "+" slot mark (chart-ink) on ' + g.slice(2) + ' (3)', cc('--chart-ink'), cc(g), 3, where + ' sea ' + n);
+        need('M17 keyboard focus ring (chart-sel) on ' + g.slice(2) + ' (3)', cc('--chart-sel'), cc(g), 3, where + ' sea ' + n);
+      }
+    }
+  }
+  console.log('Visual fixes part 2, lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(90) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('visual fixes part 2: subs.css and the scripts carry the rules', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8'), ch = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'chart.js'), 'utf8'), fl = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'fleet.js'), 'utf8');
+  for (const sx of ['.strip-next.none', '.es-scope .es-word { position: absolute; left: calc(50cqw', '.sector .disc, .tick .disc', '.ticks { align-items: stretch;', '.fc-list li > span > .muted.units', '.sheet h2 .sheet-sub', '.wide-panel:not(.map-panel) { max-width: none; }', '.setup-cols { display: grid;',
+    '.map-grid > .chart-wrap, .map-grid > .chart-key { float: left;', '.rec-rank .rung-1, .rec-rank .rung-2, .rec-rank .rung-3, .rec-rank .rung-4 { min-height: 76px; }', '.rec-give input[type="range"][disabled] { opacity: 1;', '.sheet-actions .btn.primary[data-act="dosendall"]', '.sea-bulk .btn:disabled', '.chart-plus-halo', '.chart-focus',
+    'background: var(--route-w); }', '.subs-page .inp:focus', 'height: 56px; min-height: 44px', 'font-size: clamp(16px, 5.6vw, 30px)']) assert.ok(css.includes(sx), sx);
+  for (const sx of ['function discHtml', 'class="setup-cols"', 'class="muted units"', 'class="muted sheet-sub"', 'data-rec-off', "' none'", 'function setupTailHtml', 'var vt = function']) assert.ok(js.includes(sx), sx);
+  for (const sx of ['RF: BK + 5', 'chart-plus-halo', 'chart-focus']) assert.ok(ch.includes(sx), sx);
+  assert.ok(fl.includes("box.style.top"), 'the banner stands below the header');
+  // the same disc rule everywhere outside the chart: the chart keeps chart ink (a letter there is text on the water)
+  assert.ok(/\.chart-svg \.chart-letter \{ font-family/.test(css) && !/\.chart-letter[^{]*\{[^}]*sea/.test(css), 'chart letters stay chart ink');
 });

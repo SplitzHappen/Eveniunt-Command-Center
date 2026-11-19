@@ -124,7 +124,7 @@
   // The SVG text. route: sector ids (optional), drawn as a numbered line from Start. opts.selected: the sector id drawn with brackets.
   // Everything but the sector nodes, Start and its label is decoration (aria-hidden); no position is changed (spec D7).
   // S2 geometry, in chart units: every ring is at least 6 beyond the node (R0, the route ring R1), the selection bracket stands outside all rings (BK), the "+" and cross marks stand outside the bracket
-  C.marks = function (r) { return { R0: r + 6, R1: r + 11, BK: r + 17, pa: Math.max(3, r * 0.4), ca: Math.max(4, r * 1.2) }; };
+  C.marks = function (r) { var BK = r + 17; return { R0: r + 6, R1: r + 11, BK: BK, RF: BK + 5, po: BK + 8, pa: Math.max(4, r * 0.55), ca: Math.max(4, r * 1.2) }; }; // M17: the keyboard-focus ring (RF) hugs the bracket and the "+" and cross marks start beyond it, on the diagonal, so a mark never sits on a ring
   C.svg = function (view, route, opts) {
     var b = view.box, span = Math.max(b.w, b.h), fs = span / 30, r = span / 70, sel = opts && opts.selected != null ? String(opts.selected) : null;
     var at = {}; view.nodes.forEach(function (n) { at[n.id] = n; });
@@ -136,13 +136,13 @@
     var letterAt = {}, boxesX = [];
     view.nodes.forEach(function (n) {
       var ri = (route || []).indexOf(n.id), isS = sel === String(n.id), mk = !!(opts && opts.cannot && opts.cannot[n.id]) && n.state === 'found' && !n.rankOk;
-      var top = isS ? M.BK + 2 : ri >= 0 ? M.R1 + 2 : (n.opens || mk) ? M.R0 + 2 : 0, D = Math.max(r * 2.2 + fs * 0.3, top + 3), str = n.letter + (ri >= 0 ? ' ' + (ri + 1) : ''), w = str.length * 0.55 * fs;
+      var top = isS ? M.RF + 2 : ri >= 0 ? M.R1 + 2 : (n.opens || mk) ? M.R0 + 2 : 0, D = Math.max(r * 2.2 + fs * 0.3, top + 3), str = n.letter + (ri >= 0 ? ' ' + (ri + 1) : ''), w = str.length * 0.55 * fs;
       var cand = [{ x: 0, y: -D, anchor: 'middle' }, { x: 0, y: D + fs * 0.75, anchor: 'middle' }, { x: D, y: fs * 0.35, anchor: 'start' }, { x: -D, y: fs * 0.35, anchor: 'end' }], pick = cand[0];
-      if (segs.length || (sel && !isS)) for (var i = 0; i < cand.length; i++) { var c = cand[i], x0 = n.x + c.x - (c.anchor === 'start' ? 0 : c.anchor === 'end' ? w : w / 2), tb = { x0: x0, x1: x0 + w, y0: n.y + c.y - fs, y1: n.y + c.y + fs * 0.25 }; if (!segHit(tb) && !(sel && !isS && at[sel] && tb.x0 < at[sel].x + M.BK + 4 && at[sel].x - M.BK - 4 < tb.x1 && tb.y0 < at[sel].y + M.BK + 4 && at[sel].y - M.BK - 4 < tb.y1)) { pick = c; break; } }
+      if (segs.length || (sel && !isS)) for (var i = 0; i < cand.length; i++) { var c = cand[i], x0 = n.x + c.x - (c.anchor === 'start' ? 0 : c.anchor === 'end' ? w : w / 2), tb = { x0: x0, x1: x0 + w, y0: n.y + c.y - fs, y1: n.y + c.y + fs * 0.25 }; if (!segHit(tb) && !(sel && !isS && at[sel] && tb.x0 < at[sel].x + M.RF + 4 && at[sel].x - M.RF - 4 < tb.x1 && tb.y0 < at[sel].y + M.RF + 4 && at[sel].y - M.RF - 4 < tb.y1)) { pick = c; break; } }
       letterAt[n.id] = { x: pick.x, y: pick.y, anchor: pick.anchor, str: str };
-      if (isS) boxesX.push({ x0: n.x - M.BK - 2, x1: n.x + M.BK + 2, y0: n.y - M.BK - 2, y1: n.y + M.BK + 2 });
-      if (mk) { var xc = M.BK + 3 + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xr = M.ca + 2; boxesX.push({ x0: n.x + xc - xr, x1: n.x + xc + xr, y0: n.y - xc - xr, y1: n.y - xc + xr }); }
-      if (n.slot) { var pc = M.BK + 3 + M.pa; boxesX.push({ x0: n.x + pc - M.pa - 2, x1: n.x + pc + M.pa + 2, y0: n.y - pc - M.pa - 2, y1: n.y - pc + M.pa + 2 }); }
+      if (isS) boxesX.push({ x0: n.x - M.RF - 2, x1: n.x + M.RF + 2, y0: n.y - M.RF - 2, y1: n.y + M.RF + 2 });
+      if (mk) { var xc = M.po + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xr = M.ca + 2; boxesX.push({ x0: n.x + xc - xr, x1: n.x + xc + xr, y0: n.y - xc - xr, y1: n.y - xc + xr }); }
+      if (n.slot) { var pc = M.po + M.pa; boxesX.push({ x0: n.x + pc - M.pa - 2, x1: n.x + pc + M.pa + 2, y0: n.y - pc - M.pa - 2, y1: n.y - pc + M.pa + 2 }); }
     });
     var tagAt = placeTags(view, r, fs, { letters: letterAt, boxes: boxesX });
     var e = tagAt.extent, o = '<svg class="chart-svg" data-sea="' + esc(view.sea) + '" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
@@ -198,14 +198,14 @@
         : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"' + da + '/>'
         : '<rect x="' + num(-r * 0.7) + '" y="' + num(-r * 0.7) + '" width="' + num(1.4 * r) + '" height="' + num(1.4 * r) + '"' + da + '/>';
       var idx = (route || []).indexOf(n.id), onRoute = idx >= 0, isSel = sel === String(n.id), la = letterAt[n.id];
-      var cd = M.BK + 3 + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xa = M.ca; // the cross: outside the node at its upper right (further out when a "+" is there too)
+      var cd = M.po + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xa = M.ca; // the cross: outside the node at its upper right (further out when a "+" is there too)
       var xd = 'M' + num(cd - xa) + ' ' + num(-cd - xa) + 'L' + num(cd + xa) + ' ' + num(-cd + xa) + 'M' + num(cd + xa) + ' ' + num(-cd - xa) + 'L' + num(cd - xa) + ' ' + num(-cd + xa);
-      var extra = (n.state === 'next' ? '<circle class="chart-halo" aria-hidden="true" r="' + num(r * 1.1) + '"/>' : '') +
+      var extra = '<circle class="chart-focus" aria-hidden="true" r="' + num(M.RF) + '"/>' + (n.state === 'next' ? '<circle class="chart-halo" aria-hidden="true" r="' + num(r * 1.1) + '"/>' : '') +
         (onRoute ? '<circle class="chart-routering" aria-hidden="true" r="' + num(M.R1) + '"/>' : '') +
         (mark ? '<circle class="chart-cannot-ring" aria-hidden="true" r="' + num(M.R0) + '"/>' : '') +
         (n.opens ? '<circle class="chart-ring2" aria-hidden="true" r="' + num(M.R0) + '"/>' : '') +
         (isSel ? '<path class="chart-lock" aria-hidden="true" d="' + [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (q) { var lk = Math.max(6, r * 0.7); return 'M' + num(q[0] * M.BK) + ' ' + num(q[1] * (M.BK - lk)) + 'L' + num(q[0] * M.BK) + ' ' + num(q[1] * M.BK) + 'L' + num(q[0] * (M.BK - lk)) + ' ' + num(q[1] * M.BK); }).join('') + '"/>' : '') +
-        (n.slot ? '<path class="chart-plus" aria-hidden="true" d="M' + num(M.BK + 3) + ' ' + num(-(M.BK + 3 + M.pa)) + 'h' + num(2 * M.pa) + 'M' + num(M.BK + 3 + M.pa) + ' ' + num(-(M.BK + 3 + 2 * M.pa)) + 'v' + num(2 * M.pa) + '"/>' : '');
+        (n.slot ? (function () { var pd = 'M' + num(M.po) + ' ' + num(-(M.po + M.pa)) + 'h' + num(2 * M.pa) + 'M' + num(M.po + M.pa) + ' ' + num(-(M.po + 2 * M.pa)) + 'v' + num(2 * M.pa); return '<path class="chart-plus-halo" aria-hidden="true" d="' + pd + '"/><path class="chart-plus" aria-hidden="true" d="' + pd + '"/>'; })() : '');
       o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + (mark ? ' cannot' : '') + (onRoute ? ' on-route' : '') + (isSel ? ' selected' : '') + (n.slot ? ' has-slot' : '') + (n.opens ? ' opens-sea' : '') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
         '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + extra + shape +
         (mark ? '<path class="chart-cannot-halo" aria-hidden="true" d="' + xd + '"/><path class="chart-cannot-x" aria-hidden="true" d="' + xd + '"/>' : '') +
