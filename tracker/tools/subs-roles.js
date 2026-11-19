@@ -52,8 +52,8 @@ const ALIASES = {
   // the gradient's stops, set by the theme (look.js) and the progress colour
   '--lb-a': ['accent', 'molten'], '--lb-b': ['accent', 'molten'], '--lb-c': ['accent', 'molten'], '--lb-glow': ['accent', 'molten'], '--ochre': ['accent', 'molten']
 };
-// tokens Revision 3 built that W33 retires (spec Rev4.4, "Retired"); they are used by rules and are in no role
-const RETIRING = { '--rank-ring': ['rank'], '--gil-ring': ['gil'], '--loot-ring': ['loot'], '--route-ring': ['route'], '--sea-1-ring': ['sea'], '--ring': ['route', 'loot', 'gil', 'rank', 'sea'], '--ringc': ['route', 'loot', 'gil', 'rank', 'sea'] };
+// tokens Revision 3 built that W33 retired (the ring tokens and --ringc); none remains, the map stays so that a returning one is noticed by the tests
+const RETIRING = {};
 // custom properties that are sizes, fonts or patterns, not colours
 const NON_COLOUR = new Set(['--f-disp', '--f-body', '--f-data', '--f-serif', '--f-kick', '--edge', '--pad-x', '--p', '--field', '--row-pad', '--row-gap', '--r', '--cut', '--cols', '--strip-fig', '--state-fs', '--name-fs', '--fig-fs', '--head-fs', '--quick-h', '--hazard', '--ax-l', '--ax-r', '--x', '--nfs', '--sfs', '--th', '--bar', '--ret', '--i', '--pitch', '--d']);
 // role tokens no rule of subs.css uses yet, each with its reason (the test fails when one is used, or when an unused one is missing here)
@@ -61,18 +61,16 @@ const UNUSED = {
   '--out-s': 'Out is not used as text on any screen yet; the tone exists so that a later rule has one',
   '--loot-w': 'no rule paints a loot wash; the tone is kept with its role',
   '--route-w': 'the locked lane is the locked hatch on page field 3 since W32; no rule paints a route wash now; the tone is kept with its role',
-  '--chart-bg-hi': 'the lightest ground under a marker; read by the contrast test, painted by no rule',
-  '--deep': 'added by W33 (the empty states); not computed yet', '--deep-2': 'added by W33; not computed yet', '--on-deep': 'added by W33; not computed yet', '--deep-line': 'added by W33; not computed yet'
+  '--chart-bg-hi': 'the lightest ground under a marker; read by the contrast test, painted by no rule'
 };
 // colour literals that may stay outside a token rule until the item named finishes (Rev4.6); must be empty after W36
-const LINT_PENDING = ['--ringc'];
+const LINT_PENDING = [];
 
 // tokens the model cannot compute: printed as their formula, never as a typed value
 const FORMULA = {
   '--rule': 'set by the theme (look.js)', '--grid': 'set by the theme (look.js)', '--hi': 'set by the theme: the accent at 16% opacity', '--molten': 'set by the theme: the accent and progress gradient',
   '--glow': 'set by the theme: the accent glow (dark themes)', '--shadow': 'set by the theme (look.js)', '--sweep': 'formula: black at 22% (light) or white at 28% (dark), fixed in subs.css', '--scrim': 'formula: black at 60%, fixed in subs.css',
-  '--chart-glow': 'formula: the planned route\'s pink at 55% opacity',
-  '--deep': 'W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22', '--deep-2': 'W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1', '--on-deep': 'W33 (Rev4.5): the lighter of ink and paper', '--deep-line': 'W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab'
+  '--chart-glow': 'formula: the planned route\'s pink at 55% opacity'
 };
 
 // ---- the zones (Rev4.4 table, kept in step with subs.css). frags: pieces of a selector; the longest one found in a rule wins; a leading = means the whole selector. roles: the roles a rule in the zone may use ('*' for all) ----
@@ -112,7 +110,9 @@ const ZONES = [
   Z('Send window', 'send-all rows (`.pick .chip`, `.pick-fc`)', 'status field and on; ink', ['.pick'], ['back', 'out', 'idle', 'ink']),
   // ---- Log ----
   Z('Log', 'head', 'loot field, on-mid, ink band', ['.log-list'], ['ink']),
-  Z('Log', 'row (`.log-row`)', 'page field; hover page field 2; line', ['=.log-row', '.log-row:hover', '.log-row:focus-visible', '.log-row:nth-child(even)', '.log-row:hover .muted', '.log-row:nth-child(even) .muted'], ['page', 'ink', 'line', 'accent']),
+  Z('Log', 'day rule (`.log-day`)', 'slab field, on, on-2', ['.log-day'], ['slab']),
+  Z('Log', 'row (`.log-row`)', 'page field; hover page field 2; line', ['=.log-row', '.log-row:hover', '.log-row:focus-visible', '.log-row:hover .muted'], ['page', 'ink', 'line', 'accent']),
+  Z('Log', 'who, route text, discs', 'ink; ink-2; sea', ['.log-row .disc', '.log-who'], ['ink', 'sea', 'shared', 'panel']),
   Z('Log', 'time cell (`.log-when`)', 'sea field, on-mid (no route: slab); hover accent field, on', ['.log-when', '.log-row:hover .log-when', '.log-row[class*="in-sea-"] .log-when', '.log-row[class*="in-sea-"]:hover .log-when'], ['sea', 'shared', 'slab', 'accent']),
   Z('Log', 'grade (`.log-grade`)', 'rank wash, rank graphic, ink; S and SS: rank field, on-mid', ['.log-grade'], ['rank', 'ink', 'shared']),
   Z('Log', 'gil and heat line (`.log-what`)', 'gil text; gil graphic', ['.log-what', '.log-row.logged .log-what'], ['gil', 'idle']),
@@ -128,6 +128,7 @@ const ZONES = [
   // ---- Earnings ----
   Z('Earnings', 'head', 'gil field, on-mid', ['.earn-card:first-child'], ['gil', 'ink', 'slab']),
   Z('Earnings', 'tallies (`.earn-card`)', 'first: gil wash, ink, ink band; others: panel, gil graphic band, gil text', ['.earn-card', '.earn-card:not(:first-child)', '.earn-card b'], ['gil', 'ink']),
+  Z('Earnings', 'scale line (`.earn-scale`)', 'ink-2: the printed scale of a table of bars', ['.earn-scale'], ['ink']),
   Z('Earnings', 'section labels', 'ink; hatch and underline gil graphic', ['.earn-t th', '.earn-t th, .earn-t td'], ['line', 'ink']),
   Z('Earnings', 'position block', '1: accent field, on; 2 and 3: slab; others ink-2', ['.earn-ranked tr[data-pos] > td:first-child', '.earn-ranked tr[data-pos="1"] > td:first-child', '.earn-ranked tr[data-pos="2"] > td:first-child'], ['ink', 'accent', 'slab']),
   Z('Earnings', 'route cell', 'route text, sea graphic edge, discs sea', ['.earn-ranked tr[data-pos] > td:nth-child(2)'], ['route', 'sea']),
@@ -141,7 +142,9 @@ const ZONES = [
   Z('Setup', 'accuracy (`.acc`)', 'ink-2 heads; agrees back text; differs error text', ['.acc'], ['ink', 'line', 'back', 'error']),
   Z('Setup', 'guided setup (`.wiz`)', 'head rank field; steps: accent field (now), slab-on (done), outline; fields page and ink; note accent wash; a closed sea: sea wash and graphic edge; an open sea: sea field, on-mid; letters route text; error text', ['.wiz-head', '.dot', '.sea', '.sea[open]', '.sea[class*="in-sea-"]'], ['slab', 'molten', 'route', 'loot', 'gil', 'rank', 'accent', 'sea', 'shared', 'ink', 'page']),
   // ---- Empty states ----
-  Z('Empty', 'full empty state (`.empty-state`)', 'page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band', ['.panel.welcome', '.panel.empty-state'], ['slab', 'ink', 'route', 'loot', 'gil', 'rank', 'sea']),
+  Z('Empty', 'full empty state (`.empty-state`)', 'page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band', ['.empty-state', '.es-kick', '.es-main', '.es-text', '.es-step', '.es-act', '.es-aside', '.es-note'], ['page', 'panel', 'slab', 'ink', 'shared', 'accent', 'route', 'loot', 'gil', 'rank']),
+  Z('Empty', 'scope (`.es-scope`)', 'deep fields; rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on', ['.es-scope'], ['deep', 'route', 'loot', 'gil', 'rank']),
+  Z('Empty', 'empty line (`.empty-line`)', 'page field, ink-2 dashed edge, ink; glyph: the screen\'s role, graphic', ['.empty-line'], ['page', 'ink', 'route', 'loot', 'gil', 'rank', 'sea']),
   // ---- Notices, errors ----
   Z('Notices', 'notice (`.note`)', 'accent wash and field edge, ink', ['=.note'], ['accent', 'ink']),
   Z('Errors', 'block (`.note.bad`); text (`.hint.bad`, `.wiz-err`, `.cannot-line`, `.cannot-why`)', 'error graphic hatch on the accent wash; error text', ['.note.bad', '.hint.bad', '.cannot-line', '.cannot-why'], ['error', 'accent']),
@@ -242,8 +245,7 @@ function build() {
   out('');
   out('Aliases (pointers with no colour of their own, not counted): ' + Object.keys(ALIASES).map((t) => '`' + t + '`').join(', ') + '.');
   out('');
-  out('Tokens Revision 3 built that W33 retires (still used by rules, in no role): ' + Object.keys(RETIRING).map((t) => '`' + t + '`').join(', ') + '.');
-  out('');
+  if (Object.keys(RETIRING).length) { out('Tokens Revision 3 built that W33 retires (still used by rules, in no role): ' + Object.keys(RETIRING).map((t) => '`' + t + '`').join(', ') + '.'); out(''); }
   out('## 2. Every tone, per theme and mode');
   out('');
   out('One table per role: 21 themes in light and dark, a hex value per token, and the hue (OKLCH degrees) of the first field or graphic tone. The water of the chart is shown for sea 1; every sea has its own.');

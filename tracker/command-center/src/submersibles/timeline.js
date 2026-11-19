@@ -36,6 +36,14 @@
     });
     return out.map(function (m) { return { x: Math.round(m.sum / m.n * 10000) / 10000, n: m.n }; });
   };
+  // ---- W34 (Rev4.7): Earnings' printed scale; pure, like the rest of this file ----
+  // the smallest of 1, 2, 2.5, 5 or 10 times a power of ten that is at least max (1 for nothing to show)
+  TL.niceScale = function (max) {
+    if (!(max > 0)) return 1;
+    for (var p = Math.floor(Math.log10(max)) - 1; ; p++) {
+      for (var i = 0; i < 4; i++) { var v = Math.round([1, 2, 2.5, 5][i] * Math.pow(10, p) * 1e9) / 1e9; if (v >= max - 1e-9) return v; }
+    }
+  };
   if (typeof window !== 'undefined') window.TL = TL;
   if (typeof module !== 'undefined' && module.exports) module.exports = TL;
 })();

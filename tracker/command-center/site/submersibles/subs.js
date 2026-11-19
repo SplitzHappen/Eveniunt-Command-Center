@@ -188,7 +188,7 @@
     else if (UI.tab === 'log') { main.innerHTML = logHtml(); loadPrices(false); }
     else if (UI.tab === 'map') main.innerHTML = mapHtml();
     else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); loadPrices(false); }
-    else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel empty-state"><h2>' + esc(t[1]) + '</h2><p class="muted">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
+    else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel empty-state"><h2>' + esc(t[1]) + '</h2><p class="muted empty-line">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
   var lastStatus = '';
@@ -316,6 +316,20 @@
       (last ? '<button type="button" class="btn sm ghost" data-act="ics-fc" data-fc="' + esc(f.id) + '" title="Add the last return of this free company to your calendar">Calendar: last back ' + esc(F.fmtClock(last.sub.voyage.returnAt, now)) + '</button>' : '') +
       '</div></header><div class="fc-subs">' + axisHtml(T, outs, now) + rows + '</div></section>';
   }
+  // ---- the empty states (W33, Rev4.7): one pattern. o: { id, cls, kick, title, text (html), steps: [[role, title, text], ...], act (html: the one primary button), aside, note (html), word (the scope's word) } ----
+  function emptyHtml(o) {
+    var steps = (o.steps || []).map(function (st, k) { return '<li class="es-step v-' + st[0] + '"><b>' + (k + 1) + '</b><span><strong>' + esc(st[1]) + '</strong><span>' + esc(st[2]) + '</span></span></li>'; }).join('');
+    var count = D && D.seas && D.sectors ? D.seas.length + ' seas, ' + D.sectors.length + ' sectors' : '';
+    return '<section class="panel empty-state' + (o.cls ? ' ' + o.cls : '') + '" data-empty="' + o.id + '"><div class="es-main"><p class="es-kick">' + esc(o.kick) + '</p><h2>' + esc(o.title) + '</h2><p class="es-text">' + o.text + '</p>' +
+      (steps ? '<ol class="es-steps">' + steps + '</ol>' : '') +
+      '<p class="es-act">' + o.act + (o.aside ? '<span class="es-aside">' + esc(o.aside) + '</span>' : '') + '</p>' + (o.note ? '<p class="es-note">' + o.note + '</p>' : '') + '</div>' +
+      '<div class="es-scope" aria-hidden="true"><svg viewBox="0 0 640 820" preserveAspectRatio="xMidYMid slice" focusable="false">' +
+        '<circle class="es-ring r1" cx="370" cy="430" r="90"/><circle class="es-ring r2" cx="370" cy="430" r="180"/><circle class="es-ring r3" cx="370" cy="430" r="270"/><circle class="es-ring r4" cx="370" cy="430" r="360"/><circle class="es-ring r5" cx="370" cy="430" r="450"/>' +
+        '<line class="es-cross" x1="370" y1="-40" x2="370" y2="900"/><line class="es-cross" x1="-100" y1="430" x2="760" y2="430"/>' +
+        '<g class="es-sweep"><path class="es-fan" d="M370 430 L370 70 A360 360 0 0 1 624.6 175.4 Z"/><line class="es-edge" x1="370" y1="430" x2="624.6" y2="175.4"/></g>' +
+        '<path class="es-dia" d="M370 408 L392 430 L370 452 L348 430 Z"/></svg>' +
+        '<span class="es-word">' + esc(o.word) + '</span>' + (count ? '<span class="es-count">' + esc(count) + '</span>' : '') + '</div></section>';
+  }
   // once per Board: the collapsed "How this is estimated", when any suggestion on the screen rests on community drop records; with the part of
   // each plan's gil figure that rests on the second-item assumption
   function boardEstimateNote(now) {
@@ -331,8 +345,11 @@
   function boardHtml() {
     var now = Date.now(), fcs = shownFcs(), nHidden = hiddenCount();
     if (!fcList().length) {
-      return '<section class="panel welcome"><h2>Set up your first free company</h2><p>Once per free company, about 3 to 5 minutes: its name, world and character, then each of its four submarine slots (name, rank, parts and any voyage under way) and the sectors already discovered.</p>' +
-        '<p><button type="button" class="btn primary" data-act="new">Start the setup</button></p><p class="muted">Enter each sub\'s rank and four parts: the app then works out every return time from the route you tap, and suggests the next route following your order (unlock all four subs, discover every sector, farm gil).</p></section>';
+      return emptyHtml({ id: 'board-none', cls: 'welcome', kick: 'The dock is empty', title: 'No submarines in the water', word: 'Your dock',
+        text: 'Add a free company and its submarines, and this Board shows who is out, who is back and what to send next.',
+        steps: [['route', 'Name the free company', 'Its world and the character it belongs to.'], ['rank', 'Add its submarines', 'Name, rank and the four parts of each one, and any voyage under way.'], ['loot', 'Tick what is discovered', 'One press can mark a whole sea.']],
+        act: '<button type="button" class="btn primary" data-act="new">Start the setup</button>', aside: 'about 3 to 5 minutes per free company',
+        note: 'Enter each sub\'s rank and four parts: the app then works out every return time from the route you tap, and suggests the next route following your order (unlock all four subs, discover every sector, farm gil).' });
     }
     var body, T = boardAxis(now);
     if (sortMode() === 'time') {
@@ -341,8 +358,10 @@
       all.sort(function (a, b) {
         return rank[a.status] - rank[b.status] || (a.status === 'back' ? a.sub.voyage.returnAt - b.sub.voyage.returnAt : a.status === 'out' ? a.sub.voyage.returnAt - b.sub.voyage.returnAt : 0) || String(F.subLabel(a)).localeCompare(F.subLabel(b));
       });
-      body = '<section class="fc wide"><header class="fc-head"><h3>All submarines by return time</h3></header><div class="fc-subs list">' + axisHtml(T, all.filter(function (x) { return x.status === 'out'; }), now) + all.map(function (x) { return subRow(x, now, true, T); }).join('') + '</div></section>';
+      body = '<section class="fc wide"><header class="fc-head"><h3>All submarines by return time</h3></header><div class="fc-subs list">' + axisHtml(T, all.filter(function (x) { return x.status === 'out'; }), now) + (all.length ? all.map(function (x) { return subRow(x, now, true, T); }).join('') : '<p class="muted empty-line">No submarine is in an unlocked slot yet.</p>') + '</div></section>';
     } else body = '<div class="fleet">' + fcs.map(function (f) { return fcCard(f, now, T); }).join('') + '</div>';
+    if (!fcs.length) body = '<div class="fleet"></div>' + emptyHtml({ id: 'board-hidden', kick: 'Nothing on the Board', title: 'Every free company is hidden', word: 'Hidden',
+      text: 'Their data and alerts are unchanged. Tick one in Setup to see it here.', act: '<button type="button" class="btn primary" data-tab="setup">Show them in Setup</button>' });
     var hid = nHidden ? '<p class="hint hidden-note" data-hidden-note>' + nHidden + ' free compan' + (nHidden === 1 ? 'y is' : 'ies are') + ' hidden from this Board (their data and alerts are unchanged). <button type="button" class="link" data-tab="setup">Show ' + (nHidden === 1 ? 'it' : 'them') + ' in Setup</button></p>' : '';
     return strip(now) + hid + body + boardEstimateNote(now) + '<p class="foot-note tl-key">Letters: the route\'s sectors, in order, in their sea\'s colour. Bar and marker: the time left and the return, on the line above. Outlined: a suggestion, not sent.</p>' +
       '<p class="foot-note">Return times: worked out from rank, parts and route (' + esc(confirmation().text) + '), or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
@@ -363,7 +382,7 @@
       (rows.length ? '<table class="acc"><thead><tr><th>Sub</th><th>Worked out</th><th>Game</th><th>Difference</th></tr></thead><tbody>' + rows.slice(0, 20).map(function (r) {
         var d = Math.round((r.back - r.calc) / 1000);
         return '<tr><td>' + esc(r.sub ? r.sub.name || 'Sub ' + r.sub.slot : 'removed sub') + '</td><td>' + esc(F.fmtClock(r.calc)) + '</td><td>' + esc(F.fmtClock(r.back)) + ' <span class="muted">(' + esc(r.said) + ')</span></td><td class="' + (Math.abs(d) <= 60 ? 'ok' : 'bad') + '">' + (Math.abs(d) <= 60 ? 'agrees' : (d > 0 ? '+' : '') + Math.round(d / 60) + ' min') + '</td></tr>';
-      }).join('') + '</tbody></table>' : '<p class="hint">No checks yet.</p>') + '</section>';
+      }).join('') + '</tbody></table>' : '<p class="hint empty-line">No checks yet.</p>') + '</section>';
   }
   // ------------------------------------------------------------------ phone notifications (step S7)
   // where each free company stands in the owner's order: still unlocking (subs or sectors, levelling included), farming
@@ -492,7 +511,7 @@
         '<select class="rec-sel" data-rec="loot-' + i + '" aria-label="' + esc('Loot item ' + n) + '"' + off + '>' + recOptionsHtml(i) + '</select></div>' +
         '<p class="hint rec-note" data-rec-note="' + i + '">' + esc(recNoteHtml(i)) + '</p></div>';
     }
-    return html + '<p class="hint" data-rec-empty>' + (R.active(c).length ? '' : 'No item chosen: Loot Farming is skipped.') + '</p>';
+    return html + '<p class="hint empty-line" data-rec-empty>' + (R.active(c).length ? '' : 'No item chosen: Loot Farming is skipped.') + '</p>';
   }
   function recNarrow(t) { // typing: only this picker's option list is rebuilt; the text box, caret and focus are not touched
     var i = +t.dataset.recFind; RC.find[i] = t.value;
@@ -900,7 +919,7 @@
   function pickerHtml() {
     var s = S.subs[PICK.id], fc = S.fcs[s.fcId], disc = new Set(fc.discovered || []), now = Date.now();
     var seas = D.seas.filter(function (sea) { return D.sectors.some(function (x) { return x.sea === sea.id && disc.has(x.id); }); });
-    if (!seas.length) return '<p class="hint">No discovered sectors entered for this free company (Setup → Sectors).</p>';
+    if (!seas.length) return '<p class="hint empty-line">No discovered sectors entered for this free company (Setup → Sectors).</p>';
     if (!PICK.sea || !seas.some(function (x) { return x.id === PICK.sea; })) PICK.sea = PICK.route.length ? SECTOR[PICK.route[0]].sea : seas[0].id;
     var st = subStats(s), ev = st && PICK.route.length ? ADV.evalRoute(PICK.route, st) : null;
     var btns = D.sectors.filter(function (x) { return x.sea === PICK.sea && disc.has(x.id); }).map(function (x) {
@@ -973,7 +992,7 @@
       var list = g.items.slice().sort(function (a, b) { return (hist.count[b] || 0) - (hist.count[a] || 0) || EARN.name(a).localeCompare(EARN.name(b)); });
       var avg = window.DROPS.sector(D, g.sector, null), seen = avg ? list.filter(function (id) { return avg.items[id] > 0; }).length : 0;
       return '<div class="loot-group"><div class="loot-h">' + esc(ADV.sectorName(g.sector)) + ' <span class="muted">· ' + list.length + ' possible items (community data)' + (avg ? '; ' + seen + ' with drop records, from ' + window.DROPS.fmt.count(avg.n) + ' community surveys' : '') + '</span></div>' + (list.length ? list.map(function (id) { return row(id, avg); }).join('') : '<p class="hint">No loot list for this sector yet.</p>') + '</div>';
-    }).join('') : '<p class="hint">No route was recorded for this voyage, so add the items by name.</p>';
+    }).join('') : '<p class="hint empty-line">No route was recorded for this voyage, so add the items by name.</p>';
     var extra = Object.keys(qty).map(Number).filter(function (id) { return !listed[id]; });
     return '<details class="loot"' + (open ? ' open' : '') + '><summary>What came back <span class="muted">(optional: the quantities in the voyage report' + (open ? '' : '; can also be entered later in the Log tab') + ')</span></summary>' +
       '<p class="row">' + (hist.last ? '<button type="button" class="btn sm" data-act="loot-repeat" data-items="' + esc(JSON.stringify(hist.last)) + '">Repeat last</button>' : '') + '<button type="button" class="btn sm ghost" data-act="loot-clear">Clear</button></p>' +
@@ -1003,16 +1022,26 @@
   var LOGSHOW = 60;
   function logHtml() {
     var now = Date.now(), prices = PRICES.prices || {}, list = Object.keys(S.trips).map(function (k) { return { id: k, t: S.trips[k] }; }).sort(function (a, b) { return (b.t.back || b.t.t) - (a.t.back || a.t.t); });
-    if (!list.length) return '<section class="panel empty-state"><h2>Log</h2><p class="muted">Every voyage that ends ("Send again", "Collected" or the one-press send) is kept here. Tap one to enter what came back.</p></section>';
+    if (!list.length) return emptyHtml({ id: 'log-none', kick: 'The log is empty', title: 'No voyages yet', word: 'Log',
+      text: esc('Every voyage that ends ("Send again", "Collected" or the one-press send) is kept here. Tap one to enter what came back.'),
+      steps: [['route', 'Send a submarine', 'From the Board, on the suggested route or your own.'], ['loot', 'Log what came back', 'When it returns, enter the items in the send window or here.'], ['gil', 'See what it earned', 'Earnings adds it up by route, company and item.']],
+      act: '<button type="button" class="btn primary" data-tab="board">Go to the Board</button>' });
     // look only (R3, W25): each row's value is worked out first so the row can carry its sea, whether loot is logged and its gil against the largest shown
     var shown = list.slice(0, LOGSHOW).map(function (x) { return { x: x, v: EARN.tripValue(x.t, prices) }; });
     var maxGil = Math.max.apply(null, shown.map(function (r) { return r.v.logged ? +r.v.gil || 0 : 0; }).concat([0]));
-    return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p><div class="log-list">' + shown.map(function (r) {
+    // W34 (Rev4.7): a ledger by day. Before the first row of each local day (the day of the time the row shows) a day rule says the day, its voyages and the gil of its logged rows
+    var days = LEDGER.days(shown.map(function (r) { r.at = r.x.t.back || r.x.t.t; return r; }));
+    var rowHtml = function (r) {
       var x = r.x, t = x.t, sub = S.subs[t.s] || {}, fc = S.fcs[sub.fcId] || {}, v = r.v, sec = t.r && t.r.length ? SECTOR[t.r[0]] : null;
       var cls = 'log-row' + (sec && sec.sea ? ' in-sea-' + sec.sea : '') + (v.logged ? ' logged' : ' unlogged'), st = v.logged ? ' style="--p:' + (maxGil > 0 ? Math.max(0, (+v.gil || 0) / maxGil).toFixed(3) : '0') + '"' : '';
-      return '<button type="button" class="' + cls + '" data-trip="' + esc(x.id) + '"' + st + '><span class="log-when">' + esc(F.fmtClock(t.back || t.t, now)) + '</span><span class="log-who"><b>' + esc((fc.name || '?') + ' · ' + (sub.name || 'removed sub')) + '</b><span class="muted">' + esc(t.r && t.r.length ? ADV.routeText(t.r) : 'no route') + (t.rankAfter ? ' · rank ' + t.rankAfter : '') + '</span></span>' +
+      return '<button type="button" class="' + cls + '" data-trip="' + esc(x.id) + '"' + st + '><span class="log-when">' + esc(F.fmtClock(t.back || t.t, now)) + '</span><span class="log-disc">' + routeDiscs(t.r) + '</span><span class="log-who"><b>' + esc((fc.name || '?') + ' · ' + (sub.name || 'removed sub')) + '</b><span class="muted">' + esc(t.r && t.r.length ? ADV.routeText(t.r) : 'no route') + (t.rankAfter ? ' · rank ' + t.rankAfter : '') + '</span></span>' +
         '<span class="log-what">' + (t.grade && ADV.GRADES.indexOf(t.grade) >= 0 ? '<span class="log-grade g-' + t.grade.toLowerCase() + '">Grade ' + esc(t.grade) + '</span> ' : '') + (v.logged ? t.items.length + ' item' + (t.items.length === 1 ? '' : 's') + ' · <b>' + fmtGil(v.gil) + '</b>' + (v.unknown.length ? ' + unpriced' : '') : '<span class="muted">nothing logged · tap to add</span>') + '</span></button>';
-    }).join('') + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
+    };
+    var ledger = days.map(function (d) {
+      var logged = d.rows.filter(function (r) { return r.v.logged; }), gil = logged.reduce(function (n, r) { return n + Math.round(+r.v.gil || 0); }, 0);
+      return '<div class="log-day" data-day="' + d.key + '"><b>' + esc(LEDGER.dayLabel(d.at, now)) + '</b> <span>' + d.rows.length + ' voyage' + (d.rows.length === 1 ? '' : 's') + ' · ' + (logged.length ? fmtGil(gil) + ' logged' : 'nothing logged') + '</span></div>' + d.rows.map(rowHtml).join('');
+    }).join('');
+    return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p><div class="log-list">' + ledger + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
   }
   // ------------------------------------------------------------------ the Map tab (step S4-1): read-only; writes nothing to the save
   function mapState() {
@@ -1049,7 +1078,7 @@
   function sectorRatesHtml(id) {
     var DR = window.DROPS, sec = D.dropRates && D.dropRates.sectors && D.dropRates.sectors[id], b = D.breakpoints && D.breakpoints[id];
     var price = DR.merchant(D), listed = D.loot[id] || [];
-    if (!sec) return '<p class="hint">Possible items: ' + (listed.length ? listed.map(function (i) { return esc(EARN.name(i)); }).join(', ') + ' (listed as possible, no drop record yet).' : 'no loot list for this sector yet.') + '</p>';
+    if (!sec) return '<p class="hint' + (listed.length ? '' : ' empty-line') + '">Possible items: ' + (listed.length ? listed.map(function (i) { return esc(EARN.name(i)); }).join(', ') + ' (listed as possible, no drop record yet).' : 'no loot list for this sector yet.') + '</p>';
     var recorded = {}; sec.pools.forEach(function (pl) { pl.items.forEach(function (r) { recorded[r[0]] = 1; }); });
     var out = '<div class="rates"><p class="hint">Community drop records: ' + sec.n.toLocaleString('en') + ' surveys.</p>';
     if (b) out += '<p class="hint">Thresholds (community): surveillance ' + b[0] + ' for tier 2, ' + b[1] + ' for tier 3; retrieval ' + b[2] + ' for normal, ' + b[3] + ' for optimal quantities; favor ' + b[4] + ' for a possible second item' + (sec.favor[0] > 0 ? ' (it came on ' + DR.fmt.pct(sec.favor[1] / sec.favor[0]) + ' of surveys with enough favor)' : '') + '.</p>';
@@ -1136,8 +1165,8 @@
     var subs = subsOf(m.fc), now = Date.now(), slots = Object.keys(subs).sort(function (a, b) { return a - b; });
     var opts = '<option value="">No submarine chosen</option>' + slots.map(function (k) { return '<option value="' + esc(subs[k].id) + '"' + (subs[k].id === m.sub ? ' selected' : '') + '>' + esc(subs[k].sub.name || 'Sub ' + subs[k].sub.slot) + '</option>'; }).join('');
     var o = '<div class="planner"><label class="field inline">Plan for <select id="map-sub" data-map-sub>' + opts + '</select></label>';
-    if (!slots.length) return o + '<p class="hint">This free company has no submarines entered yet (Setup).</p></div>';
-    if (!m.sub) return o + '<p class="hint">Choose a submarine to plan a route: tap found sectors in the order it should visit them (up to 5).</p></div>';
+    if (!slots.length) return o + '<p class="hint empty-line">This free company has no submarines entered yet (Setup).</p></div>';
+    if (!m.sub) return o + '<p class="hint empty-line">Choose a submarine to plan a route: tap found sectors in the order it should visit them (up to 5).</p></div>';
     var s = S.subs[m.sub], st = subStats(s), route = m.route, ev = st && route.length ? ADV.evalRoute(route, st) : null, status = F.status(s, fc, now);
     var common = (D.commonRoutes || []).filter(function (cr) { return cr.sea === m.sea; }).map(function (cr) {
       var ok = cr.route.every(function (id) { return (fc.discovered || []).indexOf(id) >= 0 && (!s.rank || SECTOR[id].rank <= s.rank); });
@@ -1186,7 +1215,7 @@
       '<label class="field inline">Free company <select id="map-fc" data-map-fc>' + opts + '</select></label>' +
       '<div class="map-seas" role="group" aria-label="Sea">' + seas + '</div>' +
       (disc.length ? '' : '<p class="note">Nothing is ticked as found for this free company yet. Tick the sectors in Setup (Edit the free company, sectors step) and they show here.</p>') +
-      (nFound ? '' : '<p class="hint">This sea is not opened yet.</p>') +
+      (nFound ? '' : '<p class="hint empty-line">This sea is not opened yet.</p>') +
       '<div class="map-grid">' + plannerHtml(fc, m) +
       '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '"><header class="chart-head"><span class="chart-sea">' + esc(seaName) + '</span><span class="chart-count">found ' + nFound + ' of ' + seaCount + '</span></header>' + CHART.svg(view, m.sub ? m.route : null, { selected: m.sector, cannot: m.sub ? cannotMap(fc, m) : null }) + '</div>' +
       '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="currentColor"/>') + ' can be revealed next · ' + sw('far', '<rect x="3" y="3" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · dimmed: above this submarine\'s rank · bright line: the way to the next slot or sea · amber arrow: can be revealed now. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
@@ -1209,7 +1238,7 @@
   function fmtGil(n) { return Math.round(n).toLocaleString('en') + ' gil'; }
   function tripSheet(tripId) {
     var t = S.trips[tripId], sub = S.subs[t.s]; if (!t) return;
-    if (!sub) { sheet('<h2>Voyage</h2><p class="hint">This submarine was removed; its voyage is kept in the history.</p><div class="sheet-actions"><button type="button" class="btn ghost" data-act="close">Close</button></div>'); return; }
+    if (!sub) { sheet('<h2>Voyage</h2><p class="hint empty-line">This submarine was removed; its voyage is kept in the history.</p><div class="sheet-actions"><button type="button" class="btn ghost" data-act="close">Close</button></div>'); return; }
     var fc = S.fcs[sub.fcId] || {}, now = Date.now();
     sheet('<h2>' + esc((sub.name || 'Sub') + ' · ' + (fc.name || '')) + '</h2><p class="muted">Back ' + esc(F.fmtClock(t.back || t.t, now)) + ' · ' + esc(t.r && t.r.length ? ADV.routeText(t.r) : 'no route recorded') + '</p>' +
       lootHtml(t.s, t.r, t.items, t.newSectors, true) + itemsDatalist() +
@@ -1240,11 +1269,16 @@
   }
   function earnHtml() {
     var now = Date.now(), tot = EARN.totals(S, PRICES.prices || {}, now), scope = priceScope();
-    if (!tot.trips) return '<section class="panel empty-state"><h2>Earnings</h2><p class="muted">Earnings come from what you log in each returned voyage (Log tab, or the send window of a returned sub).</p></section>';
+    if (!tot.trips) return emptyHtml({ id: 'earn-none', kick: 'No earnings yet', title: 'Nothing logged yet', word: 'Earnings',
+      text: esc('Earnings come from what you log in each returned voyage (Log tab, or the send window of a returned sub).'),
+      steps: [['loot', 'Log a returned voyage', 'Enter what came back in the Log tab.'], ['gil', 'Prices are added', 'The better of the merchant price and the market price after tax.']],
+      act: '<button type="button" class="btn primary" data-tab="log">Go to the Log</button>' });
     var rk = EARN.ranked(tot.byRoute);
     var ratio = function (v, m) { return m > 0 ? (Math.max(0, +v || 0) / m).toFixed(3) : '0'; }; // look only: a bar's fill is a ratio of figures already shown
+    // W34 (Rev4.7): every table of bars is drawn on one printed "nice" scale (1, 2, 2.5, 5 or 10 times a power of ten, at least its largest figure), so bars compare at a glance
     var maxHr = Math.max.apply(null, rk.ranked.map(function (r) { return +r.perHour || 0; }).concat([0]));
     var maxFc = Math.max.apply(null, fcList().map(function (f) { return +tot.byFc[f.id] || 0; }).concat([0]));
+    var scaleHr = TL.niceScale(maxHr), scaleFc = TL.niceScale(maxFc);
     var mer = EARN.totals(S, {}, now), unpriced = {}; // the log in merchant gil only, the unit of the community figure; a route with an item the data has no price for is left out
     Object.keys(S.trips).forEach(function (k) { var t = S.trips[k]; if (t.items && t.items.some(function (x) { return !(D && D.itemInfo && D.itemInfo[x[0]]); })) unpriced[(t.r || []).join(',')] = 1; });
     var seaOf = function (route) { var sc = route && route.length ? SECTOR[route[0]] : null; return sc && sc.sea ? 'in-sea-' + sc.sea : ''; }; // look only: the sea's colour on a route row
@@ -1259,7 +1293,8 @@
       var x = S.subs[k], fc = x && S.fcs[x.fcId], b = tot.bySub[k] || { gil: 0, trips: 0 };
       return { id: k, name: x ? (fc && fc.name ? fc.name : 'Unnamed') + ' · ' + (x.name || 'Sub ' + x.slot) : 'Removed submarine', gil: b.gil, trips: b.trips };
     }).sort(function (a, b) { return b.gil - a.gil || a.name.localeCompare(b.name); });
-    var maxSub = Math.max.apply(null, subRows.map(function (r) { return r.gil; }).concat([0]));
+    var maxSub = Math.max.apply(null, subRows.map(function (r) { return r.gil; }).concat([0])), scaleSub = TL.niceScale(maxSub);
+    var scaleCap = function (txt) { return '<caption class="earn-scale">' + txt + '</caption>'; };
     var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
     var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
     var src = PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : PRICES.error ? 'Universalis could not be reached (' + esc(PRICES.error) + '): merchant prices only' : 'no market prices yet';
@@ -1268,11 +1303,11 @@
       (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +
       '<p class="row"><label class="field inline">Market prices from <select class="inp" data-pref="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' + dcs.map(function (d) { return '<option' + (S.settings.prefs && S.settings.prefs.priceWorld === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label><button type="button" class="btn sm" data-act="prices">Refresh prices</button><button type="button" class="btn sm" data-act="csv">Export the log (CSV)</button></p>' +
       '<h3>Gil per hour by route <span class="muted">(from your own log)</span></h3>' + (rk.ranked.length || rk.thin.length ? '<p class="hint">Logged gil divided by logged hours at sea, at the prices shown above.</p>' +
-        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked"><thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" class="' + seaOf(r.route) + '" style="--p:' + ratio(r.perHour, maxHr) + '"><td>' + r.pos + '</td><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>' + noteRow(r.route, 5); }).join('') + '</tbody></table>' : '') +
-        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr class="' + seaOf(r.route) + '"><td>' + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml(rk.ranked.concat(rk.thin).map(function (r) { var c = window.DROPS.route(D, r.route, null); return c ? c.secondShare : null; })) : '')
-        : '<p class="hint">Log what came back from voyages with a route to see this.</p>') +
-      '<h3>By free company</h3><table class="earn-t"><tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, maxFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
-      '<h3>By submarine</h3><table class="earn-t" data-earn-subs><tbody>' + subRows.map(function (r) { return '<tr style="--p:' + ratio(r.gil, maxSub) + '"><td>' + esc(r.name) + (r.trips ? ' <span class="muted">' + r.trips + ' voyage' + (r.trips === 1 ? '' : 's') + ' logged</span>' : '') + '</td><td><b>' + fmtGil(r.gil) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
+        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked">' + scaleCap('Bars run from 0 to ' + fmtGil(scaleHr) + ' an hour') + '<thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" class="' + seaOf(r.route) + '" style="--p:' + ratio(r.perHour, scaleHr) + '"><td>' + r.pos + '</td><td>' + routeDiscs(r.route) + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>' + noteRow(r.route, 5); }).join('') + '</tbody></table>' : '') +
+        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr class="' + seaOf(r.route) + '"><td>' + routeDiscs(r.route) + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml(rk.ranked.concat(rk.thin).map(function (r) { var c = window.DROPS.route(D, r.route, null); return c ? c.secondShare : null; })) : '')
+        : '<p class="hint empty-line">Log what came back from voyages with a route to see this.</p>') +
+      '<h3>By free company</h3><table class="earn-t">' + scaleCap('Bars run from 0 to ' + fmtGil(scaleFc)) + '<tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, scaleFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
+      '<h3>By submarine</h3><table class="earn-t" data-earn-subs>' + scaleCap('Bars run from 0 to ' + fmtGil(scaleSub)) + '<tbody>' + subRows.map(function (r) { return '<tr style="--p:' + ratio(r.gil, scaleSub) + '"><td>' + esc(r.name) + (r.trips ? ' <span class="muted">' + r.trips + ' voyage' + (r.trips === 1 ? '' : 's') + ' logged</span>' : '') + '</td><td><b>' + fmtGil(r.gil) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
       '<h3>Top items</h3><table class="earn-t"><thead><tr><th>Item</th><th>Quantity</th><th>Value</th><th>Priced by</th></tr></thead><tbody>' + items.map(function (x) { return '<tr><td>' + esc(EARN.name(x[0])) + '</td><td>' + x[1].qty.toLocaleString('en') + '</td><td>' + fmtGil(x[1].gil) + '</td><td>' + (x[1].how || 'unknown') + '</td></tr>'; }).join('') + '</tbody></table></section>';
   }
 
@@ -1455,7 +1490,7 @@
     sheet('<h2>' + head + '</h2><p class="hint">Each goes on its suggested route, with its own worked-out time. Subs that are back have their voyage logged first. ' + (fleet ? 'Untick any submarine to leave it out. ' : '') + 'Change any one by tapping it on the board instead.</p>' +
       (groups.length ? groups.map(function (g) {
         return (fleet ? '<h3 class="pick-fc" data-pick-fc="' + esc(g.fcId) + '">' + esc(g.fc.name || 'Unnamed free company') + '</h3>' : '') + '<div class="pick">' + g.list.map(function (e) { return row(g, e); }).join('') + '</div>';
-      }).join('') : '<p class="hint">No submarine is back or waiting to be sent.</p>') +
+      }).join('') : '<p class="hint empty-line">No submarine is back or waiting to be sent.</p>') +
       '<details class="game-says"><summary>The game says… <span class="muted">(only for subs without rank and parts)</span></summary>' + timeFields('t', 'in', '') + '</details>' +
       '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="dosendall">Send</button><button type="button" class="btn ghost" data-act="close">Cancel</button></div>');
     previewTime($('#sheet form'), 't');

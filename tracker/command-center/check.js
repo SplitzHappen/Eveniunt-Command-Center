@@ -4169,6 +4169,163 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server33.close();
     });
 
+    // the market price lookup of Earnings and the Log, answered here (a stand-in for the market site, one price for the one item seeded) so that the page does not redraw itself in a loop while the offline run cannot fetch it
+    const stubPrices = (pg) => pg.route('https://universalis.app/**', (r) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ averagePrice: 100, items: { 10099: { averagePrice: 100 } } }) }));
+    // ── C107 Submersibles empty states (W33, Rev4.7): the four full empty states (the Board with no free company, which the Map shows too; every company hidden; the Log with no voyage; Earnings with none)
+    //    show their headline, their steps and one action; each action does what its row says; the scope is decoration hidden from screen readers; no sideways scroll and no clipped headline at 360 px;
+    //    the sweep of the scope turns, and with reduced motion it stands still.
+    await guard('C107', async () => {
+      const server = await start(PORT5);
+      const probe = (pg, id) => pg.evaluate((id) => {
+        const el = document.querySelector('[data-empty="' + id + '"]'); if (!el) return null;
+        const h = el.querySelector('h2'), a = el.querySelector('.es-act .btn'), sc = el.querySelector('.es-scope'), r = a.getBoundingClientRect();
+        return { h: h.textContent, hFits: h.scrollWidth <= h.clientWidth + 1, h2s: document.querySelectorAll('#view h2').length, act: a.textContent, hook: a.getAttribute('data-act') || a.getAttribute('data-tab'), actH: Math.round(r.height), steps: [...el.querySelectorAll('.es-step')].map((x) => x.querySelector('strong').textContent + '|' + x.className.replace('es-step ', '')),
+          kick: el.querySelector('.es-kick').textContent, welcome: el.classList.contains('welcome'), panel: el.classList.contains('panel'), hidden: sc.getAttribute('aria-hidden'), noColourAttr: ![...sc.querySelectorAll('*')].some((e) => e.hasAttribute('fill') || e.hasAttribute('stroke')), svg: sc.querySelectorAll('svg').length, labels: sc.querySelectorAll('.es-word, .es-count').length,
+          word: sc.querySelector('.es-word').textContent, side: document.documentElement.scrollWidth - innerWidth, fan: getComputedStyle(el.querySelector('.es-sweep')).animationName, note: !!el.querySelector('.es-note'), aside: (el.querySelector('.es-aside') || {}).textContent || null, scopeH: Math.round(sc.getBoundingClientRect().height), bg: getComputedStyle(sc).backgroundImage.slice(0, 40) };
+      }, id);
+      const ready = (pg) => () => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const seedHidden = (pg) => pg.evaluate(async () => { const sec = { fcs: { fa: { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3] } }, subs: { a1: { fcId: 'fa', slot: 1, name: 'Sub One', rank: 50, parts: [3, 4, 1, 2] } }, trips: {}, settings: {} }; const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null }); });
+      // the four states in one context; opts.actions: press each action (desktop only)
+      const walkStates = async (opts, doActions) => {
+        const { ctx, errors } = await context(opts), page = await ctx.newPage(), out = {}, rd = ready(page);
+        await page.goto(ROOT5 + 'submersibles/'); await rd(); await page.waitForSelector('[data-empty="board-none"]');
+        out.board = await probe(page, 'board-none');
+        await page.click('[data-tab=map]'); await page.waitForSelector('[data-empty="board-none"]'); out.map = await probe(page, 'board-none'); await page.click('[data-tab=board]');
+        if (doActions) { await page.click('[data-empty="board-none"] [data-act=new]'); await page.waitForSelector('.wiz-head'); out.setupOpens = true; await page.click('[data-act=wcancel]'); await page.click('[data-tab=board]'); await page.waitForSelector('[data-empty="board-none"]'); }
+        await page.click('[data-tab=log]'); await page.waitForSelector('[data-empty="log-none"]'); out.log = await probe(page, 'log-none');
+        if (doActions) { await page.click('[data-empty="log-none"] [data-tab=board]'); await page.waitForSelector('[data-empty="board-none"]'); out.logToBoard = await page.evaluate(() => document.querySelector('.tabs [data-tab=board]').getAttribute('aria-current')); await page.click('[data-tab=log]'); }
+        await page.click('[data-tab=earn]'); await page.waitForSelector('[data-empty="earn-none"]'); out.earn = await probe(page, 'earn-none');
+        if (doActions) { await page.click('[data-empty="earn-none"] [data-tab=log]'); await page.waitForSelector('[data-empty="log-none"]'); out.earnToLog = await page.evaluate(() => document.querySelector('.tabs [data-tab=log]').getAttribute('aria-current')); }
+        await seedHidden(page); await page.reload(); await rd(); await page.click('[data-tab=setup]'); await page.waitForSelector('[data-shown-fc=fa]'); await page.uncheck('[data-shown-fc=fa]'); await page.waitForTimeout(700);
+        await page.click('[data-tab=board]'); await page.waitForSelector('[data-empty="board-hidden"]'); out.hidden = await probe(page, 'board-hidden');
+        out.hiddenExtra = await page.evaluate(() => ({ note: !!document.querySelector('[data-hidden-note]'), fleetEmpty: document.querySelector('.fleet') && document.querySelector('.fleet').children.length === 0, after: !!(document.querySelector('.fleet').compareDocumentPosition(document.querySelector('[data-empty="board-hidden"]')) & Node.DOCUMENT_POSITION_FOLLOWING) }));
+        if (doActions) {
+          // keyboard: Tab reaches the action and it shows an outline
+          let on = false; for (let i = 0; i < 60 && !on; i++) { await page.keyboard.press('Tab'); on = await page.evaluate(() => document.activeElement.matches('[data-empty] .es-act .btn')); }
+          out.focus = on ? await page.evaluate(() => { const c = getComputedStyle(document.activeElement); return { w: parseFloat(c.outlineWidth), s: c.outlineStyle }; }) : null;
+          await page.click('[data-empty="board-hidden"] [data-tab=setup]'); await page.waitForSelector('[data-shown-panel]'); out.hiddenToSetup = true;
+        }
+        out.errors = real(errors); await ctx.close(); return out;
+      };
+      const d = await walkStates({ viewport: { width: 1440, height: 1000 } }, true);
+      const p = await walkStates({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, false);
+      // reduced motion: the fan of the scope stands still
+      const { ctx: rctx, errors: rerr } = await context({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' }), rp = await rctx.newPage();
+      await rp.goto(ROOT5 + 'submersibles/'); await ready(rp)(); await rp.waitForSelector('[data-empty="board-none"]');
+      const rm = await probe(rp, 'board-none'); await rctx.close();
+      const four = (w) => [w.board, w.log, w.earn, w.hidden];
+      const okState = (x, h, act, hook, steps, kick) => x && x.h === h && x.act === act && x.hook === hook && x.steps.length === steps && x.kick === kick && x.panel && x.hidden === 'true' && x.noColourAttr && x.svg === 1 && x.labels === 2 && x.h2s === 1 && x.actH >= 36;
+      const ok = okState(d.board, 'No submarines in the water', 'Start the setup', 'new', 3, 'The dock is empty') && d.board.welcome && d.board.note && d.board.aside === 'about 3 to 5 minutes per free company' && d.board.steps.join() === 'Name the free company|v-route,Add its submarines|v-rank,Tick what is discovered|v-loot' &&
+        okState(d.map, 'No submarines in the water', 'Start the setup', 'new', 3, 'The dock is empty') && okState(d.log, 'No voyages yet', 'Go to the Board', 'board', 3, 'The log is empty') && d.log.steps.map((x) => x.split('|')[1]).join() === 'v-route,v-loot,v-gil' &&
+        okState(d.earn, 'Nothing logged yet', 'Go to the Log', 'log', 2, 'No earnings yet') && d.earn.steps.map((x) => x.split('|')[1]).join() === 'v-loot,v-gil' && okState(d.hidden, 'Every free company is hidden', 'Show them in Setup', 'setup', 0, 'Nothing on the Board') &&
+        d.hiddenExtra.note && d.hiddenExtra.fleetEmpty && d.hiddenExtra.after && d.setupOpens && d.logToBoard === 'page' && d.earnToLog === 'page' && d.hiddenToSetup && d.focus && d.focus.w >= 2 && d.focus.s !== 'none' &&
+        four(d).map((x) => x.word).join() === 'Your dock,Log,Earnings,Hidden' && four(d).every((x) => x.fan !== 'none' && /gradient/.test(x.bg)) &&
+        four(p).every((x) => x.side <= 0 && x.hFits && x.actH >= 36 && x.scopeH >= 130 && x.scopeH <= 150) && rm.fan === 'none' && !d.errors.length && !p.errors.length && !rerr.length;
+      record('C107', 'Empty states (W33): the four full empty states (the Board with no free company, which the Map shows too, every company hidden, the Log with no voyage, Earnings with none) show their kicker, headline, steps in their role colours and one action; the actions open the setup, the Board, the Log and Setup; the scope is hidden from screen readers and holds no colour attribute; at 360 px there is no sideways scroll, the headline fits and the action is at least 36 px; the scope turns and, with reduced motion, stands still',
+        ok, { desktop: d, phone: p, reduced: { fan: rm.fan }, errors: [d.errors, p.errors, rerr] });
+      server.close();
+    });
+
+    // ── C108 Submersibles Log as a ledger by day (W34, Rev4.7): each day rule's voyage count and gil equal the rows under it, "Today" and "Yesterday" and the year of an old day read as the spec says,
+    //    the rule is sticky and does not cover a focused row, a row still opens its voyage, and at 360 px nothing scrolls sideways
+    await guard('C108', async () => {
+      const server = await start(PORT5);
+      const seed = (pg) => pg.evaluate(async () => {
+        const mid = new Date(); mid.setHours(0, 0, 0, 0); const D0 = mid.getTime(), H = 3600000, DAY = 86400000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        const at = (days, h, m) => { const d = new Date(D0 - days * DAY); d.setHours(h, m || 0, 0, 0); return d.getTime(); };
+        sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3] };
+        sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub One', rank: 50, parts: [3, 4, 1, 2] };
+        const T = (id, back, r, items) => { sec.trips[id] = { s: 'a1', t: back - 20 * H, r, back, items, newSectors: [] }; };
+        T('t1', at(0, 0, 40), [1, 2], [[10099, 3]]); T('t2', at(0, 0, 10), [3], []);          // today: one logged, one not
+        T('t3', at(1, 12), [1, 2], [[10099, 2]]);                                            // yesterday: logged
+        T('t4', at(3, 9), [1, 2], [[10099, 4]]); T('t5', at(3, 8), [3], [[10099, 1]]);       // three days ago: two logged
+        T('t6', at(5, 15), [1], []);                                                         // five days ago: nothing logged
+        T('t7', at(400, 10), [1, 2], [[10099, 6]]);                                          // more than a year ago: the year is part of the label
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      const read = (pg) => pg.evaluate(() => {
+        const out = [], list = document.querySelector('.log-list'); let cur = null;
+        [...list.children].forEach((el) => {
+          if (el.classList.contains('log-day')) { cur = { label: el.querySelector('b').textContent, summary: el.querySelector('span').textContent, rows: [], figs: [], sticky: getComputedStyle(el).position === 'sticky', top: getComputedStyle(el).top }; out.push(cur); }
+          else if (el.classList.contains('log-row')) { cur.rows.push(el.dataset.trip); const b = el.querySelector('.log-what b'); if (b) cur.figs.push(+b.textContent.replace(/[^\d]/g, '')); }
+        });
+        return { days: out, rows: list.querySelectorAll('.log-row').length, firstIsDay: list.firstElementChild.classList.contains('log-day'), discs: [...list.querySelectorAll('.log-row')].map((r) => r.querySelectorAll('.log-disc .disc').length), discHidden: [...list.querySelectorAll('.log-disc .discs')].every((d) => d.getAttribute('aria-hidden') === 'true'), zebra: !!list.querySelector('.log-row:nth-child(even)') && getComputedStyle(list.querySelectorAll('.log-row')[1]).backgroundColor !== getComputedStyle(list.querySelectorAll('.log-row')[0]).backgroundColor };
+      });
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 420 } }), page = await ctx.newPage(), rd = ready0(page); await stubPrices(page);
+      function ready0(pg) { return () => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); }
+      await page.goto(ROOT5 + 'submersibles/'); await rd(); await seed(page); await page.reload(); await rd(); await page.click('[data-tab=log]'); await page.waitForSelector('.log-row[data-trip]'); await page.waitForTimeout(300);
+      const g = await read(page);
+      const want = [['Today', ['t1', 't2']], ['Yesterday', ['t3']], [null, ['t4', 't5']], [null, ['t6']], [null, ['t7']]];
+      const sums = g.days.map((d) => ({ n: +(/^(\d+) voyages?/.exec(d.summary) || [])[1], gil: (/· ([\d,]+) gil logged$/.exec(d.summary) || [])[1] ? +(/· ([\d,]+) gil logged$/.exec(d.summary)[1].replace(/,/g, '')) : (/· nothing logged$/.test(d.summary) ? 0 : -1), word: /^\d+ voyages? · /.test(d.summary) }));
+      const match = g.days.length === 5 && g.days.every((d, i) => d.rows.join() === want[i][1].join() && sums[i].word && sums[i].n === d.rows.length && sums[i].gil === d.figs.reduce((a, b) => a + b, 0) && (want[i][0] ? d.label === want[i][0] : /^[A-Z][a-z]+ \d{1,2} [A-Z][a-z]+( \d{4})?$/.test(d.label)));
+      const oneVoyage = /^1 voyage · /.test(g.days[1].summary) && /^2 voyages · /.test(g.days[0].summary), nothing = /· nothing logged$/.test(g.days[3].summary), withYear = /\d{4}$/.test(g.days[4].label) && !/\d{4}$/.test(g.days[2].label);
+      // a row still opens its voyage
+      await page.click('.log-row[data-trip="t4"]'); await page.waitForSelector('#sheet[open] .loot'); const opens = await page.evaluate(() => !!document.querySelector('#sheet[open] [data-act=trip-save]'));
+      await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]')).catch(() => {});
+      // the rule is sticky (top 0): scroll the page so that the third day's rows pass under it; a row focused with the keyboard stays clear of the rule
+      const stick = await page.evaluate(async () => {
+        // (the price lookup may redraw the Log once while this runs: each step takes its rows afresh and is repeated until the row it focused is still on the page)
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms)), q = () => [...document.querySelectorAll('.log-row')];
+        window.scrollTo({ top: q()[3].getBoundingClientRect().top + window.scrollY - 5, behavior: 'instant' }); await wait(200);
+        const stuckNow = [...document.querySelectorAll('.log-day')].filter((d) => Math.abs(d.getBoundingClientRect().top) <= 1).length;
+        // a row above the viewport takes focus (as Shift+Tab does): the browser scrolls it into view and must leave it clear of the stuck rule
+        let row = null;
+        for (let k = 0; k < 6; k++) { window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }); await wait(200); row = q()[1]; row.focus(); await wait(300); if (row.isConnected && document.activeElement === row) break; }
+        const stuck = [...document.querySelectorAll('.log-day')].filter((d) => Math.abs(d.getBoundingClientRect().top) <= 1), rule = stuck[0], rr = row.getBoundingClientRect();
+        return { stuckNow, stuck: stuck.length, position: stuck[0] && getComputedStyle(stuck[0]).position, clear: rule ? rr.top >= rule.getBoundingClientRect().bottom - 1 : true, focused: document.activeElement === row, rowTop: Math.round(rr.top), ruleBottom: rule ? Math.round(rule.getBoundingClientRect().bottom) : null };
+      });
+      await ctx.close();
+      // 360 px: no sideways scroll, rows and discs fit
+      const { ctx: c2, errors: e2 } = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }), p2 = await c2.newPage(); await stubPrices(p2);
+      await p2.goto(ROOT5 + 'submersibles/'); await ready0(p2)(); await seed(p2); await p2.reload(); await ready0(p2)(); await p2.click('[data-tab=log]'); await p2.waitForSelector('.log-row[data-trip]'); await p2.waitForTimeout(300);
+      const ph = await p2.evaluate(() => ({ side: document.documentElement.scrollWidth - innerWidth, rowH: [...document.querySelectorAll('.log-row')].map((r) => Math.round(r.getBoundingClientRect().height)), rowW: Math.max(...[...document.querySelectorAll('.log-row, .log-day')].map((r) => Math.round(r.getBoundingClientRect().width))), listW: Math.round(document.querySelector('.log-list').getBoundingClientRect().width) }));
+      await c2.close();
+      const ok = match && oneVoyage && nothing && withYear && g.firstIsDay && g.rows === 7 && g.discs.join() === '2,1,2,2,1,1,2' && g.discHidden && !g.zebra && g.days.every((d) => d.sticky && d.top === '0px') && stick.stuckNow >= 1 && stick.focused && stick.clear === true && opens && ph.side <= 0 && ph.rowW <= ph.listW && ph.rowH.every((h) => h >= 40) && !real(errors).length && !real(e2).length;
+      record('C108', 'Log by day (W34): a sticky day rule before each local day says "Today", "Yesterday" or the weekday, day and month (with the year when it is not this year) and "N voyages · G gil logged" (or "nothing logged"); the count and the gil equal the rows under it; rows carry their route discs; a row still opens its voyage; a focused row stays clear of the rule; no sideways scroll at 360 px',
+        ok, { days: g.days.map((d) => [d.label, d.summary, d.rows.join('+'), d.figs.join('+')]), discs: g.discs, stick, opens, phone: ph, zebra: g.zebra, errors: [real(errors), real(e2)] });
+      server.close();
+    });
+
+    // ── C109 Submersibles Earnings on one printed scale (W34, Rev4.7): each ranked bar's --p is its gil per hour over the printed scale, the scale is a nice number at least the largest figure,
+    //    the by-company and by-submarine tables have their own scale and their own bars; ranked and thin rows carry route discs; no sideways scroll at 360 px
+    await guard('C109', async () => {
+      const server = await start(PORT5);
+      const seed = (pg) => pg.evaluate(async () => {
+        const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: { prefs: { priceWorld: 'Aether' } } };
+        sec.fcs.fg = { name: 'Golf Company', world: 'Gilgamesh', unlockedSlots: 2, order: 0, discovered: [1, 2, 3] }; sec.fcs.fh = { name: 'Hotel Company', world: 'Gilgamesh', unlockedSlots: 1, order: 1, discovered: [1, 2, 3] };
+        sec.subs.g1 = { fcId: 'fg', slot: 1, name: 'Sub G1', rank: 10, parts: [3, 4, 1, 2] }; sec.subs.g2 = { fcId: 'fg', slot: 2, name: 'Sub G2', rank: 10, parts: [3, 4, 1, 2] }; sec.subs.h1 = { fcId: 'fh', slot: 1, name: 'Sub H1', rank: 10, parts: [3, 4, 1, 2] };
+        for (let i = 1; i <= 10; i++) sec.trips['p' + i] = { s: 'g1', t: now - (200 + i * 30) * H, r: [1, 2], back: now - (200 + i * 30 - 20) * H, items: [[10099, 700]], newSectors: [] };
+        for (let i = 1; i <= 10; i++) sec.trips['q' + i] = { s: 'g2', t: now - (200 + i * 30) * H, r: [3], back: now - (200 + i * 30 - 10) * H, items: [[10099, 200]], newSectors: [] };
+        for (let i = 1; i <= 10; i++) sec.trips['u' + i] = { s: 'h1', t: now - (200 + i * 30) * H, r: [2], back: now - (200 + i * 30 - 12) * H, items: [[10099, 100]], newSectors: [] };
+        for (let i = 1; i <= 3; i++) sec.trips['r' + i] = { s: 'h1', t: now - (10 + i * 30) * H, r: [1], back: now - (10 + i * 30 - 10) * H, items: [[10099, 1]], newSectors: [] };
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      const read = (pg) => pg.evaluate(() => {
+        const num = (t) => +String(t).replace(/[^\d]/g, ''), cap = (t) => { const c = t.querySelector('caption.earn-scale'); return c ? c.textContent : null; };
+        const tabs = [...document.querySelectorAll('.earn-t')], by = (re) => tabs.find((t) => re.test(t.querySelector('caption') ? t.querySelector('caption').textContent : ''));
+        const rows = (t, col) => t ? [...t.querySelectorAll('tbody tr[style]:not(.earn-note)')].map((tr) => ({ p: +tr.style.getPropertyValue('--p'), fig: num(tr.cells[col].textContent), discs: tr.querySelectorAll('.disc').length })) : [];
+        const ranked = document.querySelector('.earn-ranked'), thin = document.querySelector('.earn-thin'), fcT = tabs.find((t) => !t.classList.contains('earn-ranked') && !t.classList.contains('earn-thin') && !t.hasAttribute('data-earn-subs') && t.querySelector('thead') === null), subT = document.querySelector('[data-earn-subs]');
+        return { rankedCap: cap(ranked), fcCap: cap(fcT), subCap: cap(subT), ranked: rows(ranked, 2), fc: rows(fcT, 1), sub: rows(subT, 1), thinDiscs: thin ? [...thin.querySelectorAll('tbody tr:not(.earn-note)')].map((tr) => tr.querySelectorAll('.disc').length) : [], rankedDiscs: ranked ? [...ranked.querySelectorAll('tbody tr[data-pos]')].map((tr) => tr.cells[1].querySelectorAll('.disc').length) : [],
+          captionsFirst: [ranked, fcT, subT].every((t) => t && t.firstElementChild.tagName === 'CAPTION'), cards: [...document.querySelectorAll('.earn-card')].map((c) => ({ b: c.querySelector('b').textContent, clip: getComputedStyle(c).clipPath !== 'none', figFirst: c.querySelector('b').getBoundingClientRect().top < c.querySelector('span').getBoundingClientRect().top })), side: document.documentElement.scrollWidth - innerWidth };
+      });
+      const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } }), page = await ctx.newPage(), rd = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await stubPrices(page);
+      await page.goto(ROOT5 + 'submersibles/'); await rd(); await seed(page); await page.reload(); await rd(); await page.click('[data-tab=earn]'); await page.waitForSelector('.earn-ranked'); await page.waitForTimeout(800);
+      const g = await read(page); await ctx.close();
+      const parse = (t, re) => { const m = re.exec(t || ''); return m ? +m[1].replace(/,/g, '') : null; };
+      const sHr = parse(g.rankedCap, /^Bars run from 0 to ([\d,]+) gil an hour$/), sFc = parse(g.fcCap, /^Bars run from 0 to ([\d,]+) gil$/), sSub = parse(g.subCap, /^Bars run from 0 to ([\d,]+) gil$/);
+      const nice = (v) => v != null && /^(1|2|25|5)0*$/.test(String(v));
+      const ofRows = (rs, sc) => rs.length > 0 && rs.every((r) => Math.abs(r.p - r.fig / sc) <= 0.002 && r.p <= 1.0005);
+      const holds = (rs, sc) => Math.max(...rs.map((r) => r.fig)) <= sc && (Math.max(...rs.map((r) => r.fig)) > 0);
+      // the scale is the smallest nice number that holds the largest figure: the next one down would not
+      const smallest = (rs, sc) => { const m = Math.max(...rs.map((r) => r.fig)), down = [1, 2, 2.5, 5].map((k) => k * Math.pow(10, Math.floor(Math.log10(sc)) - 1)).concat([1, 2, 2.5, 5].map((k) => k * Math.pow(10, Math.floor(Math.log10(sc))))).filter((v) => v < sc).sort((a, b) => b - a)[0]; return !down || down < m; };
+      const phone = await (async () => { const { ctx: c2, errors: e2 } = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }), p2 = await c2.newPage(); await stubPrices(p2); await p2.goto(ROOT5 + 'submersibles/'); await p2.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await seed(p2); await p2.reload(); await p2.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await p2.click('[data-tab=earn]'); await p2.waitForSelector('.earn-ranked'); await p2.waitForTimeout(800); const r = await read(p2); await c2.close(); return { side: r.side, errors: real(e2) }; })();
+      const ok = (g.ranked.length === 3 && nice(sHr) && nice(sFc) && nice(sSub) && ofRows(g.ranked, sHr) && holds(g.ranked, sHr) && smallest(g.ranked, sHr) && ofRows(g.fc, sFc) && holds(g.fc, sFc) && smallest(g.fc, sFc) && ofRows(g.sub, sSub) && holds(g.sub, sSub) && smallest(g.sub, sSub) &&
+        g.captionsFirst && g.rankedDiscs.slice().sort().join() === '1,1,2' && g.thinDiscs.join() === '1' && g.cards.length === 4 && g.cards.every((c) => c.clip && c.figFirst) && g.side <= 0 && phone.side <= 0 && !phone.errors.length && !real(errors).length);
+      record('C109', 'Earnings on one printed scale (W34): each ranked bar\'s --p is its gil per hour over the printed scale ("Bars run from 0 to N gil an hour", the smallest of 1, 2, 2.5, 5 or 10 times a power of ten that holds the largest figure); the by-company and by-submarine tables print their own scale and size their bars by it; ranked and thin rows carry route discs; the four totals are slanted count blocks with the figure over the word; no sideways scroll at 360 px',
+        ok, { scale: { hr: sHr, fc: sFc, sub: sSub }, ranked: g.ranked, fc: g.fc, sub: g.sub, rankedDiscs: g.rankedDiscs, thinDiscs: g.thinDiscs, cards: g.cards, side: [g.side, phone.side], errors: [real(errors), phone.errors] });
+      server.close();
+    });
+
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.
@@ -4194,20 +4351,18 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       // Revision 4 (W31): the palette sheet is grouped by role (tools/subs-roles.js holds the list); each role is a row, each tone a swatch with a sample and the hex the browser computed under it
       const ROLE = require('../tools/subs-roles.js');
       const SPECIAL = new Set(['--molten', '--glow', '--hi', '--shadow', '--sweep', '--scrim', '--chart-glow', '--rule', '--grid']); // set by the theme or alpha: shown, not read as a hex
-      const NOT_YET = new Set(['--deep', '--deep-2', '--on-deep', '--deep-line']); // W33
-      const ON_OF = { '--paper': '--ink', '--paper-2': '--ink', '--paper-3': '--ink', '--slip': '--ink', '--slab': '--on-slab', '--seal': '--on-seal', '--back': '--on-back', '--out': '--on-out', '--idle': '--on-idle', '--chart-bg': '--chart-ink', '--chart-bg-2': '--chart-ink', '--chart-bg-hi': '--chart-ink' };
+      const ON_OF = { '--paper': '--ink', '--paper-2': '--ink', '--paper-3': '--ink', '--slip': '--ink', '--slab': '--on-slab', '--seal': '--on-seal', '--back': '--on-back', '--out': '--on-out', '--idle': '--on-idle', '--chart-bg': '--chart-ink', '--chart-bg-2': '--chart-ink', '--chart-bg-hi': '--chart-ink', '--deep': '--on-deep', '--deep-2': '--on-deep' };
       const paletteHtml = (title) => {
         const MODEL = new Set(['--on-mid']); // tokens the model computes (compared with the browser); the others are read and shown only
-        ROLE.ROLES.forEach((r) => r.tokens.forEach(([t]) => { if (/^--(rank|gil|loot|route)-[mgsw]$/.test(t) || /^--sea-\d(-[gsw])?$/.test(t) || /^--(back|out|idle|bad)-s$/.test(t)) MODEL.add(t); }));
+        ROLE.ROLES.forEach((r) => r.tokens.forEach(([t]) => { if (/^--(rank|gil|loot|route)-[mgsw]$/.test(t) || /^--sea-\d(-[gsw])?$/.test(t) || /^--(back|out|idle|bad)-s$/.test(t) || /^--(deep|deep-2|on-deep|deep-line)$/.test(t)) MODEL.add(t); }));
         const swatch = (t, tone) => {
           const free = !MODEL.has(t) || undefined;
-          if (NOT_YET.has(t)) return '<div class="pl-sw"><div class="pl-fill" style="background:repeating-linear-gradient(-45deg,var(--paper-2) 0 6px,var(--paper-3) 6px 12px);font-weight:400">added by W33</div><div class="pl-cap"><b>' + t + '</b> <span class="pl-role">' + tone + '</span></div></div>';
           const special = SPECIAL.has(t), solid = !special;
           const fill = t === '--molten' ? 'background:var(--molten)' : special ? 'background:var(--paper) linear-gradient(var(' + t + '),var(' + t + '))' : 'background:var(' + t + ')';
           let inner = '', samp = '';
           const on = ON_OF[t] || (tone === 'field' ? '--on-mid' : null);
           if (tone === 'field' && on) inner = '<span style="color:var(' + on + ')">Text on this field</span>';
-          if (tone === 'on') samp = '<div class="pl-smp" style="background:var(' + ({ '--on-slab': '--slab', '--on-slab-2': '--slab', '--on-seal': '--seal', '--on-back': '--back', '--on-out': '--out', '--on-idle': '--idle', '--on-mid': '--rank-m' }[t] || '--slab') + ');color:var(' + t + ')"><b>Text on its field</b></div>';
+          if (tone === 'on') samp = '<div class="pl-smp" style="background:var(' + ({ '--on-slab': '--slab', '--on-slab-2': '--slab', '--on-seal': '--seal', '--on-back': '--back', '--on-out': '--out', '--on-idle': '--idle', '--on-deep': '--deep-2', '--on-mid': '--rank-m' }[t] || '--slab') + ');color:var(' + t + ')"><b>Text on its field</b></div>';
           if (tone === 'graphic') samp = '<div class="pl-smp" style="background:var(--paper)"><i style="display:inline-block;width:62%;height:7px;background:var(' + t + ')"></i> <span style="display:inline-block;width:16px;height:11px;border:3px solid var(' + t + ');vertical-align:middle"></span></div>';
           if (tone === 'text') samp = '<div class="pl-smp" style="background:var(--slip);color:var(' + t + ')"><b>On the panel</b></div><div class="pl-smp" style="background:var(--paper);color:var(' + t + ')"><b>On the page</b></div>';
           if (tone === 'wash') inner = '<span style="color:var(--ink)">Ink on the wash</span>';
@@ -4241,7 +4396,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const readScr = (pg) => pg.evaluate(() => {
         const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
         const out = {};
-        [['--scr', 'scr'], ['--scr-g', 'scrg'], ['--ring', 'ring']].forEach(([v, k]) => {
+        [['--scr', 'scr'], ['--scr-g', 'scrg']].forEach(([v, k]) => {
           const p = document.createElement('i'); p.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + v + ')'; document.body.appendChild(p);
           cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = getComputedStyle(p).backgroundColor; cx.fillRect(0, 0, 1, 1); out[k] = [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); p.remove();
         });
@@ -4403,7 +4558,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           const cmp = (tok, g, w) => { const d = Math.max(...g.map((v, i) => Math.abs(v - w[i]))); n++; if (d > maxDiff) { maxDiff = d; worst = [tok, g, w]; } if (d > 2) bad.push(tok + ' ' + g + ' vs ' + w); };
           const roleCtx = ROLE.envOf(PAL.THEMES.find((r) => r[0] === pal.theme), pal.mode); // the tones the model does not compute are compared with the generated list's values
           out.palGot.forEach(([tok, g, free]) => { if (free) cmp(tok, g, PAL.hexRgb(ROLE.valueOf(tok, roleCtx))); else { if (!(tok in want)) throw new Error('model has no ' + tok); cmp(tok, g, want[tok]); } });
-          Object.keys(scr).forEach((t) => { const g = scr[t]; cmp('--scr@' + t, g.scr, want['--scr@' + t]); cmp('--scr-g@' + t, g.scrg, want['--scr-g@' + t]); cmp('--ring@' + t, g.ring, want['--ring@' + t]); });
+          Object.keys(scr).forEach((t) => { const g = scr[t]; cmp('--scr@' + t, g.scr, want['--scr@' + t]); cmp('--scr-g@' + t, g.scrg, want['--scr-g@' + t]); });
           out.pal = { theme: pal.theme, mode: pal.mode, compared: n, maxDiff, worst, bad, hex: { rank: PAL.toHex(want['--rank-m']), gil: PAL.toHex(want['--gil-m']), loot: PAL.toHex(want['--loot-m']), route: PAL.toHex(want['--route-m']) } };
           // the page's own timing of PALETTE.compute for this theme (the page reads the root's computed colours, then computes)
           out.pal.ms = await page.evaluate(() => { const t = PALETTE.read(), t0 = performance.now(); for (let i = 0; i < 20; i++) PALETTE.compute(t); return Math.round((performance.now() - t0) / 20 * 100) / 100; });
@@ -4428,7 +4583,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         return { wide, wideNew, fam, audit, errors: real(errors), ...out };
       };
       const all8 = ['board', 'sheet', 'log', 'map', 'planner', 'earnings', 'setup', 'recommendations'];
-      // W29: the empty states (a profile with nothing in it: the Board's welcome panel and the Log's empty-state panel) in a given theme; pictures look-empty-board-<tag>.png and look-empty-log-<tag>.png, the colour families recorded
+      // W29, W33: the empty states (a profile with nothing in it: the Board, the Log and Earnings; then one company hidden) in a given theme; pictures look-empty-{board,log,earnings,hidden}-<tag>.png, the colour families recorded
       const emptyWalk = async (opts, tag, theme, mode) => {
         const { ctx, errors } = await context(opts), page = await ctx.newPage(), fam = {}, wide = [];
         if (theme) {
@@ -4440,7 +4595,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.waitForSelector('.panel.welcome'); await page.waitForTimeout(250);
         const shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
         await shot('empty-board');
-        await page.click('[data-tab=log]'); await page.waitForSelector('.panel.empty-state'); await page.waitForTimeout(250); await shot('empty-log');
+        await page.click('[data-tab=log]'); await page.waitForSelector('[data-empty="log-none"]'); await page.waitForTimeout(250); await shot('empty-log');
+        // W33: Earnings with nothing logged, and the Board with every company hidden (a company is set up, then unticked in Setup)
+        await page.click('[data-tab=earn]'); await page.waitForSelector('[data-empty="earn-none"]'); await page.waitForTimeout(250); await shot('empty-earnings');
+        await page.evaluate(async () => { const sec = { fcs: { fa: { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3] } }, subs: { a1: { fcId: 'fa', slot: 1, name: 'Sub One', rank: 50, parts: [3, 4, 1, 2] } }, trips: {}, settings: {} }; const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null }); });
+        await page.reload(); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await page.click('[data-tab=setup]'); await page.waitForSelector('[data-shown-fc=fa]'); await page.uncheck('[data-shown-fc=fa]'); await page.waitForTimeout(700);
+        await page.click('[data-tab=board]'); await page.waitForSelector('[data-empty="board-hidden"]'); await page.waitForTimeout(250); await shot('empty-hidden');
         await ctx.close();
         return { fam, wide, errors: real(errors) };
       };

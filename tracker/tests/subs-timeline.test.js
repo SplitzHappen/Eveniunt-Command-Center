@@ -80,3 +80,36 @@ test('subs.js draws the Board as Rev4.7 says: tallies, axis, track, discs, the k
   // the arithmetic is TL's, not subs.js's own
   assert.ok(js.includes('TL.span(ms)') && js.includes('TL.pos(') && js.includes('TL.ticks(') && js.includes('TL.marks('));
 });
+
+// ---- W34 (Rev4.7): the printed scale of Earnings and the Log's days ----
+test('TL.niceScale: the smallest of 1, 2, 2.5, 5 or 10 times a power of ten that is at least the largest figure; 1 for nothing', () => {
+  const cases = [[0, 1], [-5, 1], [0.3, 0.5], [1, 1], [1.5, 2], [2, 2], [2.4, 2.5], [2.5, 2.5], [2.6, 5], [5, 5], [9, 10], [10, 10], [11, 20], [24, 25], [26, 50], [999, 1000], [1000, 1000], [1001, 2000], [2400, 2500], [49999, 50000], [50000, 50000], [50001, 100000], [123456, 200000], [2500000, 2500000]];
+  for (const [max, want] of cases) assert.equal(TL.niceScale(max), want, 'for ' + max);
+  for (let max = 1; max < 3e6; max = Math.ceil(max * 1.37)) { const sc = TL.niceScale(max); assert.ok(sc >= max, sc + ' holds ' + max); assert.ok(/^(1|2|2\.5|5)0*$/.test(String(sc).replace('.', '')) || /^(1|2|25|5)0*$/.test(String(sc).replace('.', '')), sc + ' is a nice number'); }
+});
+
+const LEDGER = require('../command-center/src/submersibles/ledger.js');
+test('LEDGER: local days, their labels (Today, Yesterday, weekday day month, year when not this year) and the grouping of rows', () => {
+  const at = (y, m, d, h, mi) => new Date(y, m - 1, d, h || 0, mi || 0).getTime(), now = at(2026, 11, 19, 15, 30);
+  assert.equal(LEDGER.dayStart(at(2026, 11, 19, 23, 59)), at(2026, 11, 19));
+  assert.equal(LEDGER.dayStart(at(2026, 11, 19, 0, 0)), at(2026, 11, 19));
+  assert.equal(LEDGER.dayLabel(at(2026, 11, 19, 0, 1), now), 'Today');
+  assert.equal(LEDGER.dayLabel(at(2026, 11, 18, 23, 59), now), 'Yesterday');
+  assert.equal(LEDGER.dayLabel(at(2026, 11, 17, 12), now), 'Tuesday 17 November');
+  assert.equal(LEDGER.dayLabel(at(2026, 1, 1, 8), now), 'Thursday 1 January');
+  assert.equal(LEDGER.dayLabel(at(2025, 12, 31, 8), now), 'Wednesday 31 December 2025');
+  const rows = [at(2026, 11, 19, 14), at(2026, 11, 19, 2), at(2026, 11, 18, 22), at(2026, 11, 17, 9), at(2026, 11, 17, 8)].map((t, i) => ({ at: t, i }));
+  const days = LEDGER.days(rows);
+  assert.deepEqual(days.map((d) => d.rows.map((r) => r.i)), [[0, 1], [2], [3, 4]]);
+  assert.deepEqual(days.map((d) => LEDGER.dayLabel(d.at, now)), ['Today', 'Yesterday', 'Tuesday 17 November']);
+  assert.deepEqual(LEDGER.days([]), []);
+});
+
+test('ledger.js is pure and shipped: no clock, no page, loaded before subs.js and copied by the build', () => {
+  const dir = path.join(__dirname, '..', 'command-center');
+  const src = fs.readFileSync(path.join(dir, 'src', 'submersibles', 'ledger.js'), 'utf8');
+  assert.ok(!/Date\.now|document\.|setTimeout|setInterval|localStorage/.test(src.replace(/\/\/.*$/gm, '')), 'no clock and no page');
+  const html = fs.readFileSync(path.join(dir, 'src', 'submersibles', 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<script src="ledger.js"></script>') > 0 && html.indexOf('<script src="ledger.js"></script>') < html.indexOf('<script src="subs.js"></script>'));
+  assert.ok(fs.readFileSync(path.join(dir, 'build.js'), 'utf8').includes("'ledger.js'"));
+});

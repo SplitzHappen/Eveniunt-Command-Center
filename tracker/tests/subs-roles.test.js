@@ -120,7 +120,7 @@ function lintCss() {
 
 test('lint: subs.css holds no raw colour outside the token definitions', () => {
   assert.deepEqual(lintCss(), [], 'raw colours in ordinary rules (the exceptions live in LINT_PENDING in tools/subs-roles.js)');
-  assert.deepEqual(T.LINT_PENDING, ['--ringc'], 'W31 leaves --ringc as the only exception; W33 empties the list');
+  assert.deepEqual(T.LINT_PENDING, [], 'W33 retired --ringc, the last exception; the list is empty');
   // the lint itself catches what it should
   const probe = ['color: #fff', 'background: rgba(0, 0, 0, .6)', 'color: oklch(0.7 0.1 20)', 'border: 1px solid red', 'background: color-mix(in srgb, var(--ink) 50%, var(--paper))', 'color: white'];
   for (const p of probe) { const [prop, val] = p.split(/:\s(.*)/s), v = bare(val), ms = mixes(v), rest = ms.reduce((s, m) => s.replace(m, ''), v); assert.ok(ms.some((m) => !MIX_OK.test(m)) || hexRe.test(rest) || fnRe.test(rest) || nameRe.test(rest), p); }

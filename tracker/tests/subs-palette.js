@@ -145,7 +145,7 @@ function themeInput(row, mode) {
   return o;
 }
 const compute = (row, mode) => PALETTE.compute(themeInput(row, mode));
-// every palette token as sRGB bytes, plus the screen voice per screen (--scr, --scr-g, --ring), as the checks compare them with the browser
+// every palette token as sRGB bytes, plus the screen voice per screen (--scr, --scr-g), as the checks compare them with the browser
 function palette(row, mode) {
   const r = compute(row, mode), out = {};
   for (const [k, v] of Object.entries(r.tokens)) out[k] = hexRgb(v);
@@ -153,7 +153,6 @@ function palette(row, mode) {
   for (const [screen, [, pre]] of Object.entries(scr)) {
     out['--scr@' + screen] = out[pre + (pre === '--sea-1' ? '' : '-m')];
     out['--scr-g@' + screen] = out[pre + '-g'];
-    out['--ring@' + screen] = out[pre + '-ring'];
   }
   return out;
 }

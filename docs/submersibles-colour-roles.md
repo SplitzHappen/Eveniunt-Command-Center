@@ -43,8 +43,6 @@ Tones: `field` a solid ground that carries text; `on` the text on that field; `g
 
 Aliases (pointers with no colour of their own, not counted): `--st`, `--on-st`, `--st-bg`, `--sea`, `--sea-g`, `--sea-s`, `--sea-w`, `--scr`, `--scr-g`, `--lv-m`, `--lv-g`, `--ico`, `--band`, `--hz`, `--lb-a`, `--lb-b`, `--lb-c`, `--lb-glow`, `--ochre`.
 
-Tokens Revision 3 built that W33 retires (still used by rules, in no role): `--rank-ring`, `--gil-ring`, `--loot-ring`, `--route-ring`, `--sea-1-ring`, `--ring`, `--ringc`.
-
 ## 2. Every tone, per theme and mode
 
 One table per role: 21 themes in light and dark, a hex value per token, and the hue (OKLCH degrees) of the first field or graphic tone. The water of the chart is shown for sea 1; every sea has its own.
@@ -429,48 +427,48 @@ One table per role: 21 themes in light and dark, a hex value per token, and the 
 
 | Theme | Mode | `--deep` (field) | `--deep-2` (field) | `--on-deep` (on) | `--deep-line` (graphic) | Hue |
 | --- | --- | --- | --- | --- | --- | --- |
-| Crystarium Dawnglass | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Crystarium Dawnglass | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ishgard Hoarfrost | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ishgard Hoarfrost | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Limsa Brineward | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Limsa Brineward | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ul'dah Sultanate Gilt | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ul'dah Sultanate Gilt | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Twelveswood Verdure | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Twelveswood Verdure | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Allagan Circuitry | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Allagan Circuitry | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Magitek Steel | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Magitek Steel | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Umbral Ice, Astral Fire | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Umbral Ice, Astral Fire | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Lily of the Healer | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Lily of the Healer | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Azure Dragoon | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Azure Dragoon | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Abyssal Oath | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Abyssal Oath | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Moonfire Faire | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Moonfire Faire | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Starlight Celebration | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Starlight Celebration | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Aetheryte Glow | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Aetheryte Glow | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| First World Twilight | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| First World Twilight | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ascian Crimson | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ascian Crimson | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Sharlayan Lore | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Sharlayan Lore | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Radz-at-Han Jewel | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Radz-at-Han Jewel | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Doman Sakura | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Doman Sakura | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ultima Thule | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Ultima Thule | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Electrope Skyline | light | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
-| Electrope Skyline | dark | W33 (Rev4.5): darker of ink and paper, lightness less 0.04, held 0.12 to 0.22 | W33 (Rev4.5): lightness 0.34, lowered until --on-deep reaches 7:1 | W33 (Rev4.5): the lighter of ink and paper | W33 (Rev4.5): --on-deep 45% into --deep-2, in OKLab | - |
+| Crystarium Dawnglass | light | #02172c | #013a64 | #d9e8f5 | #6485a4 | 250° |
+| Crystarium Dawnglass | dark | #03182d | #043a64 | #e0eefb | #6787a6 | 250° |
+| Ishgard Hoarfrost | light | #02182c | #003a63 | #dbe2e9 | #65829e | 248° |
+| Ishgard Hoarfrost | dark | #0a1b31 | #153765 | #e6edf3 | #6e85a4 | 256° |
+| Limsa Brineward | light | #031127 | #143865 | #d8e0ec | #6880a1 | 257° |
+| Limsa Brineward | dark | #031127 | #143865 | #e3ebf5 | #6d85a5 | 257° |
+| Ul'dah Sultanate Gilt | light | #211500 | #493400 | #efe0b0 | #907d4f | 82° |
+| Ul'dah Sultanate Gilt | dark | #1e1200 | #4a3400 | #f7ecd2 | #94825e | 79° |
+| Twelveswood Verdure | light | #0a1902 | #224209 | #dfeacd | #728a5f | 135° |
+| Twelveswood Verdure | dark | #0a1902 | #224209 | #e4efd8 | #748c64 | 135° |
+| Allagan Circuitry | light | #1a0900 | #532d00 | #dde3e2 | #907b65 | 59° |
+| Allagan Circuitry | dark | #201000 | #4f3000 | #dfe9e7 | #8e7f68 | 69° |
+| Magitek Steel | light | #001123 | #003b61 | #dcdfe2 | #66829a | 248° |
+| Magitek Steel | dark | #00101b | #003e55 | #e6e9ec | #6b8796 | 236° |
+| Umbral Ice, Astral Fire | light | #0e051c | #402b5f | #e4dcf0 | #85769f | 299° |
+| Umbral Ice, Astral Fire | dark | #0e051c | #402b5f | #efe8fa | #897ba3 | 299° |
+| Lily of the Healer | light | #001a09 | #004424 | #ece2e4 | #6f8875 | 153° |
+| Lily of the Healer | dark | #001a0a | #004425 | #f3eaec | #718b78 | 155° |
+| Azure Dragoon | light | #081129 | #213566 | #cfdcf7 | #6a7da6 | 266° |
+| Azure Dragoon | dark | #0f1932 | #203566 | #e4ecfb | #7283a8 | 266° |
+| Abyssal Oath | light | #1f040b | #5c2032 | #efd8de | #9e6f7a | 6° |
+| Abyssal Oath | dark | #190107 | #5c2033 | #f2e0e5 | #9f727e | 4° |
+| Moonfire Faire | light | #1d081d | #50244f | #f3d6ef | #967094 | 327° |
+| Moonfire Faire | dark | #1d081d | #50244f | #fbe6f8 | #9a7697 | 327° |
+| Starlight Celebration | light | #00190b | #004428 | #e3eef0 | #6a8d7c | 157° |
+| Starlight Celebration | dark | #00190b | #004428 | #e8f5ee | #6c907b | 157° |
+| Aetheryte Glow | light | #001f22 | #004145 | #d2eff0 | #628b8d | 204° |
+| Aetheryte Glow | dark | #001c1e | #004144 | #d6f7f5 | #638e8f | 201° |
+| First World Twilight | light | #14102a | #372e63 | #e3ddf6 | #7e79a4 | 288° |
+| First World Twilight | dark | #1b1630 | #382e63 | #ece7ff | #837da7 | 291° |
+| Ascian Crimson | light | #190101 | #5e211c | #e2dfdf | #9b736e | 27° |
+| Ascian Crimson | dark | #1d0302 | #5e211c | #efebeb | #a07873 | 29° |
+| Sharlayan Lore | light | #0d0f27 | #2d3165 | #dfe1ea | #767ca0 | 277° |
+| Sharlayan Lore | dark | #0d0f27 | #2d3165 | #e6e8f2 | #797fa4 | 277° |
+| Radz-at-Han Jewel | light | #210715 | #58213f | #f6dcd6 | #9e717f | 349° |
+| Radz-at-Han Jewel | dark | #2c0f1b | #5b2038 | #fbe7f0 | #a27585 | 356° |
+| Doman Sakura | light | #220a1b | #552247 | #f8dbe8 | #9c718c | 340° |
+| Doman Sakura | dark | #230b1e | #542349 | #f8e6ef | #9c7690 | 336° |
+| Ultima Thule | light | #050318 | #323064 | #dcdcef | #787aa1 | 283° |
+| Ultima Thule | dark | #08041b | #362e63 | #e9e8ff | #807da7 | 288° |
+| Electrope Skyline | light | #050a21 | #253466 | #e3ebf7 | #7482a6 | 269° |
+| Electrope Skyline | dark | #030318 | #2a3266 | #e6f4ff | #7785aa | 276° |
 
 ### 10. rank: a submarine's rank and levelling
 
@@ -1458,7 +1456,9 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | head | loot field, on-mid, ink band | `.log-list` | ink |
-| row (`.log-row`) | page field; hover page field 2; line | `=.log-row`, `.log-row:hover`, `.log-row:focus-visible`, `.log-row:nth-child(even)`, `.log-row:hover .muted`, `.log-row:nth-child(even) .muted` | page, ink, line, accent |
+| day rule (`.log-day`) | slab field, on, on-2 | `.log-day` | slab |
+| row (`.log-row`) | page field; hover page field 2; line | `=.log-row`, `.log-row:hover`, `.log-row:focus-visible`, `.log-row:hover .muted` | page, ink, line, accent |
+| who, route text, discs | ink; ink-2; sea | `.log-row .disc`, `.log-who` | ink, sea, shared, panel |
 | time cell (`.log-when`) | sea field, on-mid (no route: slab); hover accent field, on | `.log-when`, `.log-row:hover .log-when`, `.log-row[class*="in-sea-"] .log-when`, `.log-row[class*="in-sea-"]:hover .log-when` | sea, shared, slab, accent |
 | grade (`.log-grade`) | rank wash, rank graphic, ink; S and SS: rank field, on-mid | `.log-grade` | rank, ink, shared |
 | gil and heat line (`.log-what`) | gil text; gil graphic | `.log-what`, `.log-row.logged .log-what` | gil, idle |
@@ -1482,6 +1482,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | --- | --- | --- | --- |
 | head | gil field, on-mid | `.earn-card:first-child` | gil, ink, slab |
 | tallies (`.earn-card`) | first: gil wash, ink, ink band; others: panel, gil graphic band, gil text | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink |
+| scale line (`.earn-scale`) | ink-2: the printed scale of a table of bars | `.earn-scale` | ink |
 | section labels | ink; hatch and underline gil graphic | `.earn-t th`, `.earn-t th, .earn-t td` | line, ink |
 | position block | 1: accent field, on; 2 and 3: slab; others ink-2 | `.earn-ranked tr[data-pos] > td:first-child`, `.earn-ranked tr[data-pos="1"] > td:first-child`, `.earn-ranked tr[data-pos="2"] > td:first-child` | ink, accent, slab |
 | route cell | route text, sea graphic edge, discs sea | `.earn-ranked tr[data-pos] > td:nth-child(2)` | route, sea |
@@ -1503,7 +1504,9 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
-| full empty state (`.empty-state`) | page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band | `.panel.welcome`, `.panel.empty-state` | slab, ink, route, loot, gil, rank, sea |
+| full empty state (`.empty-state`) | page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band | `.empty-state`, `.es-kick`, `.es-main`, `.es-text`, `.es-step`, `.es-act`, `.es-aside`, `.es-note` | page, panel, slab, ink, shared, accent, route, loot, gil, rank |
+| scope (`.es-scope`) | deep fields; rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on | `.es-scope` | deep, route, loot, gil, rank |
+| empty line (`.empty-line`) | page field, ink-2 dashed edge, ink; glyph: the screen's role, graphic | `.empty-line` | page, ink, route, loot, gil, rank, sea |
 
 ### Notices
 

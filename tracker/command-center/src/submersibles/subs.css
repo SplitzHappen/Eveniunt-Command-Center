@@ -6,12 +6,12 @@
 :root[data-theme="dark"] { --back: #4fd18b; --on-back: #06210f; --out: #7d93ff; --on-out: #0b0d1a; --idle: #f0b347; --on-idle: #2a1800; --bad: #ff8a80; --locked: var(--ink-2); --back-bg: color-mix(in srgb, var(--back) 16%, var(--slip)); --out-bg: color-mix(in srgb, var(--out) 10%, var(--slip)); --idle-bg: color-mix(in srgb, var(--idle) 10%, var(--slip)); --molten: linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal)) 48%, var(--lb-c, var(--ochre))); --f-disp: "Big Shoulders Display", "Arial Narrow", sans-serif; --f-kick: "Cinzel", var(--f-serif); --on-mid: var(--paper); --slab: var(--ink); --on-slab: var(--paper); --on-slab-2: color-mix(in srgb, var(--paper) 72%, var(--ink)); --hi-slip: color-mix(in srgb, var(--seal) 16%, var(--slip)); --hazard: repeating-linear-gradient(-65deg, var(--hz, var(--ink-2)) 0 8px, transparent 8px 16px); --edge: 2px; --sweep: rgba(255, 255, 255, .28); --scrim: rgba(0, 0, 0, .6); --glow: 0 0 0 1px color-mix(in srgb, var(--seal) 60%, transparent), 0 0 26px -6px var(--lb-glow, var(--seal)); }
 /* Revision 3 palette, vivid (spec W22b). palette.js computes every token below from the theme and sets it inline on the page element; what stands here is the fallback
    (the fixed hues 232, 100, 188 and 340 of Revision 4 at one lightness, tones by mixing) that applies until the script has run or if it cannot. Tones: -m a field, -g bands and borders,
-   -s coloured text, -w a wash under ink text, -ring the rings on an empty-state slab. Status colours used as text have -s tones (--back-s, --out-s, --idle-s, --bad-s). */
+   -s coloured text, -w a wash under ink text, Status colours used as text have -s tones (--back-s, --out-s, --idle-s, --bad-s). */
 .subs-page { --rank-m: oklch(0.7 0.1 232); --gil-m: oklch(0.8 0.15 92); --loot-m: oklch(0.7 0.1 188); --route-m: oklch(0.7 0.1 340);
-  --rank-g: color-mix(in srgb, var(--rank-m) 66%, var(--ink)); --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip)); --rank-ring: color-mix(in srgb, var(--rank-m) 45%, var(--ink));
-  --gil-g: color-mix(in srgb, var(--gil-m) 56%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 38%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip)); --gil-ring: color-mix(in srgb, var(--gil-m) 36%, var(--ink));
-  --loot-g: color-mix(in srgb, var(--loot-m) 66%, var(--ink)); --loot-s: color-mix(in srgb, var(--loot-m) 46%, var(--ink)); --loot-w: color-mix(in srgb, var(--loot-m) 14%, var(--slip)); --loot-ring: color-mix(in srgb, var(--loot-m) 45%, var(--ink));
-  --route-g: color-mix(in srgb, var(--route-m) 66%, var(--ink)); --route-s: color-mix(in srgb, var(--route-m) 46%, var(--ink)); --route-w: color-mix(in srgb, var(--route-m) 14%, var(--slip)); --route-ring: color-mix(in srgb, var(--route-m) 45%, var(--ink));
+  --rank-g: color-mix(in srgb, var(--rank-m) 66%, var(--ink)); --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip));
+  --gil-g: color-mix(in srgb, var(--gil-m) 56%, var(--ink)); --gil-s: color-mix(in srgb, var(--gil-m) 38%, var(--ink)); --gil-w: color-mix(in srgb, var(--gil-m) 14%, var(--slip));
+  --loot-g: color-mix(in srgb, var(--loot-m) 66%, var(--ink)); --loot-s: color-mix(in srgb, var(--loot-m) 46%, var(--ink)); --loot-w: color-mix(in srgb, var(--loot-m) 14%, var(--slip));
+  --route-g: color-mix(in srgb, var(--route-m) 66%, var(--ink)); --route-s: color-mix(in srgb, var(--route-m) 46%, var(--ink)); --route-w: color-mix(in srgb, var(--route-m) 14%, var(--slip));
   --sea-1: oklch(0.7 0.12 250); --sea-2: oklch(0.7 0.13 50); --sea-3: oklch(0.7 0.11 165); --sea-4: oklch(0.7 0.13 0); --sea-5: oklch(0.7 0.12 315); --sea-6: oklch(0.7 0.12 282); --sea-7: oklch(0.7 0.1 215);
   --sea-1-g: color-mix(in srgb, var(--sea-1) 66%, var(--ink)); --sea-1-s: color-mix(in srgb, var(--sea-1) 46%, var(--ink)); --sea-1-w: color-mix(in srgb, var(--sea-1) 14%, var(--slip));
   --sea-2-g: color-mix(in srgb, var(--sea-2) 66%, var(--ink)); --sea-2-s: color-mix(in srgb, var(--sea-2) 46%, var(--ink)); --sea-2-w: color-mix(in srgb, var(--sea-2) 14%, var(--slip));
@@ -20,13 +20,13 @@
   --sea-5-g: color-mix(in srgb, var(--sea-5) 66%, var(--ink)); --sea-5-s: color-mix(in srgb, var(--sea-5) 46%, var(--ink)); --sea-5-w: color-mix(in srgb, var(--sea-5) 14%, var(--slip));
   --sea-6-g: color-mix(in srgb, var(--sea-6) 66%, var(--ink)); --sea-6-s: color-mix(in srgb, var(--sea-6) 46%, var(--ink)); --sea-6-w: color-mix(in srgb, var(--sea-6) 14%, var(--slip));
   --sea-7-g: color-mix(in srgb, var(--sea-7) 66%, var(--ink)); --sea-7-s: color-mix(in srgb, var(--sea-7) 46%, var(--ink)); --sea-7-w: color-mix(in srgb, var(--sea-7) 14%, var(--slip));
-  --sea-1-ring: color-mix(in srgb, var(--sea-1) 45%, var(--ink));
   --back-s: color-mix(in srgb, var(--back) 70%, var(--ink)); --out-s: color-mix(in srgb, var(--out) 70%, var(--ink)); --idle-s: color-mix(in srgb, var(--idle) 70%, var(--ink)); --bad-s: color-mix(in srgb, var(--bad) 70%, var(--ink));
-  --scr: var(--route-m); --scr-g: var(--route-g); --ring: var(--route-ring); }
-.subs-page:has(.tabs [data-tab="log"][aria-current="page"]) { --scr: var(--loot-m); --scr-g: var(--loot-g); --ring: var(--loot-ring); }
-.subs-page:has(.tabs [data-tab="earn"][aria-current="page"]) { --scr: var(--gil-m); --scr-g: var(--gil-g); --ring: var(--gil-ring); }
-.subs-page:has(.tabs [data-tab="setup"][aria-current="page"]) { --scr: var(--rank-m); --scr-g: var(--rank-g); --ring: var(--rank-ring); }
-.subs-page:has(.tabs [data-tab="map"][aria-current="page"]) { --scr: var(--sea-1); --scr-g: var(--sea-1-g); --ring: var(--sea-1-ring); }
+  --scr: var(--route-m); --scr-g: var(--route-g);
+  --deep: oklch(0.2 0.04 250); --deep-2: oklch(0.32 0.07 250); --on-deep: #f1f5fa; --deep-line: color-mix(in oklab, var(--on-deep) 45%, var(--deep-2)); }
+.subs-page:has(.tabs [data-tab="log"][aria-current="page"]) { --scr: var(--loot-m); --scr-g: var(--loot-g); }
+.subs-page:has(.tabs [data-tab="earn"][aria-current="page"]) { --scr: var(--gil-m); --scr-g: var(--gil-g); }
+.subs-page:has(.tabs [data-tab="setup"][aria-current="page"]) { --scr: var(--rank-m); --scr-g: var(--rank-g); }
+.subs-page:has(.tabs [data-tab="map"][aria-current="page"]) { --scr: var(--sea-1); --scr-g: var(--sea-1-g); }
 .in-sea-1, [data-map-sea="1"] { --sea: var(--sea-1); --sea-g: var(--sea-1-g); --sea-s: var(--sea-1-s); --sea-w: var(--sea-1-w); }
 .in-sea-2, [data-map-sea="2"] { --sea: var(--sea-2); --sea-g: var(--sea-2-g); --sea-s: var(--sea-2-s); --sea-w: var(--sea-2-w); }
 .in-sea-3, [data-map-sea="3"] { --sea: var(--sea-3); --sea-g: var(--sea-3-g); --sea-s: var(--sea-3-s); --sea-w: var(--sea-3-w); }
@@ -106,11 +106,11 @@
 .panel > h2 .muted, .panel > h2 .tag, .sheet h2 .muted { font: 400 13px var(--f-body); text-transform: none; letter-spacing: 0; }
 @media (max-width: 700px) { .panel > h2:first-child { font-size: 30px; } }
 /* on any slab */
-:is(.panel > h2:first-child, .fc-head, .strip-next, .panel.welcome, .panel.empty-state) .muted, :is(.panel > h2:first-child, .fc-head, .strip-next, .panel.welcome, .panel.empty-state) .tag { color: var(--on-slab-2); }
-:is(.panel > h2:first-child, .fc-head, .strip-next, .panel.welcome, .panel.empty-state) .link { color: var(--on-slab); }
-:is(.panel > h2:first-child, .fc-head, .strip-next, .panel.welcome, .panel.empty-state) .btn:not(.primary) { border-color: var(--on-slab); color: var(--on-slab); background: transparent; }
-:is(.panel > h2:first-child, .fc-head, .strip-next, .panel.welcome, .panel.empty-state) .btn:not(.primary):hover { background: var(--on-slab); color: var(--slab); }
-:is(.panel > h2:first-child, .fc-head, .strip-next, .panel.welcome, .panel.empty-state) :focus-visible { outline-color: var(--on-slab); }
+:is(.panel > h2:first-child, .fc-head, .strip-next) .muted, :is(.panel > h2:first-child, .fc-head, .strip-next) .tag { color: var(--on-slab-2); }
+:is(.panel > h2:first-child, .fc-head, .strip-next) .link { color: var(--on-slab); }
+:is(.panel > h2:first-child, .fc-head, .strip-next) .btn:not(.primary) { border-color: var(--on-slab); color: var(--on-slab); background: transparent; }
+:is(.panel > h2:first-child, .fc-head, .strip-next) .btn:not(.primary):hover { background: var(--on-slab); color: var(--slab); }
+:is(.panel > h2:first-child, .fc-head, .strip-next) :focus-visible { outline-color: var(--on-slab); }
 /* section labels and small heads */
 .recs h3, .wide-panel > h3 { display: flex; align-items: center; gap: 10px; font: 900 22px/1 var(--f-disp); text-transform: uppercase; letter-spacing: .04em; color: var(--ink); margin: 16px 0 6px; }
 .recs h3::after, .wide-panel > h3::after { content: ""; flex: 1; height: 10px; background: repeating-linear-gradient(-65deg, var(--ink) 0 2px, transparent 2px 8px); }
@@ -195,7 +195,6 @@
 .quick { margin-left: auto; max-width: 100%; position: relative; font: 700 14px/1 var(--f-data); letter-spacing: 0; min-height: 40px; padding: 0 46px 5px 12px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: transform .12s, background .12s; }
 .quick::after { content: ""; position: absolute; right: 12px; top: calc(50% - 9px); width: 24px; height: 12px; background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 9.5px); transform: skewX(-25deg); }
 .foot-note { color: var(--ink-2); font-size: 12px; margin: 10px 0 0; max-width: 110ch; }
-.welcome { max-width: 900px; }
 
 /* setup */
 .fc-list { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 6px; }
@@ -358,21 +357,32 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .loot-new { margin-top: 10px; }
 .wide-panel { max-width: 1100px; }
 .log-list { display: block; margin-top: 10px; border: 2px solid var(--ink); }
-.log-row { display: grid; grid-template-columns: 132px 1fr auto; gap: 0 12px; align-items: center; width: 100%; min-height: 64px; text-align: left; font: inherit; font-size: 14px; padding: 0 12px 0 0; border: 0; border-bottom: 1px dashed var(--rule); border-radius: 0; background: transparent; color: var(--ink); cursor: pointer; }
+/* W34 (Rev4.7): the Log is a ledger by day. A sticky day rule (a slab) carries the day's voyages and gil; the rows under it are time cell, route discs, who and what */
+.log-day { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; padding: 8px 12px; background: var(--slab); color: var(--on-slab); }
+.log-day b { font: 900 20px/1.1 var(--f-disp); text-transform: uppercase; letter-spacing: .03em; }
+.log-day span { font: 600 13px/1.3 var(--f-data); color: var(--on-slab-2); font-variant-numeric: tabular-nums; }
+.log-row { scroll-margin-top: 56px; display: grid; grid-template-columns: 96px 150px minmax(0, 1fr) auto; gap: 0 12px; align-items: center; width: 100%; min-height: 64px; text-align: left; font: inherit; font-size: 14px; padding: 0 12px 0 0; border: 0; border-bottom: 1px dashed var(--rule); border-radius: 0; background: transparent; color: var(--ink); cursor: pointer; }
 .log-row:last-child { border-bottom: 0; }
 .log-row:hover { background: var(--paper-2); }
 .log-row:focus-visible { outline: 2px solid var(--seal); outline-offset: -4px; }
 .log-who { display: grid; min-width: 0; padding: 6px 0; }
 .log-who b { font-weight: 700; font-size: 15px; }
 .log-who .muted { font: 13px var(--f-data); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.log-when { align-self: stretch; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 26px 0 8px; background: var(--slab); color: var(--on-slab); font: 600 13px var(--f-data); clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%); }
+.log-when { align-self: stretch; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 24px 0 8px; background: var(--slab); color: var(--on-slab); font: 600 12px/1.25 var(--f-data); clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+.log-disc { display: block; min-width: 0; }
+/* a route as discs in a row (the Board's helper, drawn in flow here): the Log and the Earnings route cells */
+.log-row .discs, .earn-t .discs { display: inline-flex; gap: 6px; vertical-align: middle; --d: 24px; }
+.earn-t .discs { --d: 22px; margin-right: 10px; }
+.log-row .disc, .earn-t .disc { position: relative; left: auto; top: auto; flex: none; }
 .log-row:hover .muted { color: var(--ink); }
 .log-row:hover .log-when { background: var(--seal); color: var(--on-seal); }
-.log-what { text-align: right; font-size: 12px; }
-.log-what b { font: 900 26px/1 var(--f-disp); }
+.log-what { text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
+.log-what b { font: 900 26px/1 var(--f-disp); font-variant-numeric: tabular-nums; }
+/* W34 (Rev4.7): the four totals are the Board's count blocks: slanted ends, the figure over its word */
 .earn-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 12px 0; }
-.earn-card { container-type: inline-size; display: grid; gap: 4px; padding: 18px 12px 12px; }
-.earn-card span { font: 700 11px/1.4 var(--f-kick); color: var(--ink-2); text-transform: uppercase; letter-spacing: .22em; }
+.earn-card { --cut: 22px; container-type: inline-size; display: grid; gap: 2px; padding: 18px 40px 12px 44px; border-width: 2px 0; clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%); box-shadow: none; }
+.earn-card span { order: 2; font: 700 17px/1 var(--f-disp); color: var(--ink-2); text-transform: uppercase; letter-spacing: .08em; }
+.earn-card b { order: 1; font-variant-numeric: tabular-nums; }
 .earn-card b { font: 900 clamp(24px, 12cqi, 56px)/.95 var(--f-disp); overflow-wrap: anywhere; }
 .earn-card:first-child { background-color: var(--slab); color: var(--on-slab); }
 .earn-card:first-child span { color: var(--on-slab-2); }
@@ -394,6 +404,12 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
   .log-row { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 0 8px; }
   .log-when { min-height: 24px; justify-content: flex-start; padding: 0 12px; clip-path: none; }
   .log-who, .log-what { padding-left: 12px; padding-right: 12px; text-align: left; }
+  .log-row { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+  .log-when { grid-column: 1; }
+  .log-disc { grid-column: 2; padding: 0 12px; }
+  .log-disc:empty { display: none; }
+  .log-who, .log-what { grid-column: 1 / -1; }
+  .log-day { padding: 6px 12px; }
   .earn-ranked, .earn-thin { display: block; overflow-x: auto; }
   .earn-ranked th, .earn-ranked td, .earn-thin th, .earn-thin td { white-space: nowrap; }
 }
@@ -514,11 +530,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .earn-card { padding-top: 18px; }
 .sheet { padding-top: 6px; }
 
-/* empty state: the whole panel is a slab, a large headline, sonar rings behind */
-.panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { background-color: var(--slab); color: var(--on-slab); padding-top: 22px; padding-bottom: 24px; background-image: repeating-radial-gradient(circle at 100% 0, transparent 0 46px, color-mix(in srgb, var(--on-slab) 10%, transparent) 46px 48px); }
-.panel.welcome > h2:first-child, .panel.empty-state > h2:first-child { background: none; margin: 0 0 12px; padding: 0; border: 0; border-image: none; color: inherit; font: 900 clamp(44px, 9vw, 96px)/.9 var(--f-disp); }
-.panel.welcome p, .panel.empty-state p { max-width: 60ch; font-size: 16px; }
-.panel.welcome .btn.primary, .panel.empty-state .btn.primary { min-height: 56px; padding: 0 28px 5px; font-size: 22px; }
+/* the empty states are the pattern at the end of this file (W33) */
 
 
 /* W19: the Map tab. Sea tabs, chart head, legend, planner controls and the sector console */
@@ -634,6 +646,8 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
   .earn-ranked tr[data-pos="2"] > td:nth-child(3) b, .earn-ranked tr[data-pos="3"] > td:nth-child(3) b { font-size: 24px; }
   .earn-ranked tr.earn-note, .earn-ranked tr.earn-note > td, .earn-thin tr.earn-note, .earn-thin tr.earn-note > td { display: block; }
   .earn-note-text { position: static; width: auto; }
+  .earn-ranked > .earn-scale, .earn-thin > .earn-scale { display: block; }
+  .earn-t .discs { --d: 20px; gap: 4px; margin-right: 6px; }
   .earn-thin tr:not(.earn-note) { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
   .earn-thin tr:not(.earn-note) > td:first-child { grid-column: 1 / -1; font-weight: 700; }
   .earn-thin tr > td:nth-child(2)::before { content: "Gil per hour"; }
@@ -667,8 +681,6 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 /* W25: the Log. Each row says which sea (the time cell), how valuable (the gil figure and its heat line), graded or not (the chip) and whether loot was entered (solid edge and "N items", or dashed edge and "nothing logged") */
 .log-row[class*="in-sea-"] .log-when { --slab: var(--sea); --on-slab: var(--on-mid); background: var(--slab); color: var(--on-slab); }
 .log-row[class*="in-sea-"]:hover .log-when { background: var(--seal); color: var(--on-seal); }
-.log-row:nth-child(even) { background: var(--paper-2); }
-.log-row:nth-child(even) .muted { color: var(--ink); }
 .log-row.logged { border-right: 8px solid var(--loot-g); }
 .log-row.unlogged { border-right: 8px dashed var(--idle); }
 .log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }
@@ -685,7 +697,11 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .earn-card:not(:first-child) { background-image: linear-gradient(var(--gil-g), var(--gil-g)); }
 .earn-card b { color: var(--gil-s); }
 .earn-t td b { color: var(--gil-s); }
-.earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { background: linear-gradient(90deg, var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%), transparent 0); }
+.earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { width: 36%; background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%), linear-gradient(90deg, var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%), transparent 0); }
+.earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { width: 50%; }
+/* the printed scale of a table: the bars of its rows are shares of it */
+.earn-scale { caption-side: top; text-align: left; padding: 0 0 4px; font: 600 13px/1.3 var(--f-data); color: var(--ink-2); }
+@media (max-width: 700px) { .earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { width: auto; } }
 .earn-ranked tr[style] > td:nth-child(3) b, .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child b { color: var(--ink); }
 .earn-ranked tr[data-pos] > td:nth-child(2), .earn-thin tr:not(.earn-note) > td:first-child { font: 600 14px var(--f-data); color: var(--route-s); border-left: 6px solid var(--sea-g, var(--route-g)); }
 .earn-ranked tr[data-pos] > td:nth-child(4) { color: var(--gil-s); }
@@ -724,7 +740,6 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }
 .sea[class*="in-sea-"][open] > summary { --slab: var(--sea); --on-slab: var(--on-mid); --on-slab-2: var(--on-mid); background: var(--slab); color: var(--on-slab); }
 .tick b { color: var(--route-s); }
-.panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { --ringc: color-mix(in srgb, var(--ring) 60%, var(--slab)); background-image: radial-gradient(circle at 100% 0, transparent 0 46px, var(--ringc) 46px 48px, transparent 48px 94px, var(--ringc) 94px 96px, transparent 96px 142px, var(--ringc) 142px 144px, transparent 144px 190px, var(--ringc) 190px 192px, transparent 192px 238px, var(--ringc) 238px 240px, transparent 240px 286px, var(--ringc) 286px 288px, transparent 288px); background-size: 100% 100%; background-position: 0 0; background-repeat: no-repeat; } /* W29: six soft rings in the top-right corner (the shared panel rule had sized this layer to the 6 px molten band, so they had shown only as ticks along the top edge; a repeating gradient across the panel put lines through the text) */
 
 /* W29: the final pass (colour only).
    Board: a company head carries a thin band across its top, one quarter per slot in that slot's status colour (green Back, blue Out, amber Idle, neutral Locked; no colour for a slot with no sub yet), set from the card's data in --band; the words are on the rows below.
@@ -735,7 +750,6 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 /* W29: a closed sea in the wizard is its colour's wash (ink text, 7:1), an open one its field */
 .sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }
 .sea[class*="in-sea-"]:not([open]) > summary .muted { color: var(--ink); }
-@media (max-width: 700px) { .panel.welcome, .panel.empty-state, .panel.welcome:has(> h2:first-child), .panel.empty-state:has(> h2:first-child) { --ringc: color-mix(in srgb, var(--ring) 32%, var(--slab)); } } /* W29: on a phone the rings cross the text, so they are fainter */
 
 /* gaps spec Part B (G7 to G11): minimal additions; the voices are the module's own (rank for rank-up figures, gil for earnings) */
 .pick-fc { font: 900 16px/1.2 var(--f-disp); text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 2px; }
@@ -871,3 +885,52 @@ div.sub { cursor: default; }
   .fc-subs:not(.list) .sub.empty .sub-meta { grid-area: 1 / 1 / 3 / -1; }
   .fc-subs:not(.list) .vgauge { left: auto; right: 14px; width: 320px; height: 6px; bottom: 3px; }
 }
+
+/* ===== W33: the empty states (Rev4.7). One pattern, two sizes. Full: a headline, one sentence, numbered steps in the role colours, one action, and a sonar scope on a deep-water panel cut on the slant. Line: a sentence with a ring glyph ===== */
+.panel.empty-state[data-empty] { --pad-x: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 44%); max-width: 1400px; padding: 0; background-color: var(--paper); background-image: none; color: var(--ink); overflow: hidden; }
+.es-main { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; min-width: 0; padding: 48px 40px 48px 56px; }
+.es-kick { margin: 0; padding: 4px 14px; background: var(--slab); color: var(--on-slab); font: 700 12px/1.5 var(--f-kick); letter-spacing: .24em; text-transform: uppercase; }
+.es-main > h2 { margin: 0; padding: 0; font: 900 clamp(44px, 7.2vw, 104px)/.88 var(--f-disp); letter-spacing: .01em; text-transform: uppercase; color: var(--ink); overflow-wrap: anywhere; text-wrap: balance; }
+.es-text { margin: 0; max-width: 56ch; font-size: 18px; line-height: 1.45; color: var(--ink-2); }
+.es-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; width: 100%; max-width: 640px; }
+.es-step { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: stretch; min-height: 64px; background: var(--slip); border: 2px solid var(--ink); }
+.es-step > b { display: flex; align-items: center; justify-content: center; padding-right: 14px; font: 900 44px/1 var(--f-disp); color: var(--on-mid); clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%); }
+.es-step.v-route > b { background: var(--route-m); }
+.es-step.v-rank > b { background: var(--rank-m); }
+.es-step.v-loot > b { background: var(--loot-m); }
+.es-step.v-gil > b { background: var(--gil-m); }
+.es-step > span { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 10px 16px; font-size: 15px; color: var(--ink-2); }
+.es-step strong { font: 900 22px/1.1 var(--f-disp); text-transform: uppercase; letter-spacing: .03em; color: var(--ink); overflow-wrap: anywhere; }
+.es-act { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.es-act .btn.primary { min-height: 60px; padding: 0 30px 7px; font: 900 26px/1 var(--f-disp); letter-spacing: .06em; background: linear-gradient(var(--route-m), var(--route-m)) 0 100% / 100% 7px no-repeat, linear-gradient(var(--on-seal), var(--on-seal)) 0 calc(100% - 7px) / 100% 2px no-repeat, var(--seal); }
+.es-aside { font: 13px/1.4 var(--f-data); color: var(--ink-2); }
+.es-note { margin: 0; max-width: 56ch; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+/* the scope: a sonar drawn in the theme's own roles on the deep-water panel, hidden from screen readers */
+.es-scope { position: relative; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%); color: var(--on-deep); }
+.es-scope svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.es-scope .es-ring { fill: none; stroke-width: 2; }
+.es-scope .r1 { stroke: var(--route-m); }
+.es-scope .r2 { stroke: var(--loot-m); }
+.es-scope .r3 { stroke: var(--gil-m); }
+.es-scope .r4 { stroke: var(--rank-m); }
+.es-scope .r5, .es-scope .es-cross { stroke: var(--deep-line); }
+.es-scope .es-cross { stroke-width: 1; }
+.es-scope .es-sweep { transform-box: view-box; transform-origin: 370px 430px; animation: subs-turn 9s linear infinite; }
+.es-scope .es-fan { fill: var(--route-m); fill-opacity: .16; }
+.es-scope .es-edge { stroke: var(--route-m); stroke-width: 4; }
+.es-scope .es-dia { fill: var(--on-deep); stroke: var(--route-m); stroke-width: 4; }
+.es-scope .es-word { position: absolute; left: calc(58% - 52px); top: calc(52% + 36px); font: 900 24px/1 var(--f-disp); letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep); }
+.es-scope .es-count { position: absolute; right: 28px; bottom: 24px; font: 13px/1.3 var(--f-data); color: var(--on-deep); }
+@media (max-width: 700px) {
+  .panel.empty-state[data-empty] { grid-template-columns: minmax(0, 1fr); }
+  .es-scope { order: -1; min-height: 0; height: 140px; clip-path: none; }
+  .es-scope .es-word { left: 16px; top: 12px; }
+  .es-scope .es-count { right: 14px; bottom: 10px; }
+  .es-main { gap: 18px; padding: 20px 16px; }
+  .es-act { display: grid; width: 100%; }
+  .es-act .btn.primary { width: 100%; min-height: 56px; }
+}
+/* a sentence that says nothing is here yet: a dashed line with a ring glyph in the screen's role */
+.empty-line, .hint.empty-line, .muted.empty-line { display: flex; align-items: center; gap: 12px; min-height: 48px; margin: 8px 0; padding: 8px 14px; border: 2px dashed var(--ink-2); background: var(--paper); color: var(--ink); font-size: 14px; }
+.empty-line::before { content: ""; flex: none; box-sizing: border-box; width: 22px; height: 22px; border: 3px solid var(--scr-g); border-radius: 50%; background: radial-gradient(circle, var(--scr-g) 0 3px, transparent 4px); }
+.empty-line:empty { display: none; }

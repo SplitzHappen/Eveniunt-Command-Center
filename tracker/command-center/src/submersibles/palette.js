@@ -23,10 +23,13 @@
   P.WASH_L_DARK = 0.30;     // the same under light ink
   P.WASH_CHROMA = 1 / 3;    // a wash is a quiet tint under text, not a field: its chroma is at most this share of its field's (every -w tone)
   P.ON_MID = 4.6;           // decision 2: --on-mid on every field
+  // Revision 4 (W33, Rev4.5): the deep-water tokens of an empty state's scope
+  P.DEEP_MIN = 0.12; P.DEEP_MAX = 0.22; P.DEEP_CHROMA = 0.05; // --deep: lightness of the darker of ink and paper less 0.04, held between these, chroma at most this
+  P.DEEP2_L = 0.34; P.DEEP2_CHROMA = 0.09; P.DEEP_ON = 7;      // --deep-2: this lightness (lowered by 0.01 until --on-deep reaches 7:1), chroma at most this
   // Revision 4 (spec Rev4.5, D38 to D40): the four meaning roles that used to follow the theme's accent have one fixed hue each, in every theme.
   P.ROLE_HUE = { rank: 232, gil: 92, loot: 188, route: 340 }; // azure, gold, teal, pink
   // W31 gold correction (spec Rev4.5): gold is a yellow at high lightness. The gil field has its own, higher lightness at hue 92 (light, dark); its two darker
-  // tones (-g, -s, and the ring) move to the bronze-gold hue 84 so that they do not turn olive; the wash keeps the field's hue.
+  // tones (-g, -s) move to the bronze-gold hue 84 so that they do not turn olive; the wash keeps the field's hue.
   P.GIL_FIELD_L = [0.80, 0.84];
   P.GIL_TONE_HUE = [84, 92]; // light, dark: in a dark theme Idle sits at hue 78, so a tone at 84 would be 6 degrees from it (floor 12): there the tones keep the field's hue 92
   P.SEA_HUES = [250, 50, 165, 0, 315, 282, 215]; // sea 1 to 7 (blue, ember, jade, rose, lilac, indigo, ice), as in spec R3.4
@@ -119,8 +122,8 @@
     info.minSea = mn;
 
     var mids = [];
-    function family(name, H, withRing, fL, TH) {
-      fL = fL || fieldL; TH = TH == null ? H : TH; // fL: the field's lightness; TH: the hue of the darker tones (graphic, text, ring)
+    function family(name, H, fL, TH) {
+      fL = fL || fieldL; TH = TH == null ? H : TH; // fL: the field's lightness; TH: the hue of the darker tones (graphic, text)
       var m = colourAt(fL, H);
       mids.push(m);
       tokens[name.m] = toHex(m);
@@ -128,10 +131,9 @@
       tokens[name.s] = toHex(colourAt(fit(TH, pages, P.STRONG), TH));
       var wc = P.WASH_CHROMA * chromaAt(fL, H), wl = fit(H, [T.ink], P.WASH_INK, wc);
       tokens[name.w] = toHex(colourAt(inkIsDark ? Math.max(P.WASH_L, wl) : Math.min(P.WASH_L_DARK, wl), H, wc));
-      if (withRing) tokens[withRing] = toHex(colourAt(fit(TH, [T.paper], P.STRONG), TH)); // text in the page colour on a ring of this colour
     }
-    P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], '--' + v + '-ring', v === 'gil' ? P.GIL_FIELD_L[dark ? 1 : 0] : null, v === 'gil' ? P.GIL_TONE_HUE[dark ? 1 : 0] : null); });
-    P.SEA_HUES.forEach(function (h, i) { var n = i + 1; family({ m: '--sea-' + n, g: '--sea-' + n + '-g', s: '--sea-' + n + '-s', w: '--sea-' + n + '-w' }, h, n === 1 ? '--sea-1-ring' : null); });
+    P.VOICES.forEach(function (v, i) { family({ m: '--' + v + '-m', g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, hues[i], v === 'gil' ? P.GIL_FIELD_L[dark ? 1 : 0] : null, v === 'gil' ? P.GIL_TONE_HUE[dark ? 1 : 0] : null); });
+    P.SEA_HUES.forEach(function (h, i) { var n = i + 1; family({ m: '--sea-' + n, g: '--sea-' + n + '-g', s: '--sea-' + n + '-s', w: '--sea-' + n + '-w' }, h); });
 
     // the text on a field: the theme's ink, its page colour, black or white; the first that reaches ON_MID on every field
     var cands = [T.ink, T.paper, [0, 0, 0], [255, 255, 255]], on = null;
@@ -145,6 +147,15 @@
       if (ok) tokens['--' + s + '-s'] = toHex(c);
       else { var l = rgbToLch(c); tokens['--' + s + '-s'] = toHex(colourAt(fit(l[2], pages, P.STRONG, l[1]), l[2], l[1])); }
     });
+    // Revision 4 (W33, spec Rev4.5): deep water, the dark panel of an empty state. D is the darker of ink and paper, h its hue (the accent's when D is nearly neutral).
+    // --deep: D's lightness less 0.04, held between 0.12 and 0.22, chroma at most 0.05; --deep-2: lightness 0.34, chroma at most 0.09, lowered 0.01 at a time until
+    // --on-deep (the lighter of ink and paper) reaches 7:1 on it; --deep-line: --on-deep 45% into --deep-2, in OKLab.
+    var darkC = lum(T.ink) <= lum(T.paper) ? T.ink : T.paper, lightC = darkC === T.ink ? T.paper : T.ink, dl = rgbToLch(darkC), dh = dl[1] < 0.02 ? rgbToLch(T.seal)[2] : dl[2];
+    var deepL = Math.max(P.DEEP_MIN, Math.min(P.DEEP_MAX, dl[0] - 0.04)), d2L = P.DEEP2_L, d2;
+    var deep = colourAt(deepL, dh, P.DEEP_CHROMA);
+    for (i = 0; i < 40; i++) { d2 = colourAt(d2L, dh, P.DEEP2_CHROMA); if (ratio(lightC, d2) >= P.DEEP_ON || d2L <= 0.05) break; d2L -= 0.01; }
+    var la = rgbToLab(rnd(lightC)), lb = rgbToLab(rnd(d2)), ln = [0, 1, 2].map(function (q) { return la[q] * 0.45 + lb[q] * 0.55; });
+    tokens['--deep'] = toHex(deep); tokens['--deep-2'] = toHex(d2); tokens['--on-deep'] = toHex(lightC); tokens['--deep-line'] = toHex(labToRgb(ln[0], ln[1], ln[2]));
     return { tokens: tokens, info: info };
   };
 
