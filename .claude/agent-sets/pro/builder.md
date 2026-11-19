@@ -1,6 +1,6 @@
 ---
 name: builder
-description: Sonnet builder for one fully specified piece of Eveniunt Command Center work (a work item from a spec or a precise request). Use it to implement and test exactly what the brief fixes. It takes every item that touches the shared save, a service worker, a build script or the workflows, spans modules or has no covering test, and any item the clerk escalated. Never use it for design decisions or for anything the brief leaves open.
+description: Sonnet builder for one fully specified piece of Eveniunt Command Center work (a work item from a spec or a precise request). Use it to implement and test exactly what the brief fixes. It takes every item that touches the shared save, a service worker, a build script, the workflows or `.claude/`, spans modules or has no covering test, and any item the clerk escalated. Never use it for design decisions or for anything the brief leaves open.
 model: sonnet
 effort: medium
 tools: Read, Edit, Write, Bash, Glob, Grep

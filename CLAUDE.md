@@ -60,7 +60,7 @@ confirm each claim. Escalate clerk, then builder, then reviewer, then architect.
 results to a few lines. A Claude review of Claude-built work is same-family, never called independent. The plan (max or
 pro) follows `.claude/model-plan.json` and drops to pro on a Sonnet or Haiku start; a session started on the
 architect's model plans for itself. `.claude/hooks/tier_guard.py` refuses any other launch. Before the final report run
-`python3 .claude/hooks/tier_usage.py` and put its lines (model, effort and tokens really used per tier) in the report
+`python3 .claude/hooks/tier_usage.py` (`--session <id>` for one session) and put its lines (model, effort and tokens really used per tier) in the report
 and the pull request.
 
 ## Rules
