@@ -4940,6 +4940,34 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C123 (R1 applies only to a company that was not bare when the form opened) A bare company (no submarine, one slot, discoveries [1, 2], no world) removed elsewhere
+    //    by an explicit removal while its Setup form is open: Save stores it again under the same id (the older behaviour), no "removed elsewhere" message, no page error. ──
+    await guard('C123', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+      await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+      await tlSeed(p1, "sec.fcs.fb = { name: 'Bare Company', order: 0, unlockedSlots: 1, discovered: [1, 2] };"); await p1.reload(); await ready(p1);
+      await p1.click('[data-tab=setup]'); await p1.click('[data-act=sectors][data-fc=fb]'); await p1.waitForSelector('[data-act=wsave]');
+      const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+      await p2.evaluate(async () => {
+        const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+        sec.fcs = {}; sec.subs = {};
+        await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+      });
+      await p1.waitForTimeout(1500);
+      const before = await p1.evaluate(() => ({ gone: !!document.querySelector('[data-wiz-gone]'), save: !!document.querySelector('[data-act=wsave]') }));
+      if (before.save) await p1.click('[data-act=wsave]');
+      await p1.waitForTimeout(1500);
+      const after = await p1.evaluate(() => ({ gone: !!document.querySelector('[data-wiz-gone]'), open: !!document.querySelector('.wiz'), status: document.querySelector('#status').textContent.trim() }));
+      const kept = await p2.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { fcs: Object.keys(s.fcs), name: s.fcs.fb && s.fcs.fb.name, discovered: s.fcs.fb && s.fcs.fb.discovered }; });
+      await ctx.close();
+      const ok = !before.gone && before.save && !after.gone && !after.open && !/removed on another/.test(after.status) && JSON.stringify(kept) === JSON.stringify({ fcs: ['fb'], name: 'Bare Company', discovered: [1, 2] }) && real(errors).length === 0;
+      record('C123', 'A company that was bare when its Setup form opened and is removed elsewhere by an explicit removal is stored again by Save under the same id (no "removed elsewhere" message, none before Save either, no page error)', ok, { before, after, kept, errors: real(errors) });
+      server.close();
+    });
+
     // ── C121 (review fix R2) The Setup form's save keeps what changed elsewhere unless the player changed it here: (a) a slot switched off and on again in the form does not
     //    lower a slot count raised elsewhere; (b) a sector unticked in another tab while the form is open is not added back; (c) a name (company and submarine) typed back to what
     //    it was when the form opened does not overwrite a rename made elsewhere. ──

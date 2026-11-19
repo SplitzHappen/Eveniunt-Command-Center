@@ -131,15 +131,16 @@
   // exactly what the main Settings creates. Where a character has several free companies, bare ones are dropped when another
   // is not bare, else all but the first (lowest order, then id). Never touches one that is not bare, or one with no character.
   // Pure and deterministic, so two pages or devices drop the same ones. Returns { section: a copy, removed: [ids] }.
+  F.isBare = function (sec, fcId) {
+    var f = sec && sec.fcs && sec.fcs[fcId], subs = (sec && sec.subs) || {};
+    if (!f) return false;
+    var owned = Object.keys(subs).some(function (k) { return subs[k] && subs[k].fcId === fcId; });
+    return !owned && !f.world && (f.unlockedSlots === undefined || f.unlockedSlots === 1) &&
+      (f.discovered === undefined || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
+  };
   F.foldFcs = function (section) {
-    var sec = JSON.parse(JSON.stringify(section || {})), fcs = sec.fcs || {}, subs = sec.subs || {}, removed = [];
-    var owned = {};
-    Object.keys(subs).forEach(function (k) { owned[subs[k] && subs[k].fcId] = true; });
-    var bare = function (id) {
-      var f = fcs[id];
-      return !owned[id] && !f.world && (f.unlockedSlots === undefined || f.unlockedSlots === 1) &&
-        (f.discovered === undefined || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
-    };
+    var sec = JSON.parse(JSON.stringify(section || {})), fcs = sec.fcs || {}, removed = [];
+    var bare = function (id) { return F.isBare(sec, id); };
     var by = function (a, b) { return ((fcs[a].order || 0) - (fcs[b].order || 0)) || (a < b ? -1 : a > b ? 1 : 0); };
     var groups = {};
     Object.keys(fcs).forEach(function (id) { var c = fcs[id] && fcs[id].charId; if (typeof c === 'string') (groups[c] = groups[c] || []).push(id); });

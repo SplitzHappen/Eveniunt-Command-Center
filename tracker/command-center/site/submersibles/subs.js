@@ -147,7 +147,7 @@
       if (!RC.k.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
         syncTicks();
-        if (W) { var gone = !!(W.fcId && !S.fcs[W.fcId]); if (gone !== !!W.gone) { W.gone = gone; render(); } } // R1: the message at once, not only on Save
+        if (W) { var gone = !!(W.fcId && !W.bareAtStart && !S.fcs[W.fcId]); if (gone !== !!W.gone) { W.gone = gone; render(); } } // R1: the message at once, not only on Save
         if (JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]) !== before && !W) render();
         pushSync();
       });
@@ -672,6 +672,7 @@
       }),
       disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()), // disc: the ticks the form shows (saved now + on - off)
       on: new Set(fc && fc.discovered ? [] : startSectors()), off: new Set(), t: {} }; // on: sectors the player ticked in this form (a new company starts with the starting sectors); off: sectors the player unticked here; t: fields of the company the player changed here
+    W.bareAtStart = !!(fcId && F.isBare(S, fcId)); // a bare company can be folded away elsewhere; the form then stores it again (R1 does not apply)
     W.start = { name: W.fc.name, world: W.fc.world, charId: W.fc.charId }; W.slots0 = formSlots(); // what the form opened with: a field typed back to it is not a change; the slot count it started with
     if (at === 'sectors') W.step = steps().length - 1; // straight to the list of sectors (the same step and the same Save)
     UI.tab = 'setup'; keepUi(); render(); focusWizard();
@@ -735,7 +736,7 @@
   }
   var GONE = 'This free company was removed on another device or in another tab, so nothing was saved. Close this form; to bring the company back, set it up again.';
   function wizardHtml() {
-    if (W.fcId && !S.fcs[W.fcId]) return '<section class="panel wiz" data-step="gone"><header class="wiz-head"><h2>Edit free company</h2></header><div class="wiz-body"><div class="note bad" role="alert" data-wiz-gone>' + esc(GONE) + '</div></div>' +
+    if (W.fcId && !W.bareAtStart && !S.fcs[W.fcId]) return '<section class="panel wiz" data-step="gone"><header class="wiz-head"><h2>Edit free company</h2></header><div class="wiz-body"><div class="note bad" role="alert" data-wiz-gone>' + esc(GONE) + '</div></div>' +
       '<footer class="wiz-foot"><span></span><span class="row"><button type="button" class="btn primary" data-act="wcancel">Close</button></span></footer></section>';
     var st = steps(), key = st[Math.min(W.step, st.length - 1)], n = Math.min(W.step, st.length - 1), body = '';
     if (key === 'fc') {
@@ -802,17 +803,18 @@
   // R1: the saved copy is read first; a company (or a submarine) removed elsewhere is never written back.
   function saveWizard() {
     if (!W) return;
+    if (W.bareAtStart) { writeWizard(); return; } // synchronous: save.js decides about a company removed elsewhere
     var go = function () { if (W) writeWizard(); };
     Promise.resolve(reload()).then(go, go);
   }
   function writeWizard() {
     var fcId = W.fcId || F.newId('f'), now = W.fcId ? S.fcs[W.fcId] : null; // the free company as saved now (none for a new one)
-    if (W.fcId && !now) { W.gone = true; render(); return; } // removed elsewhere: nothing is written, the form says so
+    if (W.fcId && !now && !W.bareAtStart) { W.gone = true; render(); return; } // removed elsewhere: nothing is written, the form says so
     var order = W.fcId && S.fcs[fcId] ? S.fcs[fcId].order : fcList().reduce(function (m, f) { return Math.max(m, (f.fc.order || 0) + 1); }, 0);
     var unlocked = formSlots();
     if (now && !(unlocked < W.slots0)) unlocked = Math.max(unlocked, Math.min(4, now.unlockedSlots || 1));
     var tName = W.t.name && W.fc.name.trim() !== (W.start.name || '').trim(), tWorld = W.t.world && W.fc.world !== W.start.world, tChar = W.t.charId && W.fc.charId !== W.start.charId;
-    var disc = F.mergeTicks(now && now.discovered, Array.from(W.on), Array.from(W.off));
+    var disc = F.mergeTicks(now ? now.discovered : W.fcId ? Array.from(W.disc) : undefined, Array.from(W.on), Array.from(W.off));
     var fc = { name: now && !tName ? now.name : W.fc.name.trim(), unlockedSlots: unlocked, order: order || 0, discovered: disc, charId: (now && !tChar ? now.charId : W.fc.charId) || null };
     var world = now && !tWorld ? now.world : W.fc.world;
     if (world) fc.world = world;
@@ -839,7 +841,7 @@
   function syncTicks() {
     if (!W) return;
     var now = W.fcId ? S.fcs[W.fcId] : null;
-    if (W.fcId && !now) return; // removed elsewhere: reload() shows the message
+    if (W.fcId && !now) return; // removed elsewhere: reload() shows the message (a bare company keeps the form's own ticks)
     W.disc = new Set(F.mergeTicks(now && now.discovered, Array.from(W.on), Array.from(W.off))); // saved now + ticked here - unticked here
     // a voyage changed elsewhere for a submarine whose voyage the player has not touched here: the "Keep: back ..." label shows the
     // new time (only its text changes: no redraw, so focus and scroll stay)

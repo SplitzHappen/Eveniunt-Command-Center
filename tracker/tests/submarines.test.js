@@ -243,6 +243,12 @@ test('foldFcs: absent slots and sectors count as bare; free companies that are n
   const none = secOf({ a: bareFc('A', null, 0), b: bareFc('B', null, 0), c: { name: 'C', order: 0 }, d: { name: 'D', order: 0 } });
   assert.deepEqual(FOLD(none).removed, []);
 });
+test('isBare: bare; with a submarine, a world, more slots or a third discovery it is not; a missing company is not', () => {
+  const ISBARE = globalThis.FLEET.isBare;
+  const sec = secOf({ a: bareFc('A', 'c1', 0), s: bareFc('S', 'c1', 1), w: solidFc('W', 'c1', 2), n: Object.assign(bareFc('N', 'c1', 3), { unlockedSlots: 2 }), d: Object.assign(bareFc('D', 'c1', 4), { discovered: [1, 2, 3] }), l: { name: 'L', order: 5 } }, { u1: { fcId: 's', slot: 1 } });
+  assert.equal(ISBARE(sec, 'a'), true); assert.equal(ISBARE(sec, 'l'), true);
+  ['s', 'w', 'n', 'd', 'missing'].forEach((id) => assert.equal(ISBARE(sec, id), false, id));
+});
 test('foldFcs: applying it again removes nothing', () => {
   const once = FOLD(secOf({ a: bareFc('A', 'c1', 0), b: bareFc('B', 'c1', 1), c: bareFc('C', 'c1', 2), s: solidFc('S', 'c2', 0), t: bareFc('T', 'c2', 1) }));
   const again = FOLD(once.section);
