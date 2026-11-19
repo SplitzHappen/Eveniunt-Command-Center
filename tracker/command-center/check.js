@@ -4871,11 +4871,16 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const C = { pages: {} };
       const { ctx: cx, errors: ce } = await context();
       for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/']]) {
-        const pg = await cx.newPage(); await pg.goto(url); await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {});
-        C.pages[name] = await pg.evaluate(() => typeof window.CC === 'object' && window.CC ? typeof window.CC.mergeUnit : 'no CC');
+        const pg = await cx.newPage(); await pg.goto(url);
+        // a first visit can reload a built page once, when its worker takes the page (the Atelier always does, into isolation): wait for that
+        // reload, and repeat an evaluation that the reload cut off (this check failed once on the Checks workflow with "Execution context was destroyed")
+        if (name === 'atelier') { await pg.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 }).catch(() => {}); await pg.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 }).catch(() => {}); }
+        const ready = () => pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {});
+        const settled = async (fn) => { for (let attempt = 0; ; attempt++) { try { await ready(); return await pg.evaluate(fn); } catch (e) { if (attempt >= 3 || !/Execution context was destroyed|navigation|Target closed|detached/i.test(String(e && e.message))) throw e; await pg.waitForLoadState('load').catch(() => {}); await pg.waitForTimeout(500); } } };
+        C.pages[name] = await settled(() => typeof window.CC === 'object' && window.CC ? typeof window.CC.mergeUnit : 'no CC');
         // the unit test T2 replayed in this built page: tab A adds sector 4, tab B (stale stamp and base) adds sector 5 and a slot
         C.t2 = C.t2 || {};
-        C.t2[name] = await pg.evaluate(async () => {
+        C.t2[name] = await settled(async () => {
           if (typeof window.CC !== 'object' || !window.CC || typeof CC.writeSection !== 'function') return null;
           const sec = { fcs: { f1: { name: 'Alpha Company', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] } }, subs: {}, trips: {}, settings: {} };
           const first = await CC.writeSection('submersibles', sec, null), base = JSON.parse(JSON.stringify(first.section));
@@ -4887,7 +4892,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         });
         if (name === 'tracker') {
           await pg.waitForFunction(() => window.ET && typeof window.ET.threeWay === 'function', null, { timeout: 30000 }).catch(() => {});
-          C.replay = await pg.evaluate(() => {
+          C.replay = await settled(() => {
             const FC = (o) => Object.assign({ name: 'Alpha Company', world: 'Maduin', charId: 'c1', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }, o);
             const st = (fc) => Object.assign(ET.newState(['A', 'B']), { modules: { submersibles: { fcs: { f1: fc }, subs: {}, trips: {}, settings: {} } } });
             const doc = (fc) => ET.portable(st(fc));
