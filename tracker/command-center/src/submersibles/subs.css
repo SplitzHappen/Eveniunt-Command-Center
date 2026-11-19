@@ -381,14 +381,15 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .log-day { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 14px; padding: 8px 12px; background: var(--slab); color: var(--on-slab); }
 .log-day b { font: 900 20px/1.1 var(--f-disp); text-transform: uppercase; letter-spacing: .03em; }
 .log-day span { font: 600 13px/1.3 var(--f-data); color: var(--on-slab-2); font-variant-numeric: tabular-nums; }
-.log-row { scroll-margin-top: 56px; display: grid; grid-template-columns: 96px 150px minmax(0, 1fr) auto; gap: 0 12px; align-items: center; width: 100%; min-height: 64px; text-align: left; font: inherit; font-size: 14px; padding: 0 12px 0 0; border: 0; border-bottom: 1px dashed var(--rule); border-radius: 0; background: transparent; color: var(--ink); cursor: pointer; }
+.log-row { scroll-margin-top: 56px; display: grid; grid-template-columns: 120px 150px minmax(0, 1fr) auto; gap: 0 12px; align-items: center; width: 100%; min-height: 64px; text-align: left; font: inherit; font-size: 14px; padding: 0 12px 0 0; border: 0; border-bottom: 1px dashed var(--rule); border-radius: 0; background: transparent; color: var(--ink); cursor: pointer; }
 .log-row:last-child { border-bottom: 0; }
 .log-row:hover { background: var(--paper-2); }
 .log-row:focus-visible { outline: 2px solid var(--seal); outline-offset: -4px; }
 .log-who { display: grid; min-width: 0; padding: 6px 0; }
 .log-who b { font-weight: 700; font-size: 15px; }
 .log-who .muted { font: 13px var(--f-data); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.log-when { align-self: stretch; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 24px 0 8px; background: var(--slab); color: var(--on-slab); font: 600 12px/1.25 var(--f-data); clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+.log-when { align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px 0 8px; background: var(--slab); color: var(--on-slab); font: 600 12px/1.25 var(--f-data); clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+.log-when > span { display: block; white-space: nowrap; } /* V3: the date is one line, the time under it */
 .log-disc { display: block; min-width: 0; }
 /* a route as discs in a row (the Board's helper, drawn in flow here): the Log and the Earnings route cells */
 .log-row .discs, .earn-t .discs { display: inline-flex; gap: 6px; vertical-align: middle; --d: 24px; }
@@ -424,7 +425,7 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 .earn-thin .earn-note td:first-child { background: none; padding-left: 8px; }
 @media (max-width: 700px) {
   .log-row { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 0 8px; }
-  .log-when { min-height: 24px; justify-content: flex-start; padding: 0 12px; clip-path: none; }
+  .log-when { min-height: 24px; flex-direction: row; gap: 0 .5em; justify-content: flex-start; padding: 0 12px; clip-path: none; }
   .log-who, .log-what { padding-left: 12px; padding-right: 12px; text-align: left; }
   .log-row { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
   .log-when { grid-column: 1; }
@@ -685,6 +686,11 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
   .earn-t .discs { --d: 20px; gap: 4px; margin-right: 6px; }
   .earn-thin tr:not(.earn-note) { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
   .earn-thin tr:not(.earn-note) > td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  /* V5: discs and the route name are two blocks side by side; the name wraps inside its own block */
+  .earn-ranked tr[data-pos] > td:nth-child(2), .earn-thin tr:not(.earn-note) > td:first-child { display: flex; align-items: center; }
+  .earn-t .discs { flex: none; }
+  .earn-t .rt-name { flex: 1 1 0; min-width: 0; }
+  .earn-t .rt-sea { display: inline-block; max-width: 100%; }
   .earn-thin tr > td:nth-child(2)::before { content: "Gil per hour"; }
   .earn-thin tr > td:nth-child(3)::before { content: "Voyages"; }
 }
@@ -882,7 +888,7 @@ div.sub { cursor: default; }
 .units > .u { position: relative; min-width: 0; }
 .units > .u + .u::before { content: "·"; position: absolute; left: -11px; } /* S5: the separator is drawn in the gap before a unit, so a wrapped line neither ends nor starts with it (the row clips what falls outside) */
 .when.units { gap: 0 14px; }
-.sub-when .quick .q-r, .sub-when .quick .q-t { display: block; white-space: nowrap; }
+.sub-when .quick .q-r, .sub-when .quick .q-t { display: block; white-space: normal; } /* V1: the text may wrap inside the box its padding leaves (the slanted mark stands in the padding), never run under the mark */
 .sub-when .quick .q-dot { display: none; }
 /* compact: two lines of 26 and 30 px (64 px); nothing wraps */
 @container fcsubs (min-width: 400px) {
@@ -908,7 +914,7 @@ div.sub { cursor: default; }
   .sub-when .quick { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; column-gap: 6px; row-gap: 12px; }
   .sub-when .quick > span { flex: none; height: 22px; line-height: 22px; }
   .sub-when .quick .q-r { display: none; }
-  .sub-when .quick .q-t { display: inline; }
+  .sub-when .quick .q-t { display: inline; white-space: nowrap; }
   .sub-when .quick .q-dot { display: inline; }
   .when.units { gap: 0; }
   .sub-when .quick:hover { background: var(--molten) 0 100% / 100% 6px no-repeat, var(--seal); }
@@ -948,6 +954,10 @@ div.sub { cursor: default; }
   .fc-subs:not(.list) .sub-when .quick .q-dot { display: none; }
   .fc-subs:not(.list) .when.units { gap: 0 14px; }
   .fc-subs:not(.list) .sub-when .quick::after { content: ""; }
+  /* V1: a button too narrow for its text and the slanted mark drops the mark (and the room it keeps), never the text; the mark otherwise has its own 46 px at the right, so no line of text runs under it */
+  .fc-subs:not(.list) .sub-when .quick { container-type: inline-size; padding-right: 12px; }
+  .fc-subs:not(.list) .sub-when .quick > span { margin-right: 34px; }
+  @container (max-width: 249px) { .fc-subs:not(.list) .sub-when .quick::after { content: none; } .fc-subs:not(.list) .sub-when .quick > span { margin-right: 0; } }
   .fc-subs:not(.list) .sub.empty { min-height: 56px; }
   .fc-subs:not(.list) .sub.empty .sub-meta { grid-area: 1 / 1 / 3 / -1; }
   .fc-subs:not(.list) .vgauge { left: auto; right: 14px; width: 320px; height: 6px; bottom: 3px; }
@@ -1144,6 +1154,9 @@ div.sub { cursor: default; }
 @media (min-width: 1400px) {
   .setup-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 18px; align-items: start; }
   .setup-col > .panel { max-width: none; }
+  /* V2: the panels above and below the two columns (notifications, accuracy, size, backups) span both, so the right edge is one line; their sentences keep a readable length */
+  .subs-main:has(> .setup-cols) > .panel { max-width: none; }
+  .subs-main:has(> .setup-cols) > .panel > :is(p, .hint, .muted) { max-width: 100ch; }
 }
 /* M13: in the dense Board every company head has the same two rows (name, then the buttons), so no head is taller than another; a locked slot says in full where it opens, on up to two lines */
 @media (min-width: 701px) {

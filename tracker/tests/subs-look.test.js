@@ -395,7 +395,7 @@ test('Log and Earnings (W25, W26): subs.css and logHtml and earnHtml carry the r
   for (const s of [
     '.panel:not(.welcome):not(.empty-state):not(.map-panel) > h2:first-child, .wiz-head { --slab: var(--scr);',
     '.tabs button[aria-current="page"] { --slab: var(--scr);', '.tabs button[aria-current="page"]::before { background: var(--ink); }',
-    '.log-row[class*="in-sea-"] .log-when { --slab: var(--sea);', '.log-day { position: sticky; top: 0;', '.log-day b { font: 900 20px/1.1 var(--f-disp);', 'grid-template-columns: 96px 150px minmax(0, 1fr) auto;',
+    '.log-row[class*="in-sea-"] .log-when { --slab: var(--sea);', '.log-day { position: sticky; top: 0;', '.log-day b { font: 900 20px/1.1 var(--f-disp);', 'grid-template-columns: 120px 150px minmax(0, 1fr) auto;',
     '.log-row.logged { border-right: 8px solid var(--loot-g); }', '.log-row.unlogged { border-right: 8px dashed var(--idle); }',
     '.log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }', '.log-what b { color: var(--gil-s); }', 'background: var(--gil-g); }',
     '.earn-card:first-child { background-color: var(--gil-m); color: var(--on-mid);', 'var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);

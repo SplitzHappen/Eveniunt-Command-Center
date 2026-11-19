@@ -2436,8 +2436,8 @@ test('chart S2: for every sea, each sector selected in turn (with a route drawn)
         labels.push({ id, kind: 'letter', x0: lx0, x1: lx0 + lw, y0: ty + +L[1] - fs * 0.72, y1: ty + +L[1] });
         const T = /<text class="chart-tag" x="([-\d.]+)" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)">([^<]*)</.exec(g);
         if (T) { const fsT = +T[4], w = T[5].length * 0.55 * fsT, x0 = tx + +T[1] - (T[3] === 'start' ? 0 : T[3] === 'end' ? w : w / 2); labels.push({ id, kind: 'tag', x0, x1: x0 + w, y0: ty + +T[2] - fsT * 0.72, y1: ty + +T[2] }); }
-        if (/chart-plus/.test(g)) hard.push(Object.assign({ id, kind: 'plus' }, rect(tx + M.BK + 3 + M.pa * 2, ty - M.BK - 3 - M.pa * 2, M.pa, M.pa)));
-        if (/chart-cannot-x/.test(g)) hard.push(Object.assign({ id, kind: 'cross' }, rect(tx + M.BK + 3 + M.ca + (/chart-plus/.test(g) ? 2 * M.pa + M.ca + 4 : 0), ty - M.BK - 3 - M.ca - (/chart-plus/.test(g) ? 2 * M.pa + M.ca + 4 : 0), M.ca, M.ca)));
+        { const P = /class="chart-plus" aria-hidden="true" d="M([-\d.]+) ([-\d.]+)h([-\d.]+)M([-\d.]+) ([-\d.]+)v([-\d.]+)"/.exec(g); if (P) hard.push({ id, kind: 'plus', x0: tx + +P[1], x1: tx + +P[1] + +P[3], y0: ty + +P[5], y1: ty + +P[5] + +P[6] }); } // V4: read where the "+" is drawn (its corner may change)
+        { const X = /class="chart-cannot-x" aria-hidden="true" d="([^"]+)"/.exec(g); if (X) { const nn = X[1].match(/-?[\d.]+/g).map(Number), xs = nn.filter((_, i) => i % 2 === 0), ys = nn.filter((_, i) => i % 2 === 1); hard.push({ id, kind: 'cross', x0: tx + Math.min(...xs), x1: tx + Math.max(...xs), y0: ty + Math.min(...ys), y1: ty + Math.max(...ys) }); } }
         const rings = [/chart-routering/.test(g) ? M.R1 : 0, /chart-cannot-ring/.test(g) || /chart-ring2/.test(g) ? M.R0 : 0].filter(Boolean);
         for (const rr of rings) hard.push({ id, kind: 'ring', x0: tx - rr, x1: tx + rr, y0: ty - rr, y1: ty + rr, ring: rr, cx: tx, cy: ty });
         if (id === selId) { const k = M.BK, lk = Math.max(6, r * 0.7); for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { hard.push({ id, kind: 'bracket', x0: tx + Math.min(sx * k, sx * (k - lk)) - 2, x1: tx + Math.max(sx * k, sx * (k - lk)) + 2, y0: ty + sy * k - 2, y1: ty + sy * k + 2 }); hard.push({ id, kind: 'bracket', x0: tx + sx * k - 2, x1: tx + sx * k + 2, y0: ty + Math.min(sy * k, sy * (k - lk)), y1: ty + Math.max(sy * k, sy * (k - lk)) }); } }
@@ -2453,6 +2453,37 @@ test('chart S2: for every sea, each sector selected in turn (with a route drawn)
     }
   }
   assert.ok(checked >= 40, 'checked ' + checked + ' selections');
+});
+// ---- Visual fix V4: the bright lines (the way to the next slot or sea, the amber "can be revealed now" arrows) are obstacles for "+" marks, crosses and labels ----
+test('chart V4: for every sea and several found sets, no "+" mark, cross or label sits on a bright way-line or an amber arrow line', () => {
+  let checked = 0, bright = 0, moved = 0;
+  for (const sea of D.seas) {
+    const secs = D.sectors.filter((x) => x.sea === sea.id).map((x) => x.id), sets = [[], secs.slice(0, 1), secs.slice(0, 3), secs.slice(0, 6), secs.slice(0, 10), secs];
+    for (const found of sets) {
+      const v = CH.view(sea.id, found, 20), size = Math.max(v.box.w, v.box.h), fs = size / 30, r = size / 70, M = CH.marks(r), cannot = {}; v.nodes.forEach((n) => { if (n.rank > 20) cannot[n.id] = 'above'; });
+      for (const selId of [null, v.nodes[0].id]) {
+        const svg = CH.svg(v, [], selId == null ? { cannot } : { selected: selId, cannot });
+        const lines = [...svg.matchAll(/<line class="([^"]*)" x1="([-\d.]+)" y1="([-\d.]+)" x2="([-\d.]+)" y2="([-\d.]+)"\/>/g)].filter((m) => /\b(lead|goal)\b/.test(m[1])).map((m) => ({ x1: +m[2], y1: +m[3], x2: +m[4], y2: +m[5] }));
+        bright += lines.length;
+        const onLine = (b) => lines.some((l) => { for (let i = 0; i <= 60; i++) { const px = l.x1 + (l.x2 - l.x1) * i / 60, py = l.y1 + (l.y2 - l.y1) * i / 60; if (px > b.x0 && px < b.x1 && py > b.y0 && py < b.y1) return true; } return false; });
+        for (const g of svg.split('<g class="chart-node').slice(1)) {
+          const id = +/data-sector="(\d+)"/.exec(g)[1], [tx, ty] = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g).slice(1).map(Number), boxes = [];
+          const P = /class="chart-plus" aria-hidden="true" d="M([-\d.]+) ([-\d.]+)h([-\d.]+)M([-\d.]+) ([-\d.]+)v([-\d.]+)"/.exec(g);
+          if (P) { boxes.push({ kind: 'plus', x0: tx + +P[1], x1: tx + +P[1] + +P[3], y0: ty + +P[5], y1: ty + +P[5] + +P[6] }); if (+P[1] < 0 || +P[5] > 0) moved++; }
+          const X = /class="chart-cannot-x" aria-hidden="true" d="([^"]+)"/.exec(g);
+          if (X) { const nums = X[1].match(/-?[\d.]+/g).map(Number), xs = nums.filter((_, i) => i % 2 === 0), ys = nums.filter((_, i) => i % 2 === 1); boxes.push({ kind: 'cross', x0: tx + Math.min(...xs), x1: tx + Math.max(...xs), y0: ty + Math.min(...ys), y1: ty + Math.max(...ys) }); }
+          const L = /<text class="chart-letter" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)"(?: x="([-\d.]+)")?>([^<]*)</.exec(g), lw = L[5].length * 0.55 * fs, lx = tx + (L[4] ? +L[4] : 0), lx0 = L[2] === 'start' ? lx : L[2] === 'end' ? lx - lw : lx - lw / 2;
+          boxes.push({ kind: 'letter', x0: lx0, x1: lx0 + lw, y0: ty + +L[1] - fs * 0.72, y1: ty + +L[1] });
+          const T = /<text class="chart-tag" x="([-\d.]+)" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)">([^<]*)</.exec(g);
+          if (T) { const fsT = +T[4], w = T[5].length * 0.55 * fsT, x0 = tx + +T[1] - (T[3] === 'start' ? 0 : T[3] === 'end' ? w : w / 2); boxes.push({ kind: 'tag', x0, x1: x0 + w, y0: ty + +T[2] - fsT * 0.72, y1: ty + +T[2] }); }
+          for (const b of boxes) assert.ok(!onLine(b), `sea ${sea.id}, ${found.length} found, selected ${selId}: the ${b.kind} of sector ${id} sits on a bright line`);
+          checked++;
+        }
+      }
+    }
+  }
+  assert.ok(checked > 1000 && bright > 50, 'checked ' + checked + ' nodes, ' + bright + ' bright lines');
+  assert.ok(moved >= 1, 'at least one "+" mark stands away from its upper right corner because of a line');
 });
 test('chart S2/S3: rings are at least 6 beyond the node, the bracket stands outside every ring, the above-rank node is a dashed outline, far is the small square, the cross is 12+ units and sits outside the node', () => {
   const v = CH.view(1, [1, 2, 3, 10, 26], 30), size = Math.max(v.box.w, v.box.h), r = size / 70, M = CH.marks(r);

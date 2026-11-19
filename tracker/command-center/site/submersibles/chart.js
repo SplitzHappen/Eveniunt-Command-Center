@@ -131,18 +131,48 @@
     var hits = C.hitRadii(view), st = view.start, g = view.grid, M = C.marks(r);
     var rt = (route || []).filter(function (id) { return at[id]; }), segs = [], pathPts = [st].concat(rt.map(function (id) { return at[id]; }));
     for (var si = 1; si < pathPts.length; si++) segs.push({ x1: pathPts[si - 1].x, y1: pathPts[si - 1].y, x2: pathPts[si].x, y2: pathPts[si].y });
-    function segHit(t) { return segs.some(function (l) { for (var i = 0; i <= 24; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 24, py = l.y1 + (l.y2 - l.y1) * i / 24; if (px > t.x0 - 4 && px < t.x1 + 4 && py > t.y0 - 4 && py < t.y1 + 4) return true; } return false; }); }
+    function segHit(t) { return onLines(t, bright, 4) || segs.some(function (l) { for (var i = 0; i <= 24; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 24, py = l.y1 + (l.y2 - l.y1) * i / 24; if (px > t.x0 - 4 && px < t.x1 + 4 && py > t.y0 - 4 && py < t.y1 + 4) return true; } return false; }); }
+    // The way to an unfound slot or next-sea sector (a class only): from each such sector, back along the reveal links while the sector is not found.
+    var byOf = {}; view.lines.forEach(function (l) { byOf[l.to] = l.from; });
+    var goal = {};
+    view.nodes.forEach(function (n) {
+      if (!(n.slot || n.opens) || n.state === 'found') return;
+      var id = n.id, i = 0;
+      while (id != null && at[id] && at[id].state !== 'found' && i++ < 64) { goal[id] = true; id = byOf[id]; }
+    });
+    // open or closed as before; done: both ends found; lead: only the from end found; goal: on the way to a slot or sea
+    function lcls(l) { return (at[l.from].state === 'found' ? 'open' : 'closed') + (at[l.from].state === 'found' && at[l.to].state === 'found' ? ' done' : '') + (at[l.from].state === 'found' && at[l.to].state !== 'found' ? ' lead' : '') + (goal[l.to] ? ' goal' : ''); }
+    // V4: the reveal lines are obstacles too. The bright ones (the way to the next slot or sea, and the amber "can be revealed now" arrows) must not be crossed by a "+" mark, a cross or a label; the others are avoided when a place is free of them
+    var bright = [], allLines = [];
+    view.lines.forEach(function (l) { var seg = { x1: l.x1, y1: l.y1, x2: l.x2, y2: l.y2 }; allLines.push(seg); if (/lead|goal/.test(lcls(l))) bright.push(seg); });
+    function onLines(t, list, pad) { return list.some(function (l) { for (var i = 0; i <= 48; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 48, py = l.y1 + (l.y2 - l.y1) * i / 48; if (px > t.x0 - pad && px < t.x1 + pad && py > t.y0 - pad && py < t.y1 + pad) return true; } return false; }); }
+    function onNode(t, n) { return view.nodes.some(function (m) { return m !== n && m.x + r * 1.5 > t.x0 && m.x - r * 1.5 < t.x1 && m.y + r * 1.5 > t.y0 && m.y - r * 1.5 < t.y1; }); }
+    // the corner of a node where its "+" and cross stand: the upper right as before, else the first of lower right, upper left, lower left whose marks touch no line and no other node; when every corner touches a line, the first free of the bright lines
+    var cornerOf = {}, CORN = [[1, -1], [1, 1], [-1, -1], [-1, 1]];
+    function markBoxes(n, q) {
+      var out = [], cp = M.po + M.pa, hasX = !!(opts && opts.cannot && opts.cannot[n.id]) && n.state === 'found' && !n.rankOk, cx = M.po + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0);
+      if (n.slot) out.push({ x0: n.x + q[0] * cp - M.pa - 2, x1: n.x + q[0] * cp + M.pa + 2, y0: n.y + q[1] * cp - M.pa - 2, y1: n.y + q[1] * cp + M.pa + 2 });
+      if (hasX) out.push({ x0: n.x + q[0] * cx - M.ca - 2, x1: n.x + q[0] * cx + M.ca + 2, y0: n.y + q[1] * cx - M.ca - 2, y1: n.y + q[1] * cx + M.ca + 2 });
+      return out;
+    }
+    view.nodes.forEach(function (n) {
+      cornerOf[n.id] = CORN[0];
+      var bx = markBoxes(n, CORN[0]); if (!bx.length) return;
+      var ok = function (q, strict) { var b = markBoxes(n, q); return !b.some(function (t) { return onLines(t, bright, 3) || onNode(t, n) || (strict && onLines(t, allLines, 1)); }); }, pick = null;
+      for (var k = 0; k < CORN.length && !pick; k++) if (ok(CORN[k], true)) pick = CORN[k];
+      for (k = 0; k < CORN.length && !pick; k++) if (ok(CORN[k], false)) pick = CORN[k];
+      cornerOf[n.id] = pick || CORN[0];
+    });
     // where each letter goes: above its node (clear of every ring and of the bracket); with a route drawn, the first of above, below, right, left whose text box touches no route segment (so a step label never sits on the line)
     var letterAt = {}, boxesX = [];
     view.nodes.forEach(function (n) {
       var ri = (route || []).indexOf(n.id), isS = sel === String(n.id), mk = !!(opts && opts.cannot && opts.cannot[n.id]) && n.state === 'found' && !n.rankOk;
       var top = isS ? M.RF + 2 : ri >= 0 ? M.R1 + 2 : (n.opens || mk) ? M.R0 + 2 : 0, D = Math.max(r * 2.2 + fs * 0.3, top + 3), str = n.letter + (ri >= 0 ? ' ' + (ri + 1) : ''), w = str.length * 0.55 * fs;
       var cand = [{ x: 0, y: -D, anchor: 'middle' }, { x: 0, y: D + fs * 0.75, anchor: 'middle' }, { x: D, y: fs * 0.35, anchor: 'start' }, { x: -D, y: fs * 0.35, anchor: 'end' }], pick = cand[0];
-      if (segs.length || (sel && !isS)) for (var i = 0; i < cand.length; i++) { var c = cand[i], x0 = n.x + c.x - (c.anchor === 'start' ? 0 : c.anchor === 'end' ? w : w / 2), tb = { x0: x0, x1: x0 + w, y0: n.y + c.y - fs, y1: n.y + c.y + fs * 0.25 }; if (!segHit(tb) && !(sel && !isS && at[sel] && tb.x0 < at[sel].x + M.RF + 4 && at[sel].x - M.RF - 4 < tb.x1 && tb.y0 < at[sel].y + M.RF + 4 && at[sel].y - M.RF - 4 < tb.y1)) { pick = c; break; } }
+      if (segs.length || bright.length || (sel && !isS)) for (var i = 0; i < cand.length; i++) { var c = cand[i], x0 = n.x + c.x - (c.anchor === 'start' ? 0 : c.anchor === 'end' ? w : w / 2), tb = { x0: x0, x1: x0 + w, y0: n.y + c.y - fs, y1: n.y + c.y + fs * 0.25 }; if (!segHit(tb) && !(sel && !isS && at[sel] && tb.x0 < at[sel].x + M.RF + 4 && at[sel].x - M.RF - 4 < tb.x1 && tb.y0 < at[sel].y + M.RF + 4 && at[sel].y - M.RF - 4 < tb.y1)) { pick = c; break; } }
       letterAt[n.id] = { x: pick.x, y: pick.y, anchor: pick.anchor, str: str };
       if (isS) boxesX.push({ x0: n.x - M.RF - 2, x1: n.x + M.RF + 2, y0: n.y - M.RF - 2, y1: n.y + M.RF + 2 });
-      if (mk) { var xc = M.po + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xr = M.ca + 2; boxesX.push({ x0: n.x + xc - xr, x1: n.x + xc + xr, y0: n.y - xc - xr, y1: n.y - xc + xr }); }
-      if (n.slot) { var pc = M.po + M.pa; boxesX.push({ x0: n.x + pc - M.pa - 2, x1: n.x + pc + M.pa + 2, y0: n.y - pc - M.pa - 2, y1: n.y - pc + M.pa + 2 }); }
+      markBoxes(n, cornerOf[n.id]).forEach(function (bx) { boxesX.push(bx); }); // V4: the boxes of the "+" and the cross, at the corner chosen for them
     });
     var tagAt = placeTags(view, r, fs, { letters: letterAt, boxes: boxesX });
     var e = tagAt.extent, o = '<svg class="chart-svg" data-sea="' + esc(view.sea) + '" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
@@ -168,16 +198,6 @@
       var ux = dx / len, uy = dy / len, mx = (x1 + x2) / 2, my = (y1 + y2) / 2, px = -uy, py2 = ux;
       return '<path class="' + cls + '" aria-hidden="true" d="M' + num(mx - ux * size * 0.6 + px * size * 0.8) + ' ' + num(my - uy * size * 0.6 + py2 * size * 0.8) + 'L' + num(mx + ux * size) + ' ' + num(my + uy * size) + 'L' + num(mx - ux * size * 0.6 - px * size * 0.8) + ' ' + num(my - uy * size * 0.6 - py2 * size * 0.8) + '"/>';
     }
-    // The way to an unfound slot or next-sea sector (a class only): from each such sector, back along the reveal links while the sector is not found.
-    var byOf = {}; view.lines.forEach(function (l) { byOf[l.to] = l.from; });
-    var goal = {};
-    view.nodes.forEach(function (n) {
-      if (!(n.slot || n.opens) || n.state === 'found') return;
-      var id = n.id, i = 0;
-      while (id != null && at[id] && at[id].state !== 'found' && i++ < 64) { goal[id] = true; id = byOf[id]; }
-    });
-    // open or closed as before; done: both ends found; lead: only the from end found; goal: on the way to a slot or sea
-    function lcls(l) { return (at[l.from].state === 'found' ? 'open' : 'closed') + (at[l.from].state === 'found' && at[l.to].state === 'found' ? ' done' : '') + (at[l.from].state === 'found' && at[l.to].state !== 'found' ? ' lead' : '') + (goal[l.to] ? ' goal' : ''); }
     o += '<g class="chart-lines" aria-hidden="true">' + view.lines.map(function (l) { return '<line class="' + lcls(l) + '" x1="' + num(l.x1) + '" y1="' + num(l.y1) + '" x2="' + num(l.x2) + '" y2="' + num(l.y2) + '"/>'; }).join('') + '</g>';
     o += '<g class="chart-chevs" aria-hidden="true">' + view.lines.map(function (l) { return chev(l.x1, l.y1, l.x2, l.y2, r * 0.7, 'chart-chev ' + lcls(l)); }).join('') + '</g>';
     var path = [st].concat((route || []).filter(function (id) { return at[id]; }).map(function (id) { return at[id]; }));
@@ -198,14 +218,14 @@
         : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"' + da + '/>'
         : '<rect x="' + num(-r * 0.7) + '" y="' + num(-r * 0.7) + '" width="' + num(1.4 * r) + '" height="' + num(1.4 * r) + '"' + da + '/>';
       var idx = (route || []).indexOf(n.id), onRoute = idx >= 0, isSel = sel === String(n.id), la = letterAt[n.id];
-      var cd = M.po + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xa = M.ca; // the cross: outside the node at its upper right (further out when a "+" is there too)
-      var xd = 'M' + num(cd - xa) + ' ' + num(-cd - xa) + 'L' + num(cd + xa) + ' ' + num(-cd + xa) + 'M' + num(cd + xa) + ' ' + num(-cd - xa) + 'L' + num(cd - xa) + ' ' + num(-cd + xa);
+      var cd = M.po + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xa = M.ca, cq = cornerOf[n.id], ccx = cq[0] * cd, ccy = cq[1] * cd; // the cross: outside the node at its upper right unless a line is there (V4: then another corner), further out when a "+" is there too
+      var xd = 'M' + num(ccx - xa) + ' ' + num(ccy - xa) + 'L' + num(ccx + xa) + ' ' + num(ccy + xa) + 'M' + num(ccx + xa) + ' ' + num(ccy - xa) + 'L' + num(ccx - xa) + ' ' + num(ccy + xa);
       var extra = '<circle class="chart-focus" aria-hidden="true" r="' + num(M.RF) + '"/>' + (n.state === 'next' ? '<circle class="chart-halo" aria-hidden="true" r="' + num(r * 1.1) + '"/>' : '') +
         (onRoute ? '<circle class="chart-routering" aria-hidden="true" r="' + num(M.R1) + '"/>' : '') +
         (mark ? '<circle class="chart-cannot-ring" aria-hidden="true" r="' + num(M.R0) + '"/>' : '') +
         (n.opens ? '<circle class="chart-ring2" aria-hidden="true" r="' + num(M.R0) + '"/>' : '') +
         (isSel ? '<path class="chart-lock" aria-hidden="true" d="' + [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (q) { var lk = Math.max(6, r * 0.7); return 'M' + num(q[0] * M.BK) + ' ' + num(q[1] * (M.BK - lk)) + 'L' + num(q[0] * M.BK) + ' ' + num(q[1] * M.BK) + 'L' + num(q[0] * (M.BK - lk)) + ' ' + num(q[1] * M.BK); }).join('') + '"/>' : '') +
-        (n.slot ? (function () { var pd = 'M' + num(M.po) + ' ' + num(-(M.po + M.pa)) + 'h' + num(2 * M.pa) + 'M' + num(M.po + M.pa) + ' ' + num(-(M.po + 2 * M.pa)) + 'v' + num(2 * M.pa); return '<path class="chart-plus-halo" aria-hidden="true" d="' + pd + '"/><path class="chart-plus" aria-hidden="true" d="' + pd + '"/>'; })() : '');
+        (n.slot ? (function () { var pc = M.po + M.pa, px = cq[0] * pc, py = cq[1] * pc, pd = 'M' + num(px - M.pa) + ' ' + num(py) + 'h' + num(2 * M.pa) + 'M' + num(px) + ' ' + num(py - M.pa) + 'v' + num(2 * M.pa); return '<path class="chart-plus-halo" aria-hidden="true" d="' + pd + '"/><path class="chart-plus" aria-hidden="true" d="' + pd + '"/>'; })() : '');
       o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + (mark ? ' cannot' : '') + (onRoute ? ' on-route' : '') + (isSel ? ' selected' : '') + (n.slot ? ' has-slot' : '') + (n.opens ? ' opens-sea' : '') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
         '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + extra + shape +
         (mark ? '<path class="chart-cannot-halo" aria-hidden="true" d="' + xd + '"/><path class="chart-cannot-x" aria-hidden="true" d="' + xd + '"/>' : '') +
