@@ -2070,3 +2070,157 @@ test('SET-09 regression: a sync save whose liveness guard has expired writes not
   const stored = await CC.read();
   assert.strictEqual(stored.raw, null, 'cancelled sync result must not reach the save');
 });
+
+// ── a free company changed on both sides (docs/submersibles-merge-spec.md, owner decisions of 2026-11-19) ─────────────
+const FCK = 'm|' + JSON.stringify(['submersibles', 'fcs', 'f1']);
+const fcText = (o) => JSON.stringify(CC.checkSubmersibles({ fcs: { f1: Object.assign({ name: 'Alpha Company', world: 'Maduin', charId: 'c1', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }, o) } }).fcs.f1);
+const fcOf = (t) => JSON.parse(t);
+
+test('T1 CC.mergeUnit: only a free company present on both sides is merged; discoveries are combined, slots the higher, position the lower, a question only for name, world or character', () => {
+  const b = fcText({ discovered: [1, 2] });
+  assert.strictEqual(CC.mergeUnit('m|' + JSON.stringify(['submersibles', 'subs', 's1']), b, b, fcText({})), null, 'not a free company');
+  assert.strictEqual(CC.mergeUnit('m|' + JSON.stringify(['atelier', 'prefs']), b, b, fcText({})), null);
+  assert.strictEqual(CC.mergeUnit(FCK, b, undefined, fcText({})), null, 'a side missing');
+  assert.strictEqual(CC.mergeUnit(FCK, b, fcText({}), undefined), null);
+  assert.strictEqual(CC.mergeUnit(FCK, b, 'not json', fcText({})), null);
+  const disc = (u) => fcOf(u.local).discovered;
+  let u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2] }), fcText({ discovered: [1, 2, 3] }), fcText({ discovered: [1, 2, 4] }));
+  assert.deepStrictEqual(disc(u), [1, 2, 3, 4]); assert.deepStrictEqual(u.asks, []); assert.strictEqual(u.local, u.remote);
+  u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2, 3] }), fcText({ discovered: [1, 2] }), fcText({ discovered: [1, 2, 3, 4] }));
+  assert.deepStrictEqual(disc(u), [1, 2, 3, 4], 'combine everything: an untick on one side removes nothing');
+  assert.deepStrictEqual(disc(CC.mergeUnit(FCK, undefined, fcText({ discovered: [4, 1] }), fcText({ discovered: [2, 3] }))), [1, 2, 3, 4], 'no base: union, sorted');
+  const noList = JSON.stringify({ name: 'Alpha Company' });
+  assert.deepStrictEqual(disc(CC.mergeUnit(FCK, noList, fcText({ discovered: [1, 2, 3] }), fcText({ discovered: [1, 2, 4] }))), [1, 2, 3, 4], 'a base without the list: union');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, b, fcText({ unlockedSlots: 2, discovered: [1, 2, 3] }), fcText({ unlockedSlots: 3, discovered: [1, 2, 4] })).local).unlockedSlots, 3, 'slots: the higher');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, fcText({ order: 5, discovered: [1, 2] }), fcText({ order: 2, discovered: [1, 2, 3] }), fcText({ order: 3, discovered: [1, 2, 4] })).local).order, 2, 'position: the lower');
+  u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2] }), fcText({ name: 'Beta', discovered: [1, 2, 3] }), fcText({ world: 'Ravana', discovered: [1, 2, 4] }));
+  assert.deepStrictEqual(u.asks, []); assert.strictEqual(fcOf(u.local).name, 'Beta'); assert.strictEqual(fcOf(u.local).world, 'Ravana');
+  u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2] }), fcText({ name: 'Beta', discovered: [1, 2, 3] }), fcText({ name: 'Gamma', discovered: [1, 2, 4] }));
+  assert.deepStrictEqual(u.asks, ['name']); assert.strictEqual(fcOf(u.local).name, 'Beta'); assert.strictEqual(fcOf(u.remote).name, 'Gamma');
+  assert.deepStrictEqual(disc(u), [1, 2, 3, 4]); assert.deepStrictEqual(fcOf(u.remote).discovered, [1, 2, 3, 4]);
+  const l0 = JSON.stringify({ name: 'Alpha Company', discovered: [1, 2, 3] }), r0 = JSON.stringify({ name: 'Alpha Company', world: 'Maduin', discovered: [1, 2, 4] });
+  u = CC.mergeUnit(FCK, undefined, l0, r0);
+  assert.strictEqual(fcOf(u.local).world, 'Maduin', 'no base, a world on one side only: kept'); assert.deepStrictEqual(u.asks, []);
+  // the text is the checker's own, and the merge is symmetric and settled
+  const L = fcText({ name: 'Beta', unlockedSlots: 3, discovered: [1, 2, 3] }), R = fcText({ name: 'Gamma', order: 4, discovered: [1, 2, 5] });
+  u = CC.mergeUnit(FCK, b, L, R);
+  assert.strictEqual(u.local, JSON.stringify(CC.checkSubmersibles({ fcs: { x: fcOf(u.local) } }).fcs.x));
+  const v = CC.mergeUnit(FCK, b, R, L);
+  assert.strictEqual(v.local, u.remote); assert.strictEqual(v.remote, u.local); assert.deepStrictEqual(v.asks, u.asks);
+  const again = CC.mergeUnit(FCK, b, u.local, u.remote);
+  assert.strictEqual(again.local, u.local); assert.strictEqual(again.remote, u.remote);
+});
+
+async function twoTabs() {
+  useStorage();
+  const first = await CC.writeSection('submersibles', MODS.submersibles, null);
+  const base = JSON.parse(JSON.stringify(first.section));
+  const a = JSON.parse(JSON.stringify(base)); a.fcs.f1.discovered = [1, 2, 3, 4];
+  const b = JSON.parse(JSON.stringify(base)); b.fcs.f1.discovered = [1, 2, 3, 5]; b.fcs.f1.unlockedSlots = 3;
+  await CC.writeSection('submersibles', a, { rev: first.rev, base });
+  return CC.writeSection('submersibles', b, { rev: first.rev, base });
+}
+
+test('T2 two tabs: one adds a sector, the other adds a sector and a slot with a stale stamp; both sectors and the slot are stored', async () => {
+  const w = await twoTabs();
+  assert.strictEqual(w.merged, true);
+  assert.deepStrictEqual(w.section.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+  assert.strictEqual(w.section.fcs.f1.unlockedSlots, 3);
+  assert.deepStrictEqual(CC.checkDoc((await CC.read()).raw).modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+});
+
+test('T3 an old copy (no CC.mergeUnit): the same two tabs store this tab\'s whole record, as before', async () => {
+  const real = CC.mergeUnit;
+  CC.mergeUnit = () => null;
+  try {
+    const w = await twoTabs();
+    assert.strictEqual(w.merged, true);
+    assert.deepStrictEqual(w.section.fcs.f1.discovered, [1, 2, 3, 5]);
+    assert.strictEqual(w.section.fcs.f1.unlockedSlots, 3);
+  } finally { CC.mergeUnit = real; }
+});
+
+async function twoDevices(edit, oldFlags, order) {
+  const d = fakeGraph();
+  const pc = ET.newState(['A', 'B']); pc.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(pc);
+  await ET.cloudSync(pc, 'tok', d.f);
+  const phone = ET.newState(['A', 'B']); phone.modules = {};
+  await ET.cloudSync(phone, 'tok', d.f);
+  edit(pc.modules.submersibles.fcs.f1, phone.modules.submersibles.fcs.f1);
+  const real = CC.mergeUnit;
+  const sync = async (st, old) => { CC.mergeUnit = old ? () => null : real; try { return await ET.cloudSync(st, 'tok', d.f); } finally { CC.mergeUnit = real; } };
+  const out = [];
+  for (const who of order || ['phone', 'pc', 'phone']) out.push(await sync(who === 'pc' ? pc : phone, !!(oldFlags && oldFlags[who])));
+  return { d, pc, phone, out };
+}
+
+test('T4 two devices each add one discovery: no question, both hold both, the saves are equal', async () => {
+  const { pc, phone, out } = await twoDevices((p, h) => { p.discovered = [1, 2, 3, 4]; h.discovered = [1, 2, 3, 5]; });
+  for (const r of out) assert.ok(r.done === true && !(r.conflicts || []).length, JSON.stringify(r.conflicts || []));
+  for (const st of [pc, phone]) assert.deepStrictEqual(st.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+  assert.deepStrictEqual(pc.modules, phone.modules);
+});
+
+test('T5 one device unticks sector 3, the other adds 4: no question, both end with [1, 2, 3, 4] (nothing is removed by a merge)', async () => {
+  const { pc, phone, out } = await twoDevices((p, h) => { p.discovered = [1, 2]; h.discovered = [1, 2, 3, 4]; });
+  for (const r of out) assert.ok(r.done === true && !(r.conflicts || []).length);
+  for (const st of [pc, phone]) assert.deepStrictEqual(st.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4]);
+});
+
+test('T6 a name changed differently on both devices is the one question; both versions already carry the combined sectors; either answer keeps them', async () => {
+  for (const choice of ['local', 'remote']) {
+    const { d, pc, phone, out } = await twoDevices((p, h) => { p.name = 'Beta Company'; p.discovered = [1, 2, 3, 4]; h.name = 'Gamma Company'; h.discovered = [1, 2, 3, 5]; }, null, ['phone', 'pc']);
+    const r = out[1];
+    assert.strictEqual(r.done, false); assert.strictEqual(r.conflicts.length, 1);
+    const c = r.conflicts[0];
+    assert.strictEqual(c.id, FCK);
+    assert.deepStrictEqual(fcOf(c.local).discovered, [1, 2, 3, 4, 5]); assert.deepStrictEqual(fcOf(c.remote).discovered, [1, 2, 3, 4, 5]);
+    assert.deepStrictEqual(Object.keys(c).sort(), ['id', 'local', 'remote']);
+    const desc = ET.describeConflict(c, idx, pc);
+    assert.match(desc.what, /name differs/); assert.match(desc.what, /already combined/);
+    assert.strictEqual(desc.local, 'this device: name “Beta Company”'); assert.strictEqual(desc.remote, 'the other device: name “Gamma Company”');
+    await ET.cloudFinish(pc, 'tok', r, { [c.id]: choice }, d.f);
+    const want = choice === 'local' ? 'Beta Company' : 'Gamma Company';
+    assert.strictEqual(pc.modules.submersibles.fcs.f1.name, want); assert.deepStrictEqual(pc.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+    for (const st of [phone, pc]) { const s = await ET.cloudSync(st, 'tok', d.f); assert.ok(s.done === true && !(s.conflicts || []).length, 'later syncs converge'); }
+    assert.deepStrictEqual(pc.modules, phone.modules);
+    assert.strictEqual(phone.modules.submersibles.fcs.f1.name, want);
+  }
+});
+
+test('T7 old meets new: the new device merges and the old one takes it whole; the old device merging first gives the all-old result; only the six known fields are stored', async () => {
+  const edit = (p, h) => { p.discovered = [1, 2, 3, 4]; h.discovered = [1, 2, 3, 5]; };
+  const six = ['name', 'world', 'charId', 'order', 'unlockedSlots', 'discovered'];
+  // new device merges first, the old phone takes the result whole
+  const a = await twoDevices(edit, { phone: true }, ['phone', 'pc', 'phone']);
+  for (const r of a.out) assert.ok(r.done === true && !(r.conflicts || []).length);
+  assert.deepStrictEqual(a.phone.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+  assert.deepStrictEqual(a.pc.modules, a.phone.modules);
+  const cloud = await ET.readCloud(a.d.files.f1);
+  assert.ok(Object.keys(cloud.modules.submersibles.fcs.f1).every((k) => six.includes(k)));
+  // the old device merges first (the other uploaded first): the same as two old devices
+  const mixed = await twoDevices(edit, { phone: true }, ['pc', 'phone']);
+  const allOld = await twoDevices(edit, { phone: true, pc: true }, ['pc', 'phone']);
+  const shape = (x) => JSON.stringify({ done: x.out[1].done, conflicts: (x.out[1].conflicts || []).map((c) => [c.id, c.local, c.remote]), phone: x.phone.modules.submersibles.fcs.f1 });
+  assert.strictEqual(shape(mixed), shape(allOld));
+  assert.strictEqual(mixed.out[1].done, false, 'an old device still asks the old question');
+});
+
+test('T8 end of a Settings sync: a discovery made during the sync and one from the cloud are both kept, no question', () => {
+  const { solid, port, apply } = r3;
+  const fc = (d) => Object.assign(solid('Xray'), { discovered: d });
+  const from = { fcs: { fz: fc([1, 2]) } }, now = { fcs: { fz: fc([1, 2, 3]) } }, mine = { fcs: { fz: fc([1, 2, 4]) } };
+  const res = ET.threeWay(port(from), port(now), port(mine));
+  assert.strictEqual(res.conflicts.length, 0);
+  assert.deepStrictEqual(apply(now, res, {}).fcs.fz.discovered, [1, 2, 3, 4]);
+});
+
+test('T9 a free company changed on one side and removed on the other still gives the owner question, with the untouched texts', () => {
+  const { solid, port } = r3;
+  const base = { fcs: { f1: solid('Company') }, subs: { s1: { fcId: 'f1', slot: 1, name: 'Vanguard', rank: 5, voyage: null } } };
+  const changed = { fcs: { f1: Object.assign(solid('Company'), { discovered: [1, 2, 3] }) }, subs: base.subs };
+  const res = ET.threeWay(port(base), port(changed), port({ fcs: {}, subs: {} }));
+  const c = res.conflicts.find((x) => x.id === FCK);
+  assert.ok(c && c.integrity && c.integrity.kind === 'owner');
+  assert.deepStrictEqual(fcOf(c.local), changed.fcs.f1, 'the unit text is untouched'); assert.strictEqual(c.remote, null);
+});

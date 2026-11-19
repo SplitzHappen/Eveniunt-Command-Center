@@ -199,13 +199,51 @@
     }
     return CC.checkModules(out);
   };
-  // Three-way merge of the units of every section except the Tracker's. Clashes keep the local unit.
+  // A free company changed on both sides (owner decision 2026-11-19, docs/submersibles-merge-spec.md): merged field by
+  // field. key: 'm|' + JSON path; b, l, r: the unit as JSON text, or undefined. Returns null (the caller keeps its
+  // generic rule) unless the key is a free company and both sides are objects; else { local, remote, asks } where the
+  // two texts carry the same merged discoveries, slots and position and differ only in the fields named in asks.
+  // Discoveries: the union of both sides, nothing is removed. Slots: the higher. Position: the lower. Name, world and
+  // linked character: changed on one side only is taken; changed differently on both is asked.
+  CC.mergeUnit = function (key, b, l, r) {
+    let p; try { p = JSON.parse(String(key).slice(2)); } catch (e) { return null; }
+    if (!Array.isArray(p) || p.length !== 3 || p[0] !== 'submersibles' || p[1] !== 'fcs' || !safeKey(p[2]) || !String(key).startsWith('m|')) return null;
+    const parse = (t) => { if (typeof t !== 'string') return undefined; try { const o = JSON.parse(t); return plain(o) ? o : undefined; } catch (e) { return undefined; } };
+    const L = parse(l), R = parse(r), B = parse(b);
+    if (!L || !R) return null;
+    const blank = (v) => v === undefined || v === null || v === '';
+    const same = (x, y) => (blank(x) && blank(y)) || JSON.stringify(x) === JSON.stringify(y);
+    const outL = {}, outR = {}, asks = [];
+    for (const f of ['name', 'world', 'charId', 'order', 'unlockedSlots']) {
+      const lv = L[f], rv = R[f], bv = B ? B[f] : undefined;
+      let v, split = false;
+      if (same(lv, rv)) v = blank(lv) && blank(rv) ? (lv === null || rv === null ? null : undefined) : lv;
+      else if (B && same(lv, bv)) v = rv;
+      else if (B && same(rv, bv)) v = lv;
+      else if (f === 'order') v = Math.min(lv ?? 0, rv ?? 0);
+      else if (f === 'unlockedSlots') v = Math.max(lv ?? 1, rv ?? 1);
+      else if (!B && blank(lv) !== blank(rv)) v = blank(lv) ? rv : lv;
+      else split = true;
+      if (split) { outL[f] = lv; outR[f] = rv; asks.push(f); } else { outL[f] = v; outR[f] = v; }
+    }
+    if (Array.isArray(L.discovered) || Array.isArray(R.discovered)) {
+      const u = [...new Set([...(Array.isArray(L.discovered) ? L.discovered : []), ...(Array.isArray(R.discovered) ? R.discovered : [])])]
+        .filter((x) => Number.isInteger(x)).sort((x, y) => x - y);
+      outL.discovered = u; outR.discovered = u.slice();
+    }
+    const text = (o) => JSON.stringify(CC.checkSubmersibles({ fcs: { x: o } }).fcs.x);
+    const local = text(outL), remote = text(outR);
+    return { local, remote, asks: local === remote ? [] : asks };
+  };
+  // Three-way merge of the units of every section except the Tracker's. Clashes keep the local unit; a free company
+  // changed on both sides is merged by CC.mergeUnit.
   CC.mergeModules = function (base, local, remote) {
     const B = CC.flatModules(base), L = CC.flatModules(local), R = CC.flatModules(remote);
     const m = new Map();
     for (const k of new Set([...B.keys(), ...L.keys(), ...R.keys()])) {
       const b = B.get(k), l = L.get(k), r = R.get(k);
-      const v = l === r ? l : l === b ? r : l;
+      let v = l === r ? l : l === b ? r : l;
+      if (l !== undefined && r !== undefined && l !== r && l !== b && r !== b) { const u = CC.mergeUnit(k, b, l, r); if (u) v = u.local; }
       if (v !== undefined) m.set(k, v);
     }
     return CC.unflatModules(m);
@@ -224,6 +262,22 @@
       let n = ''; try { n = JSON.parse(local || remote || '{}').name || ''; } catch (e) { /* none */ }
       what = 'Submersibles: ' + { fcs: 'free company', subs: 'submarine', trips: 'logged voyage' }[p[1]] + (n ? ' “' + n + '”' : '');
       if (integrity && p[1] === 'fcs') { const names = (integrity.names && integrity.names.length ? integrity.names : integrity.linked).map((x) => '“' + x + '”'); what += '; choosing its removal also removes ' + (names.length === 1 ? 'its submarine ' : 'its submarines ') + names.join(', ') + (names.length === 1 ? ' and its logged voyages' : ' and their logged voyages') + '; keeping the free company keeps ' + (names.length === 1 ? 'it' : 'them') + ' too'; }
+      if (!integrity && p[1] === 'fcs' && local != null && remote != null) {
+        let L = null, R = null; try { L = JSON.parse(local); R = JSON.parse(remote); } catch (e) { /* today's wording */ }
+        if (plain(L) && plain(R)) {
+          const none = '(none)', show = (v) => (v === undefined || v === null || v === '' ? none : String(v));
+          const FIELDS = [['name', 'name', (v) => '“' + show(v) + '”'], ['world', 'world', show], ['charId', 'character', (v) => (v ? (nameOf ? nameOf(v) : v) : none)],
+            ['unlockedSlots', 'unlocked slots', show], ['order', 'position in the list', show], ['discovered', 'discovered sectors', (v) => (Array.isArray(v) ? v.join(', ') : none)]];
+          const diff = FIELDS.filter((f) => JSON.stringify(L[f[0]] === undefined ? null : L[f[0]]) !== JSON.stringify(R[f[0]] === undefined ? null : R[f[0]]));
+          if (diff.length) {
+            const labels = diff.map((f) => f[1]), joined = labels.length === 1 ? labels[0] : labels.slice(0, -1).join(', ') + ' and ' + labels[labels.length - 1];
+            const side = (o) => diff.map((f) => f[1] + ' ' + f[2](o[f[0]])).join(', ');
+            const sameList = JSON.stringify(L.discovered === undefined ? null : L.discovered) === JSON.stringify(R.discovered === undefined ? null : R.discovered);
+            what = 'Submersibles: free company' + (n ? ' “' + n + '”' : '') + ': the ' + joined + (labels.length === 1 ? ' differs' : ' differ') + ' between your devices' + (sameList ? '; its discovered sectors are already combined and stay the same whichever you choose' : '');
+            return { who: '', what, local: 'this device: ' + side(L), remote: 'the other device: ' + side(R) };
+          }
+        }
+      }
     } else if (p[0] === 'submersibles' && p[1] === 'settings') what = 'Submersibles settings';
     return { who: '', what, local: local == null ? '(removed)' : 'the version on this device', remote: remote == null ? '(removed)' : 'the version on the other device' };
   };

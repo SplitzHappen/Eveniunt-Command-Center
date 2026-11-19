@@ -2390,3 +2390,25 @@ test('gaps correction: the cannot ring and cross mark only a FOUND sector above 
   assert.match(node(8), /aria-label="[^"]*Not found yet"/); assert.match(node(1), /aria-label="[^"]*Needs range 4 more"/);
   assert.equal((svg.match(/chart-cannot-ring/g) || []).length, 1);
 });
+
+// T10 (docs/submersibles-merge-spec.md): the merged free company still goes through the fold as before; units other than a free company are untouched
+test('T10: a merged free company that is still bare is folded, one that gained a sector is not; a submarine, a logged voyage and prefs changed on both sides keep this tab\'s version', () => {
+  require(path.join(__dirname, '..', 'src', 'core', 'save.js'));
+  const CC = globalThis.CC;
+  const sec = (fcs, extra) => Object.assign({ fcs, subs: {}, trips: {}, settings: {} }, extra || {});
+  const base = sec({ fa: bareFc('Alpha', 'c1', 5), fb: bareFc('Beta', 'c1', 0) });
+  const a = JSON.parse(JSON.stringify(base)), b = JSON.parse(JSON.stringify(base));
+  a.fcs.fa.order = 4; b.fcs.fa.order = 3; // both sides changed it, nothing else: the merged record is still bare
+  const merged = CC.mergeModules({ submersibles: base }, { submersibles: a }, { submersibles: b }).submersibles;
+  assert.equal(merged.fcs.fa.order, 3); assert.deepEqual(merged.fcs.fa.discovered, [1, 2]);
+  assert.deepEqual(FOLD(merged).removed, ['fa'], 'still bare: folded into the other company as before');
+  const a2 = JSON.parse(JSON.stringify(base)), b2 = JSON.parse(JSON.stringify(base));
+  a2.fcs.fa.discovered = [1, 2, 3]; b2.fcs.fa.discovered = [1, 2, 4];
+  const grown = CC.mergeModules({ submersibles: base }, { submersibles: a2 }, { submersibles: b2 }).submersibles;
+  assert.deepEqual(grown.fcs.fa.discovered, [1, 2, 3, 4]);
+  assert.deepEqual(FOLD(grown).removed, ['fb'], 'a company that gained sectors is not bare: the bare one goes');
+  // a submarine, a logged voyage and the preferences, changed on both sides: this tab's version, as before
+  const mk = (rank, sort, said) => sec({ fa: solidFc('Alpha', 'c1', 0) }, { subs: { s1: { fcId: 'fa', slot: 1, name: 'Sub', rank } }, trips: { t1: { s: 's1', t: 1, r: [1], back: 2, said, items: [], newSectors: [] } }, settings: { prefs: { priceWorld: sort } } });
+  const m = CC.mergeModules({ submersibles: mk(10, 'Aether', '1h') }, { submersibles: mk(20, 'Maduin', '2h') }, { submersibles: mk(30, 'Ravana', '3h') }).submersibles;
+  assert.equal(m.subs.s1.rank, 20); assert.equal(m.trips.t1.said, '2h'); assert.equal(m.settings.prefs.priceWorld, 'Maduin');
+});

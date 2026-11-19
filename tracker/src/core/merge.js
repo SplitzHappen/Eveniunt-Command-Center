@@ -53,6 +53,16 @@
       }
       if (l === b) { if (r !== undefined) merged.set(k, r); continue; }
       if (r === b) { if (l !== undefined) merged.set(k, l); continue; }
+      // a free company changed on both devices: merged field by field; only a name, world or character changed
+      // differently on both is asked, and both texts already carry the combined discoveries, slots and position
+      if (k.startsWith('m|') && l !== undefined && r !== undefined && globalThis.CC && typeof globalThis.CC.mergeUnit === 'function') {
+        const u = globalThis.CC.mergeUnit(k, b, l, r);
+        if (u) {
+          merged.set(k, u.local);
+          if (u.local !== u.remote) conflicts.push({ id: k, local: u.local, remote: u.remote });
+          continue;
+        }
+      }
       conflicts.push({ id: k, local: l === undefined ? null : l, remote: r === undefined ? null : r });
       if (l !== undefined) merged.set(k, l); // provisional: this device, until the owner decides
     }

@@ -4685,12 +4685,109 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const B = await scenario('an untick is honoured', SEC(), (p) => p.uncheck('.wiz input[data-w=disc][value="3"]'), 'sec.fcs.fa.discovered = [1, 2, 3, 4];');
       const C = await scenario('Clear a sea, a newer discovery in that sea and another sea stays', SEC(', 32, 33'), async (p) => { await p.click('.in-sea-2 summary'); await p.click('[data-act=seanone][data-sea="2"]'); }, 'sec.fcs.fa.discovered = [1, 2, 3, 4, 32, 33, 34];');
       const D = await scenario('a slot, a rank and a voyage changed elsewhere survive an untouched form', SEC(), null, "sec.fcs.fa.unlockedSlots = 2; sec.subs.a1.rank = 60; sec.subs.a1.voyage = { sentAt: now - 3600000, route: [1, 2], returnAt: now + 7200000 };");
+      // E: the Keep label of an open Setup form follows a voyage that changed elsewhere (the save already did); focus and scroll stay
+      const E = await (async () => {
+        const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, SEC() + "sec.subs.a1.voyage = { sentAt: now - 3600000, route: [1, 2], returnAt: now + 7200000 };"); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]'); await p1.click('[data-act=wnext]');
+        await p1.waitForSelector('.wiz input[data-w=voyMode][value=keep]');
+        const label = () => p1.evaluate(() => { const r = document.querySelector('.wiz input[data-w=voyMode][value=keep]'); return { text: r && r.parentElement.textContent.trim(), checked: !!(r && r.checked), focus: document.activeElement && document.activeElement.getAttribute('name'), y: Math.round(window.scrollY) }; });
+        await p1.focus('.wiz input[data-w=voyMode][value=keep]');
+        const before = await label();
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        const newReturn = await p2.evaluate(async () => {
+          const r = await CC.read(), doc = CC.checkDoc(r.raw), sec = JSON.parse(JSON.stringify(doc.modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+          sec.subs.a1.voyage.returnAt = Date.now() + 5 * 3600000; await CC.writeSection('submersibles', sec, { rev: r.rev, base }); return sec.subs.a1.voyage.returnAt;
+        });
+        await p1.bringToFront(); await p1.waitForTimeout(1500);
+        const after = await label();
+        for (let i = 0; i < 6; i++) { if (await p1.$('[data-act=wsave]')) break; await p1.click('[data-act=wnext]'); }
+        await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+        const saved = await p1.evaluate(async () => CC.checkDoc((await CC.read()).raw).modules.submersibles.subs.a1.voyage.returnAt);
+        await p2.close();
+        return { before, after, newReturn, saved, errors: real(errors) };
+      })();
       const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
       const ok = same(A.mid.disc, [1, 2, 3, 4]) && A.shown.ticked.includes(4) && A.shown.focus === '2' && A.shown.y === 150 && same(A.after.disc, [1, 2, 3, 4]) &&
         same(B.after.disc, [1, 2, 4]) && same(C.after.disc, [1, 2, 3, 4, 34]) &&
         D.after.slots === 2 && D.after.rank === 60 && D.after.voyage === true && same(D.after.parts, [3, 4, 1, 2]) &&
-        [A, B, C, D].every((x) => x.errors.length === 0);
-      record('C116', 'Setup sector list does not undo discoveries (fix list K1): with the sector step open, another tab saves a newer list [1, 2, 3, 4]; the form shows sector 4 ticked with focus and scroll unmoved and Save leaves [1, 2, 3, 4]; an untick in the form is honoured ([1, 2, 4]); after "Clear every sector in" a sea, a newer discovery in that sea and one in another sea stay ([1, 2, 3, 4, 34]); a slot, a rank and a voyage saved elsewhere survive an untouched form', ok, { A, B, C, D });
+        E.before.text && E.after.text !== E.before.text && /^Keep: back/.test(E.after.text) && E.after.checked === E.before.checked && E.after.focus === E.before.focus && E.after.y === E.before.y && E.saved === E.newReturn &&
+        [A, B, C, D, E].every((x) => x.errors.length === 0);
+      record('C116', 'Setup sector list does not undo discoveries (fix list K1): with the sector step open, another tab saves a newer list [1, 2, 3, 4]; the form shows sector 4 ticked with focus and scroll unmoved and Save leaves [1, 2, 3, 4]; an untick in the form is honoured ([1, 2, 4]); after "Clear every sector in" a sea, a newer discovery in that sea and one in another sea stay ([1, 2, 3, 4, 34]); a slot, a rank and a voyage saved elsewhere survive an untouched form; and an open Setup form\'s "Keep: back ..." label follows a voyage changed elsewhere, with focus and scroll unmoved and the new voyage saved', ok, { A, B, C, D, E });
+      server.close();
+    });
+
+    // ── C119 A free company changed in two places at once keeps both sides' discoveries (merge rule, owner decisions of 2026-11-19): (a) real pages: tab 2 holds
+    //    a stale stamp and base; tab 1 records a new sector on the return sheet; tab 2 then saves another sector and a slot: the stored list holds both, the slot is
+    //    kept, tab 1 shows the new count without a reload; (b) the same with CC.mergeUnit answering nothing in tab 2 (an old copy): tab 2's record is stored whole, as before;
+    //    (c) built pages: the Tracker, the Command Center and the Atelier each have CC.mergeUnit, and the Tracker's ET.threeWay replays two devices adding one sector
+    //    each (no question) and a name changed on both (one question, the same combined list in both versions). ──
+    await guard('C119', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const run = async (oldCopy) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await p1.evaluate(async () => {
+          const now = Date.now(), H = 3600000, sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+          sec.fcs.fa = { name: 'Alpha Company', world: 'Gilgamesh', unlockedSlots: 1, order: 0, discovered: [1, 2] };
+          sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 1, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } };
+          const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+        });
+        await p1.reload(); await ready(p1);
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        await p2.evaluate(async (old) => {
+          const r = await CC.read(); window.__stale = { rev: r.rev, base: JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)) };
+          if (old) CC.mergeUnit = () => null;
+        }, oldCopy);
+        await p1.bringToFront();
+        await p1.click('.sub[data-sub="a1"] .sub-top'); await p1.waitForSelector('#sheet .loot'); await p1.click('#sheet .loot summary');
+        const newSector = await p1.$eval('#sheet [data-new-sector]', (el) => +el.dataset.newSector).catch(() => null);
+        if (newSector) await p1.check('#sheet [data-new-sector="' + newSector + '"]');
+        await p1.click('#sheet .sector[data-pick="1"]'); await p1.click('#sheet [data-act=dosend]');
+        await p1.waitForFunction(() => window.__subs && window.__subs.state().ready && !document.querySelector('#sheet[open]'), null, { timeout: 10000 }); await p1.waitForTimeout(800);
+        const afterP1 = await p1.evaluate(async () => CC.checkDoc((await CC.read()).raw).modules.submersibles.fcs.fa.discovered);
+        const merged = await p2.evaluate(async () => {
+          const sec = JSON.parse(JSON.stringify(window.__stale.base)); sec.fcs.fa.discovered = sec.fcs.fa.discovered.concat([34]); sec.fcs.fa.unlockedSlots = 2;
+          const w = await CC.writeSection('submersibles', sec, window.__stale); return { merged: !!w.merged, hadFn: typeof CC.mergeUnit };
+        });
+        await p1.bringToFront(); await p1.click('[data-tab=setup]'); await p1.waitForTimeout(1500);
+        const final = await p2.evaluate(async () => { const f = CC.checkDoc((await CC.read()).raw).modules.submersibles.fcs.fa; return { disc: f.discovered, slots: f.unlockedSlots }; });
+        const shown = await p1.$eval('[data-act=sectors][data-fc=fa] b', (b) => b.textContent.trim()).catch(() => null);
+        await ctx.close();
+        return { newSector, afterP1, merged, final, shown, errors: real(errors) };
+      };
+      const A = await run(false), B = await run(true);
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const C = { pages: {} };
+      const { ctx: cx, errors: ce } = await context();
+      for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/']]) {
+        const pg = await cx.newPage(); await pg.goto(url); await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {});
+        C.pages[name] = await pg.evaluate(() => typeof window.CC === 'object' && window.CC ? typeof window.CC.mergeUnit : 'no CC');
+        if (name === 'tracker') {
+          await pg.waitForFunction(() => window.ET && typeof window.ET.threeWay === 'function', null, { timeout: 30000 }).catch(() => {});
+          C.replay = await pg.evaluate(() => {
+            const FC = (o) => Object.assign({ name: 'Alpha Company', world: 'Maduin', charId: 'c1', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }, o);
+            const st = (fc) => Object.assign(ET.newState(['A', 'B']), { modules: { submersibles: { fcs: { f1: fc }, subs: {}, trips: {}, settings: {} } } });
+            const doc = (fc) => ET.portable(st(fc));
+            const t4 = ET.threeWay(doc(FC({})), doc(FC({ discovered: [1, 2, 3, 4] })), doc(FC({ discovered: [1, 2, 3, 5] })));
+            const t4s = ET.applyMerge(st(FC({ discovered: [1, 2, 3, 4] })), t4, {});
+            const t6 = ET.threeWay(doc(FC({})), doc(FC({ name: 'Beta', discovered: [1, 2, 3, 4] })), doc(FC({ name: 'Gamma', discovered: [1, 2, 3, 5] })));
+            const d6 = ET.describeConflict(t6.conflicts[0], null, st(FC({})));
+            return { t4: { conflicts: t4.conflicts.length, disc: t4s.modules.submersibles.fcs.f1.discovered },
+              t6: { conflicts: t6.conflicts.length, local: JSON.parse(t6.conflicts[0].local).discovered, remote: JSON.parse(t6.conflicts[0].remote).discovered, what: d6.what } };
+          });
+        }
+        await pg.close();
+      }
+      await cx.close();
+      const okA = !!A.newSector && A.afterP1.includes(A.newSector) && A.merged.merged === true && A.final.disc.includes(A.newSector) && A.final.disc.includes(34) && A.final.slots === 2 && !!A.shown && A.shown.indexOf(A.final.disc.length + ' of ') === 0 && A.errors.length === 0;
+      const okB = !!B.newSector && B.merged.merged === true && same(B.final.disc, [1, 2, 34]) && B.final.slots === 2 && !B.final.disc.includes(B.newSector) && B.errors.length === 0;
+      const okC = Object.values(C.pages).every((t) => t === 'function') && !!C.replay && C.replay.t4.conflicts === 0 && same(C.replay.t4.disc, [1, 2, 3, 4, 5]) && C.replay.t6.conflicts === 1 && same(C.replay.t6.local, [1, 2, 3, 4, 5]) && same(C.replay.t6.remote, [1, 2, 3, 4, 5]) && /name differs/.test(C.replay.t6.what) && /already combined/.test(C.replay.t6.what) && real(ce).length === 0;
+      record('C119', 'A free company changed in two tabs keeps both discoveries: tab 1 records a sector on the return sheet, tab 2 (stale stamp and base) saves another sector and a slot: the stored list holds both, the slot is kept and tab 1 shows the new count without a reload; with CC.mergeUnit answering nothing in tab 2 (an old copy) its whole record is stored as before; the Tracker, the Command Center and the Atelier each carry CC.mergeUnit, and an in-page ET.threeWay replay of two added sectors (no question) and a name changed on both (one question, the same combined list in both versions) gives the unit-test results', okA && okB && okC, { A, B, C });
       server.close();
     });
 

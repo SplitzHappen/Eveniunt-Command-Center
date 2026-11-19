@@ -689,9 +689,10 @@
       .sort(function (a, b) { return CLASS[a.class].rank - CLASS[b.class].rank || a.name.localeCompare(b.name); });
     return '<option value="">not entered</option>' + parts.map(function (p) { return '<option value="' + p.id + '"' + (p.id === sel ? ' selected' : '') + '>' + esc(CLASS[p.class].name) + ' (' + esc(p.name) + ')</option>'; }).join('');
   }
+  function keepLabel(cur, now) { return 'Keep: ' + (cur.returnAt > now ? 'back ' + F.fmtClock(cur.returnAt, now) : 'back since ' + F.fmtClock(cur.returnAt, now)); }
   function voyageFields(s, i) {
     var now = Date.now(), cur = s.voyage;
-    var opts = (cur ? [['keep', 'Keep: ' + (cur.returnAt > now ? 'back ' + F.fmtClock(cur.returnAt, now) : 'back since ' + F.fmtClock(cur.returnAt, now))]] : [])
+    var opts = (cur ? [['keep', keepLabel(cur, now)]] : [])
       .concat([['none', cur ? 'No voyage (remove it)' : 'No voyage'], ['in', 'Back in (as the game shows)'], ['at', 'Back at a date and time']]);
     return '<fieldset class="voy"><legend>Voyage under way</legend>' + opts.map(function (o) { return '<label class="opt"><input type="radio" name="voy' + i + '" value="' + o[0] + '" data-w="voyMode"' + (s.voyMode === o[0] ? ' checked' : '') + '> ' + esc(o[1]) + '</label>'; }).join('') +
       '<div class="voy-in"' + (s.voyMode === 'in' ? '' : ' hidden') + '><input class="inp" data-w="voyIn" value="' + esc(s.voyIn) + '" placeholder="1d 3h 12m or 27:45" autocomplete="off" aria-label="Time left, as the game shows"></div>' +
@@ -787,6 +788,15 @@
     if (!W) return;
     var now = W.fcId ? S.fcs[W.fcId] : null;
     if (now) (now.discovered || []).forEach(function (id) { if (!W.off.has(id)) W.disc.add(id); });
+    // a voyage changed elsewhere for a submarine whose voyage the player has not touched here: the "Keep: back ..." label shows the
+    // new time (only its text changes: no redraw, so focus and scroll stay)
+    W.subs.forEach(function (ws, i) {
+      var cur = ws.id && S.subs[ws.id] ? S.subs[ws.id].voyage : null;
+      if (!ws.id || ws.t.voyage || !cur || !ws.voyage || JSON.stringify(cur) === JSON.stringify(ws.voyage)) return;
+      ws.voyage = cur;
+      var radio = document.querySelector('.wiz input[data-w=voyMode][name="voy' + i + '"][value=keep]');
+      if (radio && radio.nextSibling) radio.nextSibling.nodeValue = ' ' + keepLabel(cur, Date.now());
+    });
     $$('.wiz details.sea').forEach(function (det) {
       var boxes = $$('.ticks input', det); boxes.forEach(function (b) { b.checked = W.disc.has(+b.value); });
       var sum = det.querySelector('summary .muted'); if (sum) sum.textContent = boxes.filter(function (b) { return b.checked; }).length + ' of ' + boxes.length;
