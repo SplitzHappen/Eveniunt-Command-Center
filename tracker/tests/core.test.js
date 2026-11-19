@@ -2101,6 +2101,17 @@ test('T1 CC.mergeUnit: only a free company present on both sides is merged; disc
   const l0 = JSON.stringify({ name: 'Alpha Company', discovered: [1, 2, 3] }), r0 = JSON.stringify({ name: 'Alpha Company', world: 'Maduin', discovered: [1, 2, 4] });
   u = CC.mergeUnit(FCK, undefined, l0, r0);
   assert.strictEqual(fcOf(u.local).world, 'Maduin', 'no base, a world on one side only: kept'); assert.deepStrictEqual(u.asks, []);
+  // a side without a position takes the other's (not 0); both names blank leave the stored text as it is
+  const noOrder = (o) => JSON.stringify(Object.assign({ name: 'Alpha Company', discovered: [1, 2] }, o));
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, noOrder({ order: 0 }), noOrder({ discovered: [1, 2, 3] }), noOrder({ order: 4, discovered: [1, 2, 4] })).local).order, 4, 'no position on one side: the other side\'s');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, noOrder({ order: 0 }), noOrder({ order: 4, discovered: [1, 2, 4] }), noOrder({ discovered: [1, 2, 3] })).local).order, 4, '... either way round');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, noOrder({ order: 2 }), noOrder({ order: 0, discovered: [1, 2, 3] }), noOrder({ order: 3, discovered: [1, 2, 4] })).local).order, 0, 'a position of 0 is still a position: the lower');
+  for (const blankName of [{ name: '' }, { name: undefined }]) {
+    const lt = JSON.stringify(Object.assign({ order: 1, discovered: [1, 2, 3] }, blankName)), rt = JSON.stringify(Object.assign({ order: 1, discovered: [1, 2, 4] }, blankName));
+    const m = CC.mergeUnit(FCK, JSON.stringify(Object.assign({ order: 1, discovered: [1, 2] }, blankName)), lt, rt);
+    assert.strictEqual('name' in fcOf(m.local), 'name' in blankName && blankName.name !== undefined, 'blank names: the stored text keeps what both sides had');
+    assert.deepStrictEqual(m.asks, []);
+  }
   // the text is the checker's own, and the merge is symmetric and settled
   const L = fcText({ name: 'Beta', unlockedSlots: 3, discovered: [1, 2, 3] }), R = fcText({ name: 'Gamma', order: 4, discovered: [1, 2, 5] });
   u = CC.mergeUnit(FCK, b, L, R);
@@ -2178,7 +2189,8 @@ test('T6 a name changed differently on both devices is the one question; both ve
     assert.deepStrictEqual(Object.keys(c).sort(), ['id', 'local', 'remote']);
     const desc = ET.describeConflict(c, idx, pc);
     assert.match(desc.what, /name differs/); assert.match(desc.what, /already combined/);
-    assert.strictEqual(desc.local, 'this device: name “Beta Company”'); assert.strictEqual(desc.remote, 'the other device: name “Gamma Company”');
+    assert.strictEqual(desc.local, 'name “Beta Company”'); assert.strictEqual(desc.remote, 'name “Gamma Company”'); // the dialog adds "This device:" / "Other device:"
+    assert.match(desc.what, /^Submersibles: free company “Beta Company” \/ “Gamma Company”: the name differs/, 'both names in the heading');
     await ET.cloudFinish(pc, 'tok', r, { [c.id]: choice }, d.f);
     const want = choice === 'local' ? 'Beta Company' : 'Gamma Company';
     assert.strictEqual(pc.modules.submersibles.fcs.f1.name, want); assert.deepStrictEqual(pc.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
@@ -2223,4 +2235,74 @@ test('T9 a free company changed on one side and removed on the other still gives
   const c = res.conflicts.find((x) => x.id === FCK);
   assert.ok(c && c.integrity && c.integrity.kind === 'owner');
   assert.deepStrictEqual(fcOf(c.local), changed.fcs.f1, 'the unit text is untouched'); assert.strictEqual(c.remote, null);
+});
+
+// R3.1 the question's wording: each side shows only what differs (the dialog adds "This device:" / "Other device:"); a name that differs names the company by both names
+test('R3-1 describeUnit wording: name, world, character and two fields at once', () => {
+  const nameOf = (id) => ({ c1: 'Alba', c2: 'Brin' })[id] || id, SAME = '; its discovered sectors are already combined and stay the same whichever you choose';
+  const d = (l, r) => CC.describeUnit(FCK, fcText(l), fcText(r), nameOf);
+  let x = d({ name: 'Beta' }, { name: 'Gamma' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Beta” / “Gamma”: the name differs between your devices' + SAME);
+  assert.strictEqual(x.local, 'name “Beta”'); assert.strictEqual(x.remote, 'name “Gamma”');
+  x = d({ world: 'Odin' }, { world: 'Ravana' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Alpha Company”: the world differs between your devices' + SAME);
+  assert.strictEqual(x.local, 'world Odin'); assert.strictEqual(x.remote, 'world Ravana');
+  x = d({ charId: 'c1' }, { charId: 'c2' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Alpha Company”: the character differs between your devices' + SAME);
+  assert.strictEqual(x.local, 'character Alba'); assert.strictEqual(x.remote, 'character Brin');
+  x = d({ name: 'Beta', world: 'Odin' }, { name: 'Gamma', world: 'Ravana' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Beta” / “Gamma”: the name and world differ between your devices' + SAME);
+  assert.strictEqual(x.local, 'name “Beta”, world Odin'); assert.strictEqual(x.remote, 'name “Gamma”, world Ravana');
+  x = d({ discovered: [1, 2, 3] }, { discovered: [1, 2, 4] });
+  assert.ok(!/ \/ /.test(x.what) && !/^this device|^the other device/.test(x.local), 'no name difference: the heading has one name; no side prefix');
+  assert.match(CC.describeUnit(FCK, fcText({ name: 'Beta' }), fcText({ name: '' }), nameOf).what, /free company “Beta”: the name differs/, 'one name blank: only the other is named');
+});
+
+// R3.2 a seeded randomized check of the merge: nothing of either side is lost, the sides can be swapped, a merged pair is settled
+test('R3-2 CC.mergeUnit, 2,000 seeded random cases: no sector missing, swap gives the same texts, merging the output again changes nothing', () => {
+  let seed = 20261119;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const some = () => { const n = Math.floor(rnd() * 6), out = []; for (let i = 0; i < n; i++) out.push(1 + Math.floor(rnd() * 12)); return out; };
+  const fc = () => { const o = { discovered: some() }; if (rnd() < 0.8) o.name = pick(['Alpha', 'Beta', 'Gamma', '']); if (rnd() < 0.6) o.world = pick(['Odin', 'Ravana', '']); if (rnd() < 0.6) o.charId = pick(['c1', 'c2', null]); if (rnd() < 0.7) o.order = Math.floor(rnd() * 4); if (rnd() < 0.7) o.unlockedSlots = 1 + Math.floor(rnd() * 4); return JSON.stringify(CC.checkSubmersibles({ fcs: { x: o } }).fcs.x); };
+  for (let i = 0; i < 2000; i++) {
+    const b = rnd() < 0.8 ? fc() : undefined, l = fc(), r = fc();
+    const u = CC.mergeUnit(FCK, b, l, r), v = CC.mergeUnit(FCK, b, r, l);
+    assert.ok(u && v, 'both sides are free companies');
+    for (const t of [l, r]) for (const sec of fcOf(t).discovered || []) assert.ok(fcOf(u.local).discovered.includes(sec) && fcOf(u.remote).discovered.includes(sec), 'case ' + i + ': sector ' + sec + ' kept');
+    assert.strictEqual(v.local, u.remote, 'case ' + i + ': swapped'); assert.strictEqual(v.remote, u.local); assert.deepStrictEqual(v.asks, u.asks);
+    const again = CC.mergeUnit(FCK, b, u.local, u.remote);
+    assert.strictEqual(again.local, u.local, 'case ' + i + ': settled'); assert.strictEqual(again.remote, u.remote);
+    for (const t of [u.local, u.remote]) { const self = CC.mergeUnit(FCK, b, t, t); assert.strictEqual(self.local, t, 'case ' + i + ': a side merged with itself'); assert.strictEqual(self.remote, t); }
+  }
+});
+
+// R3.3 the end of a Settings sync (tracker/command-center/src/settings.js done()): a clash met there is applied without asking, the base is rebuilt so the next sync
+// asks once, with the combined list, and not again afterwards
+test('R3-3 end of a Settings sync with a name clash: asked once on the next sync, with the combined list, never repeatedly', async () => {
+  const { port } = r3;
+  const fc = (name, disc) => ({ name, charId: 'c1', order: 0, unlockedSlots: 2, world: 'Ravana', discovered: disc });
+  const from = { fcs: { f1: fc('Alpha', [1, 2]) } }, now = { fcs: { f1: fc('Beta', [1, 2, 3]) } }, mine = { fcs: { f1: fc('Gamma', [1, 2, 4]) } };
+  // what done() does: the three-way merge, applied without choices, then the base rebuilt for the clashes (the start copy's units)
+  const st = (x) => Object.assign(ET.newState(['Alba']), { modules: { submersibles: Object.assign({ fcs: {}, subs: {}, trips: {}, settings: {} }, JSON.parse(JSON.stringify(x))) } });
+  const target = st(now);
+  const res = ET.threeWay(port(from), port(now), port(mine));
+  assert.strictEqual(res.conflicts.length, 1); assert.strictEqual(fcOf(res.conflicts[0].local).name, 'Beta');
+  ET.applyMerge(target, res, {});
+  assert.deepStrictEqual(target.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4], 'applied without asking: this device\'s name, both sectors');
+  const flat = (p) => ET.threeWay(p, p, p).merged, start = flat(port(from));
+  const base = flat(port(from)); // the base the last sync left
+  res.conflicts.forEach((c) => { if (start.has(c.id)) base.set(c.id, start.get(c.id)); else base.delete(c.id); });
+  assert.strictEqual(base.get(FCK), start.get(FCK), 'the clashing unit is back at its start value');
+  // next sync: base = rebuilt base, local = the merged copy, remote = the cloud copy (the other device's version): asked once, with the combined list
+  const cloud = { fcs: { f1: fc('Gamma', [1, 2, 3, 4]) } };
+  const baseDoc = ET.portable(ET.applyMerge(st(from), { merged: base, conflicts: [] }, {}));
+  const next = ET.threeWay(baseDoc, ET.portable(target), port(cloud));
+  assert.strictEqual(next.conflicts.length, 1, 'asked on the next sync');
+  assert.deepStrictEqual(fcOf(next.conflicts[0].local).discovered, [1, 2, 3, 4]); assert.deepStrictEqual(fcOf(next.conflicts[0].remote).discovered, [1, 2, 3, 4]);
+  assert.deepStrictEqual([fcOf(next.conflicts[0].local).name, fcOf(next.conflicts[0].remote).name], ['Beta', 'Gamma']);
+  // the owner answers; the sync after that finds nothing to ask
+  const answered = ET.applyMerge(st(JSON.parse(JSON.stringify(target.modules.submersibles))), next, { [next.conflicts[0].id]: 'remote' });
+  const after = ET.threeWay(port(cloud), ET.portable(answered), port(cloud));
+  assert.strictEqual(after.conflicts.length, 0, 'not asked again');
 });

@@ -13,13 +13,27 @@
   var MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
   F.DEVICE_KEY = 'eveniunt-command-center-device';
 
-  // The sectors a free company ends with when the Setup form is saved: what is saved now plus what the form ticks, minus what the player
-  // unticked in the form (a sector the form never showed as ticked is never removed). Sorted whole numbers, no repeats.
+  // The sectors a free company ends with when the Setup form is saved: what is saved now plus the sectors the player ticked in the form
+  // (a new company's starting sectors count as ticked), minus what the player unticked in the form. A sector unticked elsewhere while the
+  // form was open is not added back; one the form never showed as ticked is never removed. Sorted whole numbers, no repeats.
   F.mergeTicks = function (saved, ticked, off) {
     var gone = {}, seen = {}, out = [];
     (off || []).forEach(function (id) { gone[id] = true; });
     (saved || []).concat(ticked || []).forEach(function (id) { if (Number.isInteger(id) && !gone[id] && !seen[id]) { seen[id] = true; out.push(id); } });
     return out.sort(function (a, b) { return a - b; });
+  };
+  // The sectors the player unticked in a saved form that the stored list holds again after a merge (another device or tab had them ticked).
+  F.cameBack = function (stored, off) {
+    var have = {}, seen = {};
+    (stored || []).forEach(function (id) { have[id] = true; });
+    return (off || []).filter(function (id) { if (!Number.isInteger(id) || !have[id] || seen[id]) return false; seen[id] = true; return true; }).sort(function (a, b) { return a - b; });
+  };
+  // The status line for them ('' when none came back).
+  F.cameBackLine = function (name, back) {
+    var n = (back || []).length, who = name || 'this free company';
+    if (!n) return '';
+    return n === 1 ? '1 sector you unticked for ' + who + ' was ticked on another device or tab and has been kept. Untick it again in Setup if it is wrong.'
+      : n + ' sectors you unticked for ' + who + ' were ticked on another device or tab and have been kept. Untick them again in Setup if they are wrong.';
   };
 
   // ------------------------------------------------------------------ typed game times

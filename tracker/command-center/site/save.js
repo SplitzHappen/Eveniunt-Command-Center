@@ -217,10 +217,10 @@
     for (const f of ['name', 'world', 'charId', 'order', 'unlockedSlots']) {
       const lv = L[f], rv = R[f], bv = B ? B[f] : undefined;
       let v, split = false;
-      if (same(lv, rv)) v = blank(lv) && blank(rv) ? (lv === null || rv === null ? null : undefined) : lv;
+      if (same(lv, rv)) v = blank(lv) && blank(rv) ? (lv === null || rv === null ? null : lv === '' || rv === '' ? '' : undefined) : lv; // both blank: whatever both sides had stays (null, then an empty text, then nothing)
       else if (B && same(lv, bv)) v = rv;
       else if (B && same(rv, bv)) v = lv;
-      else if (f === 'order') v = Math.min(lv ?? 0, rv ?? 0);
+      else if (f === 'order') v = lv == null ? rv : rv == null ? lv : Math.min(lv, rv); // a side without a position takes the other's
       else if (f === 'unlockedSlots') v = Math.max(lv ?? 1, rv ?? 1);
       else if (!B && blank(lv) !== blank(rv)) v = blank(lv) ? rv : lv;
       else split = true;
@@ -271,10 +271,11 @@
           const diff = FIELDS.filter((f) => JSON.stringify(L[f[0]] === undefined ? null : L[f[0]]) !== JSON.stringify(R[f[0]] === undefined ? null : R[f[0]]));
           if (diff.length) {
             const labels = diff.map((f) => f[1]), joined = labels.length === 1 ? labels[0] : labels.slice(0, -1).join(', ') + ' and ' + labels[labels.length - 1];
-            const side = (o) => diff.map((f) => f[1] + ' ' + f[2](o[f[0]])).join(', ');
+            const side = (o) => diff.map((f) => f[1] + ' ' + f[2](o[f[0]])).join(', '); // the dialog names the side ("This device:", "Other device:")
+            const nameDiffers = diff.some((f) => f[0] === 'name'), both = [...new Set([L.name, R.name].filter((x) => x !== undefined && x !== null && x !== ''))].map((x) => '“' + x + '”').join(' / ');
             const sameList = JSON.stringify(L.discovered === undefined ? null : L.discovered) === JSON.stringify(R.discovered === undefined ? null : R.discovered);
-            what = 'Submersibles: free company' + (n ? ' “' + n + '”' : '') + ': the ' + joined + (labels.length === 1 ? ' differs' : ' differ') + ' between your devices' + (sameList ? '; its discovered sectors are already combined and stay the same whichever you choose' : '');
-            return { who: '', what, local: 'this device: ' + side(L), remote: 'the other device: ' + side(R) };
+            what = 'Submersibles: free company' + (nameDiffers ? (both ? ' ' + both : '') : n ? ' “' + n + '”' : '') + ': the ' + joined + (labels.length === 1 ? ' differs' : ' differ') + ' between your devices' + (sameList ? '; its discovered sectors are already combined and stay the same whichever you choose' : '');
+            return { who: '', what, local: side(L), remote: side(R) };
           }
         }
       }

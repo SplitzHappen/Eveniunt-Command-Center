@@ -47,3 +47,20 @@ test('K3.4 a Log day heading counts and totals every voyage of its day, whatever
   assert.equal(LEDGER.shownNote(info[older.key].n, older.rows.length), 'showing 1 of 2');
   assert.equal(LEDGER.shownNote(3, 3), '', 'nothing hidden: nothing said');
 });
+
+test('R2 mergeTicks: the sectors written are saved now plus what the player ticked in the form, minus what was unticked; one unticked elsewhere is not added back', () => {
+  // the form opened with [1, 2, 3]; another tab unticked 3: the form ticked nothing, so 3 is not written back
+  assert.deepStrictEqual(F.mergeTicks([1, 2], [], []), [1, 2]);
+  assert.deepStrictEqual(F.mergeTicks([1, 2], [7], []), [1, 2, 7], 'a sector the player ticked in the form is written');
+  assert.deepStrictEqual(F.mergeTicks([1, 2], [7], [7]), [1, 2], 'ticked then unticked: not written');
+  assert.deepStrictEqual(F.mergeTicks(undefined, [1, 2], []), [1, 2], 'a new company: the starting sectors count as ticked');
+});
+
+test('R4 cameBack: the sectors unticked in the saved form that the stored list holds again, and the plain-words line', () => {
+  assert.deepStrictEqual(F.cameBack([1, 2, 3, 4], [3, 4, 9]), [3, 4]);
+  assert.deepStrictEqual(F.cameBack([1, 2], [3, 3]), []);
+  assert.deepStrictEqual(F.cameBack(undefined, [3]), []);
+  assert.strictEqual(F.cameBackLine('Alpha', [3, 4]), '2 sectors you unticked for Alpha were ticked on another device or tab and have been kept. Untick them again in Setup if they are wrong.');
+  assert.strictEqual(F.cameBackLine('Alpha', [3]), '1 sector you unticked for Alpha was ticked on another device or tab and has been kept. Untick it again in Setup if it is wrong.');
+  assert.strictEqual(F.cameBackLine('Alpha', []), '');
+});

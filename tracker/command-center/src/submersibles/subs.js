@@ -105,10 +105,17 @@
   function write() {
     clearTimeout(SH.timer); SH.timer = null;
     if (!SH.ready || SH.problem) return Promise.resolve();
+    var unticked = SH.unticked || {}; SH.unticked = {};
+    var said = SH.note || ''; SH.note = ''; // a line to keep on show after this write (the write clears the status line when it folds duplicates)
     return CC.writeSection('submersibles', S, { rev: SH.rev, base: SH.base }).then(function (r) {
       SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now(); SH.notify = (r.doc.modules.settings && r.doc.modules.settings.notify) || SH.notify;
-      if (r.merged) { setSection(r.section); render(); }
-      return foldBare().then(function (folded) { if (folded) setStatus(''); pushSync(); });
+      if (r.merged) {
+        setSection(r.section); render();
+        // R4: a sector the player unticked in the form just saved that another device or tab had ticked is kept (a merge never removes one); say so
+        var lines = Object.keys(unticked).map(function (id) { var f = r.section.fcs && r.section.fcs[id]; return f ? F.cameBackLine(f.name, F.cameBack(f.discovered, unticked[id])) : ''; }).filter(Boolean);
+        said = [said].concat(lines).filter(Boolean).join(' ');
+      }
+      return foldBare().then(function (folded) { if (folded) setStatus(''); if (said) setStatus(said); pushSync(); });
     }).catch(function (e) {
       // A refused write used to leave an old working copy and revision in place:
       // later edits then repeated the refusal or were replaced silently. Re-read
@@ -129,8 +136,8 @@
   // another page (the Tracker after a cloud sync, another window) saved: take its section, unless a change made here
   // is still waiting (that save merges with theirs)
   function reload() {
-    if (SH.timer || !SH.ready) return;
-    CC.read().then(function (r) {
+    if (SH.timer || !SH.ready) return Promise.resolve();
+    return CC.read().then(function (r) {
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
       if (SH.timer) return;
       var before = JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]);
@@ -140,6 +147,7 @@
       if (!RC.k.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
         syncTicks();
+        if (W) { var gone = !!(W.fcId && !S.fcs[W.fcId]); if (gone !== !!W.gone) { W.gone = gone; render(); } } // R1: the message at once, not only on Save
         if (JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]) !== before && !W) render();
         pushSync();
       });
@@ -648,14 +656,16 @@
     var ui = {}; try { ui = (JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).ui || {}; } catch (e) { /* none */ }
     var liveWorld = ui.live && ui.live.world;
     W = { fcId: fcId || null, step: 0,
-      fc: { name: fc ? fc.name || '' : '', world: fc ? fc.world || '' : liveWorld || '', charId: fc ? fc.charId || '' : '' },
+      fc: { name: fc ? fc.name || '' : '', world: fc ? fc.world || '' : liveWorld || '', charId: fc ? fc.charId || '' : '' }, start: {},
       subs: [1, 2, 3, 4].map(function (slot) {
         var e = subs[slot], s = e ? e.sub : null;
         return { id: e ? e.id : null, unlocked: slot === 1 || (fc ? slot <= (fc.unlockedSlots || 1) : false), name: s ? s.name || '' : '', rank: s && s.rank ? s.rank : 1,
-          parts: s && s.parts ? s.parts.slice() : [null, null, null, null], voyage: s ? s.voyage : null, voyMode: s && s.voyage ? 'keep' : 'none', voyIn: '', voyAt: '', t: {} };
+          parts: s && s.parts ? s.parts.slice() : [null, null, null, null], voyage: s ? s.voyage : null, voyMode: s && s.voyage ? 'keep' : 'none', voyIn: '', voyAt: '', t: {},
+          start: { name: s ? s.name || '' : '', rank: s && s.rank ? s.rank : 1 } };
       }),
-      disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()),
-      off: new Set(), slotOff: false, t: {} }; // off: sectors the player unticked in this form; slotOff: a slot was switched off here; t: fields of the company the player changed here
+      disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()), // disc: the ticks the form shows (saved now + on - off)
+      on: new Set(fc && fc.discovered ? [] : startSectors()), off: new Set(), t: {} }; // on: sectors the player ticked in this form (a new company starts with the starting sectors); off: sectors the player unticked here; t: fields of the company the player changed here
+    W.start = { name: W.fc.name, world: W.fc.world, charId: W.fc.charId }; W.slots0 = formSlots(); // what the form opened with: a field typed back to it is not a change; the slot count it started with
     if (at === 'sectors') W.step = steps().length - 1; // straight to the list of sectors (the same step and the same Save)
     UI.tab = 'setup'; keepUi(); render(); focusWizard();
   }
@@ -679,13 +689,14 @@
   function seaBulk(btn, on) {
     var sea = SEA[+btn.dataset.sea], det = btn.closest('details'), start = startSectors(), live = $('[data-sea-live]');
     var list = D.sectors.filter(function (x) { return x.sea === sea.id; });
-    list.forEach(function (x) { if (on) { W.disc.add(x.id); W.off.delete(x.id); } else if (start.indexOf(x.id) < 0 && W.disc.has(x.id)) { W.disc.delete(x.id); W.off.add(x.id); } });
+    list.forEach(function (x) { if (on) { W.disc.add(x.id); W.on.add(x.id); W.off.delete(x.id); } else if (start.indexOf(x.id) < 0 && W.disc.has(x.id)) { W.disc.delete(x.id); W.on.delete(x.id); W.off.add(x.id); } });
     $$('.ticks input', det).forEach(function (b) { b.checked = W.disc.has(+b.value); });
     var got = list.filter(function (x) { return W.disc.has(x.id); }).length;
     det.querySelector('summary .muted').textContent = got + ' of ' + list.length;
     refreshSeaNotes();
     if (live) live.textContent = on ? 'All ' + list.length + ' sectors of ' + sea.name + ' ticked' : (got ? 'Cleared; ' + got + ' of ' + list.length + ' sectors of ' + sea.name + ' stay ticked because they are open from the start' : 'All sectors of ' + sea.name + ' cleared');
   }
+  function formSlots() { var u = 1; for (var i = 1; i < 4 && W.subs[i].unlocked; i++) u = i + 1; return u; }
   function focusWizard() { var el = $('#view .wiz input, #view .wiz select'); if (el) el.focus(); }
   function steps() { var out = ['fc']; for (var i = 0; i < 4; i++) { if (i === 0 || W.subs[i].unlocked || (i > 0 && W.subs[i - 1].unlocked)) out.push('sub' + (i + 1)); if (i > 0 && !W.subs[i].unlocked) break; } out.push('sectors'); return out; }
   function worldOptions(sel) {
@@ -715,7 +726,10 @@
       '<div class="voy-at"' + (s.voyMode === 'at' ? '' : ' hidden') + '><input class="inp" type="datetime-local" data-w="voyAt" value="' + esc(s.voyAt) + '" aria-label="Return date and time"></div>' +
       '<p class="hint" data-voy-hint></p></fieldset>';
   }
+  var GONE = 'This free company was removed on another device or in another tab, so nothing was saved. Close this form; to bring the company back, set it up again.';
   function wizardHtml() {
+    if (W.fcId && !S.fcs[W.fcId]) return '<section class="panel wiz" data-step="gone"><header class="wiz-head"><h2>Edit free company</h2></header><div class="wiz-body"><div class="note bad" role="alert" data-wiz-gone>' + esc(GONE) + '</div></div>' +
+      '<footer class="wiz-foot"><span></span><span class="row"><button type="button" class="btn primary" data-act="wcancel">Close</button></span></footer></section>';
     var st = steps(), key = st[Math.min(W.step, st.length - 1)], n = Math.min(W.step, st.length - 1), body = '';
     if (key === 'fc') {
       body = '<h3>Free company</h3>' +
@@ -775,35 +789,51 @@
     return '';
   }
   // K1: what the form writes over the saved copy is worked out against the copy saved NOW (another tab, a cloud sync or the return sheet
-  // may have saved since the form opened): a field the player did not change in this form keeps its saved-now value, discoveries are
-  // the saved-now list plus what the form ticks minus what the player unticked, and the slot count never goes down unless a slot was switched off here.
+  // may have saved since the form opened): a field the player did not change in this form (or typed back to what it was when the form
+  // opened) keeps its saved-now value, discoveries are the saved-now list plus the sectors ticked in this form minus what the player unticked,
+  // and the slot count goes down only when the form ended below the count it started with.
+  // R1: the saved copy is read first; a company (or a submarine) removed elsewhere is never written back.
   function saveWizard() {
+    if (!W) return;
+    var go = function () { if (W) writeWizard(); };
+    Promise.resolve(reload()).then(go, go);
+  }
+  function writeWizard() {
     var fcId = W.fcId || F.newId('f'), now = W.fcId ? S.fcs[W.fcId] : null; // the free company as saved now (none for a new one)
+    if (W.fcId && !now) { W.gone = true; render(); return; } // removed elsewhere: nothing is written, the form says so
     var order = W.fcId && S.fcs[fcId] ? S.fcs[fcId].order : fcList().reduce(function (m, f) { return Math.max(m, (f.fc.order || 0) + 1); }, 0);
-    var unlocked = 1; for (var i = 1; i < 4 && W.subs[i].unlocked; i++) unlocked = i + 1;
-    if (now && !W.slotOff) unlocked = Math.max(unlocked, Math.min(4, now.unlockedSlots || 1));
-    var fc = { name: now && !W.t.name ? now.name : W.fc.name.trim(), unlockedSlots: unlocked, order: order || 0, discovered: F.mergeTicks(now && now.discovered, Array.from(W.disc), Array.from(W.off)), charId: (now && !W.t.charId ? now.charId : W.fc.charId) || null };
-    var world = now && !W.t.world ? now.world : W.fc.world;
+    var unlocked = formSlots();
+    if (now && !(unlocked < W.slots0)) unlocked = Math.max(unlocked, Math.min(4, now.unlockedSlots || 1));
+    var tName = W.t.name && W.fc.name.trim() !== (W.start.name || '').trim(), tWorld = W.t.world && W.fc.world !== W.start.world, tChar = W.t.charId && W.fc.charId !== W.start.charId;
+    var disc = F.mergeTicks(now && now.discovered, Array.from(W.on), Array.from(W.off));
+    var fc = { name: now && !tName ? now.name : W.fc.name.trim(), unlockedSlots: unlocked, order: order || 0, discovered: disc, charId: (now && !tChar ? now.charId : W.fc.charId) || null };
+    var world = now && !tWorld ? now.world : W.fc.world;
     if (world) fc.world = world;
     S.fcs[fcId] = fc;
+    var missing = [];
     W.subs.forEach(function (s, j) {
       if (!s.unlocked) return; // a slot switched off keeps its sub record; it shows as Locked and nothing is deleted
+      if (s.id && !S.subs[s.id]) { missing.push(s.start.name || 'Sub ' + (j + 1)); return; } // removed elsewhere while the form was open: not written back
       var id = s.id || F.newId('s'), prev = S.subs[id] || {}, had = !!S.subs[id], t = s.t || {};
-      var rank = had && !t.rank && prev.rank ? prev.rank : +s.rank;
-      var rec = { fcId: fcId, slot: j + 1, name: had && !t.name ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
+      var tSubName = t.name && s.name.trim() !== (s.start.name || '').trim(), tRank = t.rank && +s.rank !== +s.start.rank;
+      var rank = had && !tRank && prev.rank ? prev.rank : +s.rank;
+      var rec = { fcId: fcId, slot: j + 1, name: had && !tSubName ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
       if (prev.expIntoRank != null && prev.rank === rec.rank) rec.expIntoRank = prev.expIntoRank; // a new rank starts with no known progress
       if (prev.expExact && prev.rank === rec.rank && (s.voyMode === 'keep' || !prev.voyage || !t.voyage)) rec.expExact = true; // a rank changed in Setup, or a voyage replaced unlogged, is no longer the game's exact point
       var parts = had && !t.parts ? prev.parts : s.parts;
       if (parts && parts.length === 4 && parts.every(function (p) { return p && PART[p] && CLASS[PART[p].class].rank <= rec.rank; })) rec.parts = parts.slice();
       S.subs[id] = rec;
     });
+    if (W.off.size) { SH.unticked = SH.unticked || {}; SH.unticked[fcId] = Array.from(W.off); } // R4: told of it if a merge brings any back
     W = null; UI.tab = 'board'; keepUi(); schedule();
+    if (missing.length) setStatus(SH.note = missing.map(function (n) { return '“' + n + '”'; }).join(', ') + (missing.length === 1 ? ' was' : ' were') + ' removed on another device or in another tab while the form was open, so ' + (missing.length === 1 ? 'it was' : 'they were') + ' not saved.');
   }
   // the form's ticks follow discoveries that arrive while it is open (never one the player unticked here); the boxes change in place, so focus and scroll stay
   function syncTicks() {
     if (!W) return;
     var now = W.fcId ? S.fcs[W.fcId] : null;
-    if (now) (now.discovered || []).forEach(function (id) { if (!W.off.has(id)) W.disc.add(id); });
+    if (W.fcId && !now) return; // removed elsewhere: reload() shows the message
+    W.disc = new Set(F.mergeTicks(now && now.discovered, Array.from(W.on), Array.from(W.off))); // saved now + ticked here - unticked here
     // a voyage changed elsewhere for a submarine whose voyage the player has not touched here: the "Keep: back ..." label shows the
     // new time (only its text changes: no redraw, so focus and scroll stay)
     W.subs.forEach(function (ws, i) {
@@ -1777,8 +1807,8 @@
     if (key === 'fc.name') { W.fc.name = t.value; W.t.name = true; }
     else if (key === 'fc.world') { W.fc.world = t.value; W.t.world = true; }
     else if (key === 'fc.charId') { W.fc.charId = t.value; W.t.charId = true; }
-    else if (key === 'disc') { if (t.checked) { W.disc.add(+t.value); W.off.delete(+t.value); } else { W.disc.delete(+t.value); W.off.add(+t.value); } var sum = t.closest('details').querySelector('summary .muted'); var all = t.closest('.ticks').querySelectorAll('input'); sum.textContent = Array.prototype.filter.call(all, function (x) { return x.checked; }).length + ' of ' + all.length; refreshSeaNotes(); }
-    else if (s && key === 'unlocked') { s.unlocked = t.checked; if (!t.checked) { W.slotOff = true; for (var k = W.subs.indexOf(s) + 1; k < 4; k++) W.subs[k].unlocked = false; } render(); }
+    else if (key === 'disc') { if (t.checked) { W.disc.add(+t.value); W.on.add(+t.value); W.off.delete(+t.value); } else { W.disc.delete(+t.value); W.on.delete(+t.value); W.off.add(+t.value); } var sum = t.closest('details').querySelector('summary .muted'); var all = t.closest('.ticks').querySelectorAll('input'); sum.textContent = Array.prototype.filter.call(all, function (x) { return x.checked; }).length + ' of ' + all.length; refreshSeaNotes(); }
+    else if (s && key === 'unlocked') { s.unlocked = t.checked; if (!t.checked) { for (var k = W.subs.indexOf(s) + 1; k < 4; k++) W.subs[k].unlocked = false; } render(); }
     else if (s && key === 'name') { s.name = t.value; s.t.name = true; }
     else if (s && key === 'rank') {
       s.rank = t.value === '' ? '' : +t.value; s.t.rank = true; s.t.parts = true; // a new rank refreshes the parts lists, so the form then writes the parts

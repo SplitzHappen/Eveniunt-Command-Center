@@ -4827,6 +4827,18 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/']]) {
         const pg = await cx.newPage(); await pg.goto(url); await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {});
         C.pages[name] = await pg.evaluate(() => typeof window.CC === 'object' && window.CC ? typeof window.CC.mergeUnit : 'no CC');
+        // the unit test T2 replayed in this built page: tab A adds sector 4, tab B (stale stamp and base) adds sector 5 and a slot
+        C.t2 = C.t2 || {};
+        C.t2[name] = await pg.evaluate(async () => {
+          if (typeof window.CC !== 'object' || !window.CC || typeof CC.writeSection !== 'function') return null;
+          const sec = { fcs: { f1: { name: 'Alpha Company', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] } }, subs: {}, trips: {}, settings: {} };
+          const first = await CC.writeSection('submersibles', sec, null), base = JSON.parse(JSON.stringify(first.section));
+          const a = JSON.parse(JSON.stringify(base)); a.fcs.f1.discovered = [1, 2, 3, 4];
+          const b = JSON.parse(JSON.stringify(base)); b.fcs.f1.discovered = [1, 2, 3, 5]; b.fcs.f1.unlockedSlots = 3;
+          await CC.writeSection('submersibles', a, { rev: first.rev, base });
+          const w = await CC.writeSection('submersibles', b, { rev: first.rev, base });
+          return { merged: w.merged, disc: w.section.fcs.f1.discovered, slots: w.section.fcs.f1.unlockedSlots, stored: CC.checkDoc((await CC.read()).raw).modules.submersibles.fcs.f1.discovered };
+        });
         if (name === 'tracker') {
           await pg.waitForFunction(() => window.ET && typeof window.ET.threeWay === 'function', null, { timeout: 30000 }).catch(() => {});
           C.replay = await pg.evaluate(() => {
@@ -4846,8 +4858,133 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await cx.close();
       const okA = !!A.newSector && A.afterP1.includes(A.newSector) && A.merged.merged === true && A.final.disc.includes(A.newSector) && A.final.disc.includes(34) && A.final.slots === 2 && !!A.shown && A.shown.indexOf(A.final.disc.length + ' of ') === 0 && A.errors.length === 0;
       const okB = !!B.newSector && B.merged.merged === true && same(B.final.disc, [1, 2, 34]) && B.final.slots === 2 && !B.final.disc.includes(B.newSector) && B.errors.length === 0;
-      const okC = Object.values(C.pages).every((t) => t === 'function') && !!C.replay && C.replay.t4.conflicts === 0 && same(C.replay.t4.disc, [1, 2, 3, 4, 5]) && C.replay.t6.conflicts === 1 && same(C.replay.t6.local, [1, 2, 3, 4, 5]) && same(C.replay.t6.remote, [1, 2, 3, 4, 5]) && /name differs/.test(C.replay.t6.what) && /already combined/.test(C.replay.t6.what) && real(ce).length === 0;
-      record('C119', 'A free company changed in two tabs keeps both discoveries: tab 1 records a sector on the return sheet, tab 2 (stale stamp and base) saves another sector and a slot: the stored list holds both, the slot is kept and tab 1 shows the new count without a reload; with CC.mergeUnit answering nothing in tab 2 (an old copy) its whole record is stored as before; the Tracker, the Command Center and the Atelier each carry CC.mergeUnit, and an in-page ET.threeWay replay of two added sectors (no question) and a name changed on both (one question, the same combined list in both versions) gives the unit-test results', okA && okB && okC, { A, B, C });
+      const okC = Object.values(C.pages).every((t) => t === 'function') && ['tracker', 'commandCenter', 'atelier'].every((n) => C.t2[n] && C.t2[n].merged === true && same(C.t2[n].disc, [1, 2, 3, 4, 5]) && same(C.t2[n].stored, [1, 2, 3, 4, 5]) && C.t2[n].slots === 3) && !!C.replay && C.replay.t4.conflicts === 0 && same(C.replay.t4.disc, [1, 2, 3, 4, 5]) && C.replay.t6.conflicts === 1 && same(C.replay.t6.local, [1, 2, 3, 4, 5]) && same(C.replay.t6.remote, [1, 2, 3, 4, 5]) && /name differs/.test(C.replay.t6.what) && /already combined/.test(C.replay.t6.what) && real(ce).length === 0;
+      record('C119', 'A free company changed in two tabs keeps both discoveries: tab 1 records a sector on the return sheet, tab 2 (stale stamp and base) saves another sector and a slot: the stored list holds both, the slot is kept and tab 1 shows the new count without a reload; with CC.mergeUnit answering nothing in tab 2 (an old copy) its whole record is stored as before; the Tracker, the Command Center and the Atelier each carry CC.mergeUnit, and the two-tab merge of the unit test T2 (one tab adds a sector, the other adds a sector and a slot with a stale stamp: both sectors and the slot are stored) replayed in each of the three built pages, and an in-page ET.threeWay replay of two added sectors (no question) and a name changed on both (one question, the same combined list in both versions) gives the unit-test results', okA && okB && okC, { A, B, C });
+      server.close();
+    });
+
+    // ── C120 (review fix R1) A free company removed elsewhere does not come back when its open Setup form is saved: (a) a form whose page was never told
+    //    (it cannot hear the other tab): Save writes nothing, the company and its submarines stay removed, the form stays open and says so with a Close button;
+    //    (b) a form whose page is told: the message shows at once, before Save; Close ends the form; (c) a submarine removed elsewhere is not written back
+    //    (the company is), and the status line names it. No page error. ──
+    await guard('C120', async () => {
+      const server = await start(PORT5);
+      const SEC = "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] }; sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub A2', rank: 40, parts: [3, 4, 1, 2] };";
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const stored = (pg) => pg.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { fcs: Object.keys(s.fcs), subs: Object.keys(s.subs) }; });
+      const scenario = async (deaf, remove) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        if (deaf) await p1.addInitScript(() => { window.BroadcastChannel = undefined; });
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, SEC); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=sectors][data-fc=fa]'); await p1.waitForSelector('[data-act=wsave]');
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        await p2.evaluate(async (what) => {
+          const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+          if (what === 'company') { sec.fcs = {}; sec.subs = {}; } else delete sec.subs.a1;
+          await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+        }, remove);
+        const gone = () => p1.evaluate(() => { const g = document.querySelector('[data-wiz-gone]'); return { text: g ? g.textContent.trim() : null, close: !!document.querySelector('.wiz [data-act=wcancel]'), open: !!document.querySelector('.wiz'), status: document.querySelector('#status').textContent.trim() }; });
+        let before = null;
+        if (!deaf) { await p1.waitForTimeout(1500); before = await gone(); }
+        else { await p1.waitForTimeout(300); }
+        if (await p1.$('[data-act=wsave]')) await p1.click('[data-act=wsave]');
+        await p1.waitForTimeout(1500);
+        const after = await gone(), kept = await stored(p2);
+        let closed = null;
+        if (remove === 'company') { await p1.click('.wiz [data-act=wcancel]'); await p1.waitForTimeout(300); closed = await p1.evaluate(() => !document.querySelector('.wiz')); }
+        await ctx.close();
+        return { deaf, remove, before, after, kept, closed, errors: real(errors) };
+      };
+      const A = await scenario(true, 'company'), B = await scenario(false, 'company'), C = await scenario(true, 'sub');
+      const MSG = 'This free company was removed on another device or in another tab, so nothing was saved. Close this form; to bring the company back, set it up again.';
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const ok = [A, B].every((x) => same(x.kept, { fcs: [], subs: [] }) && x.after.text === MSG && x.after.close && x.after.open && x.closed === true && x.errors.length === 0) && B.before.text === MSG &&
+        same(C.kept, { fcs: ['fa'], subs: ['a2'] }) && /Sub A1/.test(C.after.status) && /removed/.test(C.after.status) && C.after.text === null && C.errors.length === 0;
+      record('C120', 'A free company removed elsewhere does not come back (review fix R1): with its Setup form open and the removal made in another tab, Save writes nothing (also when the page was never told), the company and its submarines stay removed, the form stays open, says "' + MSG + '" with a Close button, and shows it at once when the page is told; a submarine removed elsewhere is not written back and the status line names it', ok, { A, B, C });
+      server.close();
+    });
+
+    // ── C121 (review fix R2) The Setup form's save keeps what changed elsewhere unless the player changed it here: (a) a slot switched off and on again in the form does not
+    //    lower a slot count raised elsewhere; (b) a sector unticked in another tab while the form is open is not added back; (c) a name (company and submarine) typed back to what
+    //    it was when the form opened does not overwrite a rename made elsewhere. ──
+    await guard('C121', async () => {
+      const server = await start(PORT5);
+      const SEC = "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] }; sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub A2', rank: 40, parts: [3, 4, 1, 2] };";
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const stored = (pg) => pg.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { disc: s.fcs.fa.discovered, slots: s.fcs.fa.unlockedSlots, name: s.fcs.fa.name, a1: s.subs.a1 && s.subs.a1.name }; });
+      const toSave = async (p) => { for (let i = 0; i < 8; i++) { if (await p.$('[data-act=wsave]')) return; await p.click('[data-act=wnext]'); } };
+      const scenario = async (act, other, afterOther) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, SEC); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+        await act(p1);
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        await p2.evaluate(async (src) => {
+          const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+          new Function('sec', src)(sec); await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+        }, other);
+        await p1.bringToFront(); await p1.waitForTimeout(1500);
+        if (afterOther) await afterOther(p1);
+        await toSave(p1); await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+        const after = await stored(p1);
+        await ctx.close();
+        return { after, errors: real(errors) };
+      };
+      // (a) slot 2 off and on again; another tab raised the count to 3
+      const A = await scenario(async (p) => { await p.click('[data-act=wnext]'); await p.click('[data-act=wnext]'); await p.uncheck('.wiz input[data-w=unlocked]'); await p.check('.wiz input[data-w=unlocked]'); }, 'sec.fcs.fa.unlockedSlots = 3;');
+      // (b) the sector list is open; another tab unticks sector 3
+      let shownB = null;
+      const B = await scenario(async (p) => { await toSave(p); }, 'sec.fcs.fa.discovered = [1, 2];', async (p) => { shownB = await p.evaluate(() => [...document.querySelectorAll('.wiz input[data-w=disc]')].filter((b) => b.checked).map((b) => +b.value)); });
+      // (c) the company's name and its first submarine's name typed back to what they were; another tab renamed both
+      const Cc = await scenario(async (p) => {
+        await p.fill('.wiz input[data-w="fc.name"]', 'Alpha Company X'); await p.fill('.wiz input[data-w="fc.name"]', 'Alpha Company');
+        await p.click('[data-act=wnext]'); await p.fill('.wiz input[data-w=name]', 'Sub A1 X'); await p.fill('.wiz input[data-w=name]', 'Sub A1');
+      }, "sec.fcs.fa.name = 'Alpha Renamed'; sec.subs.a1.name = 'Sub Renamed';");
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const ok = A.after.slots === 3 && same(B.after.disc, [1, 2]) && same(shownB, [1, 2]) && Cc.after.name === 'Alpha Renamed' && Cc.after.a1 === 'Sub Renamed' && [A, B, Cc].every((x) => x.errors.length === 0);
+      record('C121', 'Setup form keeps what changed elsewhere unless the player changed it here (review fix R2): a slot switched off and on again in the form leaves a count of 3 raised elsewhere at 3; a sector unticked in another tab while the sector list is open is shown unticked and not added back ([1, 2]); a company name and a submarine name typed back to what they were do not overwrite a rename made elsewhere', ok, { A, B, shownB, C: Cc });
+      server.close();
+    });
+
+    // ── C122 (review fix R4) When this page's own save is merged with a newer one and a sector the player unticked in the Setup form comes back (another tab had it ticked), a status
+    //    line says so in plain words, with the count: 1 sector, 2 sectors; no line when nothing was merged. ──
+    await guard('C122', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const scenario = async (unticks, interfere) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3, 5] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };");
+        await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=sectors][data-fc=fa]'); await p1.waitForSelector('[data-act=wsave]');
+        for (const id of unticks) await p1.uncheck('.wiz input[data-w=disc][value="' + id + '"]');
+        // another tab changes the same company just before this page's own write goes through (the page's stamp is then old, so the write is merged)
+        if (interfere) await p1.evaluate(() => {
+          const real = CC.writeSection; let done = false;
+          CC.writeSection = async function (name) {
+            if (name === 'submersibles' && !done) {
+              done = true; const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+              sec.fcs.fa.discovered = sec.fcs.fa.discovered.concat([4]); await real.call(CC, name, sec, { rev: r.rev, base });
+            }
+            return real.apply(this, arguments);
+          };
+        });
+        await p1.click('[data-act=wsave]'); await p1.waitForTimeout(2000);
+        const out = await p1.evaluate(async () => ({ status: document.querySelector('#status').textContent.trim(), disc: CC.checkDoc((await CC.read()).raw).modules.submersibles.fcs.fa.discovered }));
+        await ctx.close();
+        return Object.assign(out, { errors: real(errors) });
+      };
+      const one = await scenario([3], true), two = await scenario([3, 5], true), none = await scenario([3], false);
+      const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+      const ok = one.status === '1 sector you unticked for Alpha Company was ticked on another device or tab and has been kept. Untick it again in Setup if it is wrong.' && same(one.disc, [1, 2, 3, 4, 5]) &&
+        two.status === '2 sectors you unticked for Alpha Company were ticked on another device or tab and have been kept. Untick them again in Setup if they are wrong.' && same(two.disc, [1, 2, 3, 4, 5]) &&
+        !/unticked/.test(none.status) && same(none.disc, [1, 2, 5]) && [one, two, none].every((x) => x.errors.length === 0);
+      record('C122', 'A sync that brings an unticked sector back says so (review fix R4): with sector 3 unticked in the Setup form and another tab saving the company first, the merged save keeps it and the status line says "1 sector you unticked for Alpha Company was ticked on another device or tab and has been kept. Untick it again in Setup if it is wrong."; with sectors 3 and 5 unticked it says "2 sectors ... were ticked ... have been kept. Untick them again ..."; with nothing merged there is no such line and the untick stands', ok, { one, two, none });
       server.close();
     });
 
