@@ -174,7 +174,9 @@
   function render() {
     if (!D) return;
     var ae = document.activeElement, keep = ae && ae.matches && ae.matches('[data-rec-find]') ? { i: ae.dataset.recFind, a: ae.selectionStart, b: ae.selectionEnd } : null; // the narrowing box being typed in
+    var keepPicker = !!(ae && ae.matches && ae.matches('[data-pref=priceWorld]')); // the price-place picker: a redraw never takes the focus off it
     try { return renderView(); } finally {
+      if (keepPicker && UI.tab === 'earn') { var pick = $('[data-pref=priceWorld]'); if (pick) pick.focus(); }
       if (keep) { var box = $('[data-rec-find="' + keep.i + '"]'); if (box && !box.disabled) { box.focus(); try { box.setSelectionRange(keep.a, keep.b); } catch (e) { /* none */ } } }
     }
   }
@@ -185,9 +187,9 @@
     if (SH.problem) { main.innerHTML = '<div class="note bad"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.</div>'; return; }
     if (UI.tab === 'board') main.innerHTML = boardHtml();
     else if (UI.tab === 'setup') { main.innerHTML = safeNotify() + (W ? wizardHtml() : setupHtml()); if (!W) measureSize(); pushStatus(); }
-    else if (UI.tab === 'log') { main.innerHTML = logHtml(); loadPrices(false); }
+    else if (UI.tab === 'log') { main.innerHTML = logHtml(); PRICES.drawn = priceSig(); loadPrices(false); }
     else if (UI.tab === 'map') main.innerHTML = mapHtml();
-    else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); loadPrices(false); }
+    else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); PRICES.drawn = priceSig(); loadPrices(false); }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel empty-state"><h2>' + esc(t[1]) + '</h2><p class="muted empty-line">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
@@ -276,7 +278,7 @@
     else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back <span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span>' + (up && up.rank > s.rank ? ' · rank → ' + up.rank + '+' : '') + '</span>'; said = 'waiting ' + F.fmtDur(now - v.returnAt) + ' · back ' + F.fmtClock(v.returnAt, now); }
     else if (st === 'idle') { info = '<span class="when">not sent</span>'; said = 'not sent'; }
     var quick = '', a = null;
-    if (st === 'back' || st === 'idle') { a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '">Send ▸ ' + esc(ADV.routeText(a.plan.route)) + ' · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</button>'; }
+    if (st === 'back' || st === 'idle') { a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '" aria-label="' + esc('Send ▸ ' + ADV.routeText(a.plan.route) + ' · back ' + F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '"><span class="q-v">Send</span><span class="q-r"> ▸ ' + esc(ADV.routeText(a.plan.route)) + '</span><span class="q-t"> · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</span></button>'; } // W-e: the same text, in parts, so the dense lane can show the verb and the time only (the lane already draws the route as discs); the accessible name is the whole
     var gauge = '', vp = st === 'out' ? F.voyageProgress(v, now) : null;
     if (vp !== null) gauge = '<span class="vgauge" aria-hidden="true" data-voy data-sent="' + v.sentAt + '" data-ret="' + v.returnAt + '" style="--p:' + vp.toFixed(4) + '"></span><span class="vgauge-sr" data-voy-text>Voyage ' + Math.floor(vp * 100) + ' percent done</span>';
     var route = v && v.route && v.route.length ? '<span class="route" title="Route as entered">' + esc(routeText(v.route)) + '</span>' : '';
@@ -534,7 +536,8 @@
         '<button type="button" class="btn sm" data-rec="down-' + esc(k) + '" aria-label="' + esc('Move down: ' + name) + '"' + (i === n - 1 ? ' disabled' : '') + '>Move down</button></span></li>' + (k === 'level' ? topSkipHtml() : '');
     }).join('');
     // W35 (Rev4.7): the panel's head says its state, here the objective that decides first and whether fuel saving is on (redrawn with the body, so a change of order shows at once)
-    return '<p class="head-state" aria-hidden="true">First: ' + esc(R.LABEL[c.order[0]]) + (c.fuel ? ' · fuel saving on' : '') + '</p>' +
+    var nLoot = R.active(c).length; // W-a: also whether fuel efficiency is on and its allowance, and how many loot items are chosen
+    return '<p class="head-state" aria-hidden="true">First: ' + esc(R.LABEL[c.order[0]]) + ' · ' + (c.fuel ? 'Fuel: on, ' + c.giveUp + '%' : 'Fuel: off') + ' · Loot: ' + (nLoot ? nLoot + ' item' + (nLoot === 1 ? '' : 's') : 'none') + '</p>' +
       '<label class="opt big"><input type="checkbox" data-rec="fuel"' + (c.fuel ? ' checked' : '') + '> <span>Prioritise fuel efficiency</span></label>' +
       '<p class="rec-give"><label for="rec-give">To save fuel, give up at most <b>' + c.giveUp + '%</b> of the best result for my top priority</label><br>' +
       '<input type="range" id="rec-give" data-rec="giveUp" min="' + R.GIVE_MIN + '" max="' + R.GIVE_MAX + '" step="' + R.GIVE_STEP + '" value="' + c.giveUp + '"' + (c.fuel ? '' : ' disabled') + '> ' +
@@ -587,15 +590,23 @@
     else if (v === 'give-default') recsChange(function (c) { c.giveUp = R.GIVE_UP; }, v, 'The allowance is back to ' + R.GIVE_UP + '%.', 'giveUp');
   }
   function setupHtml() {
-    var fcs = fcList();
-    return '<section class="panel"><h2>Free companies</h2><p class="head-state" aria-hidden="true">' + fcs.length + ' set up</p><p class="muted">' + fcs.length + ' set up' + (fcs.length < MAX_SUGGESTED_FCS ? ' (room on the board for ' + MAX_SUGGESTED_FCS + ' side by side; more also work)' : '') + '. Everything stays editable: rename, change rank or parts, move a free company to another character.</p>' +
+    var fcs = fcList(), nSubs = fcs.reduce(function (n, f) { return n + Object.keys(subsOf(f.id)).length; }, 0); // W-a: the head says companies and submarines
+    var fcPanel = fcs.length ? fcListHtml(fcs, nSubs) : emptyHtml({ id: 'setup-none', kick: 'No free company yet', title: 'Set up your first free company', word: 'Setup', // W-b: Setup with no free company, in the empty-state pattern
+      text: esc('Add a free company and its submarines. The guided setup asks for its world, each submarine\'s rank and parts, and the sectors already discovered.'),
+      act: '<button type="button" class="btn primary" data-act="new">Start the setup</button>', aside: 'about 3 to 5 minutes per free company' });
+    return fcPanel + setupRestHtml();
+  }
+  function fcListHtml(fcs, nSubs) {
+    return '<section class="panel"><h2>Free companies</h2><p class="head-state" aria-hidden="true">' + fcs.length + (fcs.length === 1 ? ' company, ' : ' companies, ') + nSubs + (nSubs === 1 ? ' submarine' : ' submarines') + '</p><p class="muted">' + fcs.length + ' set up' + (fcs.length < MAX_SUGGESTED_FCS ? ' (room on the board for ' + MAX_SUGGESTED_FCS + ' side by side; more also work)' : '') + '. Everything stays editable: rename, change rank or parts, move a free company to another character.</p>' +
       '<ul class="fc-list">' + fcs.map(function (f) {
         var n = Object.keys(subsOf(f.id)).length;
         return '<li><span><b>' + esc(f.fc.name || 'Unnamed') + '</b> <span class="muted">' + esc([f.fc.world, charName(f.fc.charId)].filter(Boolean).join(' · ')) + ' · ' + (f.fc.unlockedSlots || 1) + ' of 4 slots unlocked · ' + n + ' sub' + (n === 1 ? '' : 's') + '</span></span>' +
           '<span class="row"><button type="button" class="btn sm" data-act="edit" data-fc="' + esc(f.id) + '">Edit</button><button type="button" class="btn sm ghost" data-act="remove" data-fc="' + esc(f.id) + '">Remove</button></span>' +
           '<span class="fc-sectors"><button type="button" class="btn sm" data-act="sectors" data-fc="' + esc(f.id) + '" title="Opens the list of sectors to tick; Save keeps it">Sectors already discovered: <b>' + (f.fc.discovered || []).length + ' of ' + D.sectors.length + '</b></button></span></li>';
-      }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>' +
-      shownPanelHtml() +
+      }).join('') + '</ul><p><button type="button" class="btn primary" data-act="new">Add a free company</button></p></section>';
+  }
+  function setupRestHtml() {
+    return shownPanelHtml() +
       recsHtml() + accuracyHtml() + '<section class="panel size"><h2>Size of your save</h2><div class="muted" data-size>Measuring…</div></section>' + '<section class="panel"><h2>Backups and other devices</h2><p class="muted">This module is part of the one save. The Tracker\'s Settings make backups and transfer codes and run cloud sync, and they carry your free companies, submarines and voyages too.</p></section>';
   }
 
@@ -1055,7 +1066,7 @@
       var logged = d.rows.filter(function (r) { return r.v.logged; }), gil = logged.reduce(function (n, r) { return n + Math.round(+r.v.gil || 0); }, 0);
       return '<div class="log-day" data-day="' + d.key + '"><b>' + esc(LEDGER.dayLabel(d.at, now)) + '</b> <span>' + d.rows.length + ' voyage' + (d.rows.length === 1 ? '' : 's') + ' · ' + (logged.length ? fmtGil(gil) + ' logged' : 'nothing logged') + '</span></div>' + d.rows.map(rowHtml).join('');
     }).join('');
-    return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p><div class="log-list">' + ledger + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
+    return '<section class="panel wide-panel"><h2>Log</h2><p class="muted">' + list.length + ' voyage' + (list.length === 1 ? '' : 's') + ' kept. Tap one to enter or change what came back.</p>' + (priceNote() ? '<p class="hint" data-price-note>' + esc(priceNote()) + '</p>' : '') + '<div class="log-list">' + ledger + '</div>' + (list.length > LOGSHOW ? '<p><button type="button" class="btn sm" data-act="log-more">Show more</button></p>' : '') + '</section>';
   }
   // ------------------------------------------------------------------ the Map tab (step S4-1): read-only; writes nothing to the save
   function mapState() {
@@ -1262,7 +1273,7 @@
   }
 
   // ------------------------------------------------------------------ the Earnings tab (design 3.5)
-  var PRICES = { scope: null, at: 0, prices: {}, busy: false, error: null };
+  var PRICES = { scope: null, at: 0, prices: {}, busy: false, error: null, tried: null, drawn: '' };
   function priceScope() { return (S.settings.prefs && S.settings.prefs.priceWorld) || sharedScope(); }
   function sharedScope() { // the place the Tracker's live prices use, else the first free company's world
     try { // the same rule as the Tracker's Market Board: one world, one data centre or (default) the region
@@ -1274,14 +1285,22 @@
     var fc = fcList()[0]; return (fc && fc.fc.world) || 'North-America';
   }
   function loggedIds() { var ids = {}; Object.keys(S.trips).forEach(function (k) { (S.trips[k].items || []).forEach(function (x) { ids[x[0]] = 1; }); }); return Object.keys(ids).map(Number); }
+  // What the price lines of a drawn screen show: a fetch redraws only when this changes.
+  function priceSig() { return JSON.stringify([PRICES.scope, PRICES.at, PRICES.busy, priceNote(), PRICES.prices]); }
+  // The plain message for a failed fetch (only for the place being shown), with the time of the last real fetch if there is one.
+  function priceNote() { return PRICES.error && PRICES.tried && PRICES.tried.scope === priceScope() ? EARN.failureNote(PRICES.at, function (t) { return F.fmtClock(t, Date.now()); }) : ''; }
+  // An automatic attempt happens at most once in 15 minutes per price place, whatever its outcome; Refresh (force) tries at once.
   function loadPrices(force) {
-    var scope = priceScope(), ids = loggedIds();
+    var scope = priceScope(), ids = loggedIds(), now = Date.now();
     if (!ids.length || PRICES.busy) return;
     var c = EARN.cached(scope); if (c) { PRICES.scope = scope; PRICES.at = c.at; PRICES.prices = c.prices; }
-    if (!force && c && Date.now() - c.at < 3600000 && ids.every(function (id) { return !EARN.tradable(id) || id in c.prices; })) return;
-    PRICES.busy = true;
-    EARN.fetchPrices(scope, ids).then(function (r) { PRICES.scope = scope; PRICES.at = r.at; PRICES.prices = r.prices; PRICES.error = null; })
-      .catch(function (e) { PRICES.error = e.message || String(e); }).then(function () { PRICES.busy = false; if (UI.tab === 'earn' || UI.tab === 'log') render(); });
+    if (!force && (!EARN.mayTry(PRICES.tried, scope, now, false) || (c && !EARN.needed(c, ids, now).length))) return;
+    PRICES.busy = true; PRICES.tried = { scope: scope, at: now };
+    EARN.fetchPrices(scope, ids, !!force).then(function (r) { PRICES.scope = scope; PRICES.at = r.at; PRICES.prices = r.prices; PRICES.error = r.error || null; })
+      .catch(function (e) { PRICES.error = e.message || String(e); }).then(function () {
+        PRICES.busy = false;
+        if ((UI.tab === 'earn' || UI.tab === 'log') && priceSig() !== PRICES.drawn) { var y = window.scrollY, x = window.scrollX; render(); if (window.scrollY !== y) window.scrollTo(x, y); }
+      });
   }
   function earnHtml() {
     var now = Date.now(), tot = EARN.totals(S, PRICES.prices || {}, now), scope = priceScope();
@@ -1313,7 +1332,7 @@
     var scaleCap = function (txt) { return '<caption class="earn-scale">' + txt + '</caption>'; };
     var items = Object.keys(tot.byItem).map(function (id) { return [id, tot.byItem[id]]; }).sort(function (a, b) { return b[1].gil - a[1].gil; }).slice(0, 12);
     var dcs = []; Object.keys(WORLDS.dc || {}).forEach(function (r) { dcs.push(r.replace(/ /g, '-')); (WORLDS.dc[r].dcs || []).forEach(function (d) { dcs.push(d); }); });
-    var src = PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : PRICES.error ? 'Universalis could not be reached (' + esc(PRICES.error) + '): merchant prices only' : 'no market prices yet';
+    var src = priceNote() ? esc(priceNote()) : PRICES.at ? 'Universalis, ' + esc(PRICES.scope) + ', prices seen ' + esc(F.fmtClock(PRICES.at, now)) : PRICES.busy ? 'Universalis prices loading…' : 'no market prices yet';
     return '<section class="panel wide-panel"><h2>Earnings</h2><p class="muted">Estimated value of what you logged: the better of the merchant price (game data) and the market price after the 5% tax (' + src + '). Not yet sold; market prices are community reports, never a promise. ' + tot.logged + ' of ' + tot.trips + ' voyages logged.</p>' +
       '<div class="earn-cards">' + [['Today', tot.day], ['This week', tot.week], ['This month', tot.month], ['All time', tot.all]].map(function (x) { return '<div class="earn-card"><span>' + x[0] + '</span><b>' + fmtGil(x[1]) + '</b></div>'; }).join('') + '</div>' +
       (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +

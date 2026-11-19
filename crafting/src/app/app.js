@@ -740,7 +740,7 @@
       case 'backToRec': app.craft.chosen = null; renderCraft(); break;
       case 'undo': undo(); break;
       case 'restart': restart(); break;
-      case 'nextCraft': nextCraft(); break;
+      case 'nextCraft': if (app.thinking) break; nextCraft(); break; // the keyboard path has the same guard (the solver is still running)
       case 'edit': editDialog(); break;
     }
   });

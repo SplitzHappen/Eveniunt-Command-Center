@@ -720,7 +720,8 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
 /* W29: the head is the one full-strength gil field on the screen; the first card is a gil wash under a thick ink band, the others a wash-free slip under a gil band; the bars are washes with a graphic tip (never the field tone) */
 .earn-card:first-child { background-color: var(--gil-w); color: var(--ink); background-image: linear-gradient(var(--ink), var(--ink)); background-size: 100% 10px; }
 .earn-card:first-child span, .earn-card:first-child b { color: var(--ink); }
-.earn-card:not(:first-child) { background-color: var(--paper); background-image: linear-gradient(var(--gil-g), var(--gil-g)); background-size: 100% 10px; border-bottom: 4px solid var(--gil-g); }
+.earn-card:not(:first-child) { background-color: var(--deep-2); color: var(--on-deep); background-image: linear-gradient(var(--gil-m), var(--gil-m)); background-size: 100% 10px; border-bottom: 4px solid var(--gil-m); }
+.earn-card:not(:first-child) span, .earn-card:not(:first-child) b { color: var(--on-deep); } /* W-c: the three plain tallies are deep-water blocks (lighter than the page in a dark theme, darker in a light one), so they stand off the panel in every theme; the gil field is the band */
 .earn-card b { color: var(--gil-s); }
 .earn-t td b { color: var(--gil-s); }
 .earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { width: 36%; background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%), linear-gradient(90deg, var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%), transparent 0); }
@@ -879,7 +880,11 @@ div.sub { cursor: default; }
   .when b { font-size: 20px; }
   .sub[data-status="out"] .when-at { font: 600 12px/1 var(--f-data); margin-left: 6px; }
   .sub[data-status="idle"] .when { font: 600 12px/1 var(--f-data); text-transform: none; }
-  .sub-when .quick { flex: 1 1 auto; width: auto; min-width: 0; min-height: 26px; height: 26px; margin: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; padding: 0 8px 4px; background: var(--molten) 0 100% / 100% 4px no-repeat, var(--seal); }
+  .sub-when .quick { flex: 1 1 auto; width: auto; min-width: 0; min-height: 26px; height: 26px; margin: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: clip; line-height: 1; padding: 0 8px 4px; background: var(--molten) 0 100% / 100% 4px no-repeat, var(--seal); }
+  /* W-e: the dense lane's button shows the verb and the return time, never the route (the lane draws it as discs) and never an ellipsis: the time wraps below the verb, out of the 26 px, when it does not fit */
+  .sub-when .quick { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; column-gap: 6px; row-gap: 12px; }
+  .sub-when .quick > span { flex: none; height: 22px; line-height: 22px; }
+  .sub-when .quick .q-r { display: none; }
   .sub-when .quick:hover { background: var(--molten) 0 100% / 100% 6px no-repeat, var(--seal); }
   .sub-when .quick::after { content: none; }
   .sub[data-status="locked"] .sub-meta { grid-row: 2; display: block; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 400; }
@@ -911,6 +916,8 @@ div.sub { cursor: default; }
   .fc-subs:not(.list) .sub[data-status="idle"] .when { font: 900 28px/1 var(--f-disp); text-transform: uppercase; }
   .fc-subs:not(.list) .sub-when .quick { flex: 1 1 150px; width: auto; min-height: 48px; height: auto; margin: 0; font-size: 15px; white-space: normal; overflow: visible; line-height: 1.25; padding: 8px 46px 12px 12px; background: var(--molten) 0 100% / 100% 5px no-repeat, var(--seal); }
   .fc-subs:not(.list) .sub-when .quick:hover { background: var(--molten) 0 100% / 100% 9px no-repeat, var(--seal); }
+  .fc-subs:not(.list) .sub-when .quick { display: block; } /* W-e: the wide lane shows the whole text, the route included */
+  .fc-subs:not(.list) .sub-when .quick > span { display: inline; height: auto; line-height: inherit; }
   .fc-subs:not(.list) .sub-when .quick::after { content: ""; }
   .fc-subs:not(.list) .sub.empty { min-height: 56px; }
   .fc-subs:not(.list) .sub.empty .sub-meta { grid-area: 1 / 1 / 3 / -1; }
@@ -1007,9 +1014,9 @@ div.sub { cursor: default; }
 /* Setup: every panel head says its state. Beside a long head (the panel is wide enough) it sits at the head's right, else it is a plain line under the head */
 .panel:has(.head-state) { position: relative; container: hpanel / inline-size; }
 .head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }
-@container hpanel (min-width: 520px) { .panel:not(.recs):not([data-shown-panel]) > .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 40%; text-align: right; color: var(--on-mid); } }
+@container hpanel (min-width: 520px) { .panel:not(.recs):not([data-shown-panel]) > .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 50%; text-align: right; color: var(--on-mid); } }
 @container hpanel (min-width: 700px) { [data-shown-panel] > .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 30%; text-align: right; color: var(--on-mid); } }
-@container hpanel (min-width: 840px) { .recs .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 300px; text-align: right; color: var(--on-slab); } }
+@container hpanel (min-width: 960px) { .recs .head-state { position: absolute; top: 14px; right: var(--pad-x); margin: 0; max-width: 480px; text-align: right; color: var(--on-slab); } }
 /* the ranking is a ladder: four rungs that step down in height and width, each on its role's wash with the number on the role's field */
 .rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }
 .rec-rank .rung-1 .rec-name b { width: 72px; font-size: 44px; } .rec-rank .rung-2 .rec-name b { width: 64px; font-size: 38px; }
@@ -1033,8 +1040,8 @@ div.sub { cursor: default; }
 .sea-link .discs { position: relative; z-index: 1; display: inline-flex; --d: 24px; }
 .sea-link .disc { position: relative; left: auto; top: auto; }
 .sea-link-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, var(--rule) 0 2px, transparent 2px 9px), var(--paper); color: var(--ink-2); }
-.map-seas .btn[data-map-sea][aria-pressed="true"].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--on-mid) 30%, transparent) 0 2px, transparent 2px 9px), var(--sea); color: var(--on-mid); }
+.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--rule) 25%, transparent) 0 1px, transparent 1px 11px), var(--paper); color: var(--ink-2); }
+.map-seas .btn[data-map-sea][aria-pressed="true"].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--on-mid) 12%, transparent) 0 1px, transparent 1px 11px), var(--sea); color: var(--on-mid); }
 /* narrow (a phone or a tablet): the chain is a compact grid of seas, two or more to a row, so the chart is on the first screen; the caption "SECTOR opens SEA" is shown for the chosen sea only (the others stay in the page for a screen reader) */
 @container mappanel (max-width: 1079px) {
   .map-seas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); grid-auto-flow: dense; gap: 4px; margin: 10px 0 12px; }

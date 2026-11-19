@@ -126,7 +126,7 @@ const ZONES = [
   Z('Map', 'sector details (`.chart-details`)', 'panel; head sea field, on-mid; state line back text, idle text or ink-2 with its edge; labels ink-2; rank text; route text; tier number loot field, on-mid; open tier accent wash; rate loot text', ['.chart-details', '.chart-facts'], ['panel', 'page', 'sea', 'shared', 'back', 'idle', 'ink', 'rank', 'route', 'loot', 'slab', 'molten', 'accent']),
   // ---- Earnings ----
   Z('Earnings', 'head', 'gil field, on-mid', ['.earn-card:first-child'], ['gil', 'ink', 'slab']),
-  Z('Earnings', 'tallies (`.earn-card`)', 'first: gil wash, ink, ink band; others: page-colour block, 10 px gil graphic band above and 4 px below, gil text, ink-2 label', ['.earn-card', '.earn-card:not(:first-child)', '.earn-card b'], ['gil', 'ink', 'page']),
+  Z('Earnings', 'tallies (`.earn-card`)', 'first: gil wash, ink, ink band; others: deep-water block (lighter than the page in a dark theme, darker in a light one, so it stands off the panel in every theme), 10 px gil field band above and 4 px below, on-deep figure and label', ['.earn-card', '.earn-card:not(:first-child)', '.earn-card b'], ['gil', 'ink', 'page', 'deep']),
   Z('Earnings', 'scale line (`.earn-scale`)', 'ink-2: the printed scale of a table of bars', ['.earn-scale'], ['ink']),
   Z('Earnings', 'section labels', 'ink; hatch and underline gil graphic', ['.earn-t th', '.earn-t th, .earn-t td'], ['line', 'ink']),
   Z('Earnings', 'position block', '1: accent field, on; 2 and 3: slab; others ink-2', ['.earn-ranked tr[data-pos] > td:first-child', '.earn-ranked tr[data-pos="1"] > td:first-child', '.earn-ranked tr[data-pos="2"] > td:first-child'], ['ink', 'accent', 'slab']),

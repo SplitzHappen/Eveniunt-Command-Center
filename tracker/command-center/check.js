@@ -4374,7 +4374,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const rungs = [1, 2, 3, 4].map((n) => { const li = document.querySelector('.rec-rank .rung-' + n), b = li && li.querySelector('.rec-name b'); return li ? { h: Math.round(li.getBoundingClientRect().height), w: Math.round(b.getBoundingClientRect().width), fs: parseFloat(getComputedStyle(b).fontSize) } : null; });
         const first = (document.querySelector('.rec-rank li .rec-name') || {}).textContent || '';
         return {
-          fcHead: st('.panel:not(.recs):not([data-shown-panel]) > .head-state'), fcCount: document.querySelectorAll('.fc-list > li').length, fcSays: (document.querySelector('.fc-list').closest('.panel').querySelector('.muted') || {}).textContent.split(' ')[0],
+          fcHead: st('.panel:not(.recs):not([data-shown-panel]) > .head-state'), fcHeadW: Math.round(document.querySelector('.panel:not(.recs):not([data-shown-panel]) > .head-state').getBoundingClientRect().width), recHeadW: Math.round(document.querySelector('[data-recs-body] > .head-state:first-child').getBoundingClientRect().width), fcCount: document.querySelectorAll('.fc-list > li').length, fcSays: (document.querySelector('.fc-list').closest('.panel').querySelector('.muted') || {}).textContent.split(' ')[0],
           shownHead: st('[data-shown-panel] > .head-state'), shownSays: st('[data-shown-count]'),
           recHead: st('[data-recs-body] > .head-state:first-child'), recFirst: first.replace(/^\d+\.\s*/, '').trim(), fuel: document.querySelector('[data-rec=fuel]').checked, rungs,
           aria: [...document.querySelectorAll('.head-state')].map((e) => e.getAttribute('aria-hidden')).join(), n: document.querySelectorAll('.head-state').length,
@@ -4393,6 +4393,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const d = await read();
       await page.click('[data-rec="order-default"]'); await page.waitForTimeout(500);
       const e = await read();
+      // W-a: the head also says the loot count: none, then one item, then two (the second picker switched on)
+      const opts = await page.$$eval('[data-rec="loot-1"] option', (os) => os.map((o) => o.value).filter((v) => v !== '0'));
+      await page.selectOption('[data-rec="loot-0"]', opts[0]); await page.waitForTimeout(500);
+      const f = await read();
+      await page.check('[data-rec="loot-on-1"]'); await page.selectOption('[data-rec="loot-1"]', opts[1]); await page.waitForTimeout(500);
+      const g = await read();
       // the head state beside or under its head at 1,440 and at 701 px: it never covers the head's text
       const overlap = async () => page.evaluate(() => [...document.querySelectorAll('.head-state')].map((hs) => {
         const h2 = hs.closest('.panel').querySelector('h2'), range = document.createRange(); range.selectNodeContents(h2);
@@ -4408,10 +4414,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ov360 = await overlap(), side360 = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       await ctx.close();
       const down = a.rungs.every((r, i) => i === 0 || r.h < a.rungs[i - 1].h) && a.rungs[0].h >= 76 && a.rungs[1].h >= 68 && a.rungs[2].h >= 60 && a.rungs[3].h >= 56 && a.rungs.map((r) => r.w).join() === '72,64,56,52' && a.rungs.map((r) => r.fs).join() === '44,38,32,28';
-      const ok = a.n === 3 && a.aria === 'true,true,true' && a.fcHead === '3 set up' && +a.fcSays === a.fcCount && a.fcCount === 3 && a.shownHead === 'All shown' && a.shownSays === 'All shown.' && b.shownHead === '1 hidden' && b.shownSays === '1 hidden from the Board.' && b2.shownHead === '2 hidden' && b2.shownSays === '2 hidden from the Board.' &&
-        a.recHead === 'First: ' + a.recFirst && !a.fuel && a.recFirst === 'Unlocking Routes' && c.recHead === 'First: ' + c.recFirst && c.recFirst !== a.recFirst && d.fuel && d.recHead === 'First: ' + d.recFirst + ' · fuel saving on' && e.recHead === 'First: ' + e.recFirst + ' · fuel saving on' && e.recFirst === 'Unlocking Routes' &&
+      const ok = a.n === 3 && a.aria === 'true,true,true' && a.fcHead === '3 companies, 1 submarine' && +a.fcSays === a.fcCount && a.fcCount === 3 && a.shownHead === 'All shown' && a.shownSays === 'All shown.' && b.shownHead === '1 hidden' && b.shownSays === '1 hidden from the Board.' && b2.shownHead === '2 hidden' && b2.shownSays === '2 hidden from the Board.' &&
+        a.recHead === 'First: ' + a.recFirst + ' · Fuel: off · Loot: none' && !a.fuel && a.recFirst === 'Unlocking Routes' && c.recHead === 'First: ' + c.recFirst + ' · Fuel: off · Loot: none' && c.recFirst !== a.recFirst && d.fuel && d.recHead === 'First: ' + d.recFirst + ' · Fuel: on, 15% · Loot: none' && e.recHead === 'First: ' + e.recFirst + ' · Fuel: on, 15% · Loot: none' && e.recFirst === 'Unlocking Routes' &&
+        f.recHead === 'First: ' + f.recFirst + ' · Fuel: on, 15% · Loot: 1 item' && g.recHead === 'First: ' + g.recFirst + ' · Fuel: on, 15% · Loot: 2 items' &&
         down && new Set(a.wash).size === 4 && new Set(a.nums).size === 4 && ov1440.every((o) => !o.hit && o.inside) && ov701.every((o) => !o.hit && o.inside) && ov360.every((o) => o.pos !== 'absolute' && o.inside) && side360 <= 0 && real(errors).length === 0;
-      record('C111', 'Setup heads (W35): "Free companies" says "N set up" (the list has N), "Free companies on the Board" says "All shown" or "N hidden" as its own line does, and the recommendations head says "First: LABEL" (plus " · fuel saving on") and follows a change of order and of fuel without a reload; the four rungs step down in height (76, 68, 60, 56 at least; number blocks 72, 64, 56, 52 px with figures 44, 38, 32, 28) on four different washes with four different number fields; the head state never covers its head at 1,440 or 701 px and is a plain line at 360 px with no sideways scroll', ok, { a, b, b2, c, d, e, ov1440, ov701, ov360, side360, errors: real(errors) });
+      record('C111', 'Setup heads (W35, fix list W-a): "Free companies" says "N companies, M submarines" (the list under it has N companies), "Free companies on the Board" says "All shown" or "N hidden" as its own line does, and the recommendations head says "First: LABEL · Fuel: off" or "Fuel: on, 15%" and "Loot: none", "1 item" or "N items", and follows a change of order, of fuel and of the loot pickers without a reload; the four rungs step down in height (76, 68, 60, 56 at least; number blocks 72, 64, 56, 52 px with figures 44, 38, 32, 28) on four different washes with four different number fields; the head state never covers its head at 1,440 or 701 px and is a plain line at 360 px with no sideways scroll', ok, { a, b, b2, c, d, e, f, g, ov1440, ov701, ov360, side360, errors: real(errors) });
       server.close();
     });
     await guard('C112', async () => {
@@ -4450,6 +4457,128 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         pressedClosed.cls.includes('closed') && pressedClosed.pressed === 'true' && /^Sea of Ash found 0 of 20$/.test(pressedClosed.text) && focus.sea === '3' && focus.w >= 2 && focus.s !== 'none' &&
         ph1.n === 7 && ph1.disp === 'grid' && ph1.tops <= 4 && exactly(ph1) && ph1.rows.every((r) => r.h >= 44) && ph1.links.filter((l) => l.vis).length <= 1 && ph1.side <= 0 && real(errors).length === 0 && real(ph.errors).length === 0;
       record('C112', 'Map chain (W35): a sea button is "closed" exactly when nothing is found there (seven buttons, each still "NAME found n of m", none focusable except as a button, no clip-path); the seas stand in one row at 1,440 px joined by six links, each a disc of the sector that opens the next sea with the words "SECTOR opens SEA"; the chosen sea can be closed and stays chosen; a sea button shows a focus outline; at 360 px the chain is a compact grid of two seas to a row (W36: no sideways scroll, every button 44 px or more, only the caption of the chosen sea shown)', ok, { wide, fb, pressedClosed, focus, ph1, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C113 (fix list F1) The market-price fetch no longer loops: with the price host blocked, and separately with one item the
+    //    service leaves out and answers 404 for on its own, over five seconds on Earnings and on the Log there are at most two
+    //    fetch attempts and three redraws; a failure says so in plain words; focus on the price-place picker survives;
+    //    Refresh makes exactly one more attempt. The module is served from this test site; the price service is a stand-in.
+    await guard('C113', async () => {
+      const server = await start(PORT5);
+      const SEED = FCS('fa', 'Alpha Company', 0, 2) + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] }; sec.trips.t1 = { s: 'a1', t: now - 40 * H, r: [1, 2], back: now - 10 * H, items: [[2, 3], [3, 1], [4, 2], [10099, 5]], newSectors: [] };";
+      const MSG = 'Market prices could not be fetched; showing merchant prices';
+      const run = async (mode, tab) => {
+        const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
+        const page = await ctx.newPage(); let attempts = 0;
+        const cors = { 'access-control-allow-origin': '*' };
+        await page.route('https://universalis.app/**', (r) => {
+          attempts++;
+          const ids = new URL(r.request().url()).pathname.split('/').pop().split(',');
+          if (mode === 'blocked') return r.abort('failed');
+          if (ids.length === 1 && ids[0] === '4') return r.fulfill({ status: 404, contentType: 'application/json', headers: cors, body: '{}' });
+          const items = {}; ids.filter((id) => id !== '4').forEach((id) => { items[id] = { itemID: +id, averagePrice: 2000 }; });
+          r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+        });
+        const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+        await page.goto(ROOT5 + 'submersibles/'); await ready();
+        await tlSeed(page, SEED); await page.reload(); await ready();
+        await page.evaluate(() => { window.__redraws = 0; new MutationObserver((m) => { window.__redraws += m.length; }).observe(document.querySelector('#view'), { childList: true }); });
+        attempts = 0;
+        await page.click('[data-tab=' + tab + ']'); await page.waitForSelector(tab === 'earn' ? '.earn-cards' : '.log-list');
+        if (tab === 'earn') await page.evaluate(() => document.querySelector('[data-pref=priceWorld]').focus());
+        await page.waitForTimeout(5000);
+        const got = await page.evaluate(() => ({ text: document.querySelector('#view').textContent, focus: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.pref) || null, redraws: window.__redraws }));
+        const out = { mode, tab, attempts, redraws: got.redraws, message: got.text.includes(MSG), seen: /prices seen/.test(got.text), focus: got.focus, extra: null };
+        if (tab === 'earn') { const before = attempts; await page.evaluate(() => document.querySelector('[data-act=prices]').click()); await page.waitForTimeout(1500); out.extra = attempts - before; }
+        out.errors = real(errors);
+        await ctx.close();
+        return out;
+      };
+      const rows = [];
+      for (const mode of ['blocked', 'one-404']) for (const tab of ['earn', 'log']) rows.push(await run(mode, tab));
+      const ok = rows.every((r) => r.attempts <= 2 && r.redraws <= 3 && r.errors.length === 0 && (r.tab === 'log' || (r.focus === 'priceWorld' && r.extra === 1))) &&
+        rows.filter((r) => r.mode === 'blocked').every((r) => r.message && !r.seen) && rows.filter((r) => r.mode === 'one-404').every((r) => !r.message && (r.tab === 'log' || r.seen));
+      record('C113', 'Market prices do not loop (fix list F1): with the price host blocked, and with one item the service leaves out and answers 404 for on its own, over five seconds on Earnings and on the Log there are at most two fetch attempts and three redraws; a failed fetch says "' + MSG + '" and shows no "prices seen" time, a 404 for one item is only "no market price" (no message; the real fetch is timed); focus stays on the price-place picker; Refresh makes exactly one more attempt', ok, { rows });
+      server.close();
+    });
+
+    // ── C114 (fix list W-b) Setup with no free company has an empty state in the module's pattern: kicker, headline, one sentence and the
+    //    guided-setup action (which opens it); the other Setup panels stay; at 360 px nothing scrolls sideways and the headline fits.
+    await guard('C114', async () => {
+      const server = await start(PORT5);
+      const walk = async (opts, press) => {
+        const { ctx, errors } = await context(opts), page = await ctx.newPage(), out = {};
+        await page.goto(ROOT5 + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+        await page.click('[data-tab=setup]'); await page.waitForSelector('[data-empty="setup-none"]');
+        out.state = await page.evaluate(() => {
+          const el = document.querySelector('[data-empty="setup-none"]'), h = el.querySelector('h2'), a = el.querySelector('.es-act .btn');
+          return { kick: el.querySelector('.es-kick').textContent, h: h.textContent, hFits: h.scrollWidth <= h.clientWidth + 1, text: el.querySelector('.es-text').textContent, act: a.textContent, hook: a.getAttribute('data-act'), actH: Math.round(a.getBoundingClientRect().height),
+            scope: el.querySelector('.es-scope').getAttribute('aria-hidden'), word: el.querySelector('.es-word').textContent, fcList: !!document.querySelector('.fc-list'), recs: !!document.querySelector('[data-recs-panel]'), size: !!document.querySelector('.panel.size'),
+            panelOld: [...document.querySelectorAll('h2')].some((x) => x.textContent === 'Free companies'), side: document.documentElement.scrollWidth - innerWidth };
+        });
+        if (press) { await page.click('[data-empty="setup-none"] [data-act=new]'); await page.waitForSelector('.wiz-head'); out.wizard = true; await page.click('[data-act=wcancel]'); await page.waitForSelector('[data-empty="setup-none"]'); out.back = true; }
+        out.errors = real(errors); await ctx.close(); return out;
+      };
+      const d = await walk({ viewport: { width: 1440, height: 1000 } }, true), p = await walk({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }, false);
+      const good = (x) => x.state.kick === 'No free company yet' && x.state.h === 'Set up your first free company' && x.state.text.length > 20 && x.state.act === 'Start the setup' && x.state.hook === 'new' && x.state.actH >= 36 && x.state.scope === 'true' && x.state.word === 'Setup' && !x.state.fcList && !x.state.panelOld && x.state.recs && x.state.size && x.state.side <= 0 && x.state.hFits && !x.errors.length;
+      record('C114', 'Setup with no free company (fix list W-b): an empty state in the module\'s pattern (kicker "No free company yet", headline "Set up your first free company", one sentence, the action "Start the setup" that opens the guided setup and Cancel comes back), the other Setup panels still there, no sideways scroll and a headline that fits at 360 px', good(d) && d.wizard && d.back && good(p), { desktop: d, phone: p });
+      server.close();
+    });
+    // ── C115 (fix list W-c, W-d, W-e) the Earnings tallies are blocks distinct from their panel in a light and a dark scheme (the block against the panel at least 1.4:1, its
+    //    figures and labels at least 7:1 on it); a closed sea on the phone Map is hatched with 1 px lines (the name stays readable); the dense Board's action button shows the verb and
+    //    the return time only (no route, no ellipsis, nothing half cut) while its accessible name is the full text with the route
+    await guard('C115', async () => {
+      const server = await start(PORT5);
+      const lum = (c) => { const v = c.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const rt = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const seedTrips = "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] }; sec.trips.t1 = { s: 'a1', t: now - 40 * H, r: [1, 2], back: now - 10 * H, items: [[10099, 5]], newSectors: [] };";
+      const tallies = {};
+      for (const scheme of ['light', 'dark']) {
+        const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 }, colorScheme: scheme }), page = await ctx.newPage();
+        await page.route('https://universalis.app/**', (r) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ averagePrice: 100, items: { 10099: { averagePrice: 100 } } }) }));
+        await page.goto(ROOT5 + 'submersibles/'); await ready(page); await tlSeed(page, seedTrips); await page.reload(); await ready(page);
+        await page.click('[data-tab=earn]'); await page.waitForSelector('.earn-card');
+        tallies[scheme] = await page.evaluate(() => {
+          const rgb = (e, p) => (getComputedStyle(e)[p].match(/[\d.]+/g) || []).slice(0, 3).map(Number), panel = document.querySelector('.earn-cards').closest('.panel');
+          return { panel: rgb(panel, 'backgroundColor'), cards: [...document.querySelectorAll('.earn-card')].map((c, i) => ({ i, bg: rgb(c, 'backgroundColor'), fig: rgb(c.querySelector('b'), 'color'), label: rgb(c.querySelector('span'), 'color') })) };
+        });
+        tallies[scheme].errors = real(errors); await ctx.close();
+      }
+      const tallyOk = (t) => t.cards.length === 4 && t.cards.slice(1).every((c) => rt(c.bg, t.panel) >= 1.4 && rt(c.fig, c.bg) >= 7 && rt(c.label, c.bg) >= 7);
+      const ratios = Object.fromEntries(Object.entries(tallies).map(([k, t]) => [k, t.cards.slice(1).map((c) => +rt(c.bg, t.panel).toFixed(2))]));
+      // the phone Map: a closed sea's hatch
+      const ph = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }), pp = await ph.ctx.newPage();
+      await pp.goto(ROOT5 + 'submersibles/'); await ready(pp); await tlSeed(pp, SEA_FC + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };");
+      await pp.reload(); await ready(pp); await pp.click('[data-tab=map]'); await pp.waitForSelector('.map-seas .closed');
+      const hatch = await pp.evaluate(() => { const b = document.querySelector('.map-seas .closed:not([aria-pressed="true"])'), bi = getComputedStyle(b).backgroundImage; return { image: bi.slice(0, 160), px: (bi.match(/\b1px\b/g) || []).length, wide: /\b[2-9]px\b/.test(bi.replace(/rgba?\([^)]*\)/g, '')), color: getComputedStyle(b).color }; });
+      await ph.ctx.close();
+      // the dense Board (8 free companies of 4 subs at 1920 x 1080, as C25)
+      const { ctx, errors } = await context({ viewport: { width: 1920, height: 1080 } }), page = await ctx.newPage();
+      await page.goto(ROOT5 + 'submersibles/'); await ready(page);
+      await page.evaluate(async () => {
+        const now = Date.now(), sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
+        ['Alpha', 'Bravo', 'Cedar', 'Delta', 'Ember', 'Fable', 'Garnet', 'Harbor'].forEach((n, i) => {
+          sec.fcs['f' + i] = { name: n + ' Company', world: 'Maduin', order: i, unlockedSlots: i === 7 ? 3 : 4, discovered: [1, 2, 3] };
+          for (let s = 1; s <= 4; s++) { const kind = (i + s) % 3, ret = kind === 0 ? now + (i * 4 + s) * 600000 : kind === 1 ? now - 600000 : null; sec.subs['s' + i + s] = { fcId: 'f' + i, slot: s, name: 'Sub ' + n[0] + s, rank: 60 + s, parts: [3, 4, 1, 2], voyage: ret ? { sentAt: now - 3600000, route: [1, 2], returnAt: ret, gameSaid: '1h' } : null }; }
+        });
+        const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
+      });
+      await page.reload(); await ready(page); await page.waitForSelector('.sub .quick');
+      const dense = await page.evaluate(() => {
+        const out = [], bottom = Math.max(...[...document.querySelectorAll('.fc .sub[data-status]')].map((el) => el.getBoundingClientRect().bottom));
+        document.querySelectorAll('.sub .quick').forEach((b) => {
+          const q = b.getBoundingClientRect(), t = b.querySelector('.q-t').getBoundingClientRect(), v = b.querySelector('.q-v').getBoundingClientRect(), r = getComputedStyle(b.querySelector('.q-r')).display;
+          const timeShown = t.top >= q.top - 1 && t.bottom <= q.bottom + 1 && t.right <= q.right + 1 && t.left >= q.left - 1, timeCut = !timeShown && t.top < q.bottom && t.bottom > q.top && t.right > q.left && t.left < q.right;
+          out.push({ visible: b.innerText.trim().slice(0, 40), full: b.getAttribute('aria-label'), text: b.textContent, route: r, verbFits: v.right <= q.right + 1, timeShown, timeCut, ellipsis: getComputedStyle(b).textOverflow, h: Math.round(q.height) });
+        });
+        return { n: out.length, shown: out.filter((x) => x.timeShown).length, rows: out.slice(0, 3), bottom: Math.round(bottom), bad: out.filter((x) => x.route !== 'none' || !x.verbFits || x.timeCut || x.ellipsis !== 'clip' || !/^Send ▸ .+ · back .+$/.test(x.full) || x.full !== x.text || x.h !== 26).length };
+      });
+      await ctx.close();
+      const ok = tallyOk(tallies.light) && tallyOk(tallies.dark) && !tallies.light.errors.length && !tallies.dark.errors.length &&
+        hatch.px >= 1 && !hatch.wide && dense.n >= 20 && dense.bad === 0 && dense.bottom <= 1080 && real(errors).length === 0 && real(ph.errors).length === 0;
+      record('C115', 'Earnings tallies, the closed-sea hatch and the dense Board button (fix list W-c, W-d, W-e): in a light and a dark scheme each of the three plain tallies is a block at least 1.4:1 from its panel with figure and label at least 7:1 on it; a closed sea on the phone Map is hatched with 1 px lines; at 1920 x 1080 every dense action button is 26 px high, shows no route and no ellipsis, never a half-cut time, and its accessible name is "Send ▸ route · back time" in full, the page still ends at 1080 px', ok, { ratios, light: tallies.light.cards.map((c) => c.bg), hatch, dense, errors: [real(errors), real(ph.errors)] });
       server.close();
     });
 
@@ -4777,6 +4906,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.click('[data-tab=log]'); await page.waitForSelector('[data-empty="log-none"]'); await page.waitForTimeout(250); await shot('empty-log');
         // W33: Earnings with nothing logged, and the Board with every company hidden (a company is set up, then unticked in Setup)
         await page.click('[data-tab=earn]'); await page.waitForSelector('[data-empty="earn-none"]'); await page.waitForTimeout(250); await shot('empty-earnings');
+        await page.click('[data-tab=setup]'); await page.waitForSelector('[data-empty="setup-none"]'); await page.$eval('[data-empty="setup-none"]', (e) => e.scrollIntoView()); await page.waitForTimeout(250); await shot('empty-setup'); // fix list W-b: the picture starts at the empty state
         await page.evaluate(async () => { const sec = { fcs: { fa: { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 1, discovered: [1, 2, 3] } }, subs: { a1: { fcId: 'fa', slot: 1, name: 'Sub One', rank: 50, parts: [3, 4, 1, 2] } }, trips: {}, settings: {} }; const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null }); });
         await page.reload(); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await page.click('[data-tab=setup]'); await page.waitForSelector('[data-shown-fc=fa]'); await page.uncheck('[data-shown-fc=fa]'); await page.waitForTimeout(700);
         await page.click('[data-tab=board]'); await page.waitForSelector('[data-empty="board-hidden"]'); await page.waitForTimeout(250); await shot('empty-hidden');

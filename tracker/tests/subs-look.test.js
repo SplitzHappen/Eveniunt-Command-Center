@@ -662,6 +662,14 @@ test('send window, Setup and Map chain (W35): every new pair reaches its contras
     // the Map's chain: ink rule and arrow on the panel (3); a closed sea's text (ink-2) on the page colour under its hatch (4.5); the caption (ink-2) on the panel (4.5); the chosen, closed sea is the sea field with on-mid (4.5)
     need9('sea chain: the link (ink) on the panel (3)', ink, slip, 3, where);
     need9('sea chain: a closed sea, ink-2 on page colour (4.5)', hx(th.ink2), paper, 4.5, where);
+    // fix list W-d: the hatch of a closed sea is lighter (one pixel lines, the rule colour at 25%, eleven pixels apart); the name (ink-2) stays at 4.5 on the page colour and on a hatch line itself
+    need9('sea chain: a closed sea, ink-2 on its hatch line (rule at 25% over the page colour) (4.5)', hx(th.ink2), hx(mixRgb(paper, hx(mixRgb(paper, ink, 0.18)), 0.25)), 4.5, where);
+    need9('sea chain: the chosen, closed sea, on-mid on its hatch line (on-mid at 12% over the sea field) (4.5)', c('--on-mid'), hx(mixRgb(c('--sea-1'), c('--on-mid'), 0.12)), 4.5, where);
+    // fix list W-c: the three plain Earnings tallies are deep-water blocks, distinct from the panel (slip) and the page in every theme; their text is on-deep, their band the gil field
+    need9('Earnings tally (deep block): the block (deep-2) against the panel (slip), at least 1.4 in every theme', c('--deep-2'), slip, 1.4, where);
+    need9('Earnings tally (deep block): the block (deep-2) against the page (paper), at least 1.4 in every theme', c('--deep-2'), paper, 1.4, where);
+    need9('Earnings tally (deep block): on-deep label and figure on the block (7)', c('--on-deep'), c('--deep-2'), 7, where);
+    need9('Earnings tally (deep block): the gil band (gil field) on the block (3)', c('--gil-m'), c('--deep-2'), 3, where);
     need9('sea chain (narrow): link caption ink-2 on the panel (4.5)', hx(th.ink2), slip, 4.5, where);
     for (let s = 1; s <= 7; s++) need9('sea chain: chosen sea, on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
   }
@@ -674,7 +682,7 @@ test('send window, Setup and Map chain (W35): subs.css and subs.js carry the rul
   for (const s of ['.sheet h2.st-back { --st: var(--back); }', '.sheet h2.st-out { --st: var(--out); }', '.sheet h2.st-idle { --st: var(--idle); }', '.cmp-lane.pick .tl-bar { height: 12px;', '.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }',
     '.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }', '.rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }',
     '.rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }', '.rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }', '.rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }', '.rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }',
-    '.wiz .tick b { color: var(--route-s); }', '.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, var(--rule) 0 2px, transparent 2px 9px), var(--paper); color: var(--ink-2); }', '.map-panel { container: mappanel / inline-size; }']) assert.ok(css.includes(s), s);
+    '.wiz .tick b { color: var(--route-s); }', '.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--rule) 25%, transparent) 0 1px, transparent 1px 11px), var(--paper); color: var(--ink-2); }', '.map-panel { container: mappanel / inline-size; }']) assert.ok(css.includes(s), s);
   assert.ok(!/\.map-seas \{ flex-wrap: nowrap; overflow-x: auto/.test(css), 'the phone strip that scrolled sideways is gone');
   assert.ok(!/clip-path[^;]*;[^}]*data-map-sea|data-map-sea[^}]*clip-path/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'the sea buttons are not cut with clip-path (they take focus)');
   for (const t of ['function cmpLane(', 'function cmpAxis(', 'TL.span(Math.max.apply(null, [a.plan.ev.seconds]', '<h2 class="st-out">', "'<h2 class=\"st-' + st + '\">'", '<p class="head-state" aria-hidden="true">', '<li class="rung-', "(n ? '' : ' closed')", 'class="sea-link"', '<div class="route-row">']) assert.ok(js.includes(t), t);
@@ -708,7 +716,7 @@ test('final pass (W36): subs.css carries the rules (columns by width, the axis l
   const must = ['@media (min-width: 974px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }', '@media (min-width: 1404px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }', '@media (min-width: 1834px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }',
     '@container fcsubs (min-width: 400px) and (max-width: 491px) { .tl-axis > i:nth-child(2), .tl-axis > i:nth-child(4) { display: none; } }', '.fc-tools { flex: 1 1 100%; flex-wrap: nowrap; }',
     '.es-scope::after { content: ""; position: absolute; left: 0; right: 0; bottom: 40px;', 'input[type="checkbox"], input[type="radio"] { -webkit-appearance: none; appearance: none;', 'input[type="radio"]:checked { background-image: radial-gradient(circle, var(--on-seal) 0 4px, var(--seal) 5px); }',
-    '.cmp-lane .tl-bar { height: 10px; outline: 2px solid var(--ink-2); outline-offset: -2px; }', '.chart-svg g { fill: none; }', '.earn-card:not(:first-child) { background-color: var(--paper);',
+    '.cmp-lane .tl-bar { height: 10px; outline: 2px solid var(--ink-2); outline-offset: -2px; }', '.chart-svg g { fill: none; }', '.earn-card:not(:first-child) { background-color: var(--deep-2);',
     'grid-auto-flow: dense;', '.sea-link:has(+ [data-map-sea][aria-pressed="true"])', '.map-grid > .chart-wrap { order: 1; }'];
   for (const s of must) assert.ok(css.includes(s), s);
   // the four rungs carry a 16% field over their wash

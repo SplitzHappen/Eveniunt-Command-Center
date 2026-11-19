@@ -120,3 +120,46 @@ test('G10: totals per submarine: the same gil as the totals by free company, sum
   assert.equal(tot.byFc.f, each * 14, 'the free company total is unchanged');
 });
 
+
+// F1: the market-price fetch. The attempt gate, the report of failed batches and the "no market price" record are pure functions.
+test('F1 attempt gate: one automatic attempt per price place in 15 minutes whatever the outcome; Refresh always tries', () => {
+  const now = 10 * H, tried = { scope: 'Aether', at: now - 60000 };
+  assert.equal(E.mayTry(null, 'Aether', now, false), true, 'never tried');
+  assert.equal(E.mayTry(tried, 'Aether', now, false), false, 'a minute after an attempt');
+  assert.equal(E.mayTry(tried, 'Aether', now + E.GATE_MS - 60001, false), false, 'just under 15 minutes');
+  assert.equal(E.mayTry(tried, 'Aether', now + E.GATE_MS - 60000, false), true, '15 minutes after');
+  assert.equal(E.mayTry(tried, 'Crystal', now, false), true, 'another price place has its own gate');
+  assert.equal(E.mayTry(tried, 'Aether', now, true), true, 'Refresh');
+  assert.equal(E.GATE_MS, 15 * 60000);
+});
+
+test('F1 failed batches: a refused or failing service sets an error and does not stamp the cache fresh; an answered one does', () => {
+  const c = { scope: 'Aether', at: 5, prices: { 2: 100 }, none: {} }, now = 9 * H;
+  const refused = E.settle(c, [[2, 3]], [{ ok: false, status: 0 }], now);
+  assert.equal(refused.failed, 1); assert.equal(refused.answered, 0); assert.equal(refused.error, 'no connection');
+  assert.equal(refused.cache.at, 5, 'not stamped as fresh'); assert.deepEqual(refused.cache.prices, { 2: 100 }); assert.deepEqual(refused.cache.none, {});
+  const http = E.settle(c, [[2, 3]], [{ ok: false, status: 500 }], now);
+  assert.equal(http.error, 'the price service answered 500'); assert.equal(http.cache.at, 5);
+  assert.equal(E.settle(c, [[2, 3]], [{ ok: false, status: 404 }], now).error, 'the price service answered 404', 'a 404 for a batch of several items is a failure');
+  const good = E.settle(c, [[2, 3]], [{ ok: true, json: { items: { 2: { averagePrice: 200.4 }, 3: { averagePrice: 0 } } } }], now);
+  assert.equal(good.error, null); assert.equal(good.cache.at, now); assert.deepEqual(good.cache.prices, { 2: 200, 3: 0 });
+  const part = E.settle(c, [[2], [3]], [{ ok: true, json: { averagePrice: 50 } }, { ok: false, status: 0 }], now);
+  assert.equal(part.failed, 1); assert.equal(part.error, null, 'one batch answered: stamped, the failed batch is retried on the next attempt'); assert.equal(part.cache.at, now); assert.deepEqual(part.cache.prices, { 2: 50 });
+  assert.equal(E.settle(c, [], [], now).error, null, 'nothing asked, nothing failed');
+  assert.match(E.failureNote(0, String), /^Market prices could not be fetched; showing merchant prices$/);
+  assert.equal(E.failureNote(7, (t) => 'T' + t), 'Market prices could not be fetched; showing merchant prices (last fetched T7)');
+});
+
+test('F1 no market price: an item left out of a reply, or answered 404 on its own, is recorded and not asked for again for an hour', () => {
+  const c = { scope: 'Aether', at: 0, prices: {}, none: {} }, now = 20 * H;
+  const left = E.settle(c, [[2, 3, 4]], [{ ok: true, json: { items: { 2: { averagePrice: 10 }, 3: { averagePrice: 20 } } } }], now);
+  assert.deepEqual(left.cache.none, { 4: now }); assert.equal(left.error, null); assert.equal(left.cache.at, now);
+  const alone = E.settle(left.cache, [[4]], [{ ok: false, status: 404 }], now + 1);
+  assert.deepEqual(alone.cache.none, { 4: now + 1 }); assert.equal(alone.failed, 0); assert.equal(alone.error, null, 'a 404 on its own is not a failure');
+  assert.deepEqual(E.needed(left.cache, [2, 3, 4], now + 60000), [], 'the cache is fresh and item 4 is recorded');
+  assert.deepEqual(E.needed(left.cache, [2, 3, 4, 5], now + 60000), [5], 'only an item never asked for is needed');
+  assert.deepEqual(E.needed(left.cache, [2, 3, 4], now + 3600000 + 1), [2, 3, 4], 'after an hour the list is stale: everything again, the record has run out too');
+  assert.deepEqual(E.needed(null, [2, 37487], now), [2], 'untradable items are never asked for');
+  const back = E.settle(left.cache, [[4]], [{ ok: true, json: { averagePrice: 9 } }], now + 5);
+  assert.deepEqual(back.cache.none, {}); assert.equal(back.cache.prices[4], 9, 'a later price clears the record');
+});

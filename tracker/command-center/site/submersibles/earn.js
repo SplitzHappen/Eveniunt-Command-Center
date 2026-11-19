@@ -139,24 +139,60 @@
   // Average recent sale price per item for a world, data centre or region; cached on this device for an hour.
   var CACHE_KEY = 'eveniunt-subs-prices';
   E.cached = function (scope) { try { var c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return c && c.scope === scope ? c : null; } catch (e) { return null; } };
-  E.fetchPrices = function (scope, ids) {
-    var c = E.cached(scope) || { scope: scope, at: 0, prices: {} };
+  // The rules of an automatic attempt and of what a reply means are pure functions, so the tests can run them without a browser.
+  E.GATE_MS = 15 * 60000; // no automatic attempt for this long after the last one, whatever its outcome (Refresh ignores it)
+  E.FRESH_MS = 3600000; // a fetched price list is fresh for an hour
+  E.NONE_MS = 3600000; // an item the service has no price for is not asked for again for an hour
+  // May the app try on its own? tried = { scope, at } (the last automatic attempt), or null.
+  E.mayTry = function (tried, scope, now, force) { return !!force || !tried || tried.scope !== scope || now - tried.at >= E.GATE_MS; };
+  // The tradable items a fetch would still ask for: all of them when the list is older than an hour, else the ones with
+  // no price and no "no market price" record younger than an hour.
+  E.needed = function (c, ids, now) {
     var want = ids.filter(function (id) { return E.tradable(id); });
-    var missing = want.filter(function (id) { return !(id in c.prices); });
-    if (!missing.length && Date.now() - c.at < 3600000) return Promise.resolve(c);
-    var list = Date.now() - c.at < 3600000 ? missing : want, batches = [];
+    if (!c) return want;
+    var none = c.none || {}, stale = now - c.at >= E.FRESH_MS;
+    return want.filter(function (id) { return !(none[id] && now - none[id] < E.NONE_MS) && (stale || !(id in c.prices)); });
+  };
+  // Folds the replies of the batches into the cache. results[n] is { ok: true, json } or { ok: false, status } for batches[n].
+  // An item left out of an answered reply, or answered 404 on its own, is recorded in c.none as "no market price"; any other
+  // failed batch counts as failed. The cache is stamped fresh (c.at) only when at least one batch was answered; when every
+  // batch failed, nothing changes. Returns { cache, failed, answered, error }.
+  E.settle = function (c, batches, results, now) {
+    var next = { scope: c.scope, at: c.at, prices: Object.assign({}, c.prices), none: Object.assign({}, c.none || {}) }, failed = 0, status = 0;
+    results.forEach(function (res, n) {
+      var b = batches[n];
+      if (res && res.ok) {
+        var j = res.json || {}, items = j.items || (b.length === 1 ? { [b[0]]: j } : {});
+        b.forEach(function (id) {
+          var x = items[id];
+          if (x == null) { next.none[id] = now; return; }
+          var p = x.averagePrice || x.currentAveragePrice; next.prices[id] = p ? Math.round(p) : 0; delete next.none[id];
+        });
+      } else if (res && res.status === 404 && b.length === 1) next.none[b[0]] = now;
+      else { failed++; status = (res && res.status) || status; }
+    });
+    var answered = batches.length - failed;
+    if (answered > 0) next.at = now;
+    return { cache: next, failed: failed, answered: answered, error: batches.length && !answered ? (status ? 'the price service answered ' + status : 'no connection') : null };
+  };
+  // The message for a failed fetch, with the time of the last real one when there is one (fmt = the module's clock).
+  E.failureNote = function (at, fmt) { return 'Market prices could not be fetched; showing merchant prices' + (at ? ' (last fetched ' + fmt(at) + ')' : ''); };
+  // Resolves { scope, at, prices, none, error }: error is set when every batch failed (the cache is then not stamped as fresh).
+  // force asks for every tradable item again, and forgets the "no market price" records.
+  E.fetchPrices = function (scope, ids, force) {
+    var c = E.cached(scope) || { scope: scope, at: 0, prices: {}, none: {} }, now = Date.now();
+    var list = force ? ids.filter(function (id) { return E.tradable(id); }) : E.needed(c, ids, now);
+    if (!list.length) return Promise.resolve(Object.assign({ error: null }, c));
+    var batches = [];
     for (var i = 0; i < list.length; i += 100) batches.push(list.slice(i, i + 100));
     return Promise.all(batches.map(function (b) {
-      return fetch('https://universalis.app/api/v2/' + encodeURIComponent(scope) + '/' + b.join(',') + '?listings=0&entries=20').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+      return fetch('https://universalis.app/api/v2/' + encodeURIComponent(scope) + '/' + b.join(',') + '?listings=0&entries=20')
+        .then(function (r) { return r.ok ? r.json().then(function (j) { return { ok: true, json: j }; }) : { ok: false, status: r.status }; })
+        .catch(function () { return { ok: false, status: 0 }; });
     })).then(function (res) {
-      res.forEach(function (j, n) {
-        if (!j) return;
-        var items = j.items || (batches[n].length === 1 ? { [batches[n][0]]: j } : {});
-        Object.keys(items).forEach(function (id) { var x = items[id]; var p = x && (x.averagePrice || x.currentAveragePrice); c.prices[id] = p ? Math.round(p) : 0; });
-      });
-      c.at = Date.now();
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) { /* private window */ }
-      return c;
+      var s = E.settle(c, batches, res, Date.now());
+      if (s.answered > 0) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(s.cache)); } catch (e) { /* private window */ } }
+      return Object.assign({ error: s.error }, s.cache);
     });
   };
 })();

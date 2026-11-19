@@ -1482,7 +1482,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | head | gil field, on-mid | `.earn-card:first-child` | gil, ink, slab |
-| tallies (`.earn-card`) | first: gil wash, ink, ink band; others: page-colour block, 10 px gil graphic band above and 4 px below, gil text, ink-2 label | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink, page |
+| tallies (`.earn-card`) | first: gil wash, ink, ink band; others: deep-water block (lighter than the page in a dark theme, darker in a light one, so it stands off the panel in every theme), 10 px gil field band above and 4 px below, on-deep figure and label | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink, page, deep |
 | scale line (`.earn-scale`) | ink-2: the printed scale of a table of bars | `.earn-scale` | ink |
 | section labels | ink; hatch and underline gil graphic | `.earn-t th`, `.earn-t th, .earn-t td` | line, ink |
 | position block | 1: accent field, on; 2 and 3: slab; others ink-2 | `.earn-ranked tr[data-pos] > td:first-child`, `.earn-ranked tr[data-pos="1"] > td:first-child`, `.earn-ranked tr[data-pos="2"] > td:first-child` | ink, accent, slab |
