@@ -189,11 +189,27 @@
     if (UI.tab === 'board') main.innerHTML = boardHtml();
     else if (UI.tab === 'setup') { main.innerHTML = safeNotify() + (W ? wizardHtml() : setupHtml()); if (!W) measureSize(); pushStatus(); }
     else if (UI.tab === 'log') { main.innerHTML = logHtml(); PRICES.drawn = priceSig(); loadPrices(false); }
-    else if (UI.tab === 'map') main.innerHTML = mapHtml();
+    else if (UI.tab === 'map') { main.innerHTML = mapHtml(); seaStrip(true); }
     else if (UI.tab === 'earn') { main.innerHTML = earnHtml(); PRICES.drawn = priceSig(); loadPrices(false); }
     else { var t = TABS.find(function (x) { return x[0] === UI.tab; }); main.innerHTML = '<section class="panel empty-state"><h2>' + esc(t[1]) + '</h2><p class="muted empty-line">' + esc(t[2]) + ' Until then, the Board and Setup work on their own.</p></section>'; }
     lastStatus = statusKey();
   }
+  // S7: on a phone the seas are one row that scrolls inside its own strip: the chosen sea is scrolled into view (on load and on change), a fade marks the side where more seas are hidden (data-more), arrow keys move between the chips
+  function seaStrip(center) {
+    var strip = document.querySelector('.map-seas'); if (!strip) return;
+    if (center) { var on = strip.querySelector('[data-map-sea][aria-pressed="true"]'); if (on && strip.scrollWidth > strip.clientWidth + 1) strip.scrollLeft = Math.max(0, on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2); }
+    seaFade(strip);
+  }
+  function seaFade(strip) {
+    var more = strip.scrollWidth <= strip.clientWidth + 1 ? '' : strip.scrollLeft > 2 ? (strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 2 ? 'both' : 'start') : 'end';
+    if (more) strip.setAttribute('data-more', more); else strip.removeAttribute('data-more');
+  }
+  document.addEventListener('scroll', function (e) { if (e.target && e.target.classList && e.target.classList.contains('map-seas')) seaFade(e.target); }, true);
+  document.addEventListener('keydown', function (e) {
+    if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !e.target.closest || !e.target.matches('.map-seas [data-map-sea]')) return;
+    var chips = [].slice.call(e.target.closest('.map-seas').querySelectorAll('[data-map-sea]')), i = chips.indexOf(e.target), j = Math.max(0, Math.min(chips.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)));
+    e.preventDefault(); chips[j].focus(); if (chips[j].scrollIntoView) chips[j].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
   var lastStatus = '';
   function statusKey() { var now = Date.now(); return F.fleet(S, now).map(function (x) { return x.id + x.status; }).join(); }
 
@@ -280,11 +296,11 @@
   }
   function subRow(x, now, withFc, T) {
     var s = x.sub, st = x.status, v = s.voyage, info = '', said = '';
-    if (st === 'out') { info = '<span class="when" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b> · <span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span></span>'; said = 'back in ' + F.fmtDur(v.returnAt - now, true) + ' · ' + F.fmtClock(v.returnAt, now); }
-    else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when">waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b> · back <span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span>' + (up && up.rank > s.rank ? ' · rank → ' + up.rank + '+' : '') + '</span>'; said = 'waiting ' + F.fmtDur(now - v.returnAt) + ' · back ' + F.fmtClock(v.returnAt, now); }
+    if (st === 'out') { info = '<span class="when units" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">' + u('back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b>') + u(nb('<span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span>')) + '</span>'; said = 'back in ' + F.fmtDur(v.returnAt - now, true) + ' · ' + F.fmtClock(v.returnAt, now); }
+    else if (st === 'back') { var up = ADV.afterVoyage(s, v.route); info = '<span class="when units">' + u('waiting <b data-since="' + v.returnAt + '">' + F.fmtDur(now - v.returnAt) + '</b>') + u('back ' + nb('<span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span>')) + (up && up.rank > s.rank ? u(nb('rank → ' + up.rank + '+')) : '') + '</span>'; said = 'waiting ' + F.fmtDur(now - v.returnAt) + ' · back ' + F.fmtClock(v.returnAt, now); }
     else if (st === 'idle') { info = '<span class="when">not sent</span>'; said = 'not sent'; }
     var quick = '', a = null;
-    if (st === 'back' || st === 'idle') { a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '" aria-label="' + esc('Send ▸ ' + ADV.routeText(a.plan.route) + ' · back ' + F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '"><span class="q-v">Send</span><span class="q-r"> ▸ ' + esc(ADV.routeText(a.plan.route)) + '</span><span class="q-t"> · back ' + esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '</span></button>'; } // W-e: the same text, in parts, so the dense lane can show the verb and the time only (the lane already draws the route as discs); the accessible name is the whole
+    if (st === 'back' || st === 'idle') { a = adviceFor(x.id); if (a && a.plan) quick = '<button type="button" class="quick' + leadVoice(a) + '" data-quick="' + esc(x.id) + '" title="' + esc(a.plan.why) + '" aria-label="' + esc('Send ▸ ' + ADV.routeText(a.plan.route) + ' · back ' + F.fmtClock(now + a.plan.ev.seconds * 1000, now)) + '"><span class="q-v">Send</span><span class="q-r"> ▸ ' + routeHtml(a.plan.route) + '</span><span class="q-t"><span class="q-dot"> · </span>back ' + nb(esc(F.fmtClock(now + a.plan.ev.seconds * 1000, now))) + '</span></button>'; } // W-e: the same text, in parts, so the dense lane can show the verb and the time only (the lane already draws the route as discs); the accessible name is the whole
     var gauge = '', vp = st === 'out' ? F.voyageProgress(v, now) : null;
     if (vp !== null) gauge = '<span class="vgauge" aria-hidden="true" data-voy data-sent="' + v.sentAt + '" data-ret="' + v.returnAt + '" style="--p:' + vp.toFixed(4) + '"></span><span class="vgauge-sr" data-voy-text>Voyage ' + Math.floor(vp * 100) + ' percent done</span>';
     var route = v && v.route && v.route.length ? '<span class="route" title="Route as entered">' + esc(routeText(v.route)) + '</span>' : '';
@@ -908,11 +924,15 @@
   }
   // G3 (gaps spec): a small label on a figure says where it comes from, in the small tag style: calculated (return time, range, the rank after),
   // game data (tanks, base experience), learned (the player's own log, with its voyage count), community estimate
+  // S5: a unit is one piece of a joined line; a unit never breaks at a clock or a route (.nb), the separator between units is drawn by CSS outside the unit (never ends or starts a line)
+  function nb(h) { return '<span class="nb">' + h + '</span>'; }
+  function u(h) { return '<span class="u">' + h + '</span>'; }
+  function routeHtml(route) { var t = ADV.routeText(route), i = t.indexOf(': '); return i < 0 ? esc(t) : esc(t.slice(0, i + 1)) + ' ' + nb(esc(t.slice(i + 2))); }
   function src(t) { return ' <span class="tag src">' + esc(t) + '</span>'; }
   function figures(ev, s, now) {
     var after = ADV.rankAfter(s.rank, s.expIntoRank || 0, ev.exp);
-    return 'Back <b>' + esc(F.fmtClock(now + ev.seconds * 1000, now)) + '</b> (in ' + F.fmtDur(ev.seconds * 1000, true) + ')' + src('calculated') + ' · range ' + ev.range + ' of ' + ev.maxRange + src('calculated') + ' · ' + ev.tanks + ' tank' + (ev.tanks === 1 ? '' : 's') + src('game data') +
-      ' · at least ' + ev.exp.toLocaleString('en') + ' exp' + src('game data') + (after.rank > s.rank ? ', rank at least ' + after.rank + src('calculated') : '');
+    return u('Back <b>' + nb(esc(F.fmtClock(now + ev.seconds * 1000, now))) + '</b> (in ' + nb(F.fmtDur(ev.seconds * 1000, true)) + ')' + src('calculated')) + u('range ' + ev.range + ' of ' + ev.maxRange + src('calculated')) + u(ev.tanks + ' tank' + (ev.tanks === 1 ? '' : 's') + src('game data')) +
+      u('at least ' + nb(ev.exp.toLocaleString('en') + ' exp') + src('game data') + (after.rank > s.rank ? ', rank at least ' + after.rank + src('calculated') : ''));
   }
   // the gil-an-hour figures of a plan or another route (Gil Farming leading): the community estimate, and the player's own log where it decided
   function gilSources(x) {
@@ -963,15 +983,15 @@
       var fig = x.est ? window.DROPS.fmt.about(window.DROPS.fmt.hour(x.est.perHour)) + ' gil an hour (estimate)' : '';
       var old = x.why && /^(Not enough of your own data|Its items have no known price)/.test(x.why); // the unchanged advisor's two short reasons
       var why = x.why ? (old ? x.why.replace(/;.*$/, '') : x.why) : '';
-      return '<li>' + cmpLane(x.route, x.ev.seconds, span, false) + '<button type="button" class="link" data-use="' + x.route.join(',') + '">' + esc(ADV.routeText(x.route)) + '</button> <span class="muted">back ' + esc(F.fmtClock(now + x.ev.seconds * 1000, now)) + '</span>' +
+      return '<li>' + cmpLane(x.route, x.ev.seconds, span, false) + '<button type="button" class="link" data-use="' + x.route.join(',') + '">' + routeHtml(x.route) + '</button> <span class="muted">back ' + nb(esc(F.fmtClock(now + x.ev.seconds * 1000, now))) + '</span>' +
         (kind ? ' <span class="tag" data-alt-kind>' + kind + '</span>' : '') + (fig ? ' <span class="muted" data-alt-figure>' + esc(fig) + '</span>' + src('community estimate') : '') +
         (x.own && x.perTrip > 0 && x.trips ? ' <span class="muted" data-alt-own>' + esc(window.DROPS.fmt.about(window.DROPS.fmt.hour(x.perTrip / (x.ev.seconds / 3600))) + ' gil an hour from your log') + '</span>' + src('learned, ' + x.trips + ' voyage' + (x.trips === 1 ? '' : 's')) : '') +
         (x.vs ? '<br><span class="muted" data-alt-vs>' + esc(x.vs.text + ' (' + F.fmtClock(now + x.ev.seconds * 1000, now) + ')') + '</span>' : '') +
         (why ? '<br><span class="muted" data-alt-why>' + esc(why) + '</span>' : '') + '</li>';
     }).join('');
     return '<div class="advice' + leadVoice(a) + '"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
-      '<p class="advice-route"><b>' + esc(ADV.routeText(a.plan.route)) + '</b> <button type="button" class="btn primary" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
-      '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint">' + figures(a.plan.ev, s, now) + '</p>' + (a.lead === 'G' && gilSources(a.plan) ? '<p class="src-line" data-src>Gil an hour: ' + gilSources(a.plan) + '</p>' : '') +
+      '<p class="advice-route"><b>' + routeHtml(a.plan.route) + '</b> <button type="button" class="btn outline" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
+      '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint units">' + figures(a.plan.ev, s, now) + '</p>' + (a.lead === 'G' && gilSources(a.plan) ? '<p class="src-line" data-src>Gil an hour: ' + gilSources(a.plan) + '</p>' : '') +
       '<div class="cmp" data-cmp data-span="' + span + '">' + cmpAxis(span) + cmpLane(a.plan.route, a.plan.ev.seconds, span, true) + '</div>' +
       (alt ? '<details open><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
       (a.parts ? '<p class="note">' + esc(a.parts.why) + '</p>' : '') + (a.note ? '<p class="note">' + esc(a.note) + '</p>' : '') + '</div>';
@@ -984,17 +1004,18 @@
     var st = subStats(s), ev = st && PICK.route.length ? ADV.evalRoute(PICK.route, st) : null;
     var btns = D.sectors.filter(function (x) { return x.sea === PICK.sea && disc.has(x.id); }).map(function (x) {
       var n = PICK.route.indexOf(x.id), low = s.rank && x.rank > s.rank, full = n < 0 && PICK.route.length >= 5;
+      var why = low ? 'above this rank' : full ? 'route is full' : ''; // B1: the reason is on the tile, not only in the tooltip
       return '<button type="button" class="sector' + (n >= 0 ? ' on' : '') + '" data-pick="' + x.id + '"' + (low || full ? ' disabled' : '') + ' title="' + esc(x.name + ', rank ' + x.rank + (low ? ' (rank too low)' : '')) + '">' +
-        (n >= 0 ? '<span class="ord">' + (n + 1) + '</span>' : '') + '<b>' + esc(x.letter) + '</b><span>' + esc(x.name.replace(/\s*\([A-Z]\)$/, '')) + '</span><small>rank ' + x.rank + '</small></button>';
+        (n >= 0 ? '<span class="ord">' + (n + 1) + '</span>' : '') + '<b>' + esc(x.letter) + '</b><span>' + esc(x.name.replace(/\s*\([A-Z]\)$/, '')) + '</span><small>rank ' + x.rank + '</small>' + (why ? '<small class="why">' + why + '</small>' : '') + '</button>';
     }).join('');
     var calc = '';
     if (!PICK.route.length) calc = '<p class="hint">Tap sectors in the order the sub should visit them (up to 5). The time is worked out as you go.</p>';
     else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out; until then, type the game\'s time below.</p>';
     else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
-    else calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>' + routeRatesHtml(s, st, ev, PICK.route);
+    else calc = '<p class="calc-line units">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>' + routeRatesHtml(s, st, ev, PICK.route);
     return '<div class="route-pick in-sea-' + PICK.sea + '"><label class="field">Sea <select class="inp" name="sea">' + seas.map(function (x) { return '<option value="' + x.id + '"' + (x.id === PICK.sea ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></label>' +
       '<div class="sectors">' + btns + '</div>' +
-      '<div class="route-row">' + routeDiscs(PICK.route) + '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + esc(ADV.routeText(PICK.route)) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p></div>' + calc + '</div>';
+      '<div class="route-row">' + routeDiscs(PICK.route) + '<p class="route-line">Route: ' + (PICK.route.length ? '<b>' + routeHtml(PICK.route) + '</b> <button type="button" class="link" data-act="pickclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p></div>' + calc + '</div>';
   }
   function redrawPicker() { var box = $('#sheet [data-picker]'); if (box) box.innerHTML = pickerHtml(); }
   function readRoute() { return PICK ? PICK.route.slice() : []; }
@@ -1229,24 +1250,29 @@
     if (!slots.length) return o + '<p class="hint empty-line">This free company has no submarines entered yet (Setup).</p></div>';
     if (!m.sub) return o + '<p class="hint empty-line">Choose a submarine to plan a route: tap found sectors in the order it should visit them (up to 5).</p></div>';
     var s = S.subs[m.sub], st = subStats(s), route = m.route, ev = st && route.length ? ADV.evalRoute(route, st) : null, status = F.status(s, fc, now);
-    var common = (D.commonRoutes || []).filter(function (cr) { return cr.sea === m.sea; }).map(function (cr) {
-      var ok = cr.route.every(function (id) { return (fc.discovered || []).indexOf(id) >= 0 && (!s.rank || SECTOR[id].rank <= s.rank); });
-      return '<button type="button" class="btn sm" data-map-use="' + cr.route.join(',') + '"' + (ok ? '' : ' disabled title="Not every sector is found, or the rank is too low"') + '>' + esc(cr.name) + '</button>';
+    var commonAll = (D.commonRoutes || []).filter(function (cr) { return cr.sea === m.sea; }).map(function (cr) {
+      var miss = cr.route.some(function (id) { return (fc.discovered || []).indexOf(id) < 0; }), high = cr.route.some(function (id) { return s.rank && SECTOR[id].rank > s.rank; });
+      var why = miss ? 'Not every sector is found yet' + (high ? ' and one is above this rank' : '') : high ? 'A sector is above this rank' : '';
+      return { cr: cr, why: why };
+    });
+    // S1: usable routes first, the others after; an unusable one stays disabled (for assistive tech, with the reason in its description) and says why under its name
+    var common = commonAll.filter(function (x) { return !x.why; }).concat(commonAll.filter(function (x) { return x.why; })).map(function (x, i) {
+      return '<button type="button" class="btn sm' + (x.why ? ' blocked' : '') + '" data-map-use="' + x.cr.route.join(',') + '"' + (x.why ? ' disabled title="' + esc(x.why) + '" aria-describedby="cr-why-' + i + '"' : '') + '><span class="cr-name">' + esc(x.cr.name) + '</span>' + (x.why ? '<span class="cr-why" id="cr-why-' + i + '">' + esc(x.why) + '</span>' : '') + '</button>';
     }).join('');
     var calc;
     if (!route.length) calc = '<p class="hint">Tap found sectors on the chart in the order the sub should visit them (up to 5; tap again to drop one). The time is worked out as you go.</p>';
     else if (!st) calc = '<p class="hint bad">Enter this sub\'s rank and four parts in Setup so the time can be worked out.</p>';
     else if (!ev.reachable) calc = '<p class="hint bad">Out of range: this route needs range ' + ev.range + ', the build has ' + ev.maxRange + '. Drop a sector or change the order.</p>';
     else {
-      calc = '<p class="calc-line">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
+      calc = '<p class="calc-line units">' + figures(ev, s, now) + '</p><p class="hint"><span class="tag">' + esc(confirmation().text) + '</span></p>';
       // G1 (gaps spec): what the chosen route usually brings, the same content as the send window, collapsed until the player opens it (kept open across redraws in this tab)
       var rates = routeRatesHtml(s, st, ev, route, true);
       if (rates) calc += '<details class="planner-rates" data-planner-rates' + (m.rates ? ' open' : '') + '><summary>What this route usually brings</summary>' + rates + '</details>';
     }
     var name = s.name || 'Sub ' + s.slot, out = status === 'out' || status === 'locked';
     var no = cannotMap(fc, m), why = m.sector && no[m.sector] ? SECTOR[m.sector].name + ' ' + no[m.sector] : '';
-    return o + '<div class="route-row">' + routeDiscs(route) + '<p class="route-line">Route: ' + (route.length ? '<b>' + esc(ADV.routeText(route)) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p></div>' +
-      (common ? '<p class="hint">Community routes in this sea: ' + common + '</p>' : '') + calc +
+    return o + '<div class="route-row">' + routeDiscs(route) + '<p class="route-line">Route: ' + (route.length ? '<b>' + routeHtml(route) + '</b> <button type="button" class="link" data-act="mapclear">Clear</button>' : '<span class="muted">none yet</span>') + '</p></div>' +
+      (common ? '<p class="hint">Community routes in this sea:</p><div class="cr-list">' + common + '</div>' : '') + calc +
       '<p class="hint">A sector marked with a cross is found but above this submarine\'s rank. Tap or focus any sector that cannot be added (not found yet, above the rank, or out of range if added) to see why.</p><p class="cannot-line" data-cannot-line role="status">' + esc(why) + '</p>' +
       '<p><button type="button" class="btn primary" data-map-send="' + esc(m.sub) + '"' + (!route.length || out ? ' disabled' : '') + '>Send ' + esc(name) + ' on this route…</button>' +
       (status === 'out' && s.voyage ? ' <span class="muted">Out: back ' + esc(F.fmtClock(s.voyage.returnAt, now)) + '</span>' : status === 'locked' ? ' <span class="muted">Not unlocked yet</span>' : '') + '</p>' +
@@ -1281,7 +1307,7 @@
       (nFound ? '' : '<p class="hint empty-line">This sea is not opened yet.</p>') +
       '<div class="map-grid">' + plannerHtml(fc, m) +
       '<div class="chart-wrap' + (m.sub ? ' planning' : '') + '"><header class="chart-head"><span class="chart-sea">' + esc(seaName) + '</span><span class="chart-count">found ' + nFound + ' of ' + seaCount + '</span></header>' + CHART.svg(view, m.sub ? m.route : null, { selected: m.sector, cannot: m.sub ? cannotMap(fc, m) : null }) + '</div>' +
-      '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="currentColor"/>') + ' can be revealed next · ' + sw('far', '<rect x="3" y="3" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · dimmed: above this submarine\'s rank · bright line: the way to the next slot or sea · amber arrow: can be revealed now. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
+      '<p class="hint chart-key">' + sw('found', '<circle cx="8" cy="8" r="6" fill="currentColor"/>') + ' found · ' + sw('next', '<path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="currentColor"/>') + ' can be revealed next · ' + sw('far', '<rect x="4" y="4" width="8" height="8" fill="currentColor"/>') + ' further away · Start · planned route, numbered · plus: grants a submarine slot · double ring: opens the next sea · ' + sw('above', '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/>') + ' above this submarine\'s rank (dashed outline; ' + sw('cross', '<path d="M3 3L13 13M13 3L3 13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>') + ' a found sector that cannot be added) · bright line: the way to the next slot or sea · amber arrow: can be revealed now. The grid, rings and sweep are decoration and measure nothing. Tap a sector for its details.</p>' +
       (m.sector ? sectorDetails(m.sector, fc) : '') + '</div>' +
       '<p class="hint">Drawn by this app from the game\'s position numbers; this is not the game\'s map picture. Depth is not drawn. Which sector reveals which is community data.</p></section>';
   }
@@ -1381,8 +1407,8 @@
       (Object.keys(tot.unknown).length ? '<p class="hint">No price yet for ' + Object.keys(tot.unknown).map(EARN.name).join(', ') + '; left out of the totals.</p>' : '') +
       '<p class="row"><label class="field inline">Market prices from <select class="inp" data-pref="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' + dcs.map(function (d) { return '<option' + (S.settings.prefs && S.settings.prefs.priceWorld === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label><button type="button" class="btn sm" data-act="prices">Refresh prices</button><button type="button" class="btn sm" data-act="csv">Export the log (CSV)</button></p>' +
       '<h3>Gil per hour by route <span class="muted">(from your own log)</span></h3>' + (rk.ranked.length || rk.thin.length ? '<p class="hint">Logged gil divided by logged hours at sea, at the prices shown above.</p>' +
-        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked">' + scaleCap('Bars run from 0 to ' + fmtGil(scaleHr) + ' an hour') + '<thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" class="' + seaOf(r.route) + '" style="--p:' + ratio(r.perHour, scaleHr) + '"><td>' + r.pos + '</td><td>' + routeDiscs(r.route) + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>' + noteRow(r.route, 5); }).join('') + '</tbody></table>' : '') +
-        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr class="' + seaOf(r.route) + '"><td>' + routeDiscs(r.route) + esc(ADV.routeText(r.route)) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml(rk.ranked.concat(rk.thin).map(function (r) { var c = window.DROPS.route(D, r.route, null); return c ? c.secondShare : null; })) : '')
+        (rk.ranked.length ? '<h4>Ranked</h4><table class="earn-t earn-ranked">' + scaleCap('Bars run from 0 to ' + fmtGil(scaleHr) + ' an hour') + '<thead><tr><th>Position</th><th>Route</th><th>Gil per hour</th><th>Gil per voyage</th><th>Voyages</th></tr></thead><tbody>' + rk.ranked.map(function (r) { return '<tr data-pos="' + r.pos + '" class="' + seaOf(r.route) + '" style="--p:' + ratio(r.perHour, scaleHr) + '"><td>' + r.pos + '</td><td>' + routeDiscs(r.route) + routeHtml(r.route) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td>' + fmtGil(r.perTrip) + '</td><td>' + r.trips + '</td></tr>' + noteRow(r.route, 5); }).join('') + '</tbody></table>' : '') +
+        (rk.thin.length ? '<h4>Not enough data yet</h4><table class="earn-t earn-thin"><thead><tr><th>Route</th><th>Gil per hour</th><th>Voyages</th></tr></thead><tbody>' + rk.thin.map(function (r) { return '<tr class="' + seaOf(r.route) + '"><td>' + routeDiscs(r.route) + routeHtml(r.route) + '</td><td><b>' + fmtGil(r.perHour) + '</b></td><td><span class="tag">' + r.trips + ' of ' + EARN.ENOUGH + ' voyages</span></td></tr>' + noteRow(r.route, 3); }).join('') + '</tbody></table>' : '') + (anyNote ? howEstimatedHtml(rk.ranked.concat(rk.thin).map(function (r) { var c = window.DROPS.route(D, r.route, null); return c ? c.secondShare : null; })) : '')
         : '<p class="hint empty-line">Log what came back from voyages with a route to see this.</p>') +
       '<h3>By free company</h3><table class="earn-t">' + scaleCap('Bars run from 0 to ' + fmtGil(scaleFc)) + '<tbody>' + fcList().map(function (f) { return '<tr style="--p:' + ratio(tot.byFc[f.id] || 0, scaleFc) + '"><td>' + esc(f.fc.name || 'Unnamed') + '</td><td><b>' + fmtGil(tot.byFc[f.id] || 0) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
       '<h3>By submarine</h3><table class="earn-t" data-earn-subs>' + scaleCap('Bars run from 0 to ' + fmtGil(scaleSub)) + '<tbody>' + subRows.map(function (r) { return '<tr style="--p:' + ratio(r.gil, scaleSub) + '"><td>' + esc(r.name) + (r.trips ? ' <span class="muted">' + r.trips + ' voyage' + (r.trips === 1 ? '' : 's') + ' logged</span>' : '') + '</td><td><b>' + fmtGil(r.gil) + '</b></td></tr>'; }).join('') + '</tbody></table>' +
@@ -1562,7 +1588,7 @@
     var row = function (g, e) {
       var st = F.status(e.sub, g.fc, now), a = plans[e.id], plan = a && a.plan;
       return '<label class="opt"><input type="checkbox" name="pick" value="' + esc(e.id) + '" checked> ' + esc(e.sub.name || 'Sub ' + e.sub.slot) + ' <span class="chip ' + st + '">' + F.LABEL[st] + '</span> <span class="muted">' +
-        (plan ? esc(ADV.routeText(plan.route)) + ' · back ' + esc(F.fmtClock(now + plan.ev.seconds * 1000, now)) : esc(a && a.blocked ? 'needs rank and parts: uses the time typed below' : 'no route')) + '</span></label>';
+        (plan ? routeHtml(plan.route) + ' · back ' + nb(esc(F.fmtClock(now + plan.ev.seconds * 1000, now))) : esc(a && a.blocked ? 'needs rank and parts: uses the time typed below' : 'no route')) + '</span></label>';
     };
     var head = fleet ? 'Send all back subs <span class="muted">every free company</span>' : 'Send all back subs <span class="muted">' + esc(groups.length ? groups[0].fc.name || '' : '') + '</span>';
     sheet('<h2>' + head + '</h2><p class="hint">Each goes on its suggested route, with its own worked-out time. Subs that are back have their voyage logged first. ' + (fleet ? 'Untick any submarine to leave it out. ' : '') + 'Change any one by tapping it on the board instead.</p>' +
@@ -1814,7 +1840,7 @@
   document.addEventListener('change', onInput);
   document.addEventListener('submit', function (e) { e.preventDefault(); });
   document.addEventListener('keydown', function (e) { var r = e.target; if ((e.key === 'Enter' || e.key === ' ') && r.closest && r.matches('#view [data-sector]')) { e.preventDefault(); mapPick(+r.dataset.sector); return; } if ((e.key === 'Enter' || e.key === ' ') && r.classList && r.classList.contains('sub') && r.dataset.sub) { e.preventDefault(); openSub(r.dataset.sub); } });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.closest && e.target.closest('#sheet') && e.target.tagName === 'INPUT' && !e.target.matches('[data-add-item], [data-qty]')) { e.preventDefault(); var p = $('#sheet .btn.primary'); if (p) p.click(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.closest && e.target.closest('#sheet') && e.target.tagName === 'INPUT' && !e.target.matches('[data-add-item], [data-qty]')) { e.preventDefault(); var p = $('#sheet [data-act="quick"]') || $('#sheet .btn.primary'); if (p) p.click(); /* S6: the suggestion's button is an outline now, so it is named first: Enter still sends on the suggested route */ } });
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && SH.timer) write(); else if (document.visibilityState === 'visible') { reload(); tick(); } });
   window.addEventListener('pagehide', function () { if (SH.timer) write(); });

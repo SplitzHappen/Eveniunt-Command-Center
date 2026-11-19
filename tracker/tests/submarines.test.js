@@ -2412,3 +2412,49 @@ test('T10: a merged free company that is still bare is folded, one that gained a
   const m = CC.mergeModules({ submersibles: mk(10, 'Aether', '1h') }, { submersibles: mk(20, 'Maduin', '2h') }, { submersibles: mk(30, 'Ravana', '3h') }).submersibles;
   assert.equal(m.subs.s1.rank, 20); assert.equal(m.trips.t1.said, '2h'); assert.equal(m.settings.prefs.priceWorld, 'Maduin');
 });
+
+// ---- Visual fixes S2, S3: no label touches a bracket, a ring, a "+" mark, a cross or the route line, in every sea with each sector selected in turn ----
+test('chart S2: for every sea, each sector selected in turn (with a route drawn), no label box meets a bracket leg, a ring stroke, a "+" mark, a cross or the route line', () => {
+  const found = D.sectors.map((x) => x.id);
+  let checked = 0;
+  for (const sea of D.seas) {
+    const v = CH.view(sea.id, found, 20), size = Math.max(v.box.w, v.box.h), fs = size / 30, r = size / 70, M = CH.marks(r);
+    const ids = v.nodes.map((n) => n.id), route = ids.filter((id, i) => i % 2 === 0).slice(0, 4), cannot = {}; v.nodes.forEach((n) => { if (n.rank > 20) cannot[n.id] = 'above'; });
+    for (const selId of ids) {
+      const svg = CH.svg(v, route, { selected: selId, cannot }), groups = svg.split('<g class="chart-node').slice(1), labels = [], hard = [];
+      const pts = /<polyline[^>]*points="([^"]+)"/.exec(svg)[1].split(' ').map((p) => p.split(',').map(Number));
+      const rect = (cx, cy, w, h) => ({ x0: cx - w, x1: cx + w, y0: cy - h, y1: cy + h }), hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+      for (const g of groups) {
+        const id = +/data-sector="(\d+)"/.exec(g)[1], [tx, ty] = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g).slice(1).map(Number);
+        const L = /<text class="chart-letter" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)"(?: x="([-\d.]+)")?>([^<]*)</.exec(g), lw = L[5].length * 0.55 * fs, lx = tx + (L[4] ? +L[4] : 0), lx0 = L[2] === 'start' ? lx : L[2] === 'end' ? lx - lw : lx - lw / 2;
+        labels.push({ id, kind: 'letter', x0: lx0, x1: lx0 + lw, y0: ty + +L[1] - fs * 0.72, y1: ty + +L[1] });
+        const T = /<text class="chart-tag" x="([-\d.]+)" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)">([^<]*)</.exec(g);
+        if (T) { const fsT = +T[4], w = T[5].length * 0.55 * fsT, x0 = tx + +T[1] - (T[3] === 'start' ? 0 : T[3] === 'end' ? w : w / 2); labels.push({ id, kind: 'tag', x0, x1: x0 + w, y0: ty + +T[2] - fsT * 0.72, y1: ty + +T[2] }); }
+        if (/chart-plus/.test(g)) hard.push(Object.assign({ id, kind: 'plus' }, rect(tx + M.BK + 3 + M.pa * 2, ty - M.BK - 3 - M.pa * 2, M.pa, M.pa)));
+        if (/chart-cannot-x/.test(g)) hard.push(Object.assign({ id, kind: 'cross' }, rect(tx + M.BK + 3 + M.ca + (/chart-plus/.test(g) ? 2 * M.pa + M.ca + 4 : 0), ty - M.BK - 3 - M.ca - (/chart-plus/.test(g) ? 2 * M.pa + M.ca + 4 : 0), M.ca, M.ca)));
+        const rings = [/chart-routering/.test(g) ? M.R1 : 0, /chart-cannot-ring/.test(g) || /chart-ring2/.test(g) ? M.R0 : 0].filter(Boolean);
+        for (const rr of rings) hard.push({ id, kind: 'ring', x0: tx - rr, x1: tx + rr, y0: ty - rr, y1: ty + rr, ring: rr, cx: tx, cy: ty });
+        if (id === selId) { const k = M.BK, lk = Math.max(6, r * 0.7); for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { hard.push({ id, kind: 'bracket', x0: tx + Math.min(sx * k, sx * (k - lk)) - 2, x1: tx + Math.max(sx * k, sx * (k - lk)) + 2, y0: ty + sy * k - 2, y1: ty + sy * k + 2 }); hard.push({ id, kind: 'bracket', x0: tx + sx * k - 2, x1: tx + sx * k + 2, y0: ty + Math.min(sy * k, sy * (k - lk)), y1: ty + Math.max(sy * k, sy * (k - lk)) }); } }
+      }
+      for (const lab of labels) {
+        for (const h of hard) {
+          if (h.ring) { const nx = Math.max(lab.x0, Math.min(h.cx, lab.x1)), ny = Math.max(lab.y0, Math.min(h.cy, lab.y1)), dmin = Math.hypot(nx - h.cx, ny - h.cy), fx = Math.max(Math.abs(lab.x0 - h.cx), Math.abs(lab.x1 - h.cx)), fy = Math.max(Math.abs(lab.y0 - h.cy), Math.abs(lab.y1 - h.cy)), dmax = Math.hypot(fx, fy); assert.ok(!(dmin < h.ring + 2 && dmax > h.ring - 2), `sea ${sea.id} sel ${selId}: ${lab.kind} of ${lab.id} crosses the ring of ${h.id}`); }
+          else assert.ok(!hit(lab, h), `sea ${sea.id} sel ${selId}: ${lab.kind} of ${lab.id} meets the ${h.kind} of ${h.id}`);
+        }
+        for (let i = 1; i < pts.length; i++) for (let k = 0; k <= 30; k++) { const px = pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k / 30, py = pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k / 30; assert.ok(!(px > lab.x0 && px < lab.x1 && py > lab.y0 && py < lab.y1), `sea ${sea.id} sel ${selId}: ${lab.kind} of ${lab.id} sits on the route line`); }
+      }
+      checked++;
+    }
+  }
+  assert.ok(checked >= 40, 'checked ' + checked + ' selections');
+});
+test('chart S2/S3: rings are at least 6 beyond the node, the bracket stands outside every ring, the above-rank node is a dashed outline, far is the small square, the cross is 12+ units and sits outside the node', () => {
+  const v = CH.view(1, [1, 2, 3, 10, 26], 30), size = Math.max(v.box.w, v.box.h), r = size / 70, M = CH.marks(r);
+  assert.ok(M.R0 >= r + 6 && M.R1 > M.R0 && M.BK > M.R1, 'ring and bracket radii');
+  const svg = CH.svg(v, [10], { selected: 10, cannot: { 26: 'above' } });
+  assert.match(svg, /class="chart-routering"[^>]*r="([\d.]+)"/); assert.ok(+/class="chart-routering"[^>]*r="([\d.]+)"/.exec(svg)[1] >= r + 6 - 0.1);
+  const n26 = new RegExp('data-sector="26"[\\s\\S]*?</g>').exec(svg)[0];
+  assert.match(n26, /<circle r="[\d.]+" stroke-dasharray="4 3"\/>/, 'found above the rank: dashed outline of its own shape'); assert.ok(!/chart-overring/.test(svg));
+  const far = new RegExp('data-sector="8"[\\s\\S]*?</g>').exec(svg)[0]; assert.ok(!/stroke-dasharray/.test(far), 'a far node within the rank is not dashed');
+  const d = /chart-cannot-x" aria-hidden="true" d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)/.exec(n26); assert.ok(d && Math.abs(+d[3] - +d[1]) >= 8 && +d[1] > r && +d[2] < -r, 'a cross at least 8 wide outside the node, upper right');
+});

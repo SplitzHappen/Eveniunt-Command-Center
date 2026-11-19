@@ -348,12 +348,12 @@ test('chart (W23): ladder far < found < next, link colours and the receding back
   assert.deepEqual(fail.slice(0, 20), [], fail.length + ' chart pairs outside their rules');
 });
 
-test('chart (W23): subs.css has the dash only on the route, chevrons hidden but lead and goal, the sweep fan hidden and a hollow far marker', () => {
+test('chart (W23): subs.css has the dash only on the route, chevrons hidden but lead and goal, the sweep fan hidden and a solid far marker (S3: it was hollow before)', () => {
   const rules = css.split('\n').filter((l) => /stroke-dasharray/.test(l));
   assert.equal(rules.length, 1); assert.ok(rules[0].startsWith('.chart-route {'));
   assert.ok(/\.chart-chev \{ display: none;/.test(css) && css.includes('.chart-chev.lead { display: inline;') && css.includes('.chart-chev.goal:not(.lead) { display: inline;'));
   assert.ok(css.includes('.chart-sweep-fan { display: none; }'));
-  assert.ok(css.includes('.chart-node.far > rect { fill: var(--chart-bg); stroke: var(--chart-far); stroke-width: 2; }'));
+  assert.ok(css.includes('.chart-node.far > rect { fill: var(--chart-far); stroke: var(--chart-bg); stroke-width: 2; }'));
   assert.ok(css.includes('.chart-node.next > rect { fill: var(--chart-next); stroke: var(--chart-bg); stroke-width: 6; paint-order: stroke fill; }'));
   assert.ok(css.indexOf('.chart-lines line.goal:is(.open, .closed)') > css.indexOf('.chart-lines line.open.lead') && css.indexOf('.chart-lines line.open.lead') > css.indexOf('.chart-lines line.open.done'));
   assert.equal(P.RULES.chartLight['--chart-next'], '#ffe38a'); assert.equal(P.RULES.chartDark['--chart-next'], '#ffe38a');
@@ -393,12 +393,12 @@ test('Log and Earnings (W25, W26): every new pair reaches its contrast in all 21
 
 test('Log and Earnings (W25, W26): subs.css and logHtml and earnHtml carry the rules and the classes', () => {
   for (const s of [
-    '.panel:not(.welcome):not(.empty-state):not(.recs):not(.map-panel) > h2:first-child, .wiz-head { --slab: var(--scr);',
+    '.panel:not(.welcome):not(.empty-state):not(.map-panel) > h2:first-child, .wiz-head { --slab: var(--scr);',
     '.tabs button[aria-current="page"] { --slab: var(--scr);', '.tabs button[aria-current="page"]::before { background: var(--ink); }',
     '.log-row[class*="in-sea-"] .log-when { --slab: var(--sea);', '.log-day { position: sticky; top: 0;', '.log-day b { font: 900 20px/1.1 var(--f-disp);', 'grid-template-columns: 96px 150px minmax(0, 1fr) auto;',
     '.log-row.logged { border-right: 8px solid var(--loot-g); }', '.log-row.unlogged { border-right: 8px dashed var(--idle); }',
     '.log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }', '.log-what b { color: var(--gil-s); }', 'background: var(--gil-g); }',
-    '.earn-card:first-child { background-color: var(--gil-w); color: var(--ink);', 'var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);
+    '.earn-card:first-child { background-color: var(--gil-m); color: var(--on-mid);', 'var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);
   const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
   assert.ok(js.includes("' in-sea-' + sec.sea") && js.includes("(v.logged ? ' logged' : ' unlogged')") && js.includes('"--p:'), 'Log row classes');
   assert.ok(js.includes('class="log-grade g-') && js.includes("'>Grade ' + esc(t.grade)") === false && js.includes("Grade ' + esc(t.grade)"), 'the grade chip');
@@ -723,4 +723,47 @@ test('final pass (W36): subs.css carries the rules (columns by width, the axis l
   for (const v of ['route', 'rank', 'gil', 'loot']) assert.ok(css.includes('color-mix(in srgb, var(--' + v + '-m) 16%, transparent)'), v);
   // the old breakpoints are gone
   assert.ok(!css.includes('@media (min-width: 701px) { .fleet:has(') && !css.includes('@media (min-width: 1400px) { .fleet:has('), 'the columns no longer start at 701 px and 1,400 px');
+});
+
+// ---- Visual fixes, part 1 (B1, S1 to S11) ----
+test('visual fixes part 1: every new text and field pairing reaches its contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), ink2 = hx(th.ink2), paper = hx(th.paper), slip = hx(th.slip), e0 = P.env(row, mode);
+    // B1 and S1: a disabled sector tile and an unusable community route: name, rank and reason at ink-2 on the plain tile (paper) at 4.5; the reason line on the panel as well
+    need('B1 disabled sector tile: name, rank and reason (ink-2) on the plain tile (4.5)', ink2, paper, 4.5, where);
+    need('S1 unusable community route: name and reason (ink-2) on the plain button (4.5)', ink2, paper, 4.5, where);
+    need('S1 the hatch band (ink-2) on the plain button (graphic 3)', ink2, paper, 3, where);
+    // S6: the outline button: ink text on the plate it stands on (the suggestion wash and the panel), the accent edge on the plate (3)
+    need('S6 outline button: ink on the panel (4.5)', ink, slip, 4.5, where);
+    need('S6 outline button: ink on the suggestion wash (4.5)', ink, P.colour('var(--hi-slip)', e0), 4.5, where);
+    need('S6 outline button: the accent edge on the panel (graphic 3)', P.colour('var(--seal)', e0), slip, 3, where);
+    // S8: Today is the gil field with the on-voice text
+    need('S8 Today tally: on-mid on the gil field (4.5)', c('--on-mid'), c('--gil-m'), 4.5, where);
+    // S4: the Recommendations head is the Setup head: on-mid on the rank field
+    need('S4 Recommendations head: on-mid on the rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    // S9: the suffix under the title is ink-2 on the panel
+    need('S9 heading suffix: ink-2 on the page (4.5)', ink2, paper, 4.5, where);
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, mode === 'dark' ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env);
+      // S3: above the rank is a dashed outline in chart-ink-2 (graphic 3 on every water), far a solid square in the far tone (3), the cross in the error colour (3)
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) {
+        need('S3 above-rank dashed outline (chart-ink-2) on ' + g.slice(2) + ' (3)', cc('--chart-ink-2'), cc(g), 3, where + ' sea ' + n);
+        need('S3 far solid square (chart-far) on ' + g.slice(2) + ' (3)', cc('--chart-far'), cc(g), 3, where + ' sea ' + n);
+      }
+    }
+  }
+  console.log('Visual fixes part 1, lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(90) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('visual fixes part 1: subs.css and the scripts carry the rules', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8'), ch = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'chart.js'), 'utf8');
+  for (const sx of ['.sector:disabled { --hz: var(--ink-2); opacity: 1;', 'background: var(--hazard) 0 0 / 14px 100% no-repeat, var(--paper);', '.cr-list .btn.blocked', '.btn.outline { background: transparent; border: 2px solid var(--seal); color: var(--ink);',
+    '.units > .u + .u::before', '.nb { white-space: nowrap; }', '@container mappanel (max-width: 479px)', '.earn-card:first-child { background-color: var(--gil-m);', '.sheet::backdrop { background: var(--scrim); }', 'stroke-width: 4px', '.panel.recs:not(.welcome)']) assert.ok(css.includes(sx), sx);
+  for (const sx of ['class="why"', "class=\"btn outline\" data-act=\"quick\"", 'function seaStrip', "'cr-why-'", 'function routeHtml', 'class="q-dot"']) assert.ok(js.includes(sx.replace(/'cr-why-'/, 'cr-why-')), sx);
+  for (const sx of ['stroke-dasharray="4 3"', 'chart-cannot-halo', 'C.marks = function']) assert.ok(ch.includes(sx), sx);
+  assert.ok(!/chart-overring/.test(css) && !/chart-overring/.test(ch), 'the old ring on an above-rank node is gone');
+  assert.equal(css.split('\n').filter((l) => /stroke-dasharray/.test(l)).length, 1, 'the route is still the only dash in the stylesheet');
 });

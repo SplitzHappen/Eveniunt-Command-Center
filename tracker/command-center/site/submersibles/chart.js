@@ -73,14 +73,17 @@
 
   // Where each secondary label (slot / opens) goes: the first of below, above, right, left whose estimated box touches no
   // other marker, letter, Start, reveal line, earlier label or the edge of the drawing. Position data is not changed.
-  function placeTags(view, r, fs) {
+  // S2: the optional fourth argument adds obstacles: extra.letters (id -> the letter's text box as drawn), extra.boxes (more boxes: the selected node's bracket, the "+" marks, the cross); without it nothing changes
+  function placeTags(view, r, fs, extra) {
     var b = view.box, ext = { x0: b.x, y0: b.y, x1: b.x + b.w, y1: b.y + b.h }, fsT = fs * 0.8, cw = 0.55, boxes = [], res = {}, lines = view.lines;
     function textBox(x, y, str, size, anchor) { var w = str.length * cw * size, x0 = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2; return { x0: x0, x1: x0 + w, y0: y - size, y1: y + size * 0.25 }; }
     function hit(a, c) { return a.x0 < c.x1 && c.x0 < a.x1 && a.y0 < c.y1 && c.y0 < a.y1; }
     view.nodes.forEach(function (n) {
       boxes.push({ x0: n.x - r * 1.5, x1: n.x + r * 1.5, y0: n.y - r * 1.5, y1: n.y + r * 1.5 });
-      boxes.push(textBox(n.x, n.y - r * 2.2 - fs * 0.3, n.letter + ' 5', fs, 'middle'));
+      if (extra && extra.letters && extra.letters[n.id]) { var lt = extra.letters[n.id]; boxes.push(textBox(n.x + lt.x, n.y + lt.y, lt.str, fs, lt.anchor)); }
+      else boxes.push(textBox(n.x, n.y - r * 2.2 - fs * 0.3, n.letter + ' 5', fs, 'middle'));
     });
+    if (extra) (extra.boxes || []).forEach(function (bx) { boxes.push(bx); });
     boxes.push({ x0: view.start.x - r * 1.5, x1: view.start.x + r * 1.5, y0: view.start.y - r * 1.5, y1: view.start.y + r * 1.5 });
     boxes.push(textBox(view.start.x, view.start.y + r * 1.5 + fs * 1.1, 'Start', fs, 'middle'));
     function inside(t) { return t.x0 >= b.x && t.x1 <= b.x + b.w && t.y0 >= b.y && t.y1 <= b.y + b.h; }
@@ -120,10 +123,28 @@
 
   // The SVG text. route: sector ids (optional), drawn as a numbered line from Start. opts.selected: the sector id drawn with brackets.
   // Everything but the sector nodes, Start and its label is decoration (aria-hidden); no position is changed (spec D7).
+  // S2 geometry, in chart units: every ring is at least 6 beyond the node (R0, the route ring R1), the selection bracket stands outside all rings (BK), the "+" and cross marks stand outside the bracket
+  C.marks = function (r) { return { R0: r + 6, R1: r + 11, BK: r + 17, pa: Math.max(3, r * 0.4), ca: Math.max(4, r * 1.2) }; };
   C.svg = function (view, route, opts) {
     var b = view.box, span = Math.max(b.w, b.h), fs = span / 30, r = span / 70, sel = opts && opts.selected != null ? String(opts.selected) : null;
     var at = {}; view.nodes.forEach(function (n) { at[n.id] = n; });
-    var hits = C.hitRadii(view), tagAt = placeTags(view, r, fs), st = view.start, g = view.grid;
+    var hits = C.hitRadii(view), st = view.start, g = view.grid, M = C.marks(r);
+    var rt = (route || []).filter(function (id) { return at[id]; }), segs = [], pathPts = [st].concat(rt.map(function (id) { return at[id]; }));
+    for (var si = 1; si < pathPts.length; si++) segs.push({ x1: pathPts[si - 1].x, y1: pathPts[si - 1].y, x2: pathPts[si].x, y2: pathPts[si].y });
+    function segHit(t) { return segs.some(function (l) { for (var i = 0; i <= 24; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 24, py = l.y1 + (l.y2 - l.y1) * i / 24; if (px > t.x0 - 4 && px < t.x1 + 4 && py > t.y0 - 4 && py < t.y1 + 4) return true; } return false; }); }
+    // where each letter goes: above its node (clear of every ring and of the bracket); with a route drawn, the first of above, below, right, left whose text box touches no route segment (so a step label never sits on the line)
+    var letterAt = {}, boxesX = [];
+    view.nodes.forEach(function (n) {
+      var ri = (route || []).indexOf(n.id), isS = sel === String(n.id), mk = !!(opts && opts.cannot && opts.cannot[n.id]) && n.state === 'found' && !n.rankOk;
+      var top = isS ? M.BK + 2 : ri >= 0 ? M.R1 + 2 : (n.opens || mk) ? M.R0 + 2 : 0, D = Math.max(r * 2.2 + fs * 0.3, top + 3), str = n.letter + (ri >= 0 ? ' ' + (ri + 1) : ''), w = str.length * 0.55 * fs;
+      var cand = [{ x: 0, y: -D, anchor: 'middle' }, { x: 0, y: D + fs * 0.75, anchor: 'middle' }, { x: D, y: fs * 0.35, anchor: 'start' }, { x: -D, y: fs * 0.35, anchor: 'end' }], pick = cand[0];
+      if (segs.length || (sel && !isS)) for (var i = 0; i < cand.length; i++) { var c = cand[i], x0 = n.x + c.x - (c.anchor === 'start' ? 0 : c.anchor === 'end' ? w : w / 2), tb = { x0: x0, x1: x0 + w, y0: n.y + c.y - fs, y1: n.y + c.y + fs * 0.25 }; if (!segHit(tb) && !(sel && !isS && at[sel] && tb.x0 < at[sel].x + M.BK + 4 && at[sel].x - M.BK - 4 < tb.x1 && tb.y0 < at[sel].y + M.BK + 4 && at[sel].y - M.BK - 4 < tb.y1)) { pick = c; break; } }
+      letterAt[n.id] = { x: pick.x, y: pick.y, anchor: pick.anchor, str: str };
+      if (isS) boxesX.push({ x0: n.x - M.BK - 2, x1: n.x + M.BK + 2, y0: n.y - M.BK - 2, y1: n.y + M.BK + 2 });
+      if (mk) { var xc = M.BK + 3 + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xr = M.ca + 2; boxesX.push({ x0: n.x + xc - xr, x1: n.x + xc + xr, y0: n.y - xc - xr, y1: n.y - xc + xr }); }
+      if (n.slot) { var pc = M.BK + 3 + M.pa; boxesX.push({ x0: n.x + pc - M.pa - 2, x1: n.x + pc + M.pa + 2, y0: n.y - pc - M.pa - 2, y1: n.y - pc + M.pa + 2 }); }
+    });
+    var tagAt = placeTags(view, r, fs, { letters: letterAt, boxes: boxesX });
     var e = tagAt.extent, o = '<svg class="chart-svg" data-sea="' + esc(view.sea) + '" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
     function gridPath(cls, keepX, keepY) {
       var d = '';
@@ -172,21 +193,23 @@
       var no = opts && opts.cannot && opts.cannot[n.id]; // G2: why this sector cannot be added to the route being planned (words from the planner)
       var mark = !!no && n.state === 'found' && !n.rankOk; // the ring and cross: only a FOUND sector above the submarine's rank; every other reason is in words (label, line, details)
       var label = n.name + ', rank ' + n.rank + ', ' + STATE[n.state] + (tags.length ? ', ' + tags.join(', ') : '') + (n.rankOk ? '' : ', above this submarine\'s rank') + (no ? ', ' + no : '');
-      var shape = n.state === 'found' ? '<circle r="' + num(r) + '"/>'
-        : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"/>'
-        : '<rect x="' + num(-r * 0.7) + '" y="' + num(-r * 0.7) + '" width="' + num(1.4 * r) + '" height="' + num(1.4 * r) + '"/>';
-      var idx = (route || []).indexOf(n.id), onRoute = idx >= 0, isSel = sel === String(n.id), c15 = r * 1.5, c09 = r * 0.9;
+      var da = n.rankOk ? '' : ' stroke-dasharray="4 3"'; // S3: above the submarine's rank = the node's own shape, outline dashed (a presentation attribute: the one dash rule in the stylesheet is the route's), no fill
+      var shape = n.state === 'found' ? '<circle r="' + num(r) + '"' + da + '/>'
+        : n.state === 'next' ? '<rect x="' + num(-r) + '" y="' + num(-r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45)"' + da + '/>'
+        : '<rect x="' + num(-r * 0.7) + '" y="' + num(-r * 0.7) + '" width="' + num(1.4 * r) + '" height="' + num(1.4 * r) + '"' + da + '/>';
+      var idx = (route || []).indexOf(n.id), onRoute = idx >= 0, isSel = sel === String(n.id), la = letterAt[n.id];
+      var cd = M.BK + 3 + M.ca + (n.slot ? 2 * M.pa + M.ca + 4 : 0), xa = M.ca; // the cross: outside the node at its upper right (further out when a "+" is there too)
+      var xd = 'M' + num(cd - xa) + ' ' + num(-cd - xa) + 'L' + num(cd + xa) + ' ' + num(-cd + xa) + 'M' + num(cd + xa) + ' ' + num(-cd - xa) + 'L' + num(cd - xa) + ' ' + num(-cd + xa);
       var extra = (n.state === 'next' ? '<circle class="chart-halo" aria-hidden="true" r="' + num(r * 1.1) + '"/>' : '') +
-        (n.rankOk ? '' : '<circle class="chart-overring" aria-hidden="true" r="' + num(r * 1.3) + '"/>') +
-        (onRoute ? '<circle class="chart-routering" aria-hidden="true" r="' + num(r * 1.4) + '"/>' : '') +
-        (mark ? '<circle class="chart-cannot-ring" aria-hidden="true" r="' + num(r * 1.25) + '"/>' : '') +
-        (n.opens ? '<circle class="chart-ring2" aria-hidden="true" r="' + num(c15) + '"/>' : '') +
-        (isSel ? '<path class="chart-lock" aria-hidden="true" d="' + [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (q) { return 'M' + num(q[0] * c15) + ' ' + num(q[1] * c09) + 'L' + num(q[0] * c15) + ' ' + num(q[1] * c15) + 'L' + num(q[0] * c09) + ' ' + num(q[1] * c15); }).join('') + '"/>' : '') +
-        (n.slot ? '<path class="chart-plus" aria-hidden="true" d="M' + num(r * 0.6) + ' ' + num(-r) + 'H' + num(r * 1.4) + 'M' + num(r) + ' ' + num(-r * 1.4) + 'V' + num(-r * 0.6) + '"/>' : '');
+        (onRoute ? '<circle class="chart-routering" aria-hidden="true" r="' + num(M.R1) + '"/>' : '') +
+        (mark ? '<circle class="chart-cannot-ring" aria-hidden="true" r="' + num(M.R0) + '"/>' : '') +
+        (n.opens ? '<circle class="chart-ring2" aria-hidden="true" r="' + num(M.R0) + '"/>' : '') +
+        (isSel ? '<path class="chart-lock" aria-hidden="true" d="' + [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function (q) { var lk = Math.max(6, r * 0.7); return 'M' + num(q[0] * M.BK) + ' ' + num(q[1] * (M.BK - lk)) + 'L' + num(q[0] * M.BK) + ' ' + num(q[1] * M.BK) + 'L' + num(q[0] * (M.BK - lk)) + ' ' + num(q[1] * M.BK); }).join('') + '"/>' : '') +
+        (n.slot ? '<path class="chart-plus" aria-hidden="true" d="M' + num(M.BK + 3) + ' ' + num(-(M.BK + 3 + M.pa)) + 'h' + num(2 * M.pa) + 'M' + num(M.BK + 3 + M.pa) + ' ' + num(-(M.BK + 3 + 2 * M.pa)) + 'v' + num(2 * M.pa) + '"/>' : '');
       o += '<g class="chart-node ' + n.state + (n.rankOk ? '' : ' over-rank') + (mark ? ' cannot' : '') + (onRoute ? ' on-route' : '') + (isSel ? ' selected' : '') + (n.slot ? ' has-slot' : '') + (n.opens ? ' opens-sea' : '') + '" data-sector="' + n.id + '" tabindex="0" role="button" aria-label="' + esc(label) + '" transform="translate(' + num(n.x) + ' ' + num(n.y) + ')">' +
         '<circle class="hit" r="' + num(hits[n.id]) + '"/>' + extra + shape +
-        (mark ? '<path class="chart-cannot-x" aria-hidden="true" d="M' + num(r * 0.7) + ' ' + num(r * 0.7) + 'L' + num(r * 1.7) + ' ' + num(r * 1.7) + 'M' + num(r * 1.7) + ' ' + num(r * 0.7) + 'L' + num(r * 0.7) + ' ' + num(r * 1.7) + '"/>' : '') +
-        '<text class="chart-letter" y="' + num(-r * 2.2 - fs * 0.3) + '" text-anchor="middle" font-size="' + num(fs) + '">' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
+        (mark ? '<path class="chart-cannot-halo" aria-hidden="true" d="' + xd + '"/><path class="chart-cannot-x" aria-hidden="true" d="' + xd + '"/>' : '') +
+        '<text class="chart-letter" y="' + num(la.y) + '" text-anchor="' + la.anchor + '" font-size="' + num(fs) + '"' + (la.x ? ' x="' + num(la.x) + '"' : '') + '>' + esc(n.letter) + (idx >= 0 ? ' ' + (idx + 1) : '') + '</text>' +
         (tags.length ? '<text class="chart-tag" x="' + num(tagAt[n.id].x) + '" y="' + num(tagAt[n.id].y) + '" text-anchor="' + tagAt[n.id].anchor + '" font-size="' + num(fs * 0.8) + '">' + esc(tags.join(' · ')) + '</text>' : '') + '</g>';
     });
     return o + '</svg>';

@@ -1444,6 +1444,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | title (`.sheet h2`) | slab; a 12 px status field edge | `.sheet h2` | slab, back, out, idle |
 | suggestion (`.advice`) | accent wash and field edge; ink; the reason's edge: the choosing role's graphic | `.advice`, `.advice-step`, `.lead-` | accent, ink, rank, gil, loot, route |
 | actions | accent field, on, molten; other buttons ink edge on panel | `.btn.primary:hover`, `.btn.primary[disabled]:hover` | accent, molten |
+| outline button (`.btn.outline`) | no fill, accent edge, ink text; hover accent wash | `.btn.outline` | accent, ink, page, wash |
 | sector buttons (`.sector`) | page field, ink; sea graphic edge; letter route text; chosen: accent field, on, molten; order badge slab; disabled: line hatch | `.sector` | page, ink, sea, route, accent, molten, slab, line |
 | routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`) | one axis: the suggestion and the other routes as lanes: page field 3 trough with a 2 px ink-2 edge, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea | `.cmp`, `.cmp-lane` | panel, page, ink, accent, line, sea, shared |
 | route line (`.route-line`) | route graphic edge, route text; discs sea; ink rules | `.route-line`, `.route-pick .route-line`, `.planner .route-line b`, `.alts`, `.route-row` | route, ink, sea, line |
@@ -1451,6 +1452,19 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | rank box, rank-up plan | rank graphic edge, rank text | `.rankbox`, `.rank-plan`, `.facts dt` | rank, ink |
 | questions after a voyage (`fieldset`, `legend`) | ink edge; slab | `=fieldset`, `=legend` | ink, slab |
 | send-all rows (`.pick .chip`, `.pick-fc`) | status field and on; ink | `.pick` | back, out, idle, ink |
+
+### Map
+
+| Zone | Role and tone | Rule fragments | Roles allowed |
+| --- | --- | --- | --- |
+| community routes (`.cr-list`) | page field, ink-2 text and reason line, line hatch band on a route that cannot be used yet | `.cr-list`, `.cr-why` | page, ink, line |
+| head | slab with the sea's graphic band | `.map-panel > h2:first-child` | sea |
+| sea chain (`[data-map-sea]`) | page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2; the link between two seas: ink rule and arrow, the opening sector as a disc in its sea | `.map-seas`, `.sea-link` | page, ink, sea, line, shared, slab, accent |
+| planner (`.planner`) | page field, ink edge, sea graphic edge; route text; discs; error text; action accent | `.map-grid > .planner`, `.map-panel .field.inline` | page, ink, sea |
+| chart head (`.chart-head`) | sea field, on-mid, ink band | `.chart-head`, `.chart-sea`, `.chart-count` | sea, shared, ink |
+| chart (`.chart-svg`) | water; chart ink; back, idle, locked, route and error chart tones | `.chart-` | water, chartink, back, idle, locked, route, error, line, ink, molten |
+| legend (`.chart-key`) | water field, chart ink; swatches back, idle, locked chart tones | `.chart-key` | water, chartink, back, idle, locked, ink, error |
+| sector details (`.chart-details`) | panel; head sea field, on-mid; state line back text, idle text or ink-2 with its edge; labels ink-2; rank text; route text; tier number loot field, on-mid; open tier accent wash; rate loot text | `.chart-details`, `.chart-facts` | panel, page, sea, shared, back, idle, ink, rank, route, loot, slab, molten, accent |
 
 ### Log
 
@@ -1465,24 +1479,12 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | gil and heat line (`.log-what`) | gil text; gil graphic | `.log-what`, `.log-row.logged .log-what` | gil, idle |
 | logged or not (row edge) | loot graphic; idle graphic (dashed) and idle text | `.log-row.logged`, `.log-row.unlogged` | loot, idle |
 
-### Map
-
-| Zone | Role and tone | Rule fragments | Roles allowed |
-| --- | --- | --- | --- |
-| head | slab with the sea's graphic band | `.map-panel > h2:first-child` | sea |
-| sea chain (`[data-map-sea]`) | page field, ink; sea field edge; bar sea graphic on line; chosen: sea field, on-mid; closed: line hatch, ink-2; the link between two seas: ink rule and arrow, the opening sector as a disc in its sea | `.map-seas`, `.sea-link` | page, ink, sea, line, shared, slab, accent |
-| planner (`.planner`) | page field, ink edge, sea graphic edge; route text; discs; error text; action accent | `.map-grid > .planner`, `.map-panel .field.inline` | page, ink, sea |
-| chart head (`.chart-head`) | sea field, on-mid, ink band | `.chart-head`, `.chart-sea`, `.chart-count` | sea, shared, ink |
-| chart (`.chart-svg`) | water; chart ink; back, idle, locked, route and error chart tones | `.chart-` | water, chartink, back, idle, locked, route, error, line, ink, molten |
-| legend (`.chart-key`) | water field, chart ink; swatches back, idle, locked chart tones | `.chart-key` | water, chartink, back, idle, locked, ink |
-| sector details (`.chart-details`) | panel; head sea field, on-mid; state line back text, idle text or ink-2 with its edge; labels ink-2; rank text; route text; tier number loot field, on-mid; open tier accent wash; rate loot text | `.chart-details`, `.chart-facts` | panel, page, sea, shared, back, idle, ink, rank, route, loot, slab, molten, accent |
-
 ### Earnings
 
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
-| head | gil field, on-mid | `.earn-card:first-child` | gil, ink, slab |
-| tallies (`.earn-card`) | first: gil wash, ink, ink band; others: deep-water block (lighter than the page in a dark theme, darker in a light one, so it stands off the panel in every theme), 10 px gil field band above and 4 px below, on-deep figure and label | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink, page, deep |
+| head | gil field, on-mid | `.earn-card:first-child` | gil, ink, slab, shared |
+| tallies (`.earn-card`) | first (Today): solid gil field, on-mid, gil band; others: deep-water block (lighter than the page in a dark theme, darker in a light one, so it stands off the panel in every theme), 10 px gil field band above and 4 px below, on-deep figure and label | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink, page, deep |
 | scale line (`.earn-scale`) | ink-2: the printed scale of a table of bars | `.earn-scale` | ink |
 | section labels | ink; hatch and underline gil graphic | `.earn-t th`, `.earn-t th, .earn-t td` | line, ink |
 | position block | 1: accent field, on; 2 and 3: slab; others ink-2 | `.earn-ranked tr[data-pos] > td:first-child`, `.earn-ranked tr[data-pos="1"] > td:first-child`, `.earn-ranked tr[data-pos="2"] > td:first-child` | ink, accent, slab |
@@ -1494,7 +1496,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
-| panel heads | rank field, on-mid (recommendations: slab and a band of the four role fields); head state on | `.panel.recs > h2:first-child`, `.head-state` | route, rank, gil, loot, slab, ink, shared |
+| panel heads | rank field, on-mid (recommendations: the same head, with a 6 px stripe of the four role fields under it); head state on | `.panel.recs:not(.welcome):not(.empty-state):not(.map-panel) > h2:first-child`, `.head-state` | route, rank, gil, loot, slab, ink, shared |
 | notifications, free companies, ticks | ink, ink-2, slab legend; page field, ink edge; link accent | `.tick b`, `.wiz-foot` | route, ink |
 | ranking (`.rec-rank`) | each rung: its role's wash, ink, its role's field and on-mid for the number; first rung accent field edge | `.rec-rank`, `.rec-name`, `.recs .btn:focus-visible`, `.recs select:focus-visible`, `.rec-note`, `.rec-give`, `[data-recs-body]` | accent, ink, slab, route, rank, gil, loot, shared, page |
 | fuel; loot pickers | accent thumb, page field 3, ink; loot text, loot graphic edge, off: ink-3 | `.rec-picker`, `.rec-pick-row` | loot, ink, page |

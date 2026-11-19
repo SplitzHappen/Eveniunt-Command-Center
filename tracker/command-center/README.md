@@ -51,7 +51,7 @@ The two S6 rules "the own log alone picks the gil route" and "part advice refuse
 
 ## Submersibles step S5: what came back, the log and earnings (2026-11-12)
 
-`src/submersibles/earn.js` (plain script, also run by `tests/earn.test.js`): the route's possible loot, what each item is worth (better of the merchant price from game data and the Universalis average after the 5% tax, cached on the device for an hour), totals, gil per hour by route, the CSV, the archive file. In the page: "What came back" in a Back sub's send window (folded) and in the Log tab; the Earnings tab; Setup's archive at 75% of the size limit and "Load an archive file". Check C29; screenshots `evidence/submersibles-s5-*.png`.
+`src/submersibles/earn.js` (plain script, also run by `tests/earn.test.js`): the route's possible loot, what each item is worth (better of the merchant price from game data and the Universalis average after the 5% tax, cached on the device for an hour), totals, gil per hour by route, the CSV, the archive file. In the page: "What came back" in a Back sub's send window (folded) and in the Log tab; the Earnings tab; Setup's archive at 75% of the size limit and "Load an archive file". Check C29; screenshots `evidence/look-log-*.png` and `evidence/look-earnings-*.png`.
 
 ## Submersibles step S7: phone notifications (2026-11-12)
 
