@@ -26,6 +26,8 @@
   // Revision 4 (W33, Rev4.5): the deep-water tokens of an empty state's scope
   P.DEEP_MIN = 0.12; P.DEEP_MAX = 0.22; P.DEEP_CHROMA = 0.05; // --deep: lightness of the darker of ink and paper less 0.04, held between these, chroma at most this
   P.DEEP2_L = 0.34; P.DEEP2_CHROMA = 0.09; P.DEEP_ON = 7;      // --deep-2: this lightness (lowered by 0.01 until --on-deep reaches 7:1), chroma at most this
+  // W36: in a dark theme the darker of ink and paper is the page itself, so the formula above put the panel on the page's own navy. There the panel is lit instead: both ends lighter than the page
+  P.DEEP_LIT_MIN = 0.31; P.DEEP_LIT_MAX = 0.35; P.DEEP_LIT_STEP = 0.10; P.DEEP2_LIT = 0.44; // --deep: the page's lightness plus the step, held between these; --deep-2: this, lowered 0.01 at a time until --on-deep reaches 7:1
   // Revision 4 (spec Rev4.5, D38 to D40): the four meaning roles that used to follow the theme's accent have one fixed hue each, in every theme.
   P.ROLE_HUE = { rank: 232, gil: 92, loot: 188, route: 340 }; // azure, gold, teal, pink
   // W31 gold correction (spec Rev4.5): gold is a yellow at high lightness. The gil field has its own, higher lightness at hue 92 (light, dark); its two darker
@@ -148,10 +150,11 @@
       else { var l = rgbToLch(c); tokens['--' + s + '-s'] = toHex(colourAt(fit(l[2], pages, P.STRONG, l[1]), l[2], l[1])); }
     });
     // Revision 4 (W33, spec Rev4.5): deep water, the dark panel of an empty state. D is the darker of ink and paper, h its hue (the accent's when D is nearly neutral).
+    // (W36: in a dark theme D is the page, so the panel is lit: --deep is the page's lightness plus 0.10 held between 0.31 and 0.35 and --deep-2 starts at 0.44, so both ends stand clear of the page)
     // --deep: D's lightness less 0.04, held between 0.12 and 0.22, chroma at most 0.05; --deep-2: lightness 0.34, chroma at most 0.09, lowered 0.01 at a time until
     // --on-deep (the lighter of ink and paper) reaches 7:1 on it; --deep-line: --on-deep 45% into --deep-2, in OKLab.
     var darkC = lum(T.ink) <= lum(T.paper) ? T.ink : T.paper, lightC = darkC === T.ink ? T.paper : T.ink, dl = rgbToLch(darkC), dh = dl[1] < 0.02 ? rgbToLch(T.seal)[2] : dl[2];
-    var deepL = Math.max(P.DEEP_MIN, Math.min(P.DEEP_MAX, dl[0] - 0.04)), d2L = P.DEEP2_L, d2;
+    var lit = darkC === T.paper, deepL = lit ? Math.max(P.DEEP_LIT_MIN, Math.min(P.DEEP_LIT_MAX, dl[0] + P.DEEP_LIT_STEP)) : Math.max(P.DEEP_MIN, Math.min(P.DEEP_MAX, dl[0] - 0.04)), d2L = lit ? P.DEEP2_LIT : P.DEEP2_L, d2;
     var deep = colourAt(deepL, dh, P.DEEP_CHROMA);
     for (i = 0; i < 40; i++) { d2 = colourAt(d2L, dh, P.DEEP2_CHROMA); if (ratio(lightC, d2) >= P.DEEP_ON || d2L <= 0.05) break; d2L -= 0.01; }
     var la = rgbToLab(rnd(lightC)), lb = rgbToLab(rnd(d2)), ln = [0, 1, 2].map(function (q) { return la[q] * 0.45 + lb[q] * 0.55; });

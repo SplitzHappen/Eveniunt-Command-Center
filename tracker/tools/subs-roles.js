@@ -101,7 +101,7 @@ const ZONES = [
   Z('Send window', 'suggestion (`.advice`)', 'accent wash and field edge; ink; the reason\'s edge: the choosing role\'s graphic', ['.advice', '.advice-step', '.lead-'], ['accent', 'ink', 'rank', 'gil', 'loot', 'route']),
   Z('Send window', 'actions', 'accent field, on, molten; other buttons ink edge on panel', ['.btn.primary:hover', '.btn.primary[disabled]:hover'], ['accent', 'molten']),
   Z('Send window', 'sector buttons (`.sector`)', 'page field, ink; sea graphic edge; letter route text; chosen: accent field, on, molten; order badge slab; disabled: line hatch', ['.sector'], ['page', 'ink', 'sea', 'route', 'accent', 'molten', 'slab', 'line']),
-  Z('Send window', 'routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`)', 'one axis: the suggestion and the other routes as lanes: page field 3 trough, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea', ['.cmp', '.cmp-lane'], ['panel', 'page', 'ink', 'accent', 'line', 'sea', 'shared']),
+  Z('Send window', 'routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`)', 'one axis: the suggestion and the other routes as lanes: page field 3 trough with a 2 px ink-2 edge, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea', ['.cmp', '.cmp-lane'], ['panel', 'page', 'ink', 'accent', 'line', 'sea', 'shared']),
   Z('Send window', 'route line (`.route-line`)', 'route graphic edge, route text; discs sea; ink rules', ['.route-line', '.route-pick .route-line', '.planner .route-line b', '.alts', '.route-row'], ['route', 'ink', 'sea', 'line']),
   Z('Send window', 'what came back (`.loot-h`, `.loot-row`, `.qbtn`, `.rate-item b`)', 'loot field, on-mid, loot graphic hatch; line; page field, ink; loot text', ['.loot-h', '.loot-row', '.qbtn', '.rate-item', '.rates-tier', '.loot-name'], ['loot', 'shared', 'ink', 'line', 'page', 'accent']),
   Z('Send window', 'rank box, rank-up plan', 'rank graphic edge, rank text', ['.rankbox', '.rank-plan', '.facts dt'], ['rank', 'ink']),
@@ -126,7 +126,7 @@ const ZONES = [
   Z('Map', 'sector details (`.chart-details`)', 'panel; head sea field, on-mid; state line back text, idle text or ink-2 with its edge; labels ink-2; rank text; route text; tier number loot field, on-mid; open tier accent wash; rate loot text', ['.chart-details', '.chart-facts'], ['panel', 'page', 'sea', 'shared', 'back', 'idle', 'ink', 'rank', 'route', 'loot', 'slab', 'molten', 'accent']),
   // ---- Earnings ----
   Z('Earnings', 'head', 'gil field, on-mid', ['.earn-card:first-child'], ['gil', 'ink', 'slab']),
-  Z('Earnings', 'tallies (`.earn-card`)', 'first: gil wash, ink, ink band; others: panel, gil graphic band, gil text', ['.earn-card', '.earn-card:not(:first-child)', '.earn-card b'], ['gil', 'ink']),
+  Z('Earnings', 'tallies (`.earn-card`)', 'first: gil wash, ink, ink band; others: page-colour block, 10 px gil graphic band above and 4 px below, gil text, ink-2 label', ['.earn-card', '.earn-card:not(:first-child)', '.earn-card b'], ['gil', 'ink', 'page']),
   Z('Earnings', 'scale line (`.earn-scale`)', 'ink-2: the printed scale of a table of bars', ['.earn-scale'], ['ink']),
   Z('Earnings', 'section labels', 'ink; hatch and underline gil graphic', ['.earn-t th', '.earn-t th, .earn-t td'], ['line', 'ink']),
   Z('Earnings', 'position block', '1: accent field, on; 2 and 3: slab; others ink-2', ['.earn-ranked tr[data-pos] > td:first-child', '.earn-ranked tr[data-pos="1"] > td:first-child', '.earn-ranked tr[data-pos="2"] > td:first-child'], ['ink', 'accent', 'slab']),
@@ -142,7 +142,7 @@ const ZONES = [
   Z('Setup', 'guided setup (`.wiz`)', 'head rank field; steps: accent field (now), slab-on (done), outline; fields page and ink; note accent wash; a closed sea: sea wash and graphic edge; an open sea: sea field, on-mid; letters route text; error text', ['.wiz-head', '.dot', '.sea', '.sea[open]', '.sea[class*="in-sea-"]'], ['slab', 'molten', 'route', 'loot', 'gil', 'rank', 'accent', 'sea', 'shared', 'ink', 'page']),
   // ---- Empty states ----
   Z('Empty', 'full empty state (`.empty-state`)', 'page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band', ['.empty-state', '.es-kick', '.es-main', '.es-text', '.es-step', '.es-act', '.es-aside', '.es-note'], ['page', 'panel', 'slab', 'ink', 'shared', 'accent', 'route', 'loot', 'gil', 'rank']),
-  Z('Empty', 'scope (`.es-scope`)', 'deep fields; rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on', ['.es-scope'], ['deep', 'route', 'loot', 'gil', 'rank']),
+  Z('Empty', 'scope (`.es-scope`)', 'deep fields (in a dark theme lighter than the page, in a light theme darker); rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on, in a strip under the drawing parted by a deep graphic rule', ['.es-scope'], ['deep', 'route', 'loot', 'gil', 'rank']),
   Z('Empty', 'empty line (`.empty-line`)', 'page field, ink-2 dashed edge, ink; glyph: the screen\'s role, graphic', ['.empty-line'], ['page', 'ink', 'route', 'loot', 'gil', 'rank', 'sea']),
   // ---- Notices, errors ----
   Z('Notices', 'notice (`.note`)', 'accent wash and field edge, ink', ['=.note'], ['accent', 'ink']),
@@ -151,7 +151,7 @@ const ZONES = [
   Z('All screens', 'tab rail (`.tabs`)', 'ink on the page field 2; the current tab: the screen\'s role as a slab; icons in their screen\'s role', ['.tabs'], ['ink', 'page', 'slab', 'molten', 'accent', 'route', 'loot', 'sea', 'gil', 'rank', 'shared']),
   Z('All screens', 'panel and card surface (`.panel`, `.fc`, `.strip`)', 'panel, ink edge, shadow; molten band', ['.panel, .fc, .earn-card, .sheet, .strip', '.panel h4', '.recs h3', '.wide-panel > h3'], ['panel', 'ink', 'overlay', 'molten', 'route', 'loot', 'gil', 'rank', 'sea']),
   Z('All screens', 'panel heads (`.panel > h2`)', 'slab field, on, molten band; on a screen: the screen\'s role field, on-mid', ['.panel > h2', '.panel:not(.welcome)', ':is(.panel > h2:first-child, .fc-head'], ['slab', 'molten', 'route', 'loot', 'gil', 'rank', 'sea', 'shared', 'ink']),
-  Z('All screens', 'buttons, links, fields (`.btn`, `.link`, `.inp`)', 'ink edge on panel; link accent; focus accent', ['=.btn', '=.link', '.inp', 'select', '.qinp', 'input[type=', '.sea-bulk', '=.muted', '=.hint', '=.tag', '=.field', '.hint', '.field'], ['ink', 'page', 'accent', 'slab']),
+  Z('All screens', 'buttons, links, fields (`.btn`, `.link`, `.inp`)', 'ink edge on panel; link accent; focus accent; radio buttons and checkboxes: a 2 px ink edge on the page field, the accent when checked with its text colour for the mark, the accent as the focus ring, ink-3 and page field 2 when disabled', ['=.btn', '=.link', '.inp', 'select', '.qinp', 'input[type=', '.sea-bulk', '=.muted', '=.hint', '=.tag', '=.field', '.hint', '.field'], ['ink', 'page', 'accent', 'slab']),
   Z('All screens', 'hint and tag lines', 'ink-2', ['.muted', '.tag'], ['ink'])
 ];
 

@@ -559,10 +559,17 @@ test('empty states (W33): the deep-water tokens follow Rev4.5 and every pair of 
     const darker = M.lum(M.rnd(ink)) <= M.lum(M.rnd(paper)) ? ink : paper, lighter = darker === ink ? paper : ink;
     assert.deepEqual(M.rnd(c('--on-deep')), M.rnd(lighter), '--on-deep is the lighter of ink and paper in ' + where);
     const dl = M.rgbToLch(darker), deep = M.rgbToLch(c('--deep')), d2 = M.rgbToLch(c('--deep-2')), h = dl[1] < 0.02 ? M.rgbToLch(hx(th.seal))[2] : dl[2];
-    if (deep[0] < 0.115 || deep[0] > 0.225) fail.push('--deep lightness ' + deep[0].toFixed(3) + ' outside 0.12 to 0.22 in ' + where);
+    // W36: in a dark theme D is the page itself, so the panel is lit instead of darkened: --deep is the page's lightness plus 0.10 held between 0.31 and 0.35, --deep-2 starts at 0.44
+    const lit = darker === paper && mode === 'dark';
+    if (!lit && (deep[0] < 0.115 || deep[0] > 0.225)) fail.push('--deep lightness ' + deep[0].toFixed(3) + ' outside 0.12 to 0.22 in ' + where);
+    if (lit && (deep[0] < 0.305 || deep[0] > 0.355)) fail.push('--deep lightness ' + deep[0].toFixed(3) + ' outside 0.31 to 0.35 in a dark theme, ' + where);
     if (deep[1] > 0.052) fail.push('--deep chroma ' + deep[1].toFixed(3) + ' over 0.05 in ' + where);
     if (d2[1] > 0.092) fail.push('--deep-2 chroma ' + d2[1].toFixed(3) + ' over 0.09 in ' + where);
-    if (d2[0] > 0.345) fail.push('--deep-2 lightness ' + d2[0].toFixed(3) + ' over 0.34 in ' + where);
+    if (!lit && d2[0] > 0.345) fail.push('--deep-2 lightness ' + d2[0].toFixed(3) + ' over 0.34 in ' + where);
+    if (lit && d2[0] > 0.445) fail.push('--deep-2 lightness ' + d2[0].toFixed(3) + ' over 0.44 in a dark theme, ' + where);
+    // W36, the measure for "clearly distinct from the page": each end of the panel against the page colour. A dark theme: at least 1.3:1 at the dark end and 1.7:1 at the light end (both ends lighter than the page); a light theme: at least 3:1 (the panel is dark on a light page)
+    need7('empty scope: deep end on the page (dark theme 1.3, light theme 3)', c('--deep'), paper, lit ? 1.3 : 3, where);
+    need7('empty scope: deep-2 end on the page (dark theme 1.7, light theme 3)', c('--deep-2'), paper, lit ? 1.7 : 3, where);
     // sRGB rounding moves the hue of a very dark colour; the model asks only that it is the one it was given
     const gapH = M.hueGap(deep[2], h); if (deep[1] > 0.01 && gapH > 6) fail.push('--deep hue ' + gapH.toFixed(1) + ' deg off its source in ' + where);
     // --deep-line is --on-deep 45% into --deep-2 in OKLab
@@ -595,6 +602,11 @@ test('empty states (W33): the deep-water tokens follow Rev4.5 and every pair of 
     need7('Log day rule: on-slab-2 on slab (4.5)', st('--on-slab-2'), st('--slab'), 4.5, where);
     need7('Earnings scale line: ink-2 on slip (4.5)', hx(th.ink2), hx(th.slip), 4.5, where);
     need7('Earnings tally label: ink-2 on slip (4.5)', hx(th.ink2), hx(th.slip), 4.5, where);
+    // W36: the three plain tallies are page-colour blocks under a gil band, their figures gil text and their labels the secondary ink
+    need7('Earnings tally (page block): ink-2 label on paper (4.5)', hx(th.ink2), paper, 4.5, where);
+    need7('Earnings tally (page block): gil text on paper (4.5)', c('--gil-s'), paper, 4.5, where);
+    need7('Earnings tally (page block): gil band on paper (3)', c('--gil-g'), paper, 3, where);
+    need7('Earnings tally (page block): ink on paper (7)', ink, paper, 7, where);
     need7('Earnings bar: ink on the gil wash (7)', ink, c('--gil-w'), 7, where);
   }
   console.log('Empty states (W33) and Log and Earnings (W34), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(70) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
@@ -659,11 +671,48 @@ test('send window, Setup and Map chain (W35): every new pair reaches its contras
 
 test('send window, Setup and Map chain (W35): subs.css and subs.js carry the rules and the markup', () => {
   const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
-  for (const s of ['.sheet h2.st-back { --st: var(--back); }', '.sheet h2.st-out { --st: var(--out); }', '.sheet h2.st-idle { --st: var(--idle); }', '.cmp-lane.pick .tl-bar { height: 8px;', '.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }',
+  for (const s of ['.sheet h2.st-back { --st: var(--back); }', '.sheet h2.st-out { --st: var(--out); }', '.sheet h2.st-idle { --st: var(--idle); }', '.cmp-lane.pick .tl-bar { height: 12px;', '.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }',
     '.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }', '.rec-rank .rung-1 { min-height: 76px; } .rec-rank .rung-2 { min-height: 68px; } .rec-rank .rung-3 { min-height: 60px; } .rec-rank .rung-4 { min-height: 56px; }',
     '.rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }', '.rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }', '.rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }', '.rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }',
     '.wiz .tick b { color: var(--route-s); }', '.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, var(--rule) 0 2px, transparent 2px 9px), var(--paper); color: var(--ink-2); }', '.map-panel { container: mappanel / inline-size; }']) assert.ok(css.includes(s), s);
   assert.ok(!/\.map-seas \{ flex-wrap: nowrap; overflow-x: auto/.test(css), 'the phone strip that scrolled sideways is gone');
   assert.ok(!/clip-path[^;]*;[^}]*data-map-sea|data-map-sea[^}]*clip-path/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'the sea buttons are not cut with clip-path (they take focus)');
   for (const t of ['function cmpLane(', 'function cmpAxis(', 'TL.span(Math.max.apply(null, [a.plan.ev.seconds]', '<h2 class="st-out">', "'<h2 class=\"st-' + st + '\">'", '<p class="head-state" aria-hidden="true">', '<li class="rung-', "(n ? '' : ' closed')", 'class="sea-link"', '<div class="route-row">']) assert.ok(js.includes(t), t);
+});
+
+// ---- Revision 4 (W36): the final pass ----
+test('final pass (W36): the trough edge, the drawn radio buttons and checkboxes, the lifted ladder rungs, the page-colour tallies and the deep-water panel reach their contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need36 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), paper = hx(th.paper), slip = hx(th.slip), e0 = P.env(row, mode), st = (n) => P.colour('var(' + n + ')', e0);
+    // the send window's trough carries the scale: its 2 px edge (ink-2) against the plate (the panel colour) is at least 3:1 (the text tone reaches 4.5:1)
+    need36('send window trough: the 2 px edge (ink-2) on the plate (3)', hx(th.ink2), slip, 3, where);
+    need36('send window trough: the edge (ink-2) on the page field 3 inside it (3)', hx(th.ink2), st('--paper-3'), 3, where);
+    // radio buttons and checkboxes: the 2 px ink edge on the page colour and on the panel (3), the check mark (on-seal) on the accent (4.5), the focus ring (the accent) on the page colour and the panel (3)
+    need36('control: the ink edge on the page colour (3)', ink, paper, 3, where);
+    need36('control: the ink edge on the panel (3)', ink, slip, 3, where);
+    need36('control: the check mark (on-seal) on the accent (4.5)', hexRgb(onSeal(hexRgb((mode === 'dark' ? row[3] : row[2])[2]))), st('--seal'), 4.5, where);
+    need36('control: the focus ring (the accent) on the page colour (printed)', st('--seal'), paper, 0, where);
+    need36('control: the focus ring (the accent) on the panel (printed)', st('--seal'), slip, 0, where);
+    // the ladder rungs: the role's field at 16% over its wash (what the row's two backgrounds make), ink on it at 7:1
+    for (const v of ['route', 'rank', 'gil', 'loot']) { const w = c('--' + v + '-w'), f = c('--' + v + '-m'), comp = w.map((x, i) => x * 0.84 + f[i] * 0.16); need36('ladder rung (lifted): ink on the ' + v + ' wash with 16% of its field (7)', ink, comp, 7, where); }
+    // the Earnings tallies other than the first are page-colour blocks (pairs in the W33 and W34 test)
+    need36('earnings tally block: the gil band (3:1 graphic) on the panel it stands on (3)', c('--gil-g'), slip, 3, where);
+  }
+  console.log('Final pass (W36), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(100) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('final pass (W36): subs.css carries the rules (columns by width, the axis labels, the head tools, the scope strip, the controls, the compact chain)', () => {
+  const must = ['@media (min-width: 974px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }', '@media (min-width: 1404px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }', '@media (min-width: 1834px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }',
+    '@container fcsubs (min-width: 400px) and (max-width: 491px) { .tl-axis > i:nth-child(2), .tl-axis > i:nth-child(4) { display: none; } }', '.fc-tools { flex: 1 1 100%; flex-wrap: nowrap; }',
+    '.es-scope::after { content: ""; position: absolute; left: 0; right: 0; bottom: 40px;', 'input[type="checkbox"], input[type="radio"] { -webkit-appearance: none; appearance: none;', 'input[type="radio"]:checked { background-image: radial-gradient(circle, var(--on-seal) 0 4px, var(--seal) 5px); }',
+    '.cmp-lane .tl-bar { height: 10px; outline: 2px solid var(--ink-2); outline-offset: -2px; }', '.chart-svg g { fill: none; }', '.earn-card:not(:first-child) { background-color: var(--paper);',
+    'grid-auto-flow: dense;', '.sea-link:has(+ [data-map-sea][aria-pressed="true"])', '.map-grid > .chart-wrap { order: 1; }'];
+  for (const s of must) assert.ok(css.includes(s), s);
+  // the four rungs carry a 16% field over their wash
+  for (const v of ['route', 'rank', 'gil', 'loot']) assert.ok(css.includes('color-mix(in srgb, var(--' + v + '-m) 16%, transparent)'), v);
+  // the old breakpoints are gone
+  assert.ok(!css.includes('@media (min-width: 701px) { .fleet:has(') && !css.includes('@media (min-width: 1400px) { .fleet:has('), 'the columns no longer start at 701 px and 1,400 px');
 });

@@ -4220,8 +4220,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         okState(d.earn, 'Nothing logged yet', 'Go to the Log', 'log', 2, 'No earnings yet') && d.earn.steps.map((x) => x.split('|')[1]).join() === 'v-loot,v-gil' && okState(d.hidden, 'Every free company is hidden', 'Show them in Setup', 'setup', 0, 'Nothing on the Board') &&
         d.hiddenExtra.note && d.hiddenExtra.fleetEmpty && d.hiddenExtra.after && d.setupOpens && d.logToBoard === 'page' && d.earnToLog === 'page' && d.hiddenToSetup && d.focus && d.focus.w >= 2 && d.focus.s !== 'none' &&
         four(d).map((x) => x.word).join() === 'Your dock,Log,Earnings,Hidden' && four(d).every((x) => x.fan !== 'none' && /gradient/.test(x.bg)) &&
-        four(p).every((x) => x.side <= 0 && x.hFits && x.actH >= 36 && x.scopeH >= 130 && x.scopeH <= 150) && rm.fan === 'none' && !d.errors.length && !p.errors.length && !rerr.length;
-      record('C107', 'Empty states (W33): the four full empty states (the Board with no free company, which the Map shows too, every company hidden, the Log with no voyage, Earnings with none) show their kicker, headline, steps in their role colours and one action; the actions open the setup, the Board, the Log and Setup; the scope is hidden from screen readers and holds no colour attribute; at 360 px there is no sideways scroll, the headline fits and the action is at least 36 px; the scope turns and, with reduced motion, stands still',
+        four(p).every((x) => x.side <= 0 && x.hFits && x.actH >= 36 && x.scopeH >= 130 && x.scopeH <= 190) && rm.fan === 'none' && !d.errors.length && !p.errors.length && !rerr.length;
+      record('C107', 'Empty states (W33): the four full empty states (the Board with no free company, which the Map shows too, every company hidden, the Log with no voyage, Earnings with none) show their kicker, headline, steps in their role colours and one action; the actions open the setup, the Board, the Log and Setup; the scope is hidden from screen readers and holds no colour attribute; at 360 px there is no sideways scroll, the headline fits and the action is at least 36 px; the scope turns and, with reduced motion, stands still (W36: on a phone the scope band is 180 px, a 140 px drawing and a 40 px strip for its labels)',
         ok, { desktop: d, phone: p, reduced: { fan: rm.fan }, errors: [d.errors, p.errors, rerr] });
       server.close();
     });
@@ -4424,7 +4424,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const chain = (pg) => pg.evaluate(() => {
         const bs = [...document.querySelectorAll('[data-map-sea]')], links = [...document.querySelectorAll('.map-seas .sea-link')], box = document.querySelector('.map-seas').getBoundingClientRect();
         const cs = getComputedStyle(document.querySelector('.map-seas'));
-        return { n: bs.length, flex: cs.flexDirection, tops: [...new Set(bs.map((b) => Math.round(b.getBoundingClientRect().top)))].length, rows: bs.map((b) => { const t = b.textContent, m = /^(.+?) found (\d+) of (\d+)$/.exec(t.trim()); return { name: m && m[1], n: m && +m[2], of: m && +m[3], closed: b.classList.contains('closed'), pressed: b.getAttribute('aria-pressed'), h: Math.round(b.getBoundingClientRect().height), clip: getComputedStyle(b).clipPath, tabindex: b.getAttribute('tabindex') }; }),
+        return { n: bs.length, flex: cs.flexDirection, disp: cs.display, tops: [...new Set(bs.map((b) => Math.round(b.getBoundingClientRect().top)))].length, rows: bs.map((b) => { const t = b.textContent, m = /^(.+?) found (\d+) of (\d+)$/.exec(t.trim()); return { name: m && m[1], n: m && +m[2], of: m && +m[3], closed: b.classList.contains('closed'), pressed: b.getAttribute('aria-pressed'), h: Math.round(b.getBoundingClientRect().height), clip: getComputedStyle(b).clipPath, tabindex: b.getAttribute('tabindex') }; }),
           links: links.map((l) => ({ t: l.textContent.trim(), disc: (l.querySelector('.disc') || {}).textContent, aria: (l.querySelector('.discs') || {}).getAttribute && l.querySelector('.discs').getAttribute('aria-hidden'), tab: l.tabIndex, vis: l.querySelector('.sea-link-t').getBoundingClientRect().width > 20 })), kids: [...document.querySelector('.map-seas').children].map((c) => c.tagName.toLowerCase() + (c.classList.contains('sea-link') ? '.l' : '')).join(' '), side: document.documentElement.scrollWidth - innerWidth, boxW: Math.round(box.width) };
       });
       const wide = await chain(page);
@@ -4448,8 +4448,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ok = wide.n === 7 && exactly(wide) && wide.rows.map((r) => r.closed).join() === 'false,true,true,true,true,true,true' && wide.rows.map((r) => r.n).join() === '5,0,0,0,0,0,0' && exactly(fb) && fb.rows.map((r) => r.closed).join() === 'false,true,true,true,true,true,true' && fb.rows[0].n === 1 &&
         wide.flex === 'row' && wide.tops === 1 && wide.links.length === 6 && wide.links.every((l, i) => new RegExp('^.+ opens ' + wide.rows[i + 1].name + '$').test(l.t) && l.disc && l.aria === 'true' && l.tab === -1 && !l.vis) && wide.kids === 'button span.l button span.l button span.l button span.l button span.l button span.l button' && wide.side <= 0 &&
         pressedClosed.cls.includes('closed') && pressedClosed.pressed === 'true' && /^Sea of Ash found 0 of 20$/.test(pressedClosed.text) && focus.sea === '3' && focus.w >= 2 && focus.s !== 'none' &&
-        ph1.n === 7 && ph1.flex === 'column' && exactly(ph1) && ph1.rows.every((r) => r.h >= 40) && ph1.links.every((l) => l.vis) && ph1.side <= 0 && real(errors).length === 0 && real(ph.errors).length === 0;
-      record('C112', 'Map chain (W35): a sea button is "closed" exactly when nothing is found there (seven buttons, each still "NAME found n of m", none focusable except as a button, no clip-path); the seas stand in one row at 1,440 px joined by six links, each a disc of the sector that opens the next sea with the words "SECTOR opens SEA"; the chosen sea can be closed and stays chosen; a sea button shows a focus outline; at 360 px the chain stands upright (no sideways scroll, every button 40 px or more, the link words shown)', ok, { wide, fb, pressedClosed, focus, ph1, errors: real(errors) });
+        ph1.n === 7 && ph1.disp === 'grid' && ph1.tops <= 4 && exactly(ph1) && ph1.rows.every((r) => r.h >= 44) && ph1.links.filter((l) => l.vis).length <= 1 && ph1.side <= 0 && real(errors).length === 0 && real(ph.errors).length === 0;
+      record('C112', 'Map chain (W35): a sea button is "closed" exactly when nothing is found there (seven buttons, each still "NAME found n of m", none focusable except as a button, no clip-path); the seas stand in one row at 1,440 px joined by six links, each a disc of the sector that opens the next sea with the words "SECTOR opens SEA"; the chosen sea can be closed and stays chosen; a sea button shows a focus outline; at 360 px the chain is a compact grid of two seas to a row (W36: no sideways scroll, every button 44 px or more, only the caption of the chosen sea shown)', ok, { wide, fb, pressedClosed, focus, ph1, errors: real(errors) });
       server.close();
     });
 
@@ -4573,6 +4573,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const roleAudit = (pg, list) => pg.evaluate((list) => {
         const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true }), memo = new Map();
         const px = (c) => { if (memo.has(c)) return memo.get(c); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data, r = [d[0], d[1], d[2], d[3] / 255]; memo.set(c, r); return r; };
+        // the tones the theme itself sets (the line colours, which the model prints as a formula): read from the page, as the browser resolves them
+        ['--rule', '--grid'].forEach((t) => { const pr = document.createElement('i'); pr.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + t + ')'; document.body.appendChild(pr); const q = px(getComputedStyle(pr).backgroundColor); pr.remove(); if (q[3] >= 0.99) list = list.concat([q.slice(0, 3)]); });
         const miss = new Map(); let n = 0;
         const hex = (r) => '#' + r.slice(0, 3).map((x) => x.toString(16).padStart(2, '0')).join('');
         const check = (c, what, el) => {
@@ -4606,6 +4608,27 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         document.querySelectorAll('.chart-svg .chart-chev').forEach((el) => { if (getComputedStyle(el).display !== 'none') { out.chevShown++; if (!(el.classList.contains('lead') || el.classList.contains('goal'))) out.chevBad++; } });
         return out;
       });
+      // W36: the axis labels on screen (the ticks that are drawn, not the notches): left to right they are never closer than 6 px, "now" is first and the quarter that ends the axis is last, three or more of them
+      const axisGaps = (pg) => pg.evaluate(() => {
+        const res = { axes: 0, minGap: 999, bad: [] };
+        document.querySelectorAll('.tl-axis').forEach((ax) => {
+          if (!ax.getClientRects().length) return;
+          const all = [...ax.querySelectorAll('i:not(.tl-mark)')], shown = all.filter((i) => getComputedStyle(i).display !== 'none'), r = shown.map((i) => i.getBoundingClientRect());
+          res.axes++;
+          for (let k = 1; k < r.length; k++) res.minGap = Math.min(res.minGap, Math.round((r[k].left - r[k - 1].right) * 10) / 10);
+          if (shown.length < 3 || shown[0] !== all[0] || shown[shown.length - 1] !== all[all.length - 1] || shown[0].textContent !== 'now' || !/^\+\d+ h$/.test(shown[shown.length - 1].textContent)) res.bad.push(shown.map((i) => i.textContent).join(' '));
+        });
+        return res;
+      });
+      // W36: colours as the browser resolves them: a token (as a background) or a property of the first element a selector finds, as three bytes; null when nothing is there
+      const colourOf = (pg, list) => pg.evaluate((list) => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+        const px = (c) => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+        return list.map(([sel, prop]) => {
+          if (sel === 'token') { const pr = document.createElement('i'); pr.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + prop + ')'; (document.querySelector('.subs-page') || document.body).appendChild(pr); const c = px(getComputedStyle(pr).backgroundColor); pr.remove(); return c; }
+          const el = document.querySelector(sel); return el ? px(getComputedStyle(el)[prop]) : null;
+        });
+      }, list);
       const walk = async (opts, tag, screens, checkPhone, theme, mode, pal) => {
         const { ctx, errors } = await context(opts);
         const page = await ctx.newPage();
@@ -4617,7 +4640,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const ready = () => page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.goto(ROOT5 + 'submersibles/'); await ready();
         await seedL1(page); await page.reload(); await ready();
-        const wide = [], wideNew = [], fam = {}, scr = {}, audit = {}, aud = pal ? rolePalette(pal.theme, pal.mode) : null, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); if (/^(wizard|empty)/.test(name)) wideNew.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); if (aud) audit[name] = await roleAudit(page, aud); };
+        const wide = [], wideNew = [], fam = {}, scr = {}, audit = {}, gaps = {}, aud = pal ? rolePalette(pal.theme, pal.mode) : null, shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); if (checkPhone) wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); if (/^(wizard|empty)/.test(name)) wideNew.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); if (aud) audit[name] = await roleAudit(page, aud); if (/^board/.test(name)) gaps[name] = await axisGaps(page); };
         const tab = async (t) => { await page.click('[data-tab=' + t + ']'); await page.waitForTimeout(250); if (pal) scr[t] = await readScr(page); };
         const out = {};
         if (pal) { // the palette sheet: before any screen, on the Board's page background, then removed
@@ -4632,6 +4655,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         if (screens.includes('board')) { await page.waitForSelector('.sub[data-sub]'); await shot('board');
           // W21: the Out row (Sub Two, sent an hour ago, back in 27 hours) carries one voyage gauge, drawn and named in words
           out.lockedSea = await page.evaluate(() => document.querySelectorAll('.sub[data-status="locked"][class*="in-sea-"]').length); out.headBand = await page.evaluate(() => [...document.querySelectorAll('.fc-head')].filter((h) => /linear-gradient/.test(h.getAttribute('style') || '') && getComputedStyle(h).backgroundImage.includes('linear-gradient')).length);
+          // W36: the two buttons of a company head stand on one line
+          out.headTools = await page.evaluate(() => { const t = document.querySelector('.fc-head .fc-tools'), bs = t ? [...t.querySelectorAll('.btn')].map((b) => b.getBoundingClientRect()) : []; return { n: bs.length, sameLine: bs.every((b) => Math.abs(b.top - bs[0].top) <= 2), head: Math.round(document.querySelector('.fc-head').getBoundingClientRect().height), btnH: bs.length ? Math.round(Math.max(...bs.map((b) => b.height))) : 0 }; });
           out.gauge = await page.evaluate(() => { const r = document.querySelector('.sub[data-status="out"] .vgauge'); return { n: document.querySelectorAll('.sub[data-status="out"] .vgauge').length, h: r ? Math.round(r.getBoundingClientRect().height) : 0, text: r ? r.nextElementSibling.textContent : '' }; }); }
         // W32: the Board by return time (one column of compact lanes on the shared axis); a picture, the colour families recorded, the sort put back
         if (screens.includes('board') && !checkPhone) { await page.click('[data-sort=time]'); await page.waitForSelector('.fc.wide .tl-axis'); await page.waitForTimeout(250); await shot('board-time'); out.timeLanes = await page.evaluate(() => document.querySelectorAll('.fc.wide .sub[data-sub]').length); await page.click('[data-sort=fc]'); await page.waitForSelector('.fleet'); }
@@ -4640,12 +4665,16 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           // W20, W35: the same window scrolled to the comparison, the suggestion and the other routes on one axis (a picture only)
           await page.$eval('#sheet .cmp', (el) => el.scrollIntoView({ block: 'center' })); await page.waitForTimeout(250);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-sheet-route-' + tag + '.png') });
+          { const [edge, plate] = await colourOf(page, [['#sheet .cmp-lane .tl-bar', 'outlineColor'], ['#sheet .cmp', 'backgroundColor']]); out.trough = await page.evaluate(() => { const b = document.querySelector('#sheet .cmp-lane .tl-bar'), cs = getComputedStyle(b); return { w: parseFloat(cs.outlineWidth), style: cs.outlineStyle, h: Math.round(b.getBoundingClientRect().height) }; }); out.trough.ratio = Math.round(PAL.ratio(edge, plate) * 100) / 100; }
           await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('#sheet[open]')).catch(() => {});
         }
         if (screens.includes('log')) { await tab('log'); await page.waitForSelector('.log-row[data-trip]'); await shot('log');
           // W25: the Log's rows carry their sea, whether loot is logged and the grade chip (read from the page; the colours are measured by the family count)
+          out.unlogged = await page.evaluate(() => { const m = document.querySelector('.log-row.unlogged .log-what .muted'), cs = m && getComputedStyle(m); return m ? { text: m.textContent.trim(), style: cs.borderTopStyle, w: parseFloat(cs.borderTopWidth), heat: getComputedStyle(m.closest('.log-what'), '::after').content } : null; });
           out.logProbe = await page.evaluate(() => { const rows = [...document.querySelectorAll('.log-row')]; return { n: rows.length, seas: [...new Set(rows.map((r) => (r.className.match(/in-sea-\d/) || [''])[0]).filter(Boolean))].length, logged: rows.filter((r) => r.classList.contains('logged')).length, unlogged: rows.filter((r) => r.classList.contains('unlogged')).length, graded: rows.filter((r) => r.querySelector('.log-grade')).length, ungraded: rows.filter((r) => !r.querySelector('.log-grade')).length, chips: [...new Set([...document.querySelectorAll('.log-grade')].map((c) => c.textContent))].join('|'), cells: [...new Set(rows.map((r) => getComputedStyle(r.querySelector('.log-when')).backgroundColor))].length }; }); }
         if (screens.includes('map')) { await tab('map'); await page.waitForSelector('.chart-svg'); await page.click('.chart-svg [data-sector="10"]'); await page.waitForSelector('.chart-details'); await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(250); await shot('map'); out.chartMap = await chartProbe(page);
+          // W36: the chain of seas and the chart on the first screen (the tab bar is fixed at the bottom of a phone)
+          out.mapChain = await page.evaluate(() => { const ch = document.querySelector('.map-seas').getBoundingClientRect(), bs = [...document.querySelectorAll('[data-map-sea]')].map((b) => b.getBoundingClientRect()), svg = document.querySelector('.chart-svg').getBoundingClientRect(), tabs = document.querySelector('.tabs').getBoundingClientRect(), phone = getComputedStyle(document.querySelector('.tabs')).position === 'fixed', vis = [...document.querySelectorAll('.map-seas .sea-link')].filter((l) => l.getClientRects().length).length; return { chainH: Math.round(ch.height), rows: new Set(bs.map((b) => Math.round(b.top))).size, minH: Math.round(Math.min(...bs.map((b) => b.height))), chartTop: Math.round(svg.top), chartShown: Math.round(Math.min(svg.bottom, phone ? tabs.top : innerHeight) - Math.max(svg.top, 0)), innerH: innerHeight, links: vis, side: document.documentElement.scrollWidth - innerWidth }; });
           // W19: the sector console with the first tier block opened, scrolled to it (a picture only, no assertion)
           await page.$eval('.chart-details .rates-tier', (el) => { el.open = true; el.scrollIntoView({ block: 'center' }); }); await page.waitForTimeout(250);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-map-tiers-' + tag + '.png') });
@@ -4658,8 +4687,23 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           // W20: the ranked table scrolled into view (a picture only; at 360 px every figure shows with no inner scrolling)
           await page.waitForTimeout(800); await page.evaluate(() => { const el = document.querySelector('.earn-ranked'); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 140, behavior: 'instant' }); }); await page.waitForTimeout(400);
           if (SHOT) await page.screenshot({ path: path.join(ev, 'look-earnings-ranked-' + tag + '.png') }); }
-        if (screens.includes('setup')) { await tab('setup'); await page.waitForSelector('[data-recs-panel]'); await shot('setup'); }
-        if (screens.includes('recommendations')) { await page.$eval('[data-recs-panel]', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('recommendations'); }
+        if (screens.includes('setup')) { await tab('setup'); await page.waitForSelector('[data-recs-panel]'); await shot('setup');
+          // W36: radio buttons and checkboxes drawn from the roles: the unchecked box's edge against the page colour and the panel (3:1), the checked state in the accent, a focus ring
+          { const [ink, paper, slip, seal, onSeal] = await colourOf(page, [['token', '--ink'], ['token', '--paper'], ['token', '--slip'], ['token', '--seal'], ['token', '--on-seal']]);
+            const r = await page.evaluate(() => {
+              const radios = [...document.querySelectorAll('input[type="radio"]')].filter((e) => e.getClientRects().length), boxes = [...document.querySelectorAll('input[type="checkbox"]')].filter((e) => e.getClientRects().length), cs = (e) => getComputedStyle(e);
+              const un = radios.find((e) => !e.checked), on = radios.find((e) => e.checked), cb = boxes.find((e) => !e.checked), cbOn = boxes.find((e) => e.checked);
+              return { radios: radios.length, boxes: boxes.length, unW: un && parseFloat(cs(un).borderTopWidth), unApp: un && cs(un).appearance, cbApp: cb && cs(cb).appearance, onImg: on && /radial-gradient/.test(cs(on).backgroundImage), cbOnBg: cbOn ? cs(cbOn).backgroundColor : null, size: un && Math.round(un.getBoundingClientRect().width), cbSize: cb && Math.round(cb.getBoundingClientRect().width), unEdge: un && cs(un).borderTopColor, cbEdge: cb && cs(cb).borderTopColor };
+            });
+            const [unEdge, cbEdge, cbOnBg] = await colourOf(page, [['input[type="radio"]:not(:checked)', 'borderTopColor'], ['input[type="checkbox"]:not(:checked)', 'borderTopColor'], ['input[type="checkbox"]:checked', 'backgroundColor']]);
+            await page.focus('input[type="radio"]'); await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');
+            r.focus = await page.evaluate(() => { const a = document.activeElement, c = getComputedStyle(a); return { type: a.type, w: parseFloat(c.outlineWidth), s: c.outlineStyle }; });
+            r.edgeOnPaper = Math.round(PAL.ratio(unEdge, paper) * 100) / 100; r.edgeOnSlip = Math.round(PAL.ratio(unEdge, slip) * 100) / 100; r.cbEdgeOnSlip = Math.round(PAL.ratio(cbEdge, slip) * 100) / 100;
+            r.checkedIsAccent = !!cbOnBg && cbOnBg.join() === seal.join(); r.markOnAccent = Math.round(PAL.ratio(onSeal, seal) * 100) / 100;
+            out.controls = r;
+            if (SHOT && pal) { await page.screenshot({ path: path.join(ev, 'look-controls-' + tag + '.png'), fullPage: true }); await page.evaluate(() => window.scrollTo(0, 0)); } } }
+        if (screens.includes('recommendations')) { await page.$eval('[data-recs-panel]', (el) => el.scrollIntoView()); await page.waitForTimeout(250); await shot('recommendations');
+          out.rungs = await page.evaluate(() => [...document.querySelectorAll('.rec-rank li:not(.hint)')].map((li) => ({ img: /linear-gradient/.test(getComputedStyle(li).backgroundImage), bg: getComputedStyle(li).backgroundColor }))); }
         if (screens.includes('wizard')) {
           // W29: the setup wizard on its last step, where every sea is listed (the first one open); a picture, the sea rows counted, no sideways scroll
           await tab('setup'); await page.click('[data-act="edit"][data-fc="fa"]'); await page.waitForSelector('.wiz-head');
@@ -4707,12 +4751,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           delete out.palGot;
         }
         await ctx.close();
-        return { wide, wideNew, fam, audit, errors: real(errors), ...out };
+        return { wide, wideNew, fam, audit, gaps, errors: real(errors), ...out };
       };
       const all8 = ['board', 'sheet', 'log', 'map', 'planner', 'earnings', 'setup', 'recommendations'];
       // W29, W33: the empty states (a profile with nothing in it: the Board, the Log and Earnings; then one company hidden) in a given theme; pictures look-empty-{board,log,earnings,hidden}-<tag>.png, the colour families recorded
-      const emptyWalk = async (opts, tag, theme, mode) => {
-        const { ctx, errors } = await context(opts), page = await ctx.newPage(), fam = {}, wide = [];
+      const emptyWalk = async (opts, tag, theme, mode, pal) => {
+        const { ctx, errors } = await context(opts), page = await ctx.newPage(), fam = {}, wide = [], audit = {}, aud = pal ? rolePalette(pal.theme, pal.mode) : null;
         if (theme) {
           await page.goto(ROOT5 + '#settings'); await page.waitForSelector('#s-appearance .look-card');
           await page.click('#s-appearance [data-look=toggle][data-v="shared:theme"]');
@@ -4720,8 +4764,16 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         }
         await page.goto(ROOT5 + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
         await page.waitForSelector('.panel.welcome'); await page.waitForTimeout(250);
-        const shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); };
+        const shot = async (name) => { if (SHOT) await page.screenshot({ path: path.join(ev, 'look-' + name + '-' + tag + '.png') }); wide.push(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)); fam[name] = await families(page); if (aud) audit[name] = await roleAudit(page, aud); };
         await shot('empty-board');
+        // W36: the deep-water panel against the page (its two ends, and the four ring colours against both ends) and the scope's labels against the rings' picture
+        const T = await colourOf(page, ['--paper', '--deep', '--deep-2', '--route-m', '--loot-m', '--gil-m', '--rank-m'].map((t) => ['token', t])), rt = (a, b) => Math.round(PAL.ratio(a, b) * 100) / 100;
+        const deep = { onPage: [rt(T[1], T[0]), rt(T[2], T[0])], rings: Math.min(...T.slice(3).map((c) => Math.min(rt(c, T[1]), rt(c, T[2])))) };
+        deep.labels = await page.evaluate(() => { // true when a label sits on the drawing and a ring runs through it (a ring crosses a box when the box has points both inside and outside it)
+          const sv = document.querySelector('.es-scope svg').getBoundingClientRect(), rings = [...document.querySelectorAll('.es-scope .es-ring')].map((c) => { const q = c.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, r: q.width / 2 }; });
+          const crossed = (e) => { if (!e) return false; const r = e.getBoundingClientRect(); if (!(r.left < sv.right && r.right > sv.left && r.top < sv.bottom && r.bottom > sv.top)) return false;
+            return rings.some((c) => { const nx = Math.max(r.left, Math.min(c.x, r.right)), ny = Math.max(r.top, Math.min(c.y, r.bottom)), near = Math.hypot(nx - c.x, ny - c.y), far = Math.max(...[[r.left, r.top], [r.right, r.top], [r.left, r.bottom], [r.right, r.bottom]].map(([x, y]) => Math.hypot(x - c.x, y - c.y))); return near < c.r + 2 && far > c.r - 2; }); };
+          return { word: crossed(document.querySelector('.es-scope .es-word')), count: crossed(document.querySelector('.es-scope .es-count')) }; });
         await page.click('[data-tab=log]'); await page.waitForSelector('[data-empty="log-none"]'); await page.waitForTimeout(250); await shot('empty-log');
         // W33: Earnings with nothing logged, and the Board with every company hidden (a company is set up, then unticked in Setup)
         await page.click('[data-tab=earn]'); await page.waitForSelector('[data-empty="earn-none"]'); await page.waitForTimeout(250); await shot('empty-earnings');
@@ -4729,10 +4781,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.reload(); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await page.click('[data-tab=setup]'); await page.waitForSelector('[data-shown-fc=fa]'); await page.uncheck('[data-shown-fc=fa]'); await page.waitForTimeout(700);
         await page.click('[data-tab=board]'); await page.waitForSelector('[data-empty="board-hidden"]'); await page.waitForTimeout(250); await shot('empty-hidden');
         await ctx.close();
-        return { fam, wide, errors: real(errors) };
+        return { fam, wide, audit, deep, errors: real(errors) };
       };
       // W32: the dense Board (eight companies of four submarines at 1920 x 1080) in a theme: the picture look-board-dense-<tag>.png, the lowest lane bottom, no sideways scroll, the colour families recorded
-      const denseWalk = async (opts, tag, theme, mode) => {
+      const denseWalk = async (opts, tag, theme, mode, o) => {
+        o = o || { n: 8, pic: 'dense' }; const aud = o.pal ? rolePalette(o.pal.theme, o.pal.mode) : null;
         const { ctx, errors } = await context(opts), page = await ctx.newPage();
         if (theme) {
           await page.goto(ROOT5 + '#settings'); await page.waitForSelector('#s-appearance .look-card');
@@ -4740,34 +4793,42 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
           await page.click('#s-appearance [data-look=theme][data-v="' + theme + '"]'); await page.click('#s-appearance [data-look=mode][data-v=' + mode + ']');
         }
         await page.goto(ROOT5 + 'submersibles/'); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
-        await page.evaluate(async () => {
+        await page.evaluate(async (N) => {
           const now = Date.now(), sec = { fcs: {}, subs: {}, trips: {}, settings: {} };
-          ['Alpha', 'Bravo', 'Cedar', 'Delta', 'Ember', 'Fable', 'Garnet', 'Harbor'].forEach((n, i) => {
+          ['Alpha', 'Bravo', 'Cedar', 'Delta', 'Ember', 'Fable', 'Garnet', 'Harbor'].slice(0, N).forEach((n, i) => {
             sec.fcs['f' + i] = { name: n + ' Company', world: 'Maduin', order: i, unlockedSlots: i === 7 ? 3 : 4, discovered: [1, 2, 3] };
             for (let s = 1; s <= 4; s++) { const kind = (i + s) % 3, ret = kind === 0 ? now + (i * 4 + s) * 600000 : kind === 1 ? now - 600000 : null; sec.subs['s' + i + s] = { fcId: 'f' + i, slot: s, name: 'Sub ' + n[0] + s, rank: 60 + s, parts: [3, 4, 1, 2], voyage: ret ? { sentAt: now - 3600000, route: [1, 2], returnAt: ret, gameSaid: '1h' } : null }; }
           });
           const r = await CC.read(); await CC.writeSection('submersibles', sec, { rev: r.rev, base: null });
-        });
+        }, o.n);
         await page.reload(); await page.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); await page.waitForSelector('.fc .sub[data-sub]'); await page.waitForTimeout(300);
-        if (SHOT) await page.screenshot({ path: path.join(ev, 'look-board-dense-' + tag + '.png') });
-        const m = await page.evaluate(() => ({ maxBottom: Math.round(Math.max(...[...document.querySelectorAll('.fc .sub[data-status]')].map((e) => e.getBoundingClientRect().bottom))), sideways: document.documentElement.scrollWidth - innerWidth, fcs: document.querySelectorAll('.fc').length }));
-        const fam = await families(page);
+        if (SHOT) await page.screenshot({ path: path.join(ev, 'look-board-' + o.pic + '-' + tag + '.png') });
+        const m = await page.evaluate(() => { const subs = [...document.querySelectorAll('.fc .sub[data-status]')].map((e) => e.getBoundingClientRect()); return { maxBottom: Math.round(Math.max(...subs.map((r) => r.bottom))), laneMax: Math.round(Math.max(...subs.map((r) => r.height))), columns: new Set([...document.querySelectorAll('.fc')].map((el) => Math.round(el.getBoundingClientRect().left))).size, sideways: document.documentElement.scrollWidth - innerWidth, fcs: document.querySelectorAll('.fc').length }; });
+        m.axis = await axisGaps(page);
+        const fam = await families(page), audit = aud ? await roleAudit(page, aud) : null;
         await ctx.close();
-        return { m, fam, errors: real(errors) };
+        return { m, fam, audit, errors: real(errors) };
       };
       const d = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', all8.concat('wizard'), false, null, null, { name: 'default', theme: 'crystarium-dawnglass', mode: 'light', follow: true, title: 'Palette: Crystarium Dawnglass, light (the default)' });
       const dd = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-dark', ['board', 'map'], false);
       const da = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', all8.concat('wizard'), false, 'azure-dragoon', 'dark', { name: 'azure-dark', theme: 'azure-dragoon', mode: 'dark', title: 'Palette: Azure Dragoon, dark' });
       const dm = await walk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', all8.concat('wizard'), false, 'magitek-steel', 'light', { name: 'magitek-light', theme: 'magitek-steel', mode: 'light', title: 'Palette: Magitek Steel, light' });
-      const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board'], false);
+      const p390 = await walk({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-390', ['board', 'map'], false);
       const p = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', all8, true);
       const pl = await walk({ viewport: { width: 360, height: 800 }, colorScheme: 'light', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone-light', ['board', 'map', 'wizard'], false);
-      const n0 = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'light' }, 'desktop', null, null);
-      const na = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark');
-      const nm = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light');
-      const e0 = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', null, null);
-      const ea = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark');
-      const em = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light');
+      const PD = { theme: 'crystarium-dawnglass', mode: 'light' }, PA = { theme: 'azure-dragoon', mode: 'dark' }, PM = { theme: 'magitek-steel', mode: 'light' };
+      const n0 = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'light' }, 'desktop', null, null, { n: 8, pic: 'dense', pal: PD });
+      const na = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark', { n: 8, pic: 'dense', pal: PA });
+      const nm = await denseWalk({ viewport: { width: 1920, height: 1080 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light', { n: 8, pic: 'dense', pal: PM });
+      // W36: the mid widths: six companies at 1,500 px and at 1,400 px keep one-line lanes (three columns), at 1,024 px two columns, and the axis labels never crowd
+      const mid = await denseWalk({ viewport: { width: 1500, height: 900 }, colorScheme: 'light' }, 'desktop', null, null, { n: 6, pic: 'mid', pal: PD });
+      const mid14 = await denseWalk({ viewport: { width: 1400, height: 900 }, colorScheme: 'light' }, 'desktop-1400', null, null, { n: 6, pic: 'mid', pal: PD });
+      const mid18 = await denseWalk({ viewport: { width: 1800, height: 900 }, colorScheme: 'light' }, 'desktop-1800', null, null, { n: 6, pic: 'mid', pal: PD });
+      const midA = await denseWalk({ viewport: { width: 1500, height: 900 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark', { n: 6, pic: 'mid', pal: PA });
+      const mid10 = await denseWalk({ viewport: { width: 1024, height: 900 }, colorScheme: 'light' }, 'desktop-1024', null, null, { n: 6, pic: 'mid', pal: PD });
+      const e0 = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop', null, null, PD);
+      const ea = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark' }, 'desktop-azure-dark', 'azure-dragoon', 'dark', PA);
+      const em = await emptyWalk({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' }, 'desktop-magitek-light', 'magitek-steel', 'light', PM);
       const ep = await emptyWalk({ viewport: { width: 360, height: 800 }, colorScheme: 'dark', deviceScaleFactor: 2, isMobile: true, hasTouch: true }, 'phone', null, null);
       // Revision 4 (W31): the comparison sheet look-palette-compare.png: the meaning roles of the three evidence themes side by side, one row per role, one column per theme, so that sameness across themes can be seen at a glance.
       // Drawn from the generated list's values (which the three palette sheets above compare with the browser), on each theme's own page colour, in a page of its own.
@@ -4799,10 +4860,26 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       // W29: the wizard lists all seven seas (the first open) and the empty states and the wizard do not scroll sideways at 360 px; a locked slot carries its sector's sea; a company head carries its status band
       const finalOk = [d, da, dm].every((w) => w.wizard && w.wizard.seas === 7 && w.wizard.open === 1) && pl.wizard.seas === 7 && pl.wideNew.every((x) => x <= 0) && ep.wide.every((x) => x <= 0) && [e0, ea, em, ep].every((w) => !w.errors.length) && [d, da, dm].every((w) => w.lockedSea >= 1 && w.headBand >= 2);
       const denseOk = [n0, na, nm].every((w) => w.m.fcs === 8 && w.m.maxBottom <= 1080 && w.m.sideways <= 0 && !w.errors.length) && [d, da, dm].every((w) => w.timeLanes === 4);
+      // W36 (the final pass). The role audit is asserted: no opaque computed colour on any pictured screen (all eight screens and the wizard, the empty states, the dense and mid Boards) outside the theme's list of tones, in the three themes.
+      const audits = [...[d, da, dm].flatMap((w) => Object.values(w.audit)), ...[e0, ea, em].flatMap((w) => Object.values(w.audit)), ...[n0, na, nm, mid, mid14, mid18, midA, mid10].map((w) => w.audit)].filter(Boolean);
+      const auditOk = audits.length >= 40 && audits.every((a) => a.n > 30 && a.miss === 0);
+      // the axis labels are never closer than 6 px, on every Board picture (the walks, the dense and the mid Boards), "now" first and the last quarter last
+      const axisAll = [...[d, dd, da, dm, p390, p, pl].flatMap((w) => Object.values(w.gaps)), ...[n0, na, nm, mid, mid14, mid18, midA, mid10].map((w) => w.m.axis)];
+      const axisOk = axisAll.length >= 20 && axisAll.every((g) => g.axes >= 1 && g.minGap >= 6 && g.bad.length === 0);
+      // the mid widths: one-line lanes (compact lanes are 64 px; none stacked): two columns at 1,400 px and 1,024 px, three from 1,404 px
+      const midOk = [mid, mid18, midA].every((w) => w.m.fcs === 6 && w.m.columns === 3 && w.m.laneMax <= 72 && w.m.sideways <= 0 && !w.errors.length) && [mid14, mid10].every((w) => w.m.columns === 2 && w.m.laneMax <= 72 && w.m.sideways <= 0);
+      // the deep-water panel: in a dark theme both ends stand clear of the page (at least 1.3:1 for the dark end, 1.7:1 for the light end), in a light theme at least 3:1; the four ring colours reach 3:1 on both ends; the scope's labels do not touch its drawing on a phone
+      const deepOk = ea.deep.onPage[0] >= 1.3 && ea.deep.onPage[1] >= 1.7 && [e0, em].every((w) => w.deep.onPage.every((x) => x >= 3)) && [e0, ea, em, ep].every((w) => w.deep.rings >= 3) && [e0, ea, em, ep].every((w) => !w.deep.labels.word && !w.deep.labels.count);
+      const troughOk = [d, da, dm].every((w) => w.trough && w.trough.ratio >= 3 && w.trough.w >= 2 && w.trough.style === 'solid' && w.trough.h >= 10);
+      const controlsOk = [d, da, dm].every((w) => w.controls && w.controls.radios >= 4 && w.controls.boxes >= 1 && w.controls.unApp === 'none' && w.controls.cbApp === 'none' && w.controls.unW >= 2 && w.controls.size >= 20 && w.controls.edgeOnPaper >= 3 && w.controls.edgeOnSlip >= 3 && w.controls.cbEdgeOnSlip >= 3 && w.controls.checkedIsAccent && w.controls.onImg && w.controls.markOnAccent >= 3 && w.controls.focus.type === 'radio' && w.controls.focus.w >= 2 && w.controls.focus.s !== 'none');
+      const rungsOk = [d, da, dm].every((w) => w.rungs.length === 4 && w.rungs.every((r) => r.img));
+      const phoneW36Ok = [p390, p, pl].every((w) => w.headTools && w.headTools.n === 2 && w.headTools.sameLine) && p390.mapChain.chainH <= 260 && p390.mapChain.rows <= 4 && p390.mapChain.minH >= 44 && p390.mapChain.chartShown >= 150 && p390.mapChain.links <= 1 && p390.mapChain.side <= 0;
+      const gilIdleOk = [d, da, dm].every((w) => w.unlogged && /^nothing logged/.test(w.unlogged.text) && w.unlogged.style === 'dashed' && w.unlogged.w >= 2 && (w.unlogged.heat === 'none' || w.unlogged.heat === 'normal'));
+      const w36Ok = auditOk && axisOk && midOk && deepOk && troughOk && controlsOk && rungsOk && phoneW36Ok && gilIdleOk && [mid, mid14, mid18, midA, mid10].every((w) => !w.errors.length);
       const gaugeOk = [d, dd, da, dm, p390, p, pl].every((w) => !w.gauge || (w.gauge.n === 1 && w.gauge.h >= 3 && w.gauge.text === 'Voyage 3 percent done')) && d.gauge.n === 1;
-      const ok = finalOk && gaugeOk && denseOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
-      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band; W32: the Board by return time (look-board-time-*.png) and the dense Board of eight companies in three themes (look-board-dense-*.png, lowest lane bottom at most 1,080 px, no sideways scroll); W35: the send window (look-sheet-*.png at the top, look-sheet-route-*.png scrolled to the comparison on its one axis), Setup and the recommendations panel with their head states and the ladder, and the Map with the chain of seas at its top (look-map-*.png), in three themes and on a phone',
-        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], dense: [n0.m, na.m, nm.m], denseFamilies: [n0.fam, na.fam, nm.fam], roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit } });
+      const ok = w36Ok && finalOk && gaugeOk && denseOk && chartOk && floorOk && logFloorOk && bsFloorOk && logProbeOk && p.wide.length === 8 && p.wide.every((w) => w <= 0) && p.chart.width >= 320 && p.chart.hitMin >= 36 && Object.values(p.minHeights).every((h) => h === null || h >= 36) && !d.errors.length && !dd.errors.length && !da.errors.length && !dm.errors.length && [d, da, dm].every((w) => w.pal.supportsPalette === true && w.pal.bad.length === 0 && w.pal.compared >= 60) && d.pal.follow.changed >= 5 && d.pal.follow.maxDiff <= 2 && !p.errors.length && !pl.errors.length && !p390.errors.length;
+      record('L1', 'Submersibles look evidence: one profile (two free companies; Back, Out and Idle subs and a locked slot; five sectors found; eleven logged voyages) walked through Board, send window, Log, Map, planner, Earnings, Setup and Recommendations: the look-*.png pictures (Chromium), no sideways scroll at 360 px on the eight screens, no page errors; at 360 px the chart is at least 320 px wide, the smallest chart tap circle and every tap height are at least 36 px; W22b: the vivid palette is computed by palette.js on the page; the palette sheet look-palette-*.png in three themes, every palette token read in the browser equals the model within 2 per channel, the palette follows a theme change without a reload, and the colour families per screen recorded; W23: on the Map and the planner in three themes only the planned route is dashed, grid and rings are 1 px at most, a lead link (2.5 px or more) and a goal link (3 px or more) are drawn, the route is 5 px or more, only lead and goal arrowheads show, and the hue-family floor holds (default theme 5, Azure Dragoon dark and Magitek Steel light 4); W25, W26: the Log (rows in at least three seas, with and without loot, with and without a grade chip) and Earnings hold their hue-family floors (Log: default theme 5, Azure Dragoon dark and Magitek Steel light 4; Earnings: 4 and 3); W27, W28: the Board, Setup and recommendations hold their floors (4; 3) and the send window 3 in the three themes; the other screens recorded only; W29: the planned route is 7 px or more and its colour is used by no other chart element, the setup wizard (all seven seas listed) and the empty states (the Board welcome panel and the Log empty panel, three themes and a phone) are pictured and do not scroll sideways at 360 px, locked slots carry their sector\'s sea and company heads their status band; W32: the Board by return time (look-board-time-*.png) and the dense Board of eight companies in three themes (look-board-dense-*.png, lowest lane bottom at most 1,080 px, no sideways scroll); W35: the send window (look-sheet-*.png at the top, look-sheet-route-*.png scrolled to the comparison on its one axis), Setup and the recommendations panel with their head states and the ladder, and the Map with the chain of seas at its top (look-map-*.png), in three themes and on a phone; W36 (the final pass): the role audit is asserted (no opaque computed colour outside the theme\'s tones on any pictured screen, 3 themes), the axis labels are never closer than 6 px with "now" and the last quarter kept, six companies keep one-line lanes at 1,024 to 1,800 px (two columns up to 1,403 px, three from 1,404 px) (look-board-mid-*.png), the deep-water panel stands clear of the page in a dark theme (1.3:1 and 1.7:1 at its two ends; rings 3:1), the send window\'s trough edge is 3:1 on its plate, radio buttons and checkboxes are drawn from the roles (look-controls-*.png: 3:1 edge, accent when checked, focus ring), the ladder rungs carry their role colour, a company head\'s buttons share a line on a phone, the phone Map\'s chain is compact with the chart on the first screen, and the scope\'s labels clear its drawing on a phone',
+        ok, { gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], dense: [n0.m, na.m, nm.m], denseFamilies: [n0.fam, na.fam, nm.fam], w36: { auditOk, audits: audits.length, auditMiss: audits.filter((a) => a.miss || a.n <= 30).map((a) => [a.n, a.top]).slice(0, 6), axisOk, axisMin: Math.min(...axisAll.map((g) => g.minGap)), axisBad: axisAll.filter((g) => g.bad.length || g.minGap < 6).slice(0, 4), midOk, mid: [mid.m, mid14.m, mid18.m, midA.m, mid10.m], deepOk, deep: [e0.deep, ea.deep, em.deep, ep.deep], troughOk, trough: [d.trough, da.trough, dm.trough], controlsOk, controls: [d.controls, da.controls, dm.controls], rungsOk, rungs: [d.rungs, da.rungs, dm.rungs], phoneW36Ok, head: [p390.headTools, p.headTools, pl.headTools], mapChain: p390.mapChain, gilIdleOk, unlogged: [d.unlogged, da.unlogged, dm.unlogged] }, roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit } });
       server20.close();
     });
 

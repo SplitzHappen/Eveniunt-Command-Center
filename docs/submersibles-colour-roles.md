@@ -428,47 +428,47 @@ One table per role: 21 themes in light and dark, a hex value per token, and the 
 | Theme | Mode | `--deep` (field) | `--deep-2` (field) | `--on-deep` (on) | `--deep-line` (graphic) | Hue |
 | --- | --- | --- | --- | --- | --- | --- |
 | Crystarium Dawnglass | light | #02172c | #013a64 | #d9e8f5 | #6485a4 | 250° |
-| Crystarium Dawnglass | dark | #03182d | #043a64 | #e0eefb | #6787a6 | 250° |
+| Crystarium Dawnglass | dark | #243b52 | #1f507c | #e0eefb | #7494b4 | 249° |
 | Ishgard Hoarfrost | light | #02182c | #003a63 | #dbe2e9 | #65829e | 248° |
-| Ishgard Hoarfrost | dark | #0a1b31 | #153765 | #e6edf3 | #6e85a4 | 256° |
+| Ishgard Hoarfrost | dark | #293b54 | #2b4d7d | #e6edf3 | #7b92b2 | 257° |
 | Limsa Brineward | light | #031127 | #143865 | #d8e0ec | #6880a1 | 257° |
-| Limsa Brineward | dark | #031127 | #143865 | #e3ebf5 | #6d85a5 | 257° |
+| Limsa Brineward | dark | #21344c | #2a4e7d | #e3ebf5 | #7a92b3 | 255° |
 | Ul'dah Sultanate Gilt | light | #211500 | #493400 | #efe0b0 | #907d4f | 82° |
-| Ul'dah Sultanate Gilt | dark | #1e1200 | #4a3400 | #f7ecd2 | #94825e | 79° |
+| Ul'dah Sultanate Gilt | dark | #433416 | #644800 | #f7ecd2 | #a48e64 | 83° |
 | Twelveswood Verdure | light | #0a1902 | #224209 | #dfeacd | #728a5f | 135° |
-| Twelveswood Verdure | dark | #0a1902 | #224209 | #e4efd8 | #748c64 | 135° |
+| Twelveswood Verdure | dark | #2b3c22 | #34551f | #e4efd8 | #7f976f | 135° |
 | Allagan Circuitry | light | #1a0900 | #532d00 | #dde3e2 | #907b65 | 59° |
-| Allagan Circuitry | dark | #201000 | #4f3000 | #dfe9e7 | #8e7f68 | 69° |
+| Allagan Circuitry | dark | #463117 | #674100 | #dfe9e7 | #9d8a6d | 70° |
 | Magitek Steel | light | #001123 | #003b61 | #dcdfe2 | #66829a | 248° |
-| Magitek Steel | dark | #00101b | #003e55 | #e6e9ec | #6b8796 | 236° |
+| Magitek Steel | dark | #113545 | #00526f | #e6e9ec | #7194a6 | 231° |
 | Umbral Ice, Astral Fire | light | #0e051c | #402b5f | #e4dcf0 | #85769f | 299° |
-| Umbral Ice, Astral Fire | dark | #0e051c | #402b5f | #efe8fa | #897ba3 | 299° |
+| Umbral Ice, Astral Fire | dark | #342a46 | #58437a | #efe8fa | #988ab3 | 300° |
 | Lily of the Healer | light | #001a09 | #004424 | #ece2e4 | #6f8875 | 153° |
-| Lily of the Healer | dark | #001a0a | #004425 | #f3eaec | #718b78 | 155° |
+| Lily of the Healer | dark | #1e3d2a | #125835 | #f3eaec | #7a9883 | 155° |
 | Azure Dragoon | light | #081129 | #213566 | #cfdcf7 | #6a7da6 | 266° |
-| Azure Dragoon | dark | #0f1932 | #203566 | #e4ecfb | #7283a8 | 266° |
+| Azure Dragoon | dark | #2e3a55 | #344b7e | #e4ecfb | #7e91b6 | 266° |
 | Abyssal Oath | light | #1f040b | #5c2032 | #efd8de | #9e6f7a | 6° |
-| Abyssal Oath | dark | #190107 | #5c2033 | #f2e0e5 | #9f727e | 4° |
+| Abyssal Oath | dark | #45252e | #743648 | #f2e0e5 | #ad7f8b | 2° |
 | Moonfire Faire | light | #1d081d | #50244f | #f3d6ef | #967094 | 327° |
-| Moonfire Faire | dark | #1d081d | #50244f | #fbe6f8 | #9a7697 | 327° |
+| Moonfire Faire | dark | #412940 | #6a3d69 | #fbe6f8 | #a986a7 | 328° |
 | Starlight Celebration | light | #00190b | #004428 | #e3eef0 | #6a8d7c | 157° |
-| Starlight Celebration | dark | #00190b | #004428 | #e8f5ee | #6c907b | 157° |
+| Starlight Celebration | dark | #1b3c2b | #0f5c3b | #e8f5ee | #759e87 | 159° |
 | Aetheryte Glow | light | #001f22 | #004145 | #d2eff0 | #628b8d | 204° |
-| Aetheryte Glow | dark | #001c1e | #004144 | #d6f7f5 | #638e8f | 201° |
+| Aetheryte Glow | dark | #124144 | #00585d | #d6f7f5 | #699c9e | 201° |
 | First World Twilight | light | #14102a | #372e63 | #e3ddf6 | #7e79a4 | 288° |
-| First World Twilight | dark | #1b1630 | #382e63 | #ece7ff | #837da7 | 291° |
+| First World Twilight | dark | #3a3653 | #4d437a | #ece7ff | #908ab5 | 290° |
 | Ascian Crimson | light | #190101 | #5e211c | #e2dfdf | #9b736e | 27° |
-| Ascian Crimson | dark | #1d0302 | #5e211c | #efebeb | #a07873 | 29° |
+| Ascian Crimson | dark | #462622 | #7a3a33 | #efebeb | #b08781 | 28° |
 | Sharlayan Lore | light | #0d0f27 | #2d3165 | #dfe1ea | #767ca0 | 277° |
-| Sharlayan Lore | dark | #0d0f27 | #2d3165 | #e6e8f2 | #797fa4 | 277° |
+| Sharlayan Lore | dark | #2d314d | #41477d | #e6e8f2 | #868db1 | 277° |
 | Radz-at-Han Jewel | light | #210715 | #58213f | #f6dcd6 | #9e717f | 349° |
-| Radz-at-Han Jewel | dark | #2c0f1b | #5b2038 | #fbe7f0 | #a27585 | 356° |
+| Radz-at-Han Jewel | dark | #502f3b | #763950 | #fbe7f0 | #b28494 | 357° |
 | Doman Sakura | light | #220a1b | #552247 | #f8dbe8 | #9c718c | 340° |
-| Doman Sakura | dark | #230b1e | #542349 | #f8e6ef | #9c7690 | 336° |
+| Doman Sakura | dark | #472d41 | #6e3b62 | #f8e6ef | #ab859f | 335° |
 | Ultima Thule | light | #050318 | #323064 | #dcdcef | #787aa1 | 283° |
-| Ultima Thule | dark | #08041b | #362e63 | #e9e8ff | #807da7 | 288° |
+| Ultima Thule | dark | #2f2c48 | #4a447b | #e9e8ff | #8d8bb5 | 288° |
 | Electrope Skyline | light | #050a21 | #253466 | #e3ebf7 | #7482a6 | 269° |
-| Electrope Skyline | dark | #030318 | #2a3266 | #e6f4ff | #7785aa | 276° |
+| Electrope Skyline | dark | #282e4a | #434e84 | #e6f4ff | #8796bb | 274° |
 
 ### 10. rank: a submarine's rank and levelling
 
@@ -1445,7 +1445,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | suggestion (`.advice`) | accent wash and field edge; ink; the reason's edge: the choosing role's graphic | `.advice`, `.advice-step`, `.lead-` | accent, ink, rank, gil, loot, route |
 | actions | accent field, on, molten; other buttons ink edge on panel | `.btn.primary:hover`, `.btn.primary[disabled]:hover` | accent, molten |
 | sector buttons (`.sector`) | page field, ink; sea graphic edge; letter route text; chosen: accent field, on, molten; order badge slab; disabled: line hatch | `.sector` | page, ink, sea, route, accent, molten, slab, line |
-| routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`) | one axis: the suggestion and the other routes as lanes: page field 3 trough, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea | `.cmp`, `.cmp-lane` | panel, page, ink, accent, line, sea, shared |
+| routes compared (`.cmp`, `.cmp-lane`, `.alts .tl`) | one axis: the suggestion and the other routes as lanes: page field 3 trough with a 2 px ink-2 edge, ink-2 bar and outlined marker, the suggestion accent bar and solid ink marker; panel plates, ink edge, accent edge on the chosen one; discs sea | `.cmp`, `.cmp-lane` | panel, page, ink, accent, line, sea, shared |
 | route line (`.route-line`) | route graphic edge, route text; discs sea; ink rules | `.route-line`, `.route-pick .route-line`, `.planner .route-line b`, `.alts`, `.route-row` | route, ink, sea, line |
 | what came back (`.loot-h`, `.loot-row`, `.qbtn`, `.rate-item b`) | loot field, on-mid, loot graphic hatch; line; page field, ink; loot text | `.loot-h`, `.loot-row`, `.qbtn`, `.rate-item`, `.rates-tier`, `.loot-name` | loot, shared, ink, line, page, accent |
 | rank box, rank-up plan | rank graphic edge, rank text | `.rankbox`, `.rank-plan`, `.facts dt` | rank, ink |
@@ -1482,7 +1482,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | head | gil field, on-mid | `.earn-card:first-child` | gil, ink, slab |
-| tallies (`.earn-card`) | first: gil wash, ink, ink band; others: panel, gil graphic band, gil text | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink |
+| tallies (`.earn-card`) | first: gil wash, ink, ink band; others: page-colour block, 10 px gil graphic band above and 4 px below, gil text, ink-2 label | `.earn-card`, `.earn-card:not(:first-child)`, `.earn-card b` | gil, ink, page |
 | scale line (`.earn-scale`) | ink-2: the printed scale of a table of bars | `.earn-scale` | ink |
 | section labels | ink; hatch and underline gil graphic | `.earn-t th`, `.earn-t th, .earn-t td` | line, ink |
 | position block | 1: accent field, on; 2 and 3: slab; others ink-2 | `.earn-ranked tr[data-pos] > td:first-child`, `.earn-ranked tr[data-pos="1"] > td:first-child`, `.earn-ranked tr[data-pos="2"] > td:first-child` | ink, accent, slab |
@@ -1506,7 +1506,7 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | Zone | Role and tone | Rule fragments | Roles allowed |
 | --- | --- | --- | --- |
 | full empty state (`.empty-state`) | page field, ink edge; kicker slab; headline ink; sentence ink-2; step: panel, ink edge, number in a role field with on-mid; action accent with the route band | `.empty-state`, `.es-kick`, `.es-main`, `.es-text`, `.es-step`, `.es-act`, `.es-aside`, `.es-note` | page, panel, slab, ink, shared, accent, route, loot, gil, rank |
-| scope (`.es-scope`) | deep fields; rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on | `.es-scope` | deep, route, loot, gil, rank |
+| scope (`.es-scope`) | deep fields (in a dark theme lighter than the page, in a light theme darker); rings route, loot, gil, rank fields and deep graphic; sweep route field; labels deep on, in a strip under the drawing parted by a deep graphic rule | `.es-scope` | deep, route, loot, gil, rank |
 | empty line (`.empty-line`) | page field, ink-2 dashed edge, ink; glyph: the screen's role, graphic | `.empty-line` | page, ink, route, loot, gil, rank, sea |
 
 ### Notices
@@ -1528,5 +1528,5 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | tab rail (`.tabs`) | ink on the page field 2; the current tab: the screen's role as a slab; icons in their screen's role | `.tabs` | ink, page, slab, molten, accent, route, loot, sea, gil, rank, shared |
 | panel and card surface (`.panel`, `.fc`, `.strip`) | panel, ink edge, shadow; molten band | `.panel, .fc, .earn-card, .sheet, .strip`, `.panel h4`, `.recs h3`, `.wide-panel > h3` | panel, ink, overlay, molten, route, loot, gil, rank, sea |
 | panel heads (`.panel > h2`) | slab field, on, molten band; on a screen: the screen's role field, on-mid | `.panel > h2`, `.panel:not(.welcome)`, `:is(.panel > h2:first-child, .fc-head` | slab, molten, route, loot, gil, rank, sea, shared, ink |
-| buttons, links, fields (`.btn`, `.link`, `.inp`) | ink edge on panel; link accent; focus accent | `=.btn`, `=.link`, `.inp`, `select`, `.qinp`, `input[type=`, `.sea-bulk`, `=.muted`, `=.hint`, `=.tag`, `=.field`, `.hint`, `.field` | ink, page, accent, slab |
+| buttons, links, fields (`.btn`, `.link`, `.inp`) | ink edge on panel; link accent; focus accent; radio buttons and checkboxes: a 2 px ink edge on the page field, the accent when checked with its text colour for the mark, the accent as the focus ring, ink-3 and page field 2 when disabled | `=.btn`, `=.link`, `.inp`, `select`, `.qinp`, `input[type=`, `.sea-bulk`, `=.muted`, `=.hint`, `=.tag`, `=.field`, `.hint`, `.field` | ink, page, accent, slab |
 | hint and tag lines | ink-2 | `.muted`, `.tag` | ink |

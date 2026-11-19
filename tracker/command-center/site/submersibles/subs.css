@@ -155,7 +155,7 @@
 }
 @media (min-width: 1400px) {
   .subs-main:has(.fleet > .fc:nth-child(5)) .strip-next { --cut: 20px; flex-wrap: nowrap; padding: 6px 40px 6px 14px; }
-  .subs-main:has(.fleet > .fc:nth-child(5)) .strip-next > b { flex-basis: auto; }
+  .subs-main:has(.fleet > .fc:nth-child(5)) .strip-next > b { flex: none; white-space: nowrap; }
   .subs-main:has(.fleet > .fc:nth-child(5)) .strip-next::after { width: 36px; height: 12px; background: repeating-linear-gradient(90deg, var(--on-slab) 0 8px, transparent 8px 12px); }
   .subs-main:has(.fleet > .fc:nth-child(5)) .strip-next:has(+ .strip-more) { padding-bottom: 6px; }
   .subs-main:has(.fleet > .fc:nth-child(5)) .strip-next:has(+ .strip-more)::after { display: none; }
@@ -175,9 +175,11 @@
 
 /* the fleet: one column up to four companies; from five, two columns from 701 px and four from 1,400 px. In one wide column the group has no frame (hero lanes) */
 .fleet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; container: fleet / inline-size; }
-@media (min-width: 701px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1400px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@container fleet (min-width: 780px) { .fleet:not(:has(> .fc:nth-child(5))) > .fc { border-color: transparent; background-color: transparent; box-shadow: none; } }
+/* W36: a group's lanes need 400 px (a card is 20 px wider than its lanes), so a card must be 420 px or wider to keep one-line lanes: the columns follow the width, two from 974 px, three from 1,404 px, four from 1,834 px (below 974 px one column). 1,920 px keeps four (C25) */
+@media (min-width: 974px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1404px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1834px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container fleet (min-width: 960px) { .fleet:not(:has(> .fc:nth-child(5))) > .fc { border-color: transparent; background-color: transparent; box-shadow: none; } }
 .fc { padding: 0 8px 8px; min-width: 0; }
 .fc-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 -8px var(--row-gap); padding: 8px 12px; background: var(--slab); color: var(--on-slab); border-bottom: 5px solid transparent; border-image: var(--molten) 1; }
 .fc-head h3 { font: 900 var(--head-fs)/1 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; margin: 0; overflow-wrap: anywhere; }
@@ -220,7 +222,15 @@
 .inp:focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
 fieldset { border: 2px solid var(--ink); border-radius: 0; margin: 10px 0; padding: 8px 12px; min-width: 0; }
 legend { font: 900 14px/1.3 var(--f-disp); text-transform: uppercase; letter-spacing: .06em; padding: 2px 10px; background: var(--slab); color: var(--on-slab); }
-input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-color: var(--seal); flex: none; }
+/* W36: radio buttons and checkboxes are drawn from the roles, not by the browser (the browser's own were nearly invisible on a dark page): a 2 px ink box on the page colour (3:1 on every ground), the accent when checked with its text colour for the mark, the accent as the focus ring */
+input[type="checkbox"], input[type="radio"] { -webkit-appearance: none; appearance: none; display: inline-grid; place-content: center; width: 22px; height: 22px; margin: 0; flex: none; vertical-align: middle; box-sizing: border-box; background-color: var(--paper); border: 2px solid var(--ink); border-radius: 0; cursor: pointer; }
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]::after { content: ""; width: 6px; height: 11px; margin-top: -2px; border: solid var(--on-seal); border-width: 0 3px 3px 0; transform: rotate(45deg) scale(0); }
+input[type="checkbox"]:checked { background-color: var(--seal); }
+input[type="checkbox"]:checked::after { transform: rotate(45deg) scale(1); }
+input[type="radio"]:checked { background-image: radial-gradient(circle, var(--on-seal) 0 4px, var(--seal) 5px); }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
+input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: var(--ink-3); background-color: var(--paper-2); cursor: not-allowed; }
 .parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 12px; }
 .parts legend { grid-column: 1 / -1; }
 .opt { display: flex; gap: 8px; align-items: center; margin: 5px 0; font-size: 14px; }
@@ -400,6 +410,8 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .earn-ranked tr[data-pos="1"] > td:nth-child(3) b { font: 900 30px/1 var(--f-disp); }
 .earn-thin td:first-child { --hz: var(--idle); padding-left: 20px; background: var(--hazard) 0 0 / 10px 100% no-repeat; }
 .field.inline { display: inline-grid; }
+/* W36: the note under a thin row is not an Idle row: no hatch beside it */
+.earn-thin .earn-note td:first-child { background: none; padding-left: 8px; }
 @media (max-width: 700px) {
   .log-row { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 0 8px; }
   .log-when { min-height: 24px; justify-content: flex-start; padding: 0 12px; clip-path: none; }
@@ -427,6 +439,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 /* R3.6: the background recedes in one faint colour (--chart-back), 1 px; nothing is dashed but the planned route */
 .chart-grid { fill: none; stroke: var(--chart-back); stroke-width: 1; stroke-opacity: .55; }
 .chart-grid.major { stroke-opacity: 1; }
+.chart-svg g { fill: none; } /* W36: a group paints nothing itself; every drawn shape below sets its own fill (the role audit read the browser's default black here) */
 .chart-rings circle { fill: none; stroke: var(--chart-back); stroke-width: 1; }
 .chart-sweep { transform-box: view-box; animation: subs-turn 9s linear infinite; }
 /* W18 fallback (spec "Escalate if"): a filled fan would lighten the ground under the markers past the contrast test, so the fan is an outline only */
@@ -517,6 +530,8 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .rec-picker { padding: 10px 12px; margin-top: 10px; border: 2px solid var(--ink); background: var(--paper); }
 .rec-pick-title, .rec-picker .opt { font-size: 15px; font-weight: 700; margin: 0; }
 .rec-pick-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
+.rec-pick-row input { background-color: var(--paper); color: var(--ink); }
+.rec-pick-row input:disabled { background-color: var(--paper-2); color: var(--ink-2); }
 .rec-pick-row input, .rec-pick-row select { flex: 1 1 200px; min-width: 0; max-width: 100%; min-height: 44px; font: inherit; padding: 4px 8px; box-sizing: border-box; }
 .rec-note { font-size: 13px; color: var(--ink-2); }
 .rec-note { margin: 2px 0 0; overflow-wrap: anywhere; }
@@ -600,6 +615,12 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
   .map-grid > .chart-key { grid-column: 1; grid-row: 3; }
 }
 @media (max-width: 700px) {
+  /* W36: on a phone the chart comes straight after the seas, so it is on the first screen; the planner, the key and the details follow it */
+  .map-grid { display: flex; flex-direction: column; }
+  .map-grid > .chart-wrap { order: 1; }
+  .map-grid > .chart-key { order: 2; }
+  .map-grid > .planner { order: 3; }
+  .map-grid > .chart-details { order: 4; }
   .map-panel { --pad-x: 8px; }
   .map-grid > .chart-wrap { max-width: none; margin: 0 calc(-1 * var(--pad-x)); border-left-width: 0; border-right-width: 0; }
   .chart-key { margin: 0 calc(-1 * var(--pad-x)) 12px; border-left-width: 0; border-right-width: 0; }
@@ -655,6 +676,11 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 @media (max-width: 700px) {
   .fc-head { padding: 6px 12px; gap: 4px 8px; }
   .fc-head .btn { min-height: 40px; }
+  /* W36: the two buttons of a company head share one line (the calendar one wraps its words inside itself) instead of stacking */
+  .fc-tools { flex: 1 1 100%; flex-wrap: nowrap; }
+  .fc-tools .btn { padding: 4px 8px; line-height: 1.2; text-align: center; white-space: normal; }
+  .fc-tools .btn:first-child:not(:only-child) { flex: none; }
+  .fc-tools .btn:last-child { flex: 1 1 0; min-width: 0; }
   .subs-mast { padding-top: 6px; padding-bottom: 6px; }
 }
 @media (max-width: 700px) { .planner .route-line b { font-size: 26px; } }
@@ -682,6 +708,8 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .log-row.logged { border-right: 8px solid var(--loot-g); }
 .log-row.unlogged { border-right: 8px dashed var(--idle); }
 .log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }
+/* W36, gil and Idle (14 degrees apart in a dark theme): where they meet they differ by form and by word. Gil is a figure with the word "gil", a solid heat line, a solid band; Idle is a field, a dashed edge or a dashed box with its own word ("Idle", "nothing logged", "of 10 voyages"). A Log row with nothing logged says so in a dashed box and has no heat line. */
+.log-row.unlogged .log-what .muted { display: inline-block; padding: 0 6px; border: 2px dashed var(--idle); }
 .log-what b { color: var(--gil-s); }
 .log-row.logged .log-what::after { content: ""; display: block; height: 4px; margin: 4px 0 0 auto; width: max(4px, calc(var(--p, 0) * 100%)); background: var(--gil-g); }
 .log-row.logged .log-what { min-width: 150px; }
@@ -692,7 +720,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 /* W29: the head is the one full-strength gil field on the screen; the first card is a gil wash under a thick ink band, the others a wash-free slip under a gil band; the bars are washes with a graphic tip (never the field tone) */
 .earn-card:first-child { background-color: var(--gil-w); color: var(--ink); background-image: linear-gradient(var(--ink), var(--ink)); background-size: 100% 10px; }
 .earn-card:first-child span, .earn-card:first-child b { color: var(--ink); }
-.earn-card:not(:first-child) { background-image: linear-gradient(var(--gil-g), var(--gil-g)); }
+.earn-card:not(:first-child) { background-color: var(--paper); background-image: linear-gradient(var(--gil-g), var(--gil-g)); background-size: 100% 10px; border-bottom: 4px solid var(--gil-g); }
 .earn-card b { color: var(--gil-s); }
 .earn-t td b { color: var(--gil-s); }
 .earn-ranked tr[style] > td:nth-child(3), .earn-t:not(.earn-ranked):not(.earn-thin) tr[style] > td:last-child { width: 36%; background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%), linear-gradient(90deg, var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%), transparent 0); }
@@ -769,8 +797,13 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; accent-
 .tl-axis > i:nth-child(5) { transform: translateX(-100%); }
 .tl-axis > i.tl-mark { bottom: 3px; width: 4px; height: 5px; font-size: 0; transform: translateX(-50%); background: var(--ink); }
 .tl-axis > i.tl-mark:not([data-n="1"])::before { content: attr(data-n); position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); min-width: 14px; padding: 0 3px; background: var(--slab); color: var(--on-slab); font: 900 11px/14px var(--f-disp); text-align: center; z-index: 2; }
-@media (min-width: 701px) and (max-width: 1399px) { .fleet:has(> .fc:nth-child(5)) > .fc:nth-child(n+3) .tl-axis { display: none; } }
-@media (min-width: 1400px) { .fleet:has(> .fc:nth-child(5)) > .fc:nth-child(n+5) .tl-axis { display: none; } }
+@media (min-width: 974px) and (max-width: 1403px) { .fleet:has(> .fc:nth-child(5)) > .fc:nth-child(n+3) .tl-axis { display: none; } }
+@media (min-width: 1404px) and (max-width: 1833px) { .fleet:has(> .fc:nth-child(5)) > .fc:nth-child(n+4) .tl-axis { display: none; } }
+@media (min-width: 1834px) { .fleet:has(> .fc:nth-child(5)) > .fc:nth-child(n+5) .tl-axis { display: none; } }
+/* W36: the axis never crowds its labels (never closer than 6 px): when the track is narrow the quarter labels go and "now", the middle and the last stay; the track is the group's width less the lane's insets */
+@container fcsubs (max-width: 289px) { .tl-axis > i:nth-child(2), .tl-axis > i:nth-child(4) { display: none; } }
+@container fcsubs (min-width: 400px) and (max-width: 491px) { .tl-axis > i:nth-child(2), .tl-axis > i:nth-child(4) { display: none; } }
+@container fcsubs (min-width: 960px) and (max-width: 985px) { .fc-subs:not(.list) .tl-axis > i:nth-child(2), .fc-subs:not(.list) .tl-axis > i:nth-child(4) { display: none; } }
 
 /* a lane, phone form: a band across the top carries the status field and its word; then name, rank plate, parts code and route, the track, the countdown, the action */
 .sub { --sfs: 20px; --nfs: 20px; --d: 22px; --pitch: 26px; --th: 34px; --bar: 6px; position: relative; overflow: hidden; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2px 0; width: 100%; text-align: left; font: inherit; font-size: 13px; border: 0; border-radius: 0; padding: 38px 10px 10px; background: var(--st-bg, var(--paper)); color: var(--ink); cursor: pointer; min-width: 0; transition: transform .12s, box-shadow .12s; }
@@ -855,8 +888,8 @@ div.sub { cursor: default; }
   .vgauge { left: auto; right: 6px; width: 190px; height: 3px; bottom: 0; }
 }
 
-/* hero: a wide lane, 84 px or more; no frame round the group (above) */
-@container fcsubs (min-width: 760px) {
+/* hero: a wide lane, 84 px or more, from 960 px (the track is then 234 px or more); no frame round the group (above) */
+@container fcsubs (min-width: 960px) {
   .fc-subs:not(.list) .sub { --sfs: 28px; --nfs: 26px; --d: 28px; --pitch: 34px; --th: 46px; --bar: 8px; grid-template-columns: 220px minmax(0, 1fr) 320px; grid-template-rows: auto auto; align-content: center; align-items: center; gap: 4px 16px; min-height: 84px; padding: 10px 14px 10px 136px; border: 2px solid var(--ink); }
   .fc-subs:not(.list) .sub + .sub { margin-top: 8px; }
   .fc-subs:not(.list) .tl-axis { --ax-l: 374px; --ax-r: 352px; margin-bottom: 8px; }
@@ -905,25 +938,28 @@ div.sub { cursor: default; }
 .es-note { margin: 0; max-width: 56ch; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 /* the scope: a sonar drawn in the theme's own roles on the deep-water panel, hidden from screen readers */
 .es-scope { position: relative; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%); color: var(--on-deep); }
-.es-scope svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* W36: the drawing stops 40 px above the scope's foot; the foot is a strip of its own for the labels that are not part of the drawing, so no ring runs through a word */
+.es-scope svg { position: absolute; inset: 0; width: 100%; height: calc(100% - 40px); }
+.es-scope::after { content: ""; position: absolute; left: 0; right: 0; bottom: 40px; height: 2px; background: var(--deep-line); }
 .es-scope .es-ring { fill: none; stroke-width: 2; }
 .es-scope .r1 { stroke: var(--route-m); }
 .es-scope .r2 { stroke: var(--loot-m); }
 .es-scope .r3 { stroke: var(--gil-m); }
 .es-scope .r4 { stroke: var(--rank-m); }
 .es-scope .r5, .es-scope .es-cross { stroke: var(--deep-line); }
-.es-scope .es-cross { stroke-width: 1; }
-.es-scope .es-sweep { transform-box: view-box; transform-origin: 370px 430px; animation: subs-turn 9s linear infinite; }
+.es-scope .es-cross { fill: none; stroke-width: 1; }
+.es-scope .es-sweep { fill: none; transform-box: view-box; transform-origin: 370px 430px; animation: subs-turn 9s linear infinite; }
 .es-scope .es-fan { fill: var(--route-m); fill-opacity: .16; }
 .es-scope .es-edge { stroke: var(--route-m); stroke-width: 4; }
 .es-scope .es-dia { fill: var(--on-deep); stroke: var(--route-m); stroke-width: 4; }
-.es-scope .es-word { position: absolute; left: calc(58% - 52px); top: calc(52% + 36px); font: 900 24px/1 var(--f-disp); letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep); }
-.es-scope .es-count { position: absolute; right: 28px; bottom: 24px; font: 13px/1.3 var(--f-data); color: var(--on-deep); }
+.es-scope .es-word { position: absolute; left: calc(58% - 52px); top: calc((100% - 40px) * .524 + 36px); font: 900 24px/1 var(--f-disp); letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep); }
+.es-scope .es-count { position: absolute; right: 28px; bottom: 11px; font: 13px/1.3 var(--f-data); color: var(--on-deep); }
 @media (max-width: 700px) {
   .panel.empty-state[data-empty] { grid-template-columns: minmax(0, 1fr); }
-  .es-scope { order: -1; min-height: 0; height: 140px; clip-path: none; }
-  .es-scope .es-word { left: 16px; top: 12px; }
-  .es-scope .es-count { right: 14px; bottom: 10px; }
+  /* on a phone the band is 180 px and the word joins the count in the strip */
+  .es-scope { order: -1; min-height: 0; height: 180px; clip-path: none; }
+  .es-scope .es-word { left: 16px; top: auto; bottom: 8px; }
+  .es-scope .es-count { right: 14px; }
   .es-main { gap: 18px; padding: 20px 16px; }
   .es-act { display: grid; width: 100%; }
   .es-act .btn.primary { width: 100%; min-height: 56px; }
@@ -951,8 +987,8 @@ div.sub { cursor: default; }
 .cmp-lane::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%); pointer-events: none; }
 .cmp-lane .tl-bar { background: linear-gradient(var(--ink-2), var(--ink-2)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }
 .cmp-lane.over .tl-bar { background: var(--ink-2); }
-.cmp-lane .tl-bar { outline: 1px solid var(--ink-3); outline-offset: -1px; }
-.cmp-lane.pick .tl-bar { height: 8px; background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }
+.cmp-lane .tl-bar { height: 10px; outline: 2px solid var(--ink-2); outline-offset: -2px; } /* W36: the trough carries the scale, so its edge is the secondary ink (4.5:1 on the plate) */
+.cmp-lane.pick .tl-bar { height: 12px; background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }
 .cmp-lane.pick.over .tl-bar { background: var(--ink); }
 .cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }
 .cmp-lane.pick.over .tl-end { background: none; }
@@ -983,6 +1019,11 @@ div.sub { cursor: default; }
 .rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }
 .rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }
 .rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }
+/* W36: each rung reads in its role's colour in a dark theme too: the role's field at 16% over its wash (ink on it stays at 7:1 in all 42 theme and mode pairs, the largest share that does) */
+.rec-rank li:has([data-rec="up-unlock"]) { background-image: linear-gradient(color-mix(in srgb, var(--route-m) 16%, transparent), color-mix(in srgb, var(--route-m) 16%, transparent)); }
+.rec-rank li:has([data-rec="up-level"]) { background-image: linear-gradient(color-mix(in srgb, var(--rank-m) 16%, transparent), color-mix(in srgb, var(--rank-m) 16%, transparent)); }
+.rec-rank li:has([data-rec="up-gil"]) { background-image: linear-gradient(color-mix(in srgb, var(--gil-m) 16%, transparent), color-mix(in srgb, var(--gil-m) 16%, transparent)); }
+.rec-rank li:has([data-rec="up-loot"]) { background-image: linear-gradient(color-mix(in srgb, var(--loot-m) 16%, transparent), color-mix(in srgb, var(--loot-m) 16%, transparent)); }
 /* the Map: the seven seas as one chain in unlock order. Each sea is its colour; a sea with nothing found is hatched; the link between two seas carries the sector that opens the next */
 .map-seas { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; margin: 10px 0 12px; }
 .map-seas .btn[data-map-sea] { flex: 1 1 0; min-width: 0; padding-right: 8px; font-size: 15px; }
@@ -994,15 +1035,14 @@ div.sub { cursor: default; }
 .sea-link-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, var(--rule) 0 2px, transparent 2px 9px), var(--paper); color: var(--ink-2); }
 .map-seas .btn[data-map-sea][aria-pressed="true"].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--on-mid) 30%, transparent) 0 2px, transparent 2px 9px), var(--sea); color: var(--on-mid); }
-/* narrow: the chain stands upright (no sideways scroll): the seas one under another, the link a caption between them that says which sector opens the next */
+/* narrow (a phone or a tablet): the chain is a compact grid of seas, two or more to a row, so the chart is on the first screen; the caption "SECTOR opens SEA" is shown for the chosen sea only (the others stay in the page for a screen reader) */
 @container mappanel (max-width: 1079px) {
-  .map-seas { flex-direction: column; margin: 10px 0 12px; }
-  .map-seas .btn[data-map-sea] { flex: none; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 4px 12px 12px 6px; }
-  .map-seas .btn[data-map-sea] .muted { text-align: right; }
-  .sea-link { width: auto; min-height: 30px; justify-items: start; padding-left: 40px; }
-  .sea-link::before { left: 16px; right: auto; top: 0; bottom: 8px; width: 4px; height: auto; }
-  .sea-link::after { left: 11px; right: auto; top: auto; bottom: 0; border: 7px solid transparent; border-bottom-width: 0; border-top: 9px solid var(--ink); }
-  .sea-link .discs { position: absolute; left: 6px; top: 50%; transform: translateY(-50%) scale(.8); }
-  .sea-link-t { position: static; width: auto; height: auto; clip-path: none; overflow: visible; white-space: normal; padding: 3px 0 5px; }
+  .map-seas { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); grid-auto-flow: dense; gap: 4px; margin: 10px 0 12px; }
+  .map-seas .btn[data-map-sea] { min-height: 48px; padding: 4px 8px 14px 6px; font-size: 15px; }
+  .sea-link { display: none; width: auto; min-height: 0; }
+  .sea-link:has(+ [data-map-sea][aria-pressed="true"]) { display: flex; grid-column: 1 / -1; align-items: center; gap: 10px; min-height: 34px; padding: 0 4px; color: var(--ink); font-size: 12px; }
+  .sea-link::before, .sea-link::after { content: none; }
+  .sea-link .discs { position: static; transform: none; flex: none; }
+  .sea-link-t { position: static; width: auto; height: auto; clip-path: none; overflow: visible; white-space: normal; }
 }
 .map-panel { container: mappanel / inline-size; }
