@@ -57,16 +57,22 @@
   var STATE = { found: 'found', next: 'can be revealed next', far: 'further away' };
   C.stateText = function (st) { return STATE[st]; };
 
-  // The invisible tap circle of each node, in chart units: about 40 px across at a phone width (the chart is then roughly
-  // 340 px wide, so a radius of span / 17), but never more than half the distance to the nearest other sector, so
-  // neighbouring tap circles do not swallow each other's taps.
-  C.TAP_FRACTION = 1 / 17;
+  // The invisible tap circle of each node, in chart units. Wanted: 44 CSS px across at a 360 px screen (the chart is then about 320 px
+  // wide, so a radius of about span / 14, a little more because the drawing is a little larger than its box; wider screens give more pixels for the same radius). Where two sectors are closer than that, a
+  // circle is as large as it can be without overlapping a neighbour's circle: first half the distance to the nearest sector, then,
+  // where the neighbour's circle is smaller, the rest of the distance up to the wanted radius. Never more than wanted.
+  C.TAP_FRACTION = 1 / 13.5;
   C.hitRadii = function (view) {
-    var b = view.box, span = Math.max(b.w, b.h), want = span * C.TAP_FRACTION, out = {};
-    view.nodes.forEach(function (n) {
-      var near = Infinity;
-      view.nodes.forEach(function (m) { if (m !== n) near = Math.min(near, Math.hypot(m.x - n.x, m.y - n.y)); });
+    var b = view.box, span = Math.max(b.w, b.h), want = span * C.TAP_FRACTION, out = {}, ns = view.nodes, d = {};
+    ns.forEach(function (n) {
+      var near = Infinity; d[n.id] = {};
+      ns.forEach(function (m) { if (m !== n) { var l = Math.hypot(m.x - n.x, m.y - n.y); d[n.id][m.id] = l; near = Math.min(near, l); } });
       out[n.id] = Math.min(want, near / 2);
+    });
+    for (var pass = 0; pass < 4; pass++) ns.forEach(function (n) {
+      var r = want;
+      ns.forEach(function (m) { if (m !== n) r = Math.min(r, d[n.id][m.id] - out[m.id]); });
+      if (r > out[n.id]) out[n.id] = r;
     });
     return out;
   };
@@ -84,13 +90,35 @@
       else boxes.push(textBox(n.x, n.y - r * 2.2 - fs * 0.3, n.letter + ' 5', fs, 'middle'));
     });
     if (extra) (extra.boxes || []).forEach(function (bx) { boxes.push(bx); });
-    boxes.push({ x0: view.start.x - r * 1.5, x1: view.start.x + r * 1.5, y0: view.start.y - r * 1.5, y1: view.start.y + r * 1.5 });
-    boxes.push(textBox(view.start.x, view.start.y + r * 1.5 + fs * 1.1, 'Start', fs, 'middle'));
+    var st = view.start;
+    boxes.push({ x0: st.x - r * 1.5, x1: st.x + r * 1.5, y0: st.y - r * 1.5, y1: st.y + r * 1.5 });
     function inside(t) { return t.x0 >= b.x && t.x1 <= b.x + b.w && t.y0 >= b.y && t.y1 <= b.y + b.h; }
+    function onSeg(list, t, pad) { return list.some(function (l) { for (var i = 0; i <= 24; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 24, py = l.y1 + (l.y2 - l.y1) * i / 24; if (px > t.x0 - pad && px < t.x1 + pad && py > t.y0 - pad && py < t.y1 + pad) return true; } return false; }); }
+    // E4: the "Start" label goes by the same rule as the other labels: the first of below, above, right, left (then hanging to a side) whose box is inside the drawing
+    // and touches no node with its rings, no letter, mark, reveal line or planned-route line. Where none is free the old place (below) stays.
+    var sDef = { x: st.x, y: st.y + r * 1.5 + fs * 1.1, anchor: 'middle' }, sPick = sDef, rr = r + 13;
+    (function () {
+      var cs = [sDef, { x: st.x, y: st.y - r * 1.5 - fs * 0.4, anchor: 'middle' }, { x: st.x + r * 2.2, y: st.y + fs * 0.35, anchor: 'start' }, { x: st.x - r * 2.2, y: st.y + fs * 0.35, anchor: 'end' },
+        { x: st.x - r, y: sDef.y, anchor: 'end' }, { x: st.x + r, y: sDef.y, anchor: 'start' }, { x: st.x - r, y: st.y - r * 1.5 - fs * 0.4, anchor: 'end' }, { x: st.x + r, y: st.y - r * 1.5 - fs * 0.4, anchor: 'start' }];
+      var segs = (extra && extra.segs) || [];
+      for (var i = 0; i < cs.length; i++) {
+        var t = textBox(cs[i].x, cs[i].y, 'Start', fs, cs[i].anchor);
+        if (!inside(t)) continue;
+        if (view.nodes.some(function (n) { return n.x + rr > t.x0 && n.x - rr < t.x1 && n.y + rr > t.y0 && n.y - rr < t.y1; })) continue;
+        if (boxes.some(function (o, k) { return k >= view.nodes.length * 2 && hit(t, o); })) continue; // letters are in boxes after the node boxes (pairs); the marks follow
+        if (boxes.slice(0, view.nodes.length * 2).some(function (o, k) { return k % 2 === 1 && hit(t, o); })) continue;
+        if (onSeg(lines, t, 2) || onSeg(segs, t, 2)) continue;
+        sPick = cs[i]; break;
+      }
+    })();
+    boxes.push(textBox(sPick.x, sPick.y, 'Start', fs, sPick.anchor));
+    var MK = r * 1.42, PADU = (Math.max(b.w, b.h) / 320) * 6.5; // F5: a marker is at most 1.42 r from its centre (the diamond); a label keeps 6.5 px (at a phone's chart width) from the marker of every other sector
     function free(t) {
       if (boxes.some(function (o) { return hit(t, o); })) return false;
       return !lines.some(function (l) { for (var i = 0; i <= 24; i++) { var px = l.x1 + (l.x2 - l.x1) * i / 24, py = l.y1 + (l.y2 - l.y1) * i / 24; if (px > t.x0 && px < t.x1 && py > t.y0 && py < t.y1) return true; } return false; });
     }
+    function grow(t) { return { x0: t.x0 - fsT * 0.3, x1: t.x1 + fsT * 0.3, y0: t.y0 - fsT * 0.3, y1: t.y1 + fsT * 0.3 }; } // the drawing box grows by this around a label, so a label is moved only where it does not
+    function clearOfMarkers(t, own) { return !view.nodes.some(function (m) { return m !== own && m.x + MK + PADU > t.x0 && m.x - MK - PADU < t.x1 && m.y + MK + PADU > t.y0 && m.y - MK - PADU < t.y1; }); }
     view.nodes.forEach(function (n) {
       var str = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean).join(' · ');
       if (!str) return;
@@ -111,13 +139,18 @@
         if (!free(t)) continue;
         if (inside(t)) pick = c; else if (!loose) loose = c; // a free place outside the drawing box is taken only if none inside (the box then grows)
       }
+      // F5: a label that is inside the drawing but too near another sector's marker moves to the first inside place that keeps 6.5 px from every other marker; the drawing box never changes by this
+      if (pick) {
+        var t0 = textBox(n.x + pick.x, n.y + pick.y, str, fsT, pick.anchor);
+        if (inside(grow(t0)) && !clearOfMarkers(t0, n)) for (var j = 0; j < cand.length; j++) { var tj = textBox(n.x + cand[j].x, n.y + cand[j].y, str, fsT, cand[j].anchor); if (free(tj) && inside(grow(tj)) && clearOfMarkers(tj, n)) { pick = cand[j]; break; } }
+      }
       pick = pick || loose || cand[0];
       var pb = textBox(n.x + pick.x, n.y + pick.y, str, fsT, pick.anchor);
       boxes.push(pb);
       res[n.id] = pick;
       ext = { x0: Math.min(ext.x0, pb.x0 - fsT * 0.3), y0: Math.min(ext.y0, pb.y0 - fsT * 0.3), x1: Math.max(ext.x1, pb.x1 + fsT * 0.3), y1: Math.max(ext.y1, pb.y1 + fsT * 0.3) };
     });
-    res.extent = ext;
+    res.extent = ext; res.start = sPick;
     return res;
   }
 
@@ -174,7 +207,7 @@
       if (isS) boxesX.push({ x0: n.x - M.RF - 2, x1: n.x + M.RF + 2, y0: n.y - M.RF - 2, y1: n.y + M.RF + 2 });
       markBoxes(n, cornerOf[n.id]).forEach(function (bx) { boxesX.push(bx); }); // V4: the boxes of the "+" and the cross, at the corner chosen for them
     });
-    var tagAt = placeTags(view, r, fs, { letters: letterAt, boxes: boxesX });
+    var tagAt = placeTags(view, r, fs, { letters: letterAt, boxes: boxesX, segs: segs });
     var e = tagAt.extent, o = '<svg class="chart-svg" data-sea="' + esc(view.sea) + '" viewBox="' + [e.x0, e.y0, e.x1 - e.x0, e.y1 - e.y0].map(num).join(' ') + '" role="group" aria-label="Chart of ' + esc(view.name) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
     function gridPath(cls, keepX, keepY) {
       var d = '';
@@ -207,7 +240,7 @@
       o += '<polyline class="chart-route" aria-hidden="true" points="' + pts + '"/>';
       for (var i = 1; i < path.length; i++) o += chev(path[i - 1].x, path[i - 1].y, path[i].x, path[i].y, r * 0.8, 'chart-route-dir');
     }
-    o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><circle class="chart-start-ping" aria-hidden="true" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + num(r * 1.5) + '"/><circle class="chart-start-ring" aria-hidden="true" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + num(r * 1.5) + '"/><rect x="' + num(st.x - r) + '" y="' + num(st.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(st.x) + ' ' + num(st.y) + ')"/><text x="' + num(st.x) + '" y="' + num(st.y + r * 1.5 + fs * 1.1) + '" text-anchor="middle" font-size="' + num(fs) + '">Start</text></g>';
+    o += '<g class="chart-start" role="img" aria-label="Start: the sea\'s starting point"><circle class="chart-start-ping" aria-hidden="true" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + num(r * 1.5) + '"/><circle class="chart-start-ring" aria-hidden="true" cx="' + num(st.x) + '" cy="' + num(st.y) + '" r="' + num(r * 1.5) + '"/><rect x="' + num(st.x - r) + '" y="' + num(st.y - r) + '" width="' + num(2 * r) + '" height="' + num(2 * r) + '" transform="rotate(45 ' + num(st.x) + ' ' + num(st.y) + ')"/><text x="' + num(tagAt.start.x) + '" y="' + num(tagAt.start.y) + '" text-anchor="' + tagAt.start.anchor + '" font-size="' + num(fs) + '">Start</text></g>';
     view.nodes.forEach(function (n) {
       var tags = [n.slot ? 'slot ' + n.slot : '', n.opens ? 'opens ' + n.opens : ''].filter(Boolean);
       var no = opts && opts.cannot && opts.cannot[n.id]; // G2: why this sector cannot be added to the route being planned (words from the planner)

@@ -147,6 +147,21 @@
   // Has a stored time run out? age = now - stored time. Expired at the limit, and also when the time is in the future by more than a minute.
   E.aged = function (at, now, limit) { var age = now - at; return age >= limit || age < -E.SKEW_MS; };
   // May the app try on its own? tried = { <price place>: { at } } (the last automatic attempt of each place), or null.
+  // E2: the attempt record of each price place is also kept in device storage next to the price cache (not in the save), so a reload and
+  // another tab on the same device honour the same 15 minutes. A storage failure falls back to the page's memory.
+  var TRIED_KEY = 'eveniunt-subs-prices-tried';
+  E.triedLoad = function (mem) {
+    var out = Object.assign({}, mem || {});
+    try {
+      var o = JSON.parse(localStorage.getItem(TRIED_KEY) || 'null');
+      if (o && typeof o === 'object') Object.keys(o).forEach(function (k) { var a = o[k] && +o[k].at; if (a > 0 && a - Date.now() <= E.SKEW_MS && (!out[k] || a > out[k].at)) out[k] = { at: a }; });
+    } catch (e) { /* memory only */ }
+    return out;
+  };
+  E.triedSave = function (scope, at, mem) {
+    if (mem) mem[scope] = { at: at };
+    try { var o = JSON.parse(localStorage.getItem(TRIED_KEY) || 'null'); if (!o || typeof o !== 'object') o = {}; o[scope] = { at: at }; localStorage.setItem(TRIED_KEY, JSON.stringify(o)); } catch (e) { /* memory only */ }
+  };
   E.mayTry = function (tried, scope, now, force) { var t = tried && tried[scope]; return !!force || !t || E.aged(t.at, now, E.GATE_MS); };
   // When a price was fetched: its own time in c.seen, else the time of the whole list (an older cache has no per-item time).
   E.seenAt = function (c, id) { return c && c.seen && c.seen[id] != null ? c.seen[id] : c ? c.at : 0; };
@@ -190,7 +205,18 @@
   };
   // The message for a failed fetch, with the time of the last real one when there is one (fmt = the module's clock).
   E.PARTIAL_NOTE = 'Some market prices could not be fetched; those items show their last known or merchant price.';
-  E.failureNote = function (at, fmt) { return 'Market prices could not be fetched; showing merchant prices' + (at ? ' (last fetched ' + fmt(at) + ')' : ''); };
+  // c = the cache the values are drawn from ({ prices, at, seen }), ids = the items on screen. The message is decided by the prices
+  // actually used for those items (a tradable item with a cached market price above 0), not by a flag: the oldest such fetch time is named.
+  E.usedMarket = function (c, ids) {
+    var t = null;
+    if (c && c.prices) (ids || []).forEach(function (id) { if (E.tradable(id) && c.prices[id] > 0) { var s = E.seenAt(c, id); if (t === null || s < t) t = s; } });
+    return t;
+  };
+  E.failureNote = function (c, ids, fmt) {
+    var t = E.usedMarket(c, ids);
+    return t === null ? 'Market prices could not be fetched; showing merchant prices.'
+      : 'Market prices could not be fetched; showing the last known market prices' + (t ? ' (fetched ' + fmt(t) + ')' : '') + ' and merchant prices for the rest.';
+  };
   // Resolves { scope, at, prices, none, seen, error, partial }: error is set when every batch failed (the cache is then not stamped as fresh); partial when only some did.
   // force asks for every tradable item again, and forgets the "no market price" records.
   E.fetchPrices = function (scope, ids, force) {

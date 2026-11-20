@@ -360,6 +360,66 @@ test('chart: an over-rank sector says so in its accessible label; slot and opens
   }
 });
 
+test('E4 chart: the "Start" label is clear of every node with its rings, every letter, mark, reveal line and route line, in every sea', () => {
+  const viewsOf = (sea) => [
+    [CH.view(sea.id, []), null, null],
+    [CH.view(sea.id, ALL, 50), D.sectors.filter((x) => x.sea === sea.id).slice(0, 4).map((x) => x.id), { selected: D.sectors.find((x) => x.sea === sea.id).id }],
+    [CH.view(sea.id, ALL.filter((i) => i % 2), 20), D.sectors.filter((x) => x.sea === sea.id && x.id % 2).slice(0, 5).map((x) => x.id), null]];
+  let bad = 0;
+  for (const sea of D.seas) for (const [v, route, opts] of viewsOf(sea)) {
+    const svg = CH.svg(v, route, opts), size = Math.max(v.box.w, v.box.h) / 30, r = Math.max(v.box.w, v.box.h) / 70;
+    const st = /<text x="([-\d.]+)" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)">Start</.exec(svg);
+    assert.ok(st, 'Start label');
+    const w = 5 * 0.55 * size, x0 = +st[1] - (st[3] === 'start' ? 0 : st[3] === 'end' ? w : w / 2), t = { x0, x1: x0 + w, y0: +st[2] - size, y1: +st[2] + size * 0.25 };
+    const where = `sea ${sea.id} ${route ? 'route' : 'plain'}`;
+    for (const n of v.nodes) assert.ok(!(n.x + r + 13 > t.x0 && n.x - r - 13 < t.x1 && n.y + r + 13 > t.y0 && n.y - r - 13 < t.y1), `${where}: Start label touches ${n.letter} or its rings`);
+    for (const g of svg.split('<g class="chart-node').slice(1)) {
+      const [tx, ty] = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g).slice(1).map(Number), l = /<text class="chart-letter" y="([-\d.]+)" text-anchor="(\w+)" font-size="[\d.]+"(?: x="([-\d.]+)")?>([^<]*)</.exec(g);
+      const lw = l[4].length * 0.55 * size, lx = tx + (l[3] ? +l[3] : 0), lx0 = lx - (l[2] === 'start' ? 0 : l[2] === 'end' ? lw : lw / 2);
+      assert.ok(!(t.x0 < lx0 + lw && lx0 < t.x1 && t.y0 < ty + +l[1] + size * 0.25 && ty + +l[1] - size < t.y1), `${where}: Start label covers a letter`);
+    }
+    const segs = v.lines.map((l) => [l.x1, l.y1, l.x2, l.y2]);
+    const pl = /<polyline[^>]*points="([^"]+)"/.exec(svg); if (pl) { const p = pl[1].split(' ').map((q) => q.split(',').map(Number)); for (let i = 1; i < p.length; i++) segs.push([p[i - 1][0], p[i - 1][1], p[i][0], p[i][1]]); }
+    for (const [x1, y1, x2, y2] of segs) for (let i = 0; i <= 48; i++) { const px = x1 + (x2 - x1) * i / 48, py = y1 + (y2 - y1) * i / 48; if (px > t.x0 && px < t.x1 && py > t.y0 && py < t.y1) { bad++; assert.fail(`${where}: a line crosses the Start label`); } }
+    assert.ok(t.x0 >= v.box.x && t.x1 <= v.box.x + v.box.w && t.y0 >= v.box.y && t.y1 <= v.box.y + v.box.h, `${where}: Start label inside the drawing`);
+  }
+  assert.equal(bad, 0);
+});
+test('E4 chart: every tap circle is 44 px across at a 360 px screen, or as large as the neighbours allow and never under the floor where room exists; none overlap', () => {
+  for (const sea of D.seas) {
+    const v = CH.view(sea.id, []), hits = CH.hitRadii(v), vb = /viewBox="([^"]+)"/.exec(CH.svg(v))[1].split(' ').map(Number), px = 320 / Math.max(vb[2], vb[3]); // the chart is about 320 px wide at 360 px
+    for (const a of v.nodes) {
+      const d = hits[a.id] * 2 * px;
+      if (d >= 44 - 0.5) continue;
+      const touching = v.nodes.some((c) => c !== a && Math.abs(hits[a.id] + hits[c.id] - Math.hypot(a.x - c.x, a.y - c.y)) < 1e-6);
+      assert.ok(touching, `sea ${sea.id} node ${a.id}: ${d.toFixed(1)} px but no neighbour stops it`);
+      assert.ok(d >= 28, `sea ${sea.id} node ${a.id}: ${d.toFixed(1)} px`);
+    }
+  }
+  const sizes = D.seas.map((sea) => { const v = CH.view(sea.id, []), hits = CH.hitRadii(v), vb = /viewBox="([^"]+)"/.exec(CH.svg(v))[1].split(' ').map(Number); return Math.min(...v.nodes.map((n) => hits[n.id] * 2 * 320 / Math.max(vb[2], vb[3]))); });
+  assert.ok(sizes[4] >= 43.5 && sizes[0] >= 34, 'measured minimum per sea: ' + sizes.map((x) => x.toFixed(1)).join(' '));
+});
+test('F5 chart: no slot or opens label is closer than 6 px to the marker of a sector it does not belong to (phone chart width and wider), in every sea', () => {
+  const states = (sea) => [[], ALL, D.sectors.filter((s) => s.sea === sea.id && s.id % 3 === 0).map((s) => s.id)];
+  for (const sea of D.seas) for (const disc of states(sea)) {
+    const v = CH.view(sea.id, disc), svg = CH.svg(v), vb = /viewBox="([^"]+)"/.exec(svg)[1].split(' ').map(Number), span = Math.max(v.box.w, v.box.h), r = span / 70;
+    const half = { found: r, next: r * Math.SQRT2, far: r * 0.7 }, nodes = [];
+    for (const g of svg.split('<g class="chart-node').slice(1)) { const [tx, ty] = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g).slice(1).map(Number), id = +/data-sector="(\d+)"/.exec(g)[1]; nodes.push({ id, tx, ty, g, h: half[v.nodes.find((n) => n.id === id).state] }); }
+    for (const px of [320, 700]) { // 360 px phone, desktop
+      const scale = px / Math.max(vb[2], vb[3]);
+      for (const n of nodes) {
+        const tag = /<text class="chart-tag" x="([-\d.]+)" y="([-\d.]+)" text-anchor="(\w+)" font-size="([\d.]+)">([^<]*)</.exec(n.g); if (!tag) continue;
+        const fsT = +tag[4], w = tag[5].length * 0.55 * fsT, x0 = n.tx + +tag[1] - (tag[3] === 'start' ? 0 : tag[3] === 'end' ? w : w / 2), t = { x0, x1: x0 + w, y0: n.ty + +tag[2] - fsT, y1: n.ty + +tag[2] + fsT * 0.25 };
+        for (const o of nodes) {
+          if (o.id === n.id) continue;
+          const dx = Math.max(o.tx - o.h - t.x1, t.x0 - (o.tx + o.h), 0), dy = Math.max(o.ty - o.h - t.y1, t.y0 - (o.ty + o.h), 0);
+          assert.ok(Math.hypot(dx, dy) * scale >= 6, `sea ${sea.id}: label of ${n.id} is ${(Math.hypot(dx, dy) * scale).toFixed(1)} px from the marker of ${o.id} at ${px} px`);
+        }
+      }
+    }
+  }
+});
+
 // ---------------------------------------------------------------- Revision 2, W18: the bolder chart (decoration only; geometry frozen)
 test('chart W18: the seven viewBox strings are the baseline of W0 (geometry frozen), and the SVG text is deterministic', () => {
   const W0 = ['25.2 -17.6 939.6 1011.5', '81.6 77 857.5 912.9', '-5.9 8.6 1013.8 976.7', '-3.7 -0.7 1010.4 996.4', '-20.8 -7.3 1012.7 1004.6', '7.4 -9.4 995.3 1005.7', '277.4 85.7 704.1 917.6']; // measured before any W18 change
@@ -2494,4 +2554,23 @@ test('chart S2/S3: rings are at least 6 beyond the node, the bracket stands outs
   assert.match(n26, /<circle r="[\d.]+" stroke-dasharray="4 3"\/>/, 'found above the rank: dashed outline of its own shape'); assert.ok(!/chart-overring/.test(svg));
   const far = new RegExp('data-sector="8"[\\s\\S]*?</g>').exec(svg)[0]; assert.ok(!/stroke-dasharray/.test(far), 'a far node within the rank is not dashed');
   const d = /chart-cannot-x" aria-hidden="true" d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)/.exec(n26); assert.ok(d && Math.abs(+d[3] - +d[1]) >= 8 && +d[1] > r && +d[2] < -r, 'a cross at least 8 wide outside the node, upper right');
+});
+
+test('E3 advisor: when no priority can be served the plan is not labelled Gil Farming and the reason says so', () => {
+  const orig = globalThis.DROPS.route;
+  try {
+    globalThis.DROPS.route = () => null; // no gil record for any runnable route
+    const inp = (found) => ({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: found }, slotsFilled: 4, recs: RECS.defaults() });
+    for (const found of [[148, 149], ALL]) {
+      const a = ADV.advise(inp(found));
+      assert.equal(a.lead, null);
+      assert.ok(!/Gil Farming/.test(a.head) && !/Gil Farming/.test(a.label));
+      assert.equal(a.plan.why, 'None of your priorities can be served for this submarine right now; the route shown is simply the quickest one it can run.');
+      const quick = a.plan.ev.seconds;
+      assert.ok(a.plan.route.length >= 1 && quick > 0);
+    }
+  } finally { globalThis.DROPS.route = orig; }
+  // every other case keeps its reason: with records, Gil Farming leads as before
+  const g = ADV.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, recs: RECS.defaults() });
+  assert.equal(g.lead, 'G'); assert.match(g.label, /Gil Farming/);
 });

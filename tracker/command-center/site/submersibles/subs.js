@@ -156,7 +156,7 @@
   function setStatus(t) { var el = $('#status'); if (el) el.textContent = t; }
 
   // ------------------------------------------------------------------ view state (this tab only)
-  var UI = { tab: 'board', map: {} };
+  var UI = { tab: 'board', map: {}, lanes: {} }; // lanes: the lanes whose Details are open on a phone (not saved)
   try { var saved = JSON.parse(sessionStorage.getItem('eveniunt-subs-ui') || '{}'); if (saved.tab) UI.tab = saved.tab; if (saved.map && typeof saved.map === 'object') UI.map = saved.map; } catch (e) { /* none */ }
   function keepUi() { try { sessionStorage.setItem('eveniunt-subs-ui', JSON.stringify(UI)); } catch (e) { /* none */ } }
   function sortMode() { return (S.settings.prefs && S.settings.prefs.sort) || 'fc'; }
@@ -304,6 +304,8 @@
     var s = x.sub, v = s.voyage, route = v && v.route && v.route.length ? routeText(v.route) : (a && a.plan ? routeText(a.plan.route) : '');
     return (s.name || 'Sub ' + s.slot) + ', ' + F.LABEL[x.status] + (route ? ', route ' + route + (x.status === 'idle' || !(v && v.route && v.route.length) ? ' (suggested)' : '') : '');
   }
+  // E6: on a phone the explanatory line of a lane (parts, route words, the unlock note) is behind one Details control; open or closed is kept in memory only
+  function laneMore(key) { return '<button type="button" class="link lane-more" data-act="lane" data-lane="' + esc(key) + '" aria-expanded="' + (UI.lanes[key] ? 'true' : 'false') + '" aria-controls="lx-' + esc(key) + '">Details</button>'; }
   function subRow(x, now, withFc, T) {
     var s = x.sub, st = x.status, v = s.voyage, info = '', said = '';
     if (st === 'out') { info = '<span class="when units" title="' + (v.gameSaid ? 'From the game (typed)' : 'Worked out from rank, parts and route') + '">' + u('back in <b data-until="' + v.returnAt + '">' + F.fmtDur(v.returnAt - now, true) + '</b>') + u(nb('<span class="when-at">' + esc(F.fmtClock(v.returnAt, now)) + '</span>')) + '</span>'; said = 'back in ' + F.fmtDur(v.returnAt - now, true) + ' · ' + F.fmtClock(v.returnAt, now); }
@@ -315,18 +317,18 @@
     if (vp !== null) gauge = '<span class="vgauge" aria-hidden="true" data-voy data-sent="' + v.sentAt + '" data-ret="' + v.returnAt + '" style="--p:' + vp.toFixed(4) + '"></span><span class="vgauge-sr" data-voy-text>Voyage ' + Math.floor(vp * 100) + ' percent done</span>';
     var route = v && v.route && v.route.length ? '<span class="route" title="Route as entered">' + esc(routeText(v.route)) + '</span>' : '';
     var lbl = laneLabel(x, now, a);
-    return '<div class="sub" role="group" tabindex="0" data-sub="' + esc(x.id) + '" data-status="' + st + '" data-lbl="' + esc(lbl) + '" aria-label="' + esc(lbl + '; ' + said + '. Press Enter to open it.') + '">' +
+    return '<div class="sub' + (UI.lanes[x.id] ? ' more' : '') + '" role="group" tabindex="0" data-sub="' + esc(x.id) + '" data-status="' + st + '" data-lbl="' + esc(lbl) + '" aria-label="' + esc(lbl + '; ' + said + '. Press Enter to open it.') + '">' +
       '<span class="sub-top"><span class="sub-name">' + (withFc ? '<span class="sub-fc">' + esc(x.fc.name || 'Unnamed') + ' · </span>' : '') + esc(s.name || 'Sub ' + s.slot) + '</span>' +
       '<span class="chip ' + st + '">' + F.LABEL[st] + '</span></span>' +
-      '<span class="sub-meta"><span title="Rank as you entered it">' + (s.rank ? 'Rank ' + s.rank : 'Rank ?') + '</span><span class="code" title="' + esc(partsTitle(s.parts)) + ' (as you entered them)">' + partsCode(s.parts) + '</span>' + route + '</span>' +
+      '<span class="sub-meta"><span title="Rank as you entered it">' + (s.rank ? 'Rank ' + s.rank : 'Rank ?') + '</span><span class="sub-extra" id="lx-' + esc(x.id) + '"><span class="code" title="' + esc(partsTitle(s.parts)) + ' (as you entered them)">' + partsCode(s.parts) + '</span>' + route + '</span>' + laneMore(x.id) + '</span>' +
       laneTl(x, now, a, T) +
       '<span class="sub-when">' + info + quick + '</span>' + gauge + '</div>';
   }
   function lockedRow(slot) {
     var u = slotUnlock(slot), lbl = 'Slot ' + slot + ', Locked' + (u ? '; unlocked by surveying ' + sectorLabel(u) : '');
     var tl = '<span class="tl locked" aria-hidden="true">' + (u && SECTOR[u.id] ? routeDiscs([u.id]) : '') + '<i class="tl-bar"></i></span>';
-    return '<div class="sub' + (u && u.sea ? ' in-sea-' + u.sea : '') + '" role="group" aria-label="' + esc(lbl) + '" data-status="locked" data-slot="' + slot + '"><span class="sub-top"><span class="sub-name">Slot ' + slot + '</span><span class="chip locked">Locked</span></span>' +
-      '<span class="sub-meta">' + (u ? 'Unlocked by surveying ' + esc(sectorLabel(u)) + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span>' : 'unlock not known') + '</span>' + tl + '</div>';
+    return '<div class="sub' + (u && u.sea ? ' in-sea-' + u.sea : '') + (UI.lanes['L' + slot] ? ' more' : '') + '" role="group" aria-label="' + esc(lbl) + '" data-status="locked" data-slot="' + slot + '"><span class="sub-top"><span class="sub-name">Slot ' + slot + '</span><span class="chip locked">Locked</span></span>' +
+      '<span class="sub-meta"><span class="sub-extra" id="lx-L' + slot + '">' + (u ? 'Unlocked by surveying ' + esc(sectorLabel(u)) + ' <span class="tag" title="Submarine Tracker, MIT; see Credits">community data</span>' : 'unlock not known') + '</span>' + laneMore('L' + slot) + '</span>' + tl + '</div>';
   }
   function fcCard(f, now, T) {
     var fc = f.fc, subs = subsOf(f.id), rows = '', outs = [];
@@ -1034,7 +1036,7 @@
     }).join('');
     return '<div class="advice' + leadVoice(a) + '"><p class="advice-step">' + (a.head ? esc(a.head) : 'Suggested · step ' + a.step + ' of 3: ' + esc(a.stepName)) + (a.goal && !(a.lead && a.step === 3 && a.lead !== 'G') ? ' <span class="muted">(' + esc(a.goal) + ')</span>' : '') + '</p>' +
       '<p class="advice-route"><b>' + routeHtml(a.plan.route) + '</b> <button type="button" class="btn outline" data-act="quick" data-sub="' + esc(id) + '" data-route="' + a.plan.route.join(',') + '">Send on this route</button> <button type="button" class="btn sm" data-use="' + a.plan.route.join(',') + '">Change it first</button></p>' +
-      '<p class="hint">' + esc(a.plan.why) + '</p><p class="hint units">' + figures(a.plan.ev, s, now) + '</p>' + (a.lead === 'G' && gilSources(a.plan) ? '<p class="src-line" data-src>Gil an hour: ' + gilSources(a.plan) + '</p>' : '') +
+      '<p class="hint advice-why' + (UI.whyOpen ? ' open' : '') + '" id="advice-why">' + esc(a.plan.why) + '</p><button type="button" class="link why-more" data-act="why" aria-controls="advice-why" aria-expanded="' + (UI.whyOpen ? 'true' : 'false') + '">' + (UI.whyOpen ? 'Show less' : 'Show more') + '</button><p class="hint units">' + figures(a.plan.ev, s, now) + '</p>' + (a.lead === 'G' && gilSources(a.plan) ? '<p class="src-line" data-src>Gil an hour: ' + gilSources(a.plan) + '</p>' : '') +
       '<div class="cmp" data-cmp data-span="' + span + '">' + cmpAxis(span) + cmpLane(a.plan.route, a.plan.ev.seconds, span, true) + '</div>' +
       (alt ? '<details open><summary class="hint">Other routes</summary><ul class="alts">' + alt + '</ul></details>' : '') +
       (a.parts ? '<p class="note">' + esc(a.parts.why) + '</p>' : '') + (a.note ? '<p class="note">' + esc(a.note) + '</p>' : '') + '</div>';
@@ -1381,7 +1383,7 @@
   // ------------------------------------------------------------------ the Earnings tab (design 3.5)
   // at: the time of the last answered fetch; seen: the OLDEST fetch time among the logged items that have a price (what "prices seen" says); partial: some batches failed;
   // tried: the last automatic attempt of each price place; running: the place being fetched; queued: the one follow-up request made while a fetch ran.
-  var PRICES = { scope: null, at: 0, seen: null, prices: {}, busy: false, error: null, partial: false, tried: {}, running: null, queued: null, drawn: '' };
+  var PRICES = { scope: null, at: 0, seen: null, seenMap: null, prices: {}, busy: false, error: null, partial: false, tried: {}, running: null, queued: null, drawn: '' };
   function priceScope() { return (S.settings.prefs && S.settings.prefs.priceWorld) || sharedScope(); }
   function sharedScope() { // the place the Tracker's live prices use, else the first free company's world
     try { // the same rule as the Tracker's Market Board: one world, one data centre or (default) the region
@@ -1396,7 +1398,7 @@
   // What the price lines of a drawn screen show: a fetch redraws only when this changes.
   function priceSig() { return JSON.stringify([PRICES.scope, PRICES.at, PRICES.seen, PRICES.busy, priceNote(), PRICES.prices]); }
   // The plain message for a failed fetch (only for the place being shown), with the time of the last real fetch if there is one.
-  function priceNote() { return PRICES.error && PRICES.tried[priceScope()] ? EARN.failureNote(PRICES.at, function (t) { return F.fmtClock(t, Date.now()); }) : PRICES.partial && PRICES.tried[priceScope()] ? EARN.PARTIAL_NOTE : ''; }
+  function priceNote() { return PRICES.error && PRICES.tried[priceScope()] ? EARN.failureNote({ prices: PRICES.prices, at: PRICES.at, seen: PRICES.seenMap }, loggedIds(), function (t) { return F.fmtClock(t, Date.now()); }) : PRICES.partial && PRICES.tried[priceScope()] ? EARN.PARTIAL_NOTE : ''; }
   // An automatic attempt happens at most once in 15 minutes per price place, whatever its outcome; Refresh (force) tries at once.
   // A Refresh or a change of price place while a fetch runs is not dropped: one follow-up request is kept (the latest) and runs when the running one ends.
   // The result of a fetch for a place that is no longer the chosen one is cached by the fetch but not shown.
@@ -1404,10 +1406,11 @@
     var scope = priceScope(), ids = loggedIds(), now = Date.now();
     if (!ids.length) return;
     if (PRICES.busy) { if (force || scope !== PRICES.running) PRICES.queued = { force: !!(force || (PRICES.queued && PRICES.queued.force)) }; return; }
-    var c = EARN.cached(scope); if (c) { PRICES.scope = scope; PRICES.at = c.at; PRICES.seen = EARN.oldest(c, ids); PRICES.prices = c.prices; }
+    var c = EARN.cached(scope); if (c) { PRICES.scope = scope; PRICES.at = c.at; PRICES.seen = EARN.oldest(c, ids); PRICES.seenMap = c.seen || null; PRICES.prices = c.prices; }
+    PRICES.tried = EARN.triedLoad(PRICES.tried); // E2: another tab or a reload on this device may have tried already
     if (!force && (!EARN.mayTry(PRICES.tried, scope, now, false) || (c && !EARN.needed(c, ids, now).length))) return;
-    PRICES.busy = true; PRICES.running = scope; PRICES.tried[scope] = { at: now };
-    EARN.fetchPrices(scope, ids, !!force).then(function (r) { if (scope !== priceScope()) return; PRICES.scope = scope; PRICES.at = r.at; PRICES.seen = EARN.oldest(r, ids); PRICES.prices = r.prices; PRICES.error = r.error || null; PRICES.partial = !!r.partial; })
+    PRICES.busy = true; PRICES.running = scope; EARN.triedSave(scope, now, PRICES.tried);
+    EARN.fetchPrices(scope, ids, !!force).then(function (r) { if (scope !== priceScope()) return; PRICES.scope = scope; PRICES.at = r.at; PRICES.seen = EARN.oldest(r, ids); PRICES.seenMap = r.seen || null; PRICES.prices = r.prices; PRICES.error = r.error || null; PRICES.partial = !!r.partial; })
       .catch(function (e) { if (scope === priceScope()) PRICES.error = e.message || String(e); }).then(function () {
         PRICES.busy = false; PRICES.running = null;
         var q = PRICES.queued; PRICES.queued = null;
@@ -1524,8 +1527,9 @@
       '<p class="wiz-err" data-err role="alert"></p><div class="sheet-actions"><button type="button" class="btn primary" data-act="' + (retime ? 'dore' : 'dosend') + '" data-sub="' + esc(id) + '">' + (retime ? 'Save' : st === 'back' ? 'Send again' : 'Send') + '</button>' +
       (st === 'back' && !retime ? '<button type="button" class="btn" data-act="collect" data-sub="' + esc(id) + '">Collected, not sent</button>' : '') +
       '<button type="button" class="btn ghost" data-act="close">Cancel</button></div><p class="hint">Rank moves on by itself when a voyage is logged (at least the base experience); type the rank and experience the game shows above to keep it exact.</p>');
-    previewTime($('#sheet form'), 't');
+    UI.whyOpen = false; fitWhy(); previewTime($('#sheet form'), 't');
   }
+  function fitWhy() { var p = $('#advice-why'), b = $('#sheet .why-more'); if (p && b) b.hidden = p.scrollHeight <= p.clientHeight + 1; } // the control shows only when the text is cut (phone, collapsed)
   // suggestions for several subs sent together: each one counts the routes already given to the ones before it, so
   // subs looking for new sectors split the discoveries instead of all taking the same route
   function planAll(ids) {
@@ -1692,6 +1696,8 @@
         delete S.fcs[b.dataset.fc]; schedule(); break;
       }
       case 'sound': F.setDeviceSubs(function (s) { s.sound = !s.sound; }); if (F.deviceSubs().sound) { F.unlockSound(); F.chime(); } render(); break;
+      case 'lane': { var lk = b.dataset.lane; UI.lanes[lk] = !UI.lanes[lk]; var ln = b.closest('.sub'); ln.classList.toggle('more', !!UI.lanes[lk]); b.setAttribute('aria-expanded', UI.lanes[lk] ? 'true' : 'false'); break; }
+      case 'why': { UI.whyOpen = !UI.whyOpen; var wp = $('#advice-why'); if (wp) wp.classList.toggle('open', UI.whyOpen); b.setAttribute('aria-expanded', UI.whyOpen ? 'true' : 'false'); b.textContent = UI.whyOpen ? 'Show less' : 'Show more'; break; }
       case 'close': closeSheet(); break;
       case 'wcancel': W = null; render(); break;
       case 'wback': W.step = Math.max(0, W.step - 1); render(); focusWizard(); break;

@@ -198,3 +198,5 @@ The test suites pass: `node --test tests/core.test.js` 61 of 61 (the sync logic 
 
 - **Gate 1E is final** (PR 991). The owner's first real sign-in and the phone check follow the release note.
 - **After gate 1E:** the new Continuity project registered in `PROJECTS.md` (decision D2) in its own small pull request.
+
+**Submersibles notes (review fixes):** when a free company is changed in two places at once, the slot count follows this rule: if BOTH sides changed it differently the higher count is kept; a count changed on one side only is taken as that side set it. The market-price attempt limit (one automatic attempt per 15 minutes) is per price place and per device: the record is kept in device storage next to the price cache, not in the save, so a reload or another tab on the same device honours it; Refresh always tries once.

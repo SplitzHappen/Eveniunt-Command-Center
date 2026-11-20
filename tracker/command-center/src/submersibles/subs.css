@@ -1190,3 +1190,30 @@ div.sub { cursor: default; }
   .loot-new .opt > b { flex: 1 1 calc(100% - 40px); min-width: 0; }
   .loot-new .opt > .muted { flex: 1 1 100%; margin-left: 30px; }
 }
+
+/* E6: on a phone the explanatory line of a Board lane is behind one Details control (closed until opened; not saved); rank, name, state, discs, time and the send button stay */
+.lane-more { display: none; }
+@media (max-width: 700px) {
+  .sub:not(.more) .sub-extra { display: none; }
+  .sub .sub-meta .lane-more { display: inline-flex; align-items: center; min-height: 44px; margin: -12px 0; padding: 0 8px; font: 700 13px var(--f-body); }
+  .sub.more .sub-extra { display: inline; }
+}
+
+/* E6: the send window on a phone: the long advice text starts as its first two lines with "Show more"; the sticky footer is one primary row and one row of secondary actions, 44 px each */
+.why-more { display: none; }
+@media (max-width: 700px) {
+  .advice-why:not(.open) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .why-more { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font: 700 13px var(--f-body); }
+  .why-more[hidden] { display: none; }
+  .sheet-actions { row-gap: 0; padding: 2px 18px; }
+  .sheet-actions .btn, .sheet-actions .btn.sm { min-height: 44px; }
+  .sheet-actions .btn.primary, .sheet-actions .btn.primary[data-act="dosendall"] { min-height: 44px; font-size: 20px; }
+}
+
+/* E5: small text (13 px and under) reaches 4.5:1 on the field it sits on in every theme: the footer and its credits use the second ink, the lane's parts code and the tier lines use the main ink (on the status washes and the tier block), and a disabled small button is drawn dashed in the second ink instead of faded */
+.subs-foot, .subs-foot a, .subs-foot summary, .subs-foot pre { color: var(--ink-2); }
+.sub-meta .code { color: var(--ink); }
+.chart-details .rate-item span { color: var(--ink); }
+.btn[disabled]:not(.primary), .btn:disabled:not(.primary) { opacity: 1; color: var(--ink-2); border-style: dashed; cursor: not-allowed; }
+.recs .btn[disabled] { opacity: 1; }
+.rec-rank .btn[disabled] { color: var(--ink); } /* on the rung's role wash the second ink is under 4.5:1; the dashed edge and the word say it is off */

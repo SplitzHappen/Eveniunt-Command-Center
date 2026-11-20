@@ -3770,6 +3770,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       for (let i = 0; i < 60 && !lane; i++) { await page.keyboard.press('Tab'); lane = await page.evaluate(() => { const a = document.activeElement; return a && a.matches('.sub[data-sub]') ? a.dataset.sub : null; }); }
       if (lane) laneOutline = await page.evaluate(() => { const c = getComputedStyle(document.activeElement); return { w: parseFloat(c.outlineWidth), s: c.outlineStyle }; });
       await page.keyboard.press('Tab');
+      if (await page.evaluate(() => document.activeElement.matches('.lane-more'))) await page.keyboard.press('Tab'); // E6: a lane's Details button comes first on a phone; the lane's own action follows it
       const act = await page.evaluate((id) => { const a = document.activeElement, c = getComputedStyle(a); return { inLane: !!a.closest('.sub[data-sub="' + id + '"]'), quick: a.matches('.quick'), w: parseFloat(c.outlineWidth), s: c.outlineStyle }; }, lane);
       await ctx.close();
       // reduced motion: nothing inside a lane animates or transitions (the lane itself and its pseudo-elements included)
@@ -4574,7 +4575,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     await guard('C113', async () => {
       const server = await start(PORT5);
       const SEED = FCS('fa', 'Alpha Company', 0, 2) + "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] }; sec.trips.t1 = { s: 'a1', t: now - 40 * H, r: [1, 2], back: now - 10 * H, items: [[2, 3], [3, 1], [4, 2], [10099, 5]], newSectors: [] };";
-      const MSG = 'Market prices could not be fetched; showing merchant prices';
+      const MSG = 'Market prices could not be fetched; showing merchant prices.', MSG2 = 'Market prices could not be fetched; showing the last known market prices (fetched ';
       const run = async (mode, tab) => {
         const { ctx, errors } = await context({ viewport: { width: 1440, height: 1000 } });
         const page = await ctx.newPage(); let attempts = 0; const asked = [];
@@ -4582,7 +4583,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.route('https://universalis.app/**', (r) => {
           attempts++;
           const ids = new URL(r.request().url()).pathname.split('/').pop().split(','); asked.push(ids.join(','));
-          if (mode === 'blocked') return r.abort('failed');
+          if (mode === 'blocked' || mode === 'stale-blocked') return r.abort('failed');
           if (ids.length === 1 && ids[0] === '4') return r.fulfill({ status: 404, contentType: 'application/json', headers: cors, body: '{}' });
           const items = {}; ids.filter((id) => id !== '4').forEach((id) => { items[id] = { itemID: +id, averagePrice: 2000 }; });
           r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
@@ -4592,6 +4593,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await tlSeed(page, SEED);
         // single-404: a cache seeded with every price but item 4's (and no "no market price" record), so the only item asked for is item 4, alone, and the service answers 404 for it
         // (in one-404 the item is left out of the batch reply and is recorded from that, so its own request never happens). The cache has no per-item times: an older cache.
+        if (mode === 'stale-blocked') await page.evaluate(() => localStorage.setItem('eveniunt-subs-prices', JSON.stringify({ scope: 'Maduin', at: Date.now() - 7200000, prices: { 2: 2000, 3: 2000, 10099: 2000 }, none: {} }))); // E1: old market prices, the fetch fails
         if (mode === 'single-404') await page.evaluate(() => localStorage.setItem('eveniunt-subs-prices', JSON.stringify({ scope: 'Maduin', at: Date.now(), prices: { 2: 2000, 3: 2000, 10099: 2000 }, none: {} })));
         await page.reload(); await ready();
         await page.evaluate(() => { window.__redraws = 0; new MutationObserver((m) => { window.__redraws += m.length; }).observe(document.querySelector('#view'), { childList: true }); });
@@ -4601,16 +4603,23 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.waitForTimeout(5000);
         const got = await page.evaluate(() => ({ text: document.querySelector('#view').textContent, focus: (document.activeElement && document.activeElement.dataset && document.activeElement.dataset.pref) || null, redraws: window.__redraws }));
         const cacheNone = await page.evaluate(() => { const c = JSON.parse(localStorage.getItem('eveniunt-subs-prices') || 'null'); return c && c.none ? Object.keys(c.none) : null; });
-        const out = { mode, tab, attempts, asked: asked.slice(), cacheNone, redraws: got.redraws, message: got.text.includes(MSG), seen: /prices seen/.test(got.text), focus: got.focus, extra: null };
+        const out = { mode, tab, attempts, asked: asked.slice(), cacheNone, redraws: got.redraws, message: got.text.includes(MSG), message2: got.text.includes(MSG2) && got.text.includes(') and merchant prices for the rest.'), seen: /prices seen/.test(got.text), focus: got.focus, extra: null };
         if (tab === 'earn') { const before = attempts; await page.evaluate(() => document.querySelector('[data-act=prices]').click()); await page.waitForTimeout(1500); out.extra = attempts - before; }
+        // E2: after a failed attempt a page reload inside the 15 minutes makes no automatic attempt (the record is kept on the device); Refresh still makes exactly one
+        if (tab === 'earn' && mode === 'blocked') {
+          attempts = 0; await page.reload(); await ready(); await page.click('[data-tab=earn]'); await page.waitForSelector('.earn-cards'); await page.waitForTimeout(2500);
+          out.reloadAttempts = attempts; const b2 = attempts; await page.evaluate(() => document.querySelector('[data-act=prices]').click()); await page.waitForTimeout(1500); out.reloadRefresh = attempts - b2;
+        }
         out.errors = real(errors);
         await ctx.close();
         return out;
       };
       const rows = [];
-      for (const mode of ['blocked', 'one-404', 'single-404']) for (const tab of ['earn', 'log']) rows.push(await run(mode, tab));
+      for (const mode of ['blocked', 'stale-blocked', 'one-404', 'single-404']) for (const tab of ['earn', 'log']) rows.push(await run(mode, tab));
       const ok = rows.every((r) => r.attempts <= 2 && r.redraws <= 3 && r.errors.length === 0 && (r.tab === 'log' || (r.focus === 'priceWorld' && r.extra === 1))) &&
-        rows.filter((r) => r.mode === 'blocked').every((r) => r.message && !r.seen) && rows.filter((r) => r.mode !== 'blocked').every((r) => !r.message && (r.tab === 'log' || r.seen)) &&
+        rows.filter((r) => r.mode === 'blocked').every((r) => r.message && !r.message2 && !r.seen && (r.tab !== 'earn' || (r.reloadAttempts === 0 && r.reloadRefresh === 1))) &&
+        rows.filter((r) => r.mode === 'stale-blocked').every((r) => r.message2 && !r.message) && // E1: an old market price is kept, so the message says so
+        rows.filter((r) => r.mode === 'one-404' || r.mode === 'single-404').every((r) => !r.message && !r.message2 && (r.tab === 'log' || r.seen)) &&
         rows.filter((r) => r.mode === 'single-404').every((r) => r.attempts === 1 && JSON.stringify(r.asked) === '["4"]' && JSON.stringify(r.cacheNone) === '["4"]'); // the single-item 404 branch is reached: item 4 alone was asked, answered 404 and is only "no market price"
       record('C113', 'Market prices do not loop (fix list F1): with the price host blocked, and with one item the service leaves out and answers 404 for on its own, over five seconds on Earnings and on the Log there are at most two fetch attempts and three redraws; a failed fetch says "' + MSG + '" and shows no "prices seen" time, a 404 for one item is only "no market price" (no message; the real fetch is timed); in a third mode a seeded cache leaves item 4 as the only item asked for, on its own, and its 404 is recorded as "no market price" with no message (K3.7); focus stays on the price-place picker; Refresh makes exactly one more attempt', ok, { rows });
       server.close();
@@ -5070,6 +5079,70 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.
+    // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
+    //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
+    //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──
+    await guard('C132', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const SEED = FCS('fa', 'Alpha Company', 0, 4) + FCS('fb', 'Bravo Company', 1, 2) +
+        "sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2], voyage: { sentAt: now - 30 * H, route: [1, 2], returnAt: now - H } }; sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Sub A2', rank: 40, parts: [3, 4, 1, 2], voyage: { sentAt: now - H, route: [1, 3], returnAt: now + 27 * H } };" +
+        "sec.subs.a3 = { fcId: 'fa', slot: 3, name: 'Sub A3', rank: 30, parts: [3, 4, 1, 2] }; sec.subs.a4 = { fcId: 'fa', slot: 4, name: 'Sub A4', rank: 20, parts: [3, 4, 1, 2] }; sec.subs.b1 = { fcId: 'fb', slot: 1, name: 'Sub B1', rank: 20, parts: [3, 4, 1, 2] };";
+      const chart = (pg) => pg.evaluate(() => {
+        const R = (e) => { const r = e.getBoundingClientRect(); return { x0: r.left, x1: r.right, y0: r.top, y1: r.bottom }; };
+        const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+        const nodes = [...document.querySelectorAll('.chart-svg .chart-node')].map((g) => {
+          const h = g.querySelector('.hit').getBoundingClientRect(), parts = [...g.children].filter((c) => !c.matches('.hit, .chart-focus, .chart-halo, .chart-letter, .chart-tag, .chart-lock')).map(R);
+          return { cx: (h.left + h.right) / 2, cy: (h.top + h.bottom) / 2, d: h.width, parts };
+        });
+        const touch = nodes.map((n, i) => nodes.some((m, j) => j !== i && Math.abs((n.d + m.d) / 2 - Math.hypot(n.cx - m.cx, n.cy - m.cy)) < 1.5));
+        const sr = document.createRange(); sr.selectNodeContents(document.querySelector('.chart-svg .chart-start text')); const st = sr.getBoundingClientRect(), t = { x0: st.left, x1: st.right, y0: st.top, y1: st.bottom };
+        const marks = nodes.some((n) => n.parts.some((p) => hit(t, p)));
+        const lineHit = [...document.querySelectorAll('.chart-svg .chart-lines line, .chart-svg .chart-route')].some((l) => {
+          const pts = l.tagName === 'line' ? [[+l.getAttribute('x1'), +l.getAttribute('y1'), +l.getAttribute('x2'), +l.getAttribute('y2')]] : (() => { const p = l.getAttribute('points').split(' ').map((q) => q.split(',').map(Number)); return p.slice(1).map((q, i) => [p[i][0], p[i][1], q[0], q[1]]); })();
+          const m = l.getScreenCTM(), svg = l.ownerSVGElement;
+          return pts.some(([x1, y1, x2, y2]) => { for (let i = 0; i <= 40; i++) { const pt = svg.createSVGPoint(); pt.x = x1 + (x2 - x1) * i / 40; pt.y = y1 + (y2 - y1) * i / 40; const q = pt.matrixTransform(m); if (q.x > t.x0 && q.x < t.x1 && q.y > t.y0 && q.y < t.y1) return true; } return false; });
+        });
+        return { n: nodes.length, min: Math.min(...nodes.map((n) => n.d)), bad: nodes.filter((n, i) => n.d < 43.5 && !(touch[i] && n.d >= 28)).length, startOnMark: marks, startOnLine: lineHit, w: Math.round(document.querySelector('.chart-svg').getBoundingClientRect().width) };
+      });
+      const rowsA = [];
+      for (const [vw, vh, phone] of [[360, 800, true], [390, 844, true], [1440, 1000, false]]) {
+        const { ctx, errors } = await context(phone ? { viewport: { width: vw, height: vh }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } : { viewport: { width: vw, height: vh } });
+        const page = await ctx.newPage(); await page.goto(ROOT5 + 'submersibles/'); await ready(page); await tlSeed(page, SEED); await page.reload(); await ready(page);
+        await page.click('[data-tab=map]'); await page.waitForSelector('.chart-svg');
+        for (const sea of [1, 2, 3, 4, 5, 6, 7]) { await page.click('[data-map-sea="' + sea + '"]'); await page.waitForSelector('.chart-svg[data-sea="' + sea + '"]'); const m = await chart(page); rowsA.push(Object.assign({ vw, sea, errors: real(errors).length }, m)); }
+        await ctx.close();
+      }
+      const okA = rowsA.every((r) => r.n > 0 && r.errors === 0 && !r.startOnMark && !r.startOnLine && (r.vw === 1440 || r.bad === 0));
+      const phoneMin = Object.fromEntries([360, 390].map((w) => [w, rowsA.filter((r) => r.vw === w).map((r) => Math.round(r.min * 10) / 10)]));
+      // phone Board and send window
+      const ph = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      const pg = await ph.ctx.newPage(); await pg.goto(ROOT5 + 'submersibles/'); await ready(pg); await tlSeed(pg, SEED); await pg.reload(); await ready(pg); await pg.waitForSelector('.fc .sub[data-sub]');
+      const board = await pg.evaluate(() => {
+        const fc = document.querySelector('.fc'), lanes = [...fc.querySelectorAll('.sub')], last = lanes[3].getBoundingClientRect(), more = [...document.querySelectorAll('.sub .lane-more')];
+        return { lanes: lanes.length, bottom: Math.round(last.bottom + scrollY), more: more.length, exp: more.map((b) => b.getAttribute('aria-expanded')).join(), hidden: [...document.querySelectorAll('.sub .sub-extra')].every((e) => getComputedStyle(e).display === 'none'), ctl: more.every((b) => b.getAttribute('aria-controls') && document.getElementById(b.getAttribute('aria-controls'))), tap: Math.min(...more.map((b) => b.getBoundingClientRect().height)), rank: lanes.slice(0, 4).every((l) => l.querySelector('.sub-meta span').getBoundingClientRect().width > 0), side: document.documentElement.scrollWidth - innerWidth };
+      });
+      await pg.click('.fc .sub[data-sub="a3"] .lane-more'); const opened = await pg.evaluate(() => ({ sheet: !!document.querySelector('#sheet[open]'), exp: document.querySelector('.sub[data-sub="a3"] .lane-more').getAttribute('aria-expanded'), shown: getComputedStyle(document.querySelector('.sub[data-sub="a3"] .sub-extra')).display !== 'none' }));
+      await pg.focus('.fc .sub[data-sub="a3"] .lane-more'); await pg.keyboard.press('Enter'); const closed = await pg.evaluate(() => ({ sheet: !!document.querySelector('#sheet[open]'), exp: document.querySelector('.sub[data-sub="a3"] .lane-more').getAttribute('aria-expanded'), shown: getComputedStyle(document.querySelector('.sub[data-sub="a3"] .sub-extra')).display !== 'none' }));
+      const sheetOf = async (id) => {
+        await pg.click('.sub[data-sub="' + id + '"] .sub-top'); await pg.waitForSelector('#sheet[open] .advice'); await pg.waitForTimeout(250);
+        const r = await pg.evaluate(() => { const sh = document.querySelector('#sheet'), a = document.querySelector('#sheet .sheet-actions').getBoundingClientRect(), c = document.querySelector('#sheet .cmp').getBoundingClientRect(), w = document.querySelector('#advice-why'), wm = document.querySelector('#sheet .why-more'), lh = parseFloat(getComputedStyle(w).lineHeight);
+          return { actions: Math.round(a.height), btns: [...document.querySelectorAll('#sheet .sheet-actions .btn')].map((b) => Math.round(b.getBoundingClientRect().height)), cmpTop: Math.round(c.top - sh.getBoundingClientRect().top + sh.scrollTop), client: sh.clientHeight, whyLines: Math.round(w.getBoundingClientRect().height / lh), whyCut: w.scrollHeight > w.clientHeight + 1, more: wm ? { hidden: wm.hidden, exp: wm.getAttribute('aria-expanded'), text: wm.textContent } : null, side: document.documentElement.scrollWidth - innerWidth }; });
+        let after = null;
+        if (r.more && !r.more.hidden) { await pg.click('#sheet .why-more'); after = await pg.evaluate(() => ({ exp: document.querySelector('#sheet .why-more').getAttribute('aria-expanded'), text: document.querySelector('#sheet .why-more').textContent, h: Math.round(document.querySelector('#advice-why').getBoundingClientRect().height) })); }
+        await pg.keyboard.press('Escape'); await pg.waitForFunction(() => !document.querySelector('#sheet[open]')).catch(() => {});
+        return Object.assign(r, { after });
+      };
+      const sIdle = await sheetOf('a3'), sBack = await sheetOf('a1');
+      const errs = real(ph.errors); await ph.ctx.close();
+      const okB = board.lanes === 4 && board.bottom <= 2000 && board.more >= 4 && /^false(,false)+$/.test(board.exp) && board.hidden && board.ctl && board.tap >= 44 && board.rank && board.side <= 0 &&
+        !opened.sheet && opened.exp === 'true' && opened.shown && !closed.sheet && closed.exp === 'false' && !closed.shown;
+      const okC = [sIdle, sBack].every((x) => x.actions <= 96 && x.btns.every((h) => h >= 44) && x.side <= 0) && sIdle.whyLines <= 2 && sIdle.whyCut && sIdle.more && !sIdle.more.hidden && sIdle.more.exp === 'false' && sIdle.more.text === 'Show more' && sIdle.after && sIdle.after.exp === 'true' && sIdle.after.text === 'Show less' &&
+        sIdle.cmpTop <= 2 * sIdle.client - sIdle.actions && errs.length === 0;
+      record('C132', 'Phone Map taps, Start label, Board lanes and send window (review fixes E4, E6): tap circles 44 px or neighbour-limited (360/390 px minimum per sea ' + JSON.stringify(phoneMin) + '), "Start" clear of nodes, rings, marks and lines in 7 seas at 360, 390 and 1,440 px; four lanes end at ' + board.bottom + ' px (limit 2,000) with one Details button each (closed, tap and Enter open and close, the lane does not open the send window); send window footer ' + sIdle.actions + ' px (limit 96), buttons ' + sIdle.btns.join('/') + ' px, advice text ' + sIdle.whyLines + ' lines with Show more, route comparison at ' + sIdle.cmpTop + ' px of a ' + sIdle.client + ' px window (back state ' + sBack.cmpTop + ')',
+        okA && okB && okC, { okA, okB, okC, board, opened, closed, sIdle, sBack, errs, bad: rowsA.filter((r) => r.bad || r.startOnMark || r.startOnLine), phoneMin });
+      server.close();
+    });
     await guard('L1', async () => {
       const server20 = await start(PORT5);
       const seedL1 = (pg) => pg.evaluate(async () => {
@@ -5620,7 +5693,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const m13 = [n0, na, nm].every((w) => eq(w.m.heads.heads.map((h) => h.h), 1) && eq(w.m.heads.heads.map((h) => h.toolsTop), 1) && w.m.heads.heads.every((h) => h.tools >= 1) && w.m.heads.locked.length >= 1 && w.m.heads.locked.every((l) => /Unlocked by surveying/.test(l.text) && l.lines <= 2 && !l.clipped && !l.ellipsis));
       const bars = [n0.m.bars, na.m.bars, nm.m.bars, d.v2l.timeBars, da.v2l.timeBars, dm.v2l.timeBars];
       const m14 = bars.every((b) => b.n >= 1 && b.bars.every((x) => x.fs >= 13 && x.fw >= 700 && Math.abs(x.off) <= 6 && /Send/.test(x.text)) && b.chipH >= 17 && b.chipFs >= 11);
-      const m15 = [d, da, dm, p].every((w) => w.v2l.sendall.w >= w.v2l.sendall.room - 2 && w.v2l.sendall.h >= 50 && w.v2l.ord.length >= 1 && w.v2l.ord.every(Boolean) && w.v2l.focus.tag === 'SELECT' && w.v2l.focus.outlineStyle === 'solid' && w.v2l.focus.outlineW === '2px' && w.v2l.focus.bgImage === 'none' && w.v2l.focus.edge && w.v2l.rec.off.length >= 1 && w.v2l.rec.off.every((o) => o.colour && o.note && o.off)) &&
+      const m15 = [d, da, dm, p].every((w) => w.v2l.sendall.w >= w.v2l.sendall.room - 2 && w.v2l.sendall.h >= 44 && w.v2l.ord.length >= 1 && w.v2l.ord.every(Boolean) && w.v2l.focus.tag === 'SELECT' && w.v2l.focus.outlineStyle === 'solid' && w.v2l.focus.outlineW === '2px' && w.v2l.focus.bgImage === 'none' && w.v2l.focus.edge && w.v2l.rec.off.length >= 1 && w.v2l.rec.off.every((o) => o.colour && o.note && o.off)) &&
         [d, da, dm].every((w) => w.v2l.tier.same && w.v2l.pal && w.v2l.pal.length === 1 && w.v2l.pal[0] === 'On the water');
       const m17 = walks2.every((w) => w.v2l.plus && !w.v2l.plus.missing && w.v2l.plus.outside && w.v2l.plus.gap >= 2 && w.v2l.plus.full && w.v2l.plus.haloColour && w.v2l.plus.haloW >= 6 && w.v2l.plus.haloW > w.v2l.plus.plusW && w.v2l.plus.inkColour && w.v2l.plus.halos);
       const m18 = [p].every((w) => w.v2l.setup.lines.length >= 5 && w.v2l.setup.lines.every((n) => n === 1) && eq(w.v2l.setup.heights, 1));

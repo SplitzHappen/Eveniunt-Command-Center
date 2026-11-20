@@ -60,14 +60,16 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   window. Discoveries can also be ticked in a list in Setup, where one press marks or clears a whole sea. Browser
   checks C100 to C102.
 - **Submersibles: fixes from two reviews** (built 2026-11-19). The market-price fetch no longer loops when the price
-  service fails or leaves an item out: one automatic attempt per 15 minutes per price place, a plain message on
-  failure, and a fetch time per item (C113, C117). The Setup form writes only what the player changed in it, on top
+  service fails or leaves an item out: one automatic attempt per 15 minutes per price place and per device (the attempt record is kept in device
+  storage next to the price cache, so a reload or a second tab honours it; Refresh ignores it), a plain message on
+  failure that says whether the last known market prices or only merchant prices are shown, and a fetch time per item
+  (C113, C117). The Setup form writes only what the player changed in it, on top
   of what is saved at that moment, so it no longer undoes a discovery, a slot, a rank or a voyage recorded since it
   was opened, and a free company removed elsewhere stays removed (C116, C120, C121). The Board's one-second tick no
   longer rebuilds advice (C118).
 - **Saves: a free company changed in two places at once is combined** (built 2026-11-19;
   `docs/submersibles-merge-spec.md`, with the owner's decisions). Discoveries recorded for one free company on two
-  devices or in two tabs are combined and a sync never removes a sector; the higher slot count is kept; a question is
+  devices or in two tabs are combined and a sync never removes a sector; when both sides changed the slot count differently the higher is kept, and a count changed on one side only is taken as that side set it; a question is
   asked only when the name, the world or the linked character differ, and it says what differs. No stored field
   changed; a device still on the old version behaves as before. `save.js` and `merge.js` changed, so the Tracker, the
   Command Center and the Atelier were rebuilt. Browser checks C119 and C122.

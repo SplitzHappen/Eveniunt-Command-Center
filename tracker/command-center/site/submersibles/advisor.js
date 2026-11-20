@@ -664,6 +664,13 @@
       return o;
     };
     var out = { step: step, stepName: stepName, goal: step === 1 ? 'slot ' + (slots + 1) : step === 2 ? undiscovered.length + ' sectors still to find' : 'gil' };
+    // E3: when every priority scores nothing, no stage was live and the plan is only the quickest route: say so, and do not call it Gil Farming
+    if (!res.lead && plan) {
+      out.head = 'Suggested · no priority can be served right now'; out.label = 'No priority can be served';
+      out.plan = { route: plan.route, ev: plan.ev, why: 'None of your priorities can be served for this submarine right now; the route shown is simply the quickest one it can run.' };
+      out.alts = []; out.parts = null; out.own = false; out.lead = null; out.skipped = fixSkipped(res.skipped); out.fuel = fuel;
+      return done(out);
+    }
     var stepHead = lead === 'U1' || lead === 'U2' || lead === 'U3' || (step === 3 && lead === 'G');
     out.head = stepHead ? 'Suggested · step ' + step + ' of 3: ' + stepName : 'Suggested · ' + R.LABEL[leadObj];
     out.label = R.LABEL[leadObj];

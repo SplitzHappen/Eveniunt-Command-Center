@@ -147,8 +147,38 @@ test('F1 failed batches: a refused or failing service sets an error and does not
   assert.equal(part.failed, 1); assert.equal(part.error, null, 'one batch answered: no all-failed error'); assert.equal(part.partial, true, 'but the failure is reported as partial'); assert.equal(part.cache.at, now); assert.deepEqual(part.cache.prices, { 2: 50 });
   assert.equal(part.cache.seen[2], now, 'the answered item is stamped fresh'); assert.equal(3 in part.cache.seen, false, 'the item of the failed batch is not');
   assert.equal(E.settle(c, [], [], now).error, null, 'nothing asked, nothing failed');
-  assert.match(E.failureNote(0, String), /^Market prices could not be fetched; showing merchant prices$/);
-  assert.equal(E.failureNote(7, (t) => 'T' + t), 'Market prices could not be fetched; showing merchant prices (last fetched T7)');
+});
+
+test('E1 the failure message is decided by the prices actually used: an old market price kept -> first sentence and the market value; none -> merchant sentence and value', () => {
+  const kept = { prices: { 10099: 1000 }, at: 7, seen: { 10099: 7 } }, ids = [10099];
+  const msgA = E.failureNote(kept, ids, (t) => 'T' + t);
+  assert.equal(msgA, 'Market prices could not be fetched; showing the last known market prices (fetched T7) and merchant prices for the rest.');
+  assert.deepEqual(E.unitValue(10099, kept.prices), { each: 950, how: 'market' }, 'the value really comes from the old market price (merchant is 10)');
+  const none = { prices: {}, at: 0 };
+  assert.equal(E.failureNote(none, ids, String), 'Market prices could not be fetched; showing merchant prices.');
+  assert.deepEqual(E.unitValue(10099, none.prices), { each: 10, how: 'merchant' });
+  assert.equal(E.failureNote({ prices: { 10099: 1000 }, at: 7 }, [2], String), 'Market prices could not be fetched; showing merchant prices.', 'a cached price for an item not on screen is not used');
+  assert.equal(E.failureNote({ prices: { 37487: 5000 }, at: 7 }, [37487], String), 'Market prices could not be fetched; showing merchant prices.', 'an untradable item never uses a market price');
+  assert.equal(E.failureNote({ prices: { 10099: 0 }, at: 7 }, ids, String), 'Market prices could not be fetched; showing merchant prices.', 'a cached 0 is no price');
+});
+
+test('E2 the attempt gate is kept in device storage: a reload or another tab honours the same 15 minutes; a storage failure falls back to memory', () => {
+  const store = {}; globalThis.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
+  const now = Date.now(), mem1 = {};
+  E.triedSave('Aether', now, mem1);
+  const reloaded = E.triedLoad({}); // a new page (empty memory) on the same device
+  assert.equal(E.mayTry(reloaded, 'Aether', now + 60000, false), false, 'a reload a minute later makes no automatic attempt');
+  assert.equal(E.mayTry(reloaded, 'Aether', now + E.GATE_MS, false), true, 'after 15 minutes it may');
+  assert.equal(E.mayTry(reloaded, 'Aether', now + 60000, true), true, 'Refresh still may');
+  assert.equal(E.mayTry(reloaded, 'Crystal', now + 60000, false), true, 'per price place');
+  store['eveniunt-subs-prices-tried'] = JSON.stringify({ Aether: { at: now + 5 * 60000 } });
+  assert.equal(E.mayTry(E.triedLoad({}), 'Aether', now, false), true, 'a time in the future by more than a minute counts as expired');
+  store['eveniunt-subs-prices-tried'] = 'not json';
+  assert.equal(E.mayTry(E.triedLoad({ Aether: { at: now } }), 'Aether', now + 1000, false), false, 'a broken record leaves the memory in force');
+  globalThis.localStorage = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
+  const mem2 = {}; E.triedSave('Aether', now, mem2);
+  assert.equal(E.mayTry(E.triedLoad(mem2), 'Aether', now + 1000, false), false, 'storage failure: memory holds the gate');
+  delete globalThis.localStorage;
 });
 
 test('F1 no market price: an item left out of a reply, or answered 404 on its own, is recorded and not asked for again for an hour', () => {

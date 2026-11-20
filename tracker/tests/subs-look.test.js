@@ -59,6 +59,13 @@ test('module tokens: status pairs and errors reach their contrast in all 21 them
       need('ink-2 on slip (labels, kickers, table heads)', c('--ink-2'), c('--slip'), 4.5, where);
       need('ink-2 on paper (sector rank line)', c('--ink-2'), c('--paper'), 4.5, where);
       need('ink on paper-2 (Log row hover)', c('--ink'), c('--paper-2'), 4.5, where);
+      // E5: small text (13 px and under) on its own field, all 21 themes, light and dark. The pairs found by walking every screen in the browser (text colour against the pixels behind it)
+      need('E5 footer, credits, licence (12px): ink-2 on paper', c('--ink-2'), c('--paper'), 4.5, where);
+      note('E5 footer before the fix (printed): ink-3 on paper', ratio(c('--ink-3'), c('--paper')), where);
+      for (const k of ['back', 'out', 'idle']) need('E5 lane parts code and rank line (12px): ink on ' + k + '-bg', c('--ink'), c('--' + k + '-bg'), 4.5, where);
+      need('E5 tier line (13px): ink on paper', c('--ink'), c('--paper'), 4.5, where);
+      for (const f of ['slip', 'paper']) need('E5 disabled small button (12px): ink-2 on ' + f, c('--ink-2'), c('--' + f), 4.5, where);
+      note('E5 disabled small button before the fix (printed): ink at half opacity on slip', ratio(mixRgb(c('--ink'), c('--slip'), 0.5), c('--slip')), where);
       note('ink-2 on paper-2 (printed; the Log row uses --ink there)', ratio(c('--ink-2'), c('--paper-2')), where);
       for (let sea = 1; sea <= 7; sea++) {
         const cenv = Object.assign({}, env, dk ? RULES.chartDark : RULES.chartLight, { '--sea': env['--sea-' + sea] });

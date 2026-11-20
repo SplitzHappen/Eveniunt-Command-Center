@@ -1425,7 +1425,8 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | group head (`.fc-head`) | slab field, on, on-2; molten band; status fields and ink-3 in the slot strip | `.fc-head`, `.fc-list` | slab, molten, page, back, out, idle, locked, ink |
 | lane ground (`.sub`) | status wash, else panel; ink edge; Back: a 2 px back field inset | `=.fc-subs:not(.list) .sub`, `.sub:focus-visible`, `=.sub`, `.sub[data-status="back"]`, `.sub[data-status="out"]`, `.sub[data-status="idle"]`, `.sub[data-sub]:hover`, `=.sub::before`, `.sub[data-status="back"]::before` | back, out, idle, page, panel, ink, accent, overlay |
 | status field and word (`.sub::before`, `.chip`) | status field and on; locked: locked hatch, ink on page | `.chip`, `.sub[data-status] .chip`, `.sub[data-status="locked"] .chip`, `.sub[data-status="locked"]::before` | back, out, idle, locked, ink, page, route |
-| name, parts code, route caption | ink; ink-2; ink | `.sub-fc`, `.sub-meta`, `.sub-when`, `.sub-name`, `.sub-top` | ink |
+| footer, credits and licence (`.subs-foot`) | ink-2 (4.5:1 on the page) | `.subs-foot` | ink |
+| name, parts code, route caption | ink; ink-2; ink (the parts code is ink since E5) | `.sub-fc`, `.sub-meta`, `.sub-when`, `.sub-name`, `.sub-top` | ink |
 | rank plate | rank field, on-mid | `.sub[data-sub] .sub-meta > span:first-child` | rank, slab, shared |
 | countdown, clock (`.when`) | ink (Back: back text); ink-2 | `=.when`, `.when` | ink, back |
 | discs (`.disc`) | sea field, on-mid; outlined: panel, sea graphic, ink; the gap ring is panel | `.disc` | sea, shared, panel, ink |
@@ -1435,6 +1436,18 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | locked lane | locked hatch on page field 3; one outlined disc; ink; tag ink-2 | `.sub[data-status="locked"]`, `.sub[data-status="locked"] .sub-meta`, `.sub[data-status="locked"] .tag` | locked, route, sea, ink, page, panel, line |
 | empty slot (`.sub.empty`) | idle graphic (dashed edge, hatch); ink-2; link accent | `.sub.empty` | idle |
 | notes (`.hint`, `.foot-note`, `.tl-key`) | ink-2; link accent | `.foot-note` | ink |
+
+### Setup
+
+| Zone | Role and tone | Rule fragments | Roles allowed |
+| --- | --- | --- | --- |
+| a disabled small button (`.btn[disabled]`) | ink-2 text, dashed ink edge, not faded (4.5:1 on the panel) | `.btn[disabled]:not(.primary)` | ink |
+| panel heads | rank field, on-mid (recommendations: the same head, with a 6 px stripe of the four role fields under it); head state on | `.panel.recs:not(.welcome):not(.empty-state):not(.map-panel) > h2:first-child`, `.head-state` | route, rank, gil, loot, slab, ink, shared |
+| notifications, free companies, ticks | ink, ink-2, slab legend; page field, ink edge; link accent | `.tick b`, `.wiz-foot` | route, ink |
+| ranking (`.rec-rank`) | each rung: its role's wash, ink, its role's field and on-mid for the number; first rung accent field edge | `.rec-rank`, `.rec-name`, `.recs .btn:focus-visible`, `.recs select:focus-visible`, `.rec-note`, `.rec-give`, `[data-recs-body]` | accent, ink, slab, route, rank, gil, loot, shared, page |
+| fuel; loot pickers | accent thumb with an ink edge (also when the slider is off: the track says off), page field 3, ink; loot text, loot graphic edge; a picker that is off: ink-3 edge, its item and record line ink-2, the word "off" beside it | `.rec-picker`, `.rec-pick-row`, `.rec-off` | loot, ink, page |
+| accuracy (`.acc`) | ink-2 heads; agrees back text; differs error text | `.acc` | ink, line, back, error |
+| guided setup (`.wiz`) | head rank field; steps: accent field (now), slab-on (done), outline; fields page and ink; note accent wash; a closed sea: sea wash and graphic edge; an open sea: sea field, on-mid; letters route text; error text | `.wiz-head`, `.dot`, `.sea`, `.sea[open]`, `.sea[class*="in-sea-"]` | slab, molten, route, loot, gil, rank, accent, sea, shared, ink, page |
 
 ### Send window
 
@@ -1491,17 +1504,6 @@ For each screen, each zone, the role and tone it uses (Rev4.4), and the rule fra
 | route cell | route text, sea graphic edge, discs sea | `.earn-ranked tr[data-pos] > td:nth-child(2)` | route, sea |
 | bars | gil wash, gil graphic tip, quarter lines line, figures ink; other gil figures gil text | `.earn-ranked tr[style]`, `.earn-ranked tr[data-pos] > td:nth-child(4)`, `.earn-t td b`, `.earn-ranked tr[data-pos]`, `.earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:nth-child(3)` | gil, ink, line |
 | thin rows; top items | idle graphic hatch; loot text, loot graphic edge, gil text | `.earn-thin`, `.earn-t:has(thead):not(.earn-ranked):not(.earn-thin) td:first-child`, `.earn-t .earn-note td` | idle, loot, ink, route, sea |
-
-### Setup
-
-| Zone | Role and tone | Rule fragments | Roles allowed |
-| --- | --- | --- | --- |
-| panel heads | rank field, on-mid (recommendations: the same head, with a 6 px stripe of the four role fields under it); head state on | `.panel.recs:not(.welcome):not(.empty-state):not(.map-panel) > h2:first-child`, `.head-state` | route, rank, gil, loot, slab, ink, shared |
-| notifications, free companies, ticks | ink, ink-2, slab legend; page field, ink edge; link accent | `.tick b`, `.wiz-foot` | route, ink |
-| ranking (`.rec-rank`) | each rung: its role's wash, ink, its role's field and on-mid for the number; first rung accent field edge | `.rec-rank`, `.rec-name`, `.recs .btn:focus-visible`, `.recs select:focus-visible`, `.rec-note`, `.rec-give`, `[data-recs-body]` | accent, ink, slab, route, rank, gil, loot, shared, page |
-| fuel; loot pickers | accent thumb with an ink edge (also when the slider is off: the track says off), page field 3, ink; loot text, loot graphic edge; a picker that is off: ink-3 edge, its item and record line ink-2, the word "off" beside it | `.rec-picker`, `.rec-pick-row`, `.rec-off` | loot, ink, page |
-| accuracy (`.acc`) | ink-2 heads; agrees back text; differs error text | `.acc` | ink, line, back, error |
-| guided setup (`.wiz`) | head rank field; steps: accent field (now), slab-on (done), outline; fields page and ink; note accent wash; a closed sea: sea wash and graphic edge; an open sea: sea field, on-mid; letters route text; error text | `.wiz-head`, `.dot`, `.sea`, `.sea[open]`, `.sea[class*="in-sea-"]` | slab, molten, route, loot, gil, rank, accent, sea, shared, ink, page |
 
 ### Empty
 
