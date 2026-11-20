@@ -158,6 +158,22 @@
     return { section: sec, removed: removed.sort() };
   };
 
+  // Slots that hold two or more submarines (a stored duplicate: a slot holds one). [{ fcId, slot, ids }] for every existing
+  // free company; ids in the order of sec.subs (the first is the one the company view shows); sorted by company order,
+  // then company id, then slot. A submarine whose company is gone is not listed. Pure.
+  F.slotClashes = function (sec) {
+    var fcs = (sec && sec.fcs) || {}, subs = (sec && sec.subs) || {}, by = {}, out = [];
+    Object.keys(subs).forEach(function (id) {
+      var s = subs[id]; if (!s || !fcs[s.fcId] || s.slot == null) return;
+      var k = s.fcId + '|' + s.slot;
+      if (!by[k]) { by[k] = { fcId: s.fcId, slot: s.slot, ids: [] }; out.push(by[k]); }
+      by[k].ids.push(id);
+    });
+    return out.filter(function (c) { return c.ids.length > 1; }).sort(function (a, b) {
+      return ((fcs[a.fcId].order || 0) - (fcs[b.fcId].order || 0)) || (a.fcId < b.fcId ? -1 : a.fcId > b.fcId ? 1 : 0) || (a.slot - b.slot);
+    });
+  };
+
   // ------------------------------------------------------------------ calendar file
   function icsText(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
   function icsTime(t) { return new Date(t).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }

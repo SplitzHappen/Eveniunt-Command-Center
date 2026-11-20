@@ -133,17 +133,27 @@
     for (const c of conflicts) { const p = subsPath(c.id); if (p && p[1] === 'subs') { index(c.id, c.local === null ? undefined : c.local, p); index(c.id, c.remote === null ? undefined : c.remote, p); } }
     const inSlot = (map, key, slot) => { const sub = parseUnit(map.get(key)); return !!sub && sub.fcId + '|' + sub.slot === slot; };
     for (const [slot, ids] of bySlot) {
-      const list = [...ids.values()];
-      if (list.length !== 2) continue; // one is normal; three or more is left as it is
+      const list = [...ids.values()].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+      if (list.length < 2) continue; // one is normal
+      // only here, only there, and on both devices (in this slot on both). A slot whose records are all on both devices, or
+      // all on one device, has nothing new to decide here: the Submersibles Board shows it.
       const here = list.filter((x) => inSlot(L, x.key, slot) && !inSlot(R, x.key, slot));
-      const there = list.filter((x) => inSlot(R, x.key, slot) && !here.includes(x));
-      if (here.length !== 1 || there.length !== 1) continue; // already on both devices: nothing new to decide here
+      const there = list.filter((x) => inSlot(R, x.key, slot) && !inSlot(L, x.key, slot));
+      const both = list.filter((x) => inSlot(L, x.key, slot) && inSlot(R, x.key, slot));
+      if (!here.length && !there.length) continue;
+      const locals = here.length ? here : both, remotes = there.length ? there : both;
+      if (!locals.length || !remotes.length) continue;
       const [fcId, slotNo] = slot.split('|');
-      const a = Object.assign({}, here[0], { value: L.get(here[0].key), sub: parseUnit(L.get(here[0].key)) });
-      const b = Object.assign({}, there[0], { value: R.get(there[0].key), sub: parseUnit(R.get(there[0].key)) });
+      const mine = (x) => Object.assign({}, x, { value: L.get(x.key), sub: parseUnit(L.get(x.key)) });
+      const theirs = (x) => Object.assign({}, x, { value: R.get(x.key), sub: parseUnit(R.get(x.key)) });
+      const ls = locals.map(mine), rs = remotes.map(theirs), a = ls[0], b = rs[0];
+      const pick = (x) => ({ key: x.key, value: x.value, name: subLabel(x.sub), rank: x.sub.rank || null });
       conflicts.push({
-        id: 'i|submersibles-slot|' + encodeURIComponent(slot), local: subLabel(a.sub), remote: subLabel(b.sub),
-        integrity: { kind: 'slot', fcId, fcName: fcName(fcId), slot: Number(slotNo), localKey: a.key, remoteKey: b.key, localValue: a.value, remoteValue: b.value, localRank: a.sub.rank || null, remoteRank: b.sub.rank || null }
+        id: 'i|submersibles-slot|' + encodeURIComponent(slot), local: ls.map((x) => subLabel(x.sub)).join(', '), remote: rs.map((x) => subLabel(x.sub)).join(', '),
+        integrity: {
+          kind: 'slot', fcId, fcName: fcName(fcId), slot: Number(slotNo), localKey: a.key, remoteKey: b.key, localValue: a.value, remoteValue: b.value, localRank: a.sub.rank || null, remoteRank: b.sub.rank || null,
+          locals: ls.map(pick), remotes: rs.map(pick), stays: here.length && there.length ? both.map((x) => subLabel(mine(x).sub)) : []
+        }
       });
     }
     return { merged, conflicts };
@@ -168,10 +178,12 @@
       if (c.integrity && c.integrity.kind === 'slot') {
         const v = chosen(c);
         if (!v) continue; // both submarines stay; the next sync that can ask, asks
-        const keepKey = v === 'remote' ? c.integrity.remoteKey : c.integrity.localKey;
-        const dropKey = v === 'remote' ? c.integrity.localKey : c.integrity.remoteKey;
-        m.set(keepKey, v === 'remote' ? c.integrity.remoteValue : c.integrity.localValue);
-        dropSub(JSON.parse(dropKey.slice(2))[2]);
+        const g = c.integrity;
+        const side = (list, key, value) => (Array.isArray(list) && list.length ? list : [{ key, value }]);
+        const keep = v === 'remote' ? side(g.remotes, g.remoteKey, g.remoteValue) : side(g.locals, g.localKey, g.localValue);
+        const drop = v === 'remote' ? side(g.locals, g.localKey, g.localValue) : side(g.remotes, g.remoteKey, g.remoteValue);
+        keep.forEach((x) => m.set(x.key, x.value));
+        drop.forEach((x) => dropSub(JSON.parse(x.key.slice(2))[2]));
         continue;
       }
       if (c.integrity && c.integrity.kind === 'owner') { owners.push(c); continue; }
@@ -253,10 +265,21 @@
   // Plain-language description of a conflict, for the "which one is right?" prompt.
   ET.describeConflict = function (c, idx, st) {
     if (c.integrity && c.integrity.kind === 'slot') {
-      const g = c.integrity, rank = (x) => (x ? ', rank ' + x : '');
+      const g = c.integrity, rank = (x) => (x ? ', rank ' + x : ''), fc = g.fcName ? '“' + g.fcName + '”' : 'a free company';
+      const ls = Array.isArray(g.locals) ? g.locals : null, rs = Array.isArray(g.remotes) ? g.remotes : null, stays = Array.isArray(g.stays) ? g.stays : [];
+      if (!ls || !rs || (ls.length === 1 && rs.length === 1 && !stays.length)) {
+        return {
+          who: '', what: 'Submersibles: slot ' + g.slot + ' of ' + fc + ' holds a different submarine on each device; the one you keep stays, the other and its logged voyages are removed',
+          local: 'keep this device’s “' + c.local + '”' + rank(g.localRank), remote: 'keep the other device’s “' + c.remote + '”' + rank(g.remoteRank)
+        };
+      }
+      const list = (xs) => { const t = xs.map((x) => '“' + x.name + '”' + rank(x.rank)); return t.length > 1 ? t.slice(0, -1).join(', ') + ' and ' + t[t.length - 1] : t[0]; };
+      const total = ls.length + rs.length + stays.length;
       return {
-        who: '', what: 'Submersibles: slot ' + g.slot + ' of ' + (g.fcName ? '“' + g.fcName + '”' : 'a free company') + ' holds a different submarine on each device; the one you keep stays, the other and its logged voyages are removed',
-        local: 'keep this device’s “' + c.local + '”' + rank(g.localRank), remote: 'keep the other device’s “' + c.remote + '”' + rank(g.remoteRank)
+        who: '', what: 'Submersibles: slot ' + g.slot + ' of ' + fc + ' holds ' + total + ' submarines across your devices, and a slot holds one; the side you keep stays, the other side and its logged voyages are removed'
+          + (stays.length ? '; ' + stays.map((n) => '“' + n + '”').join(', ') + ', already on both devices, ' + (stays.length > 1 ? 'stay' : 'stays') + ' either way' : '')
+          + '; if more than one stays, the Submersibles Board asks which one to keep',
+        local: 'keep this device’s ' + list(ls), remote: 'keep the other device’s ' + list(rs)
       };
     }
     const who = (id) => (st.chars.find((x) => x.id === id) || { name: id }).name;

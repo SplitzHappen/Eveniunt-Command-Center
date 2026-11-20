@@ -73,6 +73,17 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   asked only when the name, the world or the linked character differ, and it says what differs. No stored field
   changed; a device still on the old version behaves as before. `save.js` and `merge.js` changed, so the Tracker, the
   Command Center and the Atelier were rebuilt. Browser checks C119 and C122.
+- **Fixes from two cross-family reviews** (built 2026-11-20; ChatGPT: fail, three serious findings; Mistral: pass,
+  minor findings; `docs/submersibles-integrity-spec.md`, with the owner's decisions). A free company removed on
+  purpose stays removed, also when the page had not heard of the removal (the store refuses the write); only a
+  still-empty company that the automatic duplicate clean-up would remove again is saved back. A Setup form opened on
+  an empty slot that was filled elsewhere uses the saved submarine and applies what was typed; the store refuses any
+  write that would add a second submarine to a slot. A sync that finds three or more submarines in one slot asks one
+  question for the slot; a save that already holds duplicates shows a notice on the Board with "Keep this one", and
+  logged voyages stay in the history. `save.js` and `merge.js` changed; all three apps rebuilt. Also: a truthful
+  price-failure message, the price attempt limit kept on the device, a plain reason when no priority can be served,
+  larger phone tap circles on the chart, small text at 4.5:1 in every theme, less scrolling on the phone. Browser
+  checks C123 to C127 and C132.
 - **Shared fixes** (built 2026-11-18 and 2026-11-19). Text on the accent colour now reaches 4.5:1 in all 21 themes,
   light and dark (Tracker, Atelier and Command Center rebuilt). The Atelier no longer reloads over a first-visit click
   on Command Center. A failing browser check no longer ends the whole check run, and `CHECK_ONLY=<ids> npm run check`
@@ -107,7 +118,12 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   before it farms gil, until the player moves Gil Farming up.
 - A sync never removes a discovered sector (the owner's choice): a sector unticked on one device comes back if the
   other device changed the same free company before they met; the app says so and it can be unticked again.
-- The reviews of this work were made by Claude on Claude-built work: same-family, not independent.
+- Reviews: several by Claude on Claude-built work (same-family), then one each by ChatGPT and Mistral
+  (2026-11-20). The repairs made after those two have not been reviewed by another family yet.
+- A still-empty free company removed on purpose can still come back in one case: another company of the same
+  character that outranks it in the duplicate clean-up was added afterwards, and its old open Setup form is saved.
+  Telling that apart would need a new stored marker.
+- On a 360 px phone the closest sectors of two seas have tap circles of about 30 px.
 - The crafting solver's resume test once found the test browser's storage empty after a reload; the cause was not
   found. The app saves on every step and the test now restores from what the page saved.
 - Each recommendation control is stored on its own, so different controls changed in two tabs or on two devices are

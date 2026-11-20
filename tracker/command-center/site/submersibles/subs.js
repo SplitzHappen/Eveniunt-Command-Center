@@ -147,7 +147,8 @@
       if (!RC.k.pending) recsRead(doc, r.rev);
       return foldBare().then(function () {
         syncTicks();
-        if (W) { var gone = !!(W.fcId && !W.bareAtStart && !S.fcs[W.fcId]); if (gone !== !!W.gone) { W.gone = gone; render(); } } // R1: the message at once, not only on Save
+        if (W && W.fcId && S.fcs[W.fcId]) { W.last = JSON.parse(JSON.stringify(S.fcs[W.fcId])); W.bare = F.isBare(S, W.fcId); } // what the company was when this page last saw it: a bare one the fold removes is stored again, any other removal stands
+        if (W) { var gone = wizGone(); if (gone !== !!W.gone) { W.gone = gone; render(); } } // R1: the message at once, not only on Save
         if (JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]) !== before && !W) render();
         pushSync();
       });
@@ -378,6 +379,20 @@
     });
     return shown ? howEstimatedHtml(shares) : '';
   }
+  // A save that holds two or more submarines in one slot (an older page, or a sync applied without asking): the Board lists them and keeps all
+  // until the player chooses one and confirms; the others are then removed (their logged voyages stay in the history, as Setup's Remove does).
+  function clashHtml(now) {
+    return F.slotClashes(S).map(function (c) {
+      var fc = S.fcs[c.fcId];
+      return '<div class="note bad" role="group" aria-label="Slot ' + c.slot + ' of ' + esc(fc.name || 'a free company') + ' holds more than one submarine" data-slot-clash="' + esc(c.fcId + '|' + c.slot) + '">' +
+        '<p><strong>Slot ' + c.slot + ' of “' + esc(fc.name || 'Unnamed free company') + '” has ' + c.ids.length + ' submarines saved, and a slot holds one.</strong> Choose the one that is right; the others are removed only when you confirm.</p>' +
+        c.ids.map(function (id) {
+          var sub = S.subs[id], st = F.status(sub, fc, now), back = sub.voyage ? ', back ' + F.fmtClock(sub.voyage.returnAt, now) : '';
+          return '<p class="row" data-clash-sub="' + esc(id) + '"><span>“' + esc(sub.name || 'Sub ' + sub.slot) + '”, rank ' + (sub.rank || 1) + ', ' + F.LABEL[st].toLowerCase() + back + '</span> ' +
+            '<button type="button" class="btn primary" data-act="keepsub" data-sub="' + esc(id) + '">Keep this one</button></p>';
+        }).join('') + '</div>';
+    }).join('');
+  }
   function boardHtml() {
     var now = Date.now(), fcs = shownFcs(), nHidden = hiddenCount();
     if (!fcList().length) {
@@ -399,7 +414,7 @@
     if (!fcs.length) body = '<div class="fleet"></div>' + emptyHtml({ id: 'board-hidden', kick: 'Nothing on the Board', title: 'Every free company is hidden', word: 'Hidden',
       text: 'Their data and alerts are unchanged. Tick one in Setup to see it here.', act: '<button type="button" class="btn primary" data-tab="setup">Show them in Setup</button>' });
     var hid = nHidden ? '<p class="hint hidden-note" data-hidden-note>' + nHidden + ' free compan' + (nHidden === 1 ? 'y is' : 'ies are') + ' hidden from this Board (their data and alerts are unchanged). <button type="button" class="link" data-tab="setup">Show ' + (nHidden === 1 ? 'it' : 'them') + ' in Setup</button></p>' : '';
-    return strip(now) + hid + body + boardEstimateNote(now) + '<p class="foot-note tl-key">Letters: the route\'s sectors, in order, in their sea\'s colour. Bar and marker: the time left and the return, on the line above. Outlined: a suggestion, not sent.</p>' +
+    return strip(now) + hid + clashHtml(now) + body + boardEstimateNote(now) + '<p class="foot-note tl-key">Letters: the route\'s sectors, in order, in their sea\'s colour. Bar and marker: the time left and the return, on the line above. Outlined: a suggestion, not sent.</p>' +
       '<p class="foot-note">Return times: ' + esc(confirmation().text) + '; worked out from rank, parts and route, or the game\'s time where you typed it. Ranks and parts: as you entered them. Suggestions follow your order: unlock all four subs, discover every sector, farm gil. Alerts work while a Command Center page is open; for a reminder when the app is closed, add the return to your calendar.</p>';
   }
   // how the worked-out times compare with the game's: every voyage or trip where the game's time was also entered
@@ -675,6 +690,7 @@
       disc: new Set(fc && fc.discovered ? fc.discovered : startSectors()), // disc: the ticks the form shows (saved now + on - off)
       on: new Set(fc && fc.discovered ? [] : startSectors()), off: new Set(), t: {} }; // on: sectors the player ticked in this form (a new company starts with the starting sectors); off: sectors the player unticked here; t: fields of the company the player changed here
     W.bareAtStart = !!(fcId && F.isBare(S, fcId)); // a bare company can be folded away elsewhere; the form then stores it again (R1 does not apply)
+    W.last = fc ? JSON.parse(JSON.stringify(fc)) : null; W.bare = W.bareAtStart; // refreshed by reload() while the company exists
     W.start = { name: W.fc.name, world: W.fc.world, charId: W.fc.charId }; W.slots0 = formSlots(); // what the form opened with: a field typed back to it is not a change; the slot count it started with
     if (at === 'sectors') W.step = steps().length - 1; // straight to the list of sectors (the same step and the same Save)
     UI.tab = 'setup'; keepUi(); render(); focusWizard();
@@ -736,9 +752,12 @@
       '<div class="voy-at"' + (s.voyMode === 'at' ? '' : ' hidden') + '><input class="inp" type="datetime-local" data-w="voyAt" value="' + esc(s.voyAt) + '" aria-label="Return date and time"></div>' +
       '<p class="hint" data-voy-hint></p></fieldset>';
   }
+  // The company this form edits is gone from the saved copy and was not removed by the automatic duplicate fold (CC.foldLoser: it was bare and
+  // would be folded away again): it was removed on purpose, so the form says so and Save writes nothing.
+  function wizGone() { return !!(W && W.fcId && !S.fcs[W.fcId] && !(W.bare && CC.foldLoser(S, W.fcId, W.last))); }
   var GONE = 'This free company was removed on another device or in another tab, so nothing was saved. Close this form; to bring the company back, set it up again.';
   function wizardHtml() {
-    if (W.fcId && !W.bareAtStart && !S.fcs[W.fcId]) return '<section class="panel wiz" data-step="gone"><header class="wiz-head"><h2>Edit free company</h2></header><div class="wiz-body"><div class="note bad" role="alert" data-wiz-gone>' + esc(GONE) + '</div></div>' +
+    if (wizGone()) return '<section class="panel wiz" data-step="gone"><header class="wiz-head"><h2>Edit free company</h2></header><div class="wiz-body"><div class="note bad" role="alert" data-wiz-gone>' + esc(GONE) + '</div></div>' +
       '<footer class="wiz-foot"><span></span><span class="row"><button type="button" class="btn primary" data-act="wcancel">Close</button></span></footer></section>';
     var st = steps(), key = st[Math.min(W.step, st.length - 1)], n = Math.min(W.step, st.length - 1), body = '';
     if (key === 'fc') {
@@ -811,7 +830,7 @@
   }
   function writeWizard() {
     var fcId = W.fcId || F.newId('f'), now = W.fcId ? S.fcs[W.fcId] : null; // the free company as saved now (none for a new one)
-    if (W.fcId && !now && !W.bareAtStart) { W.gone = true; render(); return; } // removed elsewhere: nothing is written, the form says so
+    if (wizGone()) { W.gone = true; render(); return; } // removed elsewhere: nothing is written, the form says so
     var order = W.fcId && S.fcs[fcId] ? S.fcs[fcId].order : fcList().reduce(function (m, f) { return Math.max(m, (f.fc.order || 0) + 1); }, 0);
     var unlocked = formSlots();
     if (now && !(unlocked < W.slots0)) unlocked = Math.max(unlocked, Math.min(4, now.unlockedSlots || 1));
@@ -821,14 +840,17 @@
     var world = now && !tWorld ? now.world : W.fc.world;
     if (world) fc.world = world;
     S.fcs[fcId] = fc;
-    var missing = [];
+    var missing = [], adopted = [], taken = W.fcId ? subsOf(fcId) : {}; // taken: the submarines saved now in this company, by slot
     W.subs.forEach(function (s, j) {
       if (!s.unlocked) return; // a slot switched off keeps its sub record; it shows as Locked and nothing is deleted
       if (s.id && !S.subs[s.id]) { missing.push(s.start.name || 'Sub ' + (j + 1)); return; } // removed elsewhere while the form was open: not written back
-      var id = s.id || F.newId('s'), prev = S.subs[id] || {}, had = !!S.subs[id], t = s.t || {};
+      // a slot this form saw empty that holds a submarine now (saved in another tab or on another device while the form was open): use that
+      // submarine and apply only what was typed here, never a second submarine in the slot
+      var cur = !s.id && taken[j + 1] ? taken[j + 1] : null, id = s.id || (cur ? cur.id : F.newId('s')), prev = S.subs[id] || {}, had = !!S.subs[id], t = s.t || {};
+      if (cur) adopted.push('Slot ' + (j + 1) + ' already held “' + (cur.sub.name || 'Sub ' + (j + 1)) + '”, saved in another tab or on another device while this form was open; what you typed here was applied to it.');
       var tSubName = t.name && s.name.trim() !== (s.start.name || '').trim(), tRank = t.rank && +s.rank !== +s.start.rank;
       var rank = had && !tRank && prev.rank ? prev.rank : +s.rank;
-      var rec = { fcId: fcId, slot: j + 1, name: had && !tSubName ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
+      var rec = { fcId: fcId, slot: j + 1, name: had && !tSubName ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (cur ? (t.voyage && (s.voyMode === 'in' || s.voyMode === 'at') ? readVoyage(s).voyage || prev.voyage : prev.voyage) : had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
       if (prev.expIntoRank != null && prev.rank === rec.rank) rec.expIntoRank = prev.expIntoRank; // a new rank starts with no known progress
       if (prev.expExact && prev.rank === rec.rank && (s.voyMode === 'keep' || !prev.voyage || !t.voyage)) rec.expExact = true; // a rank changed in Setup, or a voyage replaced unlogged, is no longer the game's exact point
       var parts = had && !t.parts ? prev.parts : s.parts;
@@ -837,7 +859,9 @@
     });
     if (W.off.size) { SH.unticked = SH.unticked || {}; SH.unticked[fcId] = Array.from(W.off); } // R4: told of it if a merge brings any back
     W = null; UI.tab = 'board'; keepUi(); schedule();
-    if (missing.length) setStatus(SH.note = missing.map(function (n) { return '“' + n + '”'; }).join(', ') + (missing.length === 1 ? ' was' : ' were') + ' removed on another device or in another tab while the form was open, so ' + (missing.length === 1 ? 'it was' : 'they were') + ' not saved.');
+    var said = [];
+    if (missing.length) said.push(missing.map(function (n) { return '“' + n + '”'; }).join(', ') + (missing.length === 1 ? ' was' : ' were') + ' removed on another device or in another tab while the form was open, so ' + (missing.length === 1 ? 'it was' : 'they were') + ' not saved.');
+    if (said.concat(adopted).length) setStatus(SH.note = said.concat(adopted).join(' '));
   }
   // the form's ticks follow discoveries that arrive while it is open (never one the player unticked here); the boxes change in place, so focus and scroll stay
   function syncTicks() {
@@ -1689,6 +1713,17 @@
       case 'new': startWizard(null); break;
       case 'edit': closeSheet(); startWizard(b.dataset.fc); break;
       case 'sectors': closeSheet(); startWizard(b.dataset.fc, 'sectors'); break;
+      case 'keepsub': {
+        var keep = S.subs[b.dataset.sub], clash = keep && F.slotClashes(S).filter(function (c) { return c.ids.indexOf(b.dataset.sub) >= 0; })[0];
+        if (!clash) break;
+        var cfc = S.fcs[clash.fcId], others = clash.ids.filter(function (id) { return id !== b.dataset.sub; });
+        var underWay = others.some(function (id) { return S.subs[id].voyage; });
+        var subName = function (id) { return '“' + (S.subs[id].name || 'Sub ' + S.subs[id].slot) + '”'; };
+        if (!confirm('Keep ' + subName(b.dataset.sub) + ' in slot ' + clash.slot + ' of “' + (cfc.name || 'this free company') + '” and remove ' + others.map(subName).join(', ') + '? Their logged voyages stay in the history.' + (underWay ? ' A voyage under way on a removed one is not logged.' : ''))) break;
+        var said = 'Kept ' + subName(b.dataset.sub) + ' in slot ' + clash.slot + ' of “' + (cfc.name || 'this free company') + '”; removed ' + others.map(subName).join(', ') + '. Their logged voyages stay in the history.';
+        others.forEach(function (id) { delete S.subs[id]; });
+        schedule(); setStatus(SH.note = said); break;
+      }
       case 'remove': {
         var fc = S.fcs[b.dataset.fc];
         if (!fc || !confirm('Remove “' + (fc.name || 'this free company') + '” and its submarines from the board? Logged voyages stay in the history.')) break;

@@ -4966,31 +4966,192 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
-    // ── C123 (R1 applies only to a company that was not bare when the form opened) A bare company (no submarine, one slot, discoveries [1, 2], no world) removed elsewhere
-    //    by an explicit removal while its Setup form is open: Save stores it again under the same id (the older behaviour), no "removed elsewhere" message, no page error. ──
+    // ── C123 (integrity spec, fault A) A bare company (no submarine, one slot, discoveries [1, 2], no world) removed elsewhere on purpose while its Setup form is open stays removed:
+    //    (a) the page is told (it hears the other tab): the form says "removed elsewhere" at once, there is no Save button, nothing is stored; (b) the page is not told (no
+    //    BroadcastChannel, as C120): Save stores nothing and the status line says "Not saved on this device" and names the removal. No page error. ──
     await guard('C123', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const scenario = async (deaf) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        if (deaf) await p1.addInitScript(() => { window.BroadcastChannel = undefined; });
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, "sec.fcs.fb = { name: 'Bare Company', order: 0, unlockedSlots: 1, discovered: [1, 2] };"); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=sectors][data-fc=fb]'); await p1.waitForSelector('[data-act=wsave]');
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        await p2.evaluate(async () => {
+          const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+          sec.fcs = {}; sec.subs = {};
+          await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+        });
+        await p1.waitForTimeout(deaf ? 300 : 1500);
+        const probe = () => p1.evaluate(() => ({ gone: !!document.querySelector('[data-wiz-gone]'), save: !!document.querySelector('[data-act=wsave]'), open: !!document.querySelector('.wiz'), status: document.querySelector('#status').textContent.trim() }));
+        const before = await probe();
+        if (before.save) await p1.click('[data-act=wsave]');
+        await p1.waitForTimeout(1500);
+        const after = await probe();
+        const kept = await p2.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { fcs: Object.keys(s.fcs), subs: Object.keys(s.subs) }; });
+        await ctx.close();
+        return { deaf, before, after, kept, errors: real(errors) };
+      };
+      const A = await scenario(false), B = await scenario(true);
+      const none = JSON.stringify({ fcs: [], subs: [] });
+      const ok = A.before.gone && !A.before.save && A.after.gone && JSON.stringify(A.kept) === none && A.errors.length === 0 &&
+        !B.before.gone && B.before.save && /^Not saved on this device: This free company was removed on another device or in another tab\./.test(B.after.status) && JSON.stringify(B.kept) === none && B.errors.length === 0;
+      record('C123', 'A bare company removed elsewhere on purpose stays removed (integrity spec): with its Setup form open, a page that is told shows "removed elsewhere" at once with no Save button and nothing is stored; a page that is not told (no BroadcastChannel) gets "Not saved on this device: This free company was removed on another device or in another tab." on Save and nothing is stored; no page error', ok, { A, B });
+      server.close();
+    });
+
+    // ── C124 (integrity spec, fault B, owner decision O1) A company's form is open with an empty slot 2; another tab saves a submarine (rank 40, a voyage under way) into it; a name is typed
+    //    for slot 2 and Save is pressed: one submarine in slot 2, the one saved elsewhere (same id), with the typed name, its rank 40 and its voyage, and the status line names the slot; told and not told. ──
+    await guard('C124', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const SEC = "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }; sec.subs.a1 = { fcId: 'fa', slot: 1, name: 'Sub A1', rank: 50, parts: [3, 4, 1, 2] };";
+      const toSave = async (p) => { for (let i = 0; i < 8; i++) { if (await p.$('[data-act=wsave]')) return; await p.click('[data-act=wnext]'); } };
+      const scenario = async (deaf) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        if (deaf) await p1.addInitScript(() => { window.BroadcastChannel = undefined; });
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, SEC); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+        await p1.click('[data-act=wnext]'); await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'Typed Two');
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        const returnAt = await p2.evaluate(async () => {
+          const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec)), now = Date.now();
+          sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Saved Two', rank: 40, parts: [3, 4, 1, 2], voyage: { sentAt: now - 3600000, route: [1, 2], returnAt: now + 5 * 3600000, gameSaid: '5h' } };
+          await CC.writeSection('submersibles', sec, { rev: r.rev, base }); return sec.subs.a2.voyage.returnAt;
+        });
+        await p1.bringToFront(); await p1.waitForTimeout(deaf ? 300 : 1500);
+        await toSave(p1); await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+        const out = await p1.evaluate(async () => {
+          const s = CC.checkDoc((await CC.read()).raw).modules.submersibles, inSlot = Object.keys(s.subs).filter((k) => s.subs[k].fcId === 'fa' && s.subs[k].slot === 2);
+          return { inSlot, rec: inSlot.length ? { name: s.subs[inSlot[0]].name, rank: s.subs[inSlot[0]].rank, returnAt: s.subs[inSlot[0]].voyage && s.subs[inSlot[0]].voyage.returnAt } : null, all: Object.keys(s.subs).sort(), status: document.querySelector('#status').textContent.trim() };
+        });
+        await ctx.close();
+        return Object.assign(out, { deaf, returnAt, errors: real(errors) });
+      };
+      const A = await scenario(false), B = await scenario(true);
+      const good = (x) => JSON.stringify(x.inSlot) === '["a2"]' && x.rec && x.rec.name === 'Typed Two' && x.rec.rank === 40 && x.rec.returnAt === x.returnAt && JSON.stringify(x.all) === '["a1","a2"]' &&
+        x.status === 'Slot 2 already held “Saved Two”, saved in another tab or on another device while this form was open; what you typed here was applied to it.' && x.errors.length === 0;
+      record('C124', 'Fault B (integrity spec, owner decision O1): the Setup form opened with an empty slot 2, another tab saves a submarine there (rank 40, a voyage), a name is typed for slot 2 and Save is pressed: slot 2 holds one submarine, the one saved elsewhere, with the typed name, rank 40 and the voyage, and the status line says "Slot 2 already held “Saved Two”, saved in another tab or on another device while this form was open; what you typed here was applied to it."; the page told and not told', good(A) && good(B), { A, B });
+      server.close();
+    });
+
+    // ── C125 (integrity spec, fault B) A bare company's form (not told, bare at opening) is saved with a name typed for slot 1 after another tab saved a submarine into slot 1: the store refuses
+    //    ("That submarine slot changed elsewhere."), the status line says so and only the other tab's submarine is stored. ──
+    await guard('C125', async () => {
       const server = await start(PORT5);
       const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
       const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
       const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+      await p1.addInitScript(() => { window.BroadcastChannel = undefined; });
       await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
       await tlSeed(p1, "sec.fcs.fb = { name: 'Bare Company', order: 0, unlockedSlots: 1, discovered: [1, 2] };"); await p1.reload(); await ready(p1);
-      await p1.click('[data-tab=setup]'); await p1.click('[data-act=sectors][data-fc=fb]'); await p1.waitForSelector('[data-act=wsave]');
+      await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fb]'); await p1.waitForSelector('[data-act=wnext]');
+      await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'Typed One');
       const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
       await p2.evaluate(async () => {
         const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
-        sec.fcs = {}; sec.subs = {};
+        sec.subs.b1 = { fcId: 'fb', slot: 1, name: 'Saved One', rank: 30, parts: [3, 4, 1, 2], voyage: null };
         await CC.writeSection('submersibles', sec, { rev: r.rev, base });
       });
-      await p1.waitForTimeout(1500);
-      const before = await p1.evaluate(() => ({ gone: !!document.querySelector('[data-wiz-gone]'), save: !!document.querySelector('[data-act=wsave]') }));
-      if (before.save) await p1.click('[data-act=wsave]');
-      await p1.waitForTimeout(1500);
-      const after = await p1.evaluate(() => ({ gone: !!document.querySelector('[data-wiz-gone]'), open: !!document.querySelector('.wiz'), status: document.querySelector('#status').textContent.trim() }));
-      const kept = await p2.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { fcs: Object.keys(s.fcs), name: s.fcs.fb && s.fcs.fb.name, discovered: s.fcs.fb && s.fcs.fb.discovered }; });
+      await p1.bringToFront(); await p1.waitForTimeout(300);
+      for (let i = 0; i < 8 && !(await p1.$('[data-act=wsave]')); i++) await p1.click('[data-act=wnext]');
+      await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+      const out = await p1.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { subs: Object.keys(s.subs).map((k) => k + ':' + s.subs[k].name), status: document.querySelector('#status').textContent.trim() }; });
       await ctx.close();
-      const ok = !before.gone && before.save && !after.gone && !after.open && !/removed on another/.test(after.status) && JSON.stringify(kept) === JSON.stringify({ fcs: ['fb'], name: 'Bare Company', discovered: [1, 2] }) && real(errors).length === 0;
-      record('C123', 'A company that was bare when its Setup form opened and is removed elsewhere by an explicit removal is stored again by Save under the same id (no "removed elsewhere" message, none before Save either, no page error)', ok, { before, after, kept, errors: real(errors) });
+      const ok = /slot changed elsewhere/.test(out.status) && /^Not saved on this device/.test(out.status) && JSON.stringify(out.subs) === '["b1:Saved One"]' && real(errors).length === 0;
+      record('C125', 'Fault B, page not told and the company bare when its form opened: another tab saves a submarine into slot 1, a name is typed for slot 1 and Save is pressed: the store refuses ("That submarine slot changed elsewhere."), the status line says "Not saved on this device" with that reason and only the other tab\'s submarine is stored', ok, { out, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C126 (integrity spec, owner decision O3) A save that already holds two submarines in one slot (seeded straight into the store): the Board lists both with "Keep this one" beside each;
+    //    nothing changes on load or when the confirmation is declined; accepting keeps the chosen one, the logged voyage of the removed one stays stored, the notice is gone, no page error.
+    //    The notice is also pictured on a phone in Azure Dragoon dark (evidence/slot-notice-phone-azure-dark.png), with no sideways scroll, 44 px buttons and a keyboard way to them. ──
+    await guard('C126', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const dupSeed = (pg) => pg.evaluate(async () => {
+        const now = Date.now(), H = 3600000, sec = { fcs: { fa: { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] } }, trips: { t1: { s: 'a2', t: now - 30 * H, r: [1, 2], back: now - 10 * H, items: [[10099, 3]], newSectors: [] } }, settings: {},
+          subs: { a1: { fcId: 'fa', slot: 1, name: 'First Sub', rank: 50, parts: [3, 4, 1, 2], voyage: null }, a2: { fcId: 'fa', slot: 1, name: 'Second Sub', rank: 30, parts: [3, 4, 1, 2], voyage: { sentAt: now - H, route: [1, 2], returnAt: now + 4 * H, gameSaid: '4h' } } } };
+        await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.modules.submersibles = CC.checkModules({ submersibles: sec }).submersibles; doc.updated = Date.now(); return doc; });
+      });
+      const rawNow = (pg) => pg.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      const probe = (pg) => pg.evaluate(() => ({ notices: [...document.querySelectorAll('[data-slot-clash]')].map((n) => ({ key: n.dataset.slotClash, text: n.querySelector('p').textContent.trim(), rows: [...n.querySelectorAll('[data-clash-sub]')].map((r) => ({ id: r.dataset.clashSub, text: r.querySelector('span').textContent.trim(), button: r.querySelector('button').textContent.trim() })) })), status: document.querySelector('#status').textContent.trim() }));
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+      await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+      await dupSeed(p1); const seeded = await rawNow(p1);
+      await p1.reload(); await ready(p1); await p1.waitForTimeout(1200);
+      const listed = await probe(p1), afterLoad = await rawNow(p1);
+      const confirms = []; await p1.evaluate(() => { window.__said = []; window.__answer = false; window.confirm = (m) => { window.__said.push(m); return window.__answer; }; });
+      await p1.click('[data-clash-sub=a1] button'); await p1.waitForTimeout(800);
+      const declined = await rawNow(p1), stillListed = (await probe(p1)).notices.length;
+      await p1.evaluate(() => { window.__answer = true; });
+      await p1.click('[data-clash-sub=a1] button'); await p1.waitForTimeout(1500);
+      const said = await p1.evaluate(() => window.__said), after = await probe(p1);
+      const stored = await p1.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { subs: Object.keys(s.subs), trips: Object.keys(s.trips) }; });
+      await ctx.close();
+      // the phone picture, Azure Dragoon dark
+      const ph = await context({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, colorScheme: 'dark' }), pp = await ph.ctx.newPage();
+      await pp.route('https://universalis.app/**', (r) => r.abort('failed'));
+      await pp.goto(ROOT5 + '#settings'); await pp.waitForSelector('#s-appearance .look-card');
+      await pp.click('#s-appearance [data-look=toggle][data-v="shared:theme"]'); await pp.click('#s-appearance [data-look=theme][data-v="azure-dragoon"]'); await pp.click('#s-appearance [data-look=mode][data-v=dark]');
+      await pp.goto(ROOT5 + 'submersibles/'); await ready(pp); await dupSeed(pp); await pp.reload(); await ready(pp); await pp.waitForSelector('[data-slot-clash]'); await pp.waitForTimeout(500);
+      const phone = await pp.evaluate(() => {
+        const n = document.querySelector('[data-slot-clash]'), b = [...n.querySelectorAll('button')].map((x) => { const r = x.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), right: Math.round(r.right) }; }), nr = n.getBoundingClientRect();
+        return { buttons: b, noteRight: Math.round(nr.right), noteLeft: Math.round(nr.left), scrollW: document.documentElement.scrollWidth, clientW: document.documentElement.clientWidth };
+      });
+      await pp.keyboard.press('Tab'); let reach = false;
+      for (let i = 0; i < 60 && !reach; i++) { reach = await pp.evaluate(() => !!document.activeElement && document.activeElement.matches('[data-act=keepsub]')); if (!reach) await pp.keyboard.press('Tab'); }
+      phone.keyboardReach = reach;
+      if (SHOT) { await pp.evaluate(() => document.querySelector('[data-slot-clash]').scrollIntoView({ block: 'center' })); await pp.screenshot({ path: path.join(ev, 'slot-notice-phone-azure-dark.png') }); }
+      await ph.ctx.close();
+      const n0 = listed.notices[0];
+      const okList = listed.notices.length === 1 && n0.key === 'fa|1' && n0.rows.length === 2 && /^Slot 1 of “Alpha Company” has 2 submarines saved, and a slot holds one\./.test(n0.text) && n0.rows.every((r) => r.button === 'Keep this one') && /First Sub/.test(n0.rows[0].text) && /Second Sub/.test(n0.rows[1].text);
+      const ok = okList && afterLoad === seeded && declined === seeded && stillListed === 1 && said.length === 2 &&
+        said[0] === 'Keep “First Sub” in slot 1 of “Alpha Company” and remove “Second Sub”? Their logged voyages stay in the history. A voyage under way on a removed one is not logged.' &&
+        JSON.stringify(stored) === JSON.stringify({ subs: ['a1'], trips: ['t1'] }) && after.notices.length === 0 && /^Kept “First Sub” in slot 1/.test(after.status) && real(errors).length === 0 &&
+        phone.scrollW <= phone.clientW && phone.buttons.length === 2 && phone.buttons.every((b) => b.h >= 44 && b.right <= phone.clientW) && phone.keyboardReach === true && real(ph.errors).length === 0;
+      record('C126', 'A save that holds two submarines in one slot (integrity spec, owner decision O3): the Board lists both with "Keep this one" beside each; nothing changes on load or when the confirmation is declined; accepting keeps the chosen one, the removed one\'s logged voyage stays stored, the notice is gone, the status line says what was kept; on a phone (360 px, Azure Dragoon dark) the notice does not scroll sideways, its buttons are at least 44 px high and reachable by keyboard', ok, { listed, unchangedOnLoad: afterLoad === seeded, unchangedWhenDeclined: declined === seeded, stillListed, said, stored, after, phone, errors: real(errors).concat(real(ph.errors)) });
+      server.close();
+    });
+
+    // ── C127 (integrity spec) The Tracker, the Command Center and the Atelier each carry CC.foldLoser and refuse the replay of the unit test INT-B1 (a stale page adds a second submarine to a slot
+    //    another page filled) and of INT-A2 (a company removed on purpose is not stored again). ──
+    await guard('C127', async () => {
+      const server = await start(PORT5);
+      const pages = {}, errs = [];
+      for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/']]) {
+        const { ctx, errors } = await context(); errs.push(errors); // a fresh store for each page
+        const pg = await ctx.newPage(); await pg.goto(url);
+        if (name === 'atelier') { await pg.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 }).catch(() => {}); await pg.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 }).catch(() => {}); }
+        const settled = async (fn) => { for (let attempt = 0; ; attempt++) { try { await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {}); return await pg.evaluate(fn); } catch (e) { if (attempt >= 3 || !/Execution context was destroyed|navigation|Target closed|detached/i.test(String(e && e.message))) throw e; await pg.waitForLoadState('load').catch(() => {}); await pg.waitForTimeout(500); } } };
+        pages[name] = await settled(async () => {
+          if (typeof window.CC !== 'object' || !window.CC || typeof CC.writeSection !== 'function') return null;
+          const fn = typeof CC.foldLoser, clone = (x) => JSON.parse(JSON.stringify(x)), msg = (e) => String(e && e.message);
+          const solid = (name, order, c) => ({ name, charId: c, order, unlockedSlots: 2, world: 'Ravana', discovered: [1, 2, 3] });
+          const first = await CC.writeSection('submersibles', { fcs: { fa: solid('Alpha', 0, 'c2'), fb: solid('Beta', 1, 'c1') }, subs: { s0: { fcId: 'fb', slot: 2, name: 'Sub B', rank: 10, voyage: null } }, trips: {}, settings: {} }, null);
+          // INT-B1: another page fills slot 1 of fa, a stale page adds a second submarine there
+          const other = clone(first.section); other.subs.s1 = { fcId: 'fa', slot: 1, name: 'Saved elsewhere', rank: 10, voyage: null };
+          await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+          const mine = clone(first.section); mine.subs.s2 = { fcId: 'fa', slot: 1, name: 'Typed here', rank: 10, voyage: null };
+          let slot = null; try { await CC.writeSection('submersibles', mine, { rev: first.rev, base: first.section }); } catch (e) { slot = msg(e); }
+          // INT-A2: another page removes fb and its submarine; the stale page renames fb
+          const gone = clone(other); delete gone.fcs.fb; delete gone.subs.s0;
+          const mid = await CC.read(); await CC.writeSection('submersibles', gone, { rev: mid.rev, base: other });
+          const renamed = clone(first.section); renamed.fcs.fb.name = 'Typed Name';
+          let removed = null; try { await CC.writeSection('submersibles', renamed, { rev: first.rev, base: first.section }); } catch (e) { removed = msg(e); }
+          const s = CC.checkDoc((await CC.read()).raw).modules.submersibles;
+          return { fn, slot, removed, subs: Object.keys(s.subs).sort(), fcs: Object.keys(s.fcs).sort() };
+        });
+        await ctx.close();
+      }
+      const ok = Object.values(pages).every((p) => p && p.fn === 'function' && p.slot === 'That submarine slot changed elsewhere.' && p.removed === 'This free company was removed on another device or in another tab.' && JSON.stringify(p.subs) === '["s1"]' && JSON.stringify(p.fcs) === '["fa"]') && errs.every((e) => real(e).length === 0);
+      record('C127', 'The Tracker, the Command Center and the Atelier each carry CC.foldLoser; in each built page a stale write that adds a second submarine to a slot another page filled is refused ("That submarine slot changed elsewhere.") and a stale write that renames a company removed on purpose is refused ("This free company was removed on another device or in another tab."), with only the other page\'s submarine stored and the company still removed', ok, { pages, errors: errs.map(real) });
       server.close();
     });
 

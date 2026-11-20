@@ -2574,3 +2574,21 @@ test('E3 advisor: when no priority can be served the plan is not labelled Gil Fa
   const g = ADV.advise({ sub: { rank: 145, parts: [31, 24, 25, 34] }, fc: { unlockedSlots: 4, discovered: ALL }, slotsFilled: 4, recs: RECS.defaults() });
   assert.equal(g.lead, 'G'); assert.match(g.label, /Gil Farming/);
 });
+
+// ---------------------------------------------------------------- integrity spec 4.4: slots that hold more than one submarine
+test('INT-D1 FLEET.slotClashes lists every company and slot that holds two or more submarines, first-shown record first', () => {
+  const F = globalThis.FLEET || (require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'fleet.js')), globalThis.FLEET);
+  assert.equal(typeof F.slotClashes, 'function');
+  const fc = (name, order) => ({ name, order, unlockedSlots: 4, world: 'Ravana', discovered: [1, 2] });
+  const s = (fcId, slot) => ({ fcId, slot, name: 'S', rank: 1, voyage: null });
+  assert.deepEqual(F.slotClashes({ fcs: { fa: fc('A', 0) }, subs: { a1: s('fa', 1), a2: s('fa', 2) }, trips: {}, settings: {} }), [], 'one in each slot: none');
+  assert.deepEqual(F.slotClashes({ fcs: {}, subs: {}, trips: {}, settings: {} }), []);
+  const two = F.slotClashes({ fcs: { fa: fc('A', 0) }, subs: { x2: s('fa', 1), x1: s('fa', 1), y: s('fa', 3) }, trips: {}, settings: {} });
+  assert.deepEqual(two, [{ fcId: 'fa', slot: 1, ids: ['x2', 'x1'] }], 'two in a slot; ids in key order');
+  const three = F.slotClashes({ fcs: { fa: fc('A', 0) }, subs: { a: s('fa', 2), b: s('fa', 2), c: s('fa', 2) }, trips: {}, settings: {} });
+  assert.deepEqual(three, [{ fcId: 'fa', slot: 2, ids: ['a', 'b', 'c'] }]);
+  const orphan = F.slotClashes({ fcs: { fa: fc('A', 0) }, subs: { o1: s('gone', 1), o2: s('gone', 1) }, trips: {}, settings: {} });
+  assert.deepEqual(orphan, [], 'a submarine without its company is not listed');
+  const ord = F.slotClashes({ fcs: { fz: fc('Z', 0), fa: fc('A', 1) }, subs: { a1: s('fa', 1), a2: s('fa', 1), z3: s('fz', 3), z4: s('fz', 3), z1: s('fz', 1), z2: s('fz', 1) }, trips: {}, settings: {} });
+  assert.deepEqual(ord.map((c) => c.fcId + '|' + c.slot), ['fz|1', 'fz|3', 'fa|1'], 'by company order, then slot');
+});

@@ -393,6 +393,41 @@
   };
   CC.resetMemory = () => { memory = { [KEY]: null, [REV]: null }; };
 
+  // A free company is bare when no submarine of sec belongs to it, it has no world, one slot (or none noted) and the start
+  // sectors only: exactly what the main Settings creates (the same test as FLEET.isBare). Pure.
+  function subBare(sec, id, f) {
+    if (!f) return false;
+    const subs = (sec && sec.subs) || {};
+    if (Object.keys(subs).some((k) => subs[k] && subs[k].fcId === id)) return false;
+    return !f.world && (f.unlockedSlots == null || f.unlockedSlots === 1)
+      && (f.discovered == null || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
+  }
+  // True when fc, stored in sec under fcId, would be removed by the automatic duplicate fold (FLEET.foldFcs): fc is bare in
+  // sec, has a character, and another company of that character in sec is not bare, or is bare and sorts before it (lower
+  // order || 0, then lower id by plain < comparison, as foldFcs does). Pure.
+  CC.foldLoser = function (sec, fcId, fc) {
+    if (!fc || typeof fc.charId !== 'string' || !subBare(sec, fcId, fc)) return false;
+    const fcs = (sec && sec.fcs) || {};
+    const before = (a, fa, z, fz) => ((fa.order || 0) - (fz.order || 0)) || (a < z ? -1 : a > z ? 1 : 0);
+    return Object.keys(fcs).some((id) => {
+      const o = fcs[id];
+      if (id === fcId || !o || o.charId !== fc.charId) return false;
+      return !subBare(sec, id, o) || before(id, o, fcId, fc) < 0;
+    });
+  };
+  // True when some company-and-slot holds two or more submarines in sec and one of them is not already in that slot in stored.
+  function slotAdded(sec, stored) {
+    const slots = {};
+    Object.keys((sec && sec.subs) || {}).forEach((id) => {
+      const s = sec.subs[id]; if (!s || s.slot == null) return;
+      (slots[s.fcId + '|' + s.slot] = slots[s.fcId + '|' + s.slot] || []).push(id);
+    });
+    return Object.keys(slots).some((k) => slots[k].length > 1 && slots[k].some((id) => {
+      const t = ((stored && stored.subs) || {})[id], s = sec.subs[id];
+      return !(t && t.fcId === s.fcId && t.slot === s.slot);
+    }));
+  }
+
   // Write one module's section. known = { rev, base }: the stamp and the section this page last read or wrote. If
   // another page saved since, the section is merged with the stored one (units changed only elsewhere are kept).
   // own = { moved, device }: this module's entries in the device-only parts. Resolves to { rev, section, merged }.
@@ -416,10 +451,13 @@
         if (name === 'submersibles') {
           const b = base, l = local, m = sec;
           const same = (a, z) => JSON.stringify(a) === JSON.stringify(z);
-          const isBareBase = (id) => {
-            const f = (b.fcs || {})[id];
-            return !!f && !Object.values(b.subs || {}).some((s) => s.fcId === id) && !f.world && (f.unlockedSlots == null || f.unlockedSlots === 1) && (!f.discovered || same(f.discovered, [1, 2]));
-          };
+          const isBareBase = (id) => subBare(b, id, (b.fcs || {})[id]);
+          // A company this write would bring back after the stored copy lost it: only the automatic duplicate fold
+          // may have removed it (CC.foldLoser); anything else was removed on purpose and is not stored again.
+          for (const fcId of Object.keys(b.fcs || {})) {
+            if ((stored.fcs || {})[fcId] || !(m.fcs || {})[fcId]) continue;
+            if (!(isBareBase(fcId) && CC.foldLoser(stored, fcId, b.fcs[fcId]))) throw new Error('This free company was removed on another device or in another tab.');
+          }
           for (const [subId, sub] of Object.entries(l.subs || {})) {
             if (!sub || !m.subs || !m.subs[subId] || same(sub, (b.subs || {})[subId])) continue;
             const fcId = sub.fcId;
@@ -436,6 +474,9 @@
           }
         }
       }
+      // One company-and-slot never gains a second submarine through a write: refuse when a slot would hold two or more
+      // records and one of them is not already in that slot in the stored copy (a stored duplicate stays writable).
+      if (name === 'submersibles' && slotAdded(sec, stored || {})) throw new Error('That submarine slot changed elsewhere.');
       doc.modules[name] = sec;
       if (own && own.moved) doc.moved[name] = own.moved;
       if (own && own.device) doc.device[name] = own.device;

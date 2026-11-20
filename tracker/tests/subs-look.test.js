@@ -819,3 +819,20 @@ test('visual fixes part 2: subs.css and the scripts carry the rules', () => {
   // the same disc rule everywhere outside the chart: the chart keeps chart ink (a letter there is text on the water)
   assert.ok(/\.chart-svg \.chart-letter \{ font-family/.test(css) && !/\.chart-letter[^{]*\{[^}]*sea/.test(css), 'chart letters stay chart ink');
 });
+
+// ---- Integrity spec 4.4: the Board notice for a slot that holds more than one submarine (.note.bad with a .btn.primary "Keep this one" beside each) ----
+test('slot notice (integrity spec): its text, button text, button edge and error hatch reach their contrast on the note wash in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), e0 = P.env(row, mode), ink = hx(th.ink), paper = hx(th.paper);
+    const hi = hx(mixRgb(paper, P.colour('var(--seal)', e0), mode === 'dark' ? 0.18 : 0.13)); // the note wash: --hi (the accent at 13% light, 18% dark) over the page colour
+    need('slot notice: ink on the note wash (the text) (4.5)', ink, hi, 4.5, where);
+    // the button's text (on-seal on seal, 4.5) is pinned for every theme by the shared on-seal test above
+    need('slot notice: the Keep this one button (.btn.primary): the accent fill on the note wash (printed, not asserted: the button is named by its text, 4.5 above)', P.colour('var(--seal)', e0), hi, 0, where);
+    need('slot notice: the error hatch on the note wash (graphic 3)', P.colour('var(--bad)', e0), hi, 3, where);
+  }
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' slot notice pairs outside their rules; lowest: ' + JSON.stringify(lo));
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  for (const s of ['data-slot-clash=', 'data-act="keepsub"', 'class="note bad"', 'class="btn primary"']) assert.ok(js.includes(s), s);
+});
