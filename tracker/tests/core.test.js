@@ -2394,6 +2394,55 @@ test('INT-A5 (pin) the fold: a bare company that loses the fold is stored again 
   assert.strictEqual((await intStored()).fcs.fz.name, 'Typed Name');
 });
 
+// G1: a stale page adds a submarine under a company (its record unchanged) that was removed elsewhere
+const g1Run = async (fa, fb, extraStored) => {
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa, fb }, subs: {}, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.subs.sa = intSub('fa', 1, 'Added late');
+  const other = intClone(first.section); delete other.fcs.fa;
+  if (extraStored) extraStored(other);
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  return { before, run: () => CC.writeSection('submersibles', local, { rev: first.rev, base: first.section }) };
+};
+const G1MSG = /This free company was removed on another device or in another tab\./;
+
+test('G1 a company kept on purpose (it would win the clean-up) is not replaced by another for a stale submarine', async () => {
+  const t = await g1Run(intBare('Alpha', 0), intBare('Beta', 1));
+  await assert.rejects(t.run, G1MSG);
+  assert.strictEqual(JSON.stringify(await intStored()), t.before, 'the stored copy is unchanged');
+});
+
+test('G1 (pin) a company the clean-up would remove: the submarine moves to the company that beats it', async () => {
+  const t = await g1Run(intBare('Alpha', 1), intBare('Beta', 0));
+  const r = await t.run();
+  assert.strictEqual(r.section.subs.sa.fcId, 'fb');
+  assert.ok(!r.section.fcs.fa);
+});
+
+test('G1 (pin) a vanished empty company with a non-empty sibling: the submarine moves to that sibling', async () => {
+  const t = await g1Run(intBare('Alpha', 0), intSolid('Beta', 1));
+  const r = await t.run();
+  assert.strictEqual(r.section.subs.sa.fcId, 'fb');
+});
+
+test('G1 the target is the company that beats it, not just any company of the character', async () => {
+  // fb (bare, order 1) is not the winner; fc (solid) is: the move goes to fc
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa: intBare('Alpha', 0), fb: intBare('Beta', 1), fc: intSolid('Gamma', 2) }, subs: {}, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.subs.sa = intSub('fa', 1, 'Added late');
+  const other = intClone(first.section); delete other.fcs.fa;
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  const r = await CC.writeSection('submersibles', local, { rev: first.rev, base: first.section });
+  assert.strictEqual(r.section.subs.sa.fcId, 'fc');
+});
+
+test('G1 (pin) the target slot is occupied: refused', async () => {
+  const t = await g1Run(intBare('Alpha', 1), intSolid('Beta', 0), (o) => { o.subs.sb = intSub('fb', 1, 'Already there'); });
+  await assert.rejects(t.run, /slot changed elsewhere/);
+  assert.strictEqual(JSON.stringify(await intStored()), t.before);
+});
+
 const intSlotBase = () => ({ fcs: { fa: Object.assign(intSolid('Alpha', 0), { unlockedSlots: 2 }) }, subs: {}, trips: {}, settings: {} });
 
 test('INT-B1 stale stamp: a second submarine into a slot another page filled is refused, only the first is stored', async () => {
@@ -2476,6 +2525,44 @@ test('INT-C3 one submarine on both devices and a second only on the other device
   assert.deepStrictEqual(Object.keys(out(l, res, 'local', slots[0]).subs), ['a']);
   assert.deepStrictEqual(Object.keys(out(l, res, 'remote', slots[0]).subs), ['b']);
   assert.deepStrictEqual(Object.keys(out(l, res, null, slots[0]).subs).sort(), ['a', 'b']);
+});
+
+// G4: the sync question never promises more than it does. For the INT-C cases and 500 seeded random ones (one to four records per side,
+// some on both devices): every record the text names as staying either way is present after BOTH answers; the side not kept is removed
+// (with its logged voyages) only when that answer is given; with no answer nothing is removed.
+test('G4 the slot question: what its text names as staying stays after both answers, the side not kept goes only on its answer, no answer removes nothing', () => {
+  const { side, run, out } = intSlot, nameOf = (id) => id.toUpperCase();
+  const mk = (ids) => { const o = {}; ids.forEach((id, i) => { o[id] = [nameOf(id), 10 + i]; }); return side(o); };
+  const names = (t) => { const r = []; String(t).replace(/“([^”]+)”/g, (m, n) => { r.push(n); return m; }); return r; };
+  let asked = 0, withStays = 0;
+  const one = (lids, rids, tag) => {
+    const l = mk(lids), r = mk(rids), { res, slots } = run(l, r);
+    const all = [...new Set(lids.concat(rids))].sort(), has = (o, id) => id in o.subs;
+    if (!slots.length) return; // nothing asked: nothing is removed by the question (the merge keeps what each side has)
+    assert.strictEqual(slots.length, 1, tag);
+    asked++;
+    const c = slots[0], d = ET.describeConflict(c, null, { chars: [] }), g = c.integrity;
+    const staysText = (/; ((?:“[^”]+”(?:, )?)+), already on both devices, (?:stay|stays) either way/.exec(d.what) || [])[1];
+    const stayIds = names(staysText).map((n) => n.toLowerCase());
+    if (stayIds.length) withStays++;
+    const keyId = (x) => JSON.parse(x.key.slice(2))[2], locIds = g.locals.map(keyId), remIds = g.remotes.map(keyId);
+    const none = out(l, res, null, c), loc = out(l, res, 'local', c), rem = out(l, res, 'remote', c);
+    all.forEach((id) => assert.ok(has(none, id) && has(none, id) && none.trips['t' + id], tag + ': no answer keeps ' + id));
+    stayIds.forEach((id) => { assert.ok(has(loc, id) && has(rem, id), tag + ': ' + id + ' named as staying but missing after an answer'); assert.ok(!locIds.includes(id) && !remIds.includes(id), tag + ': a staying record is on neither side'); });
+    // the buttons' texts name exactly the side's records
+    assert.deepStrictEqual(names(d.local).map((n) => n.toLowerCase()).sort(), locIds.slice().sort(), tag + ': this-device text'); assert.deepStrictEqual(names(d.remote).map((n) => n.toLowerCase()).sort(), remIds.slice().sort(), tag + ': other-device text');
+    locIds.forEach((id) => assert.ok(has(loc, id) && !has(rem, id) && !rem.trips['t' + id], tag + ': ' + id + ' stays on local, goes on remote with its voyage'));
+    remIds.forEach((id) => assert.ok(has(rem, id) && !has(loc, id) && !loc.trips['t' + id], tag + ': ' + id + ' stays on remote, goes on local with its voyage'));
+    all.filter((id) => !locIds.includes(id) && !remIds.includes(id)).forEach((id) => assert.ok(has(loc, id) && has(rem, id), tag + ': ' + id + ' is on neither side and must stay'));
+  };
+  [[['a'], ['b', 'c']], [['a', 'b'], ['c', 'd']], [['a'], ['a', 'b']], [['a', 'b'], ['a']], [['a', 'b'], ['a', 'c']], [['a', 'b', 'c'], ['a', 'b', 'c']], [['a'], ['b']]].forEach(([l, r], i) => one(l, r, 'fixed ' + i));
+  let seed = 424242; const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed >> 8) % n; };
+  const pool = ['a', 'b', 'c', 'd', 'e', 'f'];
+  for (let i = 0; i < 500; i++) {
+    const pick = () => { const n = 1 + rnd(4), o = []; while (o.length < n) { const id = pool[rnd(pool.length)]; if (!o.includes(id)) o.push(id); } return o; };
+    one(pick(), pick(), 'case ' + i);
+  }
+  assert.ok(asked > 100 && withStays > 20, 'the random set reaches the questions it should: asked ' + asked + ', with a staying record ' + withStays);
 });
 
 test('INT-C4 (pin) three records already on both devices are not asked about; two new records on this device only are not asked about', () => {

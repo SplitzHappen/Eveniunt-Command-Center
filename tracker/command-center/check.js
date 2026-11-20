@@ -5034,9 +5034,37 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         return Object.assign(out, { deaf, returnAt, errors: real(errors) });
       };
       const A = await scenario(false), B = await scenario(true);
+      // G2: typing only a rank keeps everything else as saved. kind 'adopt': slot 2 is empty in the form, another tab saves a submarine there; kind 'known': slot 1's parts are changed elsewhere while the form is open
+      const rankOnly = async (kind) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+        await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+        await tlSeed(p1, SEC); await p1.reload(); await ready(p1);
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+        await p1.click('[data-act=wnext]'); if (kind === 'adopt') await p1.click('[data-act=wnext]');
+        await p1.fill('.wiz input[data-w=rank]', kind === 'adopt' ? '45' : '55'); await p1.press('.wiz input[data-w=rank]', 'Tab');
+        const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+        const elsewhereAt = await p2.evaluate(async (k) => {
+          const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec)), now = Date.now();
+          if (k === 'adopt') sec.subs.a2 = { fcId: 'fa', slot: 2, name: 'Saved Two', rank: 40, parts: [3, 4, 1, 2], voyage: { sentAt: now - 3600000, route: [1, 2], returnAt: now + 5 * 3600000, gameSaid: '5h' } };
+          else sec.subs.a1.parts = [7, 8, 5, 6];
+          await CC.writeSection('submersibles', sec, { rev: r.rev, base }); return k === 'adopt' ? sec.subs.a2.voyage.returnAt : null;
+        }, kind);
+        await p1.bringToFront(); await p1.waitForTimeout(1500);
+        await toSave(p1); await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+        const out = await p1.evaluate(async (k) => {
+          const s = CC.checkDoc((await CC.read()).raw).modules.submersibles, r = s.subs[k === 'adopt' ? 'a2' : 'a1'];
+          return { name: r.name, rank: r.rank, parts: r.parts, returnAt: r.voyage && r.voyage.returnAt, all: Object.keys(s.subs).sort(), status: document.querySelector('#status').textContent.trim() };
+        }, kind);
+        await ctx.close();
+        return Object.assign(out, { elsewhereAt, errors: real(errors) });
+      };
+      const RA = await rankOnly('adopt'), RK = await rankOnly('known');
+      const rankOk = RA.name === 'Saved Two' && RA.rank === 45 && JSON.stringify(RA.parts) === '[3,4,1,2]' && RA.returnAt === RA.elsewhereAt && RA.returnAt != null && JSON.stringify(RA.all) === '["a1","a2"]' && RA.errors.length === 0 &&
+        RK.name === 'Sub A1' && RK.rank === 55 && JSON.stringify(RK.parts) === '[7,8,5,6]' && RK.errors.length === 0;
       const good = (x) => JSON.stringify(x.inSlot) === '["a2"]' && x.rec && x.rec.name === 'Typed Two' && x.rec.rank === 40 && x.rec.returnAt === x.returnAt && JSON.stringify(x.all) === '["a1","a2"]' &&
         x.status === 'Slot 2 already held “Saved Two”, saved in another tab or on another device while this form was open; what you typed here was applied to it.' && x.errors.length === 0;
-      record('C124', 'Fault B (integrity spec, owner decision O1): the Setup form opened with an empty slot 2, another tab saves a submarine there (rank 40, a voyage), a name is typed for slot 2 and Save is pressed: slot 2 holds one submarine, the one saved elsewhere, with the typed name, rank 40 and the voyage, and the status line says "Slot 2 already held “Saved Two”, saved in another tab or on another device while this form was open; what you typed here was applied to it."; the page told and not told', good(A) && good(B), { A, B });
+      record('C124', 'Fault B (integrity spec, owner decision O1): the Setup form opened with an empty slot 2, another tab saves a submarine there (rank 40, a voyage), a name is typed for slot 2 and Save is pressed: slot 2 holds one submarine, the one saved elsewhere, with the typed name, rank 40 and the voyage, and the status line says "Slot 2 already held “Saved Two”, saved in another tab or on another device while this form was open; what you typed here was applied to it."; the page told and not told; and typing only a rank (G2) keeps the saved parts and voyage of an adopted submarine and the parts changed elsewhere of a known one', good(A) && good(B) && rankOk, { A, B, RA, RK });
       server.close();
     });
 
@@ -5240,6 +5268,35 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     // ── L1 Submersibles look evidence (not a behaviour check): one seeded profile walked through every screen; the
     //    screenshots are look-*.png (Chromium only). Asserts: no sideways page scroll at 360 px on the eight screens, no page
     //    errors. Asserts also at 360 px: the chart is at least 320 px wide, its smallest tap circle and every measured tap height are at least 36 px.
+    // ── C133 (G1, second review) A stale page adds a submarine to a still-empty company that was removed on purpose and that would win the duplicate clean-up against the company left: the store
+    //    refuses ("This free company was removed on another device or in another tab."), the page shows that message, the submarine is stored nowhere and there is no page error. ──
+    await guard('C133', async () => {
+      const server = await start(PORT5);
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 20000 });
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await ctx.newPage(); await p1.route('https://universalis.app/**', (r) => r.abort('failed'));
+      await p1.addInitScript(() => { window.BroadcastChannel = undefined; });
+      await p1.goto(ROOT5 + 'submersibles/'); await ready(p1);
+      await tlSeed(p1, "sec.fcs.fa = { name: 'Alpha Company', order: 0, unlockedSlots: 1, discovered: [1, 2], charId: 'c1' }; sec.fcs.fb = { name: 'Beta Company', order: 1, unlockedSlots: 1, discovered: [1, 2], charId: 'c2' };"); await p1.reload(); await ready(p1);
+      await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+      await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'Typed One');
+      const p2 = await ctx.newPage(); await p2.goto(ROOT5 + 'submersibles/'); await ready(p2);
+      await p2.evaluate(async () => { // elsewhere: Alpha is removed on purpose and Beta becomes a company of the same character (Alpha would have won the clean-up)
+        const r = await CC.read(), sec = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), base = JSON.parse(JSON.stringify(sec));
+        delete sec.fcs.fa; sec.fcs.fb.charId = 'c1';
+        await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+      });
+      await p1.bringToFront(); await p1.waitForTimeout(300);
+      for (let i = 0; i < 8 && !(await p1.$('[data-act=wsave]')); i++) await p1.click('[data-act=wnext]');
+      await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+      const out = await p1.evaluate(async () => { const s = CC.checkDoc((await CC.read()).raw).modules.submersibles; return { fcs: Object.keys(s.fcs), subs: Object.keys(s.subs), status: document.querySelector('#status').textContent.trim() }; });
+      const here = await p1.evaluate(() => document.body.textContent.includes('Typed One'));
+      await ctx.close();
+      const ok = /This free company was removed on another device or in another tab\./.test(out.status) && /^Not saved on this device/.test(out.status) && JSON.stringify(out.fcs) === '["fb"]' && out.subs.length === 0 && real(errors).length === 0;
+      record('C133', 'A company removed on purpose is not replaced by another for a stale submarine (G1): a stale page adds a submarine to a still-empty company that another tab removed and that would win the clean-up against the company left; the page shows "Not saved on this device: This free company was removed on another device or in another tab.", only the other company stays stored, the submarine is stored nowhere, no page error', ok, { out, here, errors: real(errors) });
+      server.close();
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──

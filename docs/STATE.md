@@ -119,10 +119,15 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 - A sync never removes a discovered sector (the owner's choice): a sector unticked on one device comes back if the
   other device changed the same free company before they met; the app says so and it can be unticked again.
 - Reviews: several by Claude on Claude-built work (same-family), then one each by ChatGPT and Mistral
-  (2026-11-20). The repairs made after those two have not been reviewed by another family yet.
-- A still-empty free company removed on purpose can still come back in one case: another company of the same
-  character that outranks it in the duplicate clean-up was added afterwards, and its old open Setup form is saved.
-  Telling that apart would need a new stored marker.
+  (2026-11-20), then a second ChatGPT round (2026-11-20, on commit `c6d5a9b`): verdict fail, two serious and two minor
+  findings, repaired in this branch. The repairs made after that round were checked by tests only, not by another family.
+- A still-empty free company removed on purpose is treated like the automatic duplicate clean-up when another company
+  of the same character would beat it in that clean-up (a non-empty one, or an empty one that sorts first): its old
+  open Setup form can store it again, and a submarine added to it from a stale page is moved to that other company.
+  Telling that apart from a clean-up would need a new stored marker. A company that would itself win the clean-up is
+  never stored again, and a submarine added to it from a stale page is refused.
+- The market-price attempt limit (one automatic attempt per 15 minutes) is per price place and per device for reloads
+  and ordinary use of several tabs; two tabs that try at the same instant can each make one attempt.
 - On a 360 px phone the closest sectors of two seas have tap circles of about 30 px.
 - The crafting solver's resume test once found the test browser's storage empty after a reload; the cause was not
   found. The app saves on every step and the test now restores from what the page saved.

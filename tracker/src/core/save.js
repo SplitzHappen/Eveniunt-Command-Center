@@ -405,15 +405,24 @@
   // True when fc, stored in sec under fcId, would be removed by the automatic duplicate fold (FLEET.foldFcs): fc is bare in
   // sec, has a character, and another company of that character in sec is not bare, or is bare and sorts before it (lower
   // order || 0, then lower id by plain < comparison, as foldFcs does). Pure.
+  // The fold's own order: lower order || 0, then lower id by plain < comparison.
+  const foldBefore = (a, fa, z, fz) => ((fa.order || 0) - (fz.order || 0)) || (a < z ? -1 : a > z ? 1 : 0);
   CC.foldLoser = function (sec, fcId, fc) {
     if (!fc || typeof fc.charId !== 'string' || !subBare(sec, fcId, fc)) return false;
     const fcs = (sec && sec.fcs) || {};
-    const before = (a, fa, z, fz) => ((fa.order || 0) - (fz.order || 0)) || (a < z ? -1 : a > z ? 1 : 0);
     return Object.keys(fcs).some((id) => {
       const o = fcs[id];
       if (id === fcId || !o || o.charId !== fc.charId) return false;
-      return !subBare(sec, id, o) || before(id, o, fcId, fc) < 0;
+      return !subBare(sec, id, o) || foldBefore(id, o, fcId, fc) < 0;
     });
+  };
+  // The id of the company that beats fc (stored under fcId) in the duplicate fold of sec: the first non-empty company of its
+  // character, else the first empty one, in the fold's own order; null when none. Call only when CC.foldLoser is true.
+  CC.foldWinner = function (sec, fcId, fc) {
+    const fcs = (sec && sec.fcs) || {};
+    const ids = Object.keys(fcs).filter((id) => id !== fcId && fcs[id] && fc && typeof fc.charId === 'string' && fcs[id].charId === fc.charId)
+      .sort((x, y) => foldBefore(x, fcs[x], y, fcs[y]));
+    return ids.find((id) => !subBare(sec, id, fcs[id])) || ids[0] || null;
   };
   // True when some company-and-slot holds two or more submarines in sec and one of them is not already in that slot in stored.
   function slotAdded(sec, stored) {
@@ -463,11 +472,11 @@
             const fcId = sub.fcId;
             if ((m.fcs || {})[fcId] || !(l.fcs || {})[fcId]) continue;
             if (!isBareBase(fcId)) throw new Error('The free company changed while its submarine was being saved.');
-            const charId = (l.fcs[fcId] || {}).charId;
-            const targets = Object.keys(m.fcs || {}).filter((id) => id !== fcId && charId && m.fcs[id].charId === charId)
-              .sort((x, y) => (m.fcs[x].order || 0) - (m.fcs[y].order || 0) || String(x).localeCompare(String(y)));
-            if (!targets.length) throw new Error('The free company was removed while its submarine was being saved.');
-            const target = targets[0];
+            // Only a company the automatic clean-up would remove again is moved from; it goes to the company that beats it.
+            // Anything else was removed on purpose: nothing is written.
+            if (!CC.foldLoser(stored, fcId, b.fcs[fcId])) throw new Error('This free company was removed on another device or in another tab.');
+            const target = CC.foldWinner(stored, fcId, b.fcs[fcId]);
+            if (!target || !(m.fcs || {})[target]) throw new Error('The free company was removed while its submarine was being saved.');
             if (Object.values(m.subs || {}).some((other) => other !== m.subs[subId] && other.fcId === target && other.slot === sub.slot))
               throw new Error('That submarine slot changed elsewhere.');
             m.subs[subId].fcId = target;

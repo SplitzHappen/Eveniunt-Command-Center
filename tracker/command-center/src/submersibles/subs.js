@@ -840,7 +840,7 @@
     var world = now && !tWorld ? now.world : W.fc.world;
     if (world) fc.world = world;
     S.fcs[fcId] = fc;
-    var missing = [], adopted = [], taken = W.fcId ? subsOf(fcId) : {}; // taken: the submarines saved now in this company, by slot
+    var missing = [], adopted = [], cleared = [], taken = W.fcId ? subsOf(fcId) : {}; // taken: the submarines saved now in this company, by slot
     W.subs.forEach(function (s, j) {
       if (!s.unlocked) return; // a slot switched off keeps its sub record; it shows as Locked and nothing is deleted
       if (s.id && !S.subs[s.id]) { missing.push(s.start.name || 'Sub ' + (j + 1)); return; } // removed elsewhere while the form was open: not written back
@@ -853,15 +853,17 @@
       var rec = { fcId: fcId, slot: j + 1, name: had && !tSubName ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (cur ? (t.voyage && (s.voyMode === 'in' || s.voyMode === 'at') ? readVoyage(s).voyage || prev.voyage : prev.voyage) : had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
       if (prev.expIntoRank != null && prev.rank === rec.rank) rec.expIntoRank = prev.expIntoRank; // a new rank starts with no known progress
       if (prev.expExact && prev.rank === rec.rank && (s.voyMode === 'keep' || !prev.voyage || !t.voyage)) rec.expExact = true; // a rank changed in Setup, or a voyage replaced unlogged, is no longer the game's exact point
-      var parts = had && !t.parts ? prev.parts : s.parts;
-      if (parts && parts.length === 4 && parts.every(function (p) { return p && PART[p] && CLASS[PART[p].class].rank <= rec.rank; })) rec.parts = parts.slice();
+      // parts: only choosing a part here replaces the saved ones; a typed rank alone keeps them when they fit (F.partsWritten)
+      var pw = F.partsWritten(had ? prev.parts || [] : null, s.parts, !!t.parts, rec.rank, function (p, r) { return !!(p && PART[p] && CLASS[PART[p].class].rank <= r); });
+      if (pw.parts) rec.parts = pw.parts;
+      if (pw.cleared) cleared.push('The parts saved for “' + rec.name + '” do not fit rank ' + rec.rank + ', so they were cleared; choose them again in Setup.');
       S.subs[id] = rec;
     });
     if (W.off.size) { SH.unticked = SH.unticked || {}; SH.unticked[fcId] = Array.from(W.off); } // R4: told of it if a merge brings any back
     W = null; UI.tab = 'board'; keepUi(); schedule();
     var said = [];
     if (missing.length) said.push(missing.map(function (n) { return '“' + n + '”'; }).join(', ') + (missing.length === 1 ? ' was' : ' were') + ' removed on another device or in another tab while the form was open, so ' + (missing.length === 1 ? 'it was' : 'they were') + ' not saved.');
-    if (said.concat(adopted).length) setStatus(SH.note = said.concat(adopted).join(' '));
+    if (said.concat(adopted, cleared).length) setStatus(SH.note = said.concat(adopted, cleared).join(' '));
   }
   // the form's ticks follow discoveries that arrive while it is open (never one the player unticked here); the boxes change in place, so focus and scroll stay
   function syncTicks() {
@@ -1866,7 +1868,7 @@
     else if (s && key === 'unlocked') { s.unlocked = t.checked; if (!t.checked) { for (var k = W.subs.indexOf(s) + 1; k < 4; k++) W.subs[k].unlocked = false; } render(); }
     else if (s && key === 'name') { s.name = t.value; s.t.name = true; }
     else if (s && key === 'rank') {
-      s.rank = t.value === '' ? '' : +t.value; s.t.rank = true; s.t.parts = true; // a new rank refreshes the parts lists, so the form then writes the parts
+      s.rank = t.value === '' ? '' : +t.value; s.t.rank = true; // only choosing a part marks the parts as touched: a refresh of the lists after a rank change does not
       if (e.type === 'change' && Number.isInteger(s.rank) && s.rank >= 1) { // refresh the parts lists for the new rank
         $$('select[data-w=part]').forEach(function (sel) { var j = +sel.dataset.j; sel.innerHTML = partOptions(j, s.rank, s.parts[j]); s.parts[j] = sel.value ? +sel.value : null; });
       }

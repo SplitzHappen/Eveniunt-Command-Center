@@ -158,6 +158,18 @@
     return { section: sec, removed: removed.sort() };
   };
 
+  // Which parts the Setup form writes for one submarine (pure). saved: the parts stored now (an array or none); typed: the form's own
+  // four parts; touched: the player chose a part in this form (a typed rank alone does not count); rank: the rank being written;
+  // fits(partId, rank): whether a part fits that rank. A part the player chose here is written as typed; otherwise the saved parts stay
+  // when every one fits the rank, and when one does not fit, none are written and `cleared` says so (the status line names it).
+  // -> { parts: array of four ids or null, cleared: boolean }
+  F.partsWritten = function (saved, typed, touched, rank, fits) {
+    var whole = function (p) { return Array.isArray(p) && p.length === 4 && p.every(function (x) { return x && fits(x, rank); }); };
+    if (touched || !Array.isArray(saved)) return { parts: whole(typed) ? typed.slice() : null, cleared: false };
+    if (whole(saved)) return { parts: saved.slice(), cleared: false };
+    return { parts: null, cleared: saved.some(function (x) { return !!x; }) };
+  };
+
   // Slots that hold two or more submarines (a stored duplicate: a slot holds one). [{ fcId, slot, ids }] for every existing
   // free company; ids in the order of sec.subs (the first is the one the company view shows); sorted by company order,
   // then company id, then slot. A submarine whose company is gone is not listed. Pure.

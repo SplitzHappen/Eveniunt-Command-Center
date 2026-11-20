@@ -162,6 +162,18 @@ test('E1 the failure message is decided by the prices actually used: an old mark
   assert.equal(E.failureNote({ prices: { 10099: 0 }, at: 7 }, ids, String), 'Market prices could not be fetched; showing merchant prices.', 'a cached 0 is no price');
 });
 
+test('G3 the failure message names market prices only when a market price is the one used: the merchant price is higher -> merchant sentence and merchant value', () => {
+  const cached = { prices: { 10099: 10 }, at: 7, seen: { 10099: 7 } }, ids = [10099];
+  assert.deepEqual(E.unitValue(10099, cached.prices), { each: 10, how: 'merchant' }, 'merchant 10 beats the cached market 10 after tax');
+  assert.equal(E.failureNote(cached, ids, (t) => 'T' + t), 'Market prices could not be fetched; showing merchant prices.');
+  assert.equal(E.usedMarket(cached, ids), null);
+  // the time named is the oldest fetch among the items whose market price is used: item 10099 (merchant value, fetched at 1) does not count
+  const two = { prices: { 10099: 10, 2: 100 }, at: 9, seen: { 10099: 1, 2: 3 } }, both = [10099, 2];
+  assert.deepEqual(E.unitValue(2, two.prices), { each: 95, how: 'market' });
+  assert.equal(E.usedMarket(two, both), 3);
+  assert.equal(E.failureNote(two, both, (t) => 'T' + t), 'Market prices could not be fetched; showing the last known market prices (fetched T3) and merchant prices for the rest.');
+});
+
 test('E2 the attempt gate is kept in device storage: a reload or another tab honours the same 15 minutes; a storage failure falls back to memory', () => {
   const store = {}; globalThis.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
   const now = Date.now(), mem1 = {};

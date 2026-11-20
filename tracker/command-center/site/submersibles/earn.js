@@ -206,10 +206,10 @@
   // The message for a failed fetch, with the time of the last real one when there is one (fmt = the module's clock).
   E.PARTIAL_NOTE = 'Some market prices could not be fetched; those items show their last known or merchant price.';
   // c = the cache the values are drawn from ({ prices, at, seen }), ids = the items on screen. The message is decided by the prices
-  // actually used for those items (a tradable item with a cached market price above 0), not by a flag: the oldest such fetch time is named.
+  // actually used for those items (an item whose value is the market price, as E.unitValue decides), not by a flag: the oldest such fetch time is named.
   E.usedMarket = function (c, ids) {
     var t = null;
-    if (c && c.prices) (ids || []).forEach(function (id) { if (E.tradable(id) && c.prices[id] > 0) { var s = E.seenAt(c, id); if (t === null || s < t) t = s; } });
+    if (c && c.prices) (ids || []).forEach(function (id) { if (E.unitValue(id, c.prices).how === 'market') { var s = E.seenAt(c, id); if (t === null || s < t) t = s; } });
     return t;
   };
   E.failureNote = function (c, ids, fmt) {

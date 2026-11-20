@@ -2592,3 +2592,18 @@ test('INT-D1 FLEET.slotClashes lists every company and slot that holds two or mo
   const ord = F.slotClashes({ fcs: { fz: fc('Z', 0), fa: fc('A', 1) }, subs: { a1: s('fa', 1), a2: s('fa', 1), z3: s('fz', 3), z4: s('fz', 3), z1: s('fz', 1), z2: s('fz', 1) }, trips: {}, settings: {} });
   assert.deepEqual(ord.map((c) => c.fcId + '|' + c.slot), ['fz|1', 'fz|3', 'fa|1'], 'by company order, then slot');
 });
+
+// G2: which parts the Setup form writes; a typed rank alone never replaces saved parts
+test('G2 FLEET.partsWritten: untouched and fitting keeps the saved parts, untouched and not fitting clears them with a flag, touched writes the typed', () => {
+  const F = globalThis.FLEET;
+  assert.equal(typeof F.partsWritten, 'function');
+  const rankOf = (id) => ({ 1: 1, 2: 1, 3: 1, 4: 1, 50: 50, 51: 50, 52: 50, 53: 50 })[id];
+  const fits = (id, rank) => rankOf(id) <= rank;
+  const saved = [50, 51, 52, 53], typed = [1, 2, 3, 4], none = [null, null, null, null];
+  assert.deepEqual(F.partsWritten(saved, none, false, 50, fits), { parts: saved, cleared: false }, 'untouched + fits: saved');
+  assert.deepEqual(F.partsWritten(saved, none, false, 10, fits), { parts: null, cleared: true }, 'untouched + does not fit: none, flagged');
+  assert.deepEqual(F.partsWritten(saved, typed, true, 10, fits), { parts: typed, cleared: false }, 'touched: typed');
+  assert.deepEqual(F.partsWritten(saved, [1, 2, null, 4], true, 10, fits), { parts: null, cleared: false }, 'touched but incomplete: none, no flag');
+  assert.deepEqual(F.partsWritten(undefined, typed, false, 10, fits), { parts: typed, cleared: false }, 'nothing saved: typed');
+  assert.deepEqual(F.partsWritten(none, none, false, 10, fits), { parts: null, cleared: false }, 'saved but empty: nothing to clear');
+});
