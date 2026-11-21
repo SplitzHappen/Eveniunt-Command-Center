@@ -88,7 +88,7 @@ sorted. In `CC.writeSection` (443-497) for `name === 'submersibles'`, with `b` b
   change the section takes the stored units (`merge.js:54`), so a plain Tracker save undoes nothing (MT9). When a
   sync result and a Submersibles tab change one record within the same seconds, this path keeps both sides, as a
   sync applied without asking does: it can store two submarines in one slot or bring back a record the tab removed;
-  it never deletes or orphans (`applyMerge`'s safety net); the Board and the next sync's question repair it. (2) An
+  it never deletes or orphans (`applyMerge`'s safety net); the Board and the next sync's question repair it. (1b) A save from an older build that already holds an orphan submarine can have a plain Tracker save bring back the company another tab removed, through its unanswered question (found by the model test's MT9 from a start with an orphan; pinned by SI-8; with no orphan stored MT9 holds). (2) An
   old cached page writes by the old rules. (3) Preferences or one logged voyage changed in two tabs: the later wins.
 
 ## 5. B: the slot question (`tracker/src/core/merge.js`, slot pass 125-158)

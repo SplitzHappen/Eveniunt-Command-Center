@@ -137,9 +137,13 @@
       if (list.length < 2) continue; // one is normal
       // only here, only there, and on both devices (in this slot on both). A slot whose records are all on both devices, or
       // all on one device, has nothing new to decide here: the Submersibles Board shows it.
-      const here = list.filter((x) => inSlot(L, x.key, slot) && !inSlot(R, x.key, slot));
-      const there = list.filter((x) => inSlot(R, x.key, slot) && !inSlot(L, x.key, slot));
+      // A submarine both devices hold but in this slot on one of them only ("moved") is on neither side of the question: no
+      // answer removes it. It is named as staying; a duplicate left over is settled on the Board.
+      const on = (map, x) => map.get(x.key) !== undefined;
+      const here = list.filter((x) => inSlot(L, x.key, slot) && !on(R, x));
+      const there = list.filter((x) => inSlot(R, x.key, slot) && !on(L, x));
       const both = list.filter((x) => inSlot(L, x.key, slot) && inSlot(R, x.key, slot));
+      const moved = list.filter((x) => on(L, x) && on(R, x) && inSlot(L, x.key, slot) !== inSlot(R, x.key, slot));
       if (!here.length && !there.length) continue;
       const locals = here.length ? here : both, remotes = there.length ? there : both;
       if (!locals.length || !remotes.length) continue;
@@ -152,7 +156,7 @@
         id: 'i|submersibles-slot|' + encodeURIComponent(slot), local: ls.map((x) => subLabel(x.sub)).join(', '), remote: rs.map((x) => subLabel(x.sub)).join(', '),
         integrity: {
           kind: 'slot', fcId, fcName: fcName(fcId), slot: Number(slotNo), localKey: a.key, remoteKey: b.key, localValue: a.value, remoteValue: b.value, localRank: a.sub.rank || null, remoteRank: b.sub.rank || null,
-          locals: ls.map(pick), remotes: rs.map(pick), stays: here.length && there.length ? both.map((x) => subLabel(mine(x).sub)) : []
+          locals: ls.map(pick), remotes: rs.map(pick), stays: (here.length && there.length ? both : []).concat(moved).map((x) => subLabel(mine(x).sub))
         }
       });
     }

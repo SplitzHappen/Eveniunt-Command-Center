@@ -2570,3 +2570,190 @@ test('INT-C4 (pin) three records already on both devices are not asked about; tw
   assert.strictEqual(run(three, three).res.conflicts.length, 0);
   assert.strictEqual(run(side({ a: ['A', 1], b: ['B', 2] }), side({})).slots.length, 0);
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Integrity spec 2 (docs/submersibles-integrity-spec-2.md), store rules A2, A3, A6: a stale write never stores an orphan
+// submarine, never brings back a submarine or logged voyage removed elsewhere, never undoes a slot another page rearranged.
+const si2Sec = (fcs, subs, trips) => ({ fcs, subs: subs || {}, trips: trips || {}, settings: {} });
+const si2Trip = (s, t) => ({ s, t, r: [1, 2], items: [], newSectors: [] });
+
+test('SI-2 fault 2: a stale page removes a company while another tab saved a submarine under it: refused, nothing stored', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0, 'c2'), fb: intSolid('Beta', 1, 'c1') }), null);
+  const added = intClone(first.section); added.subs.s1 = intSub('fb', 1);
+  await CC.writeSection('submersibles', added, { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  const removing = intClone(first.section); delete removing.fcs.fb;
+  await assert.rejects(() => CC.writeSection('submersibles', removing, { rev: first.rev, base: first.section }), /has a submarine that was saved in another tab/);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+});
+
+test('SI-3 fault 3: a stale page edits a submarine that was removed in another tab: refused; likewise a logged voyage', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, { t1: si2Trip('s1', 1), t2: si2Trip('s2', 2) }), null);
+  const other = intClone(first.section); delete other.subs.s1; delete other.trips.t2;
+  const saved = await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  assert.ok(saved.rev !== first.rev);
+  const before = JSON.stringify(await intStored());
+  const stale = intClone(first.section); stale.subs.s1.name = 'Renamed late';
+  await assert.rejects(() => CC.writeSection('submersibles', stale, { rev: first.rev, base: first.section }), /This submarine was removed on another device or in another tab\./);
+  const staleTrip = intClone(first.section); staleTrip.trips.t2.t = 99;
+  await assert.rejects(() => CC.writeSection('submersibles', staleTrip, { rev: first.rev, base: first.section }), /This logged voyage was removed on another device or in another tab\./);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+});
+
+test('SI-4 two submarines in one slot: one removed here, the other in a stale tab: refused, the first is still stored', async () => {
+  intReset();
+  const seeded = await intSeed(si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1, 'First'), s2: intSub('fa', 1, 'Second') }));
+  const a = intClone(seeded.section); delete a.subs.s2;
+  await CC.writeSection('submersibles', a, { rev: seeded.rev, base: seeded.section });
+  const b = intClone(seeded.section); delete b.subs.s1;
+  await assert.rejects(() => CC.writeSection('submersibles', b, { rev: seeded.rev, base: seeded.section }), /slot changed elsewhere/);
+  const stored = await intStored();
+  assert.ok(stored.subs.s1 && !stored.subs.s2, 'the first is still stored');
+});
+
+test('SI-5 (pin) a stored orphan submarine stays writable, with a current and with a stale stamp', async () => {
+  intReset();
+  const seeded = await intSeed(si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), so: intSub('fz', 1, 'Orphan') }));
+  const a = intClone(seeded.section); a.fcs.fa.name = 'Renamed';
+  const w1 = await CC.writeSection('submersibles', a, { rev: seeded.rev, base: seeded.section });
+  assert.ok(w1.section.subs.so && w1.section.fcs.fa.name === 'Renamed');
+  const b = intClone(seeded.section); b.subs.s1.name = 'Other tab';
+  const w2 = await CC.writeSection('submersibles', b, { rev: seeded.rev, base: seeded.section });
+  assert.ok(w2.section.subs.so && w2.section.subs.s1.name === 'Other tab' && w2.section.fcs.fa.name === 'Renamed');
+});
+
+test('SI-6 (pin) ET.saveMerge with a stale stamp and an unchanged section returns the stored section', () => {
+  const mk = (sec) => { const s = ET.newState(['A']); s.modules = { submersibles: intClone(sec) }; return ET.validateState(s); };
+  const old = si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, { t1: si2Trip('s1', 1) });
+  const now = intClone(old); delete now.subs.s2; now.subs.s1.name = 'Newer'; now.fcs.fa.name = 'Beta';
+  const out = ET.saveMerge(mk(old), 'r2', ET.portable(mk(now)), 'r1', ET.portable(mk(old)));
+  assert.strictEqual(out.merged, true);
+  assert.deepStrictEqual(out.state.modules.submersibles, mk(now).modules.submersibles);
+});
+
+// Integrity spec 2, section 5 (OWNER-2 B): a submarine both devices hold, in a different slot on each, is left out of the
+// slot question and named as staying; it is never removed by a slot answer.
+const si1 = (() => {
+  const { port, apply } = r3;
+  const sub = (slot, name, rank) => ({ fcId: 'fy', slot, name, rank: rank || 10, voyage: null });
+  const trip = (s) => ({ s, t: 1, r: [1], back: 2, items: [], newSectors: [] });
+  const fc = () => ({ name: 'Yankee', charId: 'c1', order: 0, unlockedSlots: 4, discovered: [1, 2, 3], world: 'Ravana' });
+  const base = () => ({ fcs: { fy: fc() }, subs: { s1: sub(1, 'One'), s2: sub(2, 'Two') }, trips: { t1: trip('s1'), t2: trip('s2') } });
+  const edit = (f) => { const x = base(); f(x); return x; };
+  // every answer set: none, and each answer for each conflict; every one keeps the named records and their voyages
+  const answers = (l, res, keep) => {
+    const sets = [{}]; res.conflicts.forEach((c) => { sets.forEach((s) => { sets.push(Object.assign({}, s, { [c.id]: 'local' }), Object.assign({}, s, { [c.id]: 'remote' })); }); });
+    return sets.map((ch) => { const o = apply(l, res, ch); keep.forEach((id) => { assert.ok(o.subs[id], id + ' stays with ' + JSON.stringify(ch)); assert.ok(o.trips['t' + id.slice(1)] || !/^s\d$/.test(id), 'its voyage stays'); }); return o; });
+  };
+  return { sub, trip, base, edit, answers, run: (b, l, r) => ET.threeWay(port(b), port(l), port(r)), apply, port };
+})();
+
+test('SI-1 a swap on this device while the other changes one of the two: no slot question, one question (its own), nothing is lost', () => {
+  const { edit, run, answers } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 2; x.subs.s2.slot = 1; });
+  const r = edit((x) => { x.subs.s1.rank = 40; });
+  const res = run(si1.base(), l, r);
+  assert.ok(!res.conflicts.some((c) => c.integrity && c.integrity.kind === 'slot'), 'no slot question');
+  assert.strictEqual(res.conflicts.length, 1, 's1\'s own entry only');
+  assert.match(res.conflicts[0].id, /s1/);
+  answers(l, res, ['s1', 's2']).forEach((o) => { assert.ok(o.trips.t1 && o.trips.t2, 'both logged voyages stay'); });
+  // the other changes nothing: nothing is asked and the other takes the swap
+  const calm = run(si1.base(), l, si1.base());
+  assert.strictEqual(calm.conflicts.length, 0);
+  const o = si1.apply(si1.base(), calm, {}); assert.deepStrictEqual([o.subs.s1.slot, o.subs.s2.slot], [2, 1]);
+});
+
+test('SI-1 row 3: this device moves s1 to an empty slot, the other changes s1: its own entry; slot 3 or slot 1 with the change', () => {
+  const { edit, run, apply, base } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 3; }), r = edit((x) => { x.subs.s1.rank = 40; });
+  const res = run(base(), l, r);
+  assert.ok(!res.conflicts.some((c) => c.integrity && c.integrity.kind === 'slot'));
+  assert.strictEqual(res.conflicts.length, 1);
+  const id = res.conflicts[0].id;
+  const mine = apply(l, res, { [id]: 'local' }), none = apply(l, res, {}), theirs = apply(l, res, { [id]: 'remote' });
+  assert.strictEqual(mine.subs.s1.slot, 3); assert.strictEqual(none.subs.s1.slot, 3);
+  assert.deepStrictEqual([theirs.subs.s1.slot, theirs.subs.s1.rank], [1, 40]);
+  [mine, none, theirs].forEach((o) => assert.ok(o.subs.s1 && o.subs.s2 && o.trips.t1 && o.trips.t2));
+});
+
+test('SI-1 row 4: this device moves s1 to slot 3, the other adds a submarine there: nothing is asked, both end in slot 3', () => {
+  const { edit, run, apply, base, sub } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 3; }), r = edit((x) => { x.subs.n = sub(3, 'New'); });
+  const res = run(base(), l, r);
+  assert.strictEqual(res.conflicts.length, 0);
+  const o = apply(l, res, {}); assert.deepStrictEqual([o.subs.s1.slot, o.subs.n.slot], [3, 3]);
+});
+
+test('SI-1 row 5: this device removes s2 and moves s1 to slot 2, the other changes s2: s2\'s own entry; s1 stays either way', () => {
+  const { edit, run, apply, base } = si1;
+  const l = edit((x) => { delete x.subs.s2; x.subs.s1.slot = 2; }), r = edit((x) => { x.subs.s2.rank = 40; });
+  const res = run(base(), l, r);
+  assert.ok(!res.conflicts.some((c) => c.integrity && c.integrity.kind === 'slot'), 'no slot question');
+  assert.strictEqual(res.conflicts.length, 1); assert.match(res.conflicts[0].id, /s2/);
+  const id = res.conflicts[0].id;
+  const mine = apply(l, res, { [id]: 'local' }), theirs = apply(l, res, { [id]: 'remote' });
+  assert.ok(mine.subs.s1 && !mine.subs.s2);
+  assert.ok(theirs.subs.s1 && theirs.subs.s2 && theirs.subs.s1.slot === 2 && theirs.subs.s2.slot === 2, 's2 is back beside s1 (the Board settles it)');
+  assert.ok(theirs.trips.t1 && theirs.trips.t2);
+});
+
+test('SI-1 row 6: slot 3 holds p new here and n new there, s1 moved in here: asked about p or n, s1 named as staying', () => {
+  const { edit, run, apply, base, sub } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 3; x.subs.p = sub(3, 'Pee'); x.trips.tp = si1.trip('p'); });
+  const r = edit((x) => { x.subs.n = sub(3, 'Enn'); x.trips.tn = si1.trip('n'); });
+  const res = run(base(), l, r);
+  const slots = res.conflicts.filter((c) => c.integrity && c.integrity.kind === 'slot');
+  assert.strictEqual(slots.length, 1);
+  const g = slots[0].integrity;
+  assert.deepStrictEqual(g.locals.map((x) => x.name), ['Pee']); assert.deepStrictEqual(g.remotes.map((x) => x.name), ['Enn']);
+  assert.match(ET.describeConflict(slots[0], null, { chars: [] }).what, /“One”, already on both devices, stays either way/);
+  const id = slots[0].id;
+  const mine = apply(l, res, { [id]: 'local' }), theirs = apply(l, res, { [id]: 'remote' }), none = apply(l, res, {});
+  [mine, theirs, none].forEach((o) => assert.ok(o.subs.s1 && o.subs.s2 && o.trips.t1 && o.trips.t2, 's1 stays'));
+  assert.ok(mine.subs.p && !mine.subs.n && theirs.subs.n && !theirs.subs.p);
+});
+
+// Integrity spec 2, A5 (OWNER-1 B, decided 2026-11-20): one submarine changed in two tabs: the second save is refused whole.
+test('SI-7 a submarine sent on a voyage in one tab and renamed in a stale tab: the second save is refused, the first stays', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, {}), null);
+  const sent = intClone(first.section); sent.subs.s1.voyage = { sentAt: 5, route: [1, 2], returnAt: 99, gameSaid: '10:00' };
+  await CC.writeSection('submersibles', sent, { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  const renamed = intClone(first.section); renamed.subs.s1.name = 'Renamed late';
+  await assert.rejects(() => CC.writeSection('submersibles', renamed, { rev: first.rev, base: first.section }), /This submarine changed in another tab or on another device\./);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+  // a different submarine in the stale tab is still saved; the same change in both tabs is not a conflict
+  const other = intClone(first.section); other.subs.s2.name = 'Fine';
+  assert.strictEqual((await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section })).section.subs.s2.name, 'Fine');
+  const same = intClone(first.section); same.subs.s1.voyage = { sentAt: 5, route: [1, 2], returnAt: 99, gameSaid: '10:00' };
+  await CC.writeSection('submersibles', same, { rev: first.rev, base: first.section });
+});
+
+test('SI-7 (pin) two stale tabs swap the same two submarines into the same layout: the second write is allowed, the stored copy is unchanged', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, {}), null);
+  const swap = () => { const x = intClone(first.section); x.subs.s1.slot = 2; x.subs.s2.slot = 1; return x; };
+  await CC.writeSection('submersibles', swap(), { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  const again = await CC.writeSection('submersibles', swap(), { rev: first.rev, base: first.section });
+  assert.deepStrictEqual([again.section.subs.s1.slot, again.section.subs.s2.slot], [2, 1]);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+});
+
+test('SI-8 (pin, a known limit) a plain Tracker save over a stored orphan submarine brings back the company another tab removed', () => {
+  // Older builds could store a submarine under a company removed in the same moment (the orphan). The Tracker's own save path is not
+  // guarded (docs/submersibles-integrity-spec-2.md section 4): its unanswered company question deletes nothing, so the removed company
+  // and its submarine come back. No new orphan is stored since the store rules; this records what the path does with an old one.
+  const mk = (sec) => { const s = ET.newState(['A']); s.modules = { submersibles: intClone(sec) }; return ET.validateState(s); };
+  const fc = intSolid('Alpha', 0, 'c1');
+  const base = si2Sec({ f1: fc }, { s1: intSub('f1', 1) }, { t1: si2Trip('s1', 1) });
+  const stored = si2Sec({}, { sn5: intSub('f1', 2, 'Orphan') }, { t1: si2Trip('s1', 1) });
+  const out = ET.saveMerge(mk(base), 'r2', ET.portable(mk(stored)), 'r1', ET.portable(mk(base)));
+  assert.strictEqual(out.merged, true);
+  const sec = out.state.modules.submersibles;
+  assert.deepStrictEqual(Object.keys(sec.fcs), ['f1'], 'the removed company is back');
+  assert.deepStrictEqual(Object.keys(sec.subs).sort(), ['s1', 'sn5'], 'nothing is deleted or orphaned: both submarines are kept');
+});

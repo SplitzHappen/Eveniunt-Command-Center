@@ -73,6 +73,16 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   asked only when the name, the world or the linked character differ, and it says what differs. No stored field
   changed; a device still on the old version behaves as before. `save.js` and `merge.js` changed, so the Tracker, the
   Command Center and the Atelier were rebuilt. Browser checks C119 and C122.
+- **Submersibles: one rule set for stale writes and moved submarines** (built 2026-11-21;
+  `docs/submersibles-integrity-spec-2.md`, with the owner's decisions: refuse a second save of a submarine changed in
+  another tab, leave a moved submarine out of the sync's slot question, the proposed wording). The store refuses a
+  stale write that would leave a submarine without its company, bring back a submarine or logged voyage removed
+  elsewhere, undo a slot another page rearranged, or save a submarine over another tab's change to it, each with a
+  plain "Not saved on this device: ..." line. A sync no longer asks about a submarine both devices hold in different
+  slots and never removes it by a slot answer. The Setup form writes a submarine where another tab saved it and says
+  so; a refused write's recovery cancels an edit scheduled during its re-read. A permanent randomized model test
+  (`tracker/tests/subs-model.test.js`, in `npm run test:unit`) states the rules for both models. Unit tests SI-1 to
+  SI-8, browser checks C134 to C140. `save.js` and `merge.js` changed; all three apps rebuilt.
 - **Fixes from two cross-family reviews** (built 2026-11-20; ChatGPT: fail, three serious findings; Mistral: pass,
   minor findings; `docs/submersibles-integrity-spec.md`, with the owner's decisions). A free company removed on
   purpose stays removed, also when the page had not heard of the removal (the store refuses the write); only a
@@ -134,4 +144,13 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 - Each recommendation control is stored on its own, so different controls changed in two tabs or on two devices are
   both kept. The same control changed in two tabs on one device takes the later change without asking, as every part
   of the save does.
+- Not guarded by the new store rules (`docs/submersibles-integrity-spec-2.md` section 4): the Tracker's own save and the
+  end of a Settings sync (refusing them would lose ticks), an old cached page (it writes by the old rules), and
+  preferences or one logged voyage changed in two tabs (the later save wins). A save from an older build that already
+  holds an orphan submarine (its company removed) can still have a plain Tracker save bring that removed company back
+  through its unanswered question; nothing is deleted or orphaned and the Board and the next sync's question repair it
+  (pinned by unit test SI-8; the randomized model's MT9 holds from a start with no orphan stored).
+- No screen changes a saved submarine's slot, and only the duplicate clean-up changes its company, so the moved-submarine
+  cases need a save changed outside the screens. After a sync two submarines can share a slot; the Board's "Keep this
+  one" settles it and removes one.
 - `check.js` check C26b (real push delivery) does not run in automated environments.

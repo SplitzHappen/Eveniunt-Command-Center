@@ -6,6 +6,18 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 
 `src/settings.js`, ⚙ Settings in the main menu (`#settings`): characters and each character's free company (into Submersibles), cloud sync (sign-in through `tracker/oauth.html` and back, sync of every module on opening), backups, notifications for every module (on or off per device, test, night rule in `modules.settings.notify`), appearance. It runs the Tracker's core code, copied to `site/core/` by `build.js`. Scripts and styles load network first so installed apps pick up updates. Check C27.
 
+## Submersibles: the store rules and the model test (2026-11-21)
+
+`CC.writeSection` (in `save.js`) refuses a stale Submersibles write that would orphan a submarine, bring back a submarine or
+logged voyage removed elsewhere, undo a slot another page rearranged, or overwrite another tab's change to the same submarine.
+The permanent randomized model test `tracker/tests/subs-model.test.js` states these rules (tabs model MT0 to MT9, devices model
+MD1 to MD8) over seeded random sequences, using the real save and merge code. It is part of `npm run test:unit`; run it alone with
+`cd tracker && node tests/subs-model.test.js` (3,000 sequences per model, about 15 seconds). `SUBS_MODEL_N=<sequences per seed>`
+and `SUBS_MODEL_SEED=<one seed>` override the size and the seed (for example `SUBS_MODEL_N=10000`); a failure prints the
+invariant, seed, sequence number and a shrunk list of steps. Its interpretations (a no-change edit is skipped, swaps and moves are
+operations no screen produces, MD4 counts an unanswered question as this device's answer) are written at the top of the file.
+Browser checks C134 to C140 cover the Setup form and the refused-write recovery.
+
 ## Submersibles: Customizable Recommendations
 
 - **Setup panel "Customizable Recommendations"** holds a fuel-efficiency switch with its allowance slider (default 15%, range 5 to 50), a ranking of four priorities (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming; Move up and Move down buttons) and five loot pickers, each with type-to-narrow.

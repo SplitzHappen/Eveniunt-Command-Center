@@ -5297,6 +5297,186 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C134 to C140 (integrity spec 2): the Setup form keeps a submarine where another tab put it; a refused write's recovery cancels a write scheduled during its re-read;
+    //    the slot rules refuse a second "Keep this one"; the three built apps refuse the SI-2 and SI-3 replays. ──
+    const si2Raw = (pg, src) => pg.evaluate(async (src) => { // stored exactly as given: no store rule applies (older saves hold duplicates)
+      await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); const sec = JSON.parse(JSON.stringify(doc.modules.submersibles || { fcs: {}, subs: {}, trips: {}, settings: {} })); new Function('sec', src)(sec); doc.modules.submersibles = CC.checkModules({ submersibles: sec }).submersibles; doc.updated = Date.now(); return doc; });
+    }, src);
+    const si2Change = (pg, src) => pg.evaluate(async (src) => { // another tab's write, from the saved copy as it is now
+      const r = await CC.read(), base = JSON.parse(JSON.stringify(CC.checkDoc(r.raw).modules.submersibles)), sec = JSON.parse(JSON.stringify(base));
+      new Function('sec', src)(sec); await CC.writeSection('submersibles', sec, { rev: r.rev, base });
+    }, src);
+    const si2Stored = (pg) => pg.evaluate(async () => CC.checkDoc((await CC.read()).raw).modules.submersibles);
+    const si2ToSave = async (p) => { for (let i = 0; i < 8; i++) { if (await p.$('[data-act=wsave]')) return; await p.click('[data-act=wnext]'); } };
+    const si2Page = async (ctx, deaf) => { const p = await ctx.newPage(); await p.route('https://universalis.app/**', (r) => r.abort('failed')); if (deaf) await p.addInitScript(() => { window.BroadcastChannel = undefined; }); await p.goto(ROOT5 + 'submersibles/'); await p.waitForSelector('html[data-ready="1"]', { timeout: 20000 }); return p; };
+    const SI2_FC = "sec.fcs.fa = { name: 'Alpha Company', world: 'Maduin', order: 0, unlockedSlots: ";
+    const SI2_MOVED = 'is now in slot 2, where another tab or device put it while this form was open; it stays there, and what you typed here was applied to it.';
+
+    // ── C134 (fault 4) A form's Save does not move a submarine another tab or device moved while it was open: it stays where it was saved, the typed name is applied, the status line names the move; told and not told. ──
+    await guard('C134', async () => {
+      const server = await start(PORT5);
+      const scenario = async (told) => {
+        const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+        const p1 = await si2Page(ctx, !told);
+        await tlSeed(p1, SI2_FC + "1, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+        await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+        await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'Typed Name');
+        const p2 = await si2Page(ctx, false);
+        await si2Change(p2, 'sec.fcs.fa.unlockedSlots = 2; sec.subs.s1.slot = 2;');
+        if (told) { await p1.bringToFront(); await p1.waitForTimeout(1500); } else await p1.waitForTimeout(300);
+        await si2ToSave(p1); await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+        const s = await si2Stored(p1), status = await p1.evaluate(() => document.querySelector('#status').textContent.trim());
+        await ctx.close();
+        return { told, subs: Object.keys(s.subs), slot: s.subs.s1 && s.subs.s1.slot, name: s.subs.s1 && s.subs.s1.name, status, errors: real(errors) };
+      };
+      const A = await scenario(false), B = await scenario(true);
+      const good = (x) => x.subs.join() === 's1' && x.slot === 2 && x.name === 'Typed Name' && x.status.includes('“Typed Name” ' + SI2_MOVED) && x.errors.length === 0;
+      record('C134', 'Fault 4 (integrity spec 2): a Setup form opened while a submarine was in slot 1, with the submarine moved to slot 2 in another tab, a name typed and Save pressed: the submarine stays in slot 2 with the typed name (no second one), and the status line says "“Typed Name” ' + SI2_MOVED + '"; the page told and not told', good(A) && good(B), { A, B });
+      server.close();
+    });
+
+    // ── C135 Slot 2 is switched off in the form while another tab saves a submarine into it: the submarine is stored, the slot count is 1 and the Board shows it Locked. ──
+    await guard('C135', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "2, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+      await p1.click('[data-act=wnext]'); await p1.click('[data-act=wnext]'); await p1.uncheck('.wiz input[data-w=unlocked]');
+      const p2 = await si2Page(ctx, false);
+      await si2Change(p2, "sec.subs.s2 = { fcId: 'fa', slot: 2, name: 'Slot Two', rank: 40, voyage: null };");
+      await si2ToSave(p1); await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+      await p1.click('[data-tab=board]'); await p1.waitForTimeout(300);
+      const s = await si2Stored(p1), locked = await p1.evaluate(() => [...document.querySelectorAll('.sub[data-status="locked"]')].map((e) => e.dataset.slot));
+      await ctx.close();
+      const ok = !!s.subs.s2 && s.subs.s2.slot === 2 && s.fcs.fa.unlockedSlots === 1 && Object.keys(s.subs).length === 2 && locked.includes('2') && real(errors).length === 0;
+      record('C135', 'A slot switched off in the Setup form while another tab saves a submarine into it (integrity spec 2): the submarine is stored in slot 2, the company has one slot, and the Board shows slot 2 Locked; no page error', ok, { subs: s.subs, slots: s.fcs.fa.unlockedSlots, locked, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C136 Adoption into a slot that holds two submarines (seeded): the typed name goes on the first, both are stored, the notice is shown. ──
+    await guard('C136', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "2, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.click('[data-tab=setup]'); await p1.click('[data-act=edit][data-fc=fa]'); await p1.waitForSelector('[data-act=wnext]');
+      await p1.click('[data-act=wnext]'); await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'Typed Two');
+      const p2 = await si2Page(ctx, false);
+      await si2Raw(p2, "sec.subs.x1 = { fcId: 'fa', slot: 2, name: 'Elsewhere A', rank: 40, voyage: null }; sec.subs.x2 = { fcId: 'fa', slot: 2, name: 'Elsewhere B', rank: 41, voyage: null };");
+      await si2ToSave(p1); await p1.click('[data-act=wsave]'); await p1.waitForTimeout(1500);
+      const s = await si2Stored(p1), status = await p1.evaluate(() => document.querySelector('#status').textContent.trim());
+      await ctx.close();
+      const typed = ['x1', 'x2'].filter((k) => s.subs[k] && s.subs[k].name === 'Typed Two');
+      const ok = Object.keys(s.subs).sort().join() === 's1,x1,x2' && typed.length === 1 && s.subs.x1.slot === 2 && s.subs.x2.slot === 2 && /^Slot 2 already held “/.test(status) && real(errors).length === 0;
+      record('C136', 'Adoption into a slot that already holds two submarines (integrity spec 2, seeded): the typed name is applied to the first, both stay stored in slot 2 and the status line says "Slot 2 already held …"; no page error', ok, { subs: s.subs, status, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C137 A new-company form and another tab adding a company, Save clicked twice: one company from the form and every submarine has its company. ──
+    await guard('C137', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "1, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.waitForFunction(() => window.__subs && window.__subs.startWizard);
+      await p1.evaluate(() => window.__subs.startWizard()); await p1.waitForSelector('.wiz input[data-w="fc.name"]');
+      await p1.fill('.wiz input[data-w="fc.name"]', 'Typed New'); await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'New Sub');
+      const p2 = await si2Page(ctx, false);
+      await si2Change(p2, "sec.fcs.fq = { name: 'Other Tab Company', world: 'Maduin', order: 5, unlockedSlots: 1, discovered: [1, 2, 3] }; sec.subs.sq = { fcId: 'fq', slot: 1, name: 'Other Sub', rank: 30, voyage: null };");
+      await si2ToSave(p1); await p1.evaluate(() => { const b = document.querySelector('[data-act=wsave]'); b.click(); b.click(); }); await p1.waitForTimeout(2000);
+      const s = await si2Stored(p1);
+      await ctx.close();
+      const named = Object.keys(s.fcs).filter((k) => s.fcs[k].name === 'Typed New'), orphans = Object.keys(s.subs).filter((k) => !s.fcs[s.subs[k].fcId]);
+      const ok = named.length === 1 && Object.keys(s.fcs).length === 3 && Object.keys(s.subs).length === 3 && orphans.length === 0 && Object.values(s.subs).some((x) => x.name === 'New Sub' && x.fcId === named[0]) && real(errors).length === 0;
+      record('C137', 'A new-company form racing another tab that adds a company, Save clicked twice (integrity spec 2): exactly one company from the form is stored with its submarine, the other tab\'s company and submarine are kept, and every submarine has its company; no page error', ok, { fcs: Object.keys(s.fcs), subs: s.subs, orphans, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C138 A refused write whose re-read is held, and a sort click during the hold: the "Not saved" line stays, the sort is not stored, a later sort saves. ──
+    await guard('C138', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "2, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.waitForFunction(() => window.__subs && window.__subs.write);
+      const p2 = await si2Page(ctx, false);
+      await si2Change(p2, "sec.subs.s2 = { fcId: 'fa', slot: 2, name: 'Saved Elsewhere', rank: 40, voyage: null };");
+      await p1.evaluate(() => { // hold the refused write's re-read (as C69 wraps CC.foldSection)
+        const native = CC.read.bind(CC); window.__hold = true; window.__held = [];
+        CC.read = function () { if (window.__hold) return new Promise((res) => window.__held.push(() => res(native()))); return native(); };
+        window.__subs.section().subs.s9 = { fcId: 'fa', slot: 2, name: 'Typed Here', rank: 10, voyage: null }; window.__subs.write();
+      });
+      await p1.waitForFunction(() => window.__held.length === 1, null, { timeout: 10000 });
+      await p1.click('[data-sort=time]'); // schedules a write 250 ms ahead; the re-read is released before it fires, so the write runs after the recovery
+      await p1.waitForTimeout(80); await p1.evaluate(() => { window.__hold = false; window.__held.splice(0).forEach((f) => f()); });
+      await p1.waitForTimeout(1500);
+      const after = await p1.evaluate(async () => ({ status: document.querySelector('#status').textContent, saved: CC.checkDoc((await CC.read()).raw).modules.submersibles }));
+      await p1.click('[data-sort=time]'); await p1.waitForTimeout(1500);
+      const later = await si2Stored(p1);
+      await ctx.close();
+      const ok = /^Not saved on this device: That submarine slot changed elsewhere\./.test(after.status) && /re-enter any unsaved edits/.test(after.status) && !(after.saved.settings.prefs && after.saved.settings.prefs.sort) && !after.saved.subs.s9 && !!after.saved.subs.s2
+        && !!(later.settings.prefs && later.settings.prefs.sort === 'time') && real(errors).length === 0;
+      record('C138', 'A refused write whose re-read is held and a sort click during the hold (integrity spec 2): the "Not saved on this device: That submarine slot changed elsewhere." line stays, the sort is not stored, the refused submarine is not stored, and a later sort saves', ok, { after, later: later.settings, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C139 Two tabs on a seeded duplicate, each confirming "Keep this one" for a different submarine: the second is refused and one submarine stays. ──
+    await guard('C139', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "2, discovered: [1, 2, 3] }; sec.subs.sa = { fcId: 'fa', slot: 1, name: 'One', rank: 50, voyage: null };"); 
+      await si2Raw(p1, "sec.subs.sb = { fcId: 'fa', slot: 1, name: 'Two', rank: 40, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      const p2 = await si2Page(ctx, true);
+      for (const p of [p1, p2]) { await p.waitForSelector('[data-clash-sub]'); }
+      await p1.click('[data-clash-sub=sa] [data-act=keepsub]'); await p1.waitForTimeout(1500);
+      await p2.click('[data-clash-sub=sb] [data-act=keepsub]'); await p2.waitForTimeout(1500);
+      const s = await si2Stored(p2), status = await p2.evaluate(() => document.querySelector('#status').textContent);
+      await ctx.close();
+      const ok = Object.keys(s.subs).join() === 'sa' && /^Not saved on this device: That submarine slot changed elsewhere\./.test(status) && real(errors).length === 0;
+      record('C139', 'Two tabs on a seeded two-in-one-slot save, each confirming "Keep this one" for a different submarine (integrity spec 2): the second tab shows "Not saved on this device: That submarine slot changed elsewhere." and exactly one submarine is stored', ok, { subs: Object.keys(s.subs), status, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C140 The Tracker, the Command Center and the Atelier each refuse the replays of SI-2 (a stale page removes a company another tab put a submarine under) and SI-3 (a stale page edits a removed submarine). ──
+    await guard('C140', async () => {
+      const server = await start(PORT5);
+      const pages = {}, errs = [];
+      for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/']]) {
+        const { ctx, errors } = await context(); errs.push(errors);
+        const pg = await ctx.newPage(); await pg.goto(url);
+        if (name === 'atelier') { await pg.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 }).catch(() => {}); await pg.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 }).catch(() => {}); }
+        const settled = async (fn) => { for (let attempt = 0; ; attempt++) { try { await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {}); return await pg.evaluate(fn); } catch (e) { if (attempt >= 3 || !/Execution context was destroyed|navigation|Target closed|detached/i.test(String(e && e.message))) throw e; await pg.waitForLoadState('load').catch(() => {}); await pg.waitForTimeout(500); } } };
+        pages[name] = await settled(async () => {
+          if (typeof window.CC !== 'object' || !window.CC || typeof CC.writeSection !== 'function') return null;
+          const clone = (x) => JSON.parse(JSON.stringify(x)), msg = (e) => String(e && e.message);
+          const solid = (name, order, c) => ({ name, charId: c, order, unlockedSlots: 2, world: 'Ravana', discovered: [1, 2, 3] });
+          const sub = (fc, slot, name) => ({ fcId: fc, slot, name, rank: 10, voyage: null });
+          const trip = (s, t) => ({ s, t, r: [1, 2], items: [], newSectors: [] });
+          const first = await CC.writeSection('submersibles', { fcs: { fa: solid('Alpha', 0, 'c2'), fb: solid('Beta', 1, 'c1') }, subs: { s2: sub('fa', 2, 'Two'), s3: sub('fa', 1, 'Three') }, trips: { t2: trip('s2', 2) }, settings: {} }, null);
+          // SI-2: another page saves a submarine under fb; the stale page removes fb
+          const added = clone(first.section); added.subs.s1 = sub('fb', 1, 'Under Beta');
+          const w1 = await CC.writeSection('submersibles', added, { rev: first.rev, base: first.section });
+          const removing = clone(first.section); delete removing.fcs.fb;
+          let orphan = null; try { await CC.writeSection('submersibles', removing, { rev: first.rev, base: first.section }); } catch (e) { orphan = msg(e); }
+          // SI-3: another page removes s3 and the logged voyage t2; the stale page edits both
+          const gone = clone(w1.section); delete gone.subs.s3; delete gone.trips.t2;
+          const w2 = await CC.writeSection('submersibles', gone, { rev: w1.rev, base: w1.section });
+          const editSub = clone(w1.section); editSub.subs.s3.name = 'Renamed late';
+          let subBack = null; try { await CC.writeSection('submersibles', editSub, { rev: w1.rev, base: w1.section }); } catch (e) { subBack = msg(e); }
+          const editTrip = clone(w1.section); editTrip.trips.t2.t = 99;
+          let tripBack = null; try { await CC.writeSection('submersibles', editTrip, { rev: w1.rev, base: w1.section }); } catch (e) { tripBack = msg(e); }
+          const s = CC.checkDoc((await CC.read()).raw).modules.submersibles;
+          return { orphan, subBack, tripBack, subs: Object.keys(s.subs).sort(), fcs: Object.keys(s.fcs).sort(), trips: Object.keys(s.trips) };
+        });
+        await ctx.close();
+      }
+      const ok = Object.values(pages).every((p) => p && /has a submarine that was saved in another tab/.test(p.orphan) && p.subBack === 'This submarine was removed on another device or in another tab.' && p.tripBack === 'This logged voyage was removed on another device or in another tab.' && p.subs.join() === 's1,s2' && p.fcs.join() === 'fa,fb' && p.trips.length === 0) && errs.every((e) => real(e).length === 0);
+      record('C140', 'The Tracker, the Command Center and the Atelier each refuse the replays of SI-2 and SI-3 (integrity spec 2): removing a company another tab put a submarine under, editing a submarine removed in another tab and editing a logged voyage removed in another tab are refused with the new messages and the stored copy keeps the other tab\'s changes', ok, { pages, errors: errs.map(real) });
+      server.close();
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──

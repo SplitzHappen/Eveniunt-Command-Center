@@ -437,6 +437,16 @@
     }));
   }
 
+  // The submarines of each company-and-slot, as { 'fcId|slot': [subId, ...] } with every list sorted.
+  function slotSets(sec) {
+    const out = {};
+    Object.keys((sec && sec.subs) || {}).sort().forEach((id) => {
+      const s = sec.subs[id]; if (!s || s.slot == null) return;
+      (out[s.fcId + '|' + s.slot] = out[s.fcId + '|' + s.slot] || []).push(id);
+    });
+    return out;
+  }
+
   // Write one module's section. known = { rev, base }: the stamp and the section this page last read or wrote. If
   // another page saved since, the section is merged with the stored one (units changed only elsewhere are kept).
   // own = { moved, device }: this module's entries in the device-only parts. Resolves to { rev, section, merged }.
@@ -467,6 +477,18 @@
             if ((stored.fcs || {})[fcId] || !(m.fcs || {})[fcId]) continue;
             if (!(isBareBase(fcId) && CC.foldLoser(stored, fcId, b.fcs[fcId]))) throw new Error('This free company was removed on another device or in another tab.');
           }
+          // A submarine or logged voyage removed in the stored copy is not stored again by a page that still held it.
+          [['subs', 'This submarine was removed on another device or in another tab.'], ['trips', 'This logged voyage was removed on another device or in another tab.']].forEach(([kind, text]) => {
+            for (const id of Object.keys(b[kind] || {})) if (!(stored[kind] || {})[id] && (m[kind] || {})[id]) throw new Error(text);
+          });
+          // A slot this page rearranged (its set of submarines differs between its copy and what it sends) is stored as
+          // the page showed it; if the merge made it something else, another page changed it too: refused.
+          {
+            const B = slotSets(b), L = slotSets(l), M = slotSets(m);
+            const t = (x, k) => (x[k] || []).join();
+            for (const k of new Set(Object.keys(B).concat(Object.keys(L))))
+              if (t(B, k) !== t(L, k) && t(L, k) !== t(M, k)) throw new Error('That submarine slot changed elsewhere.');
+          }
           for (const [subId, sub] of Object.entries(l.subs || {})) {
             if (!sub || !m.subs || !m.subs[subId] || same(sub, (b.subs || {})[subId])) continue;
             const fcId = sub.fcId;
@@ -481,6 +503,24 @@
               throw new Error('That submarine slot changed elsewhere.');
             m.subs[subId].fcId = target;
           }
+          // One submarine changed in two tabs (owner decision 2026-11-20): when its stored record, this page's copy and what
+          // this page sends are all different from each other (removed here counts as different), the save is refused whole.
+          for (const id of Object.keys(b.subs || {})) {
+            const rv = (stored.subs || {})[id]; if (!rv) continue;
+            const t = [JSON.stringify(b.subs[id]), (l.subs || {})[id] === undefined ? undefined : JSON.stringify(l.subs[id]), JSON.stringify(rv)];
+            if (t[0] !== t[1] && t[0] !== t[2] && t[1] !== t[2]) throw new Error('This submarine changed in another tab or on another device.');
+          }
+        }
+      }
+      // A submarine never points at a company this write leaves out, unless it already did in the stored copy.
+      if (name === 'submersibles') {
+        const rs = stored || {};
+        for (const [id, sub] of Object.entries(sec.subs || {})) {
+          const f = sub && sub.fcId;
+          if (f === undefined || (sec.fcs || {})[f]) continue;
+          const was = (rs.subs || {})[id];
+          if (was && was.fcId === f && !(rs.fcs || {})[f]) continue;
+          throw new Error((rs.fcs || {})[f] ? 'This free company has a submarine that was saved in another tab or on another device, so nothing was removed.' : 'The free company changed while its submarine was being saved.');
         }
       }
       // One company-and-slot never gains a second submarine through a write: refuse when a slot would hold two or more

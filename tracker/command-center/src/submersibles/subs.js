@@ -126,6 +126,8 @@
         var doc = r.raw == null ? CC.emptyDoc() : CC.checkDoc(r.raw);
         SH.rev = r.rev; SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
         SH.chars = doc.chars; SH.updated = doc.updated || Date.now();
+        // an edit made while this re-read ran goes with the rejected ones: its scheduled write would store the saved copy again and clear the line below
+        clearTimeout(SH.timer); SH.timer = null; SH.note = ''; SH.unticked = {};
         setSection(doc.modules.submersibles); render();
         setStatus('Not saved on this device: ' + e.message + ' The page now shows what is saved; re-enter any unsaved edits if you still need them.');
       }).catch(function () {
@@ -840,7 +842,7 @@
     var world = now && !tWorld ? now.world : W.fc.world;
     if (world) fc.world = world;
     S.fcs[fcId] = fc;
-    var missing = [], adopted = [], cleared = [], taken = W.fcId ? subsOf(fcId) : {}; // taken: the submarines saved now in this company, by slot
+    var missing = [], adopted = [], cleared = [], moved = [], taken = W.fcId ? subsOf(fcId) : {}; // taken: the submarines saved now in this company, by slot
     W.subs.forEach(function (s, j) {
       if (!s.unlocked) return; // a slot switched off keeps its sub record; it shows as Locked and nothing is deleted
       if (s.id && !S.subs[s.id]) { missing.push(s.start.name || 'Sub ' + (j + 1)); return; } // removed elsewhere while the form was open: not written back
@@ -850,7 +852,10 @@
       if (cur) adopted.push('Slot ' + (j + 1) + ' already held “' + (cur.sub.name || 'Sub ' + (j + 1)) + '”, saved in another tab or on another device while this form was open; what you typed here was applied to it.');
       var tSubName = t.name && s.name.trim() !== (s.start.name || '').trim(), tRank = t.rank && +s.rank !== +s.start.rank;
       var rank = had && !tRank && prev.rank ? prev.rank : +s.rank;
-      var rec = { fcId: fcId, slot: j + 1, name: had && !tSubName ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (cur ? (t.voyage && (s.voyMode === 'in' || s.voyMode === 'at') ? readVoyage(s).voyage || prev.voyage : prev.voyage) : had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
+      // a submarine this form knew that another tab or device moved while the form was open is written where it is saved now (the form has no control that moves one)
+      var at = s.id && had ? prev : null;
+      var rec = { fcId: at ? at.fcId : fcId, slot: at ? at.slot : j + 1, name: had && !tSubName ? prev.name : s.name.trim() || 'Sub ' + (j + 1), rank: rank, voyage: (cur ? (t.voyage && (s.voyMode === 'in' || s.voyMode === 'at') ? readVoyage(s).voyage || prev.voyage : prev.voyage) : had && (!t.voyage || s.voyMode === 'keep') ? prev.voyage : readVoyage(s).voyage) || null };
+      if (at && !(at.fcId === fcId && at.slot === j + 1)) moved.push('\u201c' + rec.name + '\u201d is now in slot ' + at.slot + ', where another tab or device put it while this form was open; it stays there, and what you typed here was applied to it.');
       if (prev.expIntoRank != null && prev.rank === rec.rank) rec.expIntoRank = prev.expIntoRank; // a new rank starts with no known progress
       if (prev.expExact && prev.rank === rec.rank && (s.voyMode === 'keep' || !prev.voyage || !t.voyage)) rec.expExact = true; // a rank changed in Setup, or a voyage replaced unlogged, is no longer the game's exact point
       // parts: only choosing a part here replaces the saved ones; a typed rank alone keeps them when they fit (F.partsWritten)
@@ -863,7 +868,7 @@
     W = null; UI.tab = 'board'; keepUi(); schedule();
     var said = [];
     if (missing.length) said.push(missing.map(function (n) { return '“' + n + '”'; }).join(', ') + (missing.length === 1 ? ' was' : ' were') + ' removed on another device or in another tab while the form was open, so ' + (missing.length === 1 ? 'it was' : 'they were') + ' not saved.');
-    if (said.concat(adopted, cleared).length) setStatus(SH.note = said.concat(adopted, cleared).join(' '));
+    if (said.concat(adopted, moved, cleared).length) setStatus(SH.note = said.concat(adopted, moved, cleared).join(' '));
   }
   // the form's ticks follow discoveries that arrive while it is open (never one the player unticked here); the boxes change in place, so focus and scroll stay
   function syncTicks() {
