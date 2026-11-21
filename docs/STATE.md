@@ -83,6 +83,9 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   so; a refused write's recovery cancels an edit scheduled during its re-read. A permanent randomized model test
   (`tracker/tests/subs-model.test.js`, in `npm run test:unit`) states the rules for both models. Unit tests SI-1 to
   SI-8, browser checks C134 to C140. `save.js` and `merge.js` changed; all three apps rebuilt.
+  The page saves one write at a time; a follow-up save after a merged one is a stale write against what was sent, so the
+  same rules check it, and a reload never replaces a change that is waiting for its save (unit tests in
+  `tracker/tests/subs-page.test.js`, browser checks C143 and C144). A write in flight for 15 seconds shows "Still saving…".
 - **Fixes from two cross-family reviews** (built 2026-11-20; ChatGPT: fail, three serious findings; Mistral: pass,
   minor findings; `docs/submersibles-integrity-spec.md`, with the owner's decisions). A free company removed on
   purpose stays removed, also when the page had not heard of the removal (the store refuses the write); only a
@@ -135,6 +138,9 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
 - Reviews: several by Claude on Claude-built work (same-family), then one each by ChatGPT and Mistral
   (2026-11-20), then a second ChatGPT round (2026-11-20, on commit `c6d5a9b`): verdict fail, two serious and two minor
   findings, repaired in this branch. The repairs made after that round were checked by tests only, not by another family.
+  A fourth review (Mistral, 2026-11-21): fail, two serious findings (a reload could drop a change waiting for its save; a
+  follow-up save could overwrite another tab's change to the same submarine), repaired; the repairs after it were checked
+  by tests only, not by another family.
 - A still-empty free company removed on purpose is treated like the automatic duplicate clean-up when another company
   of the same character would beat it in that clean-up (a non-empty one, or an empty one that sorts first): its old
   open Setup form can store it again, and a submarine added to it from a stale page is moved to that other company.

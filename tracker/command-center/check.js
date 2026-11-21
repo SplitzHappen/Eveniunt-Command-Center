@@ -5537,6 +5537,61 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C143 (fourth review, M1) A change waiting for its follow-up save survives another tab's save: the write is held, the player edits (the write timer fires during the hold, so the edit waits),
+    //    and the other tab saves while the follow-up is pending. The edit and the other tab's submarine are both stored and shown. ──
+    await guard('C143', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, false); // hears the other tab (BroadcastChannel), so its reload() runs
+      await tlSeed(p1, SI2_FC + "3, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.waitForFunction(() => window.__subs && window.__subs.write);
+      const p2 = await si2Page(ctx, false);
+      await p1.evaluate(() => {
+        const native = CC.writeSection.bind(CC); window.__hold = true; window.__held = [];
+        CC.writeSection = function () { const pr = native.apply(null, arguments); if (!window.__hold) return pr; return pr.then((r) => new Promise((res) => window.__held.push(() => res(r)))); };
+        window.__subs.section().subs.s1.name = 'Renamed M1'; window.__subs.write();
+      });
+      await p1.waitForFunction(() => window.__held.length === 1, null, { timeout: 10000 });
+      await p1.click('[data-sort=time]'); await p1.waitForTimeout(700); // the timer has fired during the hold: the sort edit waits for its follow-up save
+      await si2Change(p2, "sec.subs.s2 = { fcId: 'fa', slot: 2, name: 'Other Tab M1', rank: 40, voyage: null };"); // the other tab saves: p1 hears it
+      await p1.waitForTimeout(900);
+      await p1.evaluate(() => { window.__hold = false; window.__held.splice(0).forEach((f) => f()); });
+      await p1.waitForTimeout(1800);
+      const stored = await si2Stored(p1), shown = await p1.evaluate(() => JSON.parse(JSON.stringify(window.__subs.section())));
+      await ctx.close();
+      const good = (x) => !!x.settings.prefs && x.settings.prefs.sort === 'time' && x.subs.s1.name === 'Renamed M1' && !!x.subs.s2 && x.subs.s2.name === 'Other Tab M1';
+      const ok = good(stored) && good(shown) && real(errors).length === 0;
+      record('C143', 'An edit waiting for its follow-up save survives another tab\'s save (fourth review, M1): the sort click made while a write is held, then the other tab\'s new submarine arriving, both end up stored and shown, with the rename the write carried', ok, { stored: { sort: stored.settings.prefs, name: stored.subs.s1.name, subs: Object.keys(stored.subs) }, shown: { sort: shown.settings.prefs, name: shown.subs.s1.name, subs: Object.keys(shown.subs) }, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C144 (fourth review, M2) The other tab renames a submarine, the player changes its rank while a merged write is held: the follow-up save is refused by the store's rule, the page says so and shows the stored copy with the other tab's name. ──
+    await guard('C144', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "3, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null }; sec.subs.s2 = { fcId: 'fa', slot: 2, name: 'Second', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.waitForFunction(() => window.__subs && window.__subs.schedule);
+      const p2 = await si2Page(ctx, false);
+      await p1.evaluate(() => {
+        const native = CC.writeSection.bind(CC); window.__hold = false; window.__held = [];
+        CC.writeSection = function () { const pr = native.apply(null, arguments); if (!window.__hold) return pr; return pr.then((r) => new Promise((res) => window.__held.push(() => res(r)))); };
+      });
+      await si2Change(p2, "sec.subs.s1.name = 'Renamed Elsewhere';"); // the write below is then a merged one
+      await p1.evaluate(() => { window.__hold = true; window.__subs.section().subs.s2.name = 'Second 2'; window.__subs.write(); });
+      await p1.waitForFunction(() => window.__held.length === 1, null, { timeout: 10000 });
+      await p1.evaluate(() => { window.__subs.section().subs.s1.rank = 70; window.__subs.schedule(); }); // the player's edit of the same submarine, during the write
+      await p1.waitForTimeout(600);
+      await p1.evaluate(() => { window.__hold = false; window.__held.splice(0).forEach((f) => f()); });
+      await p1.waitForTimeout(1800);
+      const stored = await si2Stored(p1), status = await p1.evaluate(() => document.querySelector('#status').textContent), shown = await p1.evaluate(() => JSON.parse(JSON.stringify(window.__subs.section())));
+      await ctx.close();
+      const ok = stored.subs.s1.name === 'Renamed Elsewhere' && stored.subs.s1.rank === 50 && stored.subs.s2.name === 'Second 2' && shown.subs.s1.name === 'Renamed Elsewhere' && shown.subs.s1.rank === 50
+        && status.includes('Not saved on this device: This submarine changed in another tab or on another device.') && real(errors).length === 0;
+      record('C144', 'A submarine changed in two tabs, the second change made while a merged write is held (fourth review, M2): the follow-up save is refused with "This submarine changed in another tab or on another device.", the page shows the stored copy, the other tab\'s name stays and the first write\'s other change is stored', ok, { stored: { s1: stored.subs.s1, s2: stored.subs.s2 }, shownS1: shown.subs.s1, status, errors: real(errors) });
+      server.close();
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──

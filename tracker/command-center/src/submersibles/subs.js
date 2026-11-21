@@ -101,6 +101,7 @@
       return null;
     });
   }
+  var SLOW_MSG = 'Still saving… if this does not finish, reload the page.';
   function schedule() { if (!SH.ready) return; SH.editSeq++; clearTimeout(SH.timer); SH.timer = setTimeout(write, 250); render(); }
   // One write at a time from this page (H1): a write asked for while another is in flight is remembered (SH.again) and runs once the first settles.
   function write() {
@@ -110,11 +111,21 @@
     var unticked = SH.unticked || {}; SH.unticked = {};
     var said = SH.note || ''; SH.note = ''; // a line to keep on show after this write (the write clears the status line when it folds duplicates)
     var sent = JSON.parse(JSON.stringify(S)), seqAtSend = SH.editSeq; // what this write stores, and how many edits the page had made by then
+    var revAtSend = SH.rev; // the revision this page held when the write started
+    // M3: a storage transaction that never settles is not retried (a late one could commit twice); the page only says so after 15 seconds
+    var slow = setTimeout(function () { var el = $('#status'); if (el) el.textContent = SLOW_MSG; }, 15000);
     var run = CC.writeSection('submersibles', S, { rev: SH.rev, base: SH.base }).then(function (r) {
       SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now(); SH.notify = (r.doc.modules.settings && r.doc.modules.settings.notify) || SH.notify;
       if (r.merged) {
         // an edit made while the write ran is newer than the merged copy of what was sent: merge all three (what was sent, the page now, what is saved) and keep its write armed
-        setSection(SH.editSeq === seqAtSend ? r.section : F.reconcile(sent, S, r.section)); render();
+        if (SH.editSeq === seqAtSend) setSection(r.section);
+        else {
+          setSection(F.reconcile(sent, S, r.section));
+          // M2: the follow-up write is a stale write against what was sent, so the store applies its own rules (a submarine or logged voyage changed
+          // in both tabs is refused, a free company is merged field by field); the reconciled copy is only what is shown
+          SH.base = sent; SH.rev = revAtSend;
+        }
+        render();
         // R4: a sector the player unticked in the form just saved that another device or tab had ticked is kept (a merge never removes one); say so
         var lines = Object.keys(unticked).map(function (id) { var f = r.section.fcs && r.section.fcs[id]; return f ? F.cameBackLine(f.name, F.cameBack(f.discovered, unticked[id])) : ''; }).filter(Boolean);
         said = [said].concat(lines).filter(Boolean).join(' ');
@@ -143,6 +154,7 @@
       });
     });
     var done = run.catch(function () { /* settled below */ }).then(function () {
+      clearTimeout(slow); var el = $('#status'); if (el && el.textContent === SLOW_MSG) el.textContent = '';
       SH.busy = null;
       if (SH.again) { SH.again = false; return write(); }
     });
@@ -152,10 +164,11 @@
   // another page (the Tracker after a cloud sync, another window) saved: take its section, unless a change made here
   // is still waiting (that save merges with theirs)
   function reload() {
-    if (SH.timer || !SH.ready) return Promise.resolve();
+    // a save in flight or waiting (SH.busy, SH.again) holds an edit this copy would replace: its follow-up write merges with the other page's change in the store
+    if (SH.timer || SH.busy || SH.again || !SH.ready) return Promise.resolve();
     return CC.read().then(function (r) {
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
-      if (SH.timer) return;
+      if (SH.timer || SH.busy || SH.again) return;
       var before = JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]);
       SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || SH.notify;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
@@ -1975,5 +1988,5 @@
   }).catch(function (e) {
     $('#view').innerHTML = '<div class="note bad"><b>The Submersibles data could not be opened on this browser.</b> ' + esc(e.message || e) + '</div>';
   });
-  window.__subs = { stageOf: function (id) { return stageOf(id); }, section: function () { return S; }, itemName: function (id) { return EARN.name(id); }, archiveAt: function (pct) { ARCHIVE_PCT = pct; }, write: write, startWizard: startWizard, state: function () { return { ready: SH.ready, problem: SH.problem, rev: SH.rev }; } };
+  window.__subs = { schedule: schedule, stageOf: function (id) { return stageOf(id); }, section: function () { return S; }, itemName: function (id) { return EARN.name(id); }, archiveAt: function (pct) { ARCHIVE_PCT = pct; }, write: write, startWizard: startWizard, state: function () { return { ready: SH.ready, problem: SH.problem, rev: SH.rev }; } };
 })();
