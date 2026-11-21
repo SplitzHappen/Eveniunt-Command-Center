@@ -17,6 +17,7 @@
 
   A.init = function (data) {
     D = data; SECTOR = {}; SEA = {}; PART = {}; CLASS = {}; RANK = {}; CHILD = {};
+    SEA_CACHE.clear();
     data.sectors.forEach(function (s) { SECTOR[s.id] = s; });
     data.seas.forEach(function (s) { SEA[s.id] = s; });
     data.parts.forEach(function (p) { PART[p.id] = p; });
@@ -27,6 +28,11 @@
     return A;
   };
   A.LABEL = function () { return D ? D.formula.label : 'calculated'; };
+  // Owner decision Q4 (docs/submersibles-droprates-spec.md, Owner decisions): community gil routes come first, but a route the app found
+  // itself becomes the plan when its estimated merchant gil per hour for this submarine is at least this many times that of the best
+  // community route this submarine can run. The one place the factor is set.
+  A.DERIVED_FACTOR = 2;
+  A.top = function () { return TOP; }; // the top rank: the last row of the data's ranks, never a typed number
 
   // ------------------------------------------------------------------ builds and voyages (game data + community formula)
   A.stats = function (rank, parts) {
@@ -101,6 +107,30 @@
 
   // ------------------------------------------------------------------ unlocks (community data, Submarine Tracker)
   A.children = function (id) { return CHILD[id] || []; };
+  // G11 (gaps spec): the sectors a voyage on this route could have revealed: not yet discovered, and revealed by a sector on the route (the unlock table),
+  // each once, in route order. discovered: an array or a Set of sector ids. Nothing else is offered.
+  A.revealable = function (route, discovered) {
+    var has = function (id) { return discovered && (discovered.has ? discovered.has(id) : discovered.indexOf(id) >= 0); }, out = [];
+    (route || []).forEach(function (sid) { A.children(sid).forEach(function (c) { if (!has(c) && out.indexOf(c) < 0) out.push(c); }); });
+    return out;
+  };
+  // What revealing this sector brings, where the data says so: { slot: the submarine slot it grants or null, opens: the name of the sea it opens or null }
+  A.revealNote = function (id) {
+    var u = D.unlocks[id] || {}, g = D.subSlots.find(function (x) { return x.sector === id; });
+    return { slot: g ? g.slot : null, opens: u.opensSea && SEA[u.opensSea] ? SEA[u.opensSea].name : null };
+  };
+  // G9 (gaps spec): the rank-up plan of a submarine below the top rank. need: the experience still needed to reach the top rank, from the game's rank table,
+  // the rank and the experience into it (a progress the game cannot show counts as 0, as everywhere). With a route: perVoyage, the route's base experience
+  // (a floor, so "at least"), voyages and days at that rate (the voyage's own length: ev.seconds). null at the top rank or without a known rank.
+  A.rankUpPlan = function (rank, into, route, seconds) {
+    if (!RANK[rank] || rank >= TOP) return null;
+    var i0 = into || 0; if (i0 < 0 || i0 >= RANK[rank].expToNext) i0 = 0;
+    var need = -i0; for (var r = rank; r < TOP; r++) need += RANK[r].expToNext;
+    var out = { rank: rank, top: TOP, need: need, perVoyage: null, voyages: null, days: null };
+    var exp = (route || []).reduce(function (t, id) { return t + (SECTOR[id] ? SECTOR[id].exp : 0); }, 0);
+    if (exp > 0 && seconds > 0) { out.perVoyage = exp; out.voyages = Math.ceil(need / exp); out.days = out.voyages * seconds / 86400; }
+    return out;
+  };
   // the chain of sectors from a discovered one down to the target: [discovered ancestor, ..., target]
   function chainTo(target, disc) {
     var path = [target], cur = target, guard = 0;
@@ -111,6 +141,12 @@
   // ------------------------------------------------------------------ route search
   // Best routes made of the sectors in pool (visitable: discovered, rank allowed), for score(route, ev) (higher is better),
   // optionally all including one sector. A beam over routes of 1 to 5 sectors per sea: fast enough for 32 subs on a phone.
+  // Route evaluations made since the last reset (item R2): the cost figure of spec 4.2, shown as ADVISOR.lastEvals.
+  var evals = 0;
+  A.lastEvals = 0;
+  // one sea's searched routes, kept for the next submarine with the same inputs (see adviseRecs); bounded, oldest out first
+  var SEA_CACHE = new Map(), SEA_CACHE_MAX = 64;
+  function counted(route, st) { evals++; return A.evalRoute(route, st); }
   function search(pool, st, score, must, keep) {
     var bySea = {}, out = [];
     pool.forEach(function (s) { (bySea[s.sea] = bySea[s.sea] || []).push(s.id); });
@@ -123,7 +159,7 @@
         layer.forEach(function (r) {
           ids.forEach(function (id) {
             if (r.indexOf(id) >= 0) return;
-            var route = r.concat(id), ev = A.evalRoute(route, st);
+            var route = r.concat(id), ev = counted(route, st);
             if (!ev || !ev.reachable) return;
             var sc = score(route, ev);
             next.push({ route: route, ev: ev, score: sc });
@@ -160,6 +196,7 @@
     var pool = D.sectors.filter(function (s) { return disc.has(s.id) && s.rank <= sub.rank; });
     var undiscovered = D.sectors.filter(function (s) { return !disc.has(s.id); });
     var newOf = function (route) { var n = 0, seen = {}; route.forEach(function (id) { if (pending.has(id)) return; A.children(id).forEach(function (c) { if (!disc.has(c) && !seen[c]) { seen[c] = 1; n++; } }); }); return n; };
+    if (input.recs && globalThis.RECS) return adviseRecs(input, sub, st, disc, pool, undiscovered, newOf);
     var level = function (towards) {
       var c = search(pool, st, function (r, ev) { return ev.exp / hours(ev); });
       if (!c.length) return null;
@@ -210,14 +247,558 @@
       .map(function (cr) { var ev = A.evalRoute(cr.route, st); return ev && ev.reachable ? { route: cr.route, ev: ev, label: cr.name, score: stars(cr.route) / hours(ev) } : null; })
       .filter(Boolean).sort(function (a, b) { return b.score - a.score; });
     var c3 = named.length ? named : search(pool, st, function (r, ev) { return stars(r) / hours(ev); });
+    // the player's own log (item S6-2): ranked routes this sub can run, by gil per hour for this sub's own build
+    var enough = input.enough || 10, logged = input.logged || null, byKey = {};
+    (logged || []).forEach(function (l) { byKey[l.route.join(',')] = l; });
+    var own = [];
+    // routes the part advice weighs: ranked, paying, discovered and within the rank; reachability is worked out per build
+    var eligible = (logged || []).filter(function (l) {
+      return l.enough && l.perTrip > 0 && l.route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; });
+    });
+    (logged || []).forEach(function (l) {
+      if (!l.enough || !(l.perTrip > 0)) return;
+      if (!l.route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; })) return;
+      var ev = A.evalRoute(l.route, st);
+      if (!ev || !ev.reachable) return;
+      own.push({ route: l.route.slice(), ev: ev, trips: l.trips, perTrip: l.perTrip, gph: l.perTrip / (ev.seconds / 3600), key: l.route.join(',') });
+    });
+    own.sort(function (a, b) { return b.gph - a.gph || a.ev.seconds - b.ev.seconds || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0); });
+    var fmt = function (n) { return Math.round(n).toLocaleString('en'); };
+    var note = input.priceNote ? ' ' + input.priceNote : '';
+    if (own.length) {
+      var ownWhy = function (x) {
+        return 'From your own log: about ' + fmt(x.perTrip) + ' gil a voyage over ' + x.trips + ' logged voyages; this sub is back in ' + (Math.round(x.ev.seconds / 360) / 10) + ' hours, so about ' + fmt(x.gph) + ' gil per hour.' + note;
+      };
+      var picked = own.slice(0, 3), seenKeys = {};
+      picked.forEach(function (x) { seenKeys[x.key] = 1; });
+      var alts = picked.slice(1).map(function (x) { return Object.assign({ why: ownWhy(x), own: true }, x); });
+      for (var ci = 0; ci < c3.length && alts.length < 2; ci++) {
+        var cx = c3[ci], ck = cx.route.join(',');
+        if (seenKeys[ck] || ck === picked[0].key) continue;
+        seenKeys[ck] = 1;
+        var nn = byKey[ck] ? byKey[ck].trips : 0;
+        var lead = byKey[ck] && byKey[ck].enough ? 'Its items have no known price on this device (' + nn + ' logged voyages), so no gil figure' : 'Not enough of your own data (' + nn + ' of ' + enough + ' voyages)';
+        alts.push(Object.assign({ why: lead + '; ' + (cx.label ? 'a community gil route ("' + cx.label + '")' : 'many sector stars per hour') + '.' }, cx));
+      }
+      out = Object.assign(head3, { plan: Object.assign({ why: ownWhy(picked[0]), own: true }, picked[0]), alts: alts, own: true });
+      out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, out.plan.route));
+      return out;
+    }
     if (!c3.length) return { step: 3, stepName: A.STEPS[2], blocked: 'No discovered sector is within this build\'s range.' };
     out = Object.assign(head3, pack(c3, function (x) {
+      var have = byKey[x.route.join(',')], n = have ? have.trips : (logged ? 0 : null);
       return (x.label ? 'A community gil route ("' + x.label + '", Submarine Tracker)' : 'The route with the most sector stars per hour (game data)') +
-        '. Real gil per hour comes from your own logged returns once logging arrives; until then the stars are only a guide.';
+        '. Your own gil per hour takes over once a route has ' + enough + ' logged voyages' + (n ? ' (this one has ' + n + ')' : '') + '; until then the stars are only a guide.';
     }));
-    out.parts = partTip(sub, st, out.plan.route);
+    out.own = false;
+    out.parts = gilTip(sub, eligible, fmt) || (eligible.length ? null : partTip(sub, st, out.plan.route));
     return out;
   };
+  // ------------------------------------------------------------------ the advisor with the player's settings (item R2)
+  // input.recs = { fuel, giveUp, order, loot } (RECS.check). Candidates of spec 4.2, stages of 4.3, the choice RECS.pick (4.4).
+  // Returns today's shape plus lead (the stage key U1, U2, U3, X, G or L), head (the header text), label, skipped and fuel;
+  // the reasons, the header and the part advice follow spec 4.5 and 4.7 (item R3).
+  function adviseRecs(input, sub, st, disc, pool, undiscovered, newOf) {
+    var R = globalThis.RECS, recs = input.recs, fc = input.fc;
+    evals = 0;
+    var fuel = !!recs.fuel, giveUp = typeof recs.giveUp === 'number' ? recs.giveUp : R.GIVE_UP;
+    var order = Array.isArray(recs.order) && recs.order.length === R.KEYS.length && R.KEYS.every(function (k) { return recs.order.indexOf(k) >= 0; }) ? recs.order : R.KEYS;
+    var items = R.active(recs), chosen = {};
+    items.forEach(function (id) { chosen[id] = 1; });
+    var slots = fc.unlockedSlots || 1, atTop = sub.rank >= TOP;
+    var step = slots < 4 ? 1 : undiscovered.length ? 2 : 3;
+    var stepName = A.STEPS[step - 1];
+    var done = function (o) { A.lastEvals = evals; return o; };
+    // the sector to survey next on the way to the next slot (today's `visit`), when this sub's rank allows it
+    var visit = null, visitRaw = null, target = null, chain = null;
+    if (slots < 4) {
+      target = (D.subSlots.find(function (u) { return u.slot === slots + 1; }) || {}).sector;
+      chain = target ? chainTo(target, disc) : null;
+      visitRaw = disc.has(target) ? target : chain ? chain[0] : null;
+      visit = visitRaw && SECTOR[visitRaw].rank <= sub.rank ? visitRaw : null;
+    }
+    var left = slots < 4 || undiscovered.length > 0;
+    var lootAt = function (id) { return (D.loot && D.loot[id]) || []; };
+    var allowed = function (route) { return route.every(function (id) { return disc.has(id) && SECTOR[id] && SECTOR[id].rank <= sub.rank; }); };
+    var cev = function (route) { return counted(route, st); };
+    var mk = function (route, ev) { return { route: route.slice(), ev: ev, seconds: ev.seconds, tanks: Math.max(1, ev.tanks) }; };
+    // singles: every visitable sector alone, if within range
+    var singles = [];
+    pool.forEach(function (s) { var ev = cev([s.id]); if (ev && ev.reachable) singles.push(mk([s.id], ev)); });
+    if (!singles.length) {
+      // the same step, step name and sentence as today's answer for this input, so the Board's grouping and notifications do not move
+      var kept = evals, td = A.advise(Object.assign({}, input, { recs: null }));
+      evals = kept;
+      return done({ step: td.blocked ? td.step : step, stepName: td.blocked ? td.stepName : stepName, blocked: td.blocked || 'No discovered sector is within this build\'s range.', lead: null, skipped: [], fuel: fuel, parts: rangeTip(sub, pool) });
+    }
+    var live = function (fn) { return singles.some(function (r) { return fn(r) > 0; }); };
+    var noUnlock = !left ? 'every sector is found' : null;
+    var U1 = { key: 'U1', objective: 'unlock', rate: true, reason: noUnlock || (slots >= 4 ? 'every submarine slot is unlocked' : 'no route this sub can run now surveys the sector on the way to the next slot'),
+      amount: function (r) { return visit && r.route.indexOf(visit) >= 0 ? 1 : 0; } };
+    var U2 = { key: 'U2', objective: 'unlock', rate: true, reason: noUnlock || 'no sector this sub can reach now can reveal a new one',
+      amount: function (r) { return undiscovered.length ? newOf(r.route) : 0; } };
+    var u1 = live(U1.amount), u2 = live(U2.amount);
+    var U3 = { key: 'U3', objective: 'unlock', rate: true, reason: noUnlock || (atTop ? 'this sub is at the top rank' : 'a route this sub can run now already works towards what is left to unlock'),
+      amount: function (r) { return left && !atTop && !u1 && !u2 ? r.ev.exp : 0; } };
+    var topWhy = 'this submarine is at rank ' + TOP + ', the top rank';
+    var X = { key: 'X', objective: 'level', rate: true, reason: topWhy, amount: function (r) { return atTop ? 0 : r.ev.exp; } };
+    // Gil Farming (docs/submersibles-droprates-spec.md 6.1, owner decisions Q3): expected merchant gil of the route for this
+    // sub's build (DROPS), or, once a route has `enough` logged voyages whose log can be counted in merchant gil, that log's
+    // figure. Both are merchant gil per voyage, divided by this sub's hours: the same unit. When a community route is among
+    // the routes still in play only community routes score; otherwise every route does.
+    var DR = globalThis.DROPS, estMemo = {};
+    var estOf = function (route, ev) {
+      var k = route.join(','), m = estMemo[k]; if (m) return m;
+      var e = ev || A.evalRoute(route, st), r = DR.route(D, route, st);
+      // n: the fewest records any sector of the route rests on, a sector that fell back to pooled counts included (DROPS count)
+      m = estMemo[k] = r ? { gil: r.gil, perHour: DR.perHour(r.gil, e.seconds), n: r.count, few: r.few, secondShare: r.secondShare } : { gil: 0, perHour: 0, n: 0, few: true, secondShare: 0 };
+      return m;
+    };
+    var ownBy = {}; // routes with enough logged voyages and a log that can be counted in merchant gil
+    (input.logged || []).forEach(function (l) {
+      if (l.enough && Number.isFinite(l.merchantPerTrip) && l.merchantPerTrip >= 0 && allowed(l.route)) ownBy[l.route.join(',')] = l;
+    });
+    var gilAmount = function (r) { var o = ownBy[r.route.join(',')]; return o ? o.merchantPerTrip : estOf(r.route, r.ev).gil; };
+    // The best community route among `list` (by the figure the ranking uses: the own log where it decided, else the estimate), or null.
+    var commBestOf = function (list) {
+      var best = null, bs = -1;
+      list.forEach(function (r) { if (!r.label) return; var s = gilAmount(r) / (r.ev.seconds / 3600); if (s > bs) { bs = s; best = r; } });
+      return best;
+    };
+    // Owner decision Q4: an app-found route takes over when its estimate per hour is at least A.DERIVED_FACTOR times the ESTIMATE per hour
+    // of the best community route (the estimate, not the own log, so both are the same kind of figure).
+    var takesOver = function (r, comm) {
+      var e = estOf(r.route, r.ev).perHour;
+      return !r.label && e > 0 && e >= A.DERIVED_FACTOR * estOf(comm.route, comm.ev).perHour;
+    };
+    var G = { key: 'G', objective: 'gil', rate: true, amount: gilAmount, prepare: function (S) {
+      var comm = commBestOf(S);
+      if (!comm) return gilAmount;
+      var win = {}, any = false;
+      S.forEach(function (r) { if (takesOver(r, comm)) { win[r.route.join(',')] = 1; any = true; } });
+      if (any) return function (r) { return win[r.route.join(',')] ? gilAmount(r) : 0; };
+      return function (r) { return r.label ? gilAmount(r) : 0; };
+    } };
+    // Loot Farming (spec 6.3, E13): for each chosen item the route's expected quantity per hour (DROPS, for this sub's build) as a
+    // share of the best of the routes in play; the shares are added. An item with no reachable drop adds nothing.
+    var lootReason = items.length ? 'none of your chosen items has a recorded drop this submarine can reach now' : 'no item chosen';
+    var lootMemo = {};
+    var lootOf = function (route) {
+      var k = route.join(','), m = lootMemo[k]; if (m) return m;
+      var r = DR.route(D, route, st);
+      return (lootMemo[k] = { items: r ? r.items : {}, n: r ? r.count : 0 });
+    };
+    var qtyOf = function (r) { var m = lootOf(r.route).items, t = 0; items.forEach(function (id) { t += m[id] || 0; }); return t; };
+    var L = { key: 'L', objective: 'loot', rate: false, reason: lootReason, amount: qtyOf, prepare: function (S) {
+      var best = {}, per = new Map(), perOf = function (r) {
+        var h = r.ev.seconds / 3600, m = lootOf(r.route).items, o = {};
+        items.forEach(function (id) { o[id] = (m[id] || 0) / h; });
+        return o;
+      };
+      items.forEach(function (id) { best[id] = 0; });
+      S.forEach(function (r) { var o = perOf(r); per.set(r, o); items.forEach(function (id) { if (o[id] > best[id]) best[id] = o[id]; }); });
+      return function (r) {
+        var o = per.get(r) || perOf(r), t = 0;
+        items.forEach(function (id) { if (best[id] > 0) t += o[id] / best[id]; });
+        return t;
+      };
+    } };
+    var by = { unlock: [U1, U2, U3], level: [X], gil: [G], loot: [L] };
+    // spec 4.5: the cause named when a whole objective is skipped
+    var causeOf = { unlock: !left ? 'every sector is found' : 'no sector this sub can visit now leads to what is left to unlock', level: topWhy, gil: null, loot: lootReason };
+    var leadKey = null; // set once the choice is made: a stage ranked after it that still has routes over all candidates was emptied by the bands
+    var BAND_REASON = 'no route within ' + Math.round(R.BAND * 100) + '% of the best for the priorities above serves it';
+    var fixSkipped = function (list) {
+      var gone = {}, idx = function (k) { return stages.findIndex(function (s) { return s.key === k; }); };
+      var bandOnly = function (x) { var st = stages.find(function (s) { return s.key === x.key; }); return leadKey !== null && idx(x.key) > idx(leadKey) && !!x.reason && live(st.amount); };
+      list.forEach(function (x) { gone[x.objective] = (gone[x.objective] || 0) + 1; });
+      return list.map(function (x) {
+        if (bandOnly(x)) return { key: x.key, objective: x.objective, reason: BAND_REASON };
+        var whole = gone[x.objective] === by[x.objective].length && causeOf[x.objective] && !by[x.objective].some(function (s) { return live(s.amount); });
+        return { key: x.key, objective: x.objective, reason: whole ? causeOf[x.objective] : x.reason };
+      });
+    };
+    var stages = [];
+    order.forEach(function (k) { stages = stages.concat(by[k]); });
+    var isLive = {};
+    stages.forEach(function (s) { isLive[s.key] = s.key === 'G' ? true : live(s.amount); });
+    var leadSt = stages.find(function (s) { return isLive[s.key]; });
+    var cands = new Map();
+    var add = function (c) { var k = c.route.join(','); if (!cands.has(k)) cands.set(k, c); return cands.get(k); };
+    singles.forEach(add);
+    // always added: this sub's runnable community routes and routes with enough logged voyages, in their exact order
+    var commCount = 0;
+    (D.commonRoutes || []).forEach(function (cr) {
+      if (!allowed(cr.route)) return;
+      var ev = cev(cr.route); if (!ev || !ev.reachable) return;
+      add(mk(cr.route, ev)).label = cr.name; commCount++;
+    });
+    (input.logged || []).forEach(function (l) {
+      if (!l.enough || !allowed(l.route)) return;
+      var ev = cev(l.route); if (!ev || !ev.reachable) return;
+      add(mk(l.route, ev));
+    });
+    // searched routes: every order of 1 to 5 sectors in a sea of at most 8 visitable sectors, else the bounded search on the lead.
+    // Every sea this submarine can visit is searched, also one where it can run a community route (owner decision Q4)
+    {
+      var bySea = {}, bySet = {}, num = function (a, b) { return a - b; };
+      pool.forEach(function (s) { (bySea[s.sea] = bySea[s.sea] || []).push(s); });
+      var keepSet = function (route, ev) {
+        var k = route.slice().sort(num).join(','), cur = bySet[k];
+        if (!cur || ev.seconds < cur.ev.seconds || (ev.seconds === cur.ev.seconds && route.join('-') < cur.route.join('-'))) bySet[k] = { route: route.slice(), ev: ev };
+      };
+      var searchLead = leadSt.key === 'G' ? G : leadSt;
+      var amt = function (route, ev) { return searchLead.amount({ route: route, ev: ev }); };
+      // The search of one sea is memoised across submarines (item: first Board draw). It reads exactly: the sea's visitable sectors (their ids, in
+      // order), the build's speed and range (evalRoute), its surveillance, retrieval and favor (DROPS.route through estOf), the fuel flag,
+      // the logged figures that decided a route of this sea (ownBy, read by gilAmount), the data (the cache is emptied in A.init) and the
+      // Gil stage as the lead (only then is the score gilAmount; any other lead is searched afresh). Nothing of the submarine's identity,
+      // its rank beyond the pool, the pending voyages or the other stages is read. The list of { route, ev } found is read only.
+      var seaKey = function (sea, secs) {
+        if (searchLead !== G) return null;
+        var own = [];
+        Object.keys(ownBy).forEach(function (k) { if (SECTOR[+k.split(',')[0]].sea === +sea) own.push(k + '=' + ownBy[k].merchantPerTrip); });
+        return [sea, secs.map(function (s) { return s.id; }).join('.'), st.speed, st.range, st.surveillance, st.retrieval, st.favor, fuel ? 1 : 0, own.sort().join(';')].join('|');
+      };
+      Object.keys(bySea).forEach(function (sea) {
+        var secs = bySea[sea], ck = seaKey(sea, secs), hit = ck !== null ? SEA_CACHE.get(ck) : null;
+        if (hit) { hit.forEach(function (c) { keepSet(c.route, c.ev); }); return; }
+        var found = [], keepSetSea = keepSet;
+        if (ck !== null) { keepSetSea = function (route, ev) { found.push({ route: route.slice(), ev: ev }); keepSet(route, ev); }; }
+        if (secs.length <= 8) {
+          var ids = secs.map(function (s) { return s.id; });
+          (function walk(route) {
+            if (route.length >= D.formula.maxSectors) return;
+            ids.forEach(function (id) {
+              if (route.indexOf(id) >= 0) return;
+              var nr = route.concat(id), ev = cev(nr);
+              if (!ev || !ev.reachable) return;
+              keepSetSea(nr, ev); walk(nr);
+            });
+          })([]);
+        } else {
+          var hrs = function (ev) { return ev.seconds / 3600; };
+          search(secs, st, function (r, ev) { return searchLead.rate || searchLead.key === 'L' ? amt(r, ev) / hrs(ev) : amt(r, ev); }).forEach(function (c) { keepSetSea(c.route, c.ev); });
+          if (fuel) search(secs, st, function (r, ev) { return amt(r, ev) / Math.max(1, ev.tanks); }).forEach(function (c) { keepSetSea(c.route, c.ev); });
+        }
+        if (ck !== null) {
+          if (SEA_CACHE.size >= SEA_CACHE_MAX) SEA_CACHE.delete(SEA_CACHE.keys().next().value);
+          SEA_CACHE.set(ck, found);
+        }
+      });
+      Object.keys(bySet).forEach(function (k) { add(mk(bySet[k].route, bySet[k].ev)); });
+    }
+    var all = Array.from(cands.values());
+    var res = R.pick(all, stages, { fuel: fuel, giveUp: giveUp });
+    var lead = res.lead || 'G'; leadKey = lead;
+    var leadStage = stages.find(function (s) { return s.key === lead; }), leadObj = leadStage.objective;
+    var plan = res.plan;
+    // ---- the reasons (spec 4.7, 4.5): plain text, no HTML; names come from the data and the player's chosen items
+    var enough = input.enough || 10, logged = input.logged || null, byKey = {};
+    (logged || []).forEach(function (l) { byKey[l.route.join(',')] = l; });
+    var fmt = function (n) { return Math.round(n).toLocaleString('en'); };
+    var one = function (n) { return (Math.round(n * 10) / 10).toLocaleString('en'); };
+    var hrs = function (x) { return x.ev.seconds / 3600; };
+    var tankText = function (n) { return n + (n === 1 ? ' tank' : ' tanks'); };
+    var recorded = null; // every item id that has a drop record in some sector
+    var hasRecord = function (id) {
+      if (!recorded) {
+        recorded = {};
+        var sec = (D.dropRates && D.dropRates.sectors) || {};
+        Object.keys(sec).forEach(function (k) { sec[k].pools.forEach(function (pl) { pl.items.forEach(function (row) { recorded[row[0]] = 1; }); }); });
+      }
+      return !!recorded[id];
+    };
+    var itemName = function (id) { return (D.items && D.items[id]) || 'Item ' + id; };
+    // the plan's expected quantities, most first: [{ id, perHour }] for the chosen items this route can bring back
+    var lootRates = function (x) {
+      var m = lootOf(x.route).items, h = hrs(x), out = [];
+      items.forEach(function (id) { if ((m[id] || 0) > 0) out.push({ id: id, perHour: m[id] / h }); });
+      return out.sort(function (a, b) { return b.perHour - a.perHour || a.id - b.id; });
+    };
+    var LOOT_UNKNOWN = ' What the second item of a survey is, is not in the records; the estimate assumes it is drawn like the first.';
+    var lootText = function (x, full) {
+      var list = lootRates(x).map(function (r) { return DR.fmt.qty(r.perHour) + ' ' + itemName(r.id) + ' an hour'; });
+      var txt = 'Expected: about ' + list.join(', ') + ' (estimate from community drop records, at least ' + DR.fmt.count(lootOf(x.route).n) + ' surveys per sector).';
+      if (full) {
+        var m = lootOf(x.route).items;
+        var open = items.filter(function (id) { return !(m[id] > 0) && !hasRecord(id) && x.route.some(function (sid) { return lootAt(sid).indexOf(id) >= 0; }); });
+        if (open.length) txt += ' Listed as possible, no drop record yet: ' + open.map(itemName).join(', ') + '.';
+        txt += LOOT_UNKNOWN;
+      }
+      return txt;
+    };
+    var towards = function () {
+      if (slots < 4) {
+        if (!visitRaw) return null;
+        return SECTOR[visitRaw].rank > sub.rank ? 'levelling to rank ' + SECTOR[visitRaw].rank + ' for ' + name(visitRaw) + ' (step 1: slot ' + (slots + 1) + ')'
+          : 'building range for ' + name(visitRaw) + ' (step 1: slot ' + (slots + 1) + '); rank raises range';
+      }
+      if (!undiscovered.length) return null;
+      var parents = D.sectors.filter(function (s) { return disc.has(s.id) && !(input.pending || []).includes(s.id) && A.children(s.id).some(function (c) { return !disc.has(c); }); });
+      var need = parents.length ? parents.reduce(function (m, s) { return Math.min(m, s.rank); }, 999) : null;
+      var allPending = !parents.length && D.sectors.some(function (s) { return disc.has(s.id) && A.children(s.id).some(function (c) { return !disc.has(c); }); });
+      return need && need > sub.rank ? 'levelling to rank ' + need + ' for the next discovery (step 2)' : allPending ? 'while your other subs\' voyages reveal the next sectors (step 2)' : 'building range for the next discovery (step 2); rank raises range';
+    };
+    var xph = function (x) { return x.ev.exp / hrs(x); };
+    // ---- Gil Farming sentences (spec 5.4, 6.1; owner decisions Q3): the estimate and the player's own log side by side
+    var kinds = function (n) { return n + ' community gil route' + (n === 1 ? '' : 's'); };
+    var estText = function (x) {
+      var e = estOf(x.route, x.ev);
+      return DR.fmt.about(DR.fmt.voyage(e.gil)) + ' gil a voyage at merchant prices (' + DR.fmt.about(DR.fmt.hour(e.perHour)) + ' an hour for this submarine): an estimate from community drop records (at least ' +
+        DR.fmt.count(e.n) + ' surveys per sector on this route), not a promise.' + (e.few ? ' Few records for a submarine like this one.' : '');
+    };
+    // the own-log part: which figure decided, and both figures
+    var logText = function (x) {
+      var key = x.route.join(','), lg = byKey[key], ob = ownBy[key];
+      if (!lg || !(lg.trips > 0)) return '';
+      var e = estOf(x.route, x.ev);
+      if (ob) return ' Your own log on this route: ' + DR.fmt.about(DR.fmt.hour(ob.merchantPerTrip / hrs(x))) + ' gil an hour at merchant prices over ' + ob.trips + ' logged voyages (this submarine is back in ' + (Math.round(x.ev.seconds / 360) / 10) +
+        ' hours); the community estimate is ' + DR.fmt.about(DR.fmt.hour(e.perHour)) + ' an hour. Your own log decided, because the route has ' + enough + ' or more logged voyages.';
+      if (lg.enough) return ' Your own log on this route (' + lg.trips + ' logged voyages) cannot be counted in merchant gil, because a logged item has no price in the data, so the estimate decided for it.';
+      return ' Your own log on this route: ' + lg.trips + ' of ' + enough + ' logged voyages; the estimate decides until then.';
+    };
+    var seaOf = function (x) { return SEA[SECTOR[x.route[0]].sea]; };
+    var bigSea = function (x) { return pool.filter(function (s) { return s.sea === SECTOR[x.route[0]].sea; }).length > 8; };
+    // why no community route can be run: the furthest blocker among the community routes
+    var noCommunity = function () {
+      var routes = D.commonRoutes || [], found = routes.filter(function (cr) { return cr.route.every(function (id) { return disc.has(id); }); });
+      if (!found.length) return 'sectors not found';
+      return found.some(function (cr) { return allowed(cr.route); }) ? 'range' : 'rank';
+    };
+    // the best community route this submarine can run, over every candidate: what an app-found route is compared with (owner decision Q4)
+    var commBest = commBestOf(all);
+    var RULE = 'Community routes come first unless an app-found route is at least ' + (A.DERIVED_FACTOR === 2 ? 'twice' : A.DERIVED_FACTOR + ' times') + ' as good.';
+    // what the best community route is worth, as the comparison counts it: its estimate (said when the own log decided its own figure)
+    var commFigure = function (full) {
+      var e = estOf(commBest.route, commBest.ev), ob = ownBy[commBest.route.join(',')];
+      return commBest.label + ', ' + DR.fmt.about(DR.fmt.hour(e.perHour)) + ' an hour by the same estimate' + (full && ob ? ' (your own log decided that route\'s figure, but the comparison uses its estimate)' : '');
+    };
+    var gilWhy = function (x, most) {
+      var head, tail = '';
+      if (x.label) {
+        head = 'Community gil route ' + x.label + ': ';
+        tail = commCount === 1 ? ' The only community gil route this submarine can run.' : (most ? ' The best of the ' + kinds(commCount) + ' this submarine can run.' : ' One of the ' + kinds(commCount) + ' this submarine can run.');
+      } else if (!commCount) {
+        head = 'No community gil route can be run by this submarine now (' + noCommunity() + '). Found by the app from community drop rates: ';
+        tail = bigSea(x) ? ' The best found, not proven best.' : '';
+      } else {
+        head = 'Found by the app from community drop records in ' + seaOf(x).name + ': ';
+        tail = ' The best community route this submarine can run is ' + commFigure(true) + '. ' + (takesOver(x, commBest) ? 'This one is at least ' + (A.DERIVED_FACTOR === 2 ? 'twice' : A.DERIVED_FACTOR + ' times') + ' as good, so it comes first. ' : '') + RULE + (bigSea(x) ? ' The best found, not proven best.' : '');
+      }
+      return head + estText(x) + logText(x) + tail;
+    };
+    // a derived route that beats the community plan by more than 5% (estimate against estimate): shown among the other routes, labelled
+    var derivedWhy = function (x, plan) {
+      var g = estOf(x.route, x.ev).perHour, p = estOf(plan.route, plan.ev).perHour, more = Math.round((g / p - 1) * 100), e = estOf(x.route, x.ev);
+      return 'Found by the app in ' + seaOf(x).name + ': ' + DR.fmt.about(DR.fmt.hour(g)) + ' gil an hour by the same estimate, ' + more + '% more than the estimate for the community route (' + DR.fmt.about(DR.fmt.hour(p)) + ' an hour). ' + RULE + ' An estimate from community drop records (at least ' +
+        DR.fmt.count(e.n) + ' surveys per sector on this route), not a promise.' + (bigSea(x) ? ' The best found, not proven best.' : '') + logText(x);
+    };
+    // the lead's sentence for a route
+    var leadWhy = function (key, x, most) {
+      if (key === 'U1') return visit === target ? 'Surveying ' + name(target) + ' can grant slot ' + (slots + 1) + ' (not certain on every visit).'
+        : 'On the way to ' + name(target) + ', which grants slot ' + (slots + 1) + ': surveying ' + name(visit) + ' can reveal ' + name(chain[1]) + '.';
+      if (key === 'U2') {
+        var n = newOf(x.route);
+        return 'Can reveal ' + n + ' new sector' + (n === 1 ? '' : 's') + ' (' + x.route.filter(function (id) { return A.children(id).some(function (c) { return !disc.has(c); }); }).map(name).join(', ') + ' lead to them)' + (most ? ': the most per hour within reach.' : '.');
+      }
+      if (key === 'U3' || key === 'X') {
+        var tw = key === 'U3' ? towards() : null;
+        return (most ? 'Most experience per hour within reach (at least ' + fmt(xph(x)) + ' an hour)' : 'At least ' + fmt(xph(x)) + ' experience an hour') + (tw ? ', ' + tw : '') + '.';
+      }
+      if (key === 'G') return gilWhy(x, most);
+      return lootText(x, most);
+    };
+    // the plan's figure for a stage that narrowed the choice after the lead: "Then <label>: <figure>."
+    var figure = function (key, x) {
+      if (key === 'U1') return 'it surveys ' + name(visit) + (visit === target ? ', which can grant slot ' : ' on the way to slot ') + (slots + 1);
+      if (key === 'U2') { var n = newOf(x.route); return 'it can reveal ' + n + ' new sector' + (n === 1 ? '' : 's'); }
+      if (key === 'U3' || key === 'X') return 'at least ' + fmt(xph(x)) + ' experience an hour';
+      if (key === 'G') {
+        var gp = ownBy[x.route.join(',')];
+        if (gp) return DR.fmt.about(DR.fmt.hour(gp.merchantPerTrip / hrs(x))) + ' gil an hour at merchant prices (your own log)';
+        var ge = DR.fmt.about(DR.fmt.hour(estOf(x.route, x.ev).perHour)) + ' gil an hour at merchant prices (estimate from community drop records' + (!x.label && commBest ? '; found by the app; the best community route this submarine can run is ' + commFigure() : '') + ')';
+        return ge;
+      }
+      var lr = lootRates(x).map(function (r) { return DR.fmt.qty(r.perHour) + ' ' + itemName(r.id); });
+      return 'about ' + lr.join(', ') + ' an hour (estimate from community drop records)';
+    };
+    // the lead's score for a route, with the tier the lead itself used, and its name for the fuel sentence
+    var leadFn = leadStage.prepare ? leadStage.prepare(all) : leadStage.amount;
+    var leadScore = function (x) { var a = Number(leadFn(x)) || 0; return leadStage.rate ? a / hrs(x) : a; };
+    var unit = lead === 'U1' ? 'slot chances per hour' : lead === 'U2' ? 'reveal chances per hour' : lead === 'U3' || lead === 'X' ? 'experience per hour' : lead === 'L' ? 'expected loot per hour' : 'merchant gil per hour';
+    var bestLead = all.reduce(function (m, x) { return Math.max(m, leadScore(x)); }, 0);
+    var isMost = function (x) { return leadScore(x) >= bestLead - 1e-9 * bestLead; }; // the route has the best lead score of all candidates
+    var skippedKeys = {};
+    res.skipped.forEach(function (x) { skippedKeys[x.key] = 1; });
+    var fullWhy = function (x) {
+      var out = [leadWhy(lead, x, isMost(x))], done2 = 0;
+      res.trace.forEach(function (t) {
+        if (t.key === lead || t.after >= t.before || done2 >= 2 || !res.used.includes(t.key) || res.used.indexOf(t.key) < res.used.indexOf(lead)) return;
+        done2++; out.push('Then ' + R.LABEL[t.objective] + ': ' + figure(t.key, x) + '.');
+      });
+      for (var oi = 0; oi < order.length && order[oi] !== leadObj; oi++) {
+        var o = order[oi], gone = by[o].every(function (st2) { return skippedKeys[st2.key]; });
+        if (gone && causeOf[o] && !(o === 'loot' && !items.length)) out.push('Skipped ' + R.LABEL[o] + ': ' + causeOf[o] + '.');
+      }
+      if (fuel) {
+        var off = R.pick(all, stages, { fuel: false, giveUp: giveUp }).plan; // the same candidates, decided again without the fuel step
+        if (!off || off.route.join(',') === x.route.join(',')) out.push('Fuel efficiency made no difference here.');
+        else {
+          var sOff = leadScore(off), p = sOff > 0 ? Math.round((1 - leadScore(x) / sOff) * 100) : 0;
+          out.push(x.tanks < off.tanks ? 'Fuel efficiency: ' + tankText(x.tanks) + ' instead of ' + off.tanks + ', ' + (p >= 1 ? 'for ' + p + '% less ' + unit : 'with almost no loss in ' + unit) + '.'
+            : 'Fuel efficiency changed the choice: ' + tankText(x.tanks) + ' here, ' + off.tanks + ' without it.');
+        }
+      }
+      return out.join(' ');
+    };
+    var shape = function (x, full) {
+      var o = { route: x.route, ev: x.ev, why: full ? fullWhy(x) : leadWhy(lead, x, false) };
+      if (x.label) o.label = x.label;
+      if (lead === 'G') {
+        var ob = ownBy[x.route.join(',')], e = estOf(x.route, x.ev);
+        o.kind = x.label ? 'community' : 'derived'; o.name = x.label || A.routeText(x.route);
+        o.est = { gil: e.gil, perHour: e.perHour, n: e.n, few: e.few, secondShare: e.secondShare };
+        if (ob) { o.own = true; o.trips = ob.trips; o.perTrip = ob.merchantPerTrip; }
+      }
+      return o;
+    };
+    var out = { step: step, stepName: stepName, goal: step === 1 ? 'slot ' + (slots + 1) : step === 2 ? undiscovered.length + ' sectors still to find' : 'gil' };
+    // E3: when every priority scores nothing, no stage was live and the plan is only the quickest route: say so, and do not call it Gil Farming
+    if (!res.lead && plan) {
+      out.head = 'Suggested · no priority can be served right now'; out.label = 'No priority can be served';
+      out.plan = { route: plan.route, ev: plan.ev, why: 'None of your priorities can be served for this submarine right now; the route shown is simply the quickest one it can run.' };
+      out.alts = []; out.parts = null; out.own = false; out.lead = null; out.skipped = fixSkipped(res.skipped); out.fuel = fuel;
+      return done(out);
+    }
+    var stepHead = lead === 'U1' || lead === 'U2' || lead === 'U3' || (step === 3 && lead === 'G');
+    out.head = stepHead ? 'Suggested · step ' + step + ' of 3: ' + stepName : 'Suggested · ' + R.LABEL[leadObj];
+    out.label = R.LABEL[leadObj];
+    if (step === 1 && (input.slotsFilled || 0) < slots) out.note = 'A new slot only shows once slot ' + slots + ' holds a submarine: register one there in the game when you can.';
+    out.plan = shape(plan, true);
+    // other routes: the next two with other sectors, never one that scores 0 for the lead
+    var setKey = function (r) { return r.route.slice().sort(function (a, b) { return a - b; }).join(','); }, seen = {}, others = [];
+    seen[setKey(plan)] = 1;
+    res.routes.slice(1).forEach(function (x) { var k = setKey(x); if (others.length >= 2 || seen[k] || !(leadScore(x) > 0)) return; seen[k] = 1; others.push(x); });
+    out.alts = others.map(function (x) { return shape(x, false); });
+    // Gil Farming with an alternative of the other kind (spec 6.1): a community plan gets the best app-found route that beats it by more than 5%
+    // (estimate against estimate) in second place; an app-found plan gets the best community route in second place
+    if (lead === 'G' && plan.label) {
+      var derived = null, bestD = 0;
+      all.forEach(function (x) {
+        if (x.label) return;
+        var g = estOf(x.route, x.ev).perHour; if (g > bestD) { bestD = g; derived = x; }
+      });
+      if (derived && bestD > 1.05 * estOf(plan.route, plan.ev).perHour) {
+        var dShape = shape(derived, false); dShape.why = derivedWhy(derived, plan);
+        out.alts = [dShape].concat(out.alts).slice(0, 2);
+      }
+    } else if (lead === 'G' && commBest) {
+      var cShape = shape(commBest, false);
+      out.alts = [cShape].concat(out.alts.filter(function (a) { return a.route.join(',') !== commBest.route.join(','); })).slice(0, 2);
+    }
+    // part advice (gaps spec G6): only the estimate-based gil tip, and only at step 3 when Gil Farming leads. While Unlocking Routes or Leveling
+    // Submersible Rank leads there is none; Loot Farming has no loot-valued tip, so none (the old minutes-only tip is not given beside these plans).
+    out.parts = null;
+    if (step === 3 && lead === 'G') out.parts = gilTipEst(sub, st, plan, DR, estOf);
+    // G4: how each other route differs from the plan, on the measure that decided and on return time
+    var measure = { U1: 'slot chances an hour', U2: 'reveal chances an hour', U3: 'experience an hour', X: 'experience an hour', G: 'gil an hour', L: 'loot an hour' }[lead];
+    var score = function (x) { return lead === 'G' ? estOf(x.route, x.ev).perHour : leadScore({ route: x.route, ev: x.ev, seconds: x.ev.seconds, tanks: Math.max(1, x.ev.tanks) }); };
+    out.alts.forEach(function (x) { x.vs = A.altClause(score(x), score(plan), x.ev.seconds, plan.ev.seconds, measure); });
+    out.own = !!plan.own;
+    out.lead = lead; out.skipped = fixSkipped(res.skipped); out.fuel = fuel;
+    return done(out);
+  }
+  // G4 (gaps spec): one short clause comparing another route with the plan, on the deciding measure (an hour) and on return time. Computed from the
+  // two figures the advice already holds. mine/plan: the measure per hour; secs/planSecs: the voyage lengths. Returns { text, pct, seconds }.
+  A.altClause = function (mine, plan, secs, planSecs, measure) {
+    var pct = plan > 0 ? Math.round((mine / plan - 1) * 100) : null, d = secs - planSecs, mins = Math.round(Math.abs(d) / 60);
+    var m = pct === null ? 'a different ' + measure : pct === 0 ? 'about the same ' + measure : Math.abs(pct) + '% ' + (pct > 0 ? 'more ' : 'less ') + measure;
+    var t = mins < 1 ? 'back at about the same time' : 'back ' + (mins < 90 ? mins + ' min' : (Math.round(mins / 6) / 10) + ' h') + (d > 0 ? ' later' : ' sooner');
+    return { text: m + ', ' + t, pct: pct, seconds: d };
+  };
+  // G2 (gaps spec): why a sector cannot be added to the route being planned, or null when it can (or is already on the route, or the route is full).
+  // sub: { rank, parts }; discovered: the free company's found sector ids; route: the planned route. The range uses the planner's own evaluation.
+  A.cannotAdd = function (sub, discovered, route, id) {
+    var s = SECTOR[id]; if (!s || route.indexOf(id) >= 0) return null;
+    if (sub.rank && s.rank > sub.rank) return { kind: 'rank', text: 'Rank ' + s.rank + ' needed (this submarine is rank ' + sub.rank + ')' };
+    if ((discovered || []).indexOf(id) < 0) return { kind: 'unfound', text: 'Not found yet' };
+    if (route.length >= D.formula.maxSectors) return null;
+    var st = A.stats(sub.rank, sub.parts); if (!st) return null;
+    var ev = A.evalRoute(route.concat(id), st); if (!ev || ev.reachable) return null;
+    var alone = A.evalRoute([id], st), need = ev.range - st.range;
+    return { kind: 'range', need: need, alone: !!alone && !alone.reachable, text: 'Needs range ' + need + ' more' + (alone && !alone.reachable ? ' (out of range from Start even on its own)' : '') };
+  };
+  // G5 (gaps spec): nothing discovered is in reach, so name the single part change (any slot, parts the rank allows) that brings the most discovered
+  // sectors into range; ties go to the lower slot, then the lower part id. Always an object: { why } and, when a swap helps, { slot, from, to, count }.
+  function rangeTip(sub, pool) {
+    var best = null, SL = ['hull', 'stern', 'bow', 'bridge'];
+    var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
+    for (var i = 0; i < 4; i++) {
+      parts.forEach(function (p) {
+        if (p.slot !== i || p.id === sub.parts[i] || CLASS[p.class].rank > sub.rank) return;
+        var np = sub.parts.slice(); np[i] = p.id;
+        var st2 = A.stats(sub.rank, np); if (!st2) return;
+        var got = pool.filter(function (s) { var ev = A.evalRoute([s.id], st2); return ev && ev.reachable; });
+        if (got.length && (!best || got.length > best.got.length)) best = { slot: i, from: sub.parts[i], to: p.id, got: got };
+      });
+    }
+    if (!best) return { why: 'Calculated: no single part change brings a discovered sector into range for this submarine.' };
+    var names = best.got.slice(0, 4).map(function (s) { return name(s.id); }).join(', ') + (best.got.length > 4 ? ' and ' + (best.got.length - 4) + ' more' : '');
+    return { slot: best.slot, from: best.from, to: best.to, count: best.got.length,
+      why: 'Calculated: swapping the ' + SL[best.slot] + ' for ' + PART[best.to].name + ' would bring ' + best.got.length + ' discovered sector' + (best.got.length === 1 ? '' : 's') + ' into range (' + names + '). It applies only if you already have the part or plan to craft it.' };
+  }
+  // Part advice in gil, by the community estimate (docs/submersibles-droprates-spec.md 6.4, E14): each swap the sub's rank allows is
+  // valued by DROPS on the advised route for the changed build (time and all five stats). A swap is advised only when the estimated
+  // gil per hour rises by more than 5% and the route stays within range. Largest gain wins; ties go to the lower slot, then the lower
+  // part id. null when none. The tip names what changes at a threshold and says that it is an estimate.
+  var TIP_MARGIN = 0.05;
+  // and the gain must also be at least this many merchant gil an hour (a swap that adds 150 an hour to a route worth about 3 is not
+  // worth a part). Chosen from the data: over every class at ranks 20 to 145 (gil scenario) the tips below 200 an hour were all on
+  // routes worth under 150 an hour (gains 19 to 81) or small gains (7 to 26%) on routes worth 560 to 1,830; every tip from 208 up
+  // is a real step. 200 clears the first group and the marginal ones, and 150 on a near-zero route.
+  A.TIP_MIN_GAIN = 200;
+  // a duration given in minutes, as the tip says it: minutes below 90, else hours and minutes
+  function durText(mins) {
+    if (mins < 90) return mins + ' minute' + (mins === 1 ? '' : 's');
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h + ' hour' + (h === 1 ? '' : 's') + (m ? ' ' + m + ' minute' + (m === 1 ? '' : 's') : '');
+  }
+  function gilTipEst(sub, st, plan, DR, estOf) {
+    var route = plan.route, base = estOf(route, plan.ev), curG = base.perHour, best = null;
+    var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
+    for (var i = 0; i < 4; i++) {
+      parts.forEach(function (p) {
+        if (p.slot !== i || p.id === sub.parts[i] || CLASS[p.class].rank > sub.rank) return;
+        var np = sub.parts.slice(); np[i] = p.id;
+        var st2 = A.stats(sub.rank, np), ev = st2 && A.evalRoute(route, st2);
+        if (!ev || !ev.reachable) return;
+        var r = DR.route(D, route, st2); if (!r) return;
+        var g = DR.perHour(r.gil, ev.seconds), gain = g - curG;
+        if (!(g > 0) || !(g > curG * (1 + TIP_MARGIN)) || gain < A.TIP_MIN_GAIN) return;
+        if (!best || gain > best.gain) best = { slot: i, from: sub.parts[i], to: p.id, gain: gain, gph: g, st2: st2, ev: ev };
+      });
+    }
+    if (!best) return null;
+    var sectorLabel = function (id) { return SECTOR[id].letter; }, crossed = [], allMax = true;
+    var BAND = ['tier 1 only', 'tier 2', 'tier 3'], RES = ['poor', 'normal', 'optimal'];
+    route.forEach(function (id) {
+      var b = D.breakpoints && D.breakpoints[id], o = DR.state(D, id, st), n = DR.state(D, id, best.st2);
+      if (!b || !o || !n) return;
+      if (o.band < 2 || o.ret < 2 || !o.favor) allMax = false;
+      if (n.band !== o.band) crossed.push('surveillance ' + (n.band > o.band ? 'reaches' : 'falls to') + ' ' + BAND[n.band] + ' at ' + sectorLabel(id) + ' (' + (n.band > o.band ? b[n.band === 2 ? 1 : 0] : b[o.band === 2 ? 1 : 0]) + ' needed, ' + (n.band > o.band ? st.surveillance : best.st2.surveillance) + ' ' + (n.band > o.band ? 'now' : 'after') + ')');
+      if (n.ret !== o.ret) crossed.push('retrieval ' + (n.ret > o.ret ? 'becomes' : 'falls to') + ' ' + RES[n.ret] + ' at ' + sectorLabel(id) + ' (' + (n.ret > o.ret ? b[n.ret === 2 ? 3 : 2] : b[o.ret === 2 ? 3 : 2]) + ' needed, ' + (n.ret > o.ret ? st.retrieval : best.st2.retrieval) + ' ' + (n.ret > o.ret ? 'now' : 'after') + ')');
+      if (n.favor !== o.favor) crossed.push('favor ' + (n.favor ? 'reaches' : 'falls below') + ' the second-item threshold at ' + sectorLabel(id) + ' (' + b[4] + ' needed, ' + (n.favor ? st.favor : best.st2.favor) + ' ' + (n.favor ? 'now' : 'after') + ')');
+    });
+    var mins = Math.round((plan.ev.seconds - best.ev.seconds) / 60);
+    var time = mins >= 1 ? ': ' + durText(mins) + ' faster' : mins <= -1 ? ': ' + durText(-mins) + ' slower' : '';
+    var what = crossed.length ? (time ? '; ' : ': ') + crossed.join('; ') + '.' : (time ? '; ' : ': ') + (allMax ? 'surveillance, retrieval and favor stay above every threshold of this route.' : 'no threshold of this route is crossed.');
+    var fmt = DR.fmt;
+    var tip = { slot: best.slot, from: best.from, to: best.to, gain: best.gain, gilGain: Math.round(best.gain), gilFrom: Math.round(curG), gilTo: Math.round(best.gph), estimate: true };
+    tip.why = 'Swapping the ' + ['hull', 'stern', 'bow', 'bridge'][best.slot] + ' for ' + PART[best.to].name + ' is estimated to give about +' + fmt.hour(best.gain) + ' gil an hour on this route (estimate from community drop records, at merchant prices)' + time + what +
+      ' Above a threshold, extra surveillance, retrieval or favor is counted as worth nothing: the community\'s reading, not confirmed. Only if you already have the part or plan to craft it.';
+    return tip;
+  }
   // the single part change that brings this route back soonest, among the parts the sub's rank allows (step 3 only)
   function partTip(sub, st, route) {
     var base = A.evalRoute(route, st), best = null;
@@ -234,5 +815,41 @@
     if (!best) return null;
     best.why = 'Swapping the ' + ['hull', 'stern', 'bow', 'bridge'][best.slot] + ' for ' + PART[best.to].name + ' would bring this route back ' + Math.round(best.gain / 60) + ' min sooner (calculated). Only if you already have the part or plan to craft it.';
     return best;
+  }
+  // Part advice in gil (item S6-3, owner's answer A to Q1): the one part swap, allowed by the rank, that raises this sub's
+  // best gil per hour over its ranked routes (a route out of range now may come into range with the new part). Only swaps
+  // that lower none of surveillance, retrieval and favor are weighed: how those three change what comes back is not known,
+  // so the figure assumes the same items come back. Largest gain wins; ties go to the lower slot, then the lower part id;
+  // a gain below 1% of the current best gives no tip. null when there is none.
+  function bestGph(rank, parts, routes) {
+    var st = A.stats(rank, parts), best = null;
+    if (!st) return null;
+    routes.forEach(function (l) {
+      var ev = A.evalRoute(l.route, st); if (!ev || !ev.reachable) return;
+      var g = l.perTrip / (ev.seconds / 3600);
+      if (!best || g > best.gph) best = { gph: g, route: l.route };
+    });
+    return best;
+  }
+  function gilTip(sub, routes, fmt) {
+    if (!routes.length) return null;
+    var cur = bestGph(sub.rank, sub.parts, routes), curG = cur ? cur.gph : 0, best = null;
+    var parts = D.parts.slice().sort(function (a, b) { return a.id - b.id; });
+    for (var i = 0; i < 4; i++) {
+      var old = PART[sub.parts[i]];
+      parts.forEach(function (p) {
+        if (p.slot !== i || p.id === sub.parts[i] || CLASS[p.class].rank > sub.rank) return;
+        if (!old || p.surveillance < old.surveillance || p.retrieval < old.retrieval || p.favor < old.favor) return;
+        var np = sub.parts.slice(); np[i] = p.id;
+        var b = bestGph(sub.rank, np, routes); if (!b) return;
+        var gain = b.gph - curG;
+        if (gain > 0 && (!best || gain > best.gain)) best = { slot: i, from: sub.parts[i], to: p.id, gain: gain, gph: b.gph, route: b.route };
+      });
+    }
+    if (!best || best.gain < curG * 0.01) return null;
+    var tip = { slot: best.slot, from: best.from, to: best.to, gain: best.gain, gilGain: Math.round(best.gain), gilFrom: Math.round(curG), gilTo: Math.round(best.gph) };
+    tip.why = 'Swapping the ' + ['hull', 'stern', 'bow', 'bridge'][best.slot] + ' for ' + PART[best.to].name + ' would give more gil per hour: about ' + fmt(best.gph) + ' instead of ' + (cur ? 'about ' + fmt(curG) : 'nothing within range now') +
+      ' on ' + A.routeText(best.route) + ' (calculated from your own log; it assumes the same items come back). It lowers none of surveillance, retrieval and favor. Only if you already have the part or plan to craft it.';
+    return tip;
   }
 })();

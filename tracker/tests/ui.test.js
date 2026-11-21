@@ -338,14 +338,15 @@ test('all 21 themes (the Atelier\'s 20 and Solution Nine), light and dark: reada
         const hex = (v) => { v = v.trim().replace('#', ''); return [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16)); };
         const L = (c) => { const v = c.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
         const cr = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-        const paper = hex(cs.getPropertyValue('--paper')), ink = hex(cs.getPropertyValue('--ink')), seal = hex(cs.getPropertyValue('--seal'));
+        const paper = hex(cs.getPropertyValue('--paper')), ink = hex(cs.getPropertyValue('--ink')), seal = hex(cs.getPropertyValue('--seal')), onSeal = hex(cs.getPropertyValue('--on-seal'));
         const sel = document.createElement('select'); sel.innerHTML = '<option>Option</option>'; document.body.appendChild(sel); const so = getComputedStyle(sel.options[0]); setTimeout(() => sel.remove());
         const rgb = (s) => (s.match(/\d+/g) || []).slice(0, 3).map(Number);
-        return { text: cr(paper, ink), accent: cr(paper, seal), select: cr(rgb(so.backgroundColor), rgb(so.color)) };
+        return { text: cr(paper, ink), accent: cr(paper, seal), select: cr(rgb(so.backgroundColor), rgb(so.color)), onSeal: cr(onSeal, seal) };
       });
       names.push(mode + ':' + id);
       assert.ok(m.text >= 7, `${mode} ${id}: text contrast ${m.text.toFixed(2)}`);
       assert.ok(m.accent >= 3, `${mode} ${id}: accent contrast ${m.accent.toFixed(2)}`);
+      assert.ok(m.onSeal >= 4.5, `${mode} ${id}: text on the accent ${m.onSeal.toFixed(2)}`);
       assert.ok(m.select >= 7, `${mode} ${id}: dropdown contrast ${m.select.toFixed(2)}`);
     }
   }

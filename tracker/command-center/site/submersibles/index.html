@@ -35,13 +35,13 @@
 
 <div class="subs-layout">
   <nav class="tabs" aria-label="Submersibles">
-    <button type="button" data-tab="board"><span class="ico" aria-hidden="true">▦</span>Board</button>
-    <button type="button" data-tab="log"><span class="ico" aria-hidden="true">✎</span>Log</button>
-    <button type="button" data-tab="map"><span class="ico" aria-hidden="true">◎</span>Map</button>
-    <button type="button" data-tab="earn"><span class="ico" aria-hidden="true">◈</span>Earnings</button>
-    <button type="button" data-tab="setup"><span class="ico" aria-hidden="true">⚙</span>Setup</button>
+    <button type="button" data-tab="board"><span class="ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg></span>Board</button>
+    <button type="button" data-tab="log"><span class="ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h8M3 10h6M3 15h5"/><path d="M12 14.5l2.3 2.3L18 11.5"/></svg></span>Log</button>
+    <button type="button" data-tab="map"><span class="ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="4.5"/><circle cx="10" cy="10" r=".8" fill="currentColor"/></svg></span>Map</button>
+    <button type="button" data-tab="earn"><span class="ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v-4M10 17V8M16 17V3"/></svg></span>Earnings</button>
+    <button type="button" data-tab="setup"><span class="ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M3 14h14"/><circle cx="7" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg></span>Setup</button>
   </nav>
-  <main class="subs-main" id="view" aria-live="polite"><p class="muted">Opening your fleet…</p></main>
+  <main class="subs-main" id="view" aria-live="polite"><p class="muted empty-line">Opening your fleet…</p></main>
 </div>
 
 <dialog id="sheet" class="sheet" aria-label="Submarine"></dialog>
@@ -54,9 +54,15 @@
 <script src="../save.js"></script>
 <script src="data.js"></script>
 <script src="fleet.js"></script>
+<script src="recs.js"></script>
+<script src="drops.js"></script>
 <script src="advisor.js"></script>
 <script src="push.js"></script>
 <script src="earn.js"></script>
+<script src="chart.js"></script>
+<script src="palette.js"></script>
+<script src="timeline.js"></script>
+<script src="ledger.js"></script>
 <script src="subs.js"></script>
 </body>
 </html>

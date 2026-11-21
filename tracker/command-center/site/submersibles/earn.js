@@ -10,6 +10,7 @@
   'use strict';
   var E = (globalThis.EARN = globalThis.EARN || {});
   var D = null;
+  E.ENOUGH = 10; // logged voyages on exactly one route (same sectors, same order) before its figure is ranked
   E.TAX = 0.05; // design Q4 default: the Market module's rule once it exists
   E.init = function (data) { D = data; return E; };
   E.name = function (id) { return (D && D.items[id]) || 'Item ' + id; };
@@ -58,7 +59,7 @@
   }
   // Totals of the logged trips (a trip counts on the day it came back).
   E.totals = function (sec, prices, now) {
-    var out = { day: 0, week: 0, month: 0, all: 0, trips: 0, logged: 0, unknown: {}, byFc: {}, byRoute: {}, byItem: {} };
+    var out = { day: 0, week: 0, month: 0, all: 0, trips: 0, logged: 0, unknown: {}, byFc: {}, bySub: {}, byRoute: {}, byItem: {} };
     var lim = { day: startOf('day', now), week: startOf('week', now), month: startOf('month', now) };
     Object.keys(sec.trips || {}).forEach(function (k) {
       var t = sec.trips[k], v = E.tripValue(t, prices), when = t.back || t.t, sub = (sec.subs || {})[t.s], fcId = sub ? sub.fcId : '';
@@ -69,6 +70,7 @@
       out.all += v.gil;
       ['day', 'week', 'month'].forEach(function (p) { if (when >= lim[p]) out[p] += v.gil; });
       out.byFc[fcId] = (out.byFc[fcId] || 0) + v.gil;
+      var bs = out.bySub[t.s] = out.bySub[t.s] || { gil: 0, trips: 0 }; bs.gil += v.gil; bs.trips++; // G10: the same total per submarine (a removed submarine keeps its voyages)
       var rk = (t.r || []).join(',');
       if (rk && t.back && t.t && t.back > t.t) {
         var r = out.byRoute[rk] = out.byRoute[rk] || { route: t.r.slice(), gil: 0, hours: 0, trips: 0 };
@@ -76,8 +78,31 @@
       }
       (t.items || []).forEach(function (x) { var u = E.unitValue(x[0], prices), b = out.byItem[x[0]] = out.byItem[x[0]] || { qty: 0, gil: 0, how: u.how }; b.qty += x[1]; b.gil += (u.each || 0) * x[1]; });
     });
-    Object.keys(out.byRoute).forEach(function (k) { var r = out.byRoute[k]; r.perHour = r.hours ? r.gil / r.hours : 0; });
+    Object.keys(out.byRoute).forEach(function (k) { var r = out.byRoute[k]; r.perHour = r.hours ? r.gil / r.hours : 0; r.perTrip = r.trips ? r.gil / r.trips : 0; r.enough = r.trips >= E.ENOUGH; });
     return out;
+  };
+  // Ranks the routes of totals().byRoute: { ranked: [entry + pos], thin: [entry] }. Ranked: enough voyages, best gil per
+  // hour first; routes whose gil per hour rounds to the same whole gil share a position (1, 1, 3), inside a tie more
+  // voyages first, then the route text. Thin: by voyage count, highest first, then gil per hour.
+  E.ranked = function (byRoute) {
+    var all = Object.keys(byRoute || {}).map(function (k) { return { key: k, e: byRoute[k] }; });
+    var by = function (o) { return o.e; };
+    var txt = function (a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; };
+    var good = all.filter(function (o) { return o.e.enough; }).sort(function (a, b) {
+      return (Math.round(b.e.perHour) - Math.round(a.e.perHour)) || (b.e.trips - a.e.trips) || txt(a, b);
+    });
+    var ranked = good.map(function (o, i) {
+      var pos = i > 0 && Math.round(good[i - 1].e.perHour) === Math.round(o.e.perHour) ? null : i + 1;
+      o.pos = pos; return o;
+    });
+    ranked.forEach(function (o, i) { if (o.pos === null) o.pos = ranked[i - 1].pos; });
+    var thin = all.filter(function (o) { return !o.e.enough; }).sort(function (a, b) {
+      return (b.e.trips - a.e.trips) || (b.e.perHour - a.e.perHour) || txt(a, b);
+    });
+    return {
+      ranked: ranked.map(function (o) { var x = Object.assign({}, o.e); x.pos = o.pos; return x; }),
+      thin: thin.map(by)
+    };
   };
 
   // The log as CSV: one line per item of every trip (a trip with nothing logged gets one line with no item).
@@ -114,24 +139,100 @@
   // Average recent sale price per item for a world, data centre or region; cached on this device for an hour.
   var CACHE_KEY = 'eveniunt-subs-prices';
   E.cached = function (scope) { try { var c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); return c && c.scope === scope ? c : null; } catch (e) { return null; } };
-  E.fetchPrices = function (scope, ids) {
-    var c = E.cached(scope) || { scope: scope, at: 0, prices: {} };
+  // The rules of an automatic attempt and of what a reply means are pure functions, so the tests can run them without a browser.
+  E.GATE_MS = 15 * 60000; // no automatic attempt for this long after the last one, whatever its outcome (Refresh ignores it)
+  E.FRESH_MS = 3600000; // a fetched price list is fresh for an hour
+  E.NONE_MS = 3600000; // an item the service has no price for is not asked for again for an hour
+  E.SKEW_MS = 60000; // a stored time this far ahead of the clock means the clock was moved back: the record is treated as expired
+  // Has a stored time run out? age = now - stored time. Expired at the limit, and also when the time is in the future by more than a minute.
+  E.aged = function (at, now, limit) { var age = now - at; return age >= limit || age < -E.SKEW_MS; };
+  // May the app try on its own? tried = { <price place>: { at } } (the last automatic attempt of each place), or null.
+  // E2: the attempt record of each price place is also kept in device storage next to the price cache (not in the save), so a reload and
+  // another tab on the same device honour the same 15 minutes. A storage failure falls back to the page's memory.
+  var TRIED_KEY = 'eveniunt-subs-prices-tried';
+  E.triedLoad = function (mem) {
+    var out = Object.assign({}, mem || {});
+    try {
+      var o = JSON.parse(localStorage.getItem(TRIED_KEY) || 'null');
+      if (o && typeof o === 'object') Object.keys(o).forEach(function (k) { var a = o[k] && +o[k].at; if (a > 0 && a - Date.now() <= E.SKEW_MS && (!out[k] || a > out[k].at)) out[k] = { at: a }; });
+    } catch (e) { /* memory only */ }
+    return out;
+  };
+  E.triedSave = function (scope, at, mem) {
+    if (mem) mem[scope] = { at: at };
+    try { var o = JSON.parse(localStorage.getItem(TRIED_KEY) || 'null'); if (!o || typeof o !== 'object') o = {}; o[scope] = { at: at }; localStorage.setItem(TRIED_KEY, JSON.stringify(o)); } catch (e) { /* memory only */ }
+  };
+  E.mayTry = function (tried, scope, now, force) { var t = tried && tried[scope]; return !!force || !t || E.aged(t.at, now, E.GATE_MS); };
+  // When a price was fetched: its own time in c.seen, else the time of the whole list (an older cache has no per-item time).
+  E.seenAt = function (c, id) { return c && c.seen && c.seen[id] != null ? c.seen[id] : c ? c.at : 0; };
+  // The oldest fetch time among the given items that have a price in the cache, or null: "prices seen" never claims more than is true.
+  E.oldest = function (c, ids) {
+    var t = null;
+    if (c && c.prices) (ids || []).forEach(function (id) { if (id in c.prices) { var s = E.seenAt(c, id); if (s && (t === null || s < t)) t = s; } });
+    return t;
+  };
+  // The tradable items a fetch would still ask for: those with no price or a price fetched an hour ago or more (judged per item), unless
+  // the service was already found to have no price for them less than an hour ago.
+  E.needed = function (c, ids, now) {
     var want = ids.filter(function (id) { return E.tradable(id); });
-    var missing = want.filter(function (id) { return !(id in c.prices); });
-    if (!missing.length && Date.now() - c.at < 3600000) return Promise.resolve(c);
-    var list = Date.now() - c.at < 3600000 ? missing : want, batches = [];
+    if (!c) return want;
+    var none = c.none || {}, prices = c.prices || {};
+    return want.filter(function (id) { return !(none[id] != null && !E.aged(none[id], now, E.NONE_MS)) && (!(id in prices) || E.aged(E.seenAt(c, id), now, E.FRESH_MS)); });
+  };
+  // Folds the replies of the batches into the cache. results[n] is { ok: true, json } or { ok: false, status } for batches[n].
+  // An item left out of an answered reply, or answered 404 on its own, is recorded in c.none as "no market price"; any other
+  // failed batch counts as failed. Each answered item gets its own fetch time in c.seen; an item of a failed batch keeps its old price
+  // and its old time (an older cache without c.seen is first given every item's time as the list's time), so it is asked for again.
+  // c.at is the time of the last answered fetch. When every batch failed, nothing changes. Returns { cache, failed, answered, partial, error }.
+  E.settle = function (c, batches, results, now) {
+    var next = { scope: c.scope, at: c.at, prices: Object.assign({}, c.prices), none: Object.assign({}, c.none || {}), seen: {} }, failed = 0, status = 0;
+    Object.keys(c.prices).forEach(function (id) { next.seen[id] = E.seenAt(c, id); });
+    results.forEach(function (res, n) {
+      var b = batches[n];
+      if (res && res.ok) {
+        var j = res.json || {}, items = j.items || (b.length === 1 ? { [b[0]]: j } : {});
+        b.forEach(function (id) {
+          var x = items[id];
+          if (x == null) { next.none[id] = now; return; }
+          var p = x.averagePrice || x.currentAveragePrice; next.prices[id] = p ? Math.round(p) : 0; next.seen[id] = now; delete next.none[id];
+        });
+      } else if (res && res.status === 404 && b.length === 1) next.none[b[0]] = now;
+      else { failed++; status = (res && res.status) || status; }
+    });
+    var answered = batches.length - failed;
+    if (answered > 0) next.at = now;
+    return { cache: next, failed: failed, answered: answered, partial: failed > 0 && answered > 0, error: batches.length && !answered ? (status ? 'the price service answered ' + status : 'no connection') : null };
+  };
+  // The message for a failed fetch, with the time of the last real one when there is one (fmt = the module's clock).
+  E.PARTIAL_NOTE = 'Some market prices could not be fetched; those items show their last known or merchant price.';
+  // c = the cache the values are drawn from ({ prices, at, seen }), ids = the items on screen. The message is decided by the prices
+  // actually used for those items (an item whose value is the market price, as E.unitValue decides), not by a flag: the oldest such fetch time is named.
+  E.usedMarket = function (c, ids) {
+    var t = null;
+    if (c && c.prices) (ids || []).forEach(function (id) { if (E.unitValue(id, c.prices).how === 'market') { var s = E.seenAt(c, id); if (t === null || s < t) t = s; } });
+    return t;
+  };
+  E.failureNote = function (c, ids, fmt) {
+    var t = E.usedMarket(c, ids);
+    return t === null ? 'Market prices could not be fetched; showing merchant prices.'
+      : 'Market prices could not be fetched; showing the last known market prices' + (t ? ' (fetched ' + fmt(t) + ')' : '') + ' and merchant prices for the rest.';
+  };
+  // Resolves { scope, at, prices, none, seen, error, partial }: error is set when every batch failed (the cache is then not stamped as fresh); partial when only some did.
+  // force asks for every tradable item again, and forgets the "no market price" records.
+  E.fetchPrices = function (scope, ids, force) {
+    var c = E.cached(scope) || { scope: scope, at: 0, prices: {}, none: {} }, now = Date.now();
+    var list = force ? ids.filter(function (id) { return E.tradable(id); }) : E.needed(c, ids, now);
+    if (!list.length) return Promise.resolve(Object.assign({ error: null, partial: false }, c));
+    var batches = [];
     for (var i = 0; i < list.length; i += 100) batches.push(list.slice(i, i + 100));
     return Promise.all(batches.map(function (b) {
-      return fetch('https://universalis.app/api/v2/' + encodeURIComponent(scope) + '/' + b.join(',') + '?listings=0&entries=20').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+      return fetch('https://universalis.app/api/v2/' + encodeURIComponent(scope) + '/' + b.join(',') + '?listings=0&entries=20')
+        .then(function (r) { return r.ok ? r.json().then(function (j) { return { ok: true, json: j }; }) : { ok: false, status: r.status }; })
+        .catch(function () { return { ok: false, status: 0 }; });
     })).then(function (res) {
-      res.forEach(function (j, n) {
-        if (!j) return;
-        var items = j.items || (batches[n].length === 1 ? { [batches[n][0]]: j } : {});
-        Object.keys(items).forEach(function (id) { var x = items[id]; var p = x && (x.averagePrice || x.currentAveragePrice); c.prices[id] = p ? Math.round(p) : 0; });
-      });
-      c.at = Date.now();
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch (e) { /* private window */ }
-      return c;
+      var s = E.settle(c, batches, res, Date.now());
+      if (s.answered > 0) { try { localStorage.setItem(CACHE_KEY, JSON.stringify(s.cache)); } catch (e) { /* private window */ } }
+      return Object.assign({ error: s.error, partial: s.partial }, s.cache);
     });
   };
 })();

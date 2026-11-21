@@ -13,6 +13,29 @@
   var MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
   F.DEVICE_KEY = 'eveniunt-command-center-device';
 
+  // The sectors a free company ends with when the Setup form is saved: what is saved now plus the sectors the player ticked in the form
+  // (a new company's starting sectors count as ticked), minus what the player unticked in the form. A sector unticked elsewhere while the
+  // form was open is not added back; one the form never showed as ticked is never removed. Sorted whole numbers, no repeats.
+  F.mergeTicks = function (saved, ticked, off) {
+    var gone = {}, seen = {}, out = [];
+    (off || []).forEach(function (id) { gone[id] = true; });
+    (saved || []).concat(ticked || []).forEach(function (id) { if (Number.isInteger(id) && !gone[id] && !seen[id]) { seen[id] = true; out.push(id); } });
+    return out.sort(function (a, b) { return a - b; });
+  };
+  // The sectors the player unticked in a saved form that the stored list holds again after a merge (another device or tab had them ticked).
+  F.cameBack = function (stored, off) {
+    var have = {}, seen = {};
+    (stored || []).forEach(function (id) { have[id] = true; });
+    return (off || []).filter(function (id) { if (!Number.isInteger(id) || !have[id] || seen[id]) return false; seen[id] = true; return true; }).sort(function (a, b) { return a - b; });
+  };
+  // The status line for them ('' when none came back).
+  F.cameBackLine = function (name, back) {
+    var n = (back || []).length, who = name || 'this free company';
+    if (!n) return '';
+    return n === 1 ? '1 sector you unticked for ' + who + ' was ticked on another device or tab and has been kept. Untick it again in Setup if it is wrong.'
+      : n + ' sectors you unticked for ' + who + ' were ticked on another device or tab and have been kept. Untick them again in Setup if they are wrong.';
+  };
+
   // ------------------------------------------------------------------ typed game times
   // A duration as the game shows it, or as the owner writes it: "1d 3h 12m", "3h", "45 min", "27:45" (hours:minutes),
   // "27:45:10". Returns milliseconds, or null when the text cannot be read without guessing.
@@ -51,6 +74,12 @@
     if (sub.slot > slots) return 'locked';
     if (!sub.voyage) return 'idle';
     return sub.voyage.returnAt > now ? 'out' : 'back';
+  };
+  // The share of a voyage already done, 0 to 1, from the send time and the return time already stored; null when either is
+  // missing or the times are not in order (then no gauge is drawn). Clamped: before the send time 0, after the return 1.
+  F.voyageProgress = function (v, now) {
+    if (!v || !(v.sentAt > 0) || !(v.returnAt > 0) || !(v.returnAt > v.sentAt)) return null;
+    return Math.min(1, Math.max(0, (now - v.sentAt) / (v.returnAt - v.sentAt)));
   };
   F.LABEL = { back: 'Back', out: 'Out', idle: 'Idle', locked: 'Locked' };
   // up: round up to the minute, for time still to go (a countdown started from "2h 5m" reads 2 h 5 min, not 2 h 4 min)
@@ -102,15 +131,25 @@
   // exactly what the main Settings creates. Where a character has several free companies, bare ones are dropped when another
   // is not bare, else all but the first (lowest order, then id). Never touches one that is not bare, or one with no character.
   // Pure and deterministic, so two pages or devices drop the same ones. Returns { section: a copy, removed: [ids] }.
+  F.isBare = function (sec, fcId) {
+    var f = sec && sec.fcs && sec.fcs[fcId], subs = (sec && sec.subs) || {};
+    if (!f) return false;
+    var owned = Object.keys(subs).some(function (k) { return subs[k] && subs[k].fcId === fcId; });
+    return !owned && !f.world && (f.unlockedSlots === undefined || f.unlockedSlots === 1) &&
+      (f.discovered === undefined || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
+  };
+  // H1: the working copy after a write that finished while the player kept editing: the three-way merge of what the write sent
+  // (base), the copy now on the page (local) and the section the save returned (remote), by the save's own merge (the local
+  // unit wins a clash; a company changed on both sides is merged by CC.mergeUnit). Inputs are not changed.
+  F.reconcile = function (sent, local, remote) {
+    var CC = globalThis.CC, c = function (x) { return JSON.parse(JSON.stringify(x || {})); };
+    var out = CC.mergeModules({ submersibles: c(sent) }, { submersibles: c(local) }, { submersibles: c(remote) }).submersibles || {};
+    ['fcs', 'subs', 'trips', 'settings'].forEach(function (k) { if (!out[k]) out[k] = {}; });
+    return out;
+  };
   F.foldFcs = function (section) {
-    var sec = JSON.parse(JSON.stringify(section || {})), fcs = sec.fcs || {}, subs = sec.subs || {}, removed = [];
-    var owned = {};
-    Object.keys(subs).forEach(function (k) { owned[subs[k] && subs[k].fcId] = true; });
-    var bare = function (id) {
-      var f = fcs[id];
-      return !owned[id] && !f.world && (f.unlockedSlots === undefined || f.unlockedSlots === 1) &&
-        (f.discovered === undefined || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
-    };
+    var sec = JSON.parse(JSON.stringify(section || {})), fcs = sec.fcs || {}, removed = [];
+    var bare = function (id) { return F.isBare(sec, id); };
     var by = function (a, b) { return ((fcs[a].order || 0) - (fcs[b].order || 0)) || (a < b ? -1 : a > b ? 1 : 0); };
     var groups = {};
     Object.keys(fcs).forEach(function (id) { var c = fcs[id] && fcs[id].charId; if (typeof c === 'string') (groups[c] = groups[c] || []).push(id); });
@@ -126,6 +165,34 @@
       gone.forEach(function (id) { delete fcs[id]; removed.push(id); });
     });
     return { section: sec, removed: removed.sort() };
+  };
+
+  // Which parts the Setup form writes for one submarine (pure). saved: the parts stored now (an array or none); typed: the form's own
+  // four parts; touched: the player chose a part in this form (a typed rank alone does not count); rank: the rank being written;
+  // fits(partId, rank): whether a part fits that rank. A part the player chose here is written as typed; otherwise the saved parts stay
+  // when every one fits the rank, and when one does not fit, none are written and `cleared` says so (the status line names it).
+  // -> { parts: array of four ids or null, cleared: boolean }
+  F.partsWritten = function (saved, typed, touched, rank, fits) {
+    var whole = function (p) { return Array.isArray(p) && p.length === 4 && p.every(function (x) { return x && fits(x, rank); }); };
+    if (touched || !Array.isArray(saved)) return { parts: whole(typed) ? typed.slice() : null, cleared: false };
+    if (whole(saved)) return { parts: saved.slice(), cleared: false };
+    return { parts: null, cleared: saved.some(function (x) { return !!x; }) };
+  };
+
+  // Slots that hold two or more submarines (a stored duplicate: a slot holds one). [{ fcId, slot, ids }] for every existing
+  // free company; ids in the order of sec.subs (the first is the one the company view shows); sorted by company order,
+  // then company id, then slot. A submarine whose company is gone is not listed. Pure.
+  F.slotClashes = function (sec) {
+    var fcs = (sec && sec.fcs) || {}, subs = (sec && sec.subs) || {}, by = {}, out = [];
+    Object.keys(subs).forEach(function (id) {
+      var s = subs[id]; if (!s || !fcs[s.fcId] || s.slot == null) return;
+      var k = s.fcId + '|' + s.slot;
+      if (!by[k]) { by[k] = { fcId: s.fcId, slot: s.slot, ids: [] }; out.push(by[k]); }
+      by[k].ids.push(id);
+    });
+    return out.filter(function (c) { return c.ids.length > 1; }).sort(function (a, b) {
+      return ((fcs[a.fcId].order || 0) - (fcs[b.fcId].order || 0)) || (a.fcId < b.fcId ? -1 : a.fcId > b.fcId ? 1 : 0) || (a.slot - b.slot);
+    });
   };
 
   // ------------------------------------------------------------------ calendar file
@@ -201,6 +268,9 @@
     b.querySelector('.fleet-banner-x').addEventListener('click', function () { b.remove(); });
     box.appendChild(b);
     while (box.children.length > 4) box.removeChild(box.firstChild);
+    // M15: the banner stands below the page's top navigation and never covers it (at least 8 px under the header when it is in view)
+    var head = document.querySelector('header'), hb = head ? head.getBoundingClientRect().bottom : 0;
+    box.style.top = Math.round(Math.max(0, hb) + 8) + 'px';
     return text;
   }
   // opts: { link (the module's address, shown on the shell's banner), section() → the current section or null }

@@ -1,0 +1,838 @@
+'use strict';
+// Submersibles look (docs/submersibles-look-spec.md, W1): contrast of the module's status and chart colours in all 21
+// themes, light and dark. Theme rows come from command-center/site/look.js; the shared tokens are resolved as applyLook()
+// does at contrast 50; the module's own tokens are read out of src/submersibles/subs.css.
+// Run: node --test tests/subs-look.test.js
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+// the model of the module's colours (OKLab arithmetic, theme rows, token rules) lives in subs-palette.js
+const P = require('./subs-palette.js');
+const { CC, css, lookSrc, THEMES, ACCENTS, hexRgb, mixRgb, lum, ratio, RULES, colour, shared } = P;
+
+const stat = {}; // pair -> { min, where }
+const note = (pair, r, where) => { if (!stat[pair] || r < stat[pair].min) stat[pair] = { min: r, where }; };
+const failures = [], chartFailures = [];
+function need(pair, fg, bg, min, where) {
+  const r = ratio(fg, bg);
+  note(pair, r, where);
+  if (r < min) (pair.startsWith('chart-') ? chartFailures : failures).push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where);
+}
+
+// One computation, two tests, so a failing chart pair does not hide the status pairs (or the other way round).
+test('module tokens: status pairs and errors reach their contrast in all 21 themes', () => {
+  assert.equal(THEMES.length, 21);
+  for (const row of THEMES) {
+    for (const mode of ['light', 'dark']) {
+      const { dk } = shared(row, mode);
+      const ac = hexRgb((mode === 'dark' ? row[3] : row[2])[2]);
+      const where = row[0] + ' ' + mode;
+      const env = P.env(row, mode);
+      const c = (n) => colour('var(' + n + ')', env);
+      for (const k of ['back', 'out', 'idle']) {
+        need('on-' + k + ' on ' + k, c('--on-' + k), c('--' + k), 4.5, where);
+        need(k + ' on slip (edge, 3:1)', c('--' + k), c('--slip'), 3, where);
+        // W3: the Board's row tints carry the row's text and its status edge
+        need('ink on ' + k + '-bg (row text)', c('--ink'), c('--' + k + '-bg'), 4.5, where);
+        need(k + ' on ' + k + '-bg (row edge, 3:1)', c('--' + k), c('--' + k + '-bg'), 3, where);
+        note('ink-2 on ' + k + '-bg (shared ink, printed)', ratio(c('--ink-2'), c('--' + k + '-bg')), where);
+      }
+      // W21 voyage gauge: the filled segments (--out) against the unfilled ones (--out at 12% over the row tint) and the row tint
+      const gaugeTrack = colour('color-mix(in srgb, var(--out) 12%, var(--out-bg))', env);
+      need('gauge fill (out) on gauge track (3:1)', c('--out'), gaugeTrack, 3, where);
+      need('gauge fill (out) on out-bg (3:1)', c('--out'), c('--out-bg'), 3, where);
+      note('gauge track on out-bg (printed; the unfilled segments are a guide, the figure is in words)', ratio(gaugeTrack, c('--out-bg')), where);
+      // --on-seal: the shared token applyLook() picks through onSeal(), taken from the built look.js
+      need('on-seal on seal (shared; primary buttons and .quick)', hexRgb(onSeal(ac)), c('--seal'), 4.5, where);
+      // Revision 2 (W13): the inverted slab, the bar field and the card wash. The --back-bg pair above reads the new 16% value.
+      need('on-slab on slab (slab text)', c('--on-slab'), c('--slab'), 4.5, where);
+      need('on-slab-2 on slab (slab, secondary)', c('--on-slab-2'), c('--slab'), 4.5, where);
+      need('ink on hi-slip (text on the --hi wash)', c('--ink'), c('--hi-slip'), 4.5, where);
+      note('ink-2 on hi-slip (shared ink, printed)', ratio(c('--ink-2'), c('--hi-slip')), where);
+      // Revision 2 (W19, W20): the planner and the tier blocks sit on the paper, the phone Earnings labels use --ink on the bar (the pair above); the sea tab's fill on its track is decoration, its figure is the count in words, so it is printed, not asserted
+      need('ink on paper (planner, tier blocks, sea tabs)', c('--ink'), c('--paper'), 4.5, where);
+      for (let sea = 1; sea <= 7; sea++) note('sea ' + sea + ' fill on ink-2 track (printed; decoration)', ratio(c('--sea-' + sea), c('--ink-2')), where);
+      need('bad on slip', c('--bad'), c('--slip'), 4.5, where);
+      need('bad on paper', c('--bad'), c('--paper'), 4.5, where);
+      // Revision 2 (W15, W16): labels and kickers in the sheet and the tables sit on the slip, the sector names on the paper, the Log's row hover on paper-2
+      need('ink-2 on slip (labels, kickers, table heads)', c('--ink-2'), c('--slip'), 4.5, where);
+      need('ink-2 on paper (sector rank line)', c('--ink-2'), c('--paper'), 4.5, where);
+      need('ink on paper-2 (Log row hover)', c('--ink'), c('--paper-2'), 4.5, where);
+      // E5: small text (13 px and under) on its own field, all 21 themes, light and dark. The pairs found by walking every screen in the browser (text colour against the pixels behind it)
+      need('E5 footer, credits, licence (12px): ink-2 on paper', c('--ink-2'), c('--paper'), 4.5, where);
+      note('E5 footer before the fix (printed): ink-3 on paper', ratio(c('--ink-3'), c('--paper')), where);
+      for (const k of ['back', 'out', 'idle']) need('E5 lane parts code and rank line (12px): ink on ' + k + '-bg', c('--ink'), c('--' + k + '-bg'), 4.5, where);
+      need('E5 tier line (13px): ink on paper', c('--ink'), c('--paper'), 4.5, where);
+      for (const f of ['slip', 'paper']) need('E5 disabled small button (12px): ink-2 on ' + f, c('--ink-2'), c('--' + f), 4.5, where);
+      note('E5 disabled small button before the fix (printed): ink at half opacity on slip', ratio(mixRgb(c('--ink'), c('--slip'), 0.5), c('--slip')), where);
+      note('ink-2 on paper-2 (printed; the Log row uses --ink there)', ratio(c('--ink-2'), c('--paper-2')), where);
+      for (let sea = 1; sea <= 7; sea++) {
+        const cenv = Object.assign({}, env, dk ? RULES.chartDark : RULES.chartLight, { '--sea': env['--sea-' + sea] });
+        const w = where + ' sea ' + sea;
+        const cc = (n) => colour('var(' + n + ')', cenv);
+        for (const bgName of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) { // -hi: the lightest ground under any marker (scan line plus sweep), spec R5 W18
+          for (const k of ['--chart-ink', '--chart-ink-2', '--chart-found', '--chart-next', '--chart-hot-text']) need(k.slice(2) + ' on ' + bgName.slice(2), cc(k), cc(bgName), 4.5, w);
+          need('chart-hot (the route line itself, W29) on ' + bgName.slice(2) + ' (3:1)', cc('--chart-hot'), cc(bgName), 3, w); // the planned route is a line, a meaningful graphic: 3:1; the letters of its stops are text and stay at 4.5 (--chart-hot-text)
+          need('chart-far on ' + bgName.slice(2), cc('--chart-far'), cc(bgName), 3, w);
+        }
+      }
+    }
+  }
+  const rows = Object.entries(stat).map(([k, v]) => '  ' + k.padEnd(34) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where);
+  console.log('Contrast, lowest ratio per pair (21 themes x light/dark, chart pairs x 7 seas):\n' + rows.join('\n'));
+  assert.deepEqual(failures.slice(0, 20), [], failures.length + ' pairs under their ratio');
+});
+
+test('module tokens: chart pairs reach their contrast in all 21 themes, both modes and 7 seas', () => {
+  assert.deepEqual(chartFailures.slice(0, 20), [], chartFailures.length + ' chart pairs under their ratio');
+});
+
+test('the old fixed colours are gone from subs.css', () => {
+  for (const bad of ['#c0392b', '#06210f;', '#2a1800;']) {
+    // the dark pair values are the new tokens; only the literal old error red and stray #fff may not remain outside the token blocks
+    if (bad === '#c0392b') assert.ok(!css.includes(bad));
+  }
+  const body = css.split('\n').filter((l) => !l.startsWith(':root') && !l.includes(':root:not([data-theme="light"])') && !l.startsWith('.map-panel')).join('\n');
+  assert.ok(!/#fff\b/i.test(body));
+});
+
+// W12: the text colour on the accent, taken out of the built look.js with its own lum()
+const fn = (name) => { const i = lookSrc.indexOf('function ' + name + '('); assert.ok(i >= 0, 'no ' + name + '() in look.js'); return lookSrc.slice(i, lookSrc.indexOf('\n', i)); };
+const { lum: lumB, onSeal } = new Function(fn('lum') + '\n' + fn('onSeal') + '\nreturn { lum: lum, onSeal: onSeal };')();
+const oldRule = (ac) => (lumB(ac) > 0.42 ? '#111111' : '#ffffff');
+
+test('on-seal on seal reaches 4.5:1 for the 21 themes, the preset accents and a sweep of accents', () => {
+  const bad = [], changed = [];
+  const chk = (ac, where) => { const col = onSeal(ac); if (ratio(hexRgb(col), ac) < 4.5) bad.push(where + ' ' + col); return col; };
+  for (const row of THEMES) for (const mode of ['light', 'dark']) {
+    const ac = hexRgb((mode === 'dark' ? row[3] : row[2])[2]);
+    const col = chk(ac, row[0] + ' ' + mode);
+    if (col !== oldRule(ac)) changed.push(row[0] + ' ' + mode + ' ' + oldRule(ac) + ' -> ' + col);
+  }
+  const presets = ACCENTS.filter((a) => a[2]);
+  assert.equal(presets.length, 7);
+  for (const a of presets) { chk(hexRgb(a[2]), a[0] + ' light'); chk(hexRgb(a[3]), a[0] + ' dark'); }
+  let n = 0;
+  for (let r = 0; r <= 255; r += 15) for (let g = 0; g <= 255; g += 15) for (let b = 0; b <= 255; b += 15) {
+    const ac = [r, g, b], col = onSeal(ac); n++;
+    assert.ok(['#ffffff', '#111111', '#000000'].includes(col), 'one of the three colours');
+    if (ratio([255, 255, 255], ac) >= 4.5) assert.equal(col, '#ffffff', 'white whenever it reaches 4.5:1: ' + ac);
+    chk(ac, 'rgb(' + ac + ')');
+  }
+  assert.equal(n, 18 * 18 * 18);
+  assert.deepEqual(bad, []);
+  console.log('Pairs whose on-seal colour differs from the old rule (' + changed.length + '):\n  ' + changed.join('\n  '));
+});
+
+test('the three built files carry onSeal() and not the old rule', () => {
+  for (const f of [path.join(CC, 'site', 'look.js'), path.join(__dirname, '..', 'dist', 'eveniunt-tracker.html'), path.join(__dirname, '..', '..', 'crafting', 'atelier', 'dist', 'eveniunt-atelier.html')]) {
+    const t = fs.readFileSync(f, 'utf8');
+    assert.ok(t.includes('function onSeal('), f + ' has onSeal()');
+    assert.ok(!t.includes('> 0.42 ?'), f + ' has no old rule');
+  }
+});
+
+// ---- Revision 3 (W22): the palette of R3.4, computed in plain JavaScript from the theme values ----
+test('palette model: OKLab arithmetic reproduces the published values', () => { P.selfCheck(); });
+
+const status = ['--back', '--out', '--idle', '--bad'];
+const sRGBok = (rgb) => P.linear(rgb).every((v) => v >= -0.001 && v <= 1.001);
+const palFail = [], palStat = {}, palPrint = [];
+const pnote = (pair, r, where) => { if (!palStat[pair] || r < palStat[pair].min) palStat[pair] = { min: r, where }; };
+function pneed(pair, fg, bg, min, where) { const r = ratio(fg, bg); pnote(pair, r, where); if (r < min) palFail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); }
+// one hue's four tones against the surfaces they sit on (the "must reach" column of R3.4)
+function checkTones(e, mid, tones, label, where) {
+  const c = (n) => colour('var(' + n + ')', e);
+  const m = c(mid);
+  if (!sRGBok(m)) palFail.push(label + ' mid outside sRGB (' + P.linear(m).map((x) => x.toFixed(3)).join(',') + ') in ' + where);
+  pneed('on-mid on ' + label + ' mid (4.5)', c('--on-mid'), m, 4.5, where);
+  for (const s of ['--slip', '--paper', '--paper-2']) {
+    pneed(label + ' graphic on ' + s.slice(2) + ' (3)', c(tones.g), c(s), 3, where);
+    pneed(label + ' strong on ' + s.slice(2) + ' (4.5)', c(tones.s), c(s), 4.5, where);
+  }
+  pneed(label + ' strong on its wash (4.5)', c(tones.s), c(tones.w), 4.5, where);
+  pneed('ink on ' + label + ' wash (4.5)', c('--ink'), c(tones.w), 4.5, where);
+}
+function checkPalette(row, mode, o) {
+  const where = row[0] + ' ' + mode;
+  const e = P.env(row, mode, o), c = (n) => colour('var(' + n + ')', e);
+  for (const v of P.VOICES) {
+    checkTones(e, '--' + v + '-m', { g: '--' + v + '-g', s: '--' + v + '-s', w: '--' + v + '-w' }, v, where);
+    pnote('ink-2 on ' + v + '-wash (printed, not asserted)', ratio(c('--ink-2'), c('--' + v + '-w')), where);
+  }
+  for (const k of ['--back-bg', '--out-bg', '--idle-bg']) pneed('route-s on ' + k.slice(2) + ' (4.5)', c('--route-s'), c(k), 4.5, where);
+  // W22b decision 5: the fallback text tones of the status colours (the page replaces them with the computed ones)
+  for (const k of status) for (const pg of ['slip', 'paper', 'paper-2']) pneed(k.slice(2) + '-s (text tone) on ' + pg + ' (4.5)', c(k + '-s'), c('--' + pg), 4.5, where);
+  for (const n of P.SEAS) {
+    checkTones(e, '--sea-' + n, { g: '--sea-' + n + '-g', s: '--sea-' + n + '-s', w: '--sea-' + n + '-w' }, 'sea ' + n, where);
+  }
+  for (const scr of ['board'].concat(P.SCREENS)) {
+    const ee = P.env(row, mode, Object.assign({}, o, { scr }));
+    const sm = colour('var(--scr)', ee), cc = (n) => colour('var(' + n + ')', ee); // the screen voice: a field (mid) and a band (graphic tone)
+    if (!sRGBok(sm)) palFail.push('scr ' + scr + ' mid outside sRGB in ' + where);
+    pneed('on-mid on scr mid (4.5)', cc('--on-mid'), sm, 4.5, where);
+    for (const s of ['--slip', '--paper', '--paper-2']) pneed('scr graphic on ' + s.slice(2) + ' (3)', cc('--scr-g'), cc(s), 3, where);
+  }
+  // the four fixed voice hues of the fallback (Revision 4) differ pairwise by at least 40 degrees
+  const hues = P.VOICES.map((v) => P.rgbToLch(c('--' + v + '-m'))[2]);
+  let minGap = 360;
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) minGap = Math.min(minGap, P.hueGap(hues[i], hues[j]));
+  if (minGap < 40) palFail.push('voice hues ' + minGap.toFixed(1) + ' deg apart in ' + where);
+  // printed: each voice's hue against the nearest status hue
+  {
+    const sh = status.map((k) => [k.slice(2), P.rgbToLch(c(k))[2]]);
+    palPrint.push(where.padEnd(38) + P.VOICES.map((v, i) => { const n = sh.reduce((a, b) => P.hueGap(hues[i], b[1]) < P.hueGap(hues[i], a[1]) ? b : a); return v + ' ' + hues[i].toFixed(0) + ' (' + n[0] + ' ' + P.hueGap(hues[i], n[1]).toFixed(0) + ')'; }).join('  '));
+  }
+}
+
+test('fallback palette in subs.css (R3.4): every voice, sea and screen colour is in sRGB and reaches its contrast in all 21 themes, light and dark', () => {
+  for (const row of THEMES) for (const mode of ['light', 'dark']) {
+    checkPalette(row, mode, {});
+  }
+  const rows = Object.entries(palStat).map(([k, v]) => '  ' + k.padEnd(46) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where);
+  console.log('Palette contrast, lowest ratio per pair (21 themes x light/dark; sea pairs x 7 seas):\n' + rows.join('\n'));
+  console.log('Voice hue and nearest status hue (status colours: back, out, idle, bad):\n  ' + palPrint.join('\n  '));
+  const hex = (th, mode) => { const p = P.palette(THEMES.find((r) => r[0] === th), mode); return th + ' ' + mode + '\n' + P.VOICES.map((v) => '  ' + v.padEnd(6) + P.toHex(p['--' + v + '-m']) + ' mid  ' + P.toHex(p['--' + v + '-g']) + ' graphic  ' + P.toHex(p['--' + v + '-s']) + ' strong  ' + P.toHex(p['--' + v + '-w']) + ' wash').join('\n') + '\n  seas  ' + P.SEAS.map((n) => P.toHex(p['--sea-' + n])).join(' '); };
+  console.log('Palette in hex, the three evidence themes:\n' + [hex('crystarium-dawnglass', 'light'), hex('azure-dragoon', 'dark'), hex('magitek-steel', 'light')].join('\n'));
+  assert.deepEqual(palFail.slice(0, 20), [], palFail.length + ' palette pairs outside their rules');
+});
+
+// ---- W22b: the vivid palette, computed by src/submersibles/palette.js (the script the page loads) ----
+const PAL = P.PALETTE, M = PAL.math;
+const hx = (h) => (Array.isArray(h) ? h : M.hexRgb(h));
+const rows = [];
+for (const row of THEMES) for (const mode of ['light', 'dark']) rows.push([row, mode, row[0] + ' ' + mode]);
+const pages = (th) => [th.slip, th.paper, th.paper2].map(hx);
+const THEME_IN = (row, mode) => { const t = P.themeInput(row, mode); return Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v])); };
+
+test('palette (W22b): the shared script is deterministic and its cost is small', () => {
+  const t = THEME_IN(THEMES[0], 'light');
+  const a = JSON.stringify(PAL.compute(t)), b = JSON.stringify(PAL.compute(t));
+  assert.equal(a, b);
+  const t0 = process.hrtime.bigint(); let n = 0;
+  for (const [row, mode] of rows) { PAL.compute(THEME_IN(row, mode)); n++; }
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6 / n;
+  console.log('PALETTE.compute: ' + ms.toFixed(2) + ' ms per theme (mean of ' + n + ', Node)');
+  assert.ok(ms < 40, 'compute takes ' + ms + ' ms');
+});
+
+const vivid = { fail: [], stat: {}, nudge: [], hex: [] }, floors = {}; let hueOff = [0, ''];
+const vneed = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!vivid.stat[pair] || r < vivid.stat[pair].min) vivid.stat[pair] = { min: r, where }; if (r < min) vivid.fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+
+test('palette (W22b): contrast, gamut, chroma and hue rules hold in all 21 themes, light and dark', () => {
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), r = PAL.compute(th), T = r.tokens, pg = pages(th), c = (n) => hx(T[n]);
+    const mids = [];
+    for (const v of PAL.VOICES.concat(PAL.SEA_HUES.map((h, i) => 'sea-' + (i + 1)))) {
+      const sea = v.startsWith('sea-'), m = c(sea ? '--' + v : '--' + v + '-m'), g = sea ? '--' + v + '-g' : '--' + v + '-g', sN = '--' + v + '-s', w = '--' + v + '-w';
+      mids.push([v, m]);
+      pg.forEach((b, i) => { vneed(v + ' graphic on page colours (3)', c(g), b, 3, where); vneed(v + ' strong on page colours (4.5)', c(sN), b, 4.5, where); });
+      vneed(v + ' ink on wash (7)', hx(th.ink), c(w), 7, where);
+      const ch = M.rgbToLch(m)[1];
+      if (ch < 0.11) vivid.fail.push(v + ' field chroma ' + ch.toFixed(3) + ' < 0.11 in ' + where);
+      if (ch > PAL.CAP + 0.003) vivid.fail.push(v + ' field chroma ' + ch.toFixed(3) + ' over CAP in ' + where);
+    }
+    for (const [v, m] of mids) vneed('on-mid on ' + (v.startsWith('sea') ? v : v + ' field') + ' (4.5)', c('--on-mid'), m, 4.5, where);
+    for (const k of PAL.STATUS) pg.forEach((b) => vneed('status text tone ' + k + '-s (4.5)', c('--' + k + '-s'), b, 4.5, where));
+    // Revision 4 (Rev4.5): the floors, and each field's own hue within 2.5 degrees of its fixed number
+    const fl = (pair, v, min) => { if (!floors[pair] || v < floors[pair][0]) floors[pair] = [v, where]; if (v < min) vivid.fail.push(pair + ' ' + v.toFixed(1) + ' < ' + min + ' in ' + where); };
+    const sh = r.info.statusHues, vh = r.info.hues, seaH = PAL.SEA_HUES, gp = M.hueGap;
+    // W31 gold correction: gil sits near Idle amber, so the one pair gil-to-Idle has a floor of 12 (every gil tone against Idle) instead of 20. Why: gil is only ever a figure,
+    // a bar or a field with the word "gil" or a number beside it; Idle is a status field with its word. Every other voice-to-status pair keeps 20.
+    PAL.VOICES.forEach((v, vi) => sh.forEach((y, si) => { if (v === 'gil' && PAL.STATUS[si] === 'idle') return; fl('hue gap voice to status (20)', gp(vh[vi], y), 20); }));
+    for (const n of ['--gil-m', '--gil-g', '--gil-s', '--gil-w']) fl('hue gap gil tone to Idle (12)', gp(M.rgbToLch(hx(T[n]))[2], sh[PAL.STATUS.indexOf('idle')]), 12);
+    // the darker gil tones sit at the bronze-gold hue (84 in light themes; 92 in dark ones, to keep 12 degrees from Idle), within 2.5 degrees
+    for (const n of ['--gil-g', '--gil-s']) { const d = gp(M.rgbToLch(hx(T[n]))[2], PAL.GIL_TONE_HUE[r.info.dark ? 1 : 0]); if (d > 2.5) vivid.fail.push(n + ' hue ' + d.toFixed(1) + ' deg off ' + PAL.GIL_TONE_HUE[r.info.dark ? 1 : 0] + ' (2.5) in ' + where); }
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) fl('hue gap voice to voice (40)', gp(vh[i], vh[j]), 40);
+    for (const x of vh) for (const y of seaH) fl('hue gap voice to sea (15)', gp(x, y), 15);
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) fl('hue gap status to status (35)', gp(sh[i], sh[j]), 35);
+    for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) fl('hue gap sea to sea (30)', gp(seaH[i], seaH[j]), 30);
+    if (r.info.minVoiceGap < 40 || r.info.minSea < 30) vivid.fail.push('info gaps ' + [r.info.minVoiceGap, r.info.minStatus, r.info.minSea].join(' ') + ' in ' + where);
+    const off = (name, rgb, h) => { const d = gp(M.rgbToLch(rgb)[2], h); if (d > hueOff[0]) hueOff = [d, where + ' ' + name]; if (d > 2.5) vivid.fail.push(name + ' field hue ' + d.toFixed(1) + ' deg off its number (2.5) in ' + where); };
+    PAL.VOICES.forEach((v) => off(v, c('--' + v + '-m'), PAL.ROLE_HUE[v]));
+    seaH.forEach((h, i) => off('sea ' + (i + 1), c('--sea-' + (i + 1)), h));
+    vivid.nudge.push([where, r.info.minStatus, r.info.minVoiceGap, r.info.fieldL, r.info.onMid]);
+  }
+  console.log('Vivid palette, lowest ratio per pair over 21 themes x 2 modes:\n' + Object.entries(vivid.stat).map(([k, v]) => '  ' + k.padEnd(46) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  console.log('Hue floors of Rev4.5 (lowest value over 21 themes x 2 modes):\n' + Object.entries(floors).map(([k, v]) => '  ' + k.padEnd(40) + v[0].toFixed(1).padStart(7) + '  lowest at ' + v[1]).join('\n') + '\n  largest field hue error (limit 2.5): ' + hueOff[0].toFixed(2) + ' at ' + hueOff[1]);
+  console.log('Hue distance per theme and mode (voice to status, voice to voice, on-mid):\n  ' + vivid.nudge.map((x) => x[0].padEnd(34) + x[1].toFixed(1).padStart(6) + x[2].toFixed(1).padStart(6) + ' ' + x[4]).join('\n  '));
+  const hex = (th, mode) => { const p = PAL.compute(THEME_IN(THEMES.find((r) => r[0] === th), mode)).tokens; return th + ' ' + mode + '\n' + PAL.VOICES.map((v) => '  ' + v.padEnd(6) + p['--' + v + '-m'] + ' m  ' + p['--' + v + '-g'] + ' g  ' + p['--' + v + '-s'] + ' s  ' + p['--' + v + '-w'] + ' w').join('\n') + '\n  on-mid ' + p['--on-mid'] + '  status text ' + PAL.STATUS.map((k) => k + ' ' + p['--' + k + '-s']).join(' ') + '\n  seas  ' + [1, 2, 3, 4, 5, 6, 7].map((n) => p['--sea-' + n]).join(' '); };
+  console.log('Vivid palette in hex, the three evidence themes:\n' + [hex('crystarium-dawnglass', 'light'), hex('azure-dragoon', 'dark'), hex('magitek-steel', 'light')].join('\n'));
+  assert.deepEqual(vivid.fail.slice(0, 20), [], vivid.fail.length + ' vivid palette pairs outside their rules');
+});
+
+test('palette (W22b): the status text tones are used by the CSS wherever a status colour is a text colour', () => {
+  for (const sel of ['.hint.bad, .wiz-err { color: var(--bad-s)', '.acc .ok { color: var(--back-s)', '.acc .bad { color: var(--bad-s)']) assert.ok(css.includes(sel), sel);
+  // no rule sets a text colour straight from a status colour (the chart key's colours are chart tokens; line 438's is overridden later and not text on a page)
+  const text = css.split('\n').filter((l) => /[^-]color: var\(--(back|out|idle|bad)\)/.test(l) && !l.startsWith('.chart-key .key.found { color: var(--back)'));
+  assert.deepEqual(text, []);
+});
+
+test('palette (W22b): the page loads the script before subs.js, the build copies it, and the theme change is observed', () => {
+  const html = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<script src="palette.js"></script>') > 0 && html.indexOf('<script src="palette.js"></script>') < html.indexOf('<script src="subs.js"></script>'));
+  assert.ok(html.indexOf('<script src="../look.js"></script>') < html.indexOf('<script src="palette.js"></script>'));
+  assert.ok(fs.readFileSync(path.join(CC, 'build.js'), 'utf8').includes("'palette.js'"));
+  const src = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'palette.js'), 'utf8');
+  assert.ok(src.includes("attributeFilter: ['style', 'data-theme']"));
+});
+
+test('palette (W22b): the applier recomputes when the look changes and sets the tokens on the page element (simulated page)', () => {
+  const calls = [];
+  let observer = null, style = { '--paper': '#ffffff', '--paper-2': '#f2f2f2', '--slip': '#ffffff', '--ink': '#111111', '--ink-2': '#444444', '--seal': '#b5476b', '--ochre': '#c08a30', '--back': '#0f7a42', '--out': '#2343d6', '--idle': '#8f5600', '--bad': '#b3261e' };
+  const page = { style: { setProperty: (n, v) => calls.push([n, v]) } };
+  const saved = { document: globalThis.document, getComputedStyle: globalThis.getComputedStyle, MutationObserver: globalThis.MutationObserver, module: undefined };
+  globalThis.document = { documentElement: { }, body: page, querySelector: () => page, readyState: 'complete', addEventListener() {} };
+  globalThis.getComputedStyle = () => ({ getPropertyValue: (n) => ' ' + style[n] });
+  globalThis.MutationObserver = function (fn) { observer = fn; this.observe = () => {}; };
+  const key = require.resolve(path.join(CC, 'src', 'submersibles', 'palette.js'));
+  const had = globalThis.PALETTE; delete globalThis.PALETTE; delete require.cache[key];
+  try {
+    const A = require(key);
+    const first = Object.fromEntries(calls), n1 = calls.length;
+    assert.ok(n1 > 40 && first['--rank-m'].startsWith('#'), 'tokens set at load');
+    observer(); assert.equal(calls.length, n1, 'an unchanged look sets nothing');
+    style = Object.assign({}, style, { '--paper': '#0b1220', '--paper-2': '#141b2a', '--slip': '#18202f', '--ink': '#e8eefc', '--ink-2': '#b0b8cc', '--seal': '#6ea2ff', '--back': '#4fd18b', '--out': '#7d93ff', '--idle': '#f0b347', '--bad': '#ff8a80' });
+    observer();
+    const second = Object.fromEntries(calls.slice(n1));
+    assert.ok(calls.length > n1 && second['--rank-m'] !== first['--rank-m'] && second['--on-mid'] !== undefined, 'a theme change sets new tokens without a reload');
+  } finally { globalThis.document = saved.document; globalThis.getComputedStyle = saved.getComputedStyle; globalThis.MutationObserver = saved.MutationObserver; delete require.cache[key]; globalThis.PALETTE = had; }
+});
+
+// ---- Revision 3 (W23): the chart's lightness ladder, link colours and receding background; the wash cap ----
+test('palette (W23): a wash is a quiet tint, at most WASH_CHROMA of its field\'s chroma, with ink at 7:1 (21 themes, both modes)', () => {
+  const fail = []; let top = 0, low = 9, n = 0;
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens;
+    for (const v of PAL.VOICES.map((x) => '--' + x).concat([1, 2, 3, 4, 5, 6, 7].map((i) => '--sea-' + i))) {
+      const m = v.startsWith('--sea') ? v : v + '-m', fieldC = M.rgbToLch(hx(T[m]))[1], washC = M.rgbToLch(hx(T[v + '-w']))[1];
+      n++; top = Math.max(top, washC / fieldC); low = Math.min(low, washC);
+      if (washC > PAL.WASH_CHROMA * fieldC + 0.004) fail.push(v + ' wash chroma ' + washC.toFixed(3) + ' over ' + (PAL.WASH_CHROMA * fieldC).toFixed(3) + ' in ' + where);
+      if (washC < 0.02) fail.push(v + ' wash chroma ' + washC.toFixed(3) + ' under 0.02 (not tinted) in ' + where);
+      if (M.ratio(hx(th.ink), hx(T[v + '-w'])) < 7) fail.push(v + ' ink on wash under 7 in ' + where);
+    }
+  }
+  console.log('Wash chroma (' + n + ' washes): WASH_CHROMA ' + PAL.WASH_CHROMA.toFixed(3) + ', largest share of the field ' + top.toFixed(3) + ', smallest chroma ' + low.toFixed(3));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' washes outside the cap');
+});
+
+test('chart (W23): ladder far < found < next, link colours and the receding background, all 21 themes, both modes, 7 seas (the computed sea colours)', () => {
+  const fail = [], lo = {}, hi = {};
+  const mn = (k, v, w) => { if (!lo[k] || v < lo[k][0]) lo[k] = [v, w]; };
+  const mx = (k, v, w) => { if (!hi[k] || v > hi[k][0]) hi[k] = [v, w]; };
+  const waters = {};
+  for (const [row, mode, where] of rows) {
+    const dk = mode === 'dark', e0 = P.env(row, mode), T = PAL.compute(THEME_IN(row, mode)).tokens;
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, dk ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] });
+      const c = (x) => colour('var(' + x + ')', env), w = where + ' sea ' + n, L = (x) => lum(P.rnd(c(x)));
+      const bg = c('--chart-bg'), bg2 = c('--chart-bg-2'), bgh = c('--chart-bg-hi');
+      const need2 = (pair, v, min, max) => { if (min != null) mn(pair, v, w); if (max != null) mx(pair, v, w); if ((min != null && v < min) || (max != null && v > max)) fail.push(pair + ' ' + v.toFixed(2) + ' outside ' + (min == null ? '' : min) + '..' + (max == null ? '' : max) + ' in ' + w); };
+      // the background recedes: back at most 1.6 on every ground, and still there (1.15) on the plain water
+      for (const [g, b] of [['bg', bg], ['bg-2', bg2], ['bg-hi', bgh]]) need2('back on ' + g + ' (at most 1.6)', ratio(c('--chart-back'), b), null, 1.6);
+      need2('back on bg (at least 1.15)', ratio(c('--chart-back'), bg), 1.15, null);
+      need2('link on bg (1.8 to 3)', ratio(c('--chart-link'), bg), 1.8, 3); mx('link on bg (1.8 to 3)', ratio(c('--chart-link'), bg), w);
+      need2('done on bg-hi (at least 2)', ratio(c('--chart-done'), bgh), 2, null);
+      // the links that carry meaning: found to next (amber) and the way to a slot or sea (ink) read at 4.5 on every ground (the 3:1 of a meaningful graphic with room)
+      for (const [g, b] of [['bg', bg], ['bg-2', bg2], ['bg-hi', bgh]]) { need2('lead link (next) on ' + g + ' (4.5)', ratio(c('--chart-next'), b), 4.5, null); need2('goal link (ink) on ' + g + ' (4.5)', ratio(c('--chart-ink'), b), 4.5, null); need2('far outline on ' + g + ' (3)', ratio(c('--chart-far'), b), 3, null); need2('found on ' + g + ' (4.5)', ratio(c('--chart-found'), b), 4.5, null); }
+      // luminance order back < link < far < found < next, and the ratios a colour-blind player reads
+      const ord = ['--chart-back', '--chart-link', '--chart-far', '--chart-found', '--chart-next'].map(L);
+      for (let i = 0; i < 4; i++) { mn('luminance step ' + i + ' (back, link, far, found, next)', ord[i + 1] - ord[i], w); if (!(ord[i + 1] > ord[i])) fail.push('luminance order broken at step ' + i + ' in ' + w); }
+      need2('next against found (luminance, at least 1.5)', (ord[4] + 0.05) / (ord[3] + 0.05), 1.5, null);
+      need2('found against far (luminance, at least 1.3)', (ord[3] + 0.05) / (ord[2] + 0.05), 1.3, null);
+      (waters[where] = waters[where] || []).push(M.rgbToLch(P.rnd(bg)));
+    }
+  }
+  // the water of two seas can be told apart: smallest hue-and-chroma distance between two seas' water, per theme
+  let wd = 9, wdw = '';
+  for (const [where, ws] of Object.entries(waters)) for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) {
+    const a = ws[i], b = ws[j], ax = a[1] * Math.cos(a[2] * Math.PI / 180), ay = a[1] * Math.sin(a[2] * Math.PI / 180), bx = b[1] * Math.cos(b[2] * Math.PI / 180), by = b[1] * Math.sin(b[2] * Math.PI / 180);
+    const d = Math.hypot(ax - bx, ay - by); if (d < wd) { wd = d; wdw = where + ' seas ' + (i + 1) + ' and ' + (j + 1); }
+  }
+  console.log('Chart (W23), lowest per pair:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v[0].toFixed(3).padStart(7) + '  at ' + v[1]).join('\n') + '\nHighest per pair:\n' + Object.entries(hi).map(([k, v]) => '  ' + k.padEnd(62) + v[0].toFixed(3).padStart(7) + '  at ' + v[1]).join('\n') + '\nSmallest chroma-plane distance between two seas\' water: ' + wd.toFixed(4) + ' (' + wdw + ')');
+  assert.ok(wd >= 0.03, 'two seas\' water too alike: ' + wd + ' ' + wdw); // W29: the distance in the a-b plane of OKLab between the water of any two seas, every theme and mode, at least 0.030 (it was 0.0129 in Azure Dragoon dark: blue and indigo)
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' chart pairs outside their rules');
+});
+
+test('chart (W23): subs.css has the dash only on the route, chevrons hidden but lead and goal, the sweep fan hidden and a solid far marker (S3: it was hollow before)', () => {
+  const rules = css.split('\n').filter((l) => /stroke-dasharray/.test(l));
+  assert.equal(rules.length, 1); assert.ok(rules[0].startsWith('.chart-route {'));
+  assert.ok(/\.chart-chev \{ display: none;/.test(css) && css.includes('.chart-chev.lead { display: inline;') && css.includes('.chart-chev.goal:not(.lead) { display: inline;'));
+  assert.ok(css.includes('.chart-sweep-fan { display: none; }'));
+  assert.ok(css.includes('.chart-node.far > rect { fill: var(--chart-far); stroke: var(--chart-bg); stroke-width: 2; }'));
+  assert.ok(css.includes('.chart-node.next > rect { fill: var(--chart-next); stroke: var(--chart-bg); stroke-width: 6; paint-order: stroke fill; }'));
+  assert.ok(css.indexOf('.chart-lines line.goal:is(.open, .closed)') > css.indexOf('.chart-lines line.open.lead') && css.indexOf('.chart-lines line.open.lead') > css.indexOf('.chart-lines line.open.done'));
+  assert.equal(P.RULES.chartLight['--chart-next'], '#ffe38a'); assert.equal(P.RULES.chartDark['--chart-next'], '#ffe38a');
+});
+
+// ---- Revision 3 (W25, W26): the screen voice, the rail, the Log and Earnings ----
+test('Log and Earnings (W25, W26): every new pair reaches its contrast in all 21 themes, light and dark (computed palette)', () => {
+  const fail = [], lo = {};
+  const need3 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink);
+    const pg = { slip: hx(th.slip), paper: hx(th.paper), 'paper-2': hx(th.paper2) };
+    for (const [n, b] of Object.entries(pg)) {
+      // text: even Log rows (ink on paper-2), the unlogged words, gil, route and loot figures, the "Grade" chip's neighbours
+      need3('Log/Earnings text: ink on ' + n + ' (4.5)', ink, b, 4.5, where);
+      need3('Log: "nothing logged" idle-s on ' + n + ' (4.5)', c('--idle-s'), b, 4.5, where);
+      for (const v of ['gil', 'route', 'loot']) need3('Log/Earnings text: ' + v + '-s on ' + n + ' (4.5)', c('--' + v + '-s'), b, 4.5, where);
+      // meaningful graphics: the unlogged dashed edge (--idle), the logged edge, the heat line and card bands, the chip border, the sea edges, the rail icons
+      need3('Log graphic: dashed edge idle on ' + n + ' (3)', hx(T['--idle'] || th.idle), b, 3, where);
+      for (const v of ['loot', 'gil', 'rank', 'route']) need3('Log/Earnings/rail graphic: ' + v + '-g on ' + n + ' (3)', c('--' + v + '-g'), b, 3, where);
+      for (let s = 1; s <= 7; s++) need3('Log/Earnings graphic: sea edge -g on ' + n + ' (3)', c('--sea-' + s + '-g'), b, 3, where);
+    }
+    need3('Log chip: ink on rank wash (7)', ink, c('--rank-w'), 7, where);
+    need3('Log chip (S, SS): on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    need3('Earnings card and head: on-mid on gil field (4.5)', c('--on-mid'), c('--gil-m'), 4.5, where);
+    need3('Log head: on-mid on loot field (4.5)', c('--on-mid'), c('--loot-m'), 4.5, where);
+    need3('Setup head: on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    need3('Board head: on-mid on route field (4.5)', c('--on-mid'), c('--route-m'), 4.5, where);
+    for (let s = 1; s <= 7; s++) need3('Log time cell: on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
+    for (const v of ['gil', 'loot', 'rank', 'route']) need3('rail: current tab on-mid on ' + v + ' field (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where);
+    need3('rail: current tab on-mid on sea-1 field (Map) (4.5)', c('--on-mid'), c('--sea-1'), 4.5, where);
+    for (const v of ['gil', 'loot', 'rank', 'route']) need3('head band: ink on page (the 6 px band) (3)', ink, pg.slip, 3, where);
+  }
+  console.log('Log and Earnings (W25, W26), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new Log and Earnings pairs outside their rules');
+});
+
+test('Log and Earnings (W25, W26): subs.css and logHtml and earnHtml carry the rules and the classes', () => {
+  for (const s of [
+    '.panel:not(.welcome):not(.empty-state):not(.map-panel) > h2:first-child, .wiz-head { --slab: var(--scr);',
+    '.tabs button[aria-current="page"] { --slab: var(--scr);', '.tabs button[aria-current="page"]::before { background: var(--ink); }',
+    '.log-row[class*="in-sea-"] .log-when { --slab: var(--sea);', '.log-day { position: sticky; top: 0;', '.log-day b { font: 900 20px/1.1 var(--f-disp);', 'grid-template-columns: 120px 150px minmax(0, 1fr) auto;',
+    '.log-row.logged { border-right: 8px solid var(--loot-g); }', '.log-row.unlogged { border-right: 8px dashed var(--idle); }',
+    '.log-row.unlogged .log-what .muted { color: var(--idle-s); font-weight: 700; }', '.log-what b { color: var(--gil-s); }', 'background: var(--gil-g); }',
+    '.earn-card:first-child { background-color: var(--gil-m); color: var(--on-mid);', 'var(--gil-w) calc(var(--p) * 100% - 5px), var(--gil-g) calc(var(--p) * 100% - 5px) calc(var(--p) * 100%)', 'border-left: 6px solid var(--sea-g, var(--route-g))', 'border-left: 6px solid var(--loot-g)']) assert.ok(css.includes(s), s);
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  assert.ok(js.includes("' in-sea-' + sec.sea") && js.includes("(v.logged ? ' logged' : ' unlogged')") && js.includes('"--p:'), 'Log row classes');
+  assert.ok(js.includes('class="log-grade g-') && js.includes("'>Grade ' + esc(t.grade)") === false && js.includes("Grade ' + esc(t.grade)"), 'the grade chip');
+  assert.ok(js.includes("var seaOf = function (route)") && js.includes('<tr data-pos="\' + r.pos + \'" class="\' + seaOf(r.route)'), 'Earnings route rows carry the sea');
+});
+
+// ---- Revision 3 (W27, W28): the Board, the send window, Setup, the recommendations panel and the empty states ----
+test('Board, send window, Setup, recommendations, empty states (W27, W28): every new pair reaches its contrast in all 21 themes, light and dark (computed palette)', () => {
+  const fail = [], lo = {};
+  const need3 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), env = P.env(row, mode);
+    const st = (n) => P.colour('var(' + n + ')', env);
+    const pg = { slip: hx(th.slip), paper: hx(th.paper), 'paper-2': hx(th.paper2) };
+    for (const [n, b] of Object.entries(pg)) {
+      // text: sector letters, the route line and the sub's route (route-s), rates and the Loot Farming label (loot-s)
+      need3('route-s text (sector letter, route line, ticks) on ' + n + ' (4.5)', c('--route-s'), b, 4.5, where);
+      need3('loot-s text (rate figure, Loot Farming label) on ' + n + ' (4.5)', c('--loot-s'), b, 4.5, where);
+      // meaningful graphics: sea edge on a sector button and on a sea in Setup, the route line, rank box, reason and picker edges
+      for (const v of ['route', 'rank', 'loot', 'gil']) need3('edge: ' + v + '-g on ' + n + ' (3)', c('--' + v + '-g'), b, 3, where);
+      for (let s = 1; s <= 7; s++) need3('edge: sea -g on ' + n + ' (3)', c('--sea-' + s + '-g'), b, 3, where);
+    }
+    // the sub's route on the card's status tints: route-s mixed 60/40 into the ink (the CSS: color-mix(in srgb, var(--route-s) 60%, var(--ink)))
+    for (const k of ['back', 'out', 'idle']) {
+      const bg = hx(mixRgb(pg.slip, st('--' + k), k === 'back' ? 0.16 : 0.1)), rt = ink; // Revision 4: .sub-meta .route is plain ink
+      need3('Board: route text (ink, Revision 4) on the ' + k + ' card tint (4.5)', rt, bg, 4.5, where);
+      need3('Board: ink on the ' + k + ' card tint (4.5)', ink, bg, 4.5, where);
+    }
+    // fields: the rank plate, the number slabs, the loot label, the open sea
+    for (const v of ['rank', 'route', 'gil', 'loot']) need3('field: on-mid on ' + v + ' (plate, number slab, label) (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where);
+    for (let s = 1; s <= 7; s++) need3('field: on-mid on sea (open sea in Setup) (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
+    // the Board's quick band sits against the accent button: its edge (the colour the button's text uses) must stand out from the accent (4.5); the band's own colour is printed, a state is in the title and the send window's words
+    need3('quick band: on-seal edge on the accent button (4.5)', hexRgb(onSeal(hexRgb((mode === 'dark' ? row[3] : row[2])[2]))), st('--seal'), 4.5, where);
+    for (const v of ['rank', 'route', 'gil', 'loot']) lo['(printed) quick band: ' + v + ' field on the accent button'] = Math.min(lo['(printed) quick band: ' + v + ' field on the accent button'] ? lo['(printed) quick band: ' + v + ' field on the accent button'].min : 99, 99) && { min: Math.min((lo['(printed) quick band: ' + v + ' field on the accent button'] || { min: 99 }).min, M.ratio(c('--' + v + '-m'), st('--seal'))), where };
+    // the switched-off picker's ink-3 edge: printed (the disabled input and its unchecked box say it too)
+    lo['(printed) picker off: ink-3 edge on paper'] = { min: Math.min((lo['(printed) picker off: ink-3 edge on paper'] || { min: 99 }).min, M.ratio(st('--ink-3'), pg.paper)), where };
+  }
+  console.log('Board, send window, Setup, recommendations, empty states (W27, W28), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(70) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('Board, send window, Setup, recommendations, empty states (W27, W28): subs.css and subs.js carry the rules and the classes', () => {
+  for (const s of [
+    '.sub[data-sub] .sub-meta > span:first-child { --slab: var(--rank-m); --on-slab: var(--on-mid); }', '.sub-meta .route { color: var(--ink); }',
+    '.sector { border-left: 8px solid var(--sea-g); padding-left: 4px; }', '.sector:not(.on) b { color: var(--route-s); }',
+    '.route-pick .route-line { border-left: 8px solid var(--route-g); padding-left: 10px; }', '.loot-h { background: var(--loot-m); color: var(--on-mid); padding: 2px 10px; }',
+    '.rate-item b { color: var(--loot-s); }', '.rankbox { border-left: 8px solid var(--rank-g); padding-left: 10px; }',
+    'var(--route-m) 0 25%, var(--rank-m) 25% 50%, var(--gil-m) 50% 75%, var(--loot-m) 75%) 1', '.rec-picker { border-left: 8px solid var(--loot-g); }',
+    '.rec-picker:has(.rec-find:disabled) { border-left-color: var(--ink-3); }', '.sea[class*="in-sea-"] { border-left: 10px solid var(--sea-g); }',
+    '.tick b { color: var(--route-s); }']) assert.ok(css.includes(s), s);
+  for (const [k, v] of [['up-unlock', 'route'], ['up-level', 'rank'], ['up-gil', 'gil'], ['up-loot', 'loot']]) assert.ok(css.includes('li:has([data-rec="' + k + '"]) .rec-name b { --slab: var(--' + v + '-m);'), k);
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  assert.ok(js.includes("'<div class=\"route-pick in-sea-' + PICK.sea") && js.includes("'<details class=\"sea in-sea-' + sea.id") && js.includes("U1: 'route'") && js.includes("X: 'rank', G: 'gil', L: 'loot'"), 'classes');
+});
+
+// ---- Revision 3 (W29): the final pass ----
+test('final pass (W29): the planned route, the stepped-back goal line, the gil washes, locked slots, the company head band and the rank plate reach their contrast in all 21 themes, light and dark (computed palette)', () => {
+  const fail = [], lo = {};
+  const need4 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const dk = mode === 'dark', th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), e0 = P.env(row, mode);
+    // the planned route (--chart-hot, a fixed hot pink no other chart mark uses, as the found green and the next amber are fixed) on every water of every sea, at the 3:1 asked for a meaningful graphic and at the 4.5 the chart holds for its marks
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, dk ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env), w = where + ' sea ' + n;
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) {
+        need4('route (hot) on ' + g.slice(2) + ' (3)', cc('--chart-hot'), cc(g), 3, w);
+        need4('route stop letter (hot-text) on ' + g.slice(2) + ' (4.5)', cc('--chart-hot-text'), cc(g), 4.5, w);
+        need4('goal line stepped back (ink 80%) on ' + g.slice(2) + ' (4.5)', cc('--chart-ink-step'), cc(g), 4.5, w);
+      }
+      // the route is not the colour of any other mark: its distance in OKLab from the found, next and ink colours (printed) and from the sea's own water
+      const hot = cc('--chart-hot');
+      for (const k of ['--chart-found', '--chart-next', '--chart-ink']) { const a = M.rgbToLch(P.rnd(hot)), b = M.rgbToLch(P.rnd(cc(k))), d = Math.hypot(a[1] * Math.cos(a[2] * Math.PI / 180) - b[1] * Math.cos(b[2] * Math.PI / 180), a[1] * Math.sin(a[2] * Math.PI / 180) - b[1] * Math.sin(b[2] * Math.PI / 180), a[0] - b[0]); lo['(printed, smallest) route to ' + k.slice(2) + ' (OKLab distance x100)'] = { min: Math.min(lo['(printed, smallest) route to ' + k.slice(2) + ' (OKLab distance x100)'] ? lo['(printed, smallest) route to ' + k.slice(2) + ' (OKLab distance x100)'].min : 999, d * 100), where: w }; }
+    }
+    // Earnings: the first card is a gil wash under ink and a gil-strong figure; the bar is a gil wash with a gil-graphic tip, figures in ink
+    need4('Earnings: ink on gil wash (first card, bars) (7)', ink, c('--gil-w'), 7, where);
+    need4('Earnings: gil-s figure on the other cards (slip) (4.5)', c('--gil-s'), hx(th.slip), 4.5, where);
+    for (const b of [th.slip, th.paper, th.paper2]) need4('Earnings: bar tip gil-g on the cell (3)', c('--gil-g'), hx(b), 3, where);
+    need4('Earnings: bar tip gil-g on the bar wash (printed)', c('--gil-g'), c('--gil-w'), 0, where);
+    // Board (W32): a locked lane is the locked hatch on page field 3 with ink text; the trough is page field 3, the Out bar and the Back bar on it reach 3:1; ink on the trough and on each status wash reaches 4.5
+    const p3 = hx(P.colour('var(--paper-3)', e0)), sw = (n) => hx(P.colour('var(' + n + ')', e0));
+    need4('locked lane: ink name and sector text on page field 3 (4.5)', ink, p3, 4.5, where);
+    need4('trough: out bar on page field 3 (3)', sw('--out'), p3, 3, where);
+    need4('trough: back bar on page field 3 (3)', sw('--back'), p3, 3, where);
+    for (const k of ['back', 'out', 'idle']) need4('lane: ink on the ' + k + ' wash (4.5)', ink, hx(P.colour('var(--' + k + '-bg)', e0)), 4.5, where);
+    for (let s = 1; s <= 7; s++) { need4('disc: on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where); need4('outlined disc: sea graphic on the slip (3)', c('--sea-' + s + '-g'), hx(th.slip), 3, where); }
+    // the company head: the status band sits on a 5 px strip in the page colour (the slab is light in a dark theme and the fixed status colours are not 3:1 on it); the gaps between its quarters are that strip
+    const st = (n) => hx(P.colour('var(' + n + ')', e0));
+    for (const k of ['--back', '--out', '--idle', '--locked']) need4('company head band: ' + k.slice(2) + ' on the page colour strip it sits on (3)', st(k), hx(th.paper), 3, where);
+    for (let s = 1; s <= 7; s++) need4('Setup: ink (name and count) on a closed sea\'s wash (7)', ink, c('--sea-' + s + '-w'), 7, where);
+    // the rank plate: its rule above and below is on-mid on the rank field (the text pair, again)
+    need4('rank plate: on-mid rule and text on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+  }
+  console.log('Final pass (W29), lowest ratio per new pair over 21 themes x 2 modes (x 7 seas for the route):\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(70) + v.min.toFixed(2).padStart(7) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('final pass (W29): subs.css and subs.js carry the rules and the classes', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  for (const s of ['--chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc;', '.chart-route { fill: none; stroke: var(--chart-hot); stroke-width: 7;', '.chart-routering { fill: none; stroke: var(--chart-hot); stroke-width: 4; }', '.chart-node.on-route .chart-letter { fill: var(--chart-hot-text); }',
+    '.chart-svg:has(.chart-route) .chart-lines line.goal:is(.open, .closed) { stroke: var(--chart-ink-step); }',
+    '.fc-head { background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 3px), var(--paper) calc(25% - 3px) 25%) 0 0 / 100% 5px no-repeat, var(--band, none) 0 0 / 100% 5px no-repeat, linear-gradient(var(--paper), var(--paper)) 0 0 / 100% 5px no-repeat, var(--slab); }',
+    '.sub[data-status="locked"] { color: var(--ink); background: var(--paper-3); }',
+    '.tl.out .tl-bar { background: linear-gradient(var(--out), var(--out)) 0 0 / calc(var(--ret) * 100%) 100% no-repeat, var(--paper-3); }', '.tl.done .tl-bar { background: var(--back); }', '.tl.ghost .disc, .tl.locked .disc {', 'cursor: default; }', '.sea[class*="in-sea-"]:not([open]) { background: var(--sea-w); }']) assert.ok(css.includes(s), s);
+  assert.equal(css.split('--chart-hot: #ff6ec7; --chart-hot-text: #ffa6dc;').length - 1, 3, 'all three chart token rules');
+  assert.ok(js.includes("(u && u.sea ? ' in-sea-' + u.sea : '')") && js.includes('style="--band:linear-gradient(90deg, '), 'locked row sea class and the head band');
+  // only the route (and its glow, rings and the letters of its stops) uses --chart-hot; the selection bracket, the focus ring and the start ping use the accent's pale tint
+  const hot = css.split('\n').filter((l) => /^\.chart-[\w-]+[^{]*\{[^}]*var\(--chart-hot(-text)?\)/.test(l)).map((l) => l.slice(0, l.indexOf(' {')));
+  assert.ok(hot.every((x) => ['.chart-route-glow', '.chart-route', '.chart-routering', '.chart-node.on-route .chart-letter'].includes(x)), 'only the route and its stops use --chart-hot: ' + hot.join(', '));
+});
+
+// ---- gaps spec Part A (G1 to G3): the "cannot" mark on the chart, the reason text and the source tags ----
+test('gaps G2, G3: the cannot ring and cross (error colour) on every water, the reason text and the source tags reach their contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need5 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  const no = /--chart-no: (#[0-9a-f]{6});/.exec(css);
+  assert.ok(no, 'subs.css has the --chart-no token'); assert.equal(css.split('--chart-no: ' + no[1] + ';').length - 1, 3, 'in the three chart token rules (Revision 4)'); assert.equal(css.split('--chart-no:').length - 1, 3);
+  for (const [row, mode, where] of rows) {
+    const dk = mode === 'dark', th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), e0 = P.env(row, mode);
+    // the ring and the cross are meaningful graphics (3:1) on every ground of every sea; the cross is also a shape, so the colour never carries the meaning alone
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, dk ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env);
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) need5('cannot ring and cross (--chart-no) on ' + g.slice(2) + ' (3)', hexRgb(no[1]), cc(g), 3, where + ' sea ' + n);
+    }
+    // the reason under the route and in the sector details: --bad-s text on the planner (paper), the details panel (slip) and the sheet (slip)
+    for (const [n, b] of Object.entries({ paper: hx(th.paper), slip: hx(th.slip) })) need5('cannot reason: bad-s on ' + n + ' (4.5)', c('--bad-s'), b, 4.5, where);
+    // the source tags: ink-2 in the planner and send window (paper, slip), ink inside the advice block (the --hi wash, where ink-2 reaches 3.7:1 only)
+    for (const [n, b] of Object.entries({ paper: hx(th.paper), slip: hx(th.slip) })) need5('source tag: ink-2 on ' + n + ' (4.5)', hx(th.ink2), b, 4.5, where);
+    need5('source tag in the advice block: ink on hi-slip (4.5)', ink, P.colour('var(--hi-slip)', P.env(row, mode)), 4.5, where);
+  }
+  console.log('Gaps Part A, lowest ratio per new pair over 21 themes x 2 modes (x 7 seas for the chart pair):\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+  for (const s of ['.chart-cannot-ring { fill: none; stroke: var(--chart-no);', '.chart-cannot-x { fill: none; stroke: var(--chart-no);', '.tag.src {', '.advice .tag { color: var(--ink); }']) assert.ok(css.includes(s), s);
+  assert.equal(css.split('\n').filter((l) => /stroke-dasharray/.test(l)).length, 1, 'still one dash rule');
+});
+
+// ---- gaps spec Part B (G9): the rank-up plan is in the rank voice; the plan is in the send window only (a Board line did not fit C25) ----
+test('gaps G9: the rank-up plan figures (rank-s) on the sheet and the planner grounds reach 4.5 in all 21 themes, light and dark; the rule and the classes exist', () => {
+  const fail = [], lo = {};
+  const need6 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]);
+    for (const [n, b] of Object.entries({ slip: hx(th.slip), paper: hx(th.paper) })) need6('rank-up plan: rank-s figure on ' + n + ' (4.5)', c('--rank-s'), b, 4.5, where);
+    need6('rank-up plan: its rank-g rule on slip (3)', c('--rank-g'), hx(th.slip), 3, where);
+  }
+  console.log('Gaps G9, lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(62) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+  for (const s of ['.rank-plan { border-left: 8px solid var(--rank-g);', '.rank-plan b { color: var(--rank-s); }']) assert.ok(css.includes(s), s);
+});
+
+// ---- Revision 4 (W33): the empty states and their deep-water scope; (W34): the Log's day rule and Earnings' scale ----
+test('empty states (W33): the deep-water tokens follow Rev4.5 and every pair of the scope reaches its contrast in all 21 themes, light and dark (computed palette and fallback)', () => {
+  const fail = [], lo = {};
+  const need7 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), paper = hx(th.paper);
+    for (const k of ['--deep', '--deep-2', '--on-deep', '--deep-line']) assert.ok(/^#[0-9a-f]{6}$/.test(T[k]), k + ' is computed in ' + where);
+    // the rule: D is the darker of ink and paper, --on-deep the lighter
+    const darker = M.lum(M.rnd(ink)) <= M.lum(M.rnd(paper)) ? ink : paper, lighter = darker === ink ? paper : ink;
+    assert.deepEqual(M.rnd(c('--on-deep')), M.rnd(lighter), '--on-deep is the lighter of ink and paper in ' + where);
+    const dl = M.rgbToLch(darker), deep = M.rgbToLch(c('--deep')), d2 = M.rgbToLch(c('--deep-2')), h = dl[1] < 0.02 ? M.rgbToLch(hx(th.seal))[2] : dl[2];
+    // W36: in a dark theme D is the page itself, so the panel is lit instead of darkened: --deep is the page's lightness plus 0.10 held between 0.31 and 0.35, --deep-2 starts at 0.44
+    const lit = darker === paper && mode === 'dark';
+    if (!lit && (deep[0] < 0.115 || deep[0] > 0.225)) fail.push('--deep lightness ' + deep[0].toFixed(3) + ' outside 0.12 to 0.22 in ' + where);
+    if (lit && (deep[0] < 0.305 || deep[0] > 0.355)) fail.push('--deep lightness ' + deep[0].toFixed(3) + ' outside 0.31 to 0.35 in a dark theme, ' + where);
+    if (deep[1] > 0.052) fail.push('--deep chroma ' + deep[1].toFixed(3) + ' over 0.05 in ' + where);
+    if (d2[1] > 0.092) fail.push('--deep-2 chroma ' + d2[1].toFixed(3) + ' over 0.09 in ' + where);
+    if (!lit && d2[0] > 0.345) fail.push('--deep-2 lightness ' + d2[0].toFixed(3) + ' over 0.34 in ' + where);
+    if (lit && d2[0] > 0.445) fail.push('--deep-2 lightness ' + d2[0].toFixed(3) + ' over 0.44 in a dark theme, ' + where);
+    // W36, the measure for "clearly distinct from the page": each end of the panel against the page colour. A dark theme: at least 1.3:1 at the dark end and 1.7:1 at the light end (both ends lighter than the page); a light theme: at least 3:1 (the panel is dark on a light page)
+    need7('empty scope: deep end on the page (dark theme 1.3, light theme 3)', c('--deep'), paper, lit ? 1.3 : 3, where);
+    need7('empty scope: deep-2 end on the page (dark theme 1.7, light theme 3)', c('--deep-2'), paper, lit ? 1.7 : 3, where);
+    // sRGB rounding moves the hue of a very dark colour; the model asks only that it is the one it was given
+    const gapH = M.hueGap(deep[2], h); if (deep[1] > 0.01 && gapH > 6) fail.push('--deep hue ' + gapH.toFixed(1) + ' deg off its source in ' + where);
+    // --deep-line is --on-deep 45% into --deep-2 in OKLab
+    const want = P.labToRgb(...P.rgbToLab(M.rnd(c('--on-deep'))).map((x, i) => x * 0.45 + P.rgbToLab(M.rnd(c('--deep-2')))[i] * 0.55));
+    if (Math.max(...M.rnd(want).map((x, i) => Math.abs(x - M.rnd(c('--deep-line'))[i]))) > 1) fail.push('--deep-line is not 45% on-deep in deep-2 in ' + where);
+    need7('empty scope: on-deep on deep-2 (7)', c('--on-deep'), c('--deep-2'), 7, where);
+    need7('empty scope: on-deep on deep (7)', c('--on-deep'), c('--deep'), 7, where);
+    for (const v of ['route', 'loot', 'gil', 'rank']) {
+      need7('empty scope: ' + v + ' field (ring) on deep-2 (3)', c('--' + v + '-m'), c('--deep-2'), 3, where);
+      need7('empty scope: ' + v + ' field (ring) on deep (3)', c('--' + v + '-m'), c('--deep'), 3, where);
+      need7('empty step number: on-mid on ' + v + ' field (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where);
+    }
+    need7('empty scope (printed): deep-line on deep-2', c('--deep-line'), c('--deep-2'), 0, where);
+    // the kicker, the sentence, the aside and the steps' text on the page and the panel
+    const e0 = P.env(row, mode), st = (n) => P.colour('var(' + n + ')', e0);
+    need7('empty state: on-slab on slab (kicker) (4.5)', st('--on-slab'), st('--slab'), 4.5, where);
+    need7('empty state: ink-2 on paper (sentence, aside, note) (4.5)', hx(th.ink2), paper, 4.5, where);
+    need7('empty state: ink-2 on slip (step text) (4.5)', hx(th.ink2), hx(th.slip), 4.5, where);
+    need7('empty state: ink on slip (step title) (4.5)', ink, hx(th.slip), 4.5, where);
+    need7('empty line: ink on paper (4.5)', ink, paper, 4.5, where);
+    need7('empty line: ink-2 dashed edge on paper (3)', hx(th.ink2), paper, 3, where);
+    for (const g of ['--route-g', '--loot-g', '--rank-g', '--gil-g', '--sea-1-g']) need7('empty line: ring glyph ' + g.slice(2) + ' on paper (3)', c(g), paper, 3, where);
+    // the fallback values of the four new tokens (before the script has run), against the same fallback fields
+    const fb = (n) => P.colour('var(' + n + ')', e0);
+    need7('fallback: on-deep on deep-2 (7)', fb('--on-deep'), fb('--deep-2'), 7, where);
+    need7('fallback: on-deep on deep (7)', fb('--on-deep'), fb('--deep'), 7, where);
+    for (const v of ['route', 'loot', 'gil', 'rank']) { need7('fallback: ' + v + ' field on deep-2 (3)', fb('--' + v + '-m'), fb('--deep-2'), 3, where); need7('fallback: ' + v + ' field on deep (3)', fb('--' + v + '-m'), fb('--deep'), 3, where); }
+    // W34: the day rule (a slab) and the Earnings scale line
+    need7('Log day rule: on-slab on slab (4.5)', st('--on-slab'), st('--slab'), 4.5, where);
+    need7('Log day rule: on-slab-2 on slab (4.5)', st('--on-slab-2'), st('--slab'), 4.5, where);
+    need7('Earnings scale line: ink-2 on slip (4.5)', hx(th.ink2), hx(th.slip), 4.5, where);
+    need7('Earnings tally label: ink-2 on slip (4.5)', hx(th.ink2), hx(th.slip), 4.5, where);
+    // W36: the three plain tallies are page-colour blocks under a gil band, their figures gil text and their labels the secondary ink
+    need7('Earnings tally (page block): ink-2 label on paper (4.5)', hx(th.ink2), paper, 4.5, where);
+    need7('Earnings tally (page block): gil text on paper (4.5)', c('--gil-s'), paper, 4.5, where);
+    need7('Earnings tally (page block): gil band on paper (3)', c('--gil-g'), paper, 3, where);
+    need7('Earnings tally (page block): ink on paper (7)', ink, paper, 7, where);
+    need7('Earnings bar: ink on the gil wash (7)', ink, c('--gil-w'), 7, where);
+  }
+  console.log('Empty states (W33) and Log and Earnings (W34), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(70) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('empty states (W33) and the Log and Earnings (W34): subs.css, subs.js and index.html carry the rules and the markup', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8'), html = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'index.html'), 'utf8');
+  for (const s of [
+    '.panel.empty-state[data-empty] { --pad-x: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 44%);', '.es-main { display: flex; flex-direction: column;', '.es-kick { margin: 0; padding: 4px 14px; background: var(--slab); color: var(--on-slab);',
+    '.es-main > h2 { margin: 0; padding: 0; font: 900 clamp(44px, 7.2vw, 104px)/.88 var(--f-disp);', '.es-step { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: stretch; min-height: 64px; background: var(--slip); border: 2px solid var(--ink); }',
+    '.es-step.v-route > b { background: var(--route-m); }', '.es-step.v-rank > b { background: var(--rank-m); }', '.es-step.v-loot > b { background: var(--loot-m); }', '.es-step.v-gil > b { background: var(--gil-m); }',
+    'font: 900 26px/1 var(--f-disp); letter-spacing: .06em; background: linear-gradient(var(--route-m), var(--route-m)) 0 100% / 100% 7px no-repeat, linear-gradient(var(--on-seal), var(--on-seal)) 0 calc(100% - 7px) / 100% 2px no-repeat, var(--seal);',
+    '.es-scope { position: relative; container-type: size; overflow: hidden; min-height: 320px; background: linear-gradient(160deg, var(--deep-2), var(--deep)); clip-path: polygon(90px 0, 100% 0, 100% 100%, 0 100%);',
+    '.es-scope .r1 { stroke: var(--route-m); }', '.es-scope .r2 { stroke: var(--loot-m); }', '.es-scope .r3 { stroke: var(--gil-m); }', '.es-scope .r4 { stroke: var(--rank-m); }', '.es-scope .r5, .es-scope .es-cross { stroke: var(--deep-line); }',
+    '.es-scope .es-fan { fill: var(--route-m); fill-opacity: .16; }', '.es-scope .es-edge { stroke: var(--route-m); stroke-width: 4; }', '.es-scope .es-dia { fill: var(--on-deep); stroke: var(--route-m); stroke-width: 4; }', 'animation: subs-turn 9s linear infinite; }',
+    '.empty-line, .hint.empty-line, .muted.empty-line { display: flex; align-items: center; gap: 12px; min-height: 48px;', 'border: 2px dashed var(--ink-2); background: var(--paper); color: var(--ink);', 'border: 3px solid var(--scr-g); border-radius: 50%;',
+    '--deep: oklch(0.2 0.04 250); --deep-2: oklch(0.32 0.07 250); --on-deep: #f1f5fa; --deep-line: color-mix(in oklab, var(--on-deep) 45%, var(--deep-2));',
+    '.earn-scale { caption-side: top; text-align: left;', 'repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rule) calc(25% - 1px) 25%)', '.earn-card { --cut: 22px;', '.earn-card span { order: 2;', '.earn-card b { order: 1;',
+    '.log-day span { font: 600 13px/1.3 var(--f-data); color: var(--on-slab-2);']) assert.ok(css.includes(s), s);
+  for (const gone of ['--rank-ring', '--gil-ring', '--loot-ring', '--route-ring', '--sea-1-ring', '--ringc', 'var(--ring)', '--ring:', '.log-row:nth-child(even)']) assert.ok(!css.includes(gone), gone + ' is gone from subs.css');
+  assert.ok(!Object.keys(PAL.compute(THEME_IN(THEMES[0], 'light')).tokens).some((k) => /ring/.test(k)), 'the model computes no ring token');
+  for (const id of ['board-none', 'board-hidden', 'log-none', 'earn-none']) assert.ok(js.includes("id: '" + id + "'"), id);
+  assert.ok(js.includes("cls: 'welcome'") && js.includes('function emptyHtml(o)') && js.includes('data-empty="') && js.includes('<ol class="es-steps">') && js.includes('<div class="es-scope" aria-hidden="true">'), 'the pattern');
+  assert.ok(js.includes('data-act="new">Start the setup') && js.includes('data-tab="setup">Show them in Setup') && js.includes('data-tab="board">Go to the Board') && js.includes('data-tab="log">Go to the Log'), 'the four actions');
+  assert.ok(js.includes('<div class="log-day" data-day=') && js.includes('LEDGER.dayLabel(') && js.includes('<span class="log-disc">') && js.includes("<caption class=\"earn-scale\">") && js.includes('TL.niceScale('), 'the Log and Earnings markup');
+  assert.ok(html.includes('<p class="muted empty-line">Opening your fleet…</p>'), 'the loading line');
+  assert.ok(js.includes('No submarine is in an unlocked slot yet.'), 'the new line');
+});
+
+// ---- Revision 4 (W35): the send window's one axis, Setup's head states and ladder, the Map's chain of seas ----
+test('send window, Setup and Map chain (W35): every new pair reaches its contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need9 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), slip = hx(th.slip), paper = hx(th.paper);
+    const e0 = P.env(row, mode), st = (n) => P.colour('var(' + n + ')', e0), p3 = st('--paper-3');
+    // the one axis: the bar of the suggestion (accent) and of the other routes (ink-2) on the trough (page field 3), the marker (ink) on the plate
+    need9('send window axis: the suggestion bar (ink) on the trough, page field 3 (3)', ink, p3, 3, where);
+    need9('send window axis: another route bar (ink-2) on the trough, page field 3 (3)', hx(th.ink2), p3, 3, where);
+    need9('send window axis: the marker (ink) on the plate (3)', ink, slip, 3, where);
+    need9('send window axis: tick labels (ink-2) on the plate (4.5)', hx(th.ink2), slip, 4.5, where);
+    need9('send window axis: the chosen route plate edge (seal) on the sheet (printed)', st('--seal'), slip, 0, where);
+    need9('send window axis: the trough (page field 3) on the plate (printed; the hairlines and the bar carry the scale)', p3, slip, 0, where);
+    for (let s = 1; s <= 7; s++) { need9('send window axis: outlined disc, sea graphic on the plate (3)', c('--sea-' + s + '-g'), slip, 3, where); need9('send window axis: the chosen route disc, on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where); }
+    // the title's 12 px status edge against the slab it borders
+    for (const k of ['back', 'out', 'idle']) need9('sheet title edge: ' + k + ' field on the slab (printed; the word is in the title and the lane)', st('--' + k), st('--slab'), 0, where);
+    // Setup: the head state on the rank field and on the slab; the four rungs: ink on each role's wash (7), the number on the role's field (4.5)
+    need9('head state: on-mid on rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    need9('head state (recommendations): on-slab on slab (4.5)', st('--on-slab'), st('--slab'), 4.5, where);
+    need9('head state (plain line): ink-2 on slip (4.5)', hx(th.ink2), slip, 4.5, where);
+    for (const v of ['route', 'rank', 'gil', 'loot']) { need9('ladder rung: ink on ' + v + ' wash (7)', ink, c('--' + v + '-w'), 7, where); need9('ladder rung: on-mid on ' + v + ' field (4.5)', c('--on-mid'), c('--' + v + '-m'), 4.5, where); }
+    // the Map's chain: ink rule and arrow on the panel (3); a closed sea's text (ink-2) on the page colour under its hatch (4.5); the caption (ink-2) on the panel (4.5); the chosen, closed sea is the sea field with on-mid (4.5)
+    need9('sea chain: the link (ink) on the panel (3)', ink, slip, 3, where);
+    need9('sea chain: a closed sea, ink-2 on page colour (4.5)', hx(th.ink2), paper, 4.5, where);
+    // fix list W-d: the hatch of a closed sea is lighter (one pixel lines, the rule colour at 25%, eleven pixels apart); the name (ink-2) stays at 4.5 on the page colour and on a hatch line itself
+    need9('sea chain: a closed sea, ink-2 on its hatch line (rule at 25% over the page colour) (4.5)', hx(th.ink2), hx(mixRgb(paper, hx(mixRgb(paper, ink, 0.18)), 0.25)), 4.5, where);
+    need9('sea chain: the chosen, closed sea, on-mid on its hatch line (on-mid at 12% over the sea field) (4.5)', c('--on-mid'), hx(mixRgb(c('--sea-1'), c('--on-mid'), 0.12)), 4.5, where);
+    // fix list W-c: the three plain Earnings tallies are deep-water blocks, distinct from the panel (slip) and the page in every theme; their text is on-deep, their band the gil field
+    need9('Earnings tally (deep block): the block (deep-2) against the panel (slip), at least 1.4 in every theme', c('--deep-2'), slip, 1.4, where);
+    need9('Earnings tally (deep block): the block (deep-2) against the page (paper), at least 1.4 in every theme', c('--deep-2'), paper, 1.4, where);
+    need9('Earnings tally (deep block): on-deep label and figure on the block (7)', c('--on-deep'), c('--deep-2'), 7, where);
+    need9('Earnings tally (deep block): the gil band (gil field) on the block (3)', c('--gil-m'), c('--deep-2'), 3, where);
+    need9('sea chain (narrow): link caption ink-2 on the panel (4.5)', hx(th.ink2), slip, 4.5, where);
+    for (let s = 1; s <= 7; s++) need9('sea chain: chosen sea, on-mid on sea field (4.5)', c('--on-mid'), c('--sea-' + s), 4.5, where);
+  }
+  console.log('Send window, Setup and Map chain (W35), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(100) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('send window, Setup and Map chain (W35): subs.css and subs.js carry the rules and the markup', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  for (const s of ['.sheet h2.st-back { --st: var(--back); }', '.sheet h2.st-out { --st: var(--out); }', '.sheet h2.st-idle { --st: var(--idle); }', '.cmp-lane.pick .tl-bar { height: 12px;', '.cmp-lane.pick .tl-end { background: var(--ink); box-shadow: none; }',
+    '.head-state { margin: -4px 0 8px; font: 700 14px/1.4 var(--f-data); color: var(--ink-2); }', '.rec-rank .rung-1, .rec-rank .rung-2, .rec-rank .rung-3, .rec-rank .rung-4 { min-height: 76px; }',
+    '.rec-rank li:has([data-rec="up-unlock"]) { background: var(--route-w); }', '.rec-rank li:has([data-rec="up-level"]) { background: var(--rank-w); }', '.rec-rank li:has([data-rec="up-gil"]) { background: var(--gil-w); }', '.rec-rank li:has([data-rec="up-loot"]) { background: var(--loot-w); }',
+    '.wiz .tick b { color: var(--route-s); }', '.map-seas .btn[data-map-sea].closed { background: repeating-linear-gradient(-65deg, color-mix(in srgb, var(--rule) 25%, transparent) 0 1px, transparent 1px 11px), var(--paper); color: var(--ink-2); }', '.map-panel { container: mappanel / inline-size; }']) assert.ok(css.includes(s), s);
+  assert.ok(!/\.map-seas \{ flex-wrap: nowrap; overflow-x: auto/.test(css), 'the phone strip that scrolled sideways is gone');
+  assert.ok(!/clip-path[^;]*;[^}]*data-map-sea|data-map-sea[^}]*clip-path/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')), 'the sea buttons are not cut with clip-path (they take focus)');
+  for (const t of ['function cmpLane(', 'function cmpAxis(', 'TL.span(Math.max.apply(null, [a.plan.ev.seconds]', '<h2 class="st-out">', "'<h2 class=\"st-' + st + '\">'", '<p class="head-state" aria-hidden="true">', '<li class="rung-', "(n ? '' : ' closed')", 'class="sea-link"', '<div class="route-row">']) assert.ok(js.includes(t), t);
+});
+
+// ---- Revision 4 (W36): the final pass ----
+test('final pass (W36): the trough edge, the drawn radio buttons and checkboxes, the lifted ladder rungs, the page-colour tallies and the deep-water panel reach their contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need36 = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), paper = hx(th.paper), slip = hx(th.slip), e0 = P.env(row, mode), st = (n) => P.colour('var(' + n + ')', e0);
+    // the send window's trough carries the scale: its 2 px edge (ink-2) against the plate (the panel colour) is at least 3:1 (the text tone reaches 4.5:1)
+    need36('send window trough: the 2 px edge (ink-2) on the plate (3)', hx(th.ink2), slip, 3, where);
+    need36('send window trough: the edge (ink-2) on the page field 3 inside it (3)', hx(th.ink2), st('--paper-3'), 3, where);
+    // radio buttons and checkboxes: the 2 px ink edge on the page colour and on the panel (3), the check mark (on-seal) on the accent (4.5), the focus ring (the accent) on the page colour and the panel (3)
+    need36('control: the ink edge on the page colour (3)', ink, paper, 3, where);
+    need36('control: the ink edge on the panel (3)', ink, slip, 3, where);
+    need36('control: the check mark (on-seal) on the accent (4.5)', hexRgb(onSeal(hexRgb((mode === 'dark' ? row[3] : row[2])[2]))), st('--seal'), 4.5, where);
+    need36('control: the focus ring (the accent) on the page colour (printed)', st('--seal'), paper, 0, where);
+    need36('control: the focus ring (the accent) on the panel (printed)', st('--seal'), slip, 0, where);
+    // the ladder rungs: the role's field at 16% over its wash (what the row's two backgrounds make), ink on it at 7:1
+    for (const v of ['route', 'rank', 'gil', 'loot']) { const w = c('--' + v + '-w'), f = c('--' + v + '-m'), comp = w.map((x, i) => x * 0.84 + f[i] * 0.16); need36('ladder rung (lifted): ink on the ' + v + ' wash with 16% of its field (7)', ink, comp, 7, where); }
+    // the Earnings tallies other than the first are page-colour blocks (pairs in the W33 and W34 test)
+    need36('earnings tally block: the gil band (3:1 graphic) on the panel it stands on (3)', c('--gil-g'), slip, 3, where);
+  }
+  console.log('Final pass (W36), lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(100) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('final pass (W36): subs.css carries the rules (columns by width, the axis labels, the head tools, the scope strip, the controls, the compact chain)', () => {
+  const must = ['@media (min-width: 974px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }', '@media (min-width: 1404px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }', '@media (min-width: 1834px) { .fleet:has(> .fc:nth-child(5)) { grid-template-columns: repeat(4, minmax(0, 1fr)); } }',
+    '@container fcsubs (min-width: 400px) and (max-width: 491px) { .tl-axis > i:nth-child(2), .tl-axis > i:nth-child(4) { display: none; } }', '.fc-tools { flex: 1 1 100%; flex-wrap: nowrap; }',
+    '.es-scope::after { content: ""; position: absolute; left: 0; right: 0; bottom: 40px;', 'input[type="checkbox"], input[type="radio"] { -webkit-appearance: none; appearance: none;', 'input[type="radio"]:checked { background-image: radial-gradient(circle, var(--on-seal) 0 4px, var(--seal) 5px); }',
+    '.cmp-lane .tl-bar { height: 10px; outline: 2px solid var(--ink-2); outline-offset: -2px; }', '.chart-svg g { fill: none; }', '.earn-card:not(:first-child) { background-color: var(--deep-2);',
+    'grid-auto-flow: dense;', '.sea-link:has(+ [data-map-sea][aria-pressed="true"])', '.map-grid > .chart-wrap { order: 1; }'];
+  for (const s of must) assert.ok(css.includes(s), s);
+  // the four rungs carry a 16% field over their wash
+  for (const v of ['route', 'rank', 'gil', 'loot']) assert.ok(css.includes('color-mix(in srgb, var(--' + v + '-m) 16%, transparent)'), v);
+  // the old breakpoints are gone
+  assert.ok(!css.includes('@media (min-width: 701px) { .fleet:has(') && !css.includes('@media (min-width: 1400px) { .fleet:has('), 'the columns no longer start at 701 px and 1,400 px');
+});
+
+// ---- Visual fixes, part 1 (B1, S1 to S11) ----
+test('visual fixes part 1: every new text and field pairing reaches its contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), ink2 = hx(th.ink2), paper = hx(th.paper), slip = hx(th.slip), e0 = P.env(row, mode);
+    // B1 and S1: a disabled sector tile and an unusable community route: name, rank and reason at ink-2 on the plain tile (paper) at 4.5; the reason line on the panel as well
+    need('B1 disabled sector tile: name, rank and reason (ink-2) on the plain tile (4.5)', ink2, paper, 4.5, where);
+    need('S1 unusable community route: name and reason (ink-2) on the plain button (4.5)', ink2, paper, 4.5, where);
+    need('S1 the hatch band (ink-2) on the plain button (graphic 3)', ink2, paper, 3, where);
+    // S6: the outline button: ink text on the plate it stands on (the suggestion wash and the panel), the accent edge on the plate (3)
+    need('S6 outline button: ink on the panel (4.5)', ink, slip, 4.5, where);
+    need('S6 outline button: ink on the suggestion wash (4.5)', ink, P.colour('var(--hi-slip)', e0), 4.5, where);
+    need('S6 outline button: the accent edge on the panel (graphic 3)', P.colour('var(--seal)', e0), slip, 3, where);
+    // S8: Today is the gil field with the on-voice text
+    need('S8 Today tally: on-mid on the gil field (4.5)', c('--on-mid'), c('--gil-m'), 4.5, where);
+    // S4: the Recommendations head is the Setup head: on-mid on the rank field
+    need('S4 Recommendations head: on-mid on the rank field (4.5)', c('--on-mid'), c('--rank-m'), 4.5, where);
+    // S9: the suffix under the title is ink-2 on the panel
+    need('S9 heading suffix: ink-2 on the page (4.5)', ink2, paper, 4.5, where);
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, mode === 'dark' ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env);
+      // S3: above the rank is a dashed outline in chart-ink-2 (graphic 3 on every water), far a solid square in the far tone (3), the cross in the error colour (3)
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) {
+        need('S3 above-rank dashed outline (chart-ink-2) on ' + g.slice(2) + ' (3)', cc('--chart-ink-2'), cc(g), 3, where + ' sea ' + n);
+        need('S3 far solid square (chart-far) on ' + g.slice(2) + ' (3)', cc('--chart-far'), cc(g), 3, where + ' sea ' + n);
+      }
+    }
+  }
+  console.log('Visual fixes part 1, lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(90) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('visual fixes part 1: subs.css and the scripts carry the rules', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8'), ch = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'chart.js'), 'utf8');
+  for (const sx of ['.sector:disabled { --hz: var(--ink-2); opacity: 1;', 'background: var(--hazard) 0 0 / 14px 100% no-repeat, var(--paper);', '.cr-list .btn.blocked', '.btn.outline { background: transparent; border: 2px solid var(--seal); color: var(--ink);',
+    '.units > .u + .u::before', '.nb { white-space: nowrap; }', '@container mappanel (max-width: 479px)', '.earn-card:first-child { background-color: var(--gil-m);', '.sheet::backdrop { background: var(--scrim); }', 'stroke-width: 4px', '.panel.recs:not(.welcome)']) assert.ok(css.includes(sx), sx);
+  for (const sx of ['class="why"', "class=\"btn outline\" data-act=\"quick\"", 'function seaStrip', "'cr-why-'", 'function routeHtml', 'class="q-dot"']) assert.ok(js.includes(sx.replace(/'cr-why-'/, 'cr-why-')), sx);
+  for (const sx of ['stroke-dasharray="4 3"', 'chart-cannot-halo', 'C.marks = function']) assert.ok(ch.includes(sx), sx);
+  assert.ok(!/chart-overring/.test(css) && !/chart-overring/.test(ch), 'the old ring on an above-rank node is gone');
+  assert.equal(css.split('\n').filter((l) => /stroke-dasharray/.test(l)).length, 1, 'the route is still the only dash in the stylesheet');
+});
+
+// ---- Visual fixes, part 2 (M1 to M19) ----
+test('visual fixes part 2: every new text and field pairing reaches its contrast in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), T = PAL.compute(th).tokens, c = (n) => hx(T[n]), ink = hx(th.ink), ink2 = hx(th.ink2), paper = hx(th.paper), paper2 = hx(th.paper2), e0 = P.env(row, mode), paper3 = hx(P.colour('var(--paper-3)', e0));
+    // M4: a sector letter outside the chart is a disc in its sea's colour (the picker's tile, the wizard's list): on-mid on every sea field
+    for (let n = 1; n <= 7; n++) need('M4 sector disc (picker, wizard list): on-mid on the sea field (4.5)', c('--on-mid'), c('--sea-' + n), 4.5, where);
+    // M15: the disabled "Mark every sector" button (B1's style): ink-2 on the plain button; a loot picker that is off: its item and record line ink-2 on the picker (paper) and the select (paper-2)
+    need('M15 disabled bulk button: ink-2 on the plain button (4.5)', ink2, paper, 4.5, where);
+    need('M15 loot picker off: the item (ink-2) on the switched-off select (paper) (4.5)', ink2, paper, 4.5, where);
+    need('M15 loot picker off: the record line (ink-2) on the picker (paper) (4.5)', ink2, paper, 4.5, where);
+    need('M15 loot picker off: the word "off" (ink-2) on the picker (paper) (4.5)', ink2, paper, 4.5, where);
+    // M15: the open tier header is the route wash with ink text
+    need('M15 open tier header: ink on the route wash (4.5)', ink, c('--route-w'), 4.5, where);
+    // M10: the slider's thumb: its 2 px ink edge on the track (paper-3) and the accent field against the ink edge
+    need('M10 slider thumb: the ink edge on the track (3)', ink, paper3, 3, where);
+    { const k = '(printed) M10 slider thumb: the accent field against the track (paper-3); the ink edge carries the 3:1 above', r = M.ratio(P.colour('var(--seal)', e0), paper3); if (!lo[k] || r < lo[k].min) lo[k] = { min: r, where }; }
+    // M15: one focus mark on a field: the accent outline on the page and on the panel (3)
+    need('M15 focus outline (accent) on the page (3)', P.colour('var(--seal)', e0), paper, 3, where);
+    for (let n = 1; n <= 7; n++) {
+      const env = Object.assign({}, e0, mode === 'dark' ? P.RULES.chartDark : P.RULES.chartLight, { '--sea': T['--sea-' + n] }), cc = (x) => P.colour('var(' + x + ')', env);
+      for (const g of ['--chart-bg', '--chart-bg-2', '--chart-bg-hi']) {
+        // M17: the "+" mark (chart-ink) and the keyboard focus ring (chart-sel) on every water, 3:1 as marks
+        need('M17 "+" slot mark (chart-ink) on ' + g.slice(2) + ' (3)', cc('--chart-ink'), cc(g), 3, where + ' sea ' + n);
+        need('M17 keyboard focus ring (chart-sel) on ' + g.slice(2) + ' (3)', cc('--chart-sel'), cc(g), 3, where + ' sea ' + n);
+      }
+    }
+  }
+  console.log('Visual fixes part 2, lowest ratio per new pair over 21 themes x 2 modes:\n' + Object.entries(lo).map(([k, v]) => '  ' + k.padEnd(90) + v.min.toFixed(2).padStart(6) + '  lowest at ' + v.where).join('\n'));
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' new pairs outside their rules');
+});
+
+test('visual fixes part 2: subs.css and the scripts carry the rules', () => {
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8'), ch = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'chart.js'), 'utf8'), fl = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'fleet.js'), 'utf8');
+  for (const sx of ['.strip-next.none', '.es-scope .es-word { position: absolute; left: calc(50cqw', '.sector .disc, .tick .disc', '.ticks { align-items: stretch;', '.fc-list li > span > .muted.units', '.sheet h2 .sheet-sub', '.wide-panel:not(.map-panel) { max-width: none; }', '.setup-cols { display: grid;',
+    '.map-grid > .chart-wrap, .map-grid > .chart-key { float: left;', '.rec-rank .rung-1, .rec-rank .rung-2, .rec-rank .rung-3, .rec-rank .rung-4 { min-height: 76px; }', '.rec-give input[type="range"][disabled] { opacity: 1;', '.sheet-actions .btn.primary[data-act="dosendall"]', '.sea-bulk .btn:disabled', '.chart-plus-halo', '.chart-focus',
+    'background: var(--route-w); }', '.subs-page .inp:focus', 'height: 56px; min-height: 44px', 'font-size: clamp(16px, 5.6vw, 30px)']) assert.ok(css.includes(sx), sx);
+  for (const sx of ['function discHtml', 'class="setup-cols"', 'class="muted units"', 'class="muted sheet-sub"', 'data-rec-off', "' none'", 'function setupTailHtml', 'var vt = function']) assert.ok(js.includes(sx), sx);
+  for (const sx of ['RF: BK + 5', 'chart-plus-halo', 'chart-focus']) assert.ok(ch.includes(sx), sx);
+  assert.ok(fl.includes("box.style.top"), 'the banner stands below the header');
+  // the same disc rule everywhere outside the chart: the chart keeps chart ink (a letter there is text on the water)
+  assert.ok(/\.chart-svg \.chart-letter \{ font-family/.test(css) && !/\.chart-letter[^{]*\{[^}]*sea/.test(css), 'chart letters stay chart ink');
+});
+
+// ---- Integrity spec 4.4: the Board notice for a slot that holds more than one submarine (.note.bad with a .btn.primary "Keep this one" beside each) ----
+test('slot notice (integrity spec): its text, button text, button edge and error hatch reach their contrast on the note wash in all 21 themes, light and dark', () => {
+  const fail = [], lo = {};
+  const need = (pair, fg, bg, min, where) => { const r = M.ratio(fg, bg); if (!lo[pair] || r < lo[pair].min) lo[pair] = { min: r, where }; if (r < min) fail.push(pair + ' ' + r.toFixed(2) + ' < ' + min + ' in ' + where); };
+  for (const [row, mode, where] of rows) {
+    const th = THEME_IN(row, mode), e0 = P.env(row, mode), ink = hx(th.ink), paper = hx(th.paper);
+    const hi = hx(mixRgb(paper, P.colour('var(--seal)', e0), mode === 'dark' ? 0.18 : 0.13)); // the note wash: --hi (the accent at 13% light, 18% dark) over the page colour
+    need('slot notice: ink on the note wash (the text) (4.5)', ink, hi, 4.5, where);
+    // the button's text (on-seal on seal, 4.5) is pinned for every theme by the shared on-seal test above
+    need('slot notice: the Keep this one button (.btn.primary): the accent fill on the note wash (printed, not asserted: the button is named by its text, 4.5 above)', P.colour('var(--seal)', e0), hi, 0, where);
+    need('slot notice: the error hatch on the note wash (graphic 3)', P.colour('var(--bad)', e0), hi, 3, where);
+  }
+  assert.deepEqual(fail.slice(0, 20), [], fail.length + ' slot notice pairs outside their rules; lowest: ' + JSON.stringify(lo));
+  const js = fs.readFileSync(path.join(CC, 'src', 'submersibles', 'subs.js'), 'utf8');
+  for (const s of ['data-slot-clash=', 'data-act="keepsub"', 'class="note bad"', 'class="btn primary"']) assert.ok(js.includes(s), s);
+});

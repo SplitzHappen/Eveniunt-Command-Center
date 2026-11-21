@@ -1311,6 +1311,18 @@ test('Submersibles: typed game times, statuses and the calendar file (command-ce
   assert.ok(CC.safeKey(F.tripId(F.newId('s'), Date.now())), 'trip ids are valid save keys');
 });
 
+test('Submersibles: the voyage gauge share (W21) is worked out from the stored send and return times, clamped, and absent when either is missing', () => {
+  require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'fleet.js'));
+  const F = globalThis.FLEET, H = 3600000, v = { sentAt: 1000 * H, returnAt: 1004 * H };
+  assert.strictEqual(F.voyageProgress(v, 1000 * H), 0, 'at the send time');
+  assert.strictEqual(F.voyageProgress(v, 1001 * H), 0.25);
+  assert.strictEqual(F.voyageProgress(v, 1002 * H), 0.5, 'mid-voyage');
+  assert.strictEqual(F.voyageProgress(v, 1004 * H), 1, 'at the return time');
+  assert.strictEqual(F.voyageProgress(v, 1009 * H), 1, 'after the return: clamped');
+  assert.strictEqual(F.voyageProgress(v, 990 * H), 0, 'before the send time: clamped');
+  for (const bad of [null, undefined, {}, { returnAt: 5 }, { sentAt: 5 }, { sentAt: 0, returnAt: 5 }, { sentAt: 9, returnAt: 9 }, { sentAt: 9, returnAt: 3 }, { sentAt: 'x', returnAt: 5 }]) assert.strictEqual(F.voyageProgress(bad, 4), null, JSON.stringify(bad));
+});
+
 test('Submersibles: worked-out voyages match the five hand-worked voyages to the second (advisor.js)', () => {
   const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
   require(path.join(__dirname, '..', 'command-center', 'src', 'submersibles', 'advisor.js'));
@@ -1438,6 +1450,149 @@ test('Submersibles advisor: the owner\'s order (unlock all four subs, discover e
   assert.ok(a7.parts && a7.parts.gain >= 60, 'a weak build at the gil step gets a part tip');
   // every suggestion is a valid, reachable route of 1 to 5 discovered sectors the rank allows
   for (const a of [a1, a2, a3, a4, a5, a6, a7]) for (const x of [a.plan].concat(a.alts)) assert.ok(x.ev.reachable && x.route.length >= 1 && x.route.length <= 5);
+});
+
+test('Submersibles advisor, advice from the log (S6-2): ranked reachable routes become the plan, by gil per hour for this sub, with the rules of the spec', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD);
+  const all = SD.sectors.map((s) => s.id), build = [31, 24, 25, 34];
+  const base = { sub: { rank: 145, parts: build }, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 4 };
+  const L = (route, trips, perTrip, enough) => ({ route, trips, perTrip, enough: enough === undefined ? trips >= 10 : enough });
+  const secs = (r) => A.evalRoute(r, A.stats(145, build)).seconds;
+  const plain = A.advise(base);
+  // without a log (none, null or empty) the result is today's
+  for (const extra of [{}, { logged: null }, { logged: [] }, { logged: [L([1, 2], 9, 5000)], enough: 10 }]) {
+    const a = A.advise(Object.assign({}, base, extra));
+    assert.deepStrictEqual(a.plan.route, plain.plan.route); assert.deepStrictEqual(a.alts.map((x) => x.route), plain.alts.map((x) => x.route));
+    assert.ok(!a.own, 'not from the log'); assert.match(a.plan.why, /community gil route/); assert.doesNotMatch(a.plan.why, /logging arrives/);
+  }
+  // 9 voyages do not count: the reason says how many there are
+  const nine = A.advise(Object.assign({}, base, { logged: [L(plain.plan.route, 9, 5000)], enough: 10 }));
+  assert.deepStrictEqual(nine.plan.route, plain.plan.route); assert.match(nine.plan.why, /takes over once a route has 10 logged voyages \(this one has 9\)/);
+  // a ranked, reachable route becomes the plan, with the figures and the price note
+  assert.notDeepStrictEqual(plain.plan.route, [1, 2]);
+  const own = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000)], enough: 10, priceNote: 'Market prices seen Tue 14:05 on this device.' }));
+  assert.strictEqual(own.own, true); assert.strictEqual(own.plan.own, true); assert.deepStrictEqual(own.plan.route, [1, 2]);
+  assert.match(own.plan.why, /^From your own log: about 412,000 gil a voyage over 14 logged voyages; this sub is back in \d+(\.\d)? hours, so about [\d,]+ gil per hour\. Market prices seen Tue 14:05 on this device\.$/);
+  assert.strictEqual(own.alts.length, 2, 'filled up from today\'s list');
+  for (const x of own.alts) { assert.match(x.why, /^Not enough of your own data \(0 of 10 voyages\)/); assert.notDeepStrictEqual(x.route, [1, 2]); assert.ok(x.ev.reachable); }
+  assert.notDeepStrictEqual(own.alts[0].route, own.alts[1].route);
+  // a community route with enough logged voyages but no known price (pays 0): not "not enough data", and no gil figure
+  const noPrice = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 12, 0)], enough: 10 }));
+  const np = noPrice.alts.find((x) => x.route.join() === plain.plan.route.join());
+  assert.ok(np, 'the unpriced community route is listed'); assert.match(np.why, /^Its items have no known price on this device \(12 logged voyages\), so no gil figure;/); assert.doesNotMatch(np.why, /Not enough of your own data/);
+  // the order: gil per hour for this sub; the fill-up names the logged count of a thin route
+  const thin = A.advise(Object.assign({}, base, { logged: [L([1, 2], 14, 412000), L(plain.plan.route, 4, 1000, false)], enough: 10 }));
+  assert.ok(thin.alts.some((x) => x.route.join() === plain.plan.route.join() && /\(4 of 10 voyages\)/.test(x.why)));
+  const g = (r, p) => p / (secs(r) / 3600), pa = { '1,2': 100000, '1': 90000, '2': 20000 };
+  const o3 = A.advise(Object.assign({}, base, { logged: [L([2], 12, pa['2']), L([1], 12, pa['1']), L([1, 2], 12, pa['1,2'])], enough: 10 }));
+  const want = [[1], [1, 2], [2]].sort((x, y) => g(y, pa[y.join()]) - g(x, pa[x.join()]));
+  assert.deepStrictEqual([o3.plan.route].concat(o3.alts.map((x) => x.route)), want, 'best gil per hour first, by this sub\'s own hours (not the log\'s)');
+  // tie-break 1: equal gil per hour, fewer seconds first (the shorter route)
+  const sS = secs([1]), sL = secs([2]); assert.ok(sS < sL);
+  const gph = 50000 / (sS / 3600), pL = 50000 * sL / sS, ulp = (x, n) => { const f = new Float64Array([x]), u = new BigInt64Array(f.buffer); u[0] += BigInt(n); return f[0]; };
+  let found = null;
+  for (let k = -64; k <= 64 && found === null; k++) if (ulp(pL, k) / (sL / 3600) === gph) found = ulp(pL, k);
+  assert.ok(found !== null, 'test data: an equal figure exists');
+  const t1 = A.advise(Object.assign({}, base, { logged: [L([2], 12, found), L([1], 12, 50000)], enough: 10 }));
+  assert.deepStrictEqual(t1.plan.route, [1], 'equal gil per hour: fewer seconds first'); assert.deepStrictEqual(t1.alts[0].route, [2]);
+  // tie-break 2: equal gil per hour and equal seconds, the route text ascending (32,36 before 34,38), in either input order
+  assert.strictEqual(secs([32, 36]), secs([34, 38]));
+  for (const list of [[L([34, 38], 11, 70000), L([32, 36], 11, 70000)], [L([32, 36], 11, 70000), L([34, 38], 11, 70000)]]) {
+    const t2 = A.advise(Object.assign({}, base, { logged: list, enough: 10 }));
+    assert.deepStrictEqual(t2.plan.route, [32, 36]); assert.deepStrictEqual(t2.alts[0].route, [34, 38]);
+  }
+  // routes this sub cannot run are ignored: an undiscovered sector, a sector above the rank, a route out of range, and perTrip 0
+  const ignored = [
+    [Object.assign({}, base, { fc: { unlockedSlots: 4, discovered: all.filter((id) => id !== 2) } }), L([1, 2], 20, 9e6)],
+    [Object.assign({}, base, { sub: { rank: 1, parts: [3, 4, 1, 2] } }), L([1, 2, 3], 20, 9e6)],
+    [Object.assign({}, base, { sub: { rank: 145, parts: [3, 4, 1, 2] } }), null],
+    [base, L([1, 2], 20, 0)]
+  ];
+  const far = [50, 43, 48, 45, 39]; // 202 of 200 range for the weak build
+  assert.ok(!A.evalRoute(far, A.stats(145, [3, 4, 1, 2])).reachable, 'test data: a route out of range of the weak build');
+  ignored[2][1] = L(far, 20, 9e6);
+  for (const [input, l] of ignored) {
+    const ref = A.advise(input), got = A.advise(Object.assign({}, input, { logged: [l], enough: 10 }));
+    assert.ok(!got.own, 'ignored: ' + l.route.join()); assert.deepStrictEqual(got.plan.route, ref.plan.route);
+  }
+  // blocked stays blocked
+  assert.ok(A.advise({ sub: { rank: 5, parts: null }, fc: { unlockedSlots: 1, discovered: [1] }, logged: [L([1], 20, 100)] }).blocked);
+});
+
+test('Submersibles advisor, part advice in gil (S6-3): the swap that raises the best gil per hour, only if it lowers no surveillance, retrieval or favor', () => {
+  const SD = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'submarines.json'), 'utf8'));
+  const A = globalThis.ADVISOR.init(SD);
+  const all = SD.sectors.map((s) => s.id), weak = [3, 4, 1, 2], good = [31, 24, 25, 34], PT = {};
+  SD.parts.forEach((p) => { PT[p.id] = p; });
+  const base = (parts) => ({ sub: { rank: 145, parts }, fc: { unlockedSlots: 4, discovered: all }, slotsFilled: 4 });
+  const L = (route, trips, perTrip) => ({ route, trips, perTrip, enough: trips >= 10 });
+  const gphOf = (parts, route, perTrip) => { const ev = A.evalRoute(route, A.stats(145, parts)); return ev.reachable ? perTrip / (ev.seconds / 3600) : 0; };
+  // a ranked route the weak build runs slowly: a tip in gil, with the figures and the three stats not lowered
+  const a = A.advise(Object.assign(base(weak), { logged: [L([1, 2], 12, 100000)], enough: 10 }));
+  assert.ok(a.parts && /more gil per hour/.test(a.parts.why) && /lowers none of surveillance, retrieval and favor/.test(a.parts.why));
+  assert.ok(a.parts.gilGain > 0 && a.parts.gain > 0 && Number.isInteger(a.parts.slot) && a.parts.from === weak[a.parts.slot]);
+  for (const k of ['surveillance', 'retrieval', 'favor']) assert.ok(PT[a.parts.to][k] >= PT[a.parts.from][k], 'does not lower ' + k);
+  assert.ok(a.parts.gain >= gphOf(weak, [1, 2], 100000) * 0.01);
+  // the best swap by brute force over the allowed ones: same gain, and the tie-break is the lower slot then the lower part id
+  const brute = (parts, logged) => {
+    const cur = Math.max(0, ...logged.map((l) => gphOf(parts, l.route, l.perTrip))); let best = null;
+    for (let i = 0; i < 4; i++) for (const p of SD.parts.slice().sort((x, y) => x.id - y.id)) {
+      const o = PT[parts[i]];
+      if (p.slot !== i || p.id === parts[i] || SD.classes.find((c) => c.id === p.class).rank > 145) continue;
+      if (p.surveillance < o.surveillance || p.retrieval < o.retrieval || p.favor < o.favor) continue;
+      const np = parts.slice(); np[i] = p.id;
+      const g = Math.max(0, ...logged.map((l) => gphOf(np, l.route, l.perTrip))) - cur;
+      if (g > 0 && (!best || g > best.gain)) best = { slot: i, to: p.id, gain: g };
+    }
+    return { cur, best };
+  };
+  const bf = brute(weak, [L([1, 2], 12, 100000)]);
+  assert.strictEqual(a.parts.slot, bf.best.slot); assert.strictEqual(a.parts.to, bf.best.to); assert.ok(Math.abs(a.parts.gain - bf.best.gain) < 1e-6);
+  // a swap that makes a better, ranked route reachable is preferred to one that only saves minutes
+  const far = [50, 43, 48, 45, 39];
+  assert.ok(!A.evalRoute(far, A.stats(145, weak)).reachable);
+  const f = A.advise(Object.assign(base(weak), { logged: [L(far, 12, 500000)], enough: 10 }));
+  assert.ok(f.parts && /nothing within range now/.test(f.parts.why), 'a route out of range now comes into range');
+  assert.ok(A.evalRoute(far, A.stats(145, weak.map((p, i) => (i === f.parts.slot ? f.parts.to : p)))).reachable);
+  const timeOnly = A.advise(base(weak)).parts; // today's tip (no log) looks at minutes only
+  assert.ok(timeOnly && /sooner \(calculated\)/.test(timeOnly.why));
+  // below 1% of the current best: no tip (a build that is already the best the rank allows for the ranked route)
+  const none = A.advise(Object.assign(base(good), { logged: [L([1, 2], 12, 100000)], enough: 10 }));
+  assert.strictEqual(none.own, true); assert.strictEqual(none.parts, null, 'no better part: no tip');
+  // a gain strictly between 0 and 1% of the current best gives no tip (fixed inputs: the best allowed swap gains about 0.35%)
+  const small = [31, 8, 9, 22], bfs = brute(small, [L([1], 12, 100000)]);
+  assert.ok(bfs.best && bfs.best.gain > 0 && bfs.best.gain < bfs.cur * 0.01 && bfs.best.gain > bfs.cur * 0.001, 'test data: a gain between 0 and 1%');
+  assert.strictEqual(A.advise(Object.assign(base(small), { logged: [L([1], 12, 100000)], enough: 10 })).parts, null, 'a gain below 1%: no tip');
+  // exact ties, from real inputs: the same best gain from two parts; the lower slot wins, then the lower part id
+  const tieSlot = [7, 12, 37, 38], bt = brute(tieSlot, [L([1], 12, 100000)]);
+  const gains = []; // the allowed swaps with the best gain, found without the advisor's own loop order
+  for (const p of SD.parts) { const i = p.slot, o = PT[tieSlot[i]]; if (p.id === tieSlot[i] || SD.classes.find((c) => c.id === p.class).rank > 145 || p.surveillance < o.surveillance || p.retrieval < o.retrieval || p.favor < o.favor) continue; const np = tieSlot.slice(); np[i] = p.id; gains.push({ slot: i, id: p.id, g: gphOf(np, [1], 100000) - bt.cur }); }
+  const top = Math.max(...gains.map((x) => x.g)), tops = gains.filter((x) => x.g === top);
+  assert.ok(tops.length > 1 && new Set(tops.map((x) => x.slot)).size > 1, 'test data: an exact tie across slots');
+  const ts = A.advise(Object.assign(base(tieSlot), { logged: [L([1], 12, 100000)], enough: 10 })).parts;
+  assert.strictEqual(ts.slot, Math.min(...tops.map((x) => x.slot))); assert.strictEqual(ts.to, 27);
+  const tiePart = [23, 32, 9, 6], bp = brute(tiePart, [L([1], 12, 100000)]);
+  const gp = SD.parts.filter((p) => p.slot === 3 && p.id !== 6 && (p.id === 14 || p.id === 34)).map((p) => gphOf([23, 32, 9, p.id], [1], 100000) - bp.cur);
+  assert.strictEqual(gp.length, 2); assert.strictEqual(gp[0], gp[1], 'test data: two parts of one slot with exactly the same gain');
+  assert.ok(Math.abs(bp.best.gain - gp[0]) < 1e-9);
+  const tp = A.advise(Object.assign(base(tiePart), { logged: [L([1], 12, 100000)], enough: 10 })).parts;
+  assert.strictEqual(tp.slot, 3); assert.strictEqual(tp.to, 14, 'same slot: the lower part id');
+  // a swap that lowers retrieval, surveillance or favor is never suggested, even when it is faster
+  const lowers = SD.parts.some((p) => p.slot === 0 && PT[weak[0]] && (p.surveillance < PT[weak[0]].surveillance || p.retrieval < PT[weak[0]].retrieval || p.favor < PT[weak[0]].favor) && p.speed > PT[weak[0]].speed);
+  assert.ok(lowers, 'test data: a faster hull that lowers a stat exists');
+  for (const lg of [[L([1, 2], 12, 1e5)], [L([1], 12, 5e4), L([2], 12, 9e4)], [L(far, 12, 5e5)]]) {
+    const r = A.advise(Object.assign(base(weak), { logged: lg, enough: 10 }));
+    if (r.parts) for (const k of ['surveillance', 'retrieval', 'favor']) assert.ok(PT[r.parts.to][k] >= PT[r.parts.from][k]);
+  }
+  // with no ranked route (none, or nine voyages) the tip is today's, unchanged
+  for (const lg of [null, [], [L([1, 2], 9, 100000)]]) {
+    const r = A.advise(Object.assign(base(weak), lg ? { logged: lg, enough: 10 } : {}));
+    assert.deepStrictEqual(r.parts, timeOnly);
+  }
+  // the tip keeps its four fields and the result is null (not undefined) when there is none
+  for (const k of ['slot', 'from', 'to', 'why']) assert.ok(k in a.parts);
+  assert.ok(A.advise(Object.assign(base(good), { logged: [L([1, 2], 12, 100000)], enough: 10 })).parts === null);
 });
 
 test('Submersibles notifications: automatic grouping by stage, stragglers, the three fixed groupings, quiet hours (push.js)', () => {
@@ -1914,4 +2069,691 @@ test('SET-09 regression: a sync save whose liveness guard has expired writes not
   assert.strictEqual(await pending, false);
   const stored = await CC.read();
   assert.strictEqual(stored.raw, null, 'cancelled sync result must not reach the save');
+});
+
+// ── a free company changed on both sides (docs/submersibles-merge-spec.md, owner decisions of 2026-11-19) ─────────────
+const FCK = 'm|' + JSON.stringify(['submersibles', 'fcs', 'f1']);
+const fcText = (o) => JSON.stringify(CC.checkSubmersibles({ fcs: { f1: Object.assign({ name: 'Alpha Company', world: 'Maduin', charId: 'c1', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] }, o) } }).fcs.f1);
+const fcOf = (t) => JSON.parse(t);
+
+test('T1 CC.mergeUnit: only a free company present on both sides is merged; discoveries are combined, slots the higher, position the lower, a question only for name, world or character', () => {
+  const b = fcText({ discovered: [1, 2] });
+  assert.strictEqual(CC.mergeUnit('m|' + JSON.stringify(['submersibles', 'subs', 's1']), b, b, fcText({})), null, 'not a free company');
+  assert.strictEqual(CC.mergeUnit('m|' + JSON.stringify(['atelier', 'prefs']), b, b, fcText({})), null);
+  assert.strictEqual(CC.mergeUnit(FCK, b, undefined, fcText({})), null, 'a side missing');
+  assert.strictEqual(CC.mergeUnit(FCK, b, fcText({}), undefined), null);
+  assert.strictEqual(CC.mergeUnit(FCK, b, 'not json', fcText({})), null);
+  const disc = (u) => fcOf(u.local).discovered;
+  let u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2] }), fcText({ discovered: [1, 2, 3] }), fcText({ discovered: [1, 2, 4] }));
+  assert.deepStrictEqual(disc(u), [1, 2, 3, 4]); assert.deepStrictEqual(u.asks, []); assert.strictEqual(u.local, u.remote);
+  u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2, 3] }), fcText({ discovered: [1, 2] }), fcText({ discovered: [1, 2, 3, 4] }));
+  assert.deepStrictEqual(disc(u), [1, 2, 3, 4], 'combine everything: an untick on one side removes nothing');
+  assert.deepStrictEqual(disc(CC.mergeUnit(FCK, undefined, fcText({ discovered: [4, 1] }), fcText({ discovered: [2, 3] }))), [1, 2, 3, 4], 'no base: union, sorted');
+  const noList = JSON.stringify({ name: 'Alpha Company' });
+  assert.deepStrictEqual(disc(CC.mergeUnit(FCK, noList, fcText({ discovered: [1, 2, 3] }), fcText({ discovered: [1, 2, 4] }))), [1, 2, 3, 4], 'a base without the list: union');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, b, fcText({ unlockedSlots: 2, discovered: [1, 2, 3] }), fcText({ unlockedSlots: 3, discovered: [1, 2, 4] })).local).unlockedSlots, 3, 'slots: the higher');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, fcText({ order: 5, discovered: [1, 2] }), fcText({ order: 2, discovered: [1, 2, 3] }), fcText({ order: 3, discovered: [1, 2, 4] })).local).order, 2, 'position: the lower');
+  u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2] }), fcText({ name: 'Beta', discovered: [1, 2, 3] }), fcText({ world: 'Ravana', discovered: [1, 2, 4] }));
+  assert.deepStrictEqual(u.asks, []); assert.strictEqual(fcOf(u.local).name, 'Beta'); assert.strictEqual(fcOf(u.local).world, 'Ravana');
+  u = CC.mergeUnit(FCK, fcText({ discovered: [1, 2] }), fcText({ name: 'Beta', discovered: [1, 2, 3] }), fcText({ name: 'Gamma', discovered: [1, 2, 4] }));
+  assert.deepStrictEqual(u.asks, ['name']); assert.strictEqual(fcOf(u.local).name, 'Beta'); assert.strictEqual(fcOf(u.remote).name, 'Gamma');
+  assert.deepStrictEqual(disc(u), [1, 2, 3, 4]); assert.deepStrictEqual(fcOf(u.remote).discovered, [1, 2, 3, 4]);
+  const l0 = JSON.stringify({ name: 'Alpha Company', discovered: [1, 2, 3] }), r0 = JSON.stringify({ name: 'Alpha Company', world: 'Maduin', discovered: [1, 2, 4] });
+  u = CC.mergeUnit(FCK, undefined, l0, r0);
+  assert.strictEqual(fcOf(u.local).world, 'Maduin', 'no base, a world on one side only: kept'); assert.deepStrictEqual(u.asks, []);
+  // a side without a position takes the other's (not 0); both names blank leave the stored text as it is
+  const noOrder = (o) => JSON.stringify(Object.assign({ name: 'Alpha Company', discovered: [1, 2] }, o));
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, noOrder({ order: 0 }), noOrder({ discovered: [1, 2, 3] }), noOrder({ order: 4, discovered: [1, 2, 4] })).local).order, 4, 'no position on one side: the other side\'s');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, noOrder({ order: 0 }), noOrder({ order: 4, discovered: [1, 2, 4] }), noOrder({ discovered: [1, 2, 3] })).local).order, 4, '... either way round');
+  assert.strictEqual(fcOf(CC.mergeUnit(FCK, noOrder({ order: 2 }), noOrder({ order: 0, discovered: [1, 2, 3] }), noOrder({ order: 3, discovered: [1, 2, 4] })).local).order, 0, 'a position of 0 is still a position: the lower');
+  for (const blankName of [{ name: '' }, { name: undefined }]) {
+    const lt = JSON.stringify(Object.assign({ order: 1, discovered: [1, 2, 3] }, blankName)), rt = JSON.stringify(Object.assign({ order: 1, discovered: [1, 2, 4] }, blankName));
+    const m = CC.mergeUnit(FCK, JSON.stringify(Object.assign({ order: 1, discovered: [1, 2] }, blankName)), lt, rt);
+    assert.strictEqual('name' in fcOf(m.local), 'name' in blankName && blankName.name !== undefined, 'blank names: the stored text keeps what both sides had');
+    assert.deepStrictEqual(m.asks, []);
+  }
+  // the text is the checker's own, and the merge is symmetric and settled
+  const L = fcText({ name: 'Beta', unlockedSlots: 3, discovered: [1, 2, 3] }), R = fcText({ name: 'Gamma', order: 4, discovered: [1, 2, 5] });
+  u = CC.mergeUnit(FCK, b, L, R);
+  assert.strictEqual(u.local, JSON.stringify(CC.checkSubmersibles({ fcs: { x: fcOf(u.local) } }).fcs.x));
+  const v = CC.mergeUnit(FCK, b, R, L);
+  assert.strictEqual(v.local, u.remote); assert.strictEqual(v.remote, u.local); assert.deepStrictEqual(v.asks, u.asks);
+  const again = CC.mergeUnit(FCK, b, u.local, u.remote);
+  assert.strictEqual(again.local, u.local); assert.strictEqual(again.remote, u.remote);
+});
+
+async function twoTabs() {
+  useStorage();
+  const first = await CC.writeSection('submersibles', MODS.submersibles, null);
+  const base = JSON.parse(JSON.stringify(first.section));
+  const a = JSON.parse(JSON.stringify(base)); a.fcs.f1.discovered = [1, 2, 3, 4];
+  const b = JSON.parse(JSON.stringify(base)); b.fcs.f1.discovered = [1, 2, 3, 5]; b.fcs.f1.unlockedSlots = 3;
+  await CC.writeSection('submersibles', a, { rev: first.rev, base });
+  return CC.writeSection('submersibles', b, { rev: first.rev, base });
+}
+
+test('T2 two tabs: one adds a sector, the other adds a sector and a slot with a stale stamp; both sectors and the slot are stored', async () => {
+  const w = await twoTabs();
+  assert.strictEqual(w.merged, true);
+  assert.deepStrictEqual(w.section.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+  assert.strictEqual(w.section.fcs.f1.unlockedSlots, 3);
+  assert.deepStrictEqual(CC.checkDoc((await CC.read()).raw).modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+});
+
+test('T3 an old copy (no CC.mergeUnit): the same two tabs store this tab\'s whole record, as before', async () => {
+  const real = CC.mergeUnit;
+  CC.mergeUnit = () => null;
+  try {
+    const w = await twoTabs();
+    assert.strictEqual(w.merged, true);
+    assert.deepStrictEqual(w.section.fcs.f1.discovered, [1, 2, 3, 5]);
+    assert.strictEqual(w.section.fcs.f1.unlockedSlots, 3);
+  } finally { CC.mergeUnit = real; }
+});
+
+async function twoDevices(edit, oldFlags, order) {
+  const d = fakeGraph();
+  const pc = ET.newState(['A', 'B']); pc.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(pc);
+  await ET.cloudSync(pc, 'tok', d.f);
+  const phone = ET.newState(['A', 'B']); phone.modules = {};
+  await ET.cloudSync(phone, 'tok', d.f);
+  edit(pc.modules.submersibles.fcs.f1, phone.modules.submersibles.fcs.f1);
+  const real = CC.mergeUnit;
+  const sync = async (st, old) => { CC.mergeUnit = old ? () => null : real; try { return await ET.cloudSync(st, 'tok', d.f); } finally { CC.mergeUnit = real; } };
+  const out = [];
+  for (const who of order || ['phone', 'pc', 'phone']) out.push(await sync(who === 'pc' ? pc : phone, !!(oldFlags && oldFlags[who])));
+  return { d, pc, phone, out };
+}
+
+test('T4 two devices each add one discovery: no question, both hold both, the saves are equal', async () => {
+  const { pc, phone, out } = await twoDevices((p, h) => { p.discovered = [1, 2, 3, 4]; h.discovered = [1, 2, 3, 5]; });
+  for (const r of out) assert.ok(r.done === true && !(r.conflicts || []).length, JSON.stringify(r.conflicts || []));
+  for (const st of [pc, phone]) assert.deepStrictEqual(st.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+  assert.deepStrictEqual(pc.modules, phone.modules);
+});
+
+test('T5 one device unticks sector 3, the other adds 4: no question, both end with [1, 2, 3, 4] (nothing is removed by a merge)', async () => {
+  const { pc, phone, out } = await twoDevices((p, h) => { p.discovered = [1, 2]; h.discovered = [1, 2, 3, 4]; });
+  for (const r of out) assert.ok(r.done === true && !(r.conflicts || []).length);
+  for (const st of [pc, phone]) assert.deepStrictEqual(st.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4]);
+});
+
+test('T6 a name changed differently on both devices is the one question; both versions already carry the combined sectors; either answer keeps them', async () => {
+  for (const choice of ['local', 'remote']) {
+    const { d, pc, phone, out } = await twoDevices((p, h) => { p.name = 'Beta Company'; p.discovered = [1, 2, 3, 4]; h.name = 'Gamma Company'; h.discovered = [1, 2, 3, 5]; }, null, ['phone', 'pc']);
+    const r = out[1];
+    assert.strictEqual(r.done, false); assert.strictEqual(r.conflicts.length, 1);
+    const c = r.conflicts[0];
+    assert.strictEqual(c.id, FCK);
+    assert.deepStrictEqual(fcOf(c.local).discovered, [1, 2, 3, 4, 5]); assert.deepStrictEqual(fcOf(c.remote).discovered, [1, 2, 3, 4, 5]);
+    assert.deepStrictEqual(Object.keys(c).sort(), ['id', 'local', 'remote']);
+    const desc = ET.describeConflict(c, idx, pc);
+    assert.match(desc.what, /name differs/); assert.match(desc.what, /already combined/);
+    assert.strictEqual(desc.local, 'name “Beta Company”'); assert.strictEqual(desc.remote, 'name “Gamma Company”'); // the dialog adds "This device:" / "Other device:"
+    assert.match(desc.what, /^Submersibles: free company “Beta Company” \/ “Gamma Company”: the name differs/, 'both names in the heading');
+    await ET.cloudFinish(pc, 'tok', r, { [c.id]: choice }, d.f);
+    const want = choice === 'local' ? 'Beta Company' : 'Gamma Company';
+    assert.strictEqual(pc.modules.submersibles.fcs.f1.name, want); assert.deepStrictEqual(pc.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+    for (const st of [phone, pc]) { const s = await ET.cloudSync(st, 'tok', d.f); assert.ok(s.done === true && !(s.conflicts || []).length, 'later syncs converge'); }
+    assert.deepStrictEqual(pc.modules, phone.modules);
+    assert.strictEqual(phone.modules.submersibles.fcs.f1.name, want);
+  }
+});
+
+test('T7 old meets new: the new device merges and the old one takes it whole; the old device merging first gives the all-old result; only the six known fields are stored', async () => {
+  const edit = (p, h) => { p.discovered = [1, 2, 3, 4]; h.discovered = [1, 2, 3, 5]; };
+  const six = ['name', 'world', 'charId', 'order', 'unlockedSlots', 'discovered'];
+  // new device merges first, the old phone takes the result whole
+  const a = await twoDevices(edit, { phone: true }, ['phone', 'pc', 'phone']);
+  for (const r of a.out) assert.ok(r.done === true && !(r.conflicts || []).length);
+  assert.deepStrictEqual(a.phone.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4, 5]);
+  assert.deepStrictEqual(a.pc.modules, a.phone.modules);
+  const cloud = await ET.readCloud(a.d.files.f1);
+  assert.ok(Object.keys(cloud.modules.submersibles.fcs.f1).every((k) => six.includes(k)));
+  // the old device merges first (the other uploaded first): the same as two old devices
+  const mixed = await twoDevices(edit, { phone: true }, ['pc', 'phone']);
+  const allOld = await twoDevices(edit, { phone: true, pc: true }, ['pc', 'phone']);
+  const shape = (x) => JSON.stringify({ done: x.out[1].done, conflicts: (x.out[1].conflicts || []).map((c) => [c.id, c.local, c.remote]), phone: x.phone.modules.submersibles.fcs.f1 });
+  assert.strictEqual(shape(mixed), shape(allOld));
+  assert.strictEqual(mixed.out[1].done, false, 'an old device still asks the old question');
+});
+
+test('T8 end of a Settings sync: a discovery made during the sync and one from the cloud are both kept, no question', () => {
+  const { solid, port, apply } = r3;
+  const fc = (d) => Object.assign(solid('Xray'), { discovered: d });
+  const from = { fcs: { fz: fc([1, 2]) } }, now = { fcs: { fz: fc([1, 2, 3]) } }, mine = { fcs: { fz: fc([1, 2, 4]) } };
+  const res = ET.threeWay(port(from), port(now), port(mine));
+  assert.strictEqual(res.conflicts.length, 0);
+  assert.deepStrictEqual(apply(now, res, {}).fcs.fz.discovered, [1, 2, 3, 4]);
+});
+
+test('T9 a free company changed on one side and removed on the other still gives the owner question, with the untouched texts', () => {
+  const { solid, port } = r3;
+  const base = { fcs: { f1: solid('Company') }, subs: { s1: { fcId: 'f1', slot: 1, name: 'Vanguard', rank: 5, voyage: null } } };
+  const changed = { fcs: { f1: Object.assign(solid('Company'), { discovered: [1, 2, 3] }) }, subs: base.subs };
+  const res = ET.threeWay(port(base), port(changed), port({ fcs: {}, subs: {} }));
+  const c = res.conflicts.find((x) => x.id === FCK);
+  assert.ok(c && c.integrity && c.integrity.kind === 'owner');
+  assert.deepStrictEqual(fcOf(c.local), changed.fcs.f1, 'the unit text is untouched'); assert.strictEqual(c.remote, null);
+});
+
+// R3.1 the question's wording: each side shows only what differs (the dialog adds "This device:" / "Other device:"); a name that differs names the company by both names
+test('R3-1 describeUnit wording: name, world, character and two fields at once', () => {
+  const nameOf = (id) => ({ c1: 'Alba', c2: 'Brin' })[id] || id, SAME = '; its discovered sectors are already combined and stay the same whichever you choose';
+  const d = (l, r) => CC.describeUnit(FCK, fcText(l), fcText(r), nameOf);
+  let x = d({ name: 'Beta' }, { name: 'Gamma' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Beta” / “Gamma”: the name differs between your devices' + SAME);
+  assert.strictEqual(x.local, 'name “Beta”'); assert.strictEqual(x.remote, 'name “Gamma”');
+  x = d({ world: 'Odin' }, { world: 'Ravana' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Alpha Company”: the world differs between your devices' + SAME);
+  assert.strictEqual(x.local, 'world Odin'); assert.strictEqual(x.remote, 'world Ravana');
+  x = d({ charId: 'c1' }, { charId: 'c2' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Alpha Company”: the character differs between your devices' + SAME);
+  assert.strictEqual(x.local, 'character Alba'); assert.strictEqual(x.remote, 'character Brin');
+  x = d({ name: 'Beta', world: 'Odin' }, { name: 'Gamma', world: 'Ravana' });
+  assert.strictEqual(x.what, 'Submersibles: free company “Beta” / “Gamma”: the name and world differ between your devices' + SAME);
+  assert.strictEqual(x.local, 'name “Beta”, world Odin'); assert.strictEqual(x.remote, 'name “Gamma”, world Ravana');
+  x = d({ discovered: [1, 2, 3] }, { discovered: [1, 2, 4] });
+  assert.ok(!/ \/ /.test(x.what) && !/^this device|^the other device/.test(x.local), 'no name difference: the heading has one name; no side prefix');
+  assert.match(CC.describeUnit(FCK, fcText({ name: 'Beta' }), fcText({ name: '' }), nameOf).what, /free company “Beta”: the name differs/, 'one name blank: only the other is named');
+});
+
+// R3.2 a seeded randomized check of the merge: nothing of either side is lost, the sides can be swapped, a merged pair is settled
+test('R3-2 CC.mergeUnit, 2,000 seeded random cases: no sector missing, swap gives the same texts, merging the output again changes nothing', () => {
+  let seed = 20261119;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const some = () => { const n = Math.floor(rnd() * 6), out = []; for (let i = 0; i < n; i++) out.push(1 + Math.floor(rnd() * 12)); return out; };
+  const fc = () => { const o = { discovered: some() }; if (rnd() < 0.8) o.name = pick(['Alpha', 'Beta', 'Gamma', '']); if (rnd() < 0.6) o.world = pick(['Odin', 'Ravana', '']); if (rnd() < 0.6) o.charId = pick(['c1', 'c2', null]); if (rnd() < 0.7) o.order = Math.floor(rnd() * 4); if (rnd() < 0.7) o.unlockedSlots = 1 + Math.floor(rnd() * 4); return JSON.stringify(CC.checkSubmersibles({ fcs: { x: o } }).fcs.x); };
+  for (let i = 0; i < 2000; i++) {
+    const b = rnd() < 0.8 ? fc() : undefined, l = fc(), r = fc();
+    const u = CC.mergeUnit(FCK, b, l, r), v = CC.mergeUnit(FCK, b, r, l);
+    assert.ok(u && v, 'both sides are free companies');
+    for (const t of [l, r]) for (const sec of fcOf(t).discovered || []) assert.ok(fcOf(u.local).discovered.includes(sec) && fcOf(u.remote).discovered.includes(sec), 'case ' + i + ': sector ' + sec + ' kept');
+    assert.strictEqual(v.local, u.remote, 'case ' + i + ': swapped'); assert.strictEqual(v.remote, u.local); assert.deepStrictEqual(v.asks, u.asks);
+    const again = CC.mergeUnit(FCK, b, u.local, u.remote);
+    assert.strictEqual(again.local, u.local, 'case ' + i + ': settled'); assert.strictEqual(again.remote, u.remote);
+    for (const t of [u.local, u.remote]) { const self = CC.mergeUnit(FCK, b, t, t); assert.strictEqual(self.local, t, 'case ' + i + ': a side merged with itself'); assert.strictEqual(self.remote, t); }
+  }
+});
+
+// R3.3 the end of a Settings sync (tracker/command-center/src/settings.js done()): a clash met there is applied without asking, the base is rebuilt so the next sync
+// asks once, with the combined list, and not again afterwards
+test('R3-3 end of a Settings sync with a name clash: asked once on the next sync, with the combined list, never repeatedly', async () => {
+  const { port } = r3;
+  const fc = (name, disc) => ({ name, charId: 'c1', order: 0, unlockedSlots: 2, world: 'Ravana', discovered: disc });
+  const from = { fcs: { f1: fc('Alpha', [1, 2]) } }, now = { fcs: { f1: fc('Beta', [1, 2, 3]) } }, mine = { fcs: { f1: fc('Gamma', [1, 2, 4]) } };
+  // what done() does: the three-way merge, applied without choices, then the base rebuilt for the clashes (the start copy's units)
+  const st = (x) => Object.assign(ET.newState(['Alba']), { modules: { submersibles: Object.assign({ fcs: {}, subs: {}, trips: {}, settings: {} }, JSON.parse(JSON.stringify(x))) } });
+  const target = st(now);
+  const res = ET.threeWay(port(from), port(now), port(mine));
+  assert.strictEqual(res.conflicts.length, 1); assert.strictEqual(fcOf(res.conflicts[0].local).name, 'Beta');
+  ET.applyMerge(target, res, {});
+  assert.deepStrictEqual(target.modules.submersibles.fcs.f1.discovered, [1, 2, 3, 4], 'applied without asking: this device\'s name, both sectors');
+  const flat = (p) => ET.threeWay(p, p, p).merged, start = flat(port(from));
+  const base = flat(port(from)); // the base the last sync left
+  res.conflicts.forEach((c) => { if (start.has(c.id)) base.set(c.id, start.get(c.id)); else base.delete(c.id); });
+  assert.strictEqual(base.get(FCK), start.get(FCK), 'the clashing unit is back at its start value');
+  // next sync: base = rebuilt base, local = the merged copy, remote = the cloud copy (the other device's version): asked once, with the combined list
+  const cloud = { fcs: { f1: fc('Gamma', [1, 2, 3, 4]) } };
+  const baseDoc = ET.portable(ET.applyMerge(st(from), { merged: base, conflicts: [] }, {}));
+  const next = ET.threeWay(baseDoc, ET.portable(target), port(cloud));
+  assert.strictEqual(next.conflicts.length, 1, 'asked on the next sync');
+  assert.deepStrictEqual(fcOf(next.conflicts[0].local).discovered, [1, 2, 3, 4]); assert.deepStrictEqual(fcOf(next.conflicts[0].remote).discovered, [1, 2, 3, 4]);
+  assert.deepStrictEqual([fcOf(next.conflicts[0].local).name, fcOf(next.conflicts[0].remote).name], ['Beta', 'Gamma']);
+  // the owner answers; the sync after that finds nothing to ask
+  const answered = ET.applyMerge(st(JSON.parse(JSON.stringify(target.modules.submersibles))), next, { [next.conflicts[0].id]: 'remote' });
+  const after = ET.threeWay(port(cloud), ET.portable(answered), port(cloud));
+  assert.strictEqual(after.conflicts.length, 0, 'not asked again');
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Integrity spec (docs/submersibles-integrity-spec.md), store rules: a free company removed on purpose is not stored
+// again by a page that still held it; a company and slot never gain a second submarine through a write.
+const intReset = () => { CC.resetMemory(); if (globalThis.localStorage) { localStorage.removeItem(CC.LS); localStorage.removeItem(CC.LS + '-rev'); } };
+const intBare = (name, order, charId) => { const f = { name, order, unlockedSlots: 1, discovered: [1, 2] }; if (charId !== null) f.charId = charId || 'c1'; return f; };
+const intSolid = (name, order, charId) => Object.assign(intBare(name, order, charId), { world: 'Ravana', unlockedSlots: 2, discovered: [1, 2, 3] });
+const intSub = (fcId, slot, name) => ({ fcId, slot, name: name || 'Sub ' + slot, rank: 10, voyage: null });
+const intClone = (x) => JSON.parse(JSON.stringify(x));
+const intStored = async () => CC.checkDoc((await CC.read()).raw).modules.submersibles;
+// seed a stored section exactly as given (no rule applies), return { rev, section }
+const intSeed = async (sec) => {
+  await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.modules.submersibles = CC.checkModules({ submersibles: sec }).submersibles; doc.updated = Date.now(); return doc; });
+  const r = await CC.read(); return { rev: r.rev, section: CC.checkDoc(r.raw).modules.submersibles };
+};
+
+test('INT-A1 CC.foldLoser equals the fold: a fixed table and 500 seeded random sections', () => {
+  assert.strictEqual(typeof CC.foldLoser, 'function');
+  const F = globalThis.FLEET, agree = (sec, id, fc) => {
+    const added = intClone(sec); added.fcs = Object.assign({}, added.fcs, { [id]: fc });
+    return CC.foldLoser(sec, id, fc) === F.foldFcs(added).removed.includes(id);
+  };
+  const sec = (fcs, subs) => ({ fcs, subs: subs || {}, trips: {}, settings: {} });
+  // false with no character, and with no sibling
+  assert.strictEqual(CC.foldLoser(sec({ fa: intBare('A', 0) }), 'fz', intBare('Z', 1, null)), false);
+  assert.strictEqual(CC.foldLoser(sec({}), 'fz', intBare('Z', 1)), false);
+  assert.strictEqual(CC.foldLoser(sec({ fa: intBare('A', 0, 'c2') }), 'fz', intBare('Z', 1)), false);
+  // true: a bare sibling sorts before it; a solid sibling exists
+  assert.strictEqual(CC.foldLoser(sec({ fa: intBare('A', 0) }), 'fz', intBare('Z', 1)), true);
+  assert.strictEqual(CC.foldLoser(sec({ fa: intSolid('A', 5) }), 'fz', intBare('Z', 0)), true);
+  // false: it would win; it is not bare
+  assert.strictEqual(CC.foldLoser(sec({ fa: intBare('A', 1) }), 'fz', intBare('Z', 0)), false);
+  assert.strictEqual(CC.foldLoser(sec({ fa: intBare('A', 0) }), 'fz', intSolid('Z', 1)), false);
+  [[sec({ fa: intBare('A', 0), fb: intBare('B', 0) }), 'fa2', intBare('A2', 0)], [sec({ fa: intBare('A', 0) }), 'fa', intBare('A', 0)], [sec({ fb: intBare('B', 3) }), 'fa', intBare('A', 3)]]
+    .forEach(([s, id, fc]) => assert.ok(agree(s, id, fc)));
+  let seed = 12345; const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  const mk = (name, solid) => { const f = rnd(5) === 0 ? intBare(name, rnd(3), null) : intBare(name, rnd(3), ['c1', 'c2'][rnd(2)]); if (solid) { f.world = 'Ravana'; if (rnd(2)) f.unlockedSlots = 2; } return f; };
+  for (let i = 0; i < 500; i++) {
+    const fcs = {}, subs = {}, n = rnd(5);
+    for (let k = 0; k < n; k++) { const id = 'f' + 'abcde'[k], solid = rnd(3) === 0; fcs[id] = mk(id, solid); if (!solid && rnd(4) === 0) subs['s' + k] = intSub(id, 1); }
+    const fc = mk('Z', rnd(4) === 0);
+    assert.ok(agree(sec(fcs, subs), 'fx', fc), 'case ' + i);
+  }
+});
+
+test('INT-A2 stale stamp: a company with a submarine removed in the stored copy and renamed here is refused, nothing comes back', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa: intSolid('Alpha', 0, 'c2'), fb: intSolid('Beta', 1, 'c1') }, subs: { s1: intSub('fb', 1) }, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.fcs.fb.name = 'Typed Name';
+  const other = intClone(first.section); delete other.fcs.fb; delete other.subs.s1;
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  await assert.rejects(() => CC.writeSection('submersibles', local, { rev: first.rev, base: first.section }), /removed on another device/);
+  const stored = await intStored();
+  assert.ok(!stored.fcs.fb && !stored.subs.s1, 'the stored copy still has neither');
+});
+
+test('INT-A3 stale stamp: a bare company with no character removed in the stored copy and renamed here is refused', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa: intSolid('Alpha', 0), fb: intBare('Beta', 1, null) }, subs: {}, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.fcs.fb.name = 'Typed Name';
+  const other = intClone(first.section); delete other.fcs.fb;
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  await assert.rejects(() => CC.writeSection('submersibles', local, { rev: first.rev, base: first.section }), /removed on another device/);
+  assert.ok(!(await intStored()).fcs.fb);
+});
+
+test('INT-A4 stale stamp: a bare company removed on purpose, then a later bare company it would beat: refused', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa: intSolid('Alpha', 0, 'c2'), fz: intBare('Zulu', 0) }, subs: {}, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.fcs.fz.name = 'Typed Name';
+  const other = intClone(first.section); delete other.fcs.fz; other.fcs.fq = intBare('Later', 1);
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  await assert.rejects(() => CC.writeSection('submersibles', local, { rev: first.rev, base: first.section }), /removed on another device/);
+  const stored = await intStored();
+  assert.ok(!stored.fcs.fz && stored.fcs.fq);
+});
+
+test('INT-A5 (pin) the fold: a bare company that loses the fold is stored again by a save that adds a submarine', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa: intBare('Alpha', 0), fz: intBare('Zulu', 1) }, subs: {}, trips: {}, settings: {} }, null);
+  const folded = await CC.foldSection('submersibles', globalThis.FLEET.foldFcs);
+  assert.deepStrictEqual(folded.removed, ['fz']);
+  const local = intClone(first.section); local.fcs.fz.name = 'Typed Name'; local.subs.s1 = intSub('fz', 1);
+  const saved = await CC.writeSection('submersibles', local, { rev: first.rev, base: first.section });
+  assert.ok(saved.section.fcs.fz && saved.section.fcs.fz.name === 'Typed Name');
+  assert.strictEqual((await intStored()).fcs.fz.name, 'Typed Name');
+});
+
+// G1: a stale page adds a submarine under a company (its record unchanged) that was removed elsewhere
+const g1Run = async (fa, fb, extraStored) => {
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa, fb }, subs: {}, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.subs.sa = intSub('fa', 1, 'Added late');
+  const other = intClone(first.section); delete other.fcs.fa;
+  if (extraStored) extraStored(other);
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  return { before, run: () => CC.writeSection('submersibles', local, { rev: first.rev, base: first.section }) };
+};
+const G1MSG = /This free company was removed on another device or in another tab\./;
+
+test('G1 a company kept on purpose (it would win the clean-up) is not replaced by another for a stale submarine', async () => {
+  const t = await g1Run(intBare('Alpha', 0), intBare('Beta', 1));
+  await assert.rejects(t.run, G1MSG);
+  assert.strictEqual(JSON.stringify(await intStored()), t.before, 'the stored copy is unchanged');
+});
+
+test('G1 (pin) a company the clean-up would remove: the submarine moves to the company that beats it', async () => {
+  const t = await g1Run(intBare('Alpha', 1), intBare('Beta', 0));
+  const r = await t.run();
+  assert.strictEqual(r.section.subs.sa.fcId, 'fb');
+  assert.ok(!r.section.fcs.fa);
+});
+
+test('G1 (pin) a vanished empty company with a non-empty sibling: the submarine moves to that sibling', async () => {
+  const t = await g1Run(intBare('Alpha', 0), intSolid('Beta', 1));
+  const r = await t.run();
+  assert.strictEqual(r.section.subs.sa.fcId, 'fb');
+});
+
+test('G1 the target is the company that beats it, not just any company of the character', async () => {
+  // fb (bare, order 1) is not the winner; fc (solid) is: the move goes to fc
+  intReset();
+  const first = await CC.writeSection('submersibles', { fcs: { fa: intBare('Alpha', 0), fb: intBare('Beta', 1), fc: intSolid('Gamma', 2) }, subs: {}, trips: {}, settings: {} }, null);
+  const local = intClone(first.section); local.subs.sa = intSub('fa', 1, 'Added late');
+  const other = intClone(first.section); delete other.fcs.fa;
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  const r = await CC.writeSection('submersibles', local, { rev: first.rev, base: first.section });
+  assert.strictEqual(r.section.subs.sa.fcId, 'fc');
+});
+
+test('G1 (pin) the target slot is occupied: refused', async () => {
+  const t = await g1Run(intBare('Alpha', 1), intSolid('Beta', 0), (o) => { o.subs.sb = intSub('fb', 1, 'Already there'); });
+  await assert.rejects(t.run, /slot changed elsewhere/);
+  assert.strictEqual(JSON.stringify(await intStored()), t.before);
+});
+
+const intSlotBase = () => ({ fcs: { fa: Object.assign(intSolid('Alpha', 0), { unlockedSlots: 2 }) }, subs: {}, trips: {}, settings: {} });
+
+test('INT-B1 stale stamp: a second submarine into a slot another page filled is refused, only the first is stored', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', intSlotBase(), null);
+  const other = intClone(first.section); other.subs.s1 = intSub('fa', 1, 'Saved elsewhere');
+  await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  const local = intClone(first.section); local.subs.s2 = intSub('fa', 1, 'Typed here');
+  await assert.rejects(() => CC.writeSection('submersibles', local, { rev: first.rev, base: first.section }), /slot changed elsewhere/);
+  assert.deepStrictEqual(Object.keys((await intStored()).subs), ['s1']);
+});
+
+test('INT-B2 current stamp: a second submarine into an occupied slot is refused', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', intSlotBase(), null);
+  const other = intClone(first.section); other.subs.s1 = intSub('fa', 1, 'Saved elsewhere');
+  const second = await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  const local = intClone(second.section); local.subs.s2 = intSub('fa', 1, 'Typed here');
+  await assert.rejects(() => CC.writeSection('submersibles', local, { rev: second.rev, base: second.section }), /slot changed elsewhere/);
+  assert.deepStrictEqual(Object.keys((await intStored()).subs), ['s1']);
+});
+
+test('INT-B3 (pin) a stored copy that already holds two in one slot stays writable: a preference change keeps both, a deletion resolves', async () => {
+  intReset();
+  const dup = intSlotBase(); dup.subs.s1 = intSub('fa', 1, 'One'); dup.subs.s2 = intSub('fa', 1, 'Two');
+  const seeded = await intSeed(dup);
+  assert.deepStrictEqual(Object.keys(seeded.section.subs).sort(), ['s1', 's2']);
+  const pref = intClone(seeded.section); pref.settings.prefs = { sort: 'time' };
+  const a = await CC.writeSection('submersibles', pref, { rev: seeded.rev, base: seeded.section });
+  assert.deepStrictEqual(Object.keys(a.section.subs).sort(), ['s1', 's2']);
+  assert.strictEqual(a.section.settings.prefs.sort, 'time');
+  const del = intClone(a.section); delete del.subs.s2;
+  const b = await CC.writeSection('submersibles', del, { rev: a.rev, base: a.section });
+  assert.deepStrictEqual(Object.keys(b.section.subs), ['s1']);
+});
+
+// Integrity spec 4.3 / O2 option 2: three or more submarines in one slot across two devices are one question per slot.
+const intSlot = (() => {
+  const { solid, port, apply } = r3;
+  const S = (slot, name, rank) => ({ fcId: 'fy', slot, name, rank, voyage: null });
+  const side = (ids) => { const subs = {}, trips = {}; Object.keys(ids).forEach((id) => { subs[id] = S(1, ids[id][0], ids[id][1]); trips['t' + id] = { s: id, t: 1, r: [1], back: 2, items: [], newSectors: [] }; }); return { fcs: { fy: solid('Yankee') }, subs, trips }; };
+  const run = (l, r) => { const res = ET.threeWay(port({ fcs: { fy: solid('Yankee') } }), port(l), port(r)); return { res, slots: res.conflicts.filter((c) => c.integrity && c.integrity.kind === 'slot') }; };
+  const out = (l, res, choice, c) => apply(l, res, choice ? { [c.id]: choice } : {});
+  return { side, run, out };
+})();
+
+test('INT-C1 three submarines in one slot (one here, two there): one question; no answer keeps all; each answer leaves one side with its voyages', () => {
+  const { side, run, out } = intSlot, l = side({ a: ['Alpha One', 5] }), r = side({ b: ['Bravo Two', 9], c: ['Cedar Three', 7] });
+  const { res, slots } = run(l, r);
+  assert.strictEqual(slots.length, 1);
+  assert.strictEqual(slots[0].id, 'i|submersibles-slot|' + encodeURIComponent('fy|1'));
+  const none = out(l, res, null, slots[0]);
+  assert.deepStrictEqual(Object.keys(none.subs).sort(), ['a', 'b', 'c']); assert.deepStrictEqual(Object.keys(none.trips).sort(), ['ta', 'tb', 'tc']);
+  const here = out(l, res, 'local', slots[0]);
+  assert.deepStrictEqual(Object.keys(here.subs), ['a']); assert.deepStrictEqual(Object.keys(here.trips), ['ta']);
+  const there = out(l, res, 'remote', slots[0]);
+  assert.deepStrictEqual(Object.keys(there.subs).sort(), ['b', 'c']); assert.deepStrictEqual(Object.keys(there.trips).sort(), ['tb', 'tc']);
+  const d = ET.describeConflict(slots[0], null, ET.newState(['Alba']));
+  assert.match(d.what, /slot 1 of “Yankee” holds 3 submarines across your devices/);
+  assert.match(d.what, /if more than one stays, the Submersibles Board asks which one to keep/);
+  assert.match(d.local, /^keep this device’s “Alpha One”, rank 5$/);
+  assert.match(d.remote, /^keep the other device’s “Bravo Two”, rank 9 and “Cedar Three”, rank 7$/);
+});
+
+test('INT-C2 four submarines in one slot (two here, two there): one question, both answers, no answer keeps four', () => {
+  const { side, run, out } = intSlot, l = side({ a: ['A', 1], b: ['B', 2] }), r = side({ c: ['C', 3], d: ['D', 4] });
+  const { res, slots } = run(l, r);
+  assert.strictEqual(slots.length, 1);
+  assert.deepStrictEqual(Object.keys(out(l, res, null, slots[0]).subs).sort(), ['a', 'b', 'c', 'd']);
+  assert.deepStrictEqual(Object.keys(out(l, res, 'local', slots[0]).subs).sort(), ['a', 'b']);
+  assert.deepStrictEqual(Object.keys(out(l, res, 'remote', slots[0]).subs).sort(), ['c', 'd']);
+  assert.deepStrictEqual(Object.keys(out(l, res, 'remote', slots[0]).trips).sort(), ['tc', 'td']);
+  assert.match(ET.describeConflict(slots[0], null, ET.newState(['Alba'])).what, /holds 4 submarines/);
+});
+
+test('INT-C3 one submarine on both devices and a second only on the other device: one question, each answer leaves one', () => {
+  const { side, run, out } = intSlot, l = side({ a: ['A', 1] }), r = side({ a: ['A', 1], b: ['B', 2] });
+  const { res, slots } = run(l, r);
+  assert.strictEqual(slots.length, 1);
+  assert.deepStrictEqual(Object.keys(out(l, res, 'local', slots[0]).subs), ['a']);
+  assert.deepStrictEqual(Object.keys(out(l, res, 'remote', slots[0]).subs), ['b']);
+  assert.deepStrictEqual(Object.keys(out(l, res, null, slots[0]).subs).sort(), ['a', 'b']);
+});
+
+// G4: the sync question never promises more than it does. For the INT-C cases and 500 seeded random ones (one to four records per side,
+// some on both devices): every record the text names as staying either way is present after BOTH answers; the side not kept is removed
+// (with its logged voyages) only when that answer is given; with no answer nothing is removed.
+test('G4 the slot question: what its text names as staying stays after both answers, the side not kept goes only on its answer, no answer removes nothing', () => {
+  const { side, run, out } = intSlot, nameOf = (id) => id.toUpperCase();
+  const mk = (ids) => { const o = {}; ids.forEach((id, i) => { o[id] = [nameOf(id), 10 + i]; }); return side(o); };
+  const names = (t) => { const r = []; String(t).replace(/“([^”]+)”/g, (m, n) => { r.push(n); return m; }); return r; };
+  let asked = 0, withStays = 0;
+  const one = (lids, rids, tag) => {
+    const l = mk(lids), r = mk(rids), { res, slots } = run(l, r);
+    const all = [...new Set(lids.concat(rids))].sort(), has = (o, id) => id in o.subs;
+    if (!slots.length) return; // nothing asked: nothing is removed by the question (the merge keeps what each side has)
+    assert.strictEqual(slots.length, 1, tag);
+    asked++;
+    const c = slots[0], d = ET.describeConflict(c, null, { chars: [] }), g = c.integrity;
+    const staysText = (/; ((?:“[^”]+”(?:, )?)+), already on both devices, (?:stay|stays) either way/.exec(d.what) || [])[1];
+    const stayIds = names(staysText).map((n) => n.toLowerCase());
+    if (stayIds.length) withStays++;
+    const keyId = (x) => JSON.parse(x.key.slice(2))[2], locIds = g.locals.map(keyId), remIds = g.remotes.map(keyId);
+    const none = out(l, res, null, c), loc = out(l, res, 'local', c), rem = out(l, res, 'remote', c);
+    all.forEach((id) => assert.ok(has(none, id) && has(none, id) && none.trips['t' + id], tag + ': no answer keeps ' + id));
+    stayIds.forEach((id) => { assert.ok(has(loc, id) && has(rem, id), tag + ': ' + id + ' named as staying but missing after an answer'); assert.ok(!locIds.includes(id) && !remIds.includes(id), tag + ': a staying record is on neither side'); });
+    // the buttons' texts name exactly the side's records
+    assert.deepStrictEqual(names(d.local).map((n) => n.toLowerCase()).sort(), locIds.slice().sort(), tag + ': this-device text'); assert.deepStrictEqual(names(d.remote).map((n) => n.toLowerCase()).sort(), remIds.slice().sort(), tag + ': other-device text');
+    locIds.forEach((id) => assert.ok(has(loc, id) && !has(rem, id) && !rem.trips['t' + id], tag + ': ' + id + ' stays on local, goes on remote with its voyage'));
+    remIds.forEach((id) => assert.ok(has(rem, id) && !has(loc, id) && !loc.trips['t' + id], tag + ': ' + id + ' stays on remote, goes on local with its voyage'));
+    all.filter((id) => !locIds.includes(id) && !remIds.includes(id)).forEach((id) => assert.ok(has(loc, id) && has(rem, id), tag + ': ' + id + ' is on neither side and must stay'));
+  };
+  [[['a'], ['b', 'c']], [['a', 'b'], ['c', 'd']], [['a'], ['a', 'b']], [['a', 'b'], ['a']], [['a', 'b'], ['a', 'c']], [['a', 'b', 'c'], ['a', 'b', 'c']], [['a'], ['b']]].forEach(([l, r], i) => one(l, r, 'fixed ' + i));
+  let seed = 424242; const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed >> 8) % n; };
+  const pool = ['a', 'b', 'c', 'd', 'e', 'f'];
+  for (let i = 0; i < 500; i++) {
+    const pick = () => { const n = 1 + rnd(4), o = []; while (o.length < n) { const id = pool[rnd(pool.length)]; if (!o.includes(id)) o.push(id); } return o; };
+    one(pick(), pick(), 'case ' + i);
+  }
+  assert.ok(asked > 100 && withStays > 20, 'the random set reaches the questions it should: asked ' + asked + ', with a staying record ' + withStays);
+});
+
+test('INT-C4 (pin) three records already on both devices are not asked about; two new records on this device only are not asked about', () => {
+  const { side, run } = intSlot, three = side({ a: ['A', 1], b: ['B', 2], c: ['C', 3] });
+  assert.strictEqual(run(three, three).res.conflicts.length, 0);
+  assert.strictEqual(run(side({ a: ['A', 1], b: ['B', 2] }), side({})).slots.length, 0);
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Integrity spec 2 (docs/submersibles-integrity-spec-2.md), store rules A2, A3, A6: a stale write never stores an orphan
+// submarine, never brings back a submarine or logged voyage removed elsewhere, never undoes a slot another page rearranged.
+const si2Sec = (fcs, subs, trips) => ({ fcs, subs: subs || {}, trips: trips || {}, settings: {} });
+const si2Trip = (s, t) => ({ s, t, r: [1, 2], items: [], newSectors: [] });
+
+test('SI-2 fault 2: a stale page removes a company while another tab saved a submarine under it: refused, nothing stored', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0, 'c2'), fb: intSolid('Beta', 1, 'c1') }), null);
+  const added = intClone(first.section); added.subs.s1 = intSub('fb', 1);
+  await CC.writeSection('submersibles', added, { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  const removing = intClone(first.section); delete removing.fcs.fb;
+  await assert.rejects(() => CC.writeSection('submersibles', removing, { rev: first.rev, base: first.section }), /has a submarine that was saved in another tab/);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+});
+
+test('SI-3 fault 3: a stale page edits a submarine that was removed in another tab: refused; likewise a logged voyage', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, { t1: si2Trip('s1', 1), t2: si2Trip('s2', 2) }), null);
+  const other = intClone(first.section); delete other.subs.s1; delete other.trips.t2;
+  const saved = await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section });
+  assert.ok(saved.rev !== first.rev);
+  const before = JSON.stringify(await intStored());
+  const stale = intClone(first.section); stale.subs.s1.name = 'Renamed late';
+  await assert.rejects(() => CC.writeSection('submersibles', stale, { rev: first.rev, base: first.section }), /This submarine was removed on another device or in another tab\./);
+  const staleTrip = intClone(first.section); staleTrip.trips.t2.t = 99;
+  await assert.rejects(() => CC.writeSection('submersibles', staleTrip, { rev: first.rev, base: first.section }), /This logged voyage was removed on another device or in another tab\./);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+});
+
+test('SI-4 two submarines in one slot: one removed here, the other in a stale tab: refused, the first is still stored', async () => {
+  intReset();
+  const seeded = await intSeed(si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1, 'First'), s2: intSub('fa', 1, 'Second') }));
+  const a = intClone(seeded.section); delete a.subs.s2;
+  await CC.writeSection('submersibles', a, { rev: seeded.rev, base: seeded.section });
+  const b = intClone(seeded.section); delete b.subs.s1;
+  await assert.rejects(() => CC.writeSection('submersibles', b, { rev: seeded.rev, base: seeded.section }), /slot changed elsewhere/);
+  const stored = await intStored();
+  assert.ok(stored.subs.s1 && !stored.subs.s2, 'the first is still stored');
+});
+
+test('SI-5 (pin) a stored orphan submarine stays writable, with a current and with a stale stamp', async () => {
+  intReset();
+  const seeded = await intSeed(si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), so: intSub('fz', 1, 'Orphan') }));
+  const a = intClone(seeded.section); a.fcs.fa.name = 'Renamed';
+  const w1 = await CC.writeSection('submersibles', a, { rev: seeded.rev, base: seeded.section });
+  assert.ok(w1.section.subs.so && w1.section.fcs.fa.name === 'Renamed');
+  const b = intClone(seeded.section); b.subs.s1.name = 'Other tab';
+  const w2 = await CC.writeSection('submersibles', b, { rev: seeded.rev, base: seeded.section });
+  assert.ok(w2.section.subs.so && w2.section.subs.s1.name === 'Other tab' && w2.section.fcs.fa.name === 'Renamed');
+});
+
+test('SI-6 (pin) ET.saveMerge with a stale stamp and an unchanged section returns the stored section', () => {
+  const mk = (sec) => { const s = ET.newState(['A']); s.modules = { submersibles: intClone(sec) }; return ET.validateState(s); };
+  const old = si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, { t1: si2Trip('s1', 1) });
+  const now = intClone(old); delete now.subs.s2; now.subs.s1.name = 'Newer'; now.fcs.fa.name = 'Beta';
+  const out = ET.saveMerge(mk(old), 'r2', ET.portable(mk(now)), 'r1', ET.portable(mk(old)));
+  assert.strictEqual(out.merged, true);
+  assert.deepStrictEqual(out.state.modules.submersibles, mk(now).modules.submersibles);
+});
+
+// Integrity spec 2, section 5 (OWNER-2 B): a submarine both devices hold, in a different slot on each, is left out of the
+// slot question and named as staying; it is never removed by a slot answer.
+const si1 = (() => {
+  const { port, apply } = r3;
+  const sub = (slot, name, rank) => ({ fcId: 'fy', slot, name, rank: rank || 10, voyage: null });
+  const trip = (s) => ({ s, t: 1, r: [1], back: 2, items: [], newSectors: [] });
+  const fc = () => ({ name: 'Yankee', charId: 'c1', order: 0, unlockedSlots: 4, discovered: [1, 2, 3], world: 'Ravana' });
+  const base = () => ({ fcs: { fy: fc() }, subs: { s1: sub(1, 'One'), s2: sub(2, 'Two') }, trips: { t1: trip('s1'), t2: trip('s2') } });
+  const edit = (f) => { const x = base(); f(x); return x; };
+  // every answer set: none, and each answer for each conflict; every one keeps the named records and their voyages
+  const answers = (l, res, keep) => {
+    const sets = [{}]; res.conflicts.forEach((c) => { sets.forEach((s) => { sets.push(Object.assign({}, s, { [c.id]: 'local' }), Object.assign({}, s, { [c.id]: 'remote' })); }); });
+    return sets.map((ch) => { const o = apply(l, res, ch); keep.forEach((id) => { assert.ok(o.subs[id], id + ' stays with ' + JSON.stringify(ch)); assert.ok(o.trips['t' + id.slice(1)] || !/^s\d$/.test(id), 'its voyage stays'); }); return o; });
+  };
+  return { sub, trip, base, edit, answers, run: (b, l, r) => ET.threeWay(port(b), port(l), port(r)), apply, port };
+})();
+
+test('SI-1 a swap on this device while the other changes one of the two: no slot question, one question (its own), nothing is lost', () => {
+  const { edit, run, answers } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 2; x.subs.s2.slot = 1; });
+  const r = edit((x) => { x.subs.s1.rank = 40; });
+  const res = run(si1.base(), l, r);
+  assert.ok(!res.conflicts.some((c) => c.integrity && c.integrity.kind === 'slot'), 'no slot question');
+  assert.strictEqual(res.conflicts.length, 1, 's1\'s own entry only');
+  assert.match(res.conflicts[0].id, /s1/);
+  answers(l, res, ['s1', 's2']).forEach((o) => { assert.ok(o.trips.t1 && o.trips.t2, 'both logged voyages stay'); });
+  // the other changes nothing: nothing is asked and the other takes the swap
+  const calm = run(si1.base(), l, si1.base());
+  assert.strictEqual(calm.conflicts.length, 0);
+  const o = si1.apply(si1.base(), calm, {}); assert.deepStrictEqual([o.subs.s1.slot, o.subs.s2.slot], [2, 1]);
+});
+
+test('SI-1 row 3: this device moves s1 to an empty slot, the other changes s1: its own entry; slot 3 or slot 1 with the change', () => {
+  const { edit, run, apply, base } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 3; }), r = edit((x) => { x.subs.s1.rank = 40; });
+  const res = run(base(), l, r);
+  assert.ok(!res.conflicts.some((c) => c.integrity && c.integrity.kind === 'slot'));
+  assert.strictEqual(res.conflicts.length, 1);
+  const id = res.conflicts[0].id;
+  const mine = apply(l, res, { [id]: 'local' }), none = apply(l, res, {}), theirs = apply(l, res, { [id]: 'remote' });
+  assert.strictEqual(mine.subs.s1.slot, 3); assert.strictEqual(none.subs.s1.slot, 3);
+  assert.deepStrictEqual([theirs.subs.s1.slot, theirs.subs.s1.rank], [1, 40]);
+  [mine, none, theirs].forEach((o) => assert.ok(o.subs.s1 && o.subs.s2 && o.trips.t1 && o.trips.t2));
+});
+
+test('SI-1 row 4: this device moves s1 to slot 3, the other adds a submarine there: nothing is asked, both end in slot 3', () => {
+  const { edit, run, apply, base, sub } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 3; }), r = edit((x) => { x.subs.n = sub(3, 'New'); });
+  const res = run(base(), l, r);
+  assert.strictEqual(res.conflicts.length, 0);
+  const o = apply(l, res, {}); assert.deepStrictEqual([o.subs.s1.slot, o.subs.n.slot], [3, 3]);
+});
+
+test('SI-1 row 5: this device removes s2 and moves s1 to slot 2, the other changes s2: s2\'s own entry; s1 stays either way', () => {
+  const { edit, run, apply, base } = si1;
+  const l = edit((x) => { delete x.subs.s2; x.subs.s1.slot = 2; }), r = edit((x) => { x.subs.s2.rank = 40; });
+  const res = run(base(), l, r);
+  assert.ok(!res.conflicts.some((c) => c.integrity && c.integrity.kind === 'slot'), 'no slot question');
+  assert.strictEqual(res.conflicts.length, 1); assert.match(res.conflicts[0].id, /s2/);
+  const id = res.conflicts[0].id;
+  const mine = apply(l, res, { [id]: 'local' }), theirs = apply(l, res, { [id]: 'remote' });
+  assert.ok(mine.subs.s1 && !mine.subs.s2);
+  assert.ok(theirs.subs.s1 && theirs.subs.s2 && theirs.subs.s1.slot === 2 && theirs.subs.s2.slot === 2, 's2 is back beside s1 (the Board settles it)');
+  assert.ok(theirs.trips.t1 && theirs.trips.t2);
+});
+
+test('SI-1 row 6: slot 3 holds p new here and n new there, s1 moved in here: asked about p or n, s1 named as staying', () => {
+  const { edit, run, apply, base, sub } = si1;
+  const l = edit((x) => { x.subs.s1.slot = 3; x.subs.p = sub(3, 'Pee'); x.trips.tp = si1.trip('p'); });
+  const r = edit((x) => { x.subs.n = sub(3, 'Enn'); x.trips.tn = si1.trip('n'); });
+  const res = run(base(), l, r);
+  const slots = res.conflicts.filter((c) => c.integrity && c.integrity.kind === 'slot');
+  assert.strictEqual(slots.length, 1);
+  const g = slots[0].integrity;
+  assert.deepStrictEqual(g.locals.map((x) => x.name), ['Pee']); assert.deepStrictEqual(g.remotes.map((x) => x.name), ['Enn']);
+  assert.match(ET.describeConflict(slots[0], null, { chars: [] }).what, /“One”, already on both devices, stays either way/);
+  const id = slots[0].id;
+  const mine = apply(l, res, { [id]: 'local' }), theirs = apply(l, res, { [id]: 'remote' }), none = apply(l, res, {});
+  [mine, theirs, none].forEach((o) => assert.ok(o.subs.s1 && o.subs.s2 && o.trips.t1 && o.trips.t2, 's1 stays'));
+  assert.ok(mine.subs.p && !mine.subs.n && theirs.subs.n && !theirs.subs.p);
+});
+
+// Integrity spec 2, A5 (OWNER-1 B, decided 2026-11-20): one submarine changed in two tabs: the second save is refused whole.
+test('SI-7 a submarine sent on a voyage in one tab and renamed in a stale tab: the second save is refused, the first stays', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, {}), null);
+  const sent = intClone(first.section); sent.subs.s1.voyage = { sentAt: 5, route: [1, 2], returnAt: 99, gameSaid: '10:00' };
+  await CC.writeSection('submersibles', sent, { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  const renamed = intClone(first.section); renamed.subs.s1.name = 'Renamed late';
+  await assert.rejects(() => CC.writeSection('submersibles', renamed, { rev: first.rev, base: first.section }), /This submarine changed in another tab or on another device\./);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+  // a different submarine in the stale tab is still saved; the same change in both tabs is not a conflict
+  const other = intClone(first.section); other.subs.s2.name = 'Fine';
+  assert.strictEqual((await CC.writeSection('submersibles', other, { rev: first.rev, base: first.section })).section.subs.s2.name, 'Fine');
+  const same = intClone(first.section); same.subs.s1.voyage = { sentAt: 5, route: [1, 2], returnAt: 99, gameSaid: '10:00' };
+  await CC.writeSection('submersibles', same, { rev: first.rev, base: first.section });
+});
+
+test('SI-7 (pin) two stale tabs swap the same two submarines into the same layout: the second write is allowed, the stored copy is unchanged', async () => {
+  intReset();
+  const first = await CC.writeSection('submersibles', si2Sec({ fa: intSolid('Alpha', 0) }, { s1: intSub('fa', 1), s2: intSub('fa', 2) }, {}), null);
+  const swap = () => { const x = intClone(first.section); x.subs.s1.slot = 2; x.subs.s2.slot = 1; return x; };
+  await CC.writeSection('submersibles', swap(), { rev: first.rev, base: first.section });
+  const before = JSON.stringify(await intStored());
+  const again = await CC.writeSection('submersibles', swap(), { rev: first.rev, base: first.section });
+  assert.deepStrictEqual([again.section.subs.s1.slot, again.section.subs.s2.slot], [2, 1]);
+  assert.strictEqual(JSON.stringify(await intStored()), before, 'the stored copy is unchanged');
+});
+
+test('SI-8 (pin, a known limit) a plain Tracker save over a stored orphan submarine brings back the company another tab removed', () => {
+  // Older builds could store a submarine under a company removed in the same moment (the orphan). The Tracker's own save path is not
+  // guarded (docs/submersibles-integrity-spec-2.md section 4): its unanswered company question deletes nothing, so the removed company
+  // and its submarine come back. No new orphan is stored since the store rules; this records what the path does with an old one.
+  const mk = (sec) => { const s = ET.newState(['A']); s.modules = { submersibles: intClone(sec) }; return ET.validateState(s); };
+  const fc = intSolid('Alpha', 0, 'c1');
+  const base = si2Sec({ f1: fc }, { s1: intSub('f1', 1) }, { t1: si2Trip('s1', 1) });
+  const stored = si2Sec({}, { sn5: intSub('f1', 2, 'Orphan') }, { t1: si2Trip('s1', 1) });
+  const out = ET.saveMerge(mk(base), 'r2', ET.portable(mk(stored)), 'r1', ET.portable(mk(base)));
+  assert.strictEqual(out.merged, true);
+  const sec = out.state.modules.submersibles;
+  assert.deepStrictEqual(Object.keys(sec.fcs), ['f1'], 'the removed company is back');
+  assert.deepStrictEqual(Object.keys(sec.subs).sort(), ['s1', 'sn5'], 'nothing is deleted or orphaned: both submarines are kept');
 });

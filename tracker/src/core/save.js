@@ -199,13 +199,51 @@
     }
     return CC.checkModules(out);
   };
-  // Three-way merge of the units of every section except the Tracker's. Clashes keep the local unit.
+  // A free company changed on both sides (owner decision 2026-11-19, docs/submersibles-merge-spec.md): merged field by
+  // field. key: 'm|' + JSON path; b, l, r: the unit as JSON text, or undefined. Returns null (the caller keeps its
+  // generic rule) unless the key is a free company and both sides are objects; else { local, remote, asks } where the
+  // two texts carry the same merged discoveries, slots and position and differ only in the fields named in asks.
+  // Discoveries: the union of both sides, nothing is removed. Slots: the higher. Position: the lower. Name, world and
+  // linked character: changed on one side only is taken; changed differently on both is asked.
+  CC.mergeUnit = function (key, b, l, r) {
+    let p; try { p = JSON.parse(String(key).slice(2)); } catch (e) { return null; }
+    if (!Array.isArray(p) || p.length !== 3 || p[0] !== 'submersibles' || p[1] !== 'fcs' || !safeKey(p[2]) || !String(key).startsWith('m|')) return null;
+    const parse = (t) => { if (typeof t !== 'string') return undefined; try { const o = JSON.parse(t); return plain(o) ? o : undefined; } catch (e) { return undefined; } };
+    const L = parse(l), R = parse(r), B = parse(b);
+    if (!L || !R) return null;
+    const blank = (v) => v === undefined || v === null || v === '';
+    const same = (x, y) => (blank(x) && blank(y)) || JSON.stringify(x) === JSON.stringify(y);
+    const outL = {}, outR = {}, asks = [];
+    for (const f of ['name', 'world', 'charId', 'order', 'unlockedSlots']) {
+      const lv = L[f], rv = R[f], bv = B ? B[f] : undefined;
+      let v, split = false;
+      if (same(lv, rv)) v = blank(lv) && blank(rv) ? (lv === null || rv === null ? null : lv === '' || rv === '' ? '' : undefined) : lv; // both blank: whatever both sides had stays (null, then an empty text, then nothing)
+      else if (B && same(lv, bv)) v = rv;
+      else if (B && same(rv, bv)) v = lv;
+      else if (f === 'order') v = lv == null ? rv : rv == null ? lv : Math.min(lv, rv); // a side without a position takes the other's
+      else if (f === 'unlockedSlots') v = Math.max(lv ?? 1, rv ?? 1);
+      else if (!B && blank(lv) !== blank(rv)) v = blank(lv) ? rv : lv;
+      else split = true;
+      if (split) { outL[f] = lv; outR[f] = rv; asks.push(f); } else { outL[f] = v; outR[f] = v; }
+    }
+    if (Array.isArray(L.discovered) || Array.isArray(R.discovered)) {
+      const u = [...new Set([...(Array.isArray(L.discovered) ? L.discovered : []), ...(Array.isArray(R.discovered) ? R.discovered : [])])]
+        .filter((x) => Number.isInteger(x)).sort((x, y) => x - y);
+      outL.discovered = u; outR.discovered = u.slice();
+    }
+    const text = (o) => JSON.stringify(CC.checkSubmersibles({ fcs: { x: o } }).fcs.x);
+    const local = text(outL), remote = text(outR);
+    return { local, remote, asks: local === remote ? [] : asks };
+  };
+  // Three-way merge of the units of every section except the Tracker's. Clashes keep the local unit; a free company
+  // changed on both sides is merged by CC.mergeUnit.
   CC.mergeModules = function (base, local, remote) {
     const B = CC.flatModules(base), L = CC.flatModules(local), R = CC.flatModules(remote);
     const m = new Map();
     for (const k of new Set([...B.keys(), ...L.keys(), ...R.keys()])) {
       const b = B.get(k), l = L.get(k), r = R.get(k);
-      const v = l === r ? l : l === b ? r : l;
+      let v = l === r ? l : l === b ? r : l;
+      if (l !== undefined && r !== undefined && l !== r && l !== b && r !== b) { const u = CC.mergeUnit(k, b, l, r); if (u) v = u.local; }
       if (v !== undefined) m.set(k, v);
     }
     return CC.unflatModules(m);
@@ -224,6 +262,23 @@
       let n = ''; try { n = JSON.parse(local || remote || '{}').name || ''; } catch (e) { /* none */ }
       what = 'Submersibles: ' + { fcs: 'free company', subs: 'submarine', trips: 'logged voyage' }[p[1]] + (n ? ' “' + n + '”' : '');
       if (integrity && p[1] === 'fcs') { const names = (integrity.names && integrity.names.length ? integrity.names : integrity.linked).map((x) => '“' + x + '”'); what += '; choosing its removal also removes ' + (names.length === 1 ? 'its submarine ' : 'its submarines ') + names.join(', ') + (names.length === 1 ? ' and its logged voyages' : ' and their logged voyages') + '; keeping the free company keeps ' + (names.length === 1 ? 'it' : 'them') + ' too'; }
+      if (!integrity && p[1] === 'fcs' && local != null && remote != null) {
+        let L = null, R = null; try { L = JSON.parse(local); R = JSON.parse(remote); } catch (e) { /* today's wording */ }
+        if (plain(L) && plain(R)) {
+          const none = '(none)', show = (v) => (v === undefined || v === null || v === '' ? none : String(v));
+          const FIELDS = [['name', 'name', (v) => '“' + show(v) + '”'], ['world', 'world', show], ['charId', 'character', (v) => (v ? (nameOf ? nameOf(v) : v) : none)],
+            ['unlockedSlots', 'unlocked slots', show], ['order', 'position in the list', show], ['discovered', 'discovered sectors', (v) => (Array.isArray(v) ? v.join(', ') : none)]];
+          const diff = FIELDS.filter((f) => JSON.stringify(L[f[0]] === undefined ? null : L[f[0]]) !== JSON.stringify(R[f[0]] === undefined ? null : R[f[0]]));
+          if (diff.length) {
+            const labels = diff.map((f) => f[1]), joined = labels.length === 1 ? labels[0] : labels.slice(0, -1).join(', ') + ' and ' + labels[labels.length - 1];
+            const side = (o) => diff.map((f) => f[1] + ' ' + f[2](o[f[0]])).join(', '); // the dialog names the side ("This device:", "Other device:")
+            const nameDiffers = diff.some((f) => f[0] === 'name'), both = [...new Set([L.name, R.name].filter((x) => x !== undefined && x !== null && x !== ''))].map((x) => '“' + x + '”').join(' / ');
+            const sameList = JSON.stringify(L.discovered === undefined ? null : L.discovered) === JSON.stringify(R.discovered === undefined ? null : R.discovered);
+            what = 'Submersibles: free company' + (nameDiffers ? (both ? ' ' + both : '') : n ? ' “' + n + '”' : '') + ': the ' + joined + (labels.length === 1 ? ' differs' : ' differ') + ' between your devices' + (sameList ? '; its discovered sectors are already combined and stay the same whichever you choose' : '');
+            return { who: '', what, local: side(L), remote: side(R) };
+          }
+        }
+      }
     } else if (p[0] === 'submersibles' && p[1] === 'settings') what = 'Submersibles settings';
     return { who: '', what, local: local == null ? '(removed)' : 'the version on this device', remote: remote == null ? '(removed)' : 'the version on the other device' };
   };
@@ -338,6 +393,60 @@
   };
   CC.resetMemory = () => { memory = { [KEY]: null, [REV]: null }; };
 
+  // A free company is bare when no submarine of sec belongs to it, it has no world, one slot (or none noted) and the start
+  // sectors only: exactly what the main Settings creates (the same test as FLEET.isBare). Pure.
+  function subBare(sec, id, f) {
+    if (!f) return false;
+    const subs = (sec && sec.subs) || {};
+    if (Object.keys(subs).some((k) => subs[k] && subs[k].fcId === id)) return false;
+    return !f.world && (f.unlockedSlots == null || f.unlockedSlots === 1)
+      && (f.discovered == null || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
+  }
+  // True when fc, stored in sec under fcId, would be removed by the automatic duplicate fold (FLEET.foldFcs): fc is bare in
+  // sec, has a character, and another company of that character in sec is not bare, or is bare and sorts before it (lower
+  // order || 0, then lower id by plain < comparison, as foldFcs does). Pure.
+  // The fold's own order: lower order || 0, then lower id by plain < comparison.
+  const foldBefore = (a, fa, z, fz) => ((fa.order || 0) - (fz.order || 0)) || (a < z ? -1 : a > z ? 1 : 0);
+  CC.foldLoser = function (sec, fcId, fc) {
+    if (!fc || typeof fc.charId !== 'string' || !subBare(sec, fcId, fc)) return false;
+    const fcs = (sec && sec.fcs) || {};
+    return Object.keys(fcs).some((id) => {
+      const o = fcs[id];
+      if (id === fcId || !o || o.charId !== fc.charId) return false;
+      return !subBare(sec, id, o) || foldBefore(id, o, fcId, fc) < 0;
+    });
+  };
+  // The id of the company that beats fc (stored under fcId) in the duplicate fold of sec: the first non-empty company of its
+  // character, else the first empty one, in the fold's own order; null when none. Call only when CC.foldLoser is true.
+  CC.foldWinner = function (sec, fcId, fc) {
+    const fcs = (sec && sec.fcs) || {};
+    const ids = Object.keys(fcs).filter((id) => id !== fcId && fcs[id] && fc && typeof fc.charId === 'string' && fcs[id].charId === fc.charId)
+      .sort((x, y) => foldBefore(x, fcs[x], y, fcs[y]));
+    return ids.find((id) => !subBare(sec, id, fcs[id])) || ids[0] || null;
+  };
+  // True when some company-and-slot holds two or more submarines in sec and one of them is not already in that slot in stored.
+  function slotAdded(sec, stored) {
+    const slots = {};
+    Object.keys((sec && sec.subs) || {}).forEach((id) => {
+      const s = sec.subs[id]; if (!s || s.slot == null) return;
+      (slots[s.fcId + '|' + s.slot] = slots[s.fcId + '|' + s.slot] || []).push(id);
+    });
+    return Object.keys(slots).some((k) => slots[k].length > 1 && slots[k].some((id) => {
+      const t = ((stored && stored.subs) || {})[id], s = sec.subs[id];
+      return !(t && t.fcId === s.fcId && t.slot === s.slot);
+    }));
+  }
+
+  // The submarines of each company-and-slot, as { 'fcId|slot': [subId, ...] } with every list sorted.
+  function slotSets(sec) {
+    const out = {};
+    Object.keys((sec && sec.subs) || {}).sort().forEach((id) => {
+      const s = sec.subs[id]; if (!s || s.slot == null) return;
+      (out[s.fcId + '|' + s.slot] = out[s.fcId + '|' + s.slot] || []).push(id);
+    });
+    return out;
+  }
+
   // Write one module's section. known = { rev, base }: the stamp and the section this page last read or wrote. If
   // another page saved since, the section is merged with the stored one (units changed only elsewhere are kept).
   // own = { moved, device }: this module's entries in the device-only parts. Resolves to { rev, section, merged }.
@@ -361,26 +470,62 @@
         if (name === 'submersibles') {
           const b = base, l = local, m = sec;
           const same = (a, z) => JSON.stringify(a) === JSON.stringify(z);
-          const isBareBase = (id) => {
-            const f = (b.fcs || {})[id];
-            return !!f && !Object.values(b.subs || {}).some((s) => s.fcId === id) && !f.world && (f.unlockedSlots == null || f.unlockedSlots === 1) && (!f.discovered || same(f.discovered, [1, 2]));
-          };
+          const isBareBase = (id) => subBare(b, id, (b.fcs || {})[id]);
+          // A company this write would bring back after the stored copy lost it: only the automatic duplicate fold
+          // may have removed it (CC.foldLoser); anything else was removed on purpose and is not stored again.
+          for (const fcId of Object.keys(b.fcs || {})) {
+            if ((stored.fcs || {})[fcId] || !(m.fcs || {})[fcId]) continue;
+            if (!(isBareBase(fcId) && CC.foldLoser(stored, fcId, b.fcs[fcId]))) throw new Error('This free company was removed on another device or in another tab.');
+          }
+          // A submarine or logged voyage removed in the stored copy is not stored again by a page that still held it.
+          [['subs', 'This submarine was removed on another device or in another tab.'], ['trips', 'This logged voyage was removed on another device or in another tab.']].forEach(([kind, text]) => {
+            for (const id of Object.keys(b[kind] || {})) if (!(stored[kind] || {})[id] && (m[kind] || {})[id]) throw new Error(text);
+          });
+          // A slot this page rearranged (its set of submarines differs between its copy and what it sends) is stored as
+          // the page showed it; if the merge made it something else, another page changed it too: refused.
+          {
+            const B = slotSets(b), L = slotSets(l), M = slotSets(m);
+            const t = (x, k) => (x[k] || []).join();
+            for (const k of new Set(Object.keys(B).concat(Object.keys(L))))
+              if (t(B, k) !== t(L, k) && t(L, k) !== t(M, k)) throw new Error('That submarine slot changed elsewhere.');
+          }
           for (const [subId, sub] of Object.entries(l.subs || {})) {
             if (!sub || !m.subs || !m.subs[subId] || same(sub, (b.subs || {})[subId])) continue;
             const fcId = sub.fcId;
             if ((m.fcs || {})[fcId] || !(l.fcs || {})[fcId]) continue;
             if (!isBareBase(fcId)) throw new Error('The free company changed while its submarine was being saved.');
-            const charId = (l.fcs[fcId] || {}).charId;
-            const targets = Object.keys(m.fcs || {}).filter((id) => id !== fcId && charId && m.fcs[id].charId === charId)
-              .sort((x, y) => (m.fcs[x].order || 0) - (m.fcs[y].order || 0) || String(x).localeCompare(String(y)));
-            if (!targets.length) throw new Error('The free company was removed while its submarine was being saved.');
-            const target = targets[0];
+            // Only a company the automatic clean-up would remove again is moved from; it goes to the company that beats it.
+            // Anything else was removed on purpose: nothing is written.
+            if (!CC.foldLoser(stored, fcId, b.fcs[fcId])) throw new Error('This free company was removed on another device or in another tab.');
+            const target = CC.foldWinner(stored, fcId, b.fcs[fcId]);
+            if (!target || !(m.fcs || {})[target]) throw new Error('The free company was removed while its submarine was being saved.');
             if (Object.values(m.subs || {}).some((other) => other !== m.subs[subId] && other.fcId === target && other.slot === sub.slot))
               throw new Error('That submarine slot changed elsewhere.');
             m.subs[subId].fcId = target;
           }
+          // One submarine changed in two tabs (owner decision 2026-11-20): when its stored record, this page's copy and what
+          // this page sends are all different from each other (removed here counts as different), the save is refused whole.
+          for (const id of Object.keys(b.subs || {})) {
+            const rv = (stored.subs || {})[id]; if (!rv) continue;
+            const t = [JSON.stringify(b.subs[id]), (l.subs || {})[id] === undefined ? undefined : JSON.stringify(l.subs[id]), JSON.stringify(rv)];
+            if (t[0] !== t[1] && t[0] !== t[2] && t[1] !== t[2]) throw new Error('This submarine changed in another tab or on another device.');
+          }
         }
       }
+      // A submarine never points at a company this write leaves out, unless it already did in the stored copy.
+      if (name === 'submersibles') {
+        const rs = stored || {};
+        for (const [id, sub] of Object.entries(sec.subs || {})) {
+          const f = sub && sub.fcId;
+          if (f === undefined || (sec.fcs || {})[f]) continue;
+          const was = (rs.subs || {})[id];
+          if (was && was.fcId === f && !(rs.fcs || {})[f]) continue;
+          throw new Error((rs.fcs || {})[f] ? 'This free company has a submarine that was saved in another tab or on another device, so nothing was removed.' : 'The free company changed while its submarine was being saved.');
+        }
+      }
+      // One company-and-slot never gains a second submarine through a write: refuse when a slot would hold two or more
+      // records and one of them is not already in that slot in the stored copy (a stored duplicate stays writable).
+      if (name === 'submersibles' && slotAdded(sec, stored || {})) throw new Error('That submarine slot changed elsewhere.');
       doc.modules[name] = sec;
       if (own && own.moved) doc.moved[name] = own.moved;
       if (own && own.device) doc.device[name] = own.device;

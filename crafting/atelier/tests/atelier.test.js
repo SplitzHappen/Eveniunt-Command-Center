@@ -309,6 +309,7 @@ test('UI: guide opens inside the workbook; accent and custom hex/RGB colours app
   await page.click('[data-look=theme][data-v=abyssal-oath]');
   assert.equal(await cssVar('--paper'), '#1f0a10', 'Abyssal Oath dark');
   assert.equal(await cssVar('--lb-b'), '#ff3452', 'the wordmark follows the theme accent');
+  assert.equal(await cssVar('--on-seal'), '#111111', 'Abyssal Oath dark: dark text on the accent (white is only 3.58:1)');
   await page.click('[data-look=toggle][data-v="shared:theme"]');
   await page.click('[data-look=theme][data-v=limsa-brineward]');
   assert.equal(await cssVar('--paper'), '#0f1b2b', 'Limsa Brineward dark background');
@@ -487,4 +488,41 @@ test('gate 1D, hosted site over HTTP: the first visit reloads once under the Ate
   assert.equal(await page.getAttribute('a[data-cc-back]', 'href'), root, 'the way back stays');
   assert.deepEqual(errors, []);
   await ctx.close(); server.close();
+});
+
+test('gate 1D, hosted site: a click on the way back before the one-time first-visit reload is not cancelled by that reload (a stand-in worker, the controller change fired after the click)', async () => {
+  const SITE = path.join(A, 'site');
+  const server = http.createServer((req, res) => {
+    const u = decodeURIComponent(req.url.split('?')[0]).replace(/^\/atelier\//, '/');
+    if (req.url.split('?')[0] === '/') { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('<title>shell stand-in</title>'); }
+    let f = path.join(SITE, u.endsWith('/') ? u + 'index.html' : u);
+    if (!f.startsWith(SITE) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
+    const type = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm', '.png': 'image/png', '.webmanifest': 'application/manifest+json' }[path.extname(f)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': type }); fs.createReadStream(f).pipe(res);
+  });
+  await new Promise((r) => server.listen(0, r)); server.unref();
+  const base = `http://localhost:${server.address().port}/atelier/`, root = base.replace(/atelier\/$/, '');
+  for (const leave of ['click', 'none']) {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    // a stand-in for the worker API: registers at once, has no controller until the test gives it one, and fires controllerchange on demand
+    await ctx.addInitScript(() => {
+      const sw = new EventTarget(); sw.controller = null; sw.register = () => Promise.resolve({});
+      Object.defineProperty(navigator, 'serviceWorker', { value: sw, configurable: true });
+      window.__fireControllerChange = () => { sw.controller = { scriptURL: new URL('sw.js', location.href).href }; sw.dispatchEvent(new Event('controllerchange')); };
+    });
+    const page = await ctx.newPage(); const navs = [];
+    page.on('framenavigated', (f) => { if (f === page.mainFrame()) navs.push(f.url()); });
+    await page.goto(base);
+    await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier && document.querySelector('a[data-cc-back]'), null, { timeout: 60000 });
+    if (leave === 'click') {
+      // the click and the controller change land in the same moment: the navigation has begun, then the worker takes control
+      await page.evaluate(() => { document.querySelector('a[data-cc-back]').addEventListener('click', (e) => e.preventDefault(), { once: true }); document.querySelector('a[data-cc-back]').click(); window.__fireControllerChange(); });
+      assert.equal(await page.evaluate(() => sessionStorage.getItem('atelier-coi-reload')), null, 'no reload was spent');
+    } else {
+      await page.evaluate(() => window.__fireControllerChange());
+      await page.waitForFunction(() => sessionStorage.getItem('atelier-coi-reload') === '1', null, { timeout: 10000 });
+    }
+    await ctx.close();
+  }
+  server.close();
 });

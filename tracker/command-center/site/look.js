@@ -50,6 +50,7 @@
   function rgbHex(r) { return '#' + r.map(function (x) { return ('0' + Math.max(0, Math.min(255, Math.round(x))).toString(16)).slice(-2); }).join(''); }
   function lum(r) { var c = r.map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
   function mix(a, b, t) { return rgbHex(a.map(function (x, i) { return x + (b[i] - x) * t; })); }
+  function onSeal(ac) { var l = lum(ac) + 0.05; return 1.05 / l >= 4.5 ? '#ffffff' : l / (lum([17, 17, 17]) + 0.05) >= 4.5 ? '#111111' : '#000000'; }
   function sideFor(mode) { return S.look.separate ? S.look[mode] : S.look.shared; }
   function themeOf(id) { return THEMES.find(function (x) { return x[0] === id; }) || THEMES[0]; }
   // The colours a side resolves to in a mode: [bg, fg, accent, progress].
@@ -68,7 +69,7 @@
     set('--paper', rgbHex(bg)); set('--paper-2', mix(bg, fg, 0.05 * k)); set('--paper-3', mix(bg, fg, 0.1 * k)); set('--slip', mix(bg, dk ? fg : [255, 255, 255], dk ? 0.07 : 0.6));
     set('--ink', rgbHex(fg)); set('--ink-2', mix(fg, bg, Math.max(0.08, 0.32 / k))); set('--ink-3', mix(fg, bg, Math.max(0.2, 0.5 / Math.sqrt(k)))); set('--rule', mix(bg, fg, Math.min(0.5, 0.18 * k)));
     set('--grid', 'rgba(' + fg.join(',') + ',' + (0.055 * k).toFixed(3) + ')');
-    set('--seal', rgbHex(ac)); set('--on-seal', lum(ac) > 0.42 ? '#111111' : '#ffffff'); set('--hi', 'rgba(' + ac.join(',') + ',.16)');
+    set('--seal', rgbHex(ac)); set('--on-seal', onSeal(ac)); set('--hi', 'rgba(' + ac.join(',') + ',.16)');
     set('--ochre', rgbHex(pg)); set('color-scheme', dk ? 'dark' : 'light');
     // Limit Break wordmark: a molten ramp from a bright tint of the accent, through the accent, into the progress colour
     set('--lb-a', dk ? mix(ac, [255, 255, 255], 0.55) : mix(ac, fg, 0.25)); set('--lb-b', rgbHex(ac)); set('--lb-c', rgbHex(pg));

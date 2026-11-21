@@ -35,6 +35,9 @@ async function open(planet, opts = {}) {
       Object.defineProperty(window, 'localStorage', thrower);
     });
   }
+  if (opts.seed) { // start with the storage a page left behind (a restore), not the defaults
+    await ctx.addInitScript(v => { try { if (!localStorage.getItem('cosmic-solver-v1')) localStorage.setItem('cosmic-solver-v1', v); } catch (e) { /* storage blocked */ } }, opts.seed);
+  }
   if (opts.fastThink !== false) {
     await ctx.addInitScript(() => {
       try {
@@ -45,7 +48,7 @@ async function open(planet, opts = {}) {
     });
   }
   await page.goto(fileUrl(planet));
-  await page.waitForSelector('#setup .chip');
+  await page.waitForSelector(opts.seed ? '#craft:not(.hidden)' : '#setup .chip'); // a restored craft hides the setup
   return { ctx, page, errors, external };
 }
 const idle = page => page.waitForFunction(() => window.__cosmicSolver && !window.__cosmicSolver.app.thinking, null, { timeout: 20000 });
@@ -294,6 +297,11 @@ test('finished craft -> next craft carries mission charges; reload restores the 
   const done = await pageState(page);
   assert.ok(done.state.done, `craft finished after ${reps.length} reports: ${JSON.stringify(done.state)}`);
   const left = done.state.sshCharges;
+  // the button, like the Enter key, does nothing while the solver is still running
+  await page.evaluate(() => { window.__cosmicSolver.app.thinking = true; document.querySelector('[data-act=nextCraft]').click(); });
+  assert.equal(await page.evaluate(() => window.__cosmicSolver.app.session.craftsDone), 0, 'no next craft while the solver is running');
+  assert.ok((await pageState(page)).state.done, 'the finished craft is still shown');
+  await page.evaluate(() => { window.__cosmicSolver.app.thinking = false; });
   await page.click('[data-act=nextCraft]');
   await idle(page);
   const next = await pageState(page);
@@ -304,13 +312,28 @@ test('finished craft -> next craft carries mission charges; reload restores the 
   await page.keyboard.press('n');
   await idle(page);
   const mid = await pageState(page);
-  await page.reload();
-  await page.waitForSelector('#craft:not(.hidden)');
-  await idle(page);
-  const restored = await pageState(page);
-  assert.deepEqual(restored.state, mid.state, 'reload restores the same state');
-  assert.equal(restored.history.length, mid.history.length, 'reload restores the history');
+  // Restore: a new browser profile opened on the same file with the storage this page has saved. (page.reload(), and a second page of the same
+  // profile, sometimes met empty storage when the full file ran, about 3 runs in 10: the browser's own storage hand-over, not the app, whose
+  // save() is synchronous; the start-up script above then wrote the defaults and no craft came back.)
+  // The page goes through its own unload path first, as a real reload does (pagehide, then beforeunload), and is closed; only then is the
+  // storage read, and the second profile is seeded with exactly what the first one left.
+  await page.evaluate(() => { window.dispatchEvent(new Event('pagehide')); window.dispatchEvent(new Event('beforeunload')); });
+  const stored = await page.evaluate(() => localStorage.getItem('cosmic-solver-v1'));
+  await page.close({ runBeforeUnload: true });
+  assert.ok(stored && JSON.parse(stored).oizys.craft, 'the craft is saved in browser storage');
+  const second = await open('oizys', { seed: stored, fastThink: false });
+  await second.page.waitForSelector('#craft:not(.hidden)');
+  await idle(second.page);
+  const restored = await pageState(second.page);
+  // field by field against what was saved (the save leaves out what the app rebuilds: pending, chosen and the history's per-step Material Miracle time)
+  const savedCraft = JSON.parse(stored).oizys.craft, fields = Object.keys(savedCraft).filter((k) => k !== 'session' && k !== 'recipeKey');
+  assert.ok(fields.length >= 8, 'the saved craft has its fields: ' + fields.join(','));
+  for (const k of fields) assert.deepEqual(JSON.parse(JSON.stringify(restored[k])), savedCraft[k], `reload restores the saved craft field "${k}"`);
+  assert.deepEqual(restored.state, mid.state, 'and it is the state the first page showed');
+  assert.equal(restored.history.length, mid.history.length, 'and its history');
   assert.deepEqual(errors, []);
+  assert.deepEqual(second.errors, []);
+  await second.ctx.close();
   await ctx.close();
 });
 

@@ -6,9 +6,66 @@ Date: 2026-11-09. Blueprint: `.ai/planning/COMMAND_CENTER_BLUEPRINT.md`, section
 
 `src/settings.js`, ⚙ Settings in the main menu (`#settings`): characters and each character's free company (into Submersibles), cloud sync (sign-in through `tracker/oauth.html` and back, sync of every module on opening), backups, notifications for every module (on or off per device, test, night rule in `modules.settings.notify`), appearance. It runs the Tracker's core code, copied to `site/core/` by `build.js`. Scripts and styles load network first so installed apps pick up updates. Check C27.
 
+## Submersibles: the store rules and the model test (2026-11-21)
+
+`CC.writeSection` (in `save.js`) refuses a stale Submersibles write that would orphan a submarine, bring back a submarine or
+logged voyage removed elsewhere, undo a slot another page rearranged, or overwrite another tab's change to the same submarine.
+The permanent randomized model test `tracker/tests/subs-model.test.js` states these rules (tabs model MT0 to MT9, devices model
+MD1 to MD8) over seeded random sequences, using the real save and merge code. It is part of `npm run test:unit`; run it alone with
+`cd tracker && node tests/subs-model.test.js` (3,000 sequences per model, about 15 seconds). `SUBS_MODEL_N=<sequences per seed>`
+and `SUBS_MODEL_SEED=<one seed>` override the size and the seed (for example `SUBS_MODEL_N=10000`); a failure prints the
+invariant, seed, sequence number and a shrunk list of steps. Its interpretations (a no-change edit is skipped, swaps and moves are
+operations no screen produces, MD4 counts an unanswered question as this device's answer) are written at the top of the file.
+Browser checks C134 to C140 cover the Setup form and the refused-write recovery.
+
+## Submersibles: Customizable Recommendations
+
+- **Setup panel "Customizable Recommendations"** holds a fuel-efficiency switch with its allowance slider (default 15%, range 5 to 50), a ranking of four priorities (default: Unlocking Routes, Leveling Submersible Rank, Gil Farming, Loot Farming; Move up and Move down buttons) and five loot pickers, each with type-to-narrow.
+- **The rule:** the first priority that can be served leads; each lower one chooses only among routes within 5% of the best for those above. With fuel on, routes within the allowance of the best for the leading priority are compared by what they bring per tank.
+- **Storage:** the settings live in their own save section, `modules['submersibles-recommendations']`; `save.js` is unchanged.
+- **Loot** is ranked by expected quantity from the community drop records (see "Submersibles: community drop rates"); the pickers list the items a route can bring.
+- **Files:** `recs.js` (the rule and the settings), `advisor.js` (the Board's and the send window's routes), `subs.js` (the panel).
+- **Browser checks C85, C86, C87, C88** (C85: the default order and the switch, reordering, the Board follows; C86: the allowance slider and the stored switch; C87: the five pickers; C88: Loot Farming first and the item's route).
+- **Tuning:** `tracker/tools/recs-tune.js` produces `docs/submersibles-recommendations-tuning.md` (and its fingerprint file). The default allowance, 15%, is the owner's choice, informed by the gil-only result; it is no longer the rule's output over the whole fleet. The routine unit test checks the document against its fingerprint and a small fixed sample. The full re-derivation takes about a minute and runs with `npm run test:tuning` (`node tracker/tools/recs-tune.js --check`); it is also a step of the `Checks` workflow. Run it, and `node tracker/tools/recs-tune.js --write` if it fails, after any change to `advisor.js`, `recs.js`, `drops.js` or the data.
+
+## Submersibles: community drop rates
+
+- **Data:** `tracker/data/submarines.json` holds the community voyage results for all 143 sectors (per pool the records by surveillance band and retrieval result, and per item the rolls, summed quantity and quantity range), each sector's surveillance, retrieval and favor thresholds, and the record counts. `tracker/tools/submarines.py` imports them at a pinned commit; the sources and licence are in `tracker/data/SOURCES.md`.
+- **Estimate:** `drops.js` estimates the merchant gil for any route and build. Every figure is an estimate with its record count: the second item of a survey is not in the records.
+- **Gil Farming** (`advisor.js`) ranks the community gil routes a submarine can run by that estimate. A route with 10 logged voyages is ranked by the player's own log, in the same unit (merchant gil per hour). A route found by the app leads when it is at least twice as good as the best community route the submarine can run. At the top rank (145) Leveling is skipped.
+- **Loot Farming** ranks routes by expected quantity per hour, and **part advice** is valued by the same estimate.
+- **Shown on** the Map, in the send window and in Earnings.
+- **Files:** `drops.js`, `advisor.js`, `subs.js`.
+- **Browser checks** C90 to C96, C98 and C99 (C97 is the voyage gauge, see the look section below).
+
+## Submersibles: the look
+
+- **Colour by role** (revision 4, `docs/submersibles-look-spec.md`): 27 roles. Roles with a meaning (rank, gil, loot, route, the statuses, the seven seas, the chart's markers) keep one hue in every theme; page, panel, text, slab, accent and focus come from the theme. `src/submersibles/palette.js` computes every tone from the theme (and follows a theme change); `subs.css` and `chart.js` use only role tokens.
+- **The list of roles** for all 21 themes, light and dark, and which role each zone of each screen uses: `docs/submersibles-colour-roles.md`, written by `tracker/tools/subs-roles.js`. `tracker/tests/subs-roles.test.js` fails when the document is out of date or a raw colour appears in `subs.css`, `chart.js` or the page's scripts.
+- **Screens:** the Board is a fleet timeline on one shared time axis (`timeline.js`; a dense mode for many companies); the Log is a ledger by day (`ledger.js`); Earnings is a leaderboard on one scale; the send window compares routes on one axis; each Setup head states its panel's state; the Map has a sea chain (one scrolling row on a phone) and a chart whose labels avoid every mark; every screen that can be empty has an empty state (`emptyHtml` in `subs.js`) with a sonar scope in the theme's colours.
+- **Contrast test:** `tracker/tests/subs-look.test.js` asserts the module's text, field and status pairs in all 21 themes, in light and dark, and the hue separations between roles.
+- **Evidence:** block `L1` in `check.js` walks one seeded profile through every screen in the default theme, Azure Dragoon dark, Magitek Steel light and at phone widths, writes the `look-*.png` screenshots to `evidence/`, and fails if a colour on a pictured screen is outside the roles.
+- **Browser checks:** C97 (the voyage gauge), C103 to C112 (the timeline Board, empty states, ledger, leaderboard, send window, Setup heads, sea chain), C114 and C115.
+- **One check at a time:** `CHECK_ONLY=C103,C104 npm run check` runs only those checks and writes `evidence/checks-only.json` (not committed).
+
+## Submersibles step S6: gil advice from the player's own log
+
+- **Earnings** ranks routes by gil per hour once a route has 10 logged voyages; the rest are listed as not enough data yet (`earn.js`, check C78).
+- **The Board** advises routes from the player's own log, using the device's cached prices and fetching nothing (`advisor.js`, `subs.js`, check C79).
+- **Part advice** is given in gil only for swaps that lower none of surveillance, retrieval and favor (`advisor.js`, check C80).
+- **"Send on this route"** keeps the typed loot and discovery ticks (`subs.js`, check C81) and sends exactly the route it shows (check C83). No new save field.
+
+The two S6 rules "the own log alone picks the gil route" and "part advice refuses swaps that lower a stat" were replaced by the drop-rates work (see "Submersibles: community drop rates").
+
+## Submersibles step S4: the sea map
+
+- **The Map tab** draws each of the seven seas as a chart from the sector positions in the data. It is read-only; the orientation is one constant, `CHART.Y_DOWN`, in `chart.js` (check C82).
+- **The route planner** chooses a submarine and up to five found sectors, shows the worked-out figures and only opens the existing send window (`subs.js`, check C84).
+- The map writes nothing to the save.
+
 ## Submersibles step S5: what came back, the log and earnings (2026-11-12)
 
-`src/submersibles/earn.js` (plain script, also run by `tests/earn.test.js`): the route's possible loot, what each item is worth (better of the merchant price from game data and the Universalis average after the 5% tax, cached on the device for an hour), totals, gil per hour by route, the CSV, the archive file. In the page: "What came back" in a Back sub's send window (folded) and in the Log tab; the Earnings tab; Setup's archive at 75% of the size limit and "Load an archive file". Check C29; screenshots `evidence/submersibles-s5-*.png`.
+`src/submersibles/earn.js` (plain script, also run by `tests/earn.test.js`): the route's possible loot, what each item is worth (better of the merchant price from game data and the Universalis average after the 5% tax, cached on the device for an hour), totals, gil per hour by route, the CSV, the archive file. In the page: "What came back" in a Back sub's send window (folded) and in the Log tab; the Earnings tab; Setup's archive at 75% of the size limit and "Load an archive file". Check C29; screenshots `evidence/look-log-*.png` and `evidence/look-earnings-*.png`.
 
 ## Submersibles step S7: phone notifications (2026-11-12)
 
@@ -76,10 +133,10 @@ Gate 1E (round 1) puts the shell at the root of the public site.
 | `src/index.html`, `src/shell.css`, `src/shell.js` | The shell page: header, module switcher, home screen with the two modules, the Cosmic Exploration guides, the coming modules in the owner's order, the offline-file downloads, the credits, and an install button |
 | `src/icons/`, `make-icons.js` | The Command Center's own icons (gate 1E) and the script that draws them |
 | `src/sw.js` | The site-wide service worker (template; `build.js` fills in the build id and file list) |
-| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell) |
+| `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings), `drops.js` (the community drop-rate estimate), `earn.js` (loot values, prices, earnings), `palette.js` (the colour roles computed from the theme), `timeline.js` (the Board's time axis and lanes), `ledger.js` (the Log by day) |
 | `site/save.js` | The one save (gate 1C), copied from `src/core/save.js` by `build.js` |
 | `restore-build-inputs.js` | Recovers the fonts, the Atelier's solver and its action icons from the committed single-file builds, so both apps can be rebuilt in a session without the toolchain (`--verify` rebuilds and compares byte for byte) |
-| `build.js` | Builds the shell and the Submersibles page into `site/` (16 files; the icons are most of it) |
+| `build.js` | Builds the shell and the Submersibles page into `site/` (62 files; the icons are most of it) |
 | `site/` | The built shell. On the public site it is the root, next to `tracker/`, `atelier/` and `cosmic/` (gate 1E) |
 | `serve.js` | Test server: the published layout under `/Eveniunt-Command-Center/`, assembled on the fly from the shell, today's `site/` (Tracker) and `../ffxiv-cosmic-crafting-solver/atelier/site/` (Atelier), with no isolation headers, like GitHub Pages |
 | `check.js` | The browser checks (`BROWSER=chromium|firefox|webkit`); writes `evidence/checks*.json` and the screenshots. C16 also runs the publish script and the Pages workflow's assemble step into a scratch clone |
@@ -95,6 +152,8 @@ node command-center/build.js
 ```bash
 node command-center/check.js
 ```
+
+Notes on running the checks: run one check at a time. The ports are fixed at 8418 to 8422 (`PORT` moves the range); a second run that finds them taken stops with an error. A failing check is recorded as failed and the run continues with the next one.
 
 To look at it yourself: `node command-center/serve.js`, then open http://127.0.0.1:8418/Eveniunt-Command-Center/.
 
@@ -151,3 +210,5 @@ The test suites pass: `node --test tests/core.test.js` 61 of 61 (the sync logic 
 
 - **Gate 1E is final** (PR 991). The owner's first real sign-in and the phone check follow the release note.
 - **After gate 1E:** the new Continuity project registered in `PROJECTS.md` (decision D2) in its own small pull request.
+
+**Submersibles notes (review fixes):** when a free company is changed in two places at once, the slot count follows this rule: if BOTH sides changed it differently the higher count is kept; a count changed on one side only is taken as that side set it. The market-price attempt limit (one automatic attempt per 15 minutes) is per price place and per device: the record is kept in device storage next to the price cache, not in the save, so a reload or another tab on the same device honours it; Refresh always tries once. Two tabs that try at the same instant can each make one attempt. A still-empty free company removed on purpose is treated like the automatic duplicate clean-up when another company of the same character would beat it there: its open Setup form can store it again, and a submarine added to it from a stale page is moved to that other company; a company that would win the clean-up is never stored again and the stale submarine is refused. Typing only a rank in Setup keeps the saved parts when they fit the rank (otherwise they are cleared and the status line says so). The second ChatGPT review (2026-11-20, commit `c6d5a9b`) failed with two serious and two minor findings, repaired in this branch; those repairs were checked by tests only.
