@@ -101,6 +101,31 @@ Last updated: 2026-11-21.
 
 Nothing at the moment.
 
+## Decided, being planned
+
+- **Lists** (blueprint phase 3), decided by the owner on 2026-11-21 after a review of Teamcraft's lists, their known
+  problems and the community's complaints (`docs/lists-research.md`):
+  1. Lists comes before Market; Lists builds the recipe-expansion engine that Market will reuse.
+  2. One release covers every fix the research points to: totals always recomputed, a "get it by" choice per row with
+     list-level defaults, several lists against one inventory, steps for multi-phase projects, a crafting order by job,
+     one-tap "hide completed", a list from what is missing in a crafting-log page, "Solve in the Atelier", and the next
+     window of timed nodes.
+  3. Market prices in Lists from the start: the Submersibles price fetching moves into one shared price service, with
+     Submersibles' behaviour unchanged.
+  The spec is `docs/lists-spec.md` (being written); nothing is built yet.
+
+## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
+
+| Phase | Modules | State |
+| --- | --- | --- |
+| 1 | Shell, one shared save, cloud sync | Shipped |
+| 2 | Submersibles | Shipped 2026-11-21 |
+| 3 | Lists (crafting planner) with "Solve in the Atelier" | Next: spec being written |
+| 4 | Market (profit, shopping list split by world); Gathering (alarms, routes) | Planned |
+| 5 | Currencies & Collectables, Levequests, Ventures & Voyages (retainers and airships) | Planned |
+| 6 | Gear, Treasure Maps, desynthesis in the item details | Planned |
+| 7 | Polish: share lists as links, a phone layout pass, a full audit | Planned |
+
 ## Next
 
 1. The owner's own checks, which no automated run covers: a real sync between two devices (one still on the version published before 2026-11-21), two tabs saving at the same moment, a pass on a phone, and a real push notification ("Send a test" in Settings).
