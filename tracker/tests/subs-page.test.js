@@ -127,3 +127,20 @@ test('M3 a write in flight for 15 seconds shows "Still saving…", cleared when 
   assert.equal(p.status.text, '');
   assert.equal((await p.stored()).subs.s2.name, 'Beta 2');
 });
+
+test('M1b another tab saves while this page\'s write is in flight and nothing is waiting: the skipped reload runs once the write settles, so the change is shown', async () => {
+  const p = await page(SEED());
+  p.edit((S) => { S.subs.s1.name = 'Renamed'; });
+  p.hold.on = true; p.advance(250); await tick(); // this write has stored (not merged: nothing else had saved) and is held
+  assert.equal(p.held.length, 1);
+  await p.otherSaves((s) => { s.subs.s3 = sub(3, 'Gamma'); }); // another tab saves after this write's transaction
+  await p.reload(); // its change event arrives while the write is in flight: skipped for now
+  assert.equal(p.S().subs.s3, undefined);
+  assert.equal(p.SH.reloadLater, true);
+  p.release(); await p.settle();
+  assert.equal(p.S().subs.s3 && p.S().subs.s3.name, 'Gamma', 'the other tab\'s submarine is shown after the write settles');
+  assert.equal(p.S().subs.s1.name, 'Renamed');
+  const st = await p.stored();
+  assert.equal(st.subs.s1.name, 'Renamed'); assert.equal(st.subs.s3.name, 'Gamma');
+  assert.equal((await CC.read()).rev, p.SH.rev, 'the page holds the stored revision again');
+});

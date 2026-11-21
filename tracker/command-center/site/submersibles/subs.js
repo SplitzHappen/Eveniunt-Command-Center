@@ -157,6 +157,7 @@
       clearTimeout(slow); var el = $('#status'); if (el && el.textContent === SLOW_MSG) el.textContent = '';
       SH.busy = null;
       if (SH.again) { SH.again = false; return write(); }
+      if (SH.reloadLater) { SH.reloadLater = false; return reload(); } // another page saved while this write ran: show its change now
     });
     SH.busy = done;
     return done;
@@ -165,10 +166,12 @@
   // is still waiting (that save merges with theirs)
   function reload() {
     // a save in flight or waiting (SH.busy, SH.again) holds an edit this copy would replace: its follow-up write merges with the other page's change in the store
-    if (SH.timer || SH.busy || SH.again || !SH.ready) return Promise.resolve();
+    if (SH.busy || SH.again) { SH.reloadLater = true; return Promise.resolve(); } // read again once the save has settled, so the other page's change is shown
+    if (SH.timer || !SH.ready) return Promise.resolve();
     return CC.read().then(function (r) {
       var doc; try { doc = CC.checkDoc(r.raw); } catch (e) { return; }
-      if (SH.timer || SH.busy || SH.again) return;
+      if (SH.busy || SH.again) { SH.reloadLater = true; return; }
+      if (SH.timer) return;
       var before = JSON.stringify([SH.chars, S, recsNow(), hiddenSet()]);
       SH.rev = r.rev; SH.chars = doc.chars; SH.updated = doc.updated || SH.updated; SH.notify = (doc.modules.settings && doc.modules.settings.notify) || SH.notify;
       SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
