@@ -64,3 +64,21 @@ test('R4 cameBack: the sectors unticked in the saved form that the stored list h
   assert.strictEqual(F.cameBackLine('Alpha', [3]), '1 sector you unticked for Alpha was ticked on another device or tab and has been kept. Untick it again in Setup if it is wrong.');
   assert.strictEqual(F.cameBackLine('Alpha', []), '');
 });
+
+// H1 (third review): the page's write reconciles what the save returned with an edit made while the write ran (three-way merge, base = what was sent).
+test('H1 reconcile: a newer local edit survives, a remote-only change arrives, a unit changed in both takes the local one', () => {
+  for (const f of ['save', 'model', 'codec', 'merge', 'storage']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+  const unit = (name, extra) => Object.assign({ name, charId: null, order: 0, unlockedSlots: 1, world: 'Ravana', discovered: [1, 2, 3] }, extra || {});
+  const sec = (fcs, subs, settings) => ({ fcs: fcs, subs: subs || {}, trips: {}, settings: settings || {} });
+  const sent = sec({ fa: unit('Alpha'), fb: unit('Beta', { order: 1 }) });
+  const remote = sec({ fa: unit('Alpha'), fb: unit('Beta', { order: 1 }) }, { sx: { fcId: 'fa', slot: 1, name: 'Other Tab', rank: 5, voyage: null } });
+  const local = sec({ fa: unit('Alpha Renamed'), fb: unit('Beta', { order: 1 }) }, {}, { prefs: { sort: 'time' } });
+  const out = F.reconcile(sent, local, remote);
+  assert.equal(out.fcs.fa.name, 'Alpha Renamed', 'the newer local edit survives');
+  assert.equal(out.settings.prefs.sort, 'time', 'a newer local setting survives');
+  assert.ok(out.subs.sx, 'a change only in the returned section reaches the working copy');
+  assert.deepStrictEqual(sent.fcs.fa.name, 'Alpha', 'the inputs are not changed');
+  const both = F.reconcile(sent, sec({ fa: unit('Alpha Local'), fb: unit('Beta', { order: 1 }) }), sec({ fa: unit('Alpha Remote'), fb: unit('Beta', { order: 1 }) }));
+  assert.equal(both.fcs.fa.name, 'Alpha Local', 'a company changed on both sides keeps the local name');
+  for (const k of ['fcs', 'subs', 'trips', 'settings']) assert.ok(both[k] && typeof both[k] === 'object', 'every part is present: ' + k);
+});

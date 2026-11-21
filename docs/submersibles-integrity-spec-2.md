@@ -1,6 +1,6 @@
 # Submersibles: one rule set for stale writes and moved submarines (spec 2)
 
-Status: plan only, nothing built or run (no shell in the planning session; HEAD not checked). Written 2026-11-20 from
+Status: built (commits `1e483f9`, `2e2835c`); the owner's decisions are at the end. Written 2026-11-20 from
 the sources, the two earlier specs and the reviewer's scripts and outputs (`tabs.js`, `sync.js`, `swap.js`,
 `tabs-min.js`, `form.js`, `form2.js`; kept outside the repository). Line numbers are as read.
 

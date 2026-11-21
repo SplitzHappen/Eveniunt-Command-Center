@@ -10,6 +10,8 @@
 //   (3) a no-change edit (what the tab sends equals its base) is skipped in MT6 and MT7;
 //   (4) swap and moveFree are operations no screen produces (they stand for a save changed outside the screens);
 //   (5) MD4's start holds a seeded twin (two submarines in one slot), as older saves do.
+// Page scheduling (the write timer, one write in flight at a time, a write finishing while the player edits again) is outside the tabs model;
+// it is covered by the browser checks C141 and C142 of command-center/check.js and the reconcile unit test in subs-fixes.test.js.
 // Run: node tests/subs-model.test.js     Override: SUBS_MODEL_N (sequences per seed), SUBS_MODEL_SEED (one seed).
 const test = require('node:test');
 const assert = require('node:assert/strict');

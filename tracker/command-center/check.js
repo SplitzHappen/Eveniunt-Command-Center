@@ -5479,6 +5479,64 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C141 (third review, H1) A merged write finishes while the player edits again: the newer edit is not replaced by the merged copy of the older snapshot.
+    //    Round A: the sort click is released before the write timer fires; round B: the timer fires while the first write is still held (the follow-up runs after it). ──
+    await guard('C141', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "3, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.waitForFunction(() => window.__subs && window.__subs.write);
+      const p2 = await si2Page(ctx, false);
+      await p1.evaluate(() => { // hold a write's result after its transaction has stored it
+        const native = CC.writeSection.bind(CC); window.__hold = false; window.__held = []; window.__writes = 0;
+        CC.writeSection = function () { window.__writes++; const pr = native.apply(null, arguments); if (!window.__hold) return pr; return pr.then((r) => new Promise((res) => window.__held.push(() => res(r)))); };
+      });
+      const round = async (other, rename, sortKey, wait) => {
+        await si2Change(p2, other); // another tab saves: the write below is then a merged one
+        await p1.evaluate((rename) => { window.__hold = true; window.__held.length = 0; window.__subs.section().subs.s1.name = rename; window.__subs.write(); }, rename);
+        await p1.waitForFunction(() => window.__held.length === 1, null, { timeout: 10000 });
+        await p1.click('[data-sort=' + sortKey + ']'); // an edit made while the write is held
+        await p1.waitForTimeout(wait); await p1.evaluate(() => { window.__hold = false; window.__held.splice(0).forEach((f) => f()); });
+        await p1.waitForTimeout(1800);
+        return { stored: await si2Stored(p1), shown: await p1.evaluate(() => JSON.parse(JSON.stringify(window.__subs.section()))), status: await p1.evaluate(() => document.querySelector('#status').textContent) };
+      };
+      const A = await round("sec.subs.s2 = { fcId: 'fa', slot: 2, name: 'Other Tab A', rank: 40, voyage: null };", 'Renamed A', 'time', 80);
+      const B = await round("sec.subs.s3 = { fcId: 'fa', slot: 3, name: 'Other Tab B', rank: 30, voyage: null };", 'Renamed B', 'fc', 600);
+      await ctx.close();
+      const good = (x, sort, name, others) => !!x.stored.settings.prefs && x.stored.settings.prefs.sort === sort && x.stored.subs.s1.name === name && others.every((o) => !!x.stored.subs[o])
+        && x.shown.settings.prefs.sort === sort && x.shown.subs.s1.name === name && others.every((o) => !!x.shown.subs[o]);
+      const ok = good(A, 'time', 'Renamed A', ['s2']) && good(B, 'fc', 'Renamed B', ['s2', 's3']) && real(errors).length === 0;
+      record('C141', 'A merged write finishes while the player edits again (third review): the newer edit (a sort click) is shown and stored by the follow-up write, the edit the write carried and the other tab\'s submarine are stored too, whether the write timer fires after the held write finishes or while it is held; no page error', ok, { A: { sort: A.stored.settings.prefs, name: A.stored.subs.s1.name, subs: Object.keys(A.stored.subs), shownSort: A.shown.settings.prefs }, B: { sort: B.stored.settings.prefs, name: B.stored.subs.s1.name, subs: Object.keys(B.stored.subs), shownSort: B.shown.settings.prefs }, errors: real(errors) });
+      server.close();
+    });
+
+    // ── C142 (third review, H2) A refused write whose re-read also fails: the page is blocked (nothing more is written), shows the "cannot be used here" panel with the sentence, and the status line says the same. ──
+    await guard('C142', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
+      const p1 = await si2Page(ctx, true);
+      await tlSeed(p1, SI2_FC + "2, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await p1.waitForFunction(() => window.__subs && window.__subs.write);
+      const p2 = await si2Page(ctx, false);
+      await si2Change(p2, "sec.subs.s2 = { fcId: 'fa', slot: 2, name: 'Saved Elsewhere', rank: 40, voyage: null };");
+      await p1.evaluate(() => { // the refused write's re-read fails
+        const native = CC.read.bind(CC); window.__failRead = true;
+        CC.read = function () { if (window.__failRead) return Promise.reject(new Error('read stub')); return native(); };
+        window.__subs.section().subs.s9 = { fcId: 'fa', slot: 2, name: 'Typed Here', rank: 10, voyage: null }; window.__subs.write();
+      });
+      await p1.waitForFunction(() => /reload the page to continue/.test(document.querySelector('#status').textContent), null, { timeout: 10000 });
+      const sentence = 'The saved data could not be reloaded after a refused save; reload the page to continue.';
+      const shown = await p1.evaluate(() => ({ status: document.querySelector('#status').textContent, panel: (document.querySelector('.note.bad') || {}).textContent || '', state: window.__subs.state() }));
+      await p1.evaluate(() => { window.__failRead = false; });
+      await p1.evaluate(() => window.__subs.write()); await p1.waitForTimeout(1200); // a further write attempt: nothing is stored
+      const later = await si2Stored(p1);
+      await ctx.close();
+      const ok = shown.state.problem === sentence && shown.panel.includes('The save cannot be used here.') && shown.panel.includes(sentence) && shown.status.includes(sentence) && !later.subs.s9 && !!later.subs.s2 && real(errors).length === 0;
+      record('C142', 'A refused write whose re-read fails (third review): the page is blocked with "The saved data could not be reloaded after a refused save; reload the page to continue.", shows the "cannot be used here" panel with it, the status line says it, and a later write stores nothing', ok, { shown, later: Object.keys(later.subs), errors: real(errors) });
+      server.close();
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──

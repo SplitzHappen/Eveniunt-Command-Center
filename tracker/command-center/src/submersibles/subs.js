@@ -90,7 +90,7 @@
     return CC.foldSection('submersibles', F.foldFcs).then(function (r) {
       if (r.doc) {
         // A pending local edit is newer than this asynchronous cleanup result; retain it and let its queued write merge.
-        if (!SH.timer && SH.editSeq === editAtStart) {
+        if (!SH.timer && !SH.again && SH.editSeq === editAtStart) {
           SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now();
           setSection(r.section);
         }
@@ -102,15 +102,19 @@
     });
   }
   function schedule() { if (!SH.ready) return; SH.editSeq++; clearTimeout(SH.timer); SH.timer = setTimeout(write, 250); render(); }
+  // One write at a time from this page (H1): a write asked for while another is in flight is remembered (SH.again) and runs once the first settles.
   function write() {
     clearTimeout(SH.timer); SH.timer = null;
     if (!SH.ready || SH.problem) return Promise.resolve();
+    if (SH.busy) { SH.again = true; return SH.busy; }
     var unticked = SH.unticked || {}; SH.unticked = {};
     var said = SH.note || ''; SH.note = ''; // a line to keep on show after this write (the write clears the status line when it folds duplicates)
-    return CC.writeSection('submersibles', S, { rev: SH.rev, base: SH.base }).then(function (r) {
+    var sent = JSON.parse(JSON.stringify(S)), seqAtSend = SH.editSeq; // what this write stores, and how many edits the page had made by then
+    var run = CC.writeSection('submersibles', S, { rev: SH.rev, base: SH.base }).then(function (r) {
       SH.rev = r.rev; SH.base = JSON.parse(JSON.stringify(r.section)); SH.chars = r.doc.chars; SH.updated = r.doc.updated || Date.now(); SH.notify = (r.doc.modules.settings && r.doc.modules.settings.notify) || SH.notify;
       if (r.merged) {
-        setSection(r.section); render();
+        // an edit made while the write ran is newer than the merged copy of what was sent: merge all three (what was sent, the page now, what is saved) and keep its write armed
+        setSection(SH.editSeq === seqAtSend ? r.section : F.reconcile(sent, S, r.section)); render();
         // R4: a sector the player unticked in the form just saved that another device or tab had ticked is kept (a merge never removes one); say so
         var lines = Object.keys(unticked).map(function (id) { var f = r.section.fcs && r.section.fcs[id]; return f ? F.cameBackLine(f.name, F.cameBack(f.discovered, unticked[id])) : ''; }).filter(Boolean);
         said = [said].concat(lines).filter(Boolean).join(' ');
@@ -127,13 +131,23 @@
         SH.rev = r.rev; SH.base = doc.modules.submersibles ? JSON.parse(JSON.stringify(doc.modules.submersibles)) : null;
         SH.chars = doc.chars; SH.updated = doc.updated || Date.now();
         // an edit made while this re-read ran goes with the rejected ones: its scheduled write would store the saved copy again and clear the line below
-        clearTimeout(SH.timer); SH.timer = null; SH.note = ''; SH.unticked = {};
+        clearTimeout(SH.timer); SH.timer = null; SH.again = false; SH.note = ''; SH.unticked = {};
         setSection(doc.modules.submersibles); render();
         setStatus('Not saved on this device: ' + e.message + ' The page now shows what is saved; re-enter any unsaved edits if you still need them.');
       }).catch(function () {
-        setStatus('Not saved on this device: ' + e.message + ' This page is blocked because it could not reload the saved data; your current edits remain visible.');
+        // the saved data cannot be shown again: nothing more is written from this page (H2)
+        clearTimeout(SH.timer); SH.timer = null; SH.again = false;
+        SH.problem = 'The saved data could not be reloaded after a refused save; reload the page to continue.';
+        render();
+        setStatus('Not saved on this device: ' + e.message + ' ' + SH.problem);
       });
     });
+    var done = run.catch(function () { /* settled below */ }).then(function () {
+      SH.busy = null;
+      if (SH.again) { SH.again = false; return write(); }
+    });
+    SH.busy = done;
+    return done;
   }
   // another page (the Tracker after a cloud sync, another window) saved: take its section, unless a change made here
   // is still waiting (that save merges with theirs)

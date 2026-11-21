@@ -138,6 +138,15 @@
     return !owned && !f.world && (f.unlockedSlots === undefined || f.unlockedSlots === 1) &&
       (f.discovered === undefined || (Array.isArray(f.discovered) && f.discovered.length === 2 && f.discovered[0] === 1 && f.discovered[1] === 2));
   };
+  // H1: the working copy after a write that finished while the player kept editing: the three-way merge of what the write sent
+  // (base), the copy now on the page (local) and the section the save returned (remote), by the save's own merge (the local
+  // unit wins a clash; a company changed on both sides is merged by CC.mergeUnit). Inputs are not changed.
+  F.reconcile = function (sent, local, remote) {
+    var CC = globalThis.CC, c = function (x) { return JSON.parse(JSON.stringify(x || {})); };
+    var out = CC.mergeModules({ submersibles: c(sent) }, { submersibles: c(local) }, { submersibles: c(remote) }).submersibles || {};
+    ['fcs', 'subs', 'trips', 'settings'].forEach(function (k) { if (!out[k]) out[k] = {}; });
+    return out;
+  };
   F.foldFcs = function (section) {
     var sec = JSON.parse(JSON.stringify(section || {})), fcs = sec.fcs || {}, removed = [];
     var bare = function (id) { return F.isBare(sec, id); };

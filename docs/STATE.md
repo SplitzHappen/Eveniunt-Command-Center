@@ -123,6 +123,10 @@ All on one pull request, not yet merged; specs in `docs/submersibles-s6-s4-spec.
   surveillance, retrieval or favor is counted as worth nothing (the community's reading, not confirmed).
 - The only licensed list of community routes holds ten routes, six of them the OJ family; other seas rely on routes the
   app finds from the drop rates.
+- A sync slot question whose answer keeps the side holding a submarine only one device has can remove a submarine both
+  devices held in that same slot, as the question's text says (the earlier two-record policy, pinned by INT-C3).
+- Page scheduling (the write timer, a write finishing while the player edits again) is covered by browser checks
+  (C141 and C142), not by the model test.
 - The default fuel allowance (15%) is the owner's choice; the tuning rule gives no single answer over the whole fleet.
 - With the default ranking, a submarine below the top rank in a free company that has found everything is levelled
   before it farms gil, until the player moves Gil Farming up.
