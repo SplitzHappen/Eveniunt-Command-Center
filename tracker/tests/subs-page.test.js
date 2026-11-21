@@ -36,6 +36,7 @@ async function page(seed) {
   h.SH.rev = first.rev; h.SH.base = clone(first.section); h.SH.chars = first.doc.chars; h.setSection(first.section);
   const other = { rev: first.rev, base: clone(first.section) }; // another tab: saves through the store with what it last read
   return Object.assign(h, {
+    cc,
     status, held, hold, other,
     edit: (fn) => { fn(h.S()); h.schedule(); },
     advance: (ms) => { clock.now += ms; timers.filter((t) => t.at <= clock.now).sort((a, b) => a.at - b.at).forEach((t) => { clearT(t.id); t.fn(); }); },
@@ -143,4 +144,21 @@ test('M1b another tab saves while this page\'s write is in flight and nothing is
   const st = await p.stored();
   assert.equal(st.subs.s1.name, 'Renamed'); assert.equal(st.subs.s3.name, 'Gamma');
   assert.equal((await CC.read()).rev, p.SH.rev, 'the page holds the stored revision again');
+});
+
+test('N1 a deferred reload on a blocked page reads nothing and raises no unhandled rejection', async () => {
+  const p = await page(SEED());
+  const rejections = []; const on = (e) => rejections.push(e); process.on('unhandledRejection', on);
+  try {
+    p.edit((S) => { S.subs.s1.name = 'Renamed'; });
+    p.hold.on = true; p.advance(250); await tick();
+    await p.otherSaves((s) => { s.subs.s3 = sub(3, 'Gamma'); });
+    await p.reload(); assert.equal(p.SH.reloadLater, true);
+    p.SH.problem = 'The save cannot be read here.';
+    const read = p.cc.read; let reads = 0; p.cc.read = function () { reads++; return Promise.reject(new Error('unreadable')); };
+    try { p.release(); await p.settle(); await tick(); await tick(); } finally { p.cc.read = read; }
+    assert.equal(p.SH.reloadLater, false);
+    assert.equal(reads, 0, 'no read is attempted on a blocked page');
+    assert.equal(rejections.length, 0);
+  } finally { process.off('unhandledRejection', on); }
 });

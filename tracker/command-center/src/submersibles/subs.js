@@ -157,7 +157,7 @@
       clearTimeout(slow); var el = $('#status'); if (el && el.textContent === SLOW_MSG) el.textContent = '';
       SH.busy = null;
       if (SH.again) { SH.again = false; return write(); }
-      if (SH.reloadLater) { SH.reloadLater = false; return reload(); } // another page saved while this write ran: show its change now
+      if (SH.reloadLater) { SH.reloadLater = false; if (!SH.problem) return reload().catch(function () { /* N1: a failed read changes nothing on the page */ }); } // another page saved while this write ran: show its change now
     });
     SH.busy = done;
     return done;
