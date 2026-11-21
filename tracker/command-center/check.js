@@ -5378,18 +5378,20 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const server = await start(PORT5);
       const { ctx, errors } = await context({ viewport: { width: 1280, height: 1000 } });
       const p1 = await si2Page(ctx, true);
-      await tlSeed(p1, SI2_FC + "1, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };"); await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
+      await tlSeed(p1, SI2_FC + "1, discovered: [1, 2, 3] }; sec.subs.s1 = { fcId: 'fa', slot: 1, name: 'First', rank: 50, voyage: null };");
+      await p1.evaluate(async () => { await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.chars = [{ id: 'c1', name: 'Alba', lodestone: null, cls: null, gc: 1 }]; doc.updated = Date.now(); return doc; }); }); // one character: the form's company and the other tab's company are for the SAME character
+      await p1.reload(); await p1.waitForSelector('html[data-ready="1"]');
       await p1.waitForFunction(() => window.__subs && window.__subs.startWizard);
       await p1.evaluate(() => window.__subs.startWizard()); await p1.waitForSelector('.wiz input[data-w="fc.name"]');
-      await p1.fill('.wiz input[data-w="fc.name"]', 'Typed New'); await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'New Sub');
+      await p1.fill('.wiz input[data-w="fc.name"]', 'Typed New'); await p1.selectOption('.wiz select[data-w="fc.charId"]', 'c1'); await p1.click('[data-act=wnext]'); await p1.fill('.wiz input[data-w=name]', 'New Sub');
       const p2 = await si2Page(ctx, false);
-      await si2Change(p2, "sec.fcs.fq = { name: 'Other Tab Company', world: 'Maduin', order: 5, unlockedSlots: 1, discovered: [1, 2, 3] }; sec.subs.sq = { fcId: 'fq', slot: 1, name: 'Other Sub', rank: 30, voyage: null };");
+      await si2Change(p2, "sec.fcs.fq = { name: 'Other Tab Company', charId: 'c1', world: 'Maduin', order: 5, unlockedSlots: 1, discovered: [1, 2, 3] }; sec.subs.sq = { fcId: 'fq', slot: 1, name: 'Other Sub', rank: 30, voyage: null };");
       await si2ToSave(p1); await p1.evaluate(() => { const b = document.querySelector('[data-act=wsave]'); b.click(); b.click(); }); await p1.waitForTimeout(2000);
       const s = await si2Stored(p1);
       await ctx.close();
       const named = Object.keys(s.fcs).filter((k) => s.fcs[k].name === 'Typed New'), orphans = Object.keys(s.subs).filter((k) => !s.fcs[s.subs[k].fcId]);
-      const ok = named.length === 1 && Object.keys(s.fcs).length === 3 && Object.keys(s.subs).length === 3 && orphans.length === 0 && Object.values(s.subs).some((x) => x.name === 'New Sub' && x.fcId === named[0]) && real(errors).length === 0;
-      record('C137', 'A new-company form racing another tab that adds a company, Save clicked twice (integrity spec 2): exactly one company from the form is stored with its submarine, the other tab\'s company and submarine are kept, and every submarine has its company; no page error', ok, { fcs: Object.keys(s.fcs), subs: s.subs, orphans, errors: real(errors) });
+      const ok = named.length === 1 && Object.keys(s.fcs).length === 3 && Object.keys(s.subs).length === 3 && orphans.length === 0 && Object.values(s.subs).some((x) => x.name === 'New Sub' && x.fcId === named[0]) && s.fcs[named[0]].charId === 'c1' && s.fcs.fq && s.fcs.fq.charId === 'c1' && s.subs.sq && s.subs.sq.fcId === 'fq' && s.fcs.fa && s.subs.s1 && s.subs.s1.fcId === 'fa' && real(errors).length === 0; // the clean-up of a character's duplicate companies may run: it must remove only an empty company, so no submarine loses its company (orphans) and both companies of that character stay
+      record('C137', 'A new-company form racing another tab that adds a company, Save clicked twice (integrity spec 2): exactly one company from the form is stored with its submarine, the other tab\'s company and submarine (both companies for the same character) are kept, and every submarine has its company; no page error', ok, { fcs: Object.keys(s.fcs), subs: s.subs, orphans, errors: real(errors) });
       server.close();
     });
 
