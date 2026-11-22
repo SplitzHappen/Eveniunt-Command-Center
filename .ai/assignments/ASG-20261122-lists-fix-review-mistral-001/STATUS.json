@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261122-lists-fix-review-mistral-001",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "mistral",
@@ -12,8 +12,11 @@
     "head_sha": "1b7641f3cbceecc467f73e961ce106844fd6c696",
     "ref": "claude/blissful-fermat-hrrqp5"
   },
-  "result_paths": [],
-  "result_commit": null,
-  "completed_at": null,
-  "disposition": null
+  "result_paths": [
+    ".ai/assignments/ASG-20261122-lists-fix-review-mistral-001/results/REVIEW.md",
+    ".ai/assignments/ASG-20261122-lists-fix-review-mistral-001/results/findings.json"
+  ],
+  "result_commit": "9cdbd08eac3c74988f0aef9acab4e1983cdc6a0b",
+  "completed_at": "2026-11-22T21:23:34Z",
+  "disposition": "Publish: all seven accepted findings verified fixed (each pinned by a test shown failing without the fix; unit ones reproduced by me on the unfixed source), no regressions (save.js/merge.js/prices untouched, no existing test or check edited beyond C145/C155), partly accepted finding and no-undo ruling agreed; 1 NOTE recorded."
 }
