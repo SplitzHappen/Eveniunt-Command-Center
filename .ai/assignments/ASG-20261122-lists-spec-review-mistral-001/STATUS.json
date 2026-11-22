@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "assignment_id": "ASG-20261122-lists-spec-review-mistral-001",
+  "status": "READY",
+  "work_class": "analysis",
+  "requested_by": "claude",
+  "assigned_to": "mistral",
+  "branch": "assignments/ASG-20261122-lists-spec-review-mistral-001",
+  "package_commit": "4cbbd2a61dcad314a2397201bef6e88b89452f0e",
+  "candidate": {
+    "pr": 4,
+    "head_sha": "0ef02e70124348347af684c35e02c47d60c97661",
+    "ref": "claude/blissful-fermat-hrrqp5"
+  },
+  "result_paths": [],
+  "result_commit": null,
+  "completed_at": null,
+  "disposition": null
+}
