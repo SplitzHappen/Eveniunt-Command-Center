@@ -323,3 +323,14 @@ test('nextWindow: Eorzea time windows, open now or next', () => {
   const H = 175000, w = L.nextWindow([1, 13], 180, 0); assert.deepEqual(w, { opensAt: H, closesAt: 4 * H, open: false });
   const o = L.nextWindow([1, 13], 180, 2 * H); assert.deepEqual([o.open, o.opensAt, o.closesAt], [true, H, 4 * H]);
 });
+
+test('LE-GONE a must-craft item whose recipe left the game data stays in the list and asks for nothing', () => {
+  const data = { items: { 1: ['Gil', 1, 0], 10: ['Y', 1, 0], 11: ['M', 1, 0] }, recipes: { 1000: [10, 1, 1, 1, 0, [[11, 2]], 0] }, gather: {}, trades: {}, npcs: {} };
+  const gone = T('t1', 12, 3, { make: true, recipe: 1999 }), keep = T('t2', 10, 1, { make: true, recipe: 1000 });
+  const lists = [list('A', [gone, keep])], copy = clone(lists), p = plan(lists, {}, data);
+  assert.deepEqual(lists, copy);
+  assert.equal(Object.keys(p.lines).some((k) => k.startsWith('12|')), false);
+  assert.ok(line(p, 10, 'make', 1000)); assert.equal(line(p, 11).need, 2);
+  assert.equal(Object.keys(plan([list('A', [gone])], {}, data).lines).length, 0);
+  assert.equal(L.tree(data, lists).has(12), false);
+});

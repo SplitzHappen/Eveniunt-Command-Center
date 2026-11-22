@@ -10,7 +10,7 @@
   var main = document.getElementById('view');
   // SH: the page's working state. sec: the saved section as last read or written (null when none is stored); rev and base: what the next write is
   // measured against (as in subs.js). queue: edits waiting for the write in flight. undo: the last 20 changes of this visit, newest first.
-  var SH = { problem: null, chars: [], sec: null, rev: null, base: null, queue: [], busy: null, reloadLater: false, undo: [], note: '', rest: null,
+  var SH = { problem: null, chars: [], tracker: null, log: null, sec: null, rev: null, base: null, queue: [], busy: null, reloadLater: false, undo: [], note: '', rest: null,
     view: { list: null, form: false, confirm: null, bought: null, mode: 'bought', search: '', tab: 'wanted', open: {}, step: null, hide: false, sheet: false, combined: false, combinedOwner: null } };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -229,7 +229,7 @@
       SH.problem = null;
       var doc = CC.emptyDoc();
       if (r.raw != null) { try { doc = CC.checkDoc(r.raw); } catch (e) { SH.problem = e.message; return; } } // unreadable or newer: never written over
-      SH.chars = doc.chars; SH.sec = doc.modules.lists || null; SH.rev = r.rev; SH.base = SH.sec ? clone(SH.sec) : null; syncPrefs();
+      SH.chars = doc.chars; SH.tracker = doc.modules.tracker || null; SH.sec = doc.modules.lists || null; SH.rev = r.rev; SH.base = SH.sec ? clone(SH.sec) : null; syncPrefs();
     }).catch(function (e) { SH.problem = e.message; });
   }
 
@@ -258,7 +258,7 @@
     }
     if (!res.entry && !res.expect) { render(); return null; } // nothing changed (a cleared amount keeps the old one)
     return CC.writeSection('lists', res.section, { rev: SH.rev, base: SH.base, expect: res.expect }).then(function (r) {
-      SH.rev = r.rev; SH.base = clone(r.section); SH.sec = r.section; SH.chars = r.doc.chars;
+      SH.rev = r.rev; SH.base = clone(r.section); SH.sec = r.section; SH.chars = r.doc.chars; SH.tracker = (r.doc.modules && r.doc.modules.tracker) || SH.tracker;
       SH.note = ''; SH.rest = null;
       if (isUndo) dropEntry(job.o.undoOf);
       else if (res.entry) { SH.undo.unshift(res.entry); if (SH.undo.length > 20) SH.undo.length = 20; }
@@ -270,7 +270,7 @@
       var elsewhere = !!(e && /on another device or in another tab/.test(e.message)); // the store's refusals (LI1 to LI5) all say so
       return CC.read().then(function (r) {
         var doc = r.raw == null ? CC.emptyDoc() : CC.checkDoc(r.raw);
-        SH.rev = r.rev; SH.chars = doc.chars; SH.sec = doc.modules.lists || null; SH.base = SH.sec ? clone(SH.sec) : null; syncPrefs();
+        SH.rev = r.rev; SH.chars = doc.chars; SH.tracker = doc.modules.tracker || null; SH.sec = doc.modules.lists || null; SH.base = SH.sec ? clone(SH.sec) : null; syncPrefs();
         if (isUndo && elsewhere) { dropEntry(job.o.undoOf); SH.note = S.lines.undo; } else SH.note = 'Not saved on this device: ' + e.message + ' The page now shows what is saved; re-enter any unsaved edits if you still need them.';
         SH.rest = null; render();
       }).catch(function () {
@@ -608,10 +608,94 @@
     return out;
   }
 
+
+  // ------------------------------------------------------------------------------------------------ from the crafting log (W10, spec sections 6 and 7)
+  // Which recipes of a crafting-log page a character has not ticked is read from the Tracker's section of the one save with the Tracker's own
+  // core scripts (core/model.js and core/codec.js: ET.fromSaveDoc, ET.isTicked, ET.isExcluded), loaded when this screen first needs them. The page
+  // only reads; nothing is written until Create. The log (data.log) holds the recipe ids of the Tracker's craft-* lists, one list per job.
+  var LOG_JOBS = ['Carpenter', 'Blacksmith', 'Armorer', 'Goldsmith', 'Leatherworker', 'Weaver', 'Alchemist', 'Culinarian'];
+  var ET_LOAD = null;
+  function loadCore() {
+    if (window.ET && window.ET.fromSaveDoc && window.ET.isTicked) return Promise.resolve();
+    if (!ET_LOAD) ET_LOAD = ['../core/model.js', '../core/codec.js'].reduce(function (p, src) {
+      return p.then(function () { return new Promise(function (ok, bad) { var el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = function () { bad(new Error('The Tracker’s reading code could not be opened.')); }; document.head.appendChild(el); }); });
+    }, Promise.resolve());
+    return ET_LOAD;
+  }
+  function trackerState() { return window.ET.fromSaveDoc({ chars: SH.chars, modules: { tracker: SH.tracker || {} } }); }
+  function sectionId(job) { return 'craft-' + LOG_JOBS[job].toLowerCase(); }
+  function logPages(job) { return (DATA.log && DATA.log[job]) || []; }
+  // { total, missing: [recipe ids] } of one character, job and page: applicable (not marked as not applying) and not ticked
+  function logCounts(charId, job, page) {
+    var st = trackerState(), key = function (id) { return window.ET.key(sectionId(job), id); }, ticks = new Set(), excl = new Set();
+    var pg = logPages(job)[page]; if (!pg) return { total: 0, missing: [] };
+    pg[1].forEach(function (id) { if (window.ET.isTicked(st, charId, key(id))) ticks.add(id); if (window.ET.isExcluded(st, charId, key(id))) excl.add(id); });
+    return { total: E.missing(DATA, new Set(), excl, job, page).length, missing: E.missing(DATA, ticks, excl, job, page) };
+  }
+  function openLog(o) { // o: { job, page, char } (anything may be null)
+    var chars = SH.chars || [];
+    SH.view.log = { job: o && o.job != null ? o.job : null, page: o && o.page != null ? o.page : null, char: o && o.char ? o.char : (chars.length === 1 ? chars[0].id : null), asked: false };
+    SH.view.list = null; SH.view.combined = false; SH.view.form = false; SH.view.confirm = null; SH.view.bought = null; SH.note = '';
+  }
+  // the Tracker's link: #from=<job 0-7>.<first recipe id of the page>&char=<cN>; read once, then removed. An unknown job or recipe opens the screen unfilled.
+  function readHash() {
+    var h = location.hash || '';
+    if (h.indexOf('#from=') !== 0) return Promise.resolve();
+    var m = /^#from=(\d+)\.(\d+)(?:&char=(c[1-8]))?$/.exec(h), o = { job: null, page: null, char: null };
+    if (m) {
+      var job = +m[1], rid = +m[2], pages = job < 8 ? logPages(job) : [];
+      for (var i = 0; i < pages.length; i++) if (pages[i][1].indexOf(rid) >= 0) { o.job = job; o.page = i; break; }
+      if (m[3] && (SH.chars || []).some(function (c) { return c.id === m[3]; })) o.char = m[3];
+    }
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ }
+    return loadCore().then(function () { openLog(o); render(); }, function (e) { SH.note = e.message; render(); });
+  }
+  function renderLog() {
+    var V = SH.view.log, chars = SH.chars || [], head = statusHtml(), job = V.job, pages = job != null ? logPages(job) : [], pg = V.page != null ? pages[V.page] : null;
+    var h = head + '<section class="lists-panel log-screen"><h2>From the crafting log</h2>';
+    if (!chars.length) {
+      main.innerHTML = h + '<p>Set up your characters in the Tracker first: the crafting log is read from what each character has ticked there.</p><p class="row">' + btn('Back', 'log-cancel') + '</p></section>';
+      return;
+    }
+    h += '<form class="lists-form" onsubmit="return false">' +
+      '<label>Job <select data-f="logjob"><option value="">Choose a job</option>' + LOG_JOBS.map(function (n, i) { return '<option value="' + i + '"' + (i === job ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Page <select data-f="logpage"' + (job == null ? ' disabled' : '') + '><option value="">Choose a page</option>' + pages.map(function (x, i) { return '<option value="' + i + '"' + (i === V.page ? ' selected' : '') + '>' + esc(x[0]) + '</option>'; }).join('') + '</select></label>';
+    if (V.char) h += '<label>Character <select data-f="logchar">' + chars.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === V.char ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>';
+    h += '</form>';
+    if (!pg) h += '<p class="muted">Choose a job and a page.</p>';
+    else if (!V.char) {
+      h += '<h3>For which character?</h3><p class="row">' + chars.map(function (c) { var n = logCounts(c.id, job, V.page).missing.length;
+        return '<button type="button" class="btn" data-act="log-char" data-char="' + esc(c.id) + '">' + esc(c.name) + ': ' + n + ' not ticked</button>'; }).join(' ') + '</p>';
+    } else {
+      var k = logCounts(V.char, job, V.page);
+      if (!k.missing.length) h += '<p class="log-empty">Everything on this page is ticked.</p>';
+      else h += '<p class="log-count">' + k.missing.length + ' of ' + k.total + ' not ticked in the Tracker</p><ul class="log-items">' + k.missing.map(function (id) { return '<li>' + esc(itemName(DATA.recipes[id][0])) + '</li>'; }).join('') + '</ul>';
+      h += '<p class="row">' + (k.missing.length ? btn('Create', 'log-create') + ' ' : '') + btn('Cancel', 'log-cancel') + '</p>';
+      main.innerHTML = h + '</section>'; return;
+    }
+    main.innerHTML = h + '<p class="row">' + btn('Cancel', 'log-cancel') + '</p></section>';
+  }
+  // one list, one wanted item with "Must be crafted by me" and no stored way for each entry, in one change (one Undo)
+  function logCreate(charId, job, page, ids) {
+    var title = (logPages(job)[page] || ['Crafting log'])[0], name = LOG_JOBS[job] + ': ' + title;
+    return function (s) {
+      var r = S.newList(s, { name: name, charId: charId, stamp: DATA.stamp }, CTX());
+      if (r.error) return r;
+      var units = r.entry ? r.entry.units.slice() : [], sec = r.section, i;
+      for (i = 0; i < ids.length; i++) {
+        var t = S.addTarget(sec, r.id, { item: DATA.recipes[ids[i]][0], recipe: ids[i], qty: 1, make: true }, CTX());
+        if (t.error) return t;
+        if (t.entry) units = units.concat(t.entry.units);
+        sec = t.section;
+      }
+      return { section: sec, entry: { label: 'Made the list “' + name + '”', units: units }, id: r.id };
+    };
+  }
+
   // ------------------------------------------------------------------------------------------------ screens
   function btn(label, act, extra, cls) { return '<button type="button" class="btn' + (cls ? ' ' + cls : '') + '" data-act="' + act + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
   function topButtons() {
-    return btn('New list', 'new') + ' <button type="button" class="btn" data-act="from-log" disabled title="Available in a coming step">From the crafting log</button>';
+    return btn('New list', 'new') + ' ' + btn('From the crafting log', 'from-log');
   }
   function statusHtml() {
     var h = '';
@@ -738,6 +822,7 @@
   function render() {
     if (SH.problem) { main.innerHTML = '<div class="lists-note"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.' + (SH.note ? ' ' + esc(SH.note) : '') + '</div>'; return; }
     PR.want = []; PR.dirty = false;
+    if (SH.view.log) { renderLog(); return; }
     if (SH.view.combined) renderCombined(); else if (SH.view.list) renderList(); else renderHome();
     loadPrices(false); // the one automatic attempt of this place (the service's own 15-minute gate decides)
   }
@@ -773,6 +858,14 @@
     var b = ev.target.closest('[data-act]'); if (!b || b.disabled) return;
     var a = b.getAttribute('data-act'), r = rowOf(b), c = ctxOf(b), listId = SH.view.list, card = b.closest('[data-list]');
     switch (a) {
+      case 'from-log': loadCore().then(function () { openLog(null); render(); }, function (e) { SH.note = e.message; render(); }); break;
+      case 'log-cancel': SH.view.log = null; render(); break;
+      case 'log-char': SH.view.log.char = b.getAttribute('data-char'); render(); break;
+      case 'log-create': {
+        var LV = SH.view.log, ids = logCounts(LV.char, LV.job, LV.page).missing, lch = LV.char;
+        act(logCreate(lch, LV.job, LV.page, ids), { after: function (x) { SH.view.log = null; if (x.id) openList(x.id); SH.view.tab = 'craft'; } });
+        break;
+      }
       case 'new': SH.view.form = true; render(); var nm = main.querySelector('[data-f=newname]'); if (nm) nm.focus(); break;
       case 'cancel-new': SH.view.form = false; render(); break;
       case 'create': {
@@ -850,6 +943,9 @@
   main.addEventListener('change', function (ev) {
     var el = ev.target, f = el.getAttribute && el.getAttribute('data-f'); if (!f) return;
     var r = rowOf(el), c = ctxOf(el), listId = SH.view.list;
+    if (f === 'logjob') { SH.view.log.job = el.value === '' ? null : +el.value; SH.view.log.page = null; render(); return; }
+    if (f === 'logpage') { SH.view.log.page = el.value === '' ? null : +el.value; render(); return; }
+    if (f === 'logchar') { SH.view.log.char = el.value; render(); return; }
     if (f === 'qty') act(function (s) { return labeled(S.setQty(s, r.list, r.tid, el.value), 'Changed an amount of ' + itemName(r.item)); });
     else if (f === 'have') act(function (s) { return labeled(S.setHave(s, c.owner, c.item, el.getAttribute('data-q'), el.value), 'Changed what you have of ' + itemName(c.item)); });
     else if (f === 'flag') act(function (s) { return labeled(S.setFlag(s, r.list, r.tid, el.getAttribute('data-flag'), el.checked), 'Changed a setting of ' + itemName(r.item)); });
@@ -869,6 +965,7 @@
   }
   window.__lists = { reload: reload, state: SH, data: function () { return DATA; }, section: function () { return SH.sec; }, hold: function (on) { SH.hold = !!on; }, combined: function () { return S.combined(sec()); }, plan: function (owner, noPrices) { return planOf(sec(), owner, noPrices); }, prices: function () { return { place: priceScope(), cache: cache(), error: failNow(), busy: PR.busy }; } };
   setInterval(tickWindows, 15000); // the minutes to a timed node's window move on without a redraw
+  window.addEventListener('hashchange', function () { if (DATA && !SH.problem) readHash(); });
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reload(); });
   if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) {
@@ -877,6 +974,6 @@
       document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reg.update().catch(function () { /* offline */ }); });
     }).catch(function () { /* works without offline support */ });
   }
-  Promise.all([loadData(), loadSave()]).then(function () { render(); document.documentElement.dataset.ready = '1'; })
+  Promise.all([loadData(), loadSave()]).then(function () { render(); return readHash(); }).then(function () { document.documentElement.dataset.ready = '1'; })
     .catch(function (e) { main.innerHTML = '<div class="lists-note"><b>The game data could not be opened.</b> ' + esc(e && e.message) + '</div>'; });
 })();

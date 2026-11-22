@@ -208,21 +208,21 @@
     }
     return { notes: notes, set: set };
   }
-  function liveItems(lists) {
+  function liveItems(lists, ix, data) {
     var roots = [], seen = {};
     for (var i = 0; i < (lists || []).length; i++) {
       var ts = (lists[i] && lists[i].targets) || EMPTY;
-      for (var j = 0; j < ts.length; j++) { var t = ts[j]; if (t && !t.done && nat(t.qty) > 0 && isFinite(+t.item) && !seen[t.item]) { seen[t.item] = 1; roots.push(+t.item); } }
+      for (var j = 0; j < ts.length; j++) { var t = ts[j]; if (t && !t.done && nat(t.qty) > 0 && isFinite(+t.item) && !seen[t.item] && !(ix && recipeGone(ix, data, t))) { seen[t.item] = 1; roots.push(+t.item); } }
     }
     return roots;
   }
   L.cuts = function (data, input) {
-    var ctx = makeCtx(data, input), g = reach(ctx, liveItems((input || {}).lists));
+    var ctx = makeCtx(data, input), g = reach(ctx, liveItems((input || {}).lists, ctx.ix, data));
     return cutLoops(ctx, g).notes;
   };
   // every item the wanted items could need, whatever the ways and the stock
   L.tree = function (data, lists) {
-    var ix = index(data), seen = new Set(), stack = liveItems(lists), v, i, j;
+    var ix = index(data), seen = new Set(), stack = liveItems(lists, ix, data), v, i, j;
     while (stack.length) {
       v = stack.pop();
       if (seen.has(v)) continue;
@@ -236,6 +236,10 @@
   };
 
   // ------------------------------------------------------------------------------------------------ the plan
+  // A must-craft item whose stored recipe is no longer in the data and which has no other recipe: it stays, and asks for nothing (spec 6).
+  function recipeGone(ix, data, t) {
+    return !!t.make && nat(t.recipe) > 0 && !(data.recipes && data.recipes[t.recipe]) && !(ix.ofItem[+t.item] || EMPTY).length;
+  }
   function classify(ctx, t) {
     var item = +t.item, data = ctx.data, rid = recipeChoice(ctx, item, t.recipe), note = null;
     if (t.make) {
@@ -278,6 +282,7 @@
         var t = ts[ti];
         if (!t || t.done || !isFinite(+t.item)) continue;
         var qty = nat(t.qty); if (qty < 1) continue;
+        if (recipeGone(ctx.ix, data, t)) continue;
         var cls = classify(ctx, t), tkey = info.id + '.' + (t.id != null ? t.id : ti);
         if (cls.note) notes.push({ kind: cls.note, item: +t.item, list: info.id, target: tkey, text: cls.note === 'coll-not-collectable' ? 'This cannot be made as a collectable; planned as an ordinary item.' : 'This cannot be made as a crafted item; planned as an ordinary item.' });
         var sid = t.step != null && info.idxOf[t.step] !== undefined ? t.step : info.first;
@@ -287,7 +292,7 @@
       }
     }
     // loops and the order items are settled in
-    var g = reach(ctx, liveItems(lists)), cut = cutLoops(ctx, g);
+    var g = reach(ctx, liveItems(lists, ctx.ix, data)), cut = cutLoops(ctx, g);
     var seenV = new Set(), post = [];
     g.nodes.forEach(function (root) {
       if (seenV.has(root)) return;

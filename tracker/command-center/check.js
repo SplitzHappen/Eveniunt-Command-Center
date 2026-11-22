@@ -6378,6 +6378,108 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── Lists, W10: the crafting log and the Atelier hand-over. The Tracker's section of the save is seeded in the page (ticks, a not-applicable mark, two characters). ──
+    const lSeedTracker = (pg, tracker) => pg.evaluate(async (tr) => {
+      await CC.transact((raw) => {
+        const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc();
+        doc.chars = [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }]; doc.modules.tracker = tr; doc.updated = Date.now();
+        return doc;
+      });
+    }, tracker);
+    const lLogText = (pg) => pg.evaluate(() => (document.querySelector('.log-screen') || {}).textContent || '');
+    const lLogState = (pg) => pg.evaluate(() => { const v = (n) => { const e = document.querySelector('[data-f=' + n + ']'); return e ? e.value : null; }; return { screen: !!document.querySelector('.log-screen'), job: v('logjob'), page: v('logpage'), char: v('logchar'), hash: location.hash }; });
+
+    // ── C158 (Lists, W10) From the crafting log, with the real data and seeded ticks: the new list holds exactly the unticked, applicable recipes of that page, each a wanted item with "Must be crafted by me" and no stored way, each planned as a craft although a gil merchant sells it, an entry that is another entry's material is crafted once for itself and bought as a material; opened with the Tracker's link (with and without a character) the job, page and character are chosen and the hash is removed; nothing is saved before Create; an unknown recipe opens the screen unfilled. ──
+    await guard('C158', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, data = await page.evaluate(() => { const d = window.__lists.data(); return { log: d.log[0][0], recipes: Object.fromEntries(d.log[0][0][1].map((i) => [i, d.recipes[i]])), trades: d.trades, stamp: d.stamp }; });
+      const ids = data.log[1], key = (i) => 'craft-carpenter:' + i;
+      // Alba has ticked the sixth and seventh and marked the eighth as not applying (the first is a material of the next four); Brio has ticked nothing
+      await lSeedTracker(page, { ticks: { c1: { [key(ids[5])]: 1, [key(ids[6])]: 1 }, c2: {} }, excl: { c1: { [key(ids[7])]: 1 }, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+      const want = ids.slice(0, 5), docBefore = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      const first = ids[0], base = ROOT5 + 'lists/';
+      const open = async (hash) => { await page.goto('about:blank'); await page.goto(base + hash); await lReady(page); await page.waitForSelector('.log-screen, .list-card, .lists-empty'); await page.waitForTimeout(300); };
+      // the link with a character
+      await open('#from=0.' + first + '&char=c1');
+      let st = await lLogState(page), tx = await lLogText(page);
+      ck.chosen = st.screen && st.job === '0' && st.page === '0' && st.char === 'c1' && st.hash === '';
+      ck.count = tx.includes(want.length + ' of ' + (ids.length - 1) + ' not ticked in the Tracker');
+      ck.notSaved = (await page.evaluate(async () => JSON.stringify((await CC.read()).raw))) === docBefore;
+      // the link without a character: both characters' counts, one tap each
+      await open('#from=0.' + first);
+      st = await lLogState(page); tx = await lLogText(page);
+      ck.asks = st.screen && st.job === '0' && st.page === '0' && st.char === null && st.hash === '' && /For which character\?/.test(tx) && tx.includes('Alba: ' + want.length + ' not ticked') && tx.includes('Brio: ' + (ids.length) + ' not ticked');
+      await page.click('[data-act=log-char][data-char=c2]');
+      ck.tapChooses = (await lLogState(page)).char === 'c2' && (await lLogText(page)).includes(ids.length + ' of ' + ids.length + ' not ticked');
+      ck.stillNotSaved = (await page.evaluate(async () => JSON.stringify((await CC.read()).raw))) === docBefore;
+      // an unknown recipe, and an unknown job, open the screen unfilled
+      await open('#from=0.999999999&char=c1'); st = await lLogState(page);
+      ck.unknownRecipe = st.screen && st.job === '' && st.page === '' && st.hash === '';
+      await open('#from=9.' + first); st = await lLogState(page);
+      ck.unknownJob = st.screen && st.job === '' && st.page === '' && st.hash === '';
+      // the button on Your lists opens the same screen; Create makes the list
+      await open('#from=0.' + first + '&char=c1');
+      await page.click('[data-act=log-create]'); await lSettle(page); await page.waitForSelector('[data-f=listname]');
+      const sec = await lStored(page), lists = Object.entries(sec.lists), ts = lTargets(sec);
+      ck.oneList = lists.length === 1 && lists[0][1].charId === 'c1' && /Level 1-5/.test(lists[0][1].name);
+      ck.exact = ts.length === want.length && want.every((r) => ts.some((t) => t.recipe === r && t.item === data.recipes[r][0] && t.qty === 1)) && ts.every((t) => t.make === true && !t.hq && !t.coll);
+      ck.noWay = Object.keys(sec.ways || {}).length === 0;
+      // the plan: every entry is a craft for itself although a gil merchant sells it; a material of another entry is bought
+      const gil = (it) => (data.trades[it] || []).some((o) => o[1].length === 1 && o[1][0][0] === 1);
+      const plan = await page.evaluate(() => { const p = window.__lists.plan('c1'); return Object.fromEntries(Object.entries(p.lines).map(([k, l]) => [k, { by: l.by, need: l.need, crafts: l.crafts, part: l.part }])); });
+      ck.allCraft = want.every((r) => { const l = plan[data.recipes[r][0] + '|make|' + r]; return l && l.part === 'make' && l.by === 'craft' && l.need === 1 && l.crafts === 1; });
+      ck.someSold = want.some((r) => gil(data.recipes[r][0]));
+      const mats = want.filter((r) => gil(data.recipes[r][0]) && want.some((o) => o !== r && data.recipes[o][5].some((x) => x[0] === data.recipes[r][0])));
+      ck.materialBought = mats.length > 0 && mats.every((r) => { const l = plan[data.recipes[r][0] + '|normal|0']; return l && l.by === 'vendor' && l.need > 0 && l.crafts === 0; });
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      // a page with nothing missing says so and offers no Create
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+      await lSeedTracker(page, { ticks: { c1: Object.fromEntries(ids.map((i) => [key(i), 1])), c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+      await open('#from=0.' + first + '&char=c1');
+      ck.allTicked = /Everything on this page is ticked\./.test(await lLogText(page)) && (await page.locator('[data-act=log-create]').count()) === 0;
+      record('C158', 'Lists page, from the crafting log (real data, seeded ticks): the new list holds exactly the unticked, applicable recipes of the page, each a wanted item with "Must be crafted by me" and no stored way and planned as a craft though a gil merchant sells it, an entry that is another entry\'s material is crafted once for itself and bought as a material; the Tracker\'s link (with and without a character) chooses job, page and character and removes the hash; nothing is saved before Create; an unknown recipe or job opens the screen unfilled; a fully ticked page says so',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C159 (Lists, W10) The "Solve in the Atelier" link opens the built Atelier on that recipe (real data); a recipe the Atelier lacks has no link. ──
+    await guard('C159', async () => {
+      const server = await start(PORT5);
+      const ck = {};
+      const c = await context({ serviceWorkers: 'block' }); const page = await c.ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const rec = await page.evaluate(() => { const d = window.__lists.data(), id = d.log[7][0][1][0]; return { id, job: d.recipes[id][2], item: d.recipes[id][0] }; });
+      await lSeedLists(page, [{ name: 'Atelier link', items: [[rec.item, 1, { make: true }]] }]);
+      await lOpenList(page, 'Atelier link', 'craft');
+      const link = page.locator('.craft-row a[href="../atelier/#recipe=' + rec.id + '"]');
+      ck.linkShown = (await link.count()) === 1 && /Solve in the Atelier/.test(await link.first().textContent());
+      const before = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      await link.first().click();
+      await page.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 90000 });
+      await page.waitForFunction((id) => window.__atelier.S.recipeId === id && !location.hash, rec.id, { timeout: 30000 });
+      const at = await page.evaluate(() => ({ url: location.pathname, job: window.__atelier.S.job, mode: window.__atelier.S.mode, id: window.__atelier.S.recipeId, hash: location.hash, spec: document.querySelector('#spec').textContent }));
+      ck.opensAtelier = /\/atelier\/$/.test(at.url) && at.job === rec.job && at.mode === 'recipes' && at.id === rec.id && at.hash === '' && /rlvl/.test(at.spec);
+      await page.waitForTimeout(900);
+      const after = await page.evaluate(async () => { const d = CC.checkDoc((await CC.read()).raw); return JSON.stringify(d.modules.lists); });
+      ck.listsUntouched = after === JSON.stringify(JSON.parse(before).modules.lists);
+      // a recipe the Atelier lacks (the build lists it in noHandOver) has no link
+      const f = JSON.parse(LISTS_FIXTURE); f.noHandOver = [1000];
+      const c2 = await context({ serviceWorkers: 'block' }); const p2 = await c2.ctx.newPage();
+      await c2.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + JSON.stringify(f) + ';' }));
+      await p2.goto(ROOT5 + 'lists/'); await lReady(p2);
+      await lSeedLists(p2, [{ name: 'No link', items: [[100, 1, { make: true }], [102, 1, { make: true }]] }]);
+      await lOpenList(p2, 'No link', 'craft');
+      const rows = await p2.evaluate(() => [...document.querySelectorAll('.craft-row')].map((r) => ({ item: +r.dataset.item, link: r.querySelector('a[href*="atelier"]') ? r.querySelector('a[href*="atelier"]').getAttribute('href') : null })));
+      ck.noLink = rows.some((r) => r.item === 100 && r.link === null) && rows.some((r) => r.item === 102 && /#recipe=\d+$/.test(r.link || ''));
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0 && real(c2.errors).length === 0;
+      record('C159', 'Lists page: "Solve in the Atelier" opens the built Atelier on that recipe (job, recipes mode, recipe chosen, hash removed) and saves nothing to the Lists section; a recipe the build lists as having no hand-over has no link',
+        Object.values(ck).every(Boolean), { ck, rec, at, rows, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
     // ── C161 (Lists, W8) The owner's case on the fixture, with a new list and the untouched order: the gil-merchant material is bought and its materials are left out, the other-currency material is crafted and not traded; the sheet shows the five sentences; "Craft it" first brings the craft and its materials back. ──
     await guard('C161', async () => {
       const server = await start(PORT5);
