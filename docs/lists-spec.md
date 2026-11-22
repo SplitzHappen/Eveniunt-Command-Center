@@ -900,6 +900,10 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   `save.js`, the Tracker's save, every existing `ui.test.js` test, the row layout at 360 px (no sideways scroll).
   Escalate if: an existing test needs an edit; the extra row disturbs the ledger's column layout; the Tracker cannot
   tell that it runs inside the Command Center without new stored state.
+- **W12 built (2026-11-22), choices accepted:** "inside the Command Center" is `IN_CC` (hosted over HTTP with a
+  service worker, the condition of the back link); the link's recipe id is the first key of the whole group whatever
+  the filter; the link shows when some character has an unticked, applicable entry, from the existing group counts;
+  two CSS rules (row and link); both handlers return at once for `[data-mklist]`. Browser tests 61 of 61 (36, 16, 9).
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
