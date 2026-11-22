@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261122-lists-fix-review-chatgpt-001",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "chatgpt",
@@ -12,8 +12,11 @@
     "head_sha": "1b7641f3cbceecc467f73e961ce106844fd6c696",
     "ref": "claude/blissful-fermat-hrrqp5"
   },
-  "result_paths": [],
-  "result_commit": null,
-  "completed_at": null,
-  "disposition": null
+  "result_paths": [
+    ".ai/assignments/ASG-20261122-lists-fix-review-chatgpt-001/results/REVIEW.md",
+    ".ai/assignments/ASG-20261122-lists-fix-review-chatgpt-001/results/findings.json"
+  ],
+  "result_commit": "0a2280dc0b83270d3ad484c12b8c52a5a7309d76",
+  "completed_at": "2026-11-22T21:17:48.610Z",
+  "disposition": "Publish after fixes: two accepted fixes remain incomplete and two minor issues remain."
 }
