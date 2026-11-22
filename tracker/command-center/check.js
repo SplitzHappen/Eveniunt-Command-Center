@@ -5647,7 +5647,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 2); fs.rmSync(tmp, { recursive: true, force: true }); }
       const newOnes = ['tracker', 'commandCenter', 'atelier'], oldOnes = ['oldTracker', 'oldAtelier'];
       const ok = Object.keys(pages).length === 5 && Object.values(pages).every((p) => p && p.sent === true && p.other === 'ok') && newOnes.every((n) => pages[n].hasChecker === 'function' && pages[n].checkedSame === true)
-        && oldOnes.every((n) => pages[n].hasChecker === 'undefined') && ['tracker', 'oldTracker'].every((n) => pages[n].tracker === 'saved' || pages[n].tracker === 'not run') && errs.every((e) => real(e).length === 0);
+        && oldOnes.every((n) => pages[n].hasChecker === 'undefined') && ['tracker', 'oldTracker'].every((n) => pages[n].tracker === 'saved') && errs.every((e) => real(e).length === 0);
       record('C145', 'The Lists section survives a save of another module (and the Tracker\'s own save) byte for byte in the three new builds and in the Tracker and Atelier builds shipped at the merge base (git show of ' + base.slice(0, 12) + '); the new builds\' checker CC.checkLists leaves it unchanged', ok, { pages, base });
       server.close();
     });
@@ -6271,7 +6271,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT5 + 'lists/'); await lReady(page);
       await page.evaluate((a) => { localStorage.setItem('eveniunt-subs-prices', a[0]); localStorage.setItem('eveniunt-subs-prices-tried', a[1]); }, [SUBS, SUBS_TRIED]);
       await lSeedMarket(page, [103, 111]); await lSeedLists(page, [{ name: 'Crafts', items: [[100, 1]] }]);
-      await lOpenList(page, 'Market'); await lTab(page, 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await lWaitPrices(page);
+      await lOpenList(page, 'Market'); await lTab(page, 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await page.waitForFunction(() => /fetched \d\d:\d\d$/.test((document.querySelector('.gsec[data-sec=market] .line-row[data-item="103"] .price-line') || {}).textContent || ''), null, { timeout: 15000 }); // W14: the fetched state itself, never "not Fetching" (which the row's first text also satisfies)
       let tx = await lPriceTexts(page);
       ck.fetchTime = /^100 gil before tax, North-America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && c.stand.asked.length === 1 && /listings=1&entries=20$/.test(c.stand.asked[0]);
       // the plan's ways are the same with and without prices
@@ -6376,6 +6376,178 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
       record('C157', 'Lists page, patch notice: with two data changes in a row (one recipe changed twice, a deep material\'s recipe removed) the notice names each change once, oldest row against today\'s, and nothing of the list is changed; "OK, noted" writes the new stamp and the notice stays away; a stamp outside the chain shows the plain sentence; a newer stamp and the current one show no notice',
         Object.values(ck).every(Boolean), { ck, ls, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── Lists, W14 (fixes from the outside code reviews): C167 the "Restored list" card on an orphan the shipped build leaves, C168 recipe-specific "Made" and "Bought it" and the cap at 999,999,
+    //    C169 the quality "Made" records, C170 the patch notice for an added recipe. ──
+    // ── C167 (Lists, W14) Wanted items whose list header is missing, left by the build shipped before Lists (it writes the section as plain data; written to a temporary folder with git show and served beside the site): the
+    //    page keeps them, shows them under "Restored list", plans nothing for them, and offers "Put these in a new list" (the header under the old id, nothing moves) and "Remove", both through undo. ──
+    await guard('C167', async () => {
+      const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
+      const base = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4';
+      try { gitOut(['cat-file', '-e', base + '^{commit}']); } catch (e) { throw new Error('the last build without Lists, 31cb0ba, cannot be read: ' + String(e.message).split('\n')[0]); }
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-orphan-')), dir = path.join(tmp, 'tracker'), rel = 'tracker/site';
+      for (const f of gitOut(['ls-tree', '-r', '--name-only', base, rel]).toString().split('\n').filter(Boolean)) { const dest = path.join(dir, f.slice(rel.length + 1)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, gitOut(['show', base + ':' + f])); }
+      const mounts = [[BASE + 'old-tracker/', dir]];
+      MOUNTS.unshift(...mounts);
+      const server = await start(PORT5);
+      const ck = {};
+      const errs = [];
+      try {
+        const O = 'l1aaaaaaaaaa', K = 'l2bbbbbbbbbb';
+        const sample = { v: 1, lists: { [K]: { name: 'Kept', charId: null, order: 0, made: 1760000001000 } },
+          targets: { [O + '.t1aaaaaaaaaa']: { item: 101, recipe: 1001, qty: 2, at: 1760000002000 }, [O + '.t2bbbbbbbbbb']: { item: 103, recipe: 0, qty: 7, at: 1760000003000 }, [K + '.t3cccccccccc']: { item: 100, recipe: 1000, qty: 1, at: 1760000004000 } },
+          ways: {}, owners: {}, have: {}, prefs: {} };
+        // a fresh browser context each: the shipped build writes the section (it keeps it as plain data), then the Lists page opens it
+        const fresh = async () => {
+          const c = await listsCtx(); errs.push(c);
+          const old = await c.ctx.newPage(); await old.goto(ROOT5 + 'old-tracker/');
+          await old.waitForFunction(() => typeof window.CC === 'object' && window.CC && typeof CC.writeSection === 'function', null, { timeout: 30000 });
+          await old.evaluate(async (sec) => { await CC.writeSection('lists', sec, null); }, sample);
+          await old.close();
+          const page = await c.ctx.newPage(); await page.goto(ROOT5 + 'lists/'); await lReady(page);
+          return page;
+        };
+        // (A) the card, nothing planned, "Put these in a new list"
+        let page = await fresh();
+        const s0 = JSON.stringify(await lStored(page)), card = { locator: (x) => page.locator('.lists-restored').locator(x), count: () => page.locator('.lists-restored').count(), textContent: () => page.locator('.lists-restored').textContent() };
+        ck.storedKept = Object.keys(JSON.parse(s0).targets).filter((k) => k.startsWith(O + '.')).length === 2 && !JSON.parse(s0).lists[O];
+        const txt = await card.textContent();
+        ck.card = (await card.count()) === 1 && (await card.locator('h2').textContent()) === 'Restored list' && /Iron Ingot × 2/.test(txt) && /Test Ore × 7/.test(txt) && (await page.locator('.list-card').count()) === 1;
+        ck.planned = JSON.stringify(await page.evaluate(() => __lists.plan('u').shares.map((s) => s.list))) === JSON.stringify([K]);
+        await card.locator('[data-act=restore-orphans]').click(); await lSettle(page);
+        const s1 = await lStored(page);
+        ck.restored = !!s1.lists[O] && s1.lists[O].name === 'Restored list' && JSON.stringify(s1.targets) === JSON.stringify(JSON.parse(s0).targets) && (await card.count()) === 0 && (await page.locator('.list-card').count()) === 2;
+        ck.planNow = JSON.stringify(await page.evaluate(() => __lists.plan('u').shares.map((s) => s.list).sort())) === JSON.stringify([O, K]);
+        ck.noUndoOffered = (await page.locator('[data-act=undo]').count()) === 0; // the save refuses to make an orphan again (LI2), so no Undo is offered for this
+        // (B) Remove: asked first, Keep keeps, Remove removes only these items; with no list left the card is still there
+        page = await fresh();
+        await card.locator('[data-act=ask-remove-orphans]').click();
+        ck.asks = /Remove these 2 wanted items\?/.test(await card.textContent());
+        await card.locator('[data-act=keep]').click(); ck.keeps = (await card.count()) === 1 && JSON.stringify(await lStored(page)) === s0;
+        await card.locator('[data-act=ask-remove-orphans]').click(); await card.locator('[data-act=remove-orphans]').click(); await lSettle(page);
+        const s2 = await lStored(page);
+        ck.removed = (await card.count()) === 0 && Object.keys(s2.targets).join() === K + '.t3cccccccccc' && !!s2.lists[K] && (await page.locator('[data-act=undo]').count()) === 0;
+        page = await fresh();
+        await page.locator('.list-card').first().locator('[data-act=ask-remove-list]').click(); await page.locator('.list-card').first().locator('[data-act=remove-list]').click(); await lSettle(page);
+        await page.reload(); await lReady(page);
+        ck.noLists = /No lists yet/.test(await page.locator('#view').textContent()) && (await card.count()) === 1 && /Iron Ingot × 2/.test(await card.textContent());
+        ck.noErrors = errs.every((c) => real(c.errors).length === 0 && c.external.length === 0);
+      } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 1); fs.rmSync(tmp, { recursive: true, force: true }); }
+      record('C167', 'Lists page, "Restored list": wanted items left without a list by the build shipped before Lists are kept and shown under "Restored list" (also with no list at all), no plan counts them, "Put these in a new list" gives them a header under the old id and moves nothing, "Remove" asks first and removes only them; no Undo is offered for either (the save refuses to make an orphan again)',
+        Object.values(ck).every(Boolean), { ck, errors: errs.map((c) => real(c.errors)), external: errs.map((c) => c.external) });
+      server.close();
+    });
+
+    // ── C168 (Lists, W14) Two recipes of one product (Iron Ingot, recipes 1001 and 1003, one wanted item each in two lists): the row shows the line of its own recipe; "Made" and "Bought it" act only on that recipe's wanted item;
+    //    a craft that would pass 999,999 keeps 999,999, counts the craft and says so. ──
+    await guard('C168', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec) {
+        let t = 9000; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'Ingot one', charId: null }, c()); sec = r.section; const a = r.id;
+        sec = S.addTarget(sec, a, { item: 101, recipe: 1001, qty: 2, make: true }, c()).section;
+        r = S.newList(sec, { name: 'Ingot two', charId: null }, c()); sec = r.section; const b = r.id;
+        sec = S.addTarget(sec, b, { item: 101, recipe: 1003, qty: 3, make: true }, c()).section;
+        sec = S.setHave(sec, 'u', 103, 'nq', 50).section; sec = S.setHave(sec, 'u', 104, 'nq', 50).section;
+        return sec;
+      });
+      const tgt = async (rec) => lTargets(await lStored(page)).filter((t) => t.recipe === rec)[0];
+      // each row shows the line of its own recipe
+      await lOpenList(page, 'Ingot two', 'wanted');
+      ck.rowTwo = /need 3,/.test(await lRow(page, 101).textContent());
+      await lOpenList(page, 'Ingot one', 'wanted');
+      ck.rowOne = /need 2,/.test(await lRow(page, 101).textContent());
+      // "Made 1" on recipe 1003 (makes 2) credits only the wanted item of recipe 1003
+      await lOpenList(page, 'Ingot two', 'craft');
+      const row = (lk) => page.locator('.craft-row[data-lk="' + lk + '"]');
+      await row('101|make|1003').locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.madeTwo = (await tgt(1003)).crafted === 2 && !(await tgt(1001)).crafted && (await lHave(page))['u.101'].nq === 2;
+      // "Made 1" on recipe 1001 credits only recipe 1001's
+      await lOpenList(page, 'Ingot one', 'craft');
+      await row('101|make|1001').locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.madeOne = (await tgt(1001)).crafted === 1 && (await tgt(1003)).crafted === 2;
+      // "Bought it" on recipe 1003 switches "Must be crafted by me" off on that wanted item only
+      await lOpenList(page, 'Ingot two', 'craft');
+      await row('101|make|1003').locator('[data-act=ask-bought][data-mode=bought]').click(); await row('101|make|1003').locator('[data-f=boughtn]').fill('1'); await row('101|make|1003').locator('[data-act=bought]').click(); await lSettle(page);
+      ck.boughtTwo = !(await tgt(1003)).make && (await tgt(1001)).make === true;
+      // the cap: 999,999 in stock, one more craft
+      await lSeedLists(page, [{ name: 'Capped', items: [[130, 3, { make: true }]], have: { 130: 999999, 103: 5 } }]);
+      await lOpenList(page, 'Capped', 'craft');
+      await page.locator('.craft-row[data-item="130"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.capKept = (await lHave(page))['u.130'].nq === 999999 && (await tgt(1011)).crafted === 1;
+      ck.capSays = (await lNote(page)).includes('Counts above 999,999 are kept at 999,999.');
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C168', 'Lists page, two recipes of one product: each row shows its own recipe\'s line, "Made" credits and "Bought it" switches off "Must be crafted by me" only on the wanted items of that recipe, in either list; a craft that would pass 999,999 keeps 999,999 in stock, still counts the craft and says "Counts above 999,999 are kept at 999,999."',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C169 (Lists, W14) "Made" on a must-craft line records the quality the wanted items ask for: high quality; collectable before high quality; and with two different qualities on one line a choice on the row
+    //    (high quality by default). ──
+    await guard('C169', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'HQ', items: [[101, 2, { make: true, hq: true }]], have: { 104: 20 } }, { name: 'Coll', items: [[160, 2, { make: true, coll: true, hq: true }]], have: { 103: 20 } },
+        { name: 'Mixed', items: [[161, 1, { make: true, hq: true }], [161, 1, { make: true }]], have: { 103: 20 } }]);
+      const stock = async (id) => (await lHave(page))['u.' + id];
+      await lOpenList(page, 'HQ', 'wanted');
+      ck.rowQuality = (await lRow(page, 101).getAttribute('data-q')) === 'hq' && /\(high quality\)/.test(await lRow(page, 101).textContent());
+      await lTab(page, 'craft');
+      ck.noChoice = (await page.locator('[data-f=madeq]').count()) === 0;
+      await page.locator('.craft-row[data-item="101"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      const h = await stock(101);
+      ck.hq = h.hq === 1 && !h.nq && !h.coll && lTargets(await lStored(page)).filter((t) => t.item === 101)[0].crafted === 1;
+      await lOpenList(page, 'Coll', 'craft');
+      await page.locator('.craft-row[data-item="160"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      const c = await stock(160);
+      ck.coll = c.coll === 1 && !c.nq && !c.hq;
+      await lOpenList(page, 'Mixed', 'craft');
+      const sel = page.locator('.craft-row[data-item="161"] [data-f=madeq]');
+      ck.choice = (await sel.count()) === 1 && (await sel.locator('option').evaluateAll((o) => o.map((x) => x.value))).join() === 'hq,nq' && (await sel.inputValue()) === 'hq';
+      await page.locator('.craft-row[data-item="161"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      let m = await stock(161);
+      ck.mixedDefault = m.hq === 1 && !m.nq;
+      await lOpenList(page, 'Mixed', 'craft');
+      const sel2 = page.locator('.craft-row[data-item="161"] [data-f=madeq]');
+      ck.choiceKeptAfter = (await sel2.count()) === 0 || (await sel2.locator('option').evaluateAll((o) => o.map((x) => x.value))).join() === 'nq';
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C169', 'Lists page, quality of "Made": a must-craft item that asks for high quality records high quality, collectable before high quality records collectable, the wanted row counts that quality, and one line with two different asked qualities shows a quality choice (high quality first)',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C170 (Lists, W14) The patch notice names a recipe the patch added ("can now be crafted"), also when an earlier patch changed no recipe (an empty entry in the chain). ──
+    await guard('C170', async () => {
+      const server = await start(PORT5);
+      const T0 = '1.00 aaaaaaaa bbbbbbbb', T1 = '1.01 aaaaaaaa bbbbbbbb', T2 = '1.02 aaaaaaaa bbbbbbbb';
+      const f = JSON.parse(LISTS_FIXTURE);
+      f.stamp = T2;
+      f.changes = [{ from: T0, to: T1, recipes: {}, gone: {} }, { from: T1, to: T2, recipes: { 1003: [null, f.recipes['1003']] }, gone: {} }];
+      const ck = {};
+      const c = await context({ serviceWorkers: 'block' }); const page = await c.ctx.newPage();
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + JSON.stringify(f) + ';' }));
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedLists(page, [{ name: 'Behind', items: [[100, 1]] }, { name: 'Older', items: [[100, 1]] }]);
+      await lSeed(page, new Function('S', 'sec', 'DATA', 'const st = ' + JSON.stringify({ Behind: T1, Older: T0 }) + '; Object.keys(sec.lists).forEach((k) => { sec.lists[k].data = st[sec.lists[k].name]; }); return sec;'));
+      const lines = () => page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent));
+      await lOpenList(page, 'Behind');
+      const a = await lines();
+      ck.added = a.length === 1 && a[0] === 'Iron Ingot can now be crafted from 3 Test Ore.';
+      await lOpenList(page, 'Older');
+      const b = await lines();
+      ck.throughEmptyEntry = b.length === 1 && b[0] === a[0] && !/not available/.test(await page.textContent('.patch-notice'));
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C170', 'Lists page, patch notice: a recipe the patch added is named ("Iron Ingot can now be crafted from 3 Test Ore."), also for a list whose stamp is before an earlier patch that changed no recipe',
+        Object.values(ck).every(Boolean), { ck, a, b, errors: real(c.errors), external: c.external });
       void server;
     });
 

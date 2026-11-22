@@ -247,3 +247,53 @@ test('LD-10 an item with more than four offers keeps every distinct one; only ex
   }
   assert.ok(many > 0);
 });
+
+// ---------------------------------------------------------------- fix 5 of work item W14: added recipes and empty stamp changes
+// The tool is run on a made-up cache; the earlier file is then rewritten to look like an older patch and the tool is run again.
+const NOW = '7.57h1 44948e4c 70429e21';
+function earlierFile(edit) {
+  const out = tmp(), cache = tmp(), f = path.join(out, 'l.json');
+  writeCache(cache, { recipes: GOOD(), shops: SHOPS() });
+  assert.equal(run(cache, f, 2).status, 0);
+  const L = JSON.parse(fs.readFileSync(f, 'utf8'));
+  const rows = JSON.parse(JSON.stringify(L.recipes));
+  edit(L);
+  fs.writeFileSync(f, JSON.stringify(L));
+  assert.equal(run(cache, f, 2).status, 0);
+  return { N: JSON.parse(fs.readFileSync(f, 'utf8')), rows, f, cache };
+}
+
+test('LD-11 a recipe added by the patch is recorded with a null old row, with nothing else changed', () => {
+  const { N, rows } = earlierFile((L) => { delete L.recipes[2]; L.stamp = 'prev 22222222 33333333'; });
+  assert.equal(N.changes.length, 1);
+  assert.equal(N.changes[0].from, 'prev 22222222 33333333');
+  assert.equal(N.changes[0].to, NOW);
+  assert.deepEqual(N.changes[0].recipes, { 2: [null, rows[2]] });
+  assert.deepEqual(N.changes[0].gone, {});
+});
+
+test('LD-12 an added recipe, a changed one and a removed one are all recorded in one entry', () => {
+  const fake = [99, 1, 1, 1, 0, [[13, 4]], 1];
+  const { N, rows } = earlierFile((L) => { delete L.recipes[2]; L.recipes[1][1] = 9; L.recipes[3] = fake; L.stamp = 'prev 22222222 33333333'; });
+  assert.equal(N.changes.length, 1);
+  const e = N.changes[0], was1 = JSON.parse(JSON.stringify(rows[1])); was1[1] = 9;
+  assert.deepEqual(e.recipes, { 1: [was1, rows[1]], 2: [null, rows[2]] });
+  assert.deepEqual(e.gone, { 3: fake });
+});
+
+test('LD-13 a stamp change with no recipe difference still writes an (empty) entry linking the two stamps', () => {
+  const { N } = earlierFile((L) => { L.stamp = 'prev 22222222 33333333'; });
+  assert.deepEqual(N.changes, [{ from: 'prev 22222222 33333333', to: NOW, recipes: {}, gone: {} }]);
+});
+
+test('LD-14 two patches in a row: the earlier entry is kept and the new one chains from its `to`', () => {
+  const earlier = { from: 'old 00000000 00000000', to: 'prev 22222222 33333333', recipes: {}, gone: {} };
+  const { N, rows, f, cache } = earlierFile((L) => { delete L.recipes[2]; L.stamp = 'prev 22222222 33333333'; L.changes = [earlier]; });
+  assert.equal(N.changes.length, 2);
+  assert.deepEqual(N.changes[0], earlier);
+  assert.equal(N.changes[1].from, earlier.to);
+  assert.equal(N.changes[1].to, NOW);
+  assert.deepEqual(N.changes[1].recipes, { 2: [null, rows[2]] });
+  assert.equal(run(cache, f, 2).status, 0); // a run on the same stamp and recipes adds nothing
+  assert.equal(JSON.parse(fs.readFileSync(f, 'utf8')).changes.length, 2);
+});

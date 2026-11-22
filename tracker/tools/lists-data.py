@@ -26,7 +26,7 @@ Output tables (all ids are game row ids; compact arrays):
           hold none).
   trades  {item: [[gives, [[currency, amount]...], hq 0/1, gcRank or 0, npc]...]}   gil-only offers first.
   npcs    {npc: [name, zone]}   sellers named in trades whose name or place is known.
-  changes [{from, to, recipes: {id: [old row, new row]}, gone: {id: old row}}]   (the `log` table is added by W6)
+  changes [{from, to, recipes: {id: [old row or null, new row]}, gone: {id: old row}}]   (the `log` table is added by W6)
 
 Closure: the file holds every item that is a recipe's result or ingredient and every currency of a kept offer, and for
 each of those its own offers and nodes, repeated until nothing new is added.
@@ -125,10 +125,18 @@ def find_loop(recipes):
 
 
 def compare(old, recipes, old_stamp, new_stamp):
-    """The `changes` entry for recipes that differ from the previous file, or None when none do."""
-    changed = {str(k): [old[str(k)], recipes[k]] for k in sorted(recipes) if str(k) in old and old[str(k)] != recipes[k]}
+    """The `changes` entry from the previous file to this one, or None when neither the stamp nor any recipe differs.
+    `recipes` holds [old row, new row] for a changed recipe and [null, new row] for an added one; `gone` the old row of a removed one.
+    A stamp change with no recipe difference still gives an entry (empty), so a list's stamp always chains to the newest."""
+    changed = {}
+    for k in sorted(recipes):
+        key = str(k)
+        if key not in old:
+            changed[key] = [None, recipes[k]]
+        elif old[key] != recipes[k]:
+            changed[key] = [old[key], recipes[k]]
     gone = {k: old[k] for k in sorted(old, key=int) if int(k) not in recipes}
-    if not changed and not gone:
+    if not changed and not gone and old_stamp == new_stamp:
         return None
     return {"from": old_stamp, "to": new_stamp, "recipes": changed, "gone": gone}
 

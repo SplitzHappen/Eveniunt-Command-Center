@@ -298,3 +298,64 @@ test('ST-15 a step handed in marks its items finished and lowers only their own 
   // a row's Finished changes no stock count
   const f = ok(S.setDone(sec, b.lid, tid(b.k1), true)); assert.equal(J(f.section.have), J(sec.have));
 });
+
+// ---- W14 (outside code reviews, 2026-11-22), fix 1: a count the store would raise above 999,999 is kept at 999,999 and the result says so
+test('ST-16 a record or a purchase that would pass 999,999 keeps 999,999 in every quality, never loses the count, and says so', () => {
+  const lineOf = (sec, key) => { const p = planOf(sec, 'c1'); return { p, ln: p.lines[key] }; };
+  const stocked = (sec, item, q, n) => ok(S.setHave(sec, 'c1', item, q, n)).section;
+  // ordinary quality, a make line, one craft that makes one
+  let b = base(), sec = stocked(b.sec, 130, 'nq', 999999), { p, ln } = lineOf(sec, '130|make|1011');
+  let r = ok(S.record(sec, D, 'c1', p, { line: ln, times: 1, targets: { [b.k3]: 1 } }));
+  assert.equal(r.section.have['c1.130'].nq, 999999, 'ordinary stock is kept, not dropped');
+  assert.equal(r.section.targets[b.k3].crafted, 1, 'the craft is still counted'); assert.equal(r.capped, true);
+  assert.equal(r.section.have['c1.103'].nq, 9, 'the material is still taken');
+  assert.equal(ok(S.undo(r.section, r.entry)).section.have['c1.130'].nq, 999999);
+  // a multi-yield craft (Triple Gem makes 3): 999,998 + 3 is capped, 999,990 + 3 is not
+  b = base(); let k = ok(S.addTarget(b.sec, b.lid, { item: 120, recipe: 1010, qty: 3 }, ctx())).section;
+  k = stocked(k, 120, 'nq', 999998); p = planOf(k, 'c1');
+  const gem = '120|normal|0'; assert.equal(p.lines[gem].by, 'craft'); assert.equal(p.lines[gem].yield, 3);
+  r = ok(S.record(k, D, 'c1', p, { line: p.lines[gem], times: 1 })); assert.equal(r.section.have['c1.120'].nq, 999999); assert.equal(r.capped, true);
+  const k2 = stocked(k, 120, 'nq', 999990); p = planOf(k2, 'c1');
+  r = ok(S.record(k2, D, 'c1', p, { line: p.lines[gem], times: 1 })); assert.equal(r.section.have['c1.120'].nq, 999993); assert.ok(!r.capped);
+  // high quality and collectable stock, the quality chosen by the caller
+  b = base(); sec = stocked(b.sec, 130, 'hq', 999999); ({ p, ln } = lineOf(sec, '130|make|1011'));
+  r = ok(S.record(sec, D, 'c1', p, { line: ln, times: 2, quality: 'hq', targets: { [b.k3]: 2 } }));
+  assert.equal(r.section.have['c1.130'].hq, 999999); assert.equal(r.section.targets[b.k3].crafted, 2); assert.equal(r.capped, true);
+  sec = stocked(b.sec, 130, 'coll', 999999); ({ p, ln } = lineOf(sec, '130|make|1011'));
+  r = ok(S.record(sec, D, 'c1', p, { line: ln, times: 1, quality: 'coll', targets: { [b.k3]: 1 } }));
+  assert.equal(r.section.have['c1.130'].coll, 999999); assert.equal(r.capped, true);
+  // another quality of the same item is untouched by the cap
+  sec = stocked(stocked(b.sec, 130, 'hq', 999999), 130, 'nq', 5); ({ p, ln } = lineOf(sec, '130|make|1011'));
+  r = ok(S.record(sec, D, 'c1', p, { line: ln, times: 1, quality: 'hq', targets: { [b.k3]: 1 } }));
+  assert.deepEqual(r.section.have['c1.130'], { nq: 5, hq: 999999, coll: 0 });
+  // "Bought it" caps too (it used to refuse)
+  sec = stocked(b.sec, 111, 'nq', 999998);
+  r = ok(S.bought(sec, { owner: 'c1', item: 111, quality: 'nq', units: 5 })); assert.equal(r.section.have['c1.111'].nq, 999999); assert.equal(r.capped, true);
+  r = ok(S.bought(r.section, { owner: 'c1', item: 111, quality: 'nq', units: 1 })); assert.equal(r.entry, null); assert.equal(r.capped, true);
+  r = ok(S.bought(stocked(b.sec, 111, 'nq', 10), { owner: 'c1', item: 111, quality: 'nq', units: 5 })); assert.equal(r.section.have['c1.111'].nq, 15); assert.ok(!r.capped);
+  assert.equal(S.lines.capped, 'Counts above 999,999 are kept at 999,999.');
+});
+
+// ---- W14 fix 2: wanted items without their list ("Restored list")
+test('ST-17 wanted items without a list are listed, put in a new list under the old id (nothing moves) or removed, the page offers no Undo for either (the save refuses to make an orphan again, LI2)', () => {
+  const b = base(), ghost = 'gh0stlist001';
+  const sec = clone(b.sec); sec.targets[ghost + '.aaaaaaaaaaa1'] = { item: 101, recipe: 1001, qty: 2, at: 5 }; sec.targets[ghost + '.aaaaaaaaaaa2'] = { item: 103, recipe: 0, qty: 7, at: 6 };
+  const held = S.norm(sec);
+  assert.deepEqual(S.orphans(held), { [ghost]: [ghost + '.aaaaaaaaaaa1', ghost + '.aaaaaaaaaaa2'] }, 'the checker keeps them and they are found');
+  assert.deepEqual(S.orphans(b.sec), {});
+  assert.deepEqual(Object.keys(S.stateOf(held, 'u').targets), [], 'no plan counts them: no owner has them');
+  assert.deepEqual(Object.keys(S.stateOf(held, 'c1').targets).filter((k) => k.startsWith(ghost)), []);
+  // put in a new list: the header takes the old id; the wanted items are byte for byte what they were
+  const r = ok(S.restoreList(held, ghost, ctx()));
+  assert.equal(r.id, ghost); assert.equal(r.section.lists[ghost].name, 'Restored list'); assert.equal(r.section.lists[ghost].charId, null);
+  assert.equal(J(r.section.targets), J(held.targets), 'no wanted item moved or changed');
+  assert.deepEqual(S.orphans(r.section), {});
+  assert.deepEqual(r.entry.units.map((u) => u.g), ['lists']);
+  assert.ok(S.restoreList(r.section, ghost, ctx()).error, 'a list that is back is not restored again');
+  assert.ok(S.restoreList(held, 'nolist000000', ctx()).error, 'nothing to restore');
+  // remove: only the orphans' wanted items; other lists and stock are untouched
+  const d = ok(S.removeOrphans(held, ghost));
+  assert.deepEqual(S.orphans(d.section), {}); assert.equal(J(d.section.lists), J(held.lists)); assert.equal(J(d.section.have), J(held.have));
+  assert.equal(Object.keys(d.section.targets).length, Object.keys(held.targets).length - 2);
+  assert.ok(S.removeOrphans(r.section, ghost).error, 'a list that is back is removed only as a list');
+});

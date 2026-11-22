@@ -21,6 +21,7 @@
     targets: 'This list is full: 2,000 items.',
     steps: 'This list has 20 steps, the most it can have.',
     have: 'Your stock is full: 20,000 different items. Clear one first.',
+    capped: 'Counts above 999,999 are kept at 999,999.',
     undo: 'Undo was not done: this was changed again since, here or on another device. Nothing was changed.'
   };
   var WAYS = ['vendor', 'craft', 'gather', 'trade', 'market', 'have'];
@@ -48,16 +49,17 @@
   function session(sec) {
     var orig = norm(sec), draft = clone(orig), touched = [], seen = {};
     return {
-      orig: orig, d: draft,
+      orig: orig, d: draft, capped: false,
       touch: function (g, k) { var id = g + '\u0000' + k; if (!seen[id]) { seen[id] = 1; touched.push([g, k]); } },
       finish: function (label) {
-        var out = norm(draft), units = [];
+        var out = norm(draft), units = [], r;
         touched.forEach(function (t) {
           var b = text(orig[t[0]][t[1]]), a = text(out[t[0]][t[1]]);
           if (b !== a) units.push({ g: t[0], k: t[1], before: b, after: a });
         });
-        if (!units.length) return { section: orig, entry: null };
-        return { section: out, entry: { label: label, units: units } };
+        r = units.length ? { section: out, entry: { label: label, units: units } } : { section: orig, entry: null };
+        if (this.capped) r.capped = true; // a count was kept at 999,999 (the page says so)
+        return r;
       }
     };
   }
@@ -127,6 +129,34 @@
     Object.keys(d.targets).forEach(function (k) { if (k.slice(0, k.indexOf('.')) === listId) { delete d.targets[k]; s.touch('targets', k); } });
     delete d.lists[listId]; s.touch('lists', listId);
     return s.finish('Removed the list “' + (h.name || 'Untitled list') + '”');
+  };
+  // Wanted items whose list header is missing (only an older build's sync or a hand-edited save leaves them; spec section 4, "Restored list"):
+  // { '<listId>': ['<listId>.<targetId>', ...] }, every key sorted. They are kept; nothing plans them until the list is back.
+  S.orphans = function (sec) {
+    var d = norm(sec), out = {};
+    Object.keys(d.targets).forEach(function (k) { var id = k.slice(0, k.indexOf('.')); if (!d.lists[id]) (out[id] = out[id] || []).push(k); });
+    return out;
+  };
+  // "Put these in a new list": a header under the old id, so every wanted item stays under its own key and nothing moves. Returns { section, entry, id }.
+  S.restoreList = function (sec, listId, ctx) {
+    var s = session(sec), d = s.d;
+    if (d.lists[listId]) return fail('That list is back already.');
+    var keys = Object.keys(d.targets).filter(function (k) { return k.slice(0, k.indexOf('.')) === listId; });
+    if (!keys.length) return fail(NO_ITEM);
+    if (Object.keys(d.lists).length >= LIMITS.lists) return fail(LINES.lists);
+    var order = 0;
+    Object.keys(d.lists).forEach(function (k) { order = Math.max(order, (d.lists[k].order || 0) + 1); });
+    d.lists[listId] = { name: 'Restored list', charId: null, order: Math.min(order, 9999), made: nowOf(ctx) }; s.touch('lists', listId);
+    var r = s.finish('Put wanted items in a new list'); r.id = listId; return r;
+  };
+  // "Remove" on a Restored list: its wanted items only; refused when the list is back (then it is an ordinary list)
+  S.removeOrphans = function (sec, listId) {
+    var s = session(sec), d = s.d;
+    if (d.lists[listId]) return fail('That list is back already.');
+    var n = 0;
+    Object.keys(d.targets).forEach(function (k) { if (k.slice(0, k.indexOf('.')) === listId) { delete d.targets[k]; s.touch('targets', k); n++; } });
+    if (!n) return fail(NO_ITEM);
+    return s.finish('Removed the wanted items of a Restored list');
   };
   S.addStep = function (sec, listId, name, ctx) {
     var s = session(sec), d = s.d, h = d.lists[listId];
@@ -204,6 +234,7 @@
   };
 
   // ------------------------------------------------------------------------------------------------ stock
+  var CAP = S.cap = 999999;
   function haveOf(d, owner, item) { var e = d.have[owner + '.' + item]; return { nq: (e && e.nq) || 0, hq: (e && e.hq) || 0, coll: (e && e.coll) || 0 }; }
   // store one stock count of the owner; all zeros removes the unit. refuseNew: apply the limit on a new unit.
   function putHave(s, owner, item, e, refuseNew) {
@@ -244,7 +275,7 @@
     if (u === null || u < 1) return fail('Enter how many you bought: 1 or more.');
     var have = {}; have[o.item] = haveOf(d, o.owner, o.item);
     var after = L.bought(have, o.item, u, o.quality)[o.item];
-    if (after[o.quality] > 999999) return fail('A count can be 0 to 999,999.');
+    if (after[o.quality] > CAP) { after[o.quality] = CAP; s.capped = true; } // never a count the save's checker would drop
     var err = putHave(s, o.owner, o.item, { nq: after.nq || 0, hq: after.hq || 0, coll: after.coll || 0 }, true); if (err) return fail(err);
     (o.makeKeys || []).forEach(function (k) { var t = d.targets[k]; if (t && t.make) { delete t.make; s.touch('targets', k); } });
     return s.finish('Bought it');
@@ -299,6 +330,7 @@
     Object.keys(items).forEach(function (i) {
       var a = state.have[i] || {}, b = res.have[i] || {};
       var e0 = { nq: a.nq || 0, hq: a.hq || 0, coll: a.coll || 0 }, e1 = { nq: b.nq || 0, hq: b.hq || 0, coll: b.coll || 0 };
+      QUALITIES.forEach(function (q) { if (e1[q] > CAP) { e1[q] = CAP; s.capped = true; } }); // never write a count the save's checker would drop
       if (JSON.stringify(e0) === JSON.stringify(e1)) return;
       err = putHave(s, owner, i, e1, refuseNew) || err;
     });
@@ -309,7 +341,8 @@
     });
     return err;
   }
-  // "Made" (D26, E12): stock and `crafted` in one change; never refused, so the stock-count limit does not apply to it.
+  // "Made" (D26, E12): stock and `crafted` in one change; never refused, so the stock-count limit does not apply to it;
+  // a count the craft would raise above 999,999 is kept at 999,999 and the result carries `capped` (W14, outside code review).
   // o = { line, times, quality, targets: { '<listId>.<targetId>': n } }. Returns { section, entry, short }.
   S.record = function (sec, data, owner, plan, o) {
     var s = session(sec), state = S.stateOf(sec, owner), res = L.record(data, state, plan, o);
