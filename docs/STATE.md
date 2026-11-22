@@ -114,7 +114,10 @@ Last updated: 2026-11-21.
     the checks red after merging. Two notes kept as known limits (below).
   - Outside code reviews, 2026-11-22 (third round, owner's request): ChatGPT "do not publish", Mistral "publish after
     fixes". Seven findings accepted and fixed (W14), one accepted in part; `docs/lists-code-review-adjudication.md`.
-    Totals after the fixes: unit 576 of 576, browser 61 of 61, full check 175 of 175 (C26b not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
+    Totals after the fixes: unit 576 of 576, browser 61 of 61, full check 175 of 175 (C26b not run).
+  - Review of the fixes, 2026-11-22 (fourth round, owner's request): Mistral "publish", ChatGPT "publish after
+    fixes" (two fixes incomplete, two minor). All four fixed (W15). Totals: unit 577 of 577, browser 61 of 61, full
+    check 179 of 179 (C26b not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
 
 ## Decided, being planned
 
@@ -146,6 +149,11 @@ Last updated: 2026-11-21.
 - A new app icon.
 
 ## Known limits
+
+- Lists: an orphaned wanted item (left without its list by an old build's sync) that one device removed is removed by
+  the next sync without a question when the other device holds it unchanged; the removal was the player's own action
+  on that device (ChatGPT advised asking; ruled otherwise, Mistral agreed). The Restored list card's actions have no
+  undo; Remove asks first.
 
 - Lists: a page writing from an out-of-date copy wins a clash on the same stock count with another tab without a
   question (the rule every module uses; the page reloads on any change and when the tab is shown again). Undo is

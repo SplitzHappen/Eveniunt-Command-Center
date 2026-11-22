@@ -949,6 +949,12 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   (4) C166 waits for each expected price result, not for the absence of "Fetching". Each fix gets a test that fails
   without it. Accept: build twice, unit, browser, full `npm run check`; no existing test or check edited except C166's
   wait; `save.js` and `merge.js` unchanged.
+- **W15 built (2026-11-22), choices accepted:** high-quality output goes to high-quality items first, then ordinary ones;
+  collectable output only to collectable items; a must-craft row without a plan line shows "crafted c of qty" with its
+  own recipe's job and level; the list bar's character becomes a select (`store.setListChar`), and changing it takes the
+  list out of the combined view; restoring asks for the character. C171 to C174 added; the orchestrator re-checked C171
+  by undoing only the quality filter (it fails). Totals at ae4cd2c: unit 577 of 577, browser 61 of 61, full check 179 of
+  179 (C26b not run).
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
