@@ -904,6 +904,15 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   service worker, the condition of the back link); the link's recipe id is the first key of the whole group whatever
   the filter; the link shows when some character has an unticked, applicable entry, from the existing group counts;
   two CSS rules (row and link); both handlers return at once for `[data-mklist]`. Browser tests 61 of 61 (36, 16, 9).
+- **W11 built (2026-11-22), choices accepted:** role hues (oklch) craft 250, gather 140, merchant 80, market 315,
+  ready 195, short 25; pale fill with dark text in light mode, dark fill with pale text in dark mode, a 1 px edge in the
+  text tone; lowest contrast 8.03:1 text on fill and 6.42:1 text on page, panel or paper over 21 themes × 2 modes; a
+  trade row uses the merchant role with the word "Trade"; Other and Not in your typed stock use the short role; way
+  pills, "to get N" and "N of M ready" pills added in `lists.js`; 18 screenshots `evidence/lists-*.png` (L2 walks the
+  fixture). Orchestrator fixes after reviewing the screenshots: each sentence of a row's reason capitalised; the price
+  place select fits 360 px. Totals at 5ec6c31: unit 570 of 570, browser 61 of 61, full check 171 of 171 (C26b not
+  run, the browser push service is unreachable from the session; run on 7ab3019, then C150, C152, C153, C155, C160 to
+  C163 and C166 re-run after the fixes, 9 of 9).
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
