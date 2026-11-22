@@ -2759,16 +2759,17 @@ test('SI-8 (pin, a known limit) a plain Tracker save over a stored orphan submar
 });
 
 // ── Lists, work item W3: the save section, its checker and the stale-write rules (docs/lists-spec.md, section 4) ─────────────
-// Old builds are the shipped files, read with `git show <base>:<path>`, base = `git merge-base HEAD origin/main`; a test that cannot find
-// the base fails with that reason (the checks workflow fetches the whole history for this). No stand-in is written for them.
+// Old builds are the shipped files, read with `git show <base>:<path>`, base = the last published commit without Lists (31cb0ba,
+// pinned: after Lists is merged, a merge base with main would be a build that has Lists); a test that cannot find it fails with that
+// reason (the checks workflow fetches the whole history for this). No stand-in is written for them.
 const lsRoot = path.join(__dirname, '..', '..');
 let lsBaseId = null;
 function lsBase() {
   if (lsBaseId) return lsBaseId;
   const git = (...a) => require('child_process').execFileSync('git', a, { cwd: lsRoot, maxBuffer: 64 * 1024 * 1024 });
-  try { lsBaseId = git('merge-base', 'HEAD', 'origin/main').toString().trim(); git('cat-file', '-e', lsBaseId + '^{commit}'); } catch (e) {
+  try { lsBaseId = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4'; git('cat-file', '-e', lsBaseId + '^{commit}'); } catch (e) {
     lsBaseId = null;
-    throw new Error('cannot read the merge base with origin/main (the checkout needs its full history; the checks workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]);
+    throw new Error('cannot read the last build without Lists, 31cb0ba (the checkout needs its full history; the checks workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]);
   }
   return lsBaseId;
 }

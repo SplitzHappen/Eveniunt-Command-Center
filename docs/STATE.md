@@ -109,7 +109,9 @@ Last updated: 2026-11-21.
   - The save: a new `modules.lists` section. Older builds keep it. A sync never deletes a list or an item without the player's answer.
   - Reviews: one Claude review, plus ChatGPT and Mistral reviews of the plan. 35 findings were applied (20 and 15). The permanent model test found and fixed 2 more.
   - Tests: unit 570 of 570, browser 61 of 61, full check 171 of 171. C26b was not run (its browser push service is unreachable from the session).
-  - Not done: the final code review is being done by Claude (same model family, so not independent). The owner's own checks (a real sync, two tabs, a phone) are not done.
+  - Final code review by Claude (same model family, so not independent), 2026-11-22: ship after one fix. Fixed: the
+    tests against the old build were pinned to the last build without Lists (31cb0ba), which would otherwise have turned
+    the checks red after merging. Two notes kept as known limits (below). The owner's own checks (a real sync, two tabs, a phone) are not done.
 
 ## Decided, being planned
 
@@ -141,6 +143,12 @@ Last updated: 2026-11-21.
 - A new app icon.
 
 ## Known limits
+
+- Lists: a page writing from an out-of-date copy wins a clash on the same stock count with another tab without a
+  question (the rule every module uses; the page reloads on any change and when the tab is shown again). Undo is
+  protected separately.
+- Lists: a trade offer is identified by its seller, the amount it gives and its first currency; two offers that differ
+  only in a later currency share one identity, and a stored choice takes the first.
 
 - The "between half and four times the route's usual experience" refusal on return is a guard, not a measured game
   limit; if a real voyage falls outside it, widen it.

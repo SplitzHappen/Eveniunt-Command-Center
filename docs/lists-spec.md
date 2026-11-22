@@ -646,8 +646,9 @@ It also holds an item that makes 3 per craft, a merchant offer marked high quali
 gil offers "1 for 100" and "3 for 280", a trade "2 for 3 of Y and 50 gil" whose Y is crafted from 2 Z, a self-loop, a
 loop of two crafts, a loop of a craft and a trade, and a page of the crafting log whose entries include an item that
 is another entry's material and is sold by a gil merchant.
-**Old builds in tests** are the shipped files, read with `git show <base>:<path>` where `<base>` is
-`git merge-base HEAD origin/main`, never a stand-in written for the test. The checks workflow checks out one commit
+**Old builds in tests** are the shipped files, read with `git show <base>:<path>` where `<base>` is the last
+published commit without Lists, `31cb0ba` (pinned after the final review, 2026-11-22: a merge base with `main` would
+be a build that already has Lists once this ships), never a stand-in written for the test. The checks workflow checks out one commit
 only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 adds `fetch-depth: 0` to
 `.github/workflows/checks.yml`; a test that cannot find `<base>` fails with that reason, it never skips.
 

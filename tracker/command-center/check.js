@@ -5597,8 +5597,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     await guard('C145', async () => {
       const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
       let base;
-      try { base = gitOut(['merge-base', 'HEAD', 'origin/main']).toString().trim(); gitOut(['cat-file', '-e', base + '^{commit}']); }
-      catch (e) { throw new Error('the merge base with origin/main cannot be read (the checkout needs the history; the workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]); }
+      // pinned to the last published build without Lists (after Lists is merged, a merge base with main would already have it)
+      try { base = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4'; gitOut(['cat-file', '-e', base + '^{commit}']); }
+      catch (e) { throw new Error('the last build without Lists, 31cb0ba, cannot be read (the checkout needs the history; the workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]); }
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-old-'));
       const written = {};
       for (const [name, rel] of [['tracker', 'tracker/site'], ['atelier', 'crafting/atelier/site']]) {
