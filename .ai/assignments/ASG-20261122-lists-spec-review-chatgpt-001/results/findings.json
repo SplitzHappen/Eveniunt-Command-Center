@@ -1,0 +1,162 @@
+[
+  {
+    "severity": "BLOCKER",
+    "section": "4 Sync; 5 model C",
+    "title": "Unanswered entry conflict can delete an entry",
+    "consequence": "A Tracker tab's automatic merge can silently discard a remotely changed wanted item, despite the no-deletion promise.",
+    "fix": "Give deletion versus edit of each wanted item a no-answer preservation rule, retain the question until answered, and test both local/remote orientations through actual automatic saves and subsequent sync.",
+    "evidence": "Spec 176-184, 305-310; tracker/src/core/merge.js:54-67, 166-196; tracker/src/core/storage.js:98-112. Base has target T; local deletes T but keeps list; remote changes T. LY1 does not apply because neither header was removed. Ordinary conflict defaults to local null; applyMerge with {} deletes T."
+  },
+  {
+    "severity": "BLOCKER",
+    "section": "5, E12; 7",
+    "title": "Recorded crafting cannot complete must-craft targets as specified",
+    "consequence": "Crafting-log targets remain planned forever or are marked complete without accounting for how many were made; multi-craft targets and shared recipe rows are ambiguous.",
+    "fix": "Specify an atomic operation carrying target identities, quantities and quality, stock changes, partial progress and undo; distinguish completed log crafts from physical stock, then test partial and shared crafts and reload/sync.",
+    "evidence": "Spec 124, 141-143, 208, 231-236, 277-281, 383-384: craftDone receives only have, data, recipeId, times, quality, ways and returns have and short; it cannot change target.done. A make target of 3 at yield 1 needs 3 presses but has only a boolean done."
+  },
+  {
+    "severity": "BLOCKER",
+    "section": "5, E2, E11",
+    "title": "Already-have source violates the conservation invariant and can hide real shortages",
+    "consequence": "A need may be presented as met without stock, while the required model test demands it be accounted for as stock or acquired output.",
+    "fix": "Represent an explicit unverified external supply or outstanding amount and label it honestly; revise conservation and tests to count it, without consuming actual stock implicitly.",
+    "evidence": "Spec 243-247, 260-261, 276: need 5, stock 0, way have yields got 0, stock used 0, spare 0; E2 demands 0 = 5."
+  },
+  {
+    "severity": "BLOCKER",
+    "section": "5, E12",
+    "title": "The recorded-craft invariant fails when spare output serves another part",
+    "consequence": "The permanent model test is required to fail on legitimate inputs, blocking the engine and making the promised unchanged totals false.",
+    "fix": "Replace the exact unchanged-total claim with a conservation/replanning contract, including spare, quality and must-craft cases; specify whether recording a craft is permitted when ingredients are short.",
+    "evidence": "Spec 231-247, 277-281: one must-craft X and one ordinary X, yield 3, ordinary way craft, no X stock. Before recording there are two crafts; record the must-craft once with all materials available: 3 X enter stock and the make target is marked done; the ordinary craft also disappears, so crafts fall by 2, not 1, and its material needs fall."
+  },
+  {
+    "severity": "BLOCKER",
+    "section": "4 stale writes; 7 undo",
+    "title": "Undo can overwrite another tab's newer stock or edits",
+    "consequence": "A one-tap undo can silently erase work entered elsewhere after the original action, including gathered quantities.",
+    "fix": "Make undo a conditional inverse against the exact post-action units and refuse or explicitly reconcile concurrent changes; do not restore a stale snapshot as an unconditional edit.",
+    "evidence": "Spec 69-73, 170-174, 404-416, 509-518; save.js:450-464. Tab A buys 1 from stock 0; tab B changes stock to 10; A's undo restores 0, and LI3 says the later change to the same unit wins."
+  },
+  {
+    "severity": "BLOCKER",
+    "section": "5 graph, E14, E17",
+    "title": "Dependency cycles and alternate recipes lack a defined deterministic resolution",
+    "consequence": "A real or generated craft/trade cycle can prevent topological settlement, or cause the selected source to contradict the owner’s merchant-first rule and the model's termination test.",
+    "fix": "Define the selected dependency graph, cycle detection across both recipes and trades, deterministic cycle-break policy and the displayed unmet quantity; test mixed and self cycles and source priority.",
+    "evidence": "Spec 222-233, 243-246, 283, 287-291, 301-305. If X is crafted from Y and Y traded for X, neither item can be settled after all parents. Cutting a trade loop by putting an item under other must specify which item and what happens to the remaining needs."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "4 Sync LY1-LY4",
+    "title": "Whole-list keep and unanswered semantics do not specify how to preserve concurrent contents",
+    "consequence": "A keep decision or unattended merge can discard a target that exists only on the other side, and two devices can settle differently; the test's no-loss claim does not specify the actual result.",
+    "fix": "Define the complete base/local/remote truth table, including one-sided target removals, additions and edits on both sides, choice scope, unanswered result, repeat sync and post-upload base; keep all unresolved records and surface any irreconcilable conflict.",
+    "evidence": "Spec 176-184 and 305-310; merge.js:35-68, 166-225; storage.js:106-112. LY1 says keep the keeping side's header and targets, whereas LY2 says unanswered nothing of that list is deleted; an automatic save persists the provisional state without choices."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "5 quality; 3 data",
+    "title": "The item-level output cannot represent different sources, recipes and yields for one item",
+    "consequence": "A normal need bought from a merchant and a high-quality need crafted have different sources and costs, but one row's by, recipe, crafts and offer cannot faithfully drive all views and actions.",
+    "fix": "Represent each quality and must-craft/collectable part with its own source, selected recipe, offer, need, crafts and output; define aggregation, controls and purchase counts explicitly.",
+    "evidence": "Spec 97-99, 141-146, 200-206, 222-242. Normal X can be vendor while high-quality X is craft; one line.by and one line.recipe cannot both hold the required answers. Two must-craft targets may specify different recipes for X."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "5 E3 E8 E12; 7",
+    "title": "Partial purchase and trade surplus are not specified consistently",
+    "consequence": "Players can buy fewer than the shortfall, and bundles can exceed it; the row may still need a craft even though the text promises it disappears, and stock can be recorded in the wrong quantity.",
+    "fix": "Define the entered amount as physical units or transactions, apply actual yield and price, keep any remaining demand visible, and test partial and excess purchases in each quality and from each view.",
+    "evidence": "Spec 243-247, 269, 292-297, 404-412. Need 5, yield 3 per craft, buy 2: stock rises by 2 but 3 remain, so the craft and its materials cannot drop out at once."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "5 E6 E7; 7",
+    "title": "Collectable and high-quality actions lack a complete compatible state model",
+    "consequence": "The planner may claim an impossible source or consume the wrong stock for mixed quality, and cannot consistently finish or undo collectable and must-craft targets.",
+    "fix": "Define allowed flag combinations, collectability thresholds and recipe capability; define exactly which quantities each action produces and consumes and validate imported combinations without silently dropping user data.",
+    "evidence": "Spec 96-97, 124-127, 141-147, 231-242, 277-280, 382-384. A target can have make, hq and coll simultaneously, but make is settled first, coll is always crafted and craftDone accepts one unspecified quality; no threshold or precedence is defined."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "6 patch notice; 3 changes",
+    "title": "The patch notice does not define how to find removed intermediate recipes",
+    "consequence": "A player returning after a patch can see a changed or missing plan without the promised explanation, despite preserved progress.",
+    "fix": "Compare against both old and new reachable recipe graphs over every intervening change, including deleted recipes and changed ingredients, and specify how old stamps and multiple sequential patches compose.",
+    "evidence": "Spec 102, 313-321. If A used B, B's recipe disappears and the current tree stops at B, a notice restricted to affected recipes in the present tree cannot reliably find the removed B recipe or its old descendants."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "3 data; 5 E8",
+    "title": "Capping offers at four can erase the only usable quality or trade",
+    "consequence": "The planner may claim no high-quality vendor or trade exists, ignore a valid source, or violate merchant-first behavior for that quality.",
+    "fix": "Retain all offers required to preserve every source, quality and currency choice, or prove a lossless pruning rule and test a fifth unique offer.",
+    "evidence": "Spec 98-100, 104-111, 222-228. Four cheaper normal gil offers can fill the table and exclude a fifth high-quality offer; the planner then cannot select that vendor for high-quality demand."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "3, 5 trade; E8 E14",
+    "title": "Trade offer selection, multiple currencies and recursive currency planning are underspecified",
+    "consequence": "Different builders can produce different material totals or select an inaccessible trade; a crafted currency can be omitted or charged incorrectly.",
+    "fix": "Specify deterministic offer eligibility and choice per quality, how every currency including gil is charged, recursive planning of non-gil currencies, cycles, and data closure; test a multi-currency trade whose currency is crafted.",
+    "evidence": "Spec 90-100, 243-246, 269, 283. Trade X yields 2 for 3 Y plus 50 gil; Y needs 2 Z. Need 3 X means 2 trades, 6 Y, 100 gil and 12 Z when Y yield is 1; the spec does not choose between several non-gil offers."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "4 compatibility; 7",
+    "title": "Oversize merged arrays are truncated by old and new generic cleaning",
+    "consequence": "A large synced selection can silently lose data in an older build despite the unlimited-checker and compatibility guarantees.",
+    "fix": "Bound or redesign stored arrays so every valid merged save survives the pre-check cleaner, or change compatibility strategy and explicitly protect old clients; test at 5,001 elements through all shipped builds.",
+    "evidence": "Spec 128, 148-158, 627-629; save.js:30-36, 143-150. clean slices every array to 5,000 before any module checker. An unbounded combined list selection can exceed this after many merges."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "5 E9 and 7 steps; 11 Q4",
+    "title": "The per-list monotonicity promise contradicts proportional attribution",
+    "consequence": "The owner is offered a guarantee the design explicitly says it cannot give, and step leftovers are described differently from the global calculation.",
+    "fix": "Correct the owner-facing option and acceptance criteria to distinguish whole-character totals from individual shares; define whether sequential step leftovers are a display allocation or a separate calculation.",
+    "evidence": "Spec 76-79, 249-253, 612-613, 657-661; research 90-92. X yields 3, two lists each need 1: first receives the craft share. Remove the first target and the second share rises from 0 to 1, even though the character total stays 1."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "8 W1, W6, W10, W12",
+    "title": "Work-item dependencies and acceptance checks conflict",
+    "consequence": "Builders can be blocked by missing files or forbidden changes even when the intended implementation is sound.",
+    "fix": "Align named files, prerequisites and fallback ownership with actual execution, and make the log data available at the stage that validates it; reconcile whether missing Atelier recipes are allowed.",
+    "evidence": "Spec 101, 113-115, 447-455, 500-508, 362-368. W1 validates log recipe IDs although log is only added by build.js in W6; W6 says escalate if Atelier lacks any recipe while section 6 explicitly permits missing ones as no hand-over."
+  },
+  {
+    "severity": "MINOR",
+    "section": "7 Tracker link; 8 W12",
+    "title": "The link is placed inside a button-like fold control",
+    "consequence": "The link nests an interactive control in a keyboard-operable button and the existing delegated handler folds the row on click; keyboard activation and accessibility need explicit treatment.",
+    "fix": "Place the link outside the fold control or change markup and handlers with appropriate accessibility tests, including mouse and keyboard, while retaining folding and ticking.",
+    "evidence": "Spec 557-575; tracker/src/app/ui.js:475-482, 752-753, 783. W12 requires an anchor inside the first cell, which has role=button and data-fold; closest('[data-fold]') captures link clicks."
+  },
+  {
+    "severity": "MINOR",
+    "section": "6 price service; E15",
+    "title": "Missing or stale listings do not have a complete price contract",
+    "consequence": "A zero, stale or missing listing can be shown as a real price or an outdated price without the promised unknown distinction.",
+    "fix": "Specify no-listing, zero, malformed, partial-failure and old-cache behavior with per-item freshness, and test market totals and user wording.",
+    "evidence": "Spec 284, 323-338; earn.js:182-204. Existing settle records missing reply separately and maps a missing average to 0; the new listing reader and shared settle must explicitly distinguish unavailable from free."
+  },
+  {
+    "severity": "MINOR",
+    "section": "4 IDs; 7",
+    "title": "Generated identifiers do not specify collision handling",
+    "consequence": "Two offline devices can independently create the same list or target ID, turning separate records into one conflict or silently conflating them.",
+    "fix": "Specify collision-resistant generation and collision handling across devices, including imported IDs, and test same-ID independently created records.",
+    "evidence": "Spec 123-135, 176-180. Time plus a random part with 4-16 characters has no mandated entropy, collision check or separate-creation behavior."
+  },
+  {
+    "severity": "MINOR",
+    "section": "5 E13; 7",
+    "title": "Remove-and-add identity and exact undo are underspecified",
+    "consequence": "Re-adding an item with a fresh target ID, order or step may change shares and make an exact-plan assertion fail even when item totals are the same.",
+    "fix": "Define whether E13 means restoring the exact original target and position, or compare semantic totals only; test both remove-and-undo and a fresh add.",
+    "evidence": "Spec 134-143, 249-253, 259, 282 and 415-416. Shares include list and step IDs and allocation depends on ordering, so a newly generated ID or different position is not necessarily an identical plan."
+  }
+]
