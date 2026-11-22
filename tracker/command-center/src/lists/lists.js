@@ -446,7 +446,7 @@
     if (ln.why === 'chosen' && !isCrafted(ln)) p.push('You chose this');
     if (w.by && w.by !== 'have' && !isCrafted(ln) && waysOf(V, ln.item, 'normal').indexOf(w.by) < 0 && waysOf(V, ln.item, 'hq').indexOf(w.by) < 0) p.push('The way you chose is no longer available in the game data; using the usual order. Your choice is still stored');
     else if (w.by === 'trade' && w.offer && !isCrafted(ln) && ['normal', 'hq'].every(function (qq) { return !offersFor(ln.item, qq).trade.some(function (o) { return o[4] + '.' + o[0] + '.' + o[1][0][0] === w.offer; }); })) p.push('The trade you chose is no longer in the game data; using the usual one. Your choice is still stored');
-    var s = p.join('. ') + (p.length ? '.' : '');
+    var s = p.map(function (t) { return t.charAt(0).toUpperCase() + t.slice(1); }).join('. ') + (p.length ? '.' : '');
     if (V.plan.cut[ln.item]) s += (s ? ' ' : '') + V.plan.cut[ln.item];
     return s ? '<p class="why">' + esc(s) + '</p>' : '';
   }
