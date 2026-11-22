@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261122-lists-code-review-mistral-001",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "mistral",
@@ -12,8 +12,11 @@
     "head_sha": "ad41b595b2eac9ec36d3e8dc58baabf36b4ecde2",
     "ref": "claude/blissful-fermat-hrrqp5"
   },
-  "result_paths": [],
-  "result_commit": null,
-  "completed_at": null,
-  "disposition": null
+  "result_paths": [
+    ".ai/assignments/ASG-20261122-lists-code-review-mistral-001/results/REVIEW.md",
+    ".ai/assignments/ASG-20261122-lists-code-review-mistral-001/results/findings.json"
+  ],
+  "result_commit": "40b50659f511b3635c16f6e29fbec8dedbb94c7b",
+  "completed_at": "2026-11-22T20:28:43Z",
+  "disposition": "Publish after fixes: no blocker; save/sync and price behaviour verified sound by reading, passing unit suites and direct probes of the real code; one MAJOR (missing 'Restored list' view for orphaned wanted items) to fix before publishing, one NOTE."
 }
