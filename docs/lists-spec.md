@@ -760,6 +760,16 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   gives byte-identical cache records to today's for the replies in `earn.test.js`). Accept: `npm run test:unit` with
   `earn.test.js` unedited; `CHECK_ONLY=C29,C113,C117,C123 npm run check` with `check.js` unedited. Must not change:
   `subs.js`, the two storage keys, any message. Escalate if: either holds not.
+- **W6 ruling (orchestrator, 2026-11-22).** The Atelier's `recipe(id)` returns only the ingredients its solver can use
+  in high quality (`recipe_json` in `crafting/atelier/bridge/src/lib.rs`); crystals and items that cannot be high
+  quality are not in it. The builder measured: both sides hold the same 13,892 recipes, result item and job agree for
+  all, and with the sheet ingredients reduced to items whose flags say "can be HQ" (bit 2) and not "crystal" (bit 8),
+  every ingredient list and amount agrees (0 differences). So the cross-check compares recipe set, item and job
+  strictly and the ingredients under that filter; any difference stops the build. **Limit:** crystals and
+  non-HQ ingredients are not cross-checked against the Atelier (they are checked against the sheets by LD-2's hand
+  rows). The solver glue runs in Node, so the section 6 fallback is not built. `log` comes from the `craft-*` lists
+  of `tracker/data/tracker-data.json`; the Lists home card gets a title, a glyph and a live line in the style of the
+  Submersibles card.
 - **W6 Build, page shell, cross-check (Sonnet builder; after W1, W2, W5).** Files: `build.js` (the `lists/` page,
   `data.js` with `log` and the check that every `log` recipe id is in `recipes`, the budget, the cross-check call),
   `tracker/tools/lists-crosscheck.js`, `src/lists/index.html`,
