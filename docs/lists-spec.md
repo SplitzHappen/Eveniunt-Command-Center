@@ -704,7 +704,8 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   named `lists` as a stand-in for "a section this build does not know" (fixture `MODS` and the R2 two-device test). No
   shipped build has ever written `modules.lists` (searched: no source writes it), so no player data has that name. The
   stand-in is renamed to `notes` in those tests, every assertion unchanged; this is the one permitted edit of existing
-  tests in W3. Builder choices accepted: LI5 `expect` keys are the existing unit keys (`m|` + JSON path), values the
+  tests in W3, together with the same rename in five lines of `tracker/tests/submarines.test.js` (R1 test), which the
+  owner approved on 2026-11-22 after the session's permission check stopped the builder's edit. Builder choices accepted: LI5 `expect` keys are the existing unit keys (`m|` + JSON path), values the
   unit's JSON text or null; LI2's first part and LI5 also run when the stamp is equal; a wanted item missing `item` or
   `qty` is dropped, a missing `recipe` reads as 0 (never dropped for that alone); `crafted` 0 to 99999, not clamped to
   `qty`; an all-zero stock count is kept by the checker; step `name` up to 60, `n` 0 to 9999; `offer` matches
