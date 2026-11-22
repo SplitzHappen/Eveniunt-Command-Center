@@ -930,6 +930,14 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   or not; tests for an addition alone, mixed changes and two patches in a row; the page's notice names an added recipe
   ("can now be crafted"). (6) C145 fails unless both Tracker saves actually ran. (7) C155 waits for the fetched state.
   Accept: build twice, unit, browser, full `npm run check`; no existing test edited except C145 and C155 as listed.
+- **W14 built (2026-11-22), ruling and choices accepted:** "Put these in a new list" and "Remove" on the Restored list
+  card offer **no undo** (orchestrator ruling): undoing either would recreate a wanted item without its list, which the
+  save's rule LI2 refuses by design, and changing `save.js` for this rare case (it needs a sync with an old build) is
+  not worth the risk; Remove asks first, restoring is harmless. Orphans are grouped one card per missing list id; the
+  restored list is named "Restored list" with no character; a make line's credits go in list order to its own
+  recipe's wanted items; the quality choice on a row lasts for the visit; a purchase past 999,999 is capped (it was
+  refused). The patch notice says "can now be crafted from …". Totals at b6d4f0e: unit 576 of 576, browser 61 of 61,
+  full check 175 of 175 (C26b not run); new checks C167 to C170; each fix's test was seen failing without the fix.
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.

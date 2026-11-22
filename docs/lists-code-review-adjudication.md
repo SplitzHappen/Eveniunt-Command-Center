@@ -17,3 +17,7 @@ code before ruling (several recipes for one item: 657 items in the real data; "M
 | ChatGPT | C145 can pass without running the Tracker saves | Minor | Minor | Accepted | A check must not pass on "not run" | W14 |
 | ChatGPT | C155's wait can finish before the price fetch (flaky) | Minor | Minor | Accepted | Seen failing once in the reviewer's run; wait for the fetched state | W14 |
 | Mistral | Collectable stock is shared in recipe order, not list order as the spec says | Note | Note | Accepted (spec wording) | Accepted choice of W2 so that reordering lists never moves a figure; the spec text is corrected | spec, section 5 |
+
+**Applied in W14** (commit b6d4f0e), each fix pinned by a test seen failing without it: unit 576 of 576, browser 61 of
+61, full check 175 of 175 (C26b not run). One ruling during the fix: the Restored list card's two actions have no undo
+(an undo would recreate an item without its list, which the save refuses by design); Remove asks first.

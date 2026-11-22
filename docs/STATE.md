@@ -111,7 +111,10 @@ Last updated: 2026-11-21.
   - Tests: unit 570 of 570, browser 61 of 61, full check 171 of 171. C26b was not run (its browser push service is unreachable from the session).
   - Final code review by Claude (same model family, so not independent), 2026-11-22: ship after one fix. Fixed: the
     tests against the old build were pinned to the last build without Lists (31cb0ba), which would otherwise have turned
-    the checks red after merging. Two notes kept as known limits (below). The owner's own checks (a real sync, two tabs, a phone) are not done.
+    the checks red after merging. Two notes kept as known limits (below).
+  - Outside code reviews, 2026-11-22 (third round, owner's request): ChatGPT "do not publish", Mistral "publish after
+    fixes". Seven findings accepted and fixed (W14), one accepted in part; `docs/lists-code-review-adjudication.md`.
+    Totals after the fixes: unit 576 of 576, browser 61 of 61, full check 175 of 175 (C26b not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
 
 ## Decided, being planned
 
