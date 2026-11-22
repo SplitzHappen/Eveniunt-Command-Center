@@ -99,26 +99,22 @@ Last updated: 2026-11-21.
 
 ## Built, waiting for the owner's `ship`
 
-Nothing at the moment.
+- **Lists: the crafting planner (phase 3)**, built 2026-11-22 on pull request 4, spec `docs/lists-spec.md`, research `docs/lists-research.md`, review record `docs/lists-review-adjudication.md`.
+  - Lists are kept per character, each with its steps. Each character has one stock, typed by hand.
+  - Every row says "get it by". Gil merchants come first. "Bought it" can be used at any time, with undo.
+  - Views: To get, To craft, Wanted, and a combined view for each character.
+  - A list can start from the crafting log. The Tracker links to it (inside the Command Center only). "Solve in the Atelier" opens the recipe there.
+  - Market prices come from one shared price service, also used by Submersibles. Timed nodes show their next window.
+  - A notice appears when game data changes a list's recipe.
+  - The save: a new `modules.lists` section. Older builds keep it. A sync never deletes a list or an item without the player's answer.
+  - Reviews: one Claude review, plus ChatGPT and Mistral reviews of the plan. 35 findings were applied (20 and 15). The permanent model test found and fixed 2 more.
+  - Tests: unit 570 of 570, browser 61 of 61, full check 171 of 171. C26b was not run (its browser push service is unreachable from the session).
+  - Not done: the final code review is being done by Claude (same model family, so not independent). The owner's own checks (a real sync, two tabs, a phone) are not done.
 
 ## Decided, being planned
 
-- **Lists** (blueprint phase 3), decided by the owner on 2026-11-21 after a review of Teamcraft's lists, their known
-  problems and the community's complaints (`docs/lists-research.md`):
-  1. Lists comes before Market; Lists builds the recipe-expansion engine that Market will reuse.
-  2. One release covers every fix the research points to: totals always recomputed, a "get it by" choice per row with
-     list-level defaults, several lists against one inventory, steps for multi-phase projects, a crafting order by job,
-     one-tap "hide completed", a list from what is missing in a crafting-log page, "Solve in the Atelier", and the next
-     window of timed nodes.
-  3. Market prices in Lists from the start: the Submersibles price fetching moves into one shared price service, with
-     Submersibles' behaviour unchanged.
-  The spec is `docs/lists-spec.md` (written 2026-11-21; the owner answered its questions on 2026-11-22 and added two
-  rules: buy from a gil merchant before crafting, and "I bought it instead" at any time). Nothing is built yet;
-  W0 (baseline and data facts) is done. A same-family review found two blockers and four major gaps, all fixed in the
-  spec. Outside reviews by ChatGPT (not ready: 6 blockers, 10 major) and Mistral (ready after fixes: 5 major) on
-  2026-11-22: 35 findings, 32 accepted and 3 in part, all applied (`docs/lists-review-adjudication.md`; results on the
-  branches `assignments/ASG-20261122-lists-spec-review-*`). The owner answered the last question on 2026-11-22
-  (Q4: how an item is got is chosen once per character). Building started with W1.
+- **Lists** (blueprint phase 3): built and waiting for the owner's `ship`; see the entry under "Built, waiting for the
+  owner's `ship`" above. The spec is `docs/lists-spec.md`.
 
 ## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
 
@@ -126,7 +122,7 @@ Nothing at the moment.
 | --- | --- | --- |
 | 1 | Shell, one shared save, cloud sync | Shipped |
 | 2 | Submersibles | Shipped 2026-11-21 |
-| 3 | Lists (crafting planner) with "Solve in the Atelier" | Next: spec written and answered; build not started |
+| 3 | Lists (crafting planner) with "Solve in the Atelier" | Built, waiting for ship |
 | 4 | Market (profit, shopping list split by world); Gathering (alarms, routes) | Planned |
 | 5 | Currencies & Collectables, Levequests, Ventures & Voyages (retainers and airships) | Planned |
 | 6 | Gear, Treasure Maps, desynthesis in the item details | Planned |
@@ -192,3 +188,25 @@ Nothing at the moment.
   cases need a save changed outside the screens. After a sync two submarines can share a slot; the Board's "Keep this
   one" settles it and removes one.
 - `check.js` check C26b (real push delivery) does not run in automated environments.
+- Lists: stock is typed by hand; retainers, alts and the free-company chest are whatever the player types.
+- Lists: one way per item per character. An item cannot be crafted for one list and bought for another at the same time, except crafting-log entries, which are always crafted. Moving a list to another character puts it under that character's stock, ways and order.
+- Lists: a craft's or purchase's spare output is shown but not planned with. Once recorded it is typed stock that everything uses, so before a multi-yield craft is recorded, another need of the same item can look larger than it will be.
+- Lists: the character's totals never rise from a removal or from more stock. One list's or one step's own figures can, because a craft can move from one list's share to the next.
+- Lists: collectables and crafting-log entries are always planned as crafts, even if a merchant sells the item; collectability ratings are not tracked.
+- Lists: "I have enough of this" is the player's word; the amount shows as not in typed stock and is not checked.
+- Lists: recording a craft the typed materials do not cover is allowed; the counts go to 0 and the page asks the player to check them.
+- Lists: an item that is part of a loop is listed under Other and not planned further.
+- Lists: yields are not cross-checked (the Atelier holds none). Market price is the cheapest listing of any quality, before tax, from community reports; it is not split by world (that is Market).
+- Lists: "buy from a merchant first" looks only at whether a gil merchant sells the item, not at the price. An expensive merchant item is still planned as bought, with its price on the row and "Craft it instead" one tap away. The data does not say whether a merchant needs a quest or a housing plot, and does not mark allied-society NPCs, so a gil offer that needs allied reputation is planned like any merchant; the row names the seller and place, and a Grand Company rank when the data gives one.
+- Lists: a trade is chosen by a fixed rule, not by cost for the amount; the row lists the other trades to choose from.
+- Lists: a high-quality need goes to a merchant only for an offer marked high quality; whether a market listing is high quality is not checked.
+- Lists: the patch notice compares recipes only, and only as far back as the first data file this app shipped.
+- Lists: undo covers the last 20 changes of one visit, is gone after a reload, and is refused when the same thing was changed again since; a way can always be changed back by hand.
+- Lists: "Left over" shows unused stock of items in this list's tree; it cannot know why the stock is there.
+- Lists: the same unit changed in two tabs means the later save wins. A stock count changed on two devices is asked about.
+- Lists: sync questions name the list and the character but show items by number, because Settings does not hold the item names.
+- Lists: size limits stop new entries on a device; a sync can still bring a save above them, and nothing is dropped.
+- Lists: a device still on the old version syncs lists unit by unit and by the old rules, so it can leave a kept list empty, an entry without its list, or delete on its own side what the other device changed. The new page shows entries without a list as "Restored list". This ends when every device has updated.
+- Lists: the Tracker's link appears only inside the Command Center and only in an open group. With several characters the character is chosen in Lists, because the Tracker has no current character.
+- Lists: timed nodes show the next window only; alarms belong to the Gathering module. Fishing windows are not shown.
+- Lists: sources other than merchant, craft, gather, trade and market (drops, quests, desynthesis, reduction) are "Other": to get, your own way. Sharing a list by link or file is a later phase.
