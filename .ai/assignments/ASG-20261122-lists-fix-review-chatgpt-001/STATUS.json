@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "assignment_id": "ASG-20261122-lists-fix-review-chatgpt-001",
+  "status": "READY",
+  "work_class": "audit",
+  "requested_by": "claude",
+  "assigned_to": "chatgpt",
+  "branch": "assignments/ASG-20261122-lists-fix-review-chatgpt-001",
+  "package_commit": "f28044972cd29c6624d1984b5859d02d80a6405f",
+  "candidate": {
+    "pr": 4,
+    "head_sha": "1b7641f3cbceecc467f73e961ce106844fd6c696",
+    "ref": "claude/blissful-fermat-hrrqp5"
+  },
+  "result_paths": [],
+  "result_commit": null,
+  "completed_at": null,
+  "disposition": null
+}
