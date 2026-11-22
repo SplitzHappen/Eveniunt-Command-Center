@@ -1,0 +1,29 @@
+[
+  {
+    "severity": "BLOCKER",
+    "file": "tracker/command-center/src/lists/store.js",
+    "line": 314,
+    "title": "Recording a craft can erase the existing product stock count",
+    "consequence": "A player with a stock count near the allowed maximum can lose that entire quality's recorded count when recording a craft; the crafted progress can still be saved, leaving misleading totals.",
+    "fix": "Make recording and validation atomic without dropping the existing count: support the resulting count or refuse the whole edit with a clear explanation before changing stock or progress. Cover each quality and multi-yield output.",
+    "evidence": "A Node reproduction using the real store, engine and checker starts with c1.10.nq=999999 and a must-craft target for one item with yield 1. S.record returns c1.10={hq:0,coll:0}, while the target has crafted=1. apply writes 1000000, and save.js:182 drops nq above 999999 during normalization. Materials and progress can be changed in the same operation."
+  },
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 847,
+    "title": "A craft can be credited to a different recipe for the same item",
+    "consequence": "A list made from the crafting log can show the wrong recipe as crafted and continue to request the recipe the player actually made; its materials and completion state become misleading.",
+    "fix": "Resolve each target to its actual planned recipe and credit only targets belonging to the selected make line, in list and step order. Also match the recipe in lineFor so wanted rows show their own line. Test the real page with two recipes of one product.",
+    "evidence": "creditsFor filters only item, make and done; the Made handler at lines 918-923 passes no recipe. Game data has item 5056 with recipes 1 and 170. If the target for recipe 1 comes first but the player records the recipe 170 row, recipe 1 receives the credit. The model test at tracker/tests/lists-model.test.js:444-447 supplies only the line's own recipe targets and thus does not exercise this page error."
+  },
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 923,
+    "title": "Must-craft outputs are always recorded as ordinary quality",
+    "consequence": "Recording a high-quality or collectable must-craft output increases ordinary stock instead. The player can see incorrect stock and material totals for other lists and may hand in or buy the wrong quality.",
+    "fix": "Carry the intended or player-selected output quality through the page to recording, accounting for mixed-quality targets on one make line; display and edit the matching quality. Add page-level tests for high-quality and collectable must-craft items.",
+    "evidence": "engine.js defines make quality as nq at line 256 and groups make lines by item and recipe, irrespective of target quality. The Made handler passes ln.quality with no quality choice; qualityOf at lists.js:336 also favors that value over the wanted item's hq or coll flag. The spec says these flags indicate the expected recorded quality."
+  }
+]
