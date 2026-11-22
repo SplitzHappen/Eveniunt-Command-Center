@@ -5791,6 +5791,149 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── Lists, W7: the page's edits on the small fixture (stand-in game data, no network): C148 one tab, C149 two tabs, C165 undo across tabs. ──
+    const LISTS_FIXTURE = fs.readFileSync(path.join(T, 'tests', 'fixtures', 'lists-fixture.json'), 'utf8');
+    const listsCtx = async () => {
+      const c = await context({ serviceWorkers: 'block' });
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + LISTS_FIXTURE + ';' }));
+      return c;
+    };
+    const lReady = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+    const lSettle = (pg) => pg.waitForFunction(() => window.__lists && !window.__lists.state.busy && !window.__lists.state.queue.length, null, { timeout: 15000 });
+    const lStored = (pg) => pg.evaluate(async () => { const d = CC.checkDoc((await CC.read()).raw); return d.modules.lists || null; });
+    const lOpenFirst = async (pg) => { await pg.click('.list-card [data-act=open]'); await pg.waitForSelector('.wanted-row, .empty-line'); };
+    const lMake = async (pg, name) => { await pg.click('[data-act=new]'); await pg.fill('[data-f=newname]', name); await pg.click('[data-act=create]'); await lSettle(pg); await pg.waitForSelector('[data-f=listname]'); };
+    const lAdd = async (pg, query, id, qty) => { await pg.fill('[data-f=addqty]', String(qty)); await pg.fill('[data-f=search]', query); await pg.click('button[data-act=add][data-item="' + id + '"]'); await lSettle(pg); };
+    const lRow = (pg, id) => pg.locator('.wanted-row[data-item="' + id + '"]');
+    const lType = async (pg, id, field, v) => { const el = lRow(pg, id).locator('[data-f=' + field + ']'); await el.fill(String(v)); await el.press('Tab'); await lSettle(pg); };
+    const lNote = (pg) => pg.evaluate(() => (document.querySelector('.lists-status') || {}).textContent || '');
+    const lTargets = (sec) => Object.values((sec && sec.targets) || {});
+    const lQty = (sec, item) => (lTargets(sec).filter((t) => t.item === item)[0] || {}).qty;
+
+    // ── C148 (Lists, W7) One tab: make a list, add wanted items, change amounts, type stock (I have, minus, plus), a cleared amount keeps the item, flags are kept together, and a reload keeps all. ──
+    await guard('C148', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lMake(page, 'Food');
+      ck.listOpen = (await page.inputValue('[data-f=listname]')) === 'Food';
+      await lAdd(page, 'grand', 100, 2); await lAdd(page, 'mythril', 130, 1); await lAdd(page, 'collectable piece', 160, 1);
+      ck.rows = await page.locator('.wanted-row').count() === 3;
+      ck.qty2 = (await lRow(page, 100).locator('[data-f=qty]').inputValue()) === '2';
+      await lType(page, 100, 'qty', 5);
+      ck.qty5 = lQty(await lStored(page), 100) === 5;
+      await lType(page, 100, 'qty', '');
+      ck.clearedKeeps = lQty(await lStored(page), 100) === 5 && (await lRow(page, 100).locator('[data-f=qty]').inputValue()) === '5' && (await page.locator('.wanted-row').count()) === 3;
+      await lType(page, 130, 'have', 4);
+      let sec = await lStored(page);
+      ck.have4 = JSON.stringify(sec.have['u.130']) === '{"nq":4,"hq":0,"coll":0}' && /have 4/.test(await lRow(page, 130).locator('.w-count').textContent());
+      await lRow(page, 130).locator('[data-act=plus]').click(); await lSettle(page);
+      await lRow(page, 130).locator('[data-act=plus]').click(); await lSettle(page);
+      await lRow(page, 130).locator('[data-act=minus]').click(); await lSettle(page);
+      ck.plusMinus = (await lStored(page)).have['u.130'].nq === 5;
+      await lType(page, 130, 'have', 0);
+      ck.zeroRemoves = (await lStored(page)).have['u.130'] === undefined;
+      await lType(page, 130, 'have', 3);
+      await lRow(page, 160).locator('[data-f=flag][data-flag=hq]').check(); await lSettle(page);
+      await lRow(page, 160).locator('[data-f=flag][data-flag=coll]').check(); await lSettle(page);
+      sec = await lStored(page);
+      const t160 = lTargets(sec).filter((t) => t.item === 160)[0];
+      ck.flagsTogether = t160.hq === true && t160.coll === true;
+      await lRow(page, 100).locator('[data-act=ask-remove]').click(); await lRow(page, 100).locator('[data-act=remove]').click(); await lSettle(page);
+      ck.removed = lQty(await lStored(page), 100) === undefined && lTargets(await lStored(page)).length === 2;
+      ck.undoShown = (await page.locator('[data-act=undo][data-i="0"]').count()) === 1;
+      await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undoneBack = lQty(await lStored(page), 100) === 5;
+      const before = await lStored(page);
+      await page.reload(); await lReady(page);
+      const after = await lStored(page);
+      ck.reloadSame = JSON.stringify(before) === JSON.stringify(after) && JSON.stringify(after.lists).length > 10;
+      await lOpenFirst(page);
+      ck.reloadShows = (await lRow(page, 100).locator('[data-f=qty]').inputValue()) === '5' && (await lRow(page, 130).locator('[data-f=have]').inputValue()) === '3' &&
+        (await lRow(page, 160).locator('[data-f=flag][data-flag=coll]').isChecked()) && (await lRow(page, 160).locator('[data-f=flag][data-flag=hq]').isChecked());
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C148', 'Lists page: a new list, wanted items added and removed, amounts changed, a cleared amount keeps the item, stock typed with I have, plus and minus, flags kept together, Undo, and a reload shows all of it',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C149 (Lists, W7) Two tabs on one save: different wanted items both kept; a stale edit inside a list another tab removed shows "Not saved" with the list's text and changes
+    //    nothing; a stale removal of an item the other tab changed is refused. A tab's copy is held stale with __lists.hold. ──
+    await guard('C149', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const a = await ctx.newPage(), b = await ctx.newPage();
+      for (const p of [a, b]) { await p.goto(ROOT5 + 'lists/'); await lReady(p); }
+      const ck = {};
+      await lMake(a, 'Shared'); await lAdd(a, 'grand', 100, 2); await lAdd(a, 'mythril', 130, 3);
+      await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
+      ck.bothShow = (await lRow(b, 100).count()) === 1 && (await lRow(b, 130).count()) === 1;
+      // (1) different items, both stale
+      for (const p of [a, b]) await p.evaluate(() => window.__lists.hold(true));
+      await lType(a, 100, 'qty', 4); await lType(b, 130, 'qty', 6);
+      let sec = await lStored(a);
+      ck.differentItems = lQty(sec, 100) === 4 && lQty(sec, 130) === 6;
+      for (const p of [a, b]) await p.evaluate(() => window.__lists.hold(false));
+      await a.evaluate(() => window.__lists.reload()); await b.evaluate(() => window.__lists.reload());
+      // (2) a stale edit inside a removed list
+      await b.evaluate(() => window.__lists.hold(true));
+      await a.click('[data-act=back]'); await a.click('[data-act=ask-remove-list]'); await a.click('[data-act=remove-list]'); await lSettle(a);
+      ck.listGone = Object.keys((await lStored(a)).lists).length === 0;
+      const frozen = JSON.stringify(await lStored(b));
+      await lType(b, 100, 'qty', 9);
+      const note = await lNote(b), after2 = await lStored(b);
+      ck.staleInRemoved = note.includes('Not saved on this device: This list was removed on another device or in another tab.') && JSON.stringify(after2) === frozen && Object.keys(after2.lists).length === 0 && lTargets(after2).length === 0;
+      await b.evaluate(() => window.__lists.hold(false));
+      // (3) a stale removal of an item the other tab changed
+      await b.evaluate(() => window.__lists.reload());
+      await lMake(a, 'Second'); await lAdd(a, 'grand', 100, 2);
+      await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
+      await b.evaluate(() => window.__lists.hold(true));
+      await lType(a, 100, 'qty', 8);
+      await lRow(b, 100).locator('[data-act=ask-remove]').click(); await lRow(b, 100).locator('[data-act=remove]').click(); await lSettle(b);
+      const note3 = await lNote(b), after3 = await lStored(b);
+      ck.staleRemovalRefused = note3.includes('Not saved on this device: This was changed on another device or in another tab, so it was not removed.') && lQty(after3, 100) === 8;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C149', 'Lists page, two tabs: different wanted items are both kept; a stale edit inside a list the other tab removed says Not saved with the list\'s text and stores nothing; a stale removal of an item the other tab changed is refused',
+        Object.values(ck).every(Boolean), { ck, notes: [note, note3], errors: real(errors), external });
+      void server;
+    });
+
+    // ── C165 (Lists, W7) Undo across tabs: tab A buys 1, tab B types 10 for the same item, tab A's Undo is refused with its line and the count stays 10; without tab B's edit the Undo works. ──
+    await guard('C165', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const a = await ctx.newPage(), b = await ctx.newPage();
+      for (const p of [a, b]) { await p.goto(ROOT5 + 'lists/'); await lReady(p); }
+      const ck = {};
+      await lMake(a, 'Buying'); await lAdd(a, 'mythril', 130, 3);
+      await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
+      const buyOne = async (p) => { await lRow(p, 130).locator('[data-act=ask-bought]').click(); await lRow(p, 130).locator('[data-f=boughtn]').fill('1'); await lRow(p, 130).locator('[data-act=bought]').click(); await lSettle(p); };
+      await buyOne(a);
+      ck.bought1 = (await lStored(a)).have['u.130'].nq === 1;
+      ck.offers = (await a.locator('[data-act=rest]').count()) >= 1;
+      await a.evaluate(() => window.__lists.hold(true));
+      await lType(b, 130, 'have', 10);
+      ck.typed10 = (await lStored(b)).have['u.130'].nq === 10;
+      await a.click('[data-act=undo][data-i="0"]'); await lSettle(a);
+      const note = await lNote(a);
+      ck.refused = note.includes('Undo was not done: this was changed again since, here or on another device. Nothing was changed.') && (await lStored(a)).have['u.130'].nq === 10;
+      ck.entryDropped = !/Bought 1 Mythril Bolt/.test(await lNote(a));
+      // without tab B's edit the Undo works
+      await a.evaluate(() => window.__lists.hold(false)); await a.evaluate(() => window.__lists.reload()); await b.evaluate(() => window.__lists.reload());
+      await lType(a, 130, 'have', 0);
+      await buyOne(a);
+      ck.bought2 = (await lStored(a)).have['u.130'].nq === 1;
+      await a.click('[data-act=undo][data-i="0"]'); await lSettle(a);
+      ck.undone = (await lStored(a)).have['u.130'] === undefined && !(await lNote(a)).includes('Undo was not done');
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C165', 'Lists page, undo across tabs: tab A buys 1, tab B types 10 for the same item, tab A\'s Undo is refused with its line and the count stays 10; without tab B\'s edit the Undo works',
+        Object.values(ck).every(Boolean), { ck, note, errors: real(errors), external });
+      void server;
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──

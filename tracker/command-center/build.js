@@ -76,7 +76,7 @@ for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'recs.js', 'dr
 // plus `log` (the crafting-log pages of the Tracker's craft-* lists, as recipe ids) and `noHandOver` (recipes the Atelier lacks, no link).
 // The build stops when a log recipe id is not in `recipes`, when the Atelier disagrees with the sheets (tools/lists-crosscheck.js) or when
 // data.js is over the 1.5 MB budget. Both sizes are printed.
-for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
+for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js', 'store.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
 {
   const data = JSON.parse(fs.readFileSync(path.join(T, 'data', 'lists.json'), 'utf8'));
   const tracker = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8'));

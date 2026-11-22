@@ -15,3 +15,33 @@
 .lists-empty .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .lists-note { padding: 12px 14px; border: 1px solid var(--rule); background: var(--slip); }
 .lists-foot { max-width: 1240px; }
+
+/* Work item W7: making lists, wanted items, stock, undo. Colours come from the theme tokens above. */
+.lists-bar .btn:not([disabled]), .lists-panel .btn, .list-card .btn, .lists-status .btn, .lists-form .btn, .lists-empty .btn:not([disabled]) { min-height: 40px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.lists-status { margin: 0 0 12px; }
+.lists-status p { margin: 0 0 8px; }
+.lists-note-line { padding: 10px 12px; border: 1px solid var(--rule); border-left: 4px solid var(--seal); background: var(--slip); overflow-wrap: anywhere; }
+.lists-earlier { margin: 0 0 8px; }
+.lists-earlier li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0; }
+.lists-form { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--rule); background: var(--slip); }
+.lists-form label, .lists-panel label { display: flex; flex-direction: column; gap: 4px; font: 600 13px/1.3 var(--f-data); color: var(--ink-2); min-width: 0; }
+.lists-form input, .lists-form select, .lists-panel input[type=text], .lists-panel input[type=search], .lists-panel input[type=number], .lists-panel select { min-height: 40px; font: inherit; max-width: 100%; box-sizing: border-box; }
+.lists-panel { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--rule); border-top: 3px solid var(--seal); background: var(--slip); }
+.lists-panel h2 { font: 700 11px/1.2 "Cinzel", var(--f-serif); letter-spacing: .26em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px; }
+.lists-panel .row, .list-card .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.add-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; }
+.hits { list-style: none; margin: 8px 0 12px; padding: 0; }
+.hits li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--rule); }
+.wanted { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+.wanted-row { border: 1px solid var(--rule); padding: 10px 12px; min-width: 0; }
+.wanted-row.done .w-name { text-decoration: line-through; }
+.w-head { margin: 0 0 8px; overflow-wrap: anywhere; }
+.w-count, .w-q { font: 600 13px/1.4 var(--f-data); color: var(--ink-2); }
+.tag { font: 600 12px/1.4 var(--f-data); border: 1px solid var(--rule); padding: 1px 6px; }
+.w-edit, .w-stock, .w-bought, .w-act { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; margin: 0 0 8px; }
+.w-edit .chk { flex-direction: row; align-items: center; gap: 6px; min-height: 40px; }
+.w-edit .chk input { width: 20px; height: 20px; }
+.w-stock input, .w-edit input[type=number] { width: 7em; }
+.ask { font-weight: 600; }
+.list-title input { width: min(100%, 420px); }
+@media (max-width: 480px) { .lists-main { padding: 16px 12px 36px; } }
