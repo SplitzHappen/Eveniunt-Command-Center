@@ -255,7 +255,7 @@ one side only, taken; changed differently on both, asked. One new pass for `list
   | 1 | X removed the header and every wanted item; Y's header and wanted items equal B | The removal is taken: the list goes with everything in it. No question (the player removed it; nothing is orphaned) |
   | 2 | X removed the list; Y changed the header, or changed or added any wanted item | One question, kind `list` |
   | 3 | X lacks the header but still holds wanted items of the list (an older build, a hand edit); Y changed or not | One question, kind `list` |
-  | 4 | Both sides lack the header | No list question; wanted items left on either side stay and show as "Restored list" (LY3's exception) |
+  | 4 | Both sides lack the header | No list question; a wanted item changed or added on either side stays and shows as "Restored list" (LY3's exception); an item one side removed and the other holds unchanged follows the ordinary rule and is removed (outside code review, 2026-11-22: the removal was the player's own action) |
   | 5 | The header is not in B and one side added it (a new list), or there is no B | Taken with its wanted items; no question |
 
   The question names the list. **Keep**: Y's header stays, and every wanted item of the list that either side holds
@@ -356,7 +356,8 @@ or step. Lines are settled from the wanted items down, each exactly once, after 
 (always possible once the cuts are made). For one item:
 1. **make** lines: need = the sum of `qty − crafted` of their wanted items; crafts = need ÷ yield, rounded up. They
    are given no stock, and what they make beyond the need is `spare`.
-2. **coll** lines: need = the amounts; given = collectable stock (shared between coll lines in list order); short =
+2. **coll** lines: need = the amounts; given = collectable stock (shared between an item's coll lines in recipe order, then list and step order within a line:
+the W2 choice, so that reordering lists never moves a figure); short =
    need − given; crafts = short ÷ yield, rounded up.
 3. **hq** line: given = high-quality stock; short = need − given; got by the hq way.
 4. **normal** line: given = normal stock, then only the high-quality stock line 3 did not take; short = need − given;
@@ -914,6 +915,21 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   place select fits 360 px. Totals at 5ec6c31: unit 570 of 570, browser 61 of 61, full check 171 of 171 (C26b not
   run, the browser push service is unreachable from the session; run on 7ab3019, then C150, C152, C153, C155, C160 to
   C163 and C166 re-run after the fixes, 9 of 9).
+- **W14 Fixes from the outside code reviews (Sonnet builder; after W13; `docs/lists-code-review-adjudication.md`).**
+  (1) `store.js` caps every stock count a record, a purchase or a hand-in would raise at 999,999 and says so in the
+  status line ("Counts above 999,999 are kept at 999,999."); never a count the checker drops; unit test at the boundary
+  in each quality and for a multi-yield craft. (2) The "Restored list" card on Your lists for wanted items whose list
+  header is missing (spec section 4): shows them, plans nothing for them until restored, offers "Put these in a new
+  list" (creates a header with the old id, so nothing moves) and "Remove", both through undo; browser check on an
+  orphan made by the shipped build's sync. (3) "Made" and "Bought it" act only on the wanted items of the row's own
+  recipe (a make line's credits and its must-craft keys are filtered by recipe, never by item alone); the Wanted row's
+  lookup takes the row's own part; tests with two recipes of one product (real data: Bronze Ingot, recipes 1 and 170)
+  across two lists. (4) "Made" on a must-craft line records the quality the wanted items ask for (collectable, else high
+  quality, else normal), with a quality choice on the row when they ask for different ones; tests in each quality.
+  (5) `lists-data.py` records added recipes (old row null) and writes a `changes` entry for every stamp change, empty
+  or not; tests for an addition alone, mixed changes and two patches in a row; the page's notice names an added recipe
+  ("can now be crafted"). (6) C145 fails unless both Tracker saves actually ran. (7) C155 waits for the fetched state.
+  Accept: build twice, unit, browser, full `npm run check`; no existing test edited except C145 and C155 as listed.
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
