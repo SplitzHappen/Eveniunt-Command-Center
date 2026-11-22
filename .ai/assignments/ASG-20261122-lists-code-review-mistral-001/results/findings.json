@@ -1,0 +1,20 @@
+[
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 738,
+    "title": "Wanted items without their list are invisible: the promised \"Restored list\" view is not implemented",
+    "consequence": "An entry left without its list header (only via a sync with a device still on the old build, or a hand-edited save) is kept in the save and never deleted, but the page never shows it: the player cannot see, rename, move or remove it, may see an empty list and add the item again, ending with a duplicate hidden entry. No data is lost; the entry reappears if its list header returns.",
+    "fix": "Render targets whose list header is missing as a \"Restored list\" card on \"Your lists\" (name it, allow remove, allow moving the entry to an existing list or re-creating its list), as docs/lists-spec.md section 4 describes; add a browser check pinning the display. The save side is already done (checker keeps the entry, new orphans are refused, syncs never delete it).",
+    "evidence": "grep -rn \"Restored\" tracker/command-center/src/ finds nothing; lists.js:738 renderHome iterates only Object.keys(sc.lists); lists.js:315 targetsOf returns only targets with an existing list prefix; store.js:288 stateOf includes a target only when its list header exists; docs/lists-spec.md:217 and docs/STATE.md:217 promise the display; core.test.js:3321 (LY-8) asserts only save-level keeping, not the page."
+  },
+  {
+    "severity": "NOTE",
+    "file": "tracker/command-center/src/lists/engine.js",
+    "line": 1,
+    "title": "Collectable stock shared between an item's collectable lines in recipe order, not list order as the spec text says",
+    "consequence": "Only the display shares between two collectable lines of one item can differ from the spec's wording; line totals (the figures the never-rises rules protect) are identical either way. No player-visible wrong total.",
+    "fix": "None required. If the spec text is wanted exactly, give the stock in list order (the builder chose recipe order so reordering lists never moves a figure).",
+    "evidence": "engine.js header comment lists the accepted choice; docs/lists-spec.md section 5 says coll lines share stock in list order; the model test part A (which asserts the totals rules) passes."
+  }
+]
