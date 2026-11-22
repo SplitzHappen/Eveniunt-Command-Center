@@ -866,6 +866,12 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   removed, nothing is saved before Create; an unknown recipe id opens the screen unfilled) and C159 (the link opens
   the built Atelier on that recipe; a recipe without a hand-over has no link). Ticks are read with the Tracker's own
   reader in `site/core/`. Accept: unit, browser and those checks. Escalate if: reading ticks needs a core change.
+- **W10 built (2026-11-22), choices accepted:** ticks are read with the Tracker's own `ET.fromSaveDoc`, `ET.isTicked`,
+  `ET.isExcluded` (Lists loads `model.js` and `codec.js` when the screen is first needed); "not applicable" is the
+  Tracker's per-character exclusion; the gone-recipe rule applies to a `make` wanted item whose stored recipe is gone
+  and that has no other recipe (an ordinary wanted item is still planned by its ways, since it does not depend on a
+  recipe); the Atelier's unknown-id message is its existing "Recipe: ?"; the Atelier link changes job and mode in
+  memory only; a list made from the log is named "<Job>: <page title>", opens on To craft, and is one undo entry.
 - **W11 Look and phone pass (Sonnet builder; after W9, W10).** Files: `lists.css`, `tracker/tests/lists-look.test.js`
   (the six roles at 4.5:1 in all 21 themes, both modes; no colour in a rule outside the token block), `check.js` C160
   (every colour on a pictured screen is a role) and evidence block `L2` (each screen at 1440 px light and 360 px dark,
