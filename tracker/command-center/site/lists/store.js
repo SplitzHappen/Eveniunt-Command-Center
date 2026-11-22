@@ -138,16 +138,31 @@
     return out;
   };
   // "Put these in a new list": a header under the old id, so every wanted item stays under its own key and nothing moves. Returns { section, entry, id }.
-  S.restoreList = function (sec, listId, ctx) {
+  // charId (W15): the character the new list belongs to, or null/absent for none; anything else is refused.
+  S.restoreList = function (sec, listId, ctx, charId) {
     var s = session(sec), d = s.d;
+    if (charId !== undefined && charId !== null && charId !== '' && !/^c[1-8]$/.test(String(charId))) return fail('Choose one of your characters, or none.');
     if (d.lists[listId]) return fail('That list is back already.');
     var keys = Object.keys(d.targets).filter(function (k) { return k.slice(0, k.indexOf('.')) === listId; });
     if (!keys.length) return fail(NO_ITEM);
     if (Object.keys(d.lists).length >= LIMITS.lists) return fail(LINES.lists);
     var order = 0;
     Object.keys(d.lists).forEach(function (k) { order = Math.max(order, (d.lists[k].order || 0) + 1); });
-    d.lists[listId] = { name: 'Restored list', charId: null, order: Math.min(order, 9999), made: nowOf(ctx) }; s.touch('lists', listId);
+    d.lists[listId] = { name: 'Restored list', charId: charId ? String(charId) : null, order: Math.min(order, 9999), made: nowOf(ctx) }; s.touch('lists', listId);
     var r = s.finish('Put wanted items in a new list'); r.id = listId; return r;
+  };
+  // W15: the list's character, afterwards (only a character or none); the list's stock owner follows it, nothing in the stock moves,
+  // and the list leaves the combined view (its ticks are per character).
+  S.setListChar = function (sec, listId, charId) {
+    var s = session(sec), d = s.d, h = d.lists[listId];
+    if (!h) return fail(NO_LIST);
+    var c = charId === undefined || charId === null || charId === '' ? null : String(charId);
+    if (c !== null && !/^c[1-8]$/.test(c)) return fail('Choose one of your characters, or none.');
+    if ((h.charId || null) === c) return { section: s.orig, entry: null, kept: true };
+    h.charId = c; s.touch('lists', listId);
+    var cb = d.prefs && d.prefs.combined;
+    if (cb && cb[listId]) { var n = {}; Object.keys(cb).forEach(function (k) { if (k !== listId) n[k] = cb[k]; }); d.prefs.combined = n; s.touch('prefs', 'combined'); }
+    return s.finish('Changed the character of the list “' + (h.name || 'Untitled list') + '”');
   };
   // "Remove" on a Restored list: its wanted items only; refused when the list is back (then it is an ordinary list)
   S.removeOrphans = function (sec, listId) {

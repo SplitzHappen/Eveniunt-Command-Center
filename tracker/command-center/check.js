@@ -6183,7 +6183,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     const lOpenFirstList = async (pg) => { if (await pg.locator('[data-act=back]').count()) await pg.click('[data-act=back]'); await pg.waitForSelector('.list-card'); await pg.locator('.list-card [data-act=open]').first().click(); await pg.waitForSelector('[data-f=listname]'); };
     const lPriceTexts = (pg) => pg.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec[data-sec=market] .line-row')].map((r) => [r.dataset.item, (r.querySelector('.price-line') || {}).textContent || ''])));
     const lPriceTotal = (pg) => pg.evaluate(() => { const e = document.querySelector('.price-total'); return e ? { text: e.textContent, gil: +e.dataset.gil, priced: +e.dataset.priced, unpriced: +e.dataset.unpriced } : null; });
-    const lWaitPrices = (pg) => pg.waitForFunction(() => { const e = document.querySelector('.gsec[data-sec=market] .price-line'); return e && !/Fetching/.test(e.textContent); }, null, { timeout: 15000 });
+    // W15: waits for the answer itself: every price row has left its first text ("Price not fetched") and "Fetching", and the page's request is finished
+    const lWaitPrices = (pg) => pg.waitForFunction(() => { const r = [...document.querySelectorAll('.gsec[data-sec=market] .price-line')]; return r.length > 0 && r.every((e) => !/^Fetching/.test(e.textContent) && e.textContent.trim() !== 'Price not fetched') && !__lists.prices().busy; }, null, { timeout: 15000 });
     const lSettled = (pg) => pg.waitForTimeout(400);
     const SORRY_NONE = 'Market prices could not be fetched; showing no market prices.', SORRY_KEPT = 'Market prices could not be fetched; showing the last known market prices.';
 
@@ -6548,6 +6549,164 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
       record('C170', 'Lists page, patch notice: a recipe the patch added is named ("Iron Ingot can now be crafted from 3 Test Ore."), also for a list whose stamp is before an earlier patch that changed no recipe',
         Object.values(ck).every(Boolean), { ck, a, b, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── Lists, W15 (fixes from the review of the fixes): C171 "Made" credits only the wanted items its quality satisfies, C172 a finished row shows its own recipe, C173 the character of a restored list and of a list,
+    //    C174 the price wait of C166 waits for the fetched text (the reply is held back). ──
+    // ── C171 (Lists, W15) Iron Ingot (recipe 1001, makes 1) and Test Trade Good-like item 120 (recipe 1010, makes 3): an unfinished high-quality target and an ordinary one of the same recipe, in either order and in two lists. ──
+    await guard('C171', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, dbg = {};
+      const crafted = async (item) => lTargets(await lStored(page)).filter((t) => t.item === item).map((t) => (t.hq ? 'hq' : t.coll ? 'coll' : 'nq') + (t.qty) + ':' + (t.crafted || 0)).sort().join(' ');
+      const stock = async (id) => ((await lHave(page))['u.' + id]) || {};
+      const reset = () => lSeed(page, function (S) { return S.emptySection(); });
+      const made = async (item, q, all) => {
+        const row = page.locator('.craft-row[data-item="' + item + '"]');
+        if (q) await row.locator('[data-f=madeq]').selectOption(q);
+        await row.locator('[data-act=made]' + (all ? ':not([data-crafts="1"])' : '[data-crafts="1"]')).first().click(); await lSettle(page);
+      };
+      // (1) high quality first, ordinary second, one list: ordinary chosen credits the ordinary target only; then high quality credits the high-quality one
+      await reset(); await lSeedLists(page, [{ name: 'One', items: [[101, 1, { make: true, hq: true }], [101, 1, { make: true }]], have: { 104: 20 } }]);
+      await lOpenList(page, 'One', 'craft');
+      await made(101, 'nq');
+      ck.ordinaryOnly = (await crafted(101)) === 'hq1:0 nq1:1' && (await stock(101)).nq === 1 && !(await stock(101)).hq;
+      await lOpenList(page, 'One', 'craft');
+      await made(101, null);
+      ck.thenHq = (await crafted(101)) === 'hq1:1 nq1:1' && (await stock(101)).hq === 1;
+      // (2) ordinary first in list order, high quality in a later list: high-quality output still goes to the high-quality target first, the rest to the ordinary one
+      await reset(); await lSeedLists(page, [{ name: 'First', items: [[120, 2, { make: true }]], have: { 103: 20 } }, { name: 'Second', items: [[120, 4, { make: true, hq: true }]] }]);
+      await lOpenList(page, 'First', 'craft');
+      await made(120, 'hq');
+      ck.hqFirstAcrossLists = (await crafted(120)) === 'hq4:3 nq2:0' && (await stock(120)).hq === 3;
+      await lOpenList(page, 'First', 'craft');
+      await made(120, 'hq');
+      ck.multiYieldRest = (await crafted(120)) === 'hq4:4 nq2:2' && (await stock(120)).hq === 6;
+      // (3) multi-yield ordinary: the three go to the ordinary target, the high-quality one gets none
+      await reset(); await lSeedLists(page, [{ name: 'Mixed', items: [[120, 2, { make: true, hq: true }], [120, 4, { make: true }]], have: { 103: 20 } }]);
+      await lOpenList(page, 'Mixed', 'craft');
+      await made(120, 'nq');
+      ck.multiYieldOrdinary = (await crafted(120)) === 'hq2:0 nq4:3' && (await stock(120)).nq === 3;
+      // (4) "Made all" with ordinary chosen: the ordinary target is finished, the high-quality one is not credited, the rest stays in stock
+      await reset(); await lSeedLists(page, [{ name: 'All', items: [[101, 2, { make: true, hq: true }], [101, 1, { make: true }]], have: { 104: 20 } }]);
+      await lOpenList(page, 'All', 'craft');
+      await made(101, 'nq', true);
+      ck.madeAll = (await crafted(101)) === 'hq2:0 nq1:1' && (await stock(101)).nq === 3 && !(await stock(101)).hq;
+      // (5) collectable: collectable output credits the collectable target only; ordinary chosen credits the ordinary one
+      await reset(); await lSeedLists(page, [{ name: 'Coll', items: [[160, 1, { make: true, coll: true }], [160, 1, { make: true }]], have: { 103: 20 } }]);
+      await lOpenList(page, 'Coll', 'craft');
+      await made(160, 'nq');
+      ck.collOrdinary = (await crafted(160)) === 'coll1:0 nq1:1';
+      await lOpenList(page, 'Coll', 'craft');
+      await made(160, null);
+      ck.collFirst = (await crafted(160)) === 'coll1:1 nq1:1' && (await stock(160)).coll === 1;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C171', 'Lists page, "Made" and "Made all" credit only the wanted items the made quality satisfies: ordinary output only ordinary items, high-quality output high-quality then ordinary items (list order inside each, also across lists), collectable output collectable items; a multi-yield craft gives the rest to the next item and the remainder stays in stock',
+        Object.values(ck).every(Boolean), { ck, dbg, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C172 (Lists, W15) A must-craft row that is crafted in full and has left the plan shows its own recipe and job, never the line of another recipe of the product (Iron Ingot, recipes 1001 at level 10 and 1003 at level 20). ──
+    await guard('C172', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec) {
+        let t = 9000; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'Done', charId: null }, c()); sec = r.section; const a = r.id;
+        r = S.addTarget(sec, a, { item: 101, recipe: 1001, qty: 1, make: true }, c()); sec = r.section; sec.targets[r.key].crafted = 1;
+        r = S.newList(sec, { name: 'Fresh', charId: null }, c()); sec = r.section; const b = r.id;
+        sec = S.addTarget(sec, b, { item: 101, recipe: 1003, qty: 3, make: true }, c()).section;
+        sec = S.setHave(sec, 'u', 103, 'nq', 50).section;
+        return sec;
+      });
+      await lOpenList(page, 'Done', 'wanted');
+      const own = await lRow(page, 101).textContent();
+      ck.ownState = /crafted 1 of 1/.test(own) && /Crafted by Blacksmith, level 10/.test(own) && !/need 3/.test(own) && !/level 20/.test(own);
+      ck.planHasOnlyOther = await page.evaluate(() => Object.keys(__lists.plan('u').lines).filter((k) => /^101\|/.test(k)).join() === '101|make|1003');
+      await lOpenList(page, 'Fresh', 'wanted');
+      const other = await lRow(page, 101).textContent();
+      ck.otherRow = /need 3,/.test(other) && /level 20/.test(other) && !/crafted 1 of 1/.test(other);
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C172', 'Lists page, two recipes of one product with one crafted in full: the finished recipe\'s wanted row shows "crafted 1 of 1" and its own recipe\'s job and level, never the other recipe\'s need or job; the other row still shows its own',
+        Object.values(ck).every(Boolean), { ck, own, other, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C173 (Lists, W15) "Put these in a new list" asks which character (default: no character); a list's character can be changed from the list bar to a character or to none; every target field is kept. ──
+    await guard('C173', async () => {
+      const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
+      const base = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4';
+      try { gitOut(['cat-file', '-e', base + '^{commit}']); } catch (e) { throw new Error('the last build without Lists, 31cb0ba, cannot be read: ' + String(e.message).split('\n')[0]); }
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-orphan-')), dir = path.join(tmp, 'tracker'), rel = 'tracker/site';
+      for (const f of gitOut(['ls-tree', '-r', '--name-only', base, rel]).toString().split('\n').filter(Boolean)) { const dest = path.join(dir, f.slice(rel.length + 1)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, gitOut(['show', base + ':' + f])); }
+      const mounts = [[BASE + 'old-tracker/', dir]];
+      MOUNTS.unshift(...mounts);
+      const server = await start(PORT5);
+      const ck = {}, errs = [], dbg = {};
+      try {
+        const O = 'l1aaaaaaaaaa';
+        const orphans = { [O + '.t1aaaaaaaaaa']: { item: 101, recipe: 1001, qty: 2, crafted: 1, make: true, hq: true, at: 1760000002000 }, [O + '.t2bbbbbbbbbb']: { item: 103, recipe: 0, qty: 7, at: 1760000003000 } };
+        const sample = { v: 1, lists: {}, targets: orphans, ways: {}, owners: {}, have: {}, prefs: {} };
+        const fresh = async () => {
+          const c = await listsCtx(); errs.push(c);
+          const old = await c.ctx.newPage(); await old.goto(ROOT5 + 'old-tracker/');
+          await old.waitForFunction(() => typeof window.CC === 'object' && window.CC && typeof CC.writeSection === 'function', null, { timeout: 30000 });
+          await old.evaluate(async (sec) => { await CC.writeSection('lists', sec, null); }, sample);
+          await old.close();
+          const page = await c.ctx.newPage(); await page.goto(ROOT5 + 'lists/'); await lReady(page);
+          await page.evaluate(async () => { await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.chars = [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }]; doc.updated = Date.now(); return doc; }); });
+          await page.reload(); await lReady(page);
+          return page;
+        };
+        const canon = (x) => JSON.stringify(x, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v));
+        const card = (page) => page.locator('.lists-restored');
+        // (A) the default is no character
+        let page = await fresh();
+        const sel = card(page).locator('[data-f=restorechar]');
+        ck.choices = (await sel.locator('option').evaluateAll((o) => o.map((x) => x.value + '=' + x.textContent))).join() === 'c1=Alba,c2=Brio,=No character' && (await sel.inputValue()) === '';
+        await card(page).locator('[data-act=restore-orphans]').click(); await lSettle(page);
+        let s = await lStored(page);
+        ck.defaultNone = s.lists[O].charId === null && canon(s.targets) === canon(orphans);
+        // (B) a character: the list is that character's, every target field is kept
+        page = await fresh();
+        await card(page).locator('[data-f=restorechar]').selectOption('c2');
+        await card(page).locator('[data-act=restore-orphans]').click(); await lSettle(page);
+        s = await lStored(page);
+        ck.chosen = s.lists[O].charId === 'c2' && canon(s.targets) === canon(orphans) && (await page.locator('.lists-group[aria-label=Brio] .list-card').count()) === 1;
+        // (C) afterwards, from the list bar: to the other character, then to none; targets and stock untouched
+        await lOpenList(page, 'Restored list');
+        const lc = page.locator('[data-f=listchar]');
+        ck.barShows = (await lc.inputValue()) === 'c2';
+        await lc.selectOption('c1'); await lSettle(page);
+        s = await lStored(page); ck.toOther = s.lists[O].charId === 'c1' && canon(s.targets) === canon(orphans);
+        await page.locator('[data-f=listchar]').selectOption(''); await lSettle(page);
+        s = await lStored(page); ck.toNone = s.lists[O].charId === null && canon(s.targets) === canon(orphans);
+        ck.noErrors = errs.every((c) => real(c.errors).length === 0 && c.external.length === 0);
+      } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 1); fs.rmSync(tmp, { recursive: true, force: true }); }
+      record('C173', 'Lists page, character of a restored list: "Put these in a new list" asks which character (default no character), the wanted items keep every field, and the list bar changes the list\'s character to a character or to none',
+        Object.values(ck).every(Boolean), { ck, dbg, errors: errs.map((c) => real(c.errors)), external: errs.map((c) => c.external) });
+      server.close();
+    });
+
+    // ── C174 (Lists, W15) The price wait of C166 waits for the fetched text: the stand-in's reply is held back for 700 ms, and the wait returns only with the price shown. ──
+    await guard('C174', async () => {
+      const server = await start(PORT5);
+      const ck = {};
+      const c = await listsCtx(); const page = await c.ctx.newPage();
+      await c.ctx.route('https://universalis.app/**', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.fallback(); });
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedMarket(page, [103, 104]); await lMarketOpen(page); await lWaitPrices(page);
+      const tx = await lPriceTexts(page);
+      ck.fetchedAtWaitEnd = /^100 gil before tax, North-America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && /fetched \d\d:\d\d$/.test(tx[104]) && c.stand.asked.length === 1;
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C174', 'Lists page, prices: with the stand-in\'s reply held back, the wait that C166 uses returns only when every price row shows its fetched price (not at the first text, "Price not fetched")',
+        Object.values(ck).every(Boolean), { ck, tx, errors: real(c.errors), external: c.external });
       void server;
     });
 

@@ -359,3 +359,31 @@ test('ST-17 wanted items without a list are listed, put in a new list under the 
   assert.equal(Object.keys(d.section.targets).length, Object.keys(held.targets).length - 2);
   assert.ok(S.removeOrphans(r.section, ghost).error, 'a list that is back is removed only as a list');
 });
+
+// ---- W15 fix 3: the character of a restored list, and of a list afterwards
+test('ST-18 a restored list can take a character (default none, anything else refused), a list\'s character can be changed to a character or none, every target field is kept and the stock owner follows', () => {
+  const b = base(), ghost = 'gh0stlist002';
+  const sec = clone(b.sec); sec.targets[ghost + '.aaaaaaaaaaa1'] = { item: 101, recipe: 1001, qty: 2, crafted: 1, make: true, hq: true, step: 'sx', at: 5 };
+  const held = S.norm(sec);
+  assert.equal(ok(S.restoreList(held, ghost, ctx())).section.lists[ghost].charId, null, 'default: no character');
+  assert.equal(ok(S.restoreList(held, ghost, ctx(), null)).section.lists[ghost].charId, null);
+  assert.equal(ok(S.restoreList(held, ghost, ctx(), '')).section.lists[ghost].charId, null);
+  const r = ok(S.restoreList(held, ghost, ctx(), 'c2'));
+  assert.equal(r.section.lists[ghost].charId, 'c2'); assert.equal(S.ownerOf(r.section.lists[ghost]), 'c2');
+  assert.equal(J(r.section.targets), J(held.targets), 'every target field is kept');
+  assert.ok(S.restoreList(held, ghost, ctx(), 'x9').error, 'not a character');
+  assert.ok(S.restoreList(held, ghost, ctx(), 'c9').error, 'not a character');
+  // afterwards
+  let c = ok(S.setListChar(r.section, ghost, 'c3'));
+  assert.equal(c.section.lists[ghost].charId, 'c3'); assert.equal(J(c.section.targets), J(held.targets)); assert.equal(J(c.section.have), J(r.section.have));
+  assert.deepEqual(c.entry.units.map((u) => u.g + ':' + u.k), ['lists:' + ghost]);
+  c = ok(S.setListChar(c.section, ghost, null)); assert.equal(c.section.lists[ghost].charId, null);
+  assert.equal(S.setListChar(c.section, ghost, '').entry, null, 'no change, no entry');
+  assert.ok(S.setListChar(c.section, ghost, 'zz').error); assert.ok(S.setListChar(c.section, 'nolist000000', 'c1').error);
+  // the plan follows the owner: the list's wanted item is planned for the new owner only
+  const m = ok(S.setListChar(b.sec, b.lid, 'c2')).section;
+  assert.ok(Object.keys(S.stateOf(m, 'c2').targets).some((k) => k.startsWith(b.lid)) && !Object.keys(S.stateOf(m, 'c1').targets).some((k) => k.startsWith(b.lid)));
+  // the list leaves the combined view when its character changes
+  let t = ok(S.tickCombined(b.sec, b.lid, true)).section; assert.deepEqual(S.combined(t), [b.lid]);
+  t = ok(S.setListChar(t, b.lid, 'c2')).section; assert.deepEqual(S.combined(t), []);
+});

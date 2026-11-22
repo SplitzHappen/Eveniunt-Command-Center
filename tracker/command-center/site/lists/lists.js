@@ -341,7 +341,10 @@
   function lineFor(plan, t) {
     var keys = plan.items[t.item] || [], want = t.make ? 'make' : t.coll ? 'coll' : t.hq ? 'hq' : 'normal', found = null, fb = null, rid = recipeOfTarget(t);
     keys.forEach(function (k) { var ln = plan.lines[k]; if (ln.part === want && (want === 'make' || want === 'coll' ? ln.recipe === rid : true) && !found) found = ln; if (ln.part === 'normal' && !fb) fb = ln; });
-    return found || fb || (keys.length ? plan.lines[keys[0]] : null);
+    // W15: a must-craft row whose own line has left the plan (crafted in full, finished, covered) has none; it never borrows another recipe's line
+    if (t.make) return found;
+    var other = null; keys.forEach(function (k) { var ln = plan.lines[k]; if (!other && ln.part !== 'make' && ln.part !== 'coll') other = ln; });
+    return found || fb || other;
   }
   function askedQuality(t) { return t.coll ? 'coll' : t.hq ? 'hq' : 'nq'; }
   // a must-craft wanted item's stock is counted in the quality it asks for (W14); any other row follows its plan line
@@ -760,6 +763,11 @@
     });
     return out;
   }
+  // W15: the character choices of a select: every character, then "No character" (the default unless `sel` names one)
+  function charOptions(sel) {
+    var chars = SH.chars || [], known = !sel || chars.some(function (c) { return c.id === sel; });
+    return chars.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + (known ? '' : '<option value="' + esc(sel) + '" selected>' + esc(nameOfChar(sel)) + '</option>') + '<option value=""' + (sel ? '' : ' selected') + '>No character</option>';
+  }
   // "Restored list" (spec section 4): wanted items whose list is missing are kept, shown here, planned by nothing until put in a list, or removed
   function orphansHtml(sc) {
     var orph = S.orphans(sc), ids = Object.keys(orph);
@@ -768,7 +776,7 @@
       return '<section class="lists-group lists-restored" data-orphan="' + esc(id) + '" aria-label="Restored list"><h2>Restored list</h2>' +
         '<p>' + keys.length + ' wanted item' + (keys.length === 1 ? ' has' : 's have') + ' no list, which can happen after a sync with a device on an older version. They are kept, and no plan counts them until they are in a list.</p>' +
         '<ul class="restored-items">' + keys.map(function (k) { var t = sc.targets[k]; return '<li data-key="' + esc(k) + '">' + esc(itemName(t.item)) + ' × ' + t.qty + '</li>'; }).join('') + '</ul><p class="row">' +
-        btn('Put these in a new list', 'restore-orphans') + ' ' + (asking ? '<span class="ask">Remove these ' + keys.length + ' wanted item' + (keys.length === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-orphans', '', 'danger') + ' ' + btn('Keep', 'keep')
+        '<label>Character <select data-f="restorechar">' + charOptions('') + '</select></label> ' + btn('Put these in a new list', 'restore-orphans') + ' ' + (asking ? '<span class="ask">Remove these ' + keys.length + ' wanted item' + (keys.length === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-orphans', '', 'danger') + ' ' + btn('Keep', 'keep')
           : btn('Remove', 'ask-remove-orphans')) + '</p></section>';
     }).join('');
   }
@@ -801,10 +809,11 @@
     var have = sc.have[owner + '.' + t.item], typed = (have && have[q]) || 0, name = itemName(t.item), recs = recipesOf(t.item);
     var need = ln ? (ln.part === 'make' ? ln.need : ln.short) : 0, steps = h.steps || {}, stepIds = stepIdsOf(h);
     var h2 = '<li class="wanted-row' + (t.done ? ' done' : '') + '" data-key="' + esc(key) + '" data-item="' + t.item + '" data-q="' + q + '" data-owner="' + esc(owner) + '"><div class="w-head"><b class="w-name">' + esc(name) + '</b> <span class="w-count">' +
-      (t.done ? 'Finished' : 'need ' + (ln ? ln.need : t.qty) + ', have ' + typed) + ' <span class="w-q">(' + qWord(q) + ')</span></span>' +
+      (t.done ? 'Finished' : t.make && !ln ? 'crafted ' + Math.min(t.crafted || 0, t.qty) + ' of ' + t.qty + ', have ' + typed : 'need ' + (ln ? ln.need : t.qty) + ', have ' + typed) + ' <span class="w-q">(' + qWord(q) + ')</span></span>' +
       (t.make ? ' <span class="tag">Must be crafted by me: ' + (t.crafted || 0) + ' of ' + t.qty + ' crafted</span>' : '') + (!DATA.items[t.item] || (t.make && !recs.length) ? ' <span class="tag gone">no longer in the game data</span>' : '') + '</div>';
     var shown = ln && !(t.make && ln.part !== 'make');
     if (shown) h2 += reasonOf(V, ln, null);
+    else if (t.make && !ln && !t.done && DATA.recipes[recipeOfTarget(t)]) { var orr = DATA.recipes[recipeOfTarget(t)]; h2 += '<p class="why own-state">Crafted by ' + (JOBS[orr[2]] || 'a crafter') + ', level ' + orr[3] + '.</p>'; } // W15: the row's own recipe and job
     h2 += '<div class="w-edit"><label>Amount <input type="number" inputmode="numeric" min="1" max="99999" data-f="qty" value="' + t.qty + '"></label>';
     if (canHq(t.item) || t.hq) h2 += flagBox(key, 'hq', 'High quality', t.hq);
     if (canColl(t.item) || t.coll) h2 += flagBox(key, 'coll', 'Collectable', t.coll);
@@ -841,7 +850,7 @@
     var sums = sumShares(V.plan, V.ids, SH.view.step), tab = SH.view.tab;
     var out = statusHtml() + '<div class="lists-bar">' + btn('Your lists', 'back') + '</div>' + noticeHtml(h, id, sc) +
       '<section class="lists-panel"><label class="list-title">List name <input type="text" data-f="listname" maxlength="60" value="' + esc(h.name || '') + '"></label>' +
-      '<p class="muted">' + esc(nameOfChar(h.charId || '')) + ' · ' + (sids.length ? sids.length + ' step' + (sids.length === 1 ? '' : 's') + ': ' + sids.map(function (s) { return esc(steps[s].name); }).join(', ') : 'one step') + '</p>' +
+      '<p class="muted"><label>Character <select data-f="listchar">' + charOptions(h.charId || '') + '</select></label> · ' + (sids.length ? sids.length + ' step' + (sids.length === 1 ? '' : 's') + ': ' + sids.map(function (s) { return esc(steps[s].name); }).join(', ') : 'one step') + '</p>' +
       '<p class="row"><label>New step <input type="text" data-f="stepname" maxlength="60"></label> ' + btn('Add a step', 'addstep') + '</p>' + totalsLine(V) + barHtml(V) + '</section>' +
       tabsHtml(V, [['get', 'To get'], ['craft', 'To craft'], ['wanted', 'Wanted']]) + (tab === 'wanted' ? '' : stepsHtml(V, h, id));
     if (tab === 'get') out += '<section class="lists-panel tab-get">' + getTab(V, sums) + '</section>';
@@ -878,14 +887,18 @@
   function vendorQualities(item, q) { var tr = (DATA.trades && DATA.trades[item]) || []; return tr.some(function (o) { return o[1].length === 1 && o[1][0][0] === 1 && (o[2] ? 'hq' : 'nq') === (q === 'hq' ? 'hq' : 'nq'); }); }
   // how much of a must-craft item's output goes to which wanted items: list order, then step order (the engine's record)
   // W14: only the wanted items of the line's own recipe count (a product can have several recipes, and each has its own line).
-  function creditsFor(sc, owner, item, recipe, made) {
-    var out = {}, left = made;
-    ownerListIds(sc, owner).forEach(function (lid) {
-      var steps = sc.lists[lid].steps || {}, sids = stepIdsOf(sc.lists[lid]);
-      var keys = targetsOf(sc, lid).filter(function (k) { var t = sc.targets[k]; return t.item === item && t.make && !t.done && recipeOfTarget(t) === recipe; });
-      var idx = function (k) { var i = sids.indexOf(sc.targets[k].step); return steps && i > 0 ? i : 0; };
-      keys.sort(function (a, b) { return idx(a) - idx(b); });
-      keys.forEach(function (k) { var t = sc.targets[k], c = Math.min(left, t.qty - (t.crafted || 0)); if (c > 0) { out[k] = c; left -= c; } });
+  // W15: and only those the made quality satisfies: collectable output credits collectable items; high-quality output credits high-quality items, then ordinary ones;
+  // ordinary output credits ordinary items only. Inside each group: list order, then step order; what is left of the output stays in stock.
+  function creditsFor(sc, owner, item, recipe, made, quality) {
+    var out = {}, left = made, groups = quality === 'coll' ? [['coll']] : quality === 'hq' ? [['hq'], ['nq']] : [['nq']];
+    groups.forEach(function (want) {
+      ownerListIds(sc, owner).forEach(function (lid) {
+        var steps = sc.lists[lid].steps || {}, sids = stepIdsOf(sc.lists[lid]);
+        var keys = targetsOf(sc, lid).filter(function (k) { var t = sc.targets[k]; return t.item === item && t.make && !t.done && recipeOfTarget(t) === recipe && want.indexOf(askedQuality(t)) >= 0; });
+        var idx = function (k) { var i = sids.indexOf(sc.targets[k].step); return steps && i > 0 ? i : 0; };
+        keys.sort(function (a, b) { return idx(a) - idx(b); });
+        keys.forEach(function (k) { var t = sc.targets[k], c = Math.min(left, t.qty - (t.crafted || 0)); if (c > 0) { out[k] = c; left -= c; } });
+      });
     });
     return out;
   }
@@ -928,7 +941,7 @@
       case 'keep': SH.view.confirm = null; render(); break;
       case 'ask-remove-orphans': SH.view.confirm = 'orphan:' + b.closest('[data-orphan]').getAttribute('data-orphan'); render(); break;
       case 'remove-orphans': { var oid = b.closest('[data-orphan]').getAttribute('data-orphan'); SH.view.confirm = null; act(function (s) { return S.removeOrphans(s, oid); }, { after: noUndo }); break; }
-      case 'restore-orphans': { var rid2 = b.closest('[data-orphan]').getAttribute('data-orphan'); act(function (s) { return S.restoreList(s, rid2, CTX()); }, { after: noUndo }); break; }
+      case 'restore-orphans': { var rid2 = b.closest('[data-orphan]').getAttribute('data-orphan'); var rch = b.closest('[data-orphan]').querySelector('[data-f=restorechar]'), rchar = rch && rch.value ? rch.value : null; act(function (s) { return S.restoreList(s, rid2, CTX(), rchar); }, { after: noUndo }); break; }
       case 'remove-list': { var lid = card.getAttribute('data-list'); SH.view.confirm = null; act(function (s) { return S.removeList(s, lid); }); break; }
       case 'add': {
         var qty = main.querySelector('[data-f=addqty]').value, item = +b.getAttribute('data-item'), rid = recipesOf(item)[0] || 0;
@@ -960,8 +973,8 @@
         act(function (s) {
           var plan = planOf(s, mo), ln = plan.lines[lk];
           if (!ln || ln.by !== 'craft') return { error: 'That craft is no longer in the plan.' };
-          var credits = ln.part === 'make' ? creditsFor(s, mo, ln.item, ln.recipe, times * ln.yield) : {};
-          return labeled(S.record(s, DATA, mo, plan, { line: ln, times: times, quality: madeQuality(s, mo, ln, lk), targets: credits }), 'Made ' + times + ' ' + itemName(ln.item));
+          var mq = madeQuality(s, mo, ln, lk), credits = ln.part === 'make' ? creditsFor(s, mo, ln.item, ln.recipe, times * ln.yield, mq) : {};
+          return labeled(S.record(s, DATA, mo, plan, { line: ln, times: times, quality: mq, targets: credits }), 'Made ' + times + ' ' + itemName(ln.item));
         }, { after: function (res) { if (res.short && res.short.length) SH.note = RECORD_LINE; } });
         break;
       }
@@ -999,6 +1012,7 @@
     else if (f === 'offer') { var key = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: 'trade', offer: key }), 'Chose a trade for ' + itemName(c.item)); }); }
     else if (f === 'tick') { var id = el.closest('[data-list]').getAttribute('data-list'), on = el.checked; act(function (s) { return S.tickCombined(s, id, on); }); }
     else if (f === 'priceWorld') { var pw = el.value; act(function (s) { return prefEdit(s, 'priceWorld', pw); }); }
+    else if (f === 'listchar') { var lc = el.value || null; act(function (s) { return S.setListChar(s, listId, lc); }); }
     else if (f === 'listname') act(function (s) { return S.renameList(s, listId, el.value); });
   });
 
