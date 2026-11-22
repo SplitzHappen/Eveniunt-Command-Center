@@ -805,6 +805,11 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   10; without tab B's edit the Undo works). The page writes one save at a time, as `subs.js` `write()` does. Accept:
   `npm run test:unit`, `CHECK_ONLY=C147,C148,C149,C165 npm run check`. Escalate if: the write pattern needs a store
   change beyond LI5.
+- **W7 built (2026-11-22), choices accepted:** stock entry and "Bought it" sit on Wanted rows until W8 adds the tabs;
+  a new wanted item stores its lowest-level recipe (0 when none); groups written in sorted key order (undo restores
+  byte for byte); `record` and `finishStep` ignore the stock-count limit (D26), `bought` obeys it; a blank, zero or
+  invalid entry keeps the old value; Rename list and Add a step added (removing a step is not built); an unknown id in
+  `prefs.combined` is ignored and only an explicit tick rewrites the selection (the W4 item, ST-14).
 - **W8 Views and choices (Sonnet builder; after W7).** Files: `lists.js`, `lists.css`, `check.js` C150 (a "get it by"
   change and a change of the order of ways move the totals at once, in every list of that character; a high-quality
   row and an ordinary row of one item each show their own way and seller), C151 (steps: each step's share, the shares
