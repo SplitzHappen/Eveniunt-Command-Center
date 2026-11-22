@@ -45,3 +45,33 @@
 .ask { font-weight: 600; }
 .list-title input { width: min(100%, 420px); }
 @media (max-width: 480px) { .lists-main { padding: 16px 12px 36px; } }
+
+/* Work item W8: tabs, sections, plan rows, steps, order of ways, combined view. Colours come from the theme tokens above; the colour roles are W11's. */
+.lists-tabs, .lists-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.lists-tabs .tab, .lists-steps .step-tab, .sec-toggle { min-height: 40px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.lists-tabs .tab[aria-selected=true], .lists-steps .step-tab[aria-selected=true] { border-bottom: 3px solid var(--seal); font-weight: 700; }
+.step-tab .st-fig { font: 600 12px/1.3 var(--f-data); color: var(--ink-2); }
+.lists-opts { margin: 8px 0; }
+.lists-totals { font: 600 13px/1.4 var(--f-data); color: var(--ink-2); margin: 8px 0; }
+.fine { font-size: 12px; }
+.gsec, .cblock { margin: 0 0 12px; }
+.gsec-h, .cblock h3 { margin: 0 0 6px; font: 700 14px/1.3 var(--f-data); }
+.sec-toggle { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 8px; }
+.lines { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 10px; }
+.line-row { border: 1px solid var(--rule); padding: 10px 12px; min-width: 0; }
+.line-row.done { opacity: .75; }
+.why { margin: 0 0 8px; font: 500 13px/1.4 var(--f-data); color: var(--ink-2); overflow-wrap: anywhere; }
+.stamp { font: 600 12px/1.4 var(--f-data); border: 1px solid var(--rule); padding: 1px 6px; }
+.held { font: 600 12px/1.4 var(--f-data); border: 1px dashed var(--rule); padding: 1px 6px; }
+.w-way { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; margin: 0 0 8px; }
+.w-way select { max-width: 100%; }
+.left-row { border: 1px solid var(--rule); padding: 8px 12px; overflow-wrap: anywhere; }
+.lists-confirm { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--rule); border-left: 4px solid var(--seal); background: var(--slip); }
+.order-list { margin: 0 0 12px; padding-left: 0; list-style: none; display: grid; gap: 8px; }
+.order-list li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; border: 1px solid var(--rule); padding: 8px 12px; }
+.ord-text { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.group-bar { margin: 0 0 10px; }
+.group-bar .btn, .lists-opts .btn, .lines .btn, .lists-confirm .btn, .order-list .btn, .list-card .tick { min-height: 40px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.tick { display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 6px 0; }
+.tick input { width: 20px; height: 20px; }
+@media (max-width: 480px) { .lists-tabs .tab, .lists-steps .step-tab { flex: 1 1 auto; } }

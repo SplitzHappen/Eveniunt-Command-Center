@@ -264,6 +264,17 @@
     s.touch('ways', k);
     return s.finish('Changed how an item is got');
   };
+  // The order of ways of one owner (D12, D14; the Order of ways sheet): the five words, each once, stored as one text.
+  var WORDS = ['vendor', 'craft', 'gather', 'trade', 'market'];
+  S.setOrder = function (sec, owner, order) {
+    if (!OWNER.test(String(owner))) return fail('Unknown character.');
+    var a = typeof order === 'string' ? order.split(/\s+/).filter(Boolean) : null;
+    if (!a || a.length !== 5 || a.some(function (w, i) { return WORDS.indexOf(w) < 0 || a.indexOf(w) !== i; })) return fail('The order must name each of the five ways once.');
+    var s = session(sec), cur = s.d.owners[owner] ? clone(s.d.owners[owner]) : {}, text = a.join(' ');
+    if (cur.order === text) return { section: s.orig, entry: null };
+    cur.order = text; s.d.owners[owner] = cur; s.touch('owners', owner);
+    return s.finish('Changed the order of ways');
+  };
   // "Use the usual order": the way and its offer are cleared
   S.clearWay = function (sec, owner, item) {
     if (!OWNER.test(String(owner)) || !ITEMKEY.test(String(item))) return fail('Unknown item.');
