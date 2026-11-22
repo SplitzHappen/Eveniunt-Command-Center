@@ -1,0 +1,38 @@
+[
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 881,
+    "title": "Recording a mixed-quality craft can credit a target requiring another quality",
+    "consequence": "An ordinary craft can mark a high-quality or collectable wanted item crafted, while the ordinary item remains outstanding; the plan can omit a craft the player still needs.",
+    "fix": "Allocate credits only to targets compatible with the selected output quality, and handle Made all and multi-yield output without crediting incompatible targets. Test both orders, both selector choices, collectables and multiple lists.",
+    "evidence": "In the built page, two recipe-1 Bronze Ingot targets have high-quality first and ordinary second. Selecting ordinary and pressing Made 1 saved one ordinary item but set crafted=1 on the high-quality target. creditsFor filters by item and recipe, not quality; the Made handler computes credits without passing madeQuality. C169 checks the stock quality but not which mixed-quality target gets credit."
+  },
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 341,
+    "title": "A completed wanted item can display another recipe's outstanding line",
+    "consequence": "The wanted row can show another job and need count, leading a player to believe a completed recipe still needs materials or to buy an incorrect amount.",
+    "fix": "When the target's own make or collectable line is absent, render its own completed or fallback state rather than an unrelated recipe line. Test an already-crafted target alongside an unfinished different recipe of the same product.",
+    "evidence": "In the built page recipe 1 of Bronze Ingot was already crafted 1 of 1 and recipe 170 still needed 3. The recipe-1 wanted row showed 'need 3' and 'Crafted by Armorer' (recipe 170). lineFor finds no matching make line and returns keys[0]. C168 covers two unfinished recipe lines, not this case."
+  },
+  {
+    "severity": "MINOR",
+    "file": "tracker/command-center/src/lists/store.js",
+    "line": 149,
+    "title": "Restored items cannot be assigned to a character",
+    "consequence": "The restored list uses the no-character stock and order, so it cannot use the player's character-specific stock or join that character's combined view; the player must manually recreate entries to use that character.",
+    "fix": "Offer an explicit character choice at restoration or allow the restored list's character to be changed later, without guessing the missing original owner. Preserve all target fields and protect stale writes.",
+    "evidence": "With character c1 present and an orphaned Bronze Ingot target, the browser's restore action created charId:null. The opened list displayed 'No character', and no character selector is provided on that screen. store.js always sets charId:null, and the page only offers a character selector for a new list."
+  },
+  {
+    "severity": "MINOR",
+    "file": "tracker/command-center/check.js",
+    "line": 6186,
+    "title": "The other price-table check still has the early-return race",
+    "consequence": "A slow but successful price reply can make the remaining price-table check fail, producing a false release-check failure.",
+    "fix": "Use an explicit completed-request or expected-result wait in every price-table case, including C166, rather than the shared not-Fetching predicate.",
+    "evidence": "C155 now waits for fetched text, but C166 still calls lWaitPrices, which also accepts initial 'Price not fetched'. In an isolated test copy, adding a 500 ms delay only to the mocked price response made C166 fail multiple price assertions; the candidate's six focused checks otherwise passed."
+  }
+]
