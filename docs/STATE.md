@@ -117,7 +117,8 @@ Nothing at the moment.
   W0 (baseline and data facts) is done. A same-family review found two blockers and four major gaps, all fixed in the
   spec. Outside reviews by ChatGPT (not ready: 6 blockers, 10 major) and Mistral (ready after fixes: 5 major) on
   2026-11-22: 35 findings, 32 accepted and 3 in part, all applied (`docs/lists-review-adjudication.md`; results on the
-  branches `assignments/ASG-20261122-lists-spec-review-*`). One owner question is open (section 11, Q4).
+  branches `assignments/ASG-20261122-lists-spec-review-*`). The owner answered the last question on 2026-11-22
+  (Q4: how an item is got is chosen once per character). Building started with W1.
 
 ## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
 

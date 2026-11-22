@@ -5,7 +5,7 @@ session had no shell, so no test, build or network request was run and no file s
 with the owner's answers (section 11) and two owner requirements: buy from a gil merchant first, and change how an
 item is got at any time. Revised again 2026-11-22 after a same-family review (Claude reviewing a Claude plan, not an
 independent audit): the planning model of section 5 was rebuilt so that every invariant is a property a test can
-check, and one owner question (Q4) is open. **Revision 4 (2026-11-22)** applies two outside reviews (ChatGPT: not
+check; the owner answered the last question (Q4: option A) on 2026-11-22. **Revision 4 (2026-11-22)** applies two outside reviews (ChatGPT: not
 ready, 20 findings; Mistral: ready after fixes, 15 findings); every finding and its ruling is in
 `docs/lists-review-adjudication.md`. Requirements: `docs/lists-research.md` sections 1 to 8. Owner decisions of
 2026-11-21 are fixed: Lists before Market with a reusable engine; one release covering research sections 1 to 7;
@@ -55,8 +55,8 @@ market prices from day one through one shared price service.
   `tracker/tests/ui.test.js`; Lists needs nothing from it; Market will replace that page's shopping list anyway.
 - **D11 Atelier hand-over by a link**, `atelier/#recipe=<recipe id>`. [The shared save: a visit would become a saved
   change. A query string: the Atelier's offline copy is matched by path.]
-- **D12 One plan per character, and in it one way of getting each item** (review, 2026-11-22; owner question Q4, built
-  as written until answered). All lists of a character are planned together against that character's stock. How an
+- **D12 One plan per character, and in it one way of getting each item** (review, 2026-11-22; owner's answer to Q4,
+  option A, 2026-11-22). All lists of a character are planned together against that character's stock. How an
   item is got, and the order in which ways are tried, are stored once per character, not per list. [Per-list choices
   with one shared plan, as first written: list 1 crafts X (makes 3, needs 1), list 2 buys X (needs 2) and lives on
   list 1's spare; removing list 1's item makes list 2 buy 2. Amounts that rise when something is removed are the fault
@@ -824,9 +824,7 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   browser check answers prices with a stand-in.
 - **Gil merchants must be told apart from other vendors by the data** (D14). If W0 or W1 finds they cannot be, the
   owner's first requirement cannot be met honestly and the work stops there for a decision.
-- **Q4 is open** (section 11). W2, W3, W7 and W8 build option A; an answer of B changes the save layout (ways and the
-  order move back to each list), the engine's sharing rule and those four items. Best answered before W3 ships a
-  layout.
+- **Q4 is answered** (section 11): option A, one way per item per character, as W2, W3, W7 and W8 build it.
 - **The data budget is not measured** and keeping every offer and every currency's own recipes makes the file larger
   than first planned. W1 reports plain and packed sizes on its first run; above the budget it stops and the trimming
   is a decision, not a silent step.
@@ -884,7 +882,7 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
 - Sources other than merchant, craft, gather, trade and market (drops, quests, desynthesis, reduction) are "Other": to
   get, your own way. Sharing a list by link or file is a later phase.
 
-## 11. Owner decisions (2026-11-22), and one open question
+## 11. Owner decisions (2026-11-22)
 
 - **Q1, what I have: once per character (option A).** One stock per character that all of that character's lists draw
   on, in the order the lists are put in; a list says how many are held for another list. Lists without a character
@@ -899,11 +897,11 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
 - **New requirement 2: how an item is got can be changed at any time, from every row**, with a one-tap "Bought it",
   nothing gathered lost, and one-tap undo (D15, D16, E18, E20, C162, C163, C165).
 
-**Q4 (open). When a character has several lists, is "how I get this item" chosen once for the character, or
+**Q4 (answered 2026-11-22: option A). When a character has several lists, is "how I get this item" chosen once for the character, or
 separately in each list?** Your decision of 2026-11-21 spoke of settings per list. Once all of a character's lists
 share one stock (Q1), settings per list can make the numbers go up when you remove something, so the plan needs one of
 the following. Both outside reviewers recommend A.
-- **A. Once per character (recommended; this is what is built until you answer).** What happens: if you say "I buy
+- **A. Once per character (recommended; the owner's choice).** What happens: if you say "I buy
   Iron Ingots", that holds in all of that character's lists, and the order of ways (merchant first, then craft, …) is
   set once per character. What it improves: removing an item or typing more stock can never make any of the
   character's totals go up, that is, what the character has to get, craft or trade over all lists together; "Bought
