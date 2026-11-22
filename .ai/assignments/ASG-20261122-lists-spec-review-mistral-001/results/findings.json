@@ -1,0 +1,122 @@
+[
+  {
+    "severity": "MAJOR",
+    "section": "3, 4, 6 (data stamp vs saved field; patch-change rule)",
+    "title": "The data stamp cannot fit the 60-character cap on the saved `data` field, silently disabling the patch-change notice",
+    "consequence": "If the stamp is built from the full 40-character commit hashes pinned in tracker/data/SOURCES.md it is ~86 chars; CC.checkLists keeps `data` only up to 60, so the field is dropped, and section 6's 'unknown stamp shows no notice' rule then applies to every list. The 'game data changed since this list was last checked' notice would never fire, with no error anywhere.",
+    "fix": "Define the stamp to fit 60 characters (game version + short hashes) and add an LD/LS test that a real stamp from lists-data.py round-trips through CC.checkLists byte-for-byte and is <= 60 chars.",
+    "evidence": "docs/lists-spec.md:95 (stamp = game version + sheet commit + Teamcraft commit), :135 (`data` up to 60), :315-321 (patch rule; unknown stamp -> no notice); tracker/data/SOURCES.md:4 (full 40-char pin 44948e4cda5846eab0baa9872122a888fcc4f1b1)."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "5, invariant E18(c)",
+    "title": "'Changing the way back gives the earlier plan again' is literally false after a purchase or recorded craft changed stock",
+    "consequence": "E18(a) allows LISTS.bought to raise the bought item's own stock; a later hand switch back then produces a different (lower) plan, not the earlier one. The model test asserts E1-E18 over random sequences that include buys and recorded crafts, so W2 escalates or a builder weakens the invariant to get green, which the spec forbids.",
+    "fix": "Qualify E18(c): with the stock counts as they were, the way change back gives the earlier plan; after a purchase or recorded craft the plan is never worse than before. Undo (D16) is the path that restores the exact earlier plan including stock.",
+    "evidence": "docs/lists-spec.md:292-297 (E18(a) 'the bought item's own, which only rises'; (c) 'gives the earlier plan again'), :304-305 (Part A asserts E1-E18 over sequences of way changes, crafts recorded, items bought)."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "4, sync rules LY1/LY3",
+    "title": "LY1's trigger phrase 'kept-changed' is undefined; under the narrow reading a header-only one-sided removal orphans wanted items and breaks LY3",
+    "consequence": "In the real three-way merge a unit unchanged on one side and removed on the other is taken silently with no conflict, so a list header removed on one side while the other side's wanted items are merely kept would drop the header and orphan the targets, violating LY3 ('after a sync no wanted item lacks its list unless one side already held it so') - list entries losing their list in a sync.",
+    "fix": "Define the trigger explicitly: the list question fires whenever a list header is absent from one side while the other side still holds that header or any of that list's wanted items, changed or not (i.e. whenever the merge would orphan units).",
+    "evidence": "docs/lists-spec.md:178-182 (LY1 'changed, added or kept-changed', LY3); tracker/src/core/merge.js:54-55 (one-sided change taken silently), :66 (conflict only when both sides changed differently)."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "5, settlement order and E14; section 3 tool stop rules",
+    "title": "Only trade loops are cut; a recipe (craft) cycle has no rule and can loop the engine forever",
+    "consequence": "Settlement requires each item settled after every item that can need it; on a cyclic recipe graph no such order exists, no cut rule or 'other' fallback is defined for craft cycles, and the data tool does not check acyclicity - the engine can hang the page, or a builder invents an untested cut.",
+    "fix": "Extend E14 to every cycle (craft or trade): cut at a deterministic point (e.g. the item whose way is the trade, else smallest item id in the cycle), list it under 'other' with a note, other side keeps its normal way; and make lists-data.py stop, writing nothing, on a recipe cycle.",
+    "evidence": "docs/lists-spec.md:232-233 (settlement order, only 'a trade loop is cut'), :283 (E14), :108-115 (tool stop rules, no cycle check), :304 (model test has trade loops only)."
+  },
+  {
+    "severity": "MAJOR",
+    "section": "4, stale writes LI1-LI3 and the Compatibility claim",
+    "title": "LI rules sit behind `if (stored && rev !== known.rev)`; if the whole lists section is absent from stored, a stale page resurrects removed lists unquestioned",
+    "consequence": "When modules.lists is absent from the stored save (all units removed by an answered sync, or a hand-emptied save) while the page's base still holds lists, the stale branch is skipped and the page's section is written wholesale - a sync deletion is undone by a stale tab with no question, contradicting LI1/D6 and CLAUDE.md's merge rule.",
+    "fix": "Make CC.checkLists always emit `v` and all six groups even when empty (as checkSubmersibles does), so the section never disappears once present and the LI branch always runs; add an LS test for the fully-emptied-section case.",
+    "evidence": "tracker/src/core/save.js:460 (`if (stored && rev !== (known && known.rev))` gates merge+refusals), :108-119 (checkSubmersibles always returns its groups); docs/lists-spec.md:154-157 (compatibility), :164-172 (LI1-LI3)."
+  },
+  {
+    "severity": "MINOR",
+    "section": "4, save notes vs LI2",
+    "title": "The 'entry without its list is never a reason to refuse a write' sentence contradicts LI2 as written",
+    "consequence": "A builder can read the blanket sentence as forbidding LI2's refusal of writes that create a new orphan, making hand-edited orphans unwritable or new orphans writable depending on reading.",
+    "fix": "Reword the section-4 sentence: an orphan is never dropped; a write that would create a NEW orphan is refused (LI2); an orphan already in the stored copy stays writable and shows under 'Restored list'.",
+    "evidence": "docs/lists-spec.md:159-160 vs :164-166."
+  },
+  {
+    "severity": "MINOR",
+    "section": "5, parts 1-4; E6/E7; model test",
+    "title": "Precedence when one wanted item carries several of make/coll/hq is unstated",
+    "consequence": "Parts are implied to partition needs ('every other need') but no rule says what happens for an item flagged both coll and hq, or make and coll; the model test generates such items, so engine and test can disagree and totals differ by implementation.",
+    "fix": "State the precedence in one line (e.g. make > coll > hq > normal, each wanted item counted in exactly one part) or define how flags combine.",
+    "evidence": "docs/lists-spec.md:233-241 (parts), :266 (E6 flags coexist), :268 (E7), :304 (test generates hq+coll+make wanted items)."
+  },
+  {
+    "severity": "MINOR",
+    "section": "5, vendor shortfall rule; section 3 trades table",
+    "title": "'The cheapest gil offer' is undefined and can pick the wrong seller and price",
+    "consequence": "Cheapest per unit vs per total disagree: offers '1 for 100 gil' and '3 for 280 gil' with shortfall 4 - unit-cheapest picks the 3-for-280 offer (560 gil total), total-cheapest picks four singles (400 gil). gil.vendor and the 'Sold by ...' row depend on an undefined comparison.",
+    "fix": "Define it as lowest total cost for the shortfall, min over gil offers of ceil(shortfall/gives) x price, tie-broken by lowest unit price then lowest npc id; name that offer's seller on the row.",
+    "evidence": "docs/lists-spec.md:244 ('at the cheapest gil offer'), :96-97 (trades 'gil offers first and cheapest first')."
+  },
+  {
+    "severity": "MINOR",
+    "section": "6, D9 shared price service",
+    "title": "'Moved unchanged from earn.js lines 138-205 and 220-237' cannot be literal at two spots",
+    "consequence": "settle reads the reply field averagePrice/currentAveragePrice (earn.js:197) and fetchPrices hard-codes the query ?listings=0&entries=20 (earn.js:229); the shared PRICE.create parameterizes exactly these (query, read), so those two lines must change. Treating 'unchanged' as byte-identical breaks C113/C117/C123; over-editing breaks earn.test.js. The claim that subs.js is not edited does hold (it uses only EARN names that survive the move).",
+    "fix": "Add one sentence to section 6: the rules and limits move unchanged; the query string and the reply-field extraction become create() parameters (query, read).",
+    "evidence": "tracker/command-center/src/submersibles/earn.js:187-205 (settle, field read at :197), :222-237 (fetchPrices, query at :229); subs.js:981-982,1320-1323,1470-1474 (surviving EARN.* price calls); docs/lists-spec.md section 6."
+  },
+  {
+    "severity": "MINOR",
+    "section": "5, LISTS.finish; section 7 wording rules",
+    "title": "What 'Finished' does to stock is unspecified (row vs step, amount, quality) and no invariant covers finish",
+    "consequence": "Row-level 'Finished' vs step-level 'Finished takes its wanted items out of the stock' differ with no stated rule for how much is removed or in which quality; finish is the one state change with no E-invariant, so wrong totals after finishing a step (research fault #2971) are possible and untestable as written.",
+    "fix": "State in section 5: row Finished sets `done` only (stock untouched); step Finished sets done on its wanted items and removes up to qty of each from stock in the part's quality, never below 0; add an invariant that finishing never raises any total and is undone by restoring the removed counts.",
+    "evidence": "docs/lists-spec.md:210 (LISTS.finish signature), :420 (both Finished sentences), :304-305 (Part A has no finish step)."
+  },
+  {
+    "severity": "MINOR",
+    "section": "7, 'Get it by' select; section 4 way shape; section 5 way rule",
+    "title": "Which quality's way the row's 'Get it by' select sets is unstated",
+    "consequence": "One stored way per item, but the ways an item 'really has' differ between normal and high-quality needs and the row may be either; a builder could grey out or mis-set the select on an hq row.",
+    "fix": "One line: the select lists the ways the item has in the row's quality; choosing one sets the single stored way, and the other quality uses the same `by` if that source has that quality, else falls back to the owner's order (the section-5 way rule already does this).",
+    "evidence": "docs/lists-spec.md:134 (way shape), :222-224 (one way per quality), :384-388 (select 'lists only the ways the item really has')."
+  },
+  {
+    "severity": "MINOR",
+    "section": "4, checker shape; W3 LS-3/C145",
+    "title": "CC.checkLists should always emit all seven top-level keys",
+    "consequence": "If an empty section checks to {} the lists module can vanish from the store (opening the finding-5 hole), and 'byte for byte' round-trip tests (LS-3, C145) can flake on key order or missing groups.",
+    "fix": "Mirror checkSubmersibles (save.js:108-119): checkLists always returns { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} } with entries filled in.",
+    "evidence": "tracker/src/core/save.js:108-119 (always-emitting pattern); docs/lists-spec.md:148-157 (checker description), :478 (LS-3 byte-for-byte test)."
+  },
+  {
+    "severity": "NOTE",
+    "section": "3, size budget; sections 9 and 12",
+    "title": "The 1.5 MB packed data budget is unmeasured",
+    "consequence": "If W1's first run exceeds the budget the build stops by design and trimming becomes an owner decision mid-build instead of an early one with numbers.",
+    "fix": "No spec change needed; keep the section-9 risk and have W1 report plain vs packed size on first run so any trimming decision is made early.",
+    "evidence": "docs/lists-spec.md:115 ('Size budget (not measured)'), section 9 risks, section 12 'Not verified'."
+  },
+  {
+    "severity": "NOTE",
+    "section": "5, E7/E17; section 2 D14; section 11 new requirement 1",
+    "title": "Collectables are crafted even if a gil merchant sells them - an exception to the owner's merchant-first rule",
+    "consequence": "The owner rule says a gil-merchant item is bought before anything is crafted at every level; the spec crafts coll (and make) items regardless. If the pinned shops.json gives any collectable a pure-gil offer, the plan crafts it instead of buying.",
+    "fix": "Confirm the coll exception is intended (research fault #2896 is the reason); if any collectable has a gil offer in the pinned data, accept it or let the row offer 'buy it' like any other.",
+    "evidence": "docs/lists-spec.md:64 (D14 owner requirement), :268 (E7), :287-288 (E17 'only the make and coll parts are crafts regardless')."
+  },
+  {
+    "severity": "NOTE",
+    "section": "8, W12 / TL-3 (tracker/src/app/ui.js)",
+    "title": "The new Tracker button needs an explicit early return in the click handler before the fold branch",
+    "consequence": "The group row's first cell carries data-fold and the handler folds on any click inside it; a 'Make a list from what is missing' link placed there folds the group when clicked unless guarded first. TL-3 already requires the behavior and W12's files include ui.js, so this is a builder note, not a spec change.",
+    "fix": "In the click handler, return early for [data-mklist] (letting the link navigate) before the data-fold branch at ui.js:752.",
+    "evidence": "tracker/src/app/ui.js:475-482 (groupHtml row), :728 (data-gc branch), :752-753 (data-fold branch); docs/lists-spec.md section 8 W12/TL-3."
+  }
+]
