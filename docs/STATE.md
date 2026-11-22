@@ -115,7 +115,9 @@ Nothing at the moment.
   The spec is `docs/lists-spec.md` (written 2026-11-21; the owner answered its questions on 2026-11-22 and added two
   rules: buy from a gil merchant before crafting, and "I bought it instead" at any time). Nothing is built yet;
   W0 (baseline and data facts) is done. A same-family review found two blockers and four major gaps, all fixed in the
-  spec; one owner question is open (section 11, Q4). An outside review by ChatGPT and Mistral follows before building.
+  spec. Outside reviews by ChatGPT (not ready: 6 blockers, 10 major) and Mistral (ready after fixes: 5 major) on
+  2026-11-22: 35 findings, 32 accepted and 3 in part, all applied (`docs/lists-review-adjudication.md`; results on the
+  branches `assignments/ASG-20261122-lists-spec-review-*`). One owner question is open (section 11, Q4).
 
 ## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
 
