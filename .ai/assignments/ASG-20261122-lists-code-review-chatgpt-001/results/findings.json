@@ -4,26 +4,71 @@
     "file": "tracker/command-center/src/lists/store.js",
     "line": 314,
     "title": "Recording a craft can erase the existing product stock count",
-    "consequence": "A player with a stock count near the allowed maximum can lose that entire quality's recorded count when recording a craft; the crafted progress can still be saved, leaving misleading totals.",
-    "fix": "Make recording and validation atomic without dropping the existing count: support the resulting count or refuse the whole edit with a clear explanation before changing stock or progress. Cover each quality and multi-yield output.",
-    "evidence": "A Node reproduction using the real store, engine and checker starts with c1.10.nq=999999 and a must-craft target for one item with yield 1. S.record returns c1.10={hq:0,coll:0}, while the target has crafted=1. apply writes 1000000, and save.js:182 drops nq above 999999 during normalization. Materials and progress can be changed in the same operation."
+    "consequence": "A player with a stock count near the allowed maximum can lose that entire quality's recorded count when recording a craft; progress can still be saved and totals become misleading.",
+    "fix": "Support the resulting count or reject the entire edit clearly before changing stock, materials or progress. Test every quality and multi-yield output at the boundary.",
+    "evidence": "The real store, engine and checker were run in Node with c1.10.nq=999999, a must-craft target and yield 1. S.record returned c1.10={hq:0,coll:0} and crafted=1. apply writes 1000000 and save.js:182 drops nq above 999999 during normalization."
+  },
+  {
+    "severity": "MAJOR",
+    "file": "tracker/src/core/merge.js",
+    "line": 207,
+    "title": "An orphaned wanted item can disappear when both list headers are missing",
+    "consequence": "During a sync involving an older build or another save that retained an item without its header, the remaining item can be deleted without the separate choice promised by the design.",
+    "fix": "Handle the both-headers-missing case explicitly: preserve every wanted item held by either side as specified, while retaining ordinary conflict handling for two differing values. Test both orientations and a repeat sync.",
+    "evidence": "Base holds header listaaaa and target listaaaa.itemaaaa. Local lacks both; remote lacks the header but still holds the unchanged target. ET.threeWay followed by ET.applyMerge with no choices yields no target and no conflicts. The generic one-sided removal at lines 87-88 wins; line 207 skips the whole-list pass. The spec's case 4 says surviving wanted items stay. LY-4 tests changed or added survivors but not this unchanged one; the model treats it as an allowed one-sided removal."
+  },
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 738,
+    "title": "Saved wanted items without headers are invisible and cannot be recovered in the page",
+    "consequence": "A player whose older device leaves a wanted item without its list can see 'No lists yet' even though the item remains in the save; it is excluded from plans and cannot be inspected, renamed or removed through the promised recovery view.",
+    "fix": "Expose orphaned targets in a recoverable Restored list view and provide safe, explicit restore or removal actions without discarding their data. Test the actual page with an orphan created by the old-build sync.",
+    "evidence": "The browser was seeded with a valid section containing no headers and target listaaaa.targetaa. __lists.section().targets still contained it while the visible page said 'No lists yet'. renderHome enumerates only sc.lists; planOf likewise enumerates headers. The spec requires a Restored list; LY-4 and LY-8 assert storage but do not inspect that page."
   },
   {
     "severity": "MAJOR",
     "file": "tracker/command-center/src/lists/lists.js",
     "line": 847,
-    "title": "A craft can be credited to a different recipe for the same item",
-    "consequence": "A list made from the crafting log can show the wrong recipe as crafted and continue to request the recipe the player actually made; its materials and completion state become misleading.",
-    "fix": "Resolve each target to its actual planned recipe and credit only targets belonging to the selected make line, in list and step order. Also match the recipe in lineFor so wanted rows show their own line. Test the real page with two recipes of one product.",
-    "evidence": "creditsFor filters only item, make and done; the Made handler at lines 918-923 passes no recipe. Game data has item 5056 with recipes 1 and 170. If the target for recipe 1 comes first but the player records the recipe 170 row, recipe 1 receives the credit. The model test at tracker/tests/lists-model.test.js:444-447 supplies only the line's own recipe targets and thus does not exercise this page error."
+    "title": "Recipe-specific craft and purchase actions affect other recipes for the same item",
+    "consequence": "A crafting-log list can mark the wrong recipe crafted or stop requiring another recipe to be crafted, giving the player incorrect completion and material totals.",
+    "fix": "Resolve each target to its planned recipe and apply credits, make-flag changes and wanted-row display to the selected recipe line only. Test two real recipes of one product on the page, including separate lists.",
+    "evidence": "In the built page, item 5056 has recipe 1 and recipe 170 targets. Pressing Made 1 on recipe 170 credited recipe 1, not 170. Bought it on recipe 170 cleared make from both targets. creditsFor and makeKeysOf filter by item, not recipe; lineFor also chooses the first matching part. The model test at tracker/tests/lists-model.test.js:444-447 constructs credits already filtered by recipe, bypassing the page bug."
   },
   {
     "severity": "MAJOR",
     "file": "tracker/command-center/src/lists/lists.js",
     "line": 923,
     "title": "Must-craft outputs are always recorded as ordinary quality",
-    "consequence": "Recording a high-quality or collectable must-craft output increases ordinary stock instead. The player can see incorrect stock and material totals for other lists and may hand in or buy the wrong quality.",
-    "fix": "Carry the intended or player-selected output quality through the page to recording, accounting for mixed-quality targets on one make line; display and edit the matching quality. Add page-level tests for high-quality and collectable must-craft items.",
-    "evidence": "engine.js defines make quality as nq at line 256 and groups make lines by item and recipe, irrespective of target quality. The Made handler passes ln.quality with no quality choice; qualityOf at lists.js:336 also favors that value over the wanted item's hq or coll flag. The spec says these flags indicate the expected recorded quality."
+    "consequence": "Recording a high-quality or collectable must-craft output increases ordinary stock instead; other lists can show incorrect stock and material totals.",
+    "fix": "Allow the player to record the quality actually made, with an appropriate target-based default and support for mixed-quality targets. Display and edit the matching quality on wanted rows; test the page for both qualities.",
+    "evidence": "In the built page a high-quality must-craft target for item 5056, recipe 170, became crafted=1 and stock u.5056={nq:1,hq:0,coll:0} after Made 1. engine.js:256 assigns make lines nq; the handler passes that value with no choice, and qualityOf at lists.js:336 favors it over the target flag."
+  },
+  {
+    "severity": "MINOR",
+    "file": "tracker/tools/lists-data.py",
+    "line": 127,
+    "title": "Patch history omits newly added recipes and stamp-only transitions",
+    "consequence": "After a future data update, a player can receive only a generic notice or a notice that misses a newly craftable item, even when that item affects the list's planning tree.",
+    "fix": "Record added recipes with a missing old row and preserve a history link for every stamp transition, including a transition with no recipe changes. Test additions alone, mixed additions and changes, and multiple patches.",
+    "evidence": "compare({'1': oldRow}, {1: oldRow, 2: newRow}, 'old', 'new') returns None. With a changed existing row and the new row, it returns only the changed existing row. The page reconstructs the old table from this history, so the added recipe is not recognized as new; a stamp-only update also breaks the chain."
+  },
+  {
+    "severity": "MINOR",
+    "file": "tracker/command-center/check.js",
+    "line": 5649,
+    "title": "The old-build preservation check can pass without the Tracker save it claims to test",
+    "consequence": "A regression in how the Tracker saves a Lists section can escape this specific compatibility check while its result reports the Tracker's own save as covered.",
+    "fix": "For both Tracker pages require the save functions to exist, require tracker === 'saved', and fail if the save could not be run; retain the byte-for-byte comparison after that save.",
+    "evidence": "At lines 5634-5638 tracker defaults to 'not run' if the Tracker functions are missing. Line 5650 explicitly accepts either 'saved' or 'not run' for both Tracker builds, although line 5651 claims their own save was checked."
+  },
+  {
+    "severity": "MINOR",
+    "file": "tracker/command-center/check.js",
+    "line": 6186,
+    "title": "The price-check wait can finish before the request is complete",
+    "consequence": "A passing price implementation can produce a failing browser check, making release checks unreliable and obscuring real regressions.",
+    "fix": "Wait for the expected completed price or an explicit fetch completion state, then assert the request and displayed value; avoid treating the initial 'Price not fetched' state as completion.",
+    "evidence": "C155 failed in the focused run solely at fetchTime and passed in an isolated retry. lWaitPrices accepts any text not containing 'Fetching', including the initial 'Price not fetched'. render constructs the row before loadPrices marks the request busy. This is a plausible race; the failing run did not record the actual initial text, so its precise cause is not proven."
   }
 ]
