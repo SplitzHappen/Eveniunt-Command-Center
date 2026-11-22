@@ -3,9 +3,11 @@
 Status: plan only, nothing built. Written 2026-11-21 from a reading of the sources named in section 12; the planning
 session had no shell, so no test, build or network request was run and no file size was measured. Revised 2026-11-22
 with the owner's answers (section 11) and two owner requirements: buy from a gil merchant first, and change how an
-item is got at any time. Requirements: `docs/lists-research.md` sections 1 to 8. Owner decisions of 2026-11-21 are
-fixed: Lists before Market with a reusable engine; one release covering research sections 1 to 7; market prices from
-day one through one shared price service.
+item is got at any time. Revised again 2026-11-22 after a same-family review (Claude reviewing a Claude plan, not an
+independent audit): the planning model of section 5 was rebuilt so that every invariant is a property a test can
+check, and one owner question (Q4) is open. Requirements: `docs/lists-research.md` sections 1 to 8. Owner decisions of
+2026-11-21 are fixed: Lists before Market with a reusable engine; one release covering research sections 1 to 7;
+market prices from day one through one shared price service.
 
 ## 1. Goal and constraints
 
@@ -49,9 +51,13 @@ day one through one shared price service.
   `tracker/tests/ui.test.js`; Lists needs nothing from it; Market will replace that page's shopping list anyway.
 - **D11 Atelier hand-over by a link**, `atelier/#recipe=<recipe id>`. [The shared save: a visit would become a saved
   change. A query string: the Atelier's offline copy is matched by path.]
-- **D12 In a combined view an item has one "get it by" choice**: the first selected list that sets one, else the first
-  list's defaults; the page names a disagreement. [Per-list choices in one plan: removing an item from one list could
-  raise what another list buys, breaking invariant E5.]
+- **D12 One plan per character, and in it one way of getting each item** (review, 2026-11-22; owner question Q4, built
+  as written until answered). All lists of a character are planned together against that character's stock. How an
+  item is got, and the order in which ways are tried, are stored once per character, not per list. [Per-list choices
+  with one shared plan, as first written: list 1 crafts X (makes 3, needs 1), list 2 buys X (needs 2) and lives on
+  list 1's spare; removing list 1's item makes list 2 buy 2. Amounts that rise when something is removed are the fault
+  this module exists to avoid, and no test could hold. Per-list choices with no sharing of what a list crafts: sound,
+  but totals come out higher than needed; it is option B of Q4.]
 - **D13 What changed in a patch comes from the data, not from the save**: the data tool records recipes that differ
   from the previous data file; a list stores only the data stamp it was last confirmed against. [A stored copy or
   fingerprint of each recipe: can only say "something changed", and grows the save.]
@@ -67,6 +73,15 @@ day one through one shared price service.
   [A stored history: grows the save and merges badly.] After a reload the choice can still be changed back by hand.
 - **D17 The Tracker's button hands the page over by a link**, never a save write; Lists makes the list only when the
   player presses Create (the owner's answer to Q3).
+- **D18 Totals are worked out once for the whole character, then shared out to lists and steps** (review). Totals
+  never depend on how wanted items are split into lists and steps. [Step after step with a running stock, as first
+  written: an earlier normal need could use up high-quality stock a later step needed, so steps and one step gave
+  different answers.]
+- **D19 "Must be crafted by me" belongs to the wanted item, not to the item** (review): a crafting-log entry is
+  crafted whatever the item's way is, and the same item as a material elsewhere still follows the character's way.
+  [A per-item craft choice: an ingot that is both a log entry and a material would be crafted everywhere, against D14.]
+- **D20 Size limits are enforced when the player edits, never by the checker** (review). The checker runs inside every
+  sync and tab merge; a cap there would silently drop merged data. [Caps in `CC.checkLists`: a sync could delete.]
 
 ## 3. Data (`tracker/data/lists.json`, built into `site/lists/data.js`)
 
@@ -84,7 +99,7 @@ ingredient, or a currency of a kept trade.
 | `trades` | `{ item: [[gives, [[currency, amount]…], hq 0/1, gcRank or 0, npc]…] }`, at most four per item, gil offers first and cheapest first; currency 1 is gil. Seller name and zone come from `npcs` | Teamcraft `shops.json` (`trades[].items[].id/amount/hq`, `trades[].currencies[].id/amount`, `trades[].requiredGCRank`, shop `npcs`) |
 | `npcs` | `{ npc: [name, zone] }` for sellers in `trades` only; an NPC without a name or place shows as "a merchant" | Teamcraft `npcs.json`, same commit (already used by the Tracker) |
 | `log` | `{ job: [[page title, [recipe ids]]…] }`, added by `build.js` from the `craft-*` lists of `tracker-data.json` | the Tracker's own lists |
-| `changes` | `[{ from, to, recipes: { id: [old row, new row] }, gone: [ids] }]`; empty in the first file | the tool, by comparing with the committed file before it writes |
+| `changes` | `[{ from, to, recipes: { id: [old row, new row] }, gone: [ids] }]`; empty in the first file; a later run keeps every earlier entry and adds one | the tool, by comparing with the committed file before it writes |
 
 **Gil merchant or not** is read from the offer, never guessed: an offer is `vendor` when its only currency is gil
 (currency 1); every other offer is `trade`. **Facts checked by W0 (2026-11-22):** the pinned `shops.json` has 2,253
@@ -105,69 +120,92 @@ packed with deflate as `submersibles/data.js` is; `build.js` prints plain and pa
 ```
 modules.lists = {
   v: 1,
-  lists:   { <listId>: { name, charId, order, made, data, def: { order: [sources] }, steps: [{ id, name }] } },
-  targets: { "<listId>.<targetId>": { item, recipe, qty, hq, coll, step, done } },
-  rows:    { "<listId>.<itemId>":   { by, recipe, hq } },
+  lists:   { <listId>: { name, charId, order, made, data, steps: [{ id, name }] } },
+  targets: { "<listId>.<targetId>": { item, recipe, qty, hq, coll, make, step, done } },
+  ways:    { "<owner>.<itemId>":    { by, recipe, hq } },
+  owners:  { <owner>:               { order: [sources] } },
   have:    { "<owner>.<itemId>":    { nq, hq, coll } },
   prefs:   { priceWorld, hideDone, combined: [listIds] }
 }
 ```
 
+- `owner` is the list's character, `c1` to `c8`, or `u` for lists without a character. Stock (owner decision Q1), ways
+  and the order of ways (D12, owner question Q4) are kept once per owner.
 - `listId`, `targetId`, step `id`: `[a-z0-9]{4,16}`, made on the device (time and random part). `name` up to 60
   characters; `charId` `c1` to `c8` or `null`; `order` 0 to 9999; `made` a time; `data` the data stamp, up to 60.
-- `def.order`: a permutation of `vendor`, `craft`, `gather`, `trade`, `market`; **the default is that order** (D14).
-  A header without `def.order` reads as the default. (No allied-society switch: the data cannot mark those vendors,
-  section 3.) `steps`: up to 20, in order; a list with none is one step.
-- Target: `item` and `recipe` game ids (`recipe` 0 for a wanted item that is not crafted); `qty` 1 to 99999; `hq`,
-  `coll` true or left out; `step` a step id or left out (first step); `done` true once the player marks it finished.
-- Row: `by` one of `vendor`, `craft`, `gather`, `trade`, `market`, `have`, left out for the list default; `recipe`
+  **List order is fixed:** by `order`, then `made`, then `listId` as plain text, so equal `order` values never make
+  two devices plan differently. `steps`: in order; a list with none is one step.
+- `owners.<owner>.order`: a permutation of `vendor`, `craft`, `gather`, `trade`, `market`; **the default is that
+  order** (D14). An owner without it reads as the default. (No allied-society switch: the data cannot mark those
+  vendors, section 3.)
+- Target (a wanted item): `item` and `recipe` game ids (`recipe` 0 for a wanted item that is not crafted); `qty` 1 to
+  99999; `hq`, `coll` true or left out; `make` true when this wanted item must be crafted by the player whatever the
+  item's way is (set by "From the crafting log"; D19); `step` a step id or left out; `done` true once finished.
+  **A `step` id that is not in the list's header is kept as stored and read as the first step**, never dropped.
+- Way: `by` one of `vendor`, `craft`, `gather`, `trade`, `market`, `have`, left out for the owner's order; `recipe`
   when the item has several; `hq` true when the player wants this material in high quality.
-- Stock: one stock per character (owner decision Q1): `owner` is `c1` to `c8`, or `u` for lists without a character.
-  `nq`, `hq`, `coll` 0 to 999999; a count that is all zeros is removed.
-- Limits: 200 lists, 2,000 wanted items per list, 20,000 stock counts. `CC.checkLists` keeps only known fields of the
-  right type and drops a bad entry, never repairs by guessing (the rule of `checkSubmersibles`).
+- Stock: `nq`, `hq`, `coll` 0 to 999999; a count that is all zeros is removed.
+- **The checker has no size limits (D20).** `CC.checkLists` keeps every entry whose fields are valid, however many
+  there are; it keeps only known fields of the right type and drops an entry only when it is malformed (the rule of
+  `checkSubmersibles`), never to make room. Limits are applied by the page's edit functions alone: a new list is
+  refused above 200 lists, a new wanted item above 2,000 in a list, a new step above 20, a new stock count above
+  20,000, each with a plain line ("This list is full: 2,000 items."). Data over a limit that arrived by a sync or
+  another tab stays, shows and can be edited or removed.
 - **Compatibility.** Old data is untouched: no existing field changes. An older build already keeps a section it does
   not know as plain data (`CC.checkModules` falls back to `clean`), merges it unit by unit and never strips it; every
-  key above passes `CC.safeKey` and the depth and length limits of `clean`. From this release on `CC.checkLists` is the
-  checker in all three apps, so a later new field needs all three rebuilt again, as `CLAUDE.md` says. Check C145 proves
-  the three built apps save without changing the section. `CC.VERSION` stays 1.
+  key above passes `CC.safeKey` and the depth and length limits of `clean` (confirmed by the review). From this
+  release on `CC.checkLists` is the checker in all three apps, so a later new field needs all three rebuilt again, as
+  `CLAUDE.md` says. Check C145 proves it with the shipped builds. `CC.VERSION` stays 1.
 - **An entry without its list** (only an older build's sync or a hand-edited save can leave one): never dropped, never
   a reason to refuse a write; the page shows it under "Restored list" and the player renames or removes it.
 
-**Stale writes** (`CC.writeSection('lists', …)`, stale branch; base, sent, stored, result as in the Submersibles spec):
-- **LI1 Nothing comes back.** A list header or wanted item in base, absent from stored, present in the result: refused
-  whole. Text: `This list was removed on another device or in another tab.` / `This item was removed from the list on
-  another device or in another tab.`
-- **LI2 No new orphan.** A wanted item or choice in the result whose list header is missing, unless stored already held
-  it that way: refused with the first text.
+**Stale writes** (`CC.writeSection('lists', …)`, stale branch; base, sent, stored, result as in the Submersibles spec).
+Checked in this order, so an edit inside a removed list always gets the list's text:
+- **LI2 No new orphan (first).** A wanted item in the result whose list header is missing from the result, unless
+  stored already held it that way; and a wanted item the page added or changed whose list header is in base and absent
+  from stored: refused whole with `This list was removed on another device or in another tab.`
+- **LI1 Nothing comes back.** A list header in base, absent from stored, present in the result: refused with the same
+  text. A wanted item in base, absent from stored, present in the result (its list still stored): refused with `This
+  item was removed from the list on another device or in another tab.`
 - **LI3 Nothing else changes.** A unit the page did not change is stored as stored has it; one it changed, as sent.
-  The same unit changed in two tabs: the later save wins, as in every part of the save (known limit).
+  The same unit changed in two tabs (a way, an order, a stock count, a wanted item's amount): the later save wins, as
+  in every part of the save (known limit).
 - A refused write stores nothing; the page shows the saved copy and `Not saved on this device: <reason> The page now
   shows what is saved; re-enter any unsaved edits if you still need them.` (the Submersibles page's behaviour).
 
 **Sync** (`ET.threeWay`, `ET.applyMerge`): units merge by the existing rule (changed on one side: taken; changed
 differently on both: asked, this device kept until answered). New pass beside the free-company pass:
 - **LY1** A list header removed on one side while the other side changed it, or changed, added or kept-changed any of
-  its wanted items or choices: one question, kind `list`, naming the list: keep it with everything in it (the keeping
-  side's header, wanted items and choices) or remove it with everything in it. Its units raise no questions of their own.
-- **LY2** Unanswered, nothing of that list is deleted. **LY3** After a sync no entry lacks its list unless one side
-  already held it so. **LY4** Devices settle (same proof style as MD8). Stock counts are never part of a list question.
-- `CC.describeUnit` gains plain labels: `Lists: list “Name”`, `Lists: “Name”: a wanted item`, `Lists: “Name”: how an
-  item is got`, `Lists: the amount you have of <item>` with both sides' numbers. Item names come from `globalThis.
-  LISTS_NAMES` when the page has loaded the Lists data, else `item <number>`.
+  its wanted items: one question, kind `list`, naming the list: keep it with everything in it (the keeping side's
+  header and wanted items) or remove it with everything in it. Its units raise no questions of their own.
+- **LY2** Unanswered, nothing of that list is deleted (the Tracker's own tab save runs this pass with no answers; that
+  is safe under this rule, confirmed by the review). **LY3** After a sync no wanted item lacks its list unless one
+  side already held it so. **LY4** Devices settle (same proof style as MD8). Ways, orders and stock counts belong to
+  the character, not to a list, and are never part of a list question.
+- **Wording.** `CC.describeUnit(id, local, remote, nameOf, integrity)` keeps its signature and cannot see list names
+  or item names, and Settings does not load the Lists data. So: the `list` question carries the list's name in its
+  `integrity` (as the slot question carries the free company's name), and the same pass attaches `integrity: { kind:
+  'lists-label', listName }` to every other clash on a wanted item, read from the header in the merged copy or on
+  either side; `ET.applyMerge` treats that kind like a plain clash. Labels: `Lists: list “Name”`; `Lists: “Name”: a
+  wanted item (item 5057, 3 wanted)`; `Lists: how <character> gets item 5057`; `Lists: <character>'s order of ways to
+  get items`; `Lists: the amount <character> has of item 5057` with both sides' numbers. Characters are named through
+  `nameOf`. **Items appear by number in these questions** (known limit).
 
 ## 5. The engine (`tracker/command-center/src/lists/engine.js`)
 
 ```js
-LISTS.plan(data, input) -> plan      // pure: no clock, no storage, input never changed
-// input: { lists: [{ id, def, steps, targets: [...], rows: { itemId: {...} } }], have: { itemId: { nq, hq, coll } }, prices: { itemId: gil } | null }
-// plan:  { steps: [{ list, step, lines }], items: { itemId: line }, order: [{ job, crafts: [...] }],
-//          shop: { vendor, gather, trade, market, other, have }, gil: { vendor, market, unknown: [itemIds] },
-//          left: { itemId: {...} }, leftover: { listId: [{ item, nq, hq }] }, notes: [] }
-// line:  { item, need, needHq, used, toGet, by, why, recipe, crafts, makes, surplus, trades, cost, offer, timed }
-LISTS.source(data, list, itemId) -> { by, why }   // the row's choice ('chosen'), else the first of def.order the item really has ('default'), else 'other'
-LISTS.tree(data, list) -> Set(itemIds)       // every item the list's wanted items could need, whatever the choices and stock
-LISTS.craftDone(have, data, recipeId, times, quality) -> have   // a new stock map: product added, materials taken (never below 0)
+LISTS.plan(data, input) -> plan      // one owner; pure: no clock, no storage, input never changed
+// input: { order: [sources], ways: { itemId: { by, recipe, hq } }, have: { itemId: { nq, hq, coll } },
+//          lists: [{ id, steps, targets: [...] }] (already in list order), prices: { itemId: gil } | null }
+// plan:  { items: { itemId: line },            // the owner's totals: the only place amounts are decided
+//          shares: [{ list, step, lines }],     // the same totals shared out; per item the shares add up to the total
+//          order: [{ job, crafts: [...] }], shop: { vendor, gather, trade, market, other, have },
+//          gil: { vendor, market, unknown: [itemIds] }, spare: { itemId: {...} }, left: { itemId: {...} },
+//          leftover: { listId: [{ item, nq, hq }] }, notes: [] }
+// line:  { item, parts: { normal, hq, coll, make }, need, used, toGet, by, why, recipe, crafts, makes, trades, cost, offer, timed }
+LISTS.way(data, input, itemId, quality) -> { by, why }   // fixed by the data, the order and the stored way; never by stock or lists
+LISTS.tree(data, lists) -> Set(itemIds)      // every item the wanted items could need, whatever the ways and stock
+LISTS.craftDone(have, data, recipeId, times, quality, ways) -> { have, short: [itemIds] }   // see E12
 LISTS.bought(have, itemId, amount, quality) -> have             // a new stock map: the amount added, nothing taken
 LISTS.finish(have, target) -> have           // a finished wanted item leaves the stock
 LISTS.missing(data, ticks, excluded, job, page) -> [recipeIds]
@@ -175,72 +213,101 @@ LISTS.nextWindow(hours, minutes, nowMs) -> { opensAt, closesAt, open }       // 
 ```
 
 **One list opened on its own is never planned alone** (orchestrator review, 2026-11-21). With one stock per owner, the
-page always plans every list of that owner together, in `order`, and shows the opened list's share of that plan: stock
-an earlier list already uses is not offered again, and the row says so ("4 held for “Other list”"). Otherwise two lists
-opened one at a time would each count the same stock as theirs, which is Teamcraft's fault of research section 1
-(materials marked acquired after another craft used them). Invariant **E16**: summed over all lists of one owner, the
-stock used never exceeds the stock typed, whichever list is opened. The player can reorder lists to choose which is
+page always plans every list of that owner together, in list order, and shows the opened list's share of that plan:
+stock an earlier list already uses is not offered again, and the row says so ("4 held for “Other list”"). Otherwise
+two lists opened one at a time would each count the same stock as theirs, which is Teamcraft's fault of research
+section 1 (materials marked acquired after another craft used them). The player can reorder lists to choose which is
 served first.
 
-How a plan is made: lists in `order`, steps in order, one running stock. Per step, wanted items that are not `done`
-make demands; items are settled from the wanted items down (a craft before its materials): stock is used first (a
-high-quality need takes high-quality stock only; any other need takes normal stock, then high-quality); the rest goes
-by the item's source: `vendor` buys from the cheapest gil offer (trades rounded up to what one trade gives, the cost
-added to `gil.vendor`, nothing below the item is planned); `craft` rounds crafts up to the recipe's yield and its
-surplus joins the stock; `trade` rounds trades up and its currencies become further demands; `gather`, `market` and
-`other` are amounts to get; `have` needs nothing and touches no stock. The closing stock of a step opens the next.
+**The way of an item** (D12, D14). For each item and quality the way is the stored way's `by` when the item really has
+that source in that quality; else the first source in the owner's order that the item has in that quality; else
+`other`. A source "has the quality": `craft` for normal always and for high quality when the recipe can be HQ; a
+`vendor` or `trade` offer for normal when it is not marked `hq`, for high quality only when it is; `market` for both;
+`gather` for normal only. So an item has one way for normal needs and one for high-quality needs, and both depend only
+on the data, the owner's order and the stored way. With the default order an item a gil merchant sells is bought,
+wanted items included, and nothing below it is planned; its row shows "Sold by <seller> for N gil; planned as bought"
+with "Craft it instead" one tap away. `line.why` and `line.offer` carry the reason and the offer.
 
-**The source of an item** is decided the same way at every level, wanted items included, top down: the row's choice
-when there is one and the item still has that source; else the first source in `def.order` the item has. With the
-default order a wanted item or material that a gil merchant sells is bought, whether or not it has a recipe, and its
-recipe's materials never enter the plan. A wanted item the player added in order to craft it is no exception: its row
-shows "Sold by <seller> for N gil; planned as bought" with "Craft it instead" one tap away. **One exception, set when
-the list is made** (orchestrator review, 2026-11-22): a wanted item placed by "From the crafting log" (or the Tracker's
-button) is stored with the row choice `craft`, because buying it would not complete the log entry; its materials follow
-the order as usual, so a material a gil merchant sells is still bought. The player can change that choice like any other. A high-quality need is
-sent only to a merchant offer marked high quality (`hq`); otherwise the next source in the order is used and the row
-says why.
-`line.why` and `line.offer` carry the reason and the offer for the page.
+**How totals are made (D18).** Every wanted item of the owner that is not `done` is taken together, whatever its list
+or step. Items are settled from the wanted items down, each exactly once, after every item that can need it (a trade
+loop is cut, E14). Each item has up to four parts, and a part never feeds another except where said:
+1. **make**: a `make` wanted item (D19). Crafts = its amount ÷ the recipe's yield, rounded up. It uses no stock of the
+   item, and what it makes is `spare`, not offered to any other need in the plan. (Recording the craft, "Made", marks
+   it done and adds what was made to the typed stock; from then on it is stock like any other.)
+2. **coll**: collectable wanted items. Shortfall = amount − collectable stock, not below 0; always crafted; the
+   rounding surplus is `spare`.
+3. **hq**: high-quality needs (wanted items with `hq`; all needs of an item whose way has `hq`). Shortfall = need −
+   high-quality stock, not below 0. Got by the item's high-quality way; the rounding surplus is `spare`.
+4. **normal**: every other need. It takes normal stock first, then only the high-quality stock that part 3 left over.
+   Shortfall = need − that stock, not below 0. Got by the item's normal way; the rounding surplus is `spare`.
+Getting a shortfall: `craft` = shortfall ÷ yield, rounded up, and each material gets a need of crafts × its amount;
+`vendor` = trades of shortfall ÷ what one trade gives, rounded up, at the cheapest gil offer, cost added to
+`gil.vendor`, nothing below; `trade` the same rounding, and each currency gets a need of trades × its amount (gil to
+`gil.vendor`); `gather`, `market`, `other` = the shortfall to get; `have` = nothing to get, nothing below, and no
+stock taken. `left` is typed stock no part used.
 
-**Left over.** `plan.leftover[listId]`: stock the plan of that owner does not use, of items in `LISTS.tree` of that
-list. It is what a changed choice or a "Bought it" freed; it stays in the stock and other lists use it.
+**How totals are shared out.** Needs carry the list and step they come from; a material's need carries the list and
+step of the craft that asks for it. Within a part, stock is given in list order then step order, and crafts and trades
+are counted up in that order: a step's crafts = (the shortfall up to and including it ÷ yield, rounded up) − (the same
+up to the step before). The shares exist to show a list or a step; they decide nothing. Removing something from an
+earlier list can move a craft from that list's share to a later list's share while the total stays or falls.
 
-**Invariants** (each a named unit test and a property of the model test):
-- **E1** Same input, same plan; the input is unchanged.
-- **E2** Per item and step: opening stock + made + got = used + closing stock.
-- **E3** Multi-yield rounds up: crafts = the shortfall divided by the yield, rounded up; 0 ≤ surplus < yield.
-- **E4** An item held in full asks for nothing below it; raising any stock count never raises any amount to get or craft.
-- **E5** Removing a wanted item, or lowering its amount, never raises any amount to get or craft over the whole plan.
-- **E6** A high-quality need is never met by normal stock; `hq` and `coll` stay on the line and survive a list copy.
-- **E7** A collectable wanted item is met only by collectable stock and counts toward the list.
-- **E8** A trade's real ratio: trades = shortfall ÷ what one trade gives, rounded up; cost = trades × the trade's cost.
-- **E9** Steps lose nothing: summed over its steps a list asks for exactly what the same wanted items ask as one step.
+**Left over.** `plan.leftover[listId]`: entries of `left` for items in `LISTS.tree` of that list. It is what a changed
+way or a "Bought it" freed; it stays in the stock and other lists use it.
+
+**Invariants** (each a named unit test and a property of the model test; "total" means `plan.items`, the owner's plan):
+- **E1** Same input, same plan; the input is unchanged; list order ties are broken as section 4 says.
+- **E2** Per item and part: stock given + made or got = need + spare; over the parts, stock given + `left` = stock
+  typed; `spare` is never given to a need.
+- **E3** Multi-yield rounds up: crafts = the part's shortfall ÷ yield, rounded up; 0 ≤ what is made − shortfall < yield.
+- **E4** Raising any stock count never raises any total to get, to craft or to trade, of any item. An item whose
+  normal and high-quality needs are covered by stock gives no need to anything below it.
+- **E5** Removing a wanted item, or lowering its amount, never raises any total to get, to craft or to trade.
+- **E6** A high-quality need is given high-quality stock only, and is never sent to a source that lacks the quality;
+  `hq`, `coll` and `make` stay on the wanted item and survive a list copy.
+- **E7** A collectable wanted item is met only by collectable stock or a craft, and counts toward the list.
+- **E8** A trade's real ratio: trades = shortfall ÷ what one trade gives, rounded up; cost = trades × the offer's cost.
+- **E9** Totals do not depend on lists or steps: moving wanted items between lists and steps of one owner, or
+  reordering lists, leaves every total unchanged; and for every item the shares add up exactly to its total. (The
+  review's case holds: one high-quality X held, a merchant selling normal X only, X craftable; one high-quality and
+  one normal X wanted, in one step or two: the high-quality one takes the stock, one normal X is bought, both times.)
 - **E10** The crafting order is valid (no craft before one that makes its material), each block is one job, and
   neighbouring blocks differ in job.
 - **E11** `have` ("already have"): nothing to get, nothing crafted, nothing below it, stock untouched.
-- **E12** Recording a craft made from stock lowers that craft by the number made and changes no amount to gather or buy.
+- **E12** `craftDone` adds times × yield of the product in the quality given and takes times × amount of each material:
+  from high-quality stock only when that material's way has `hq`, otherwise from normal stock first and then
+  high-quality stock, the order the plan uses; never below 0, and a material it could not take in full is returned in
+  `short`. When `short` is empty and the plan showed at least that many crafts of the recipe in that part: those
+  crafts fall by exactly the number recorded and no total to get, to trade or to craft of any other item changes.
 - **E13** Removing a wanted item and adding it back gives the identical plan (no residue).
 - **E14** Every plan ends: a trade loop is cut, the item is listed under `other` and a note says why.
 - **E15** Gil: market gil = amount × price for priced items only; an unpriced item is in `gil.unknown`, never 0.
-- **E16** (above) Stock used over all lists of one owner never exceeds the stock typed.
-- **E17** With default settings and no row choices (a crafting-log list's own wanted items carry the choice `craft`,
-  above, and are outside this rule; their materials are inside it): no item a gil merchant sells (in the quality needed)
-  is planned as `craft` or `gather`; and every material in the plan is needed by a wanted item or by a craft
-  that is itself in the plan, so none appears only because an item a gil merchant sells could have been crafted.
-- **E18** Changing an item's choice from `craft` to `vendor`, `trade`, `market` or `have`, or recording it with
-  `LISTS.bought`, never raises any amount to craft, never raises the amount to get of any other item, and changes no
-  stock count except the bought item's own, which only rises. (The item itself moves from "to craft" to "to buy" by at
-  most its shortfall; gil may rise.) Changing the choice back gives the earlier plan again.
+- **E16** Stock given over all parts, lists and steps of an owner never exceeds the stock typed, for every item and
+  quality, whichever list is opened; the shares of stock add up to the stock given.
+- **E17** With the default order and no stored ways: every item with a normal need that has a gil offer of normal
+  quality is got by `vendor`, never `craft` or `gather`, and gives no need to anything below it (the same for a
+  high-quality need and an offer marked high quality); only the `make` and `coll` parts are crafts regardless. And in
+  every plan, every item with a need gets it from a wanted item, a craft in the plan or a trade in the plan: no
+  material appears for a craft or trade the plan does not hold.
+- **E18** (a) Changing an item's way from `craft` to `vendor`, `market` or `have`, or recording it with
+  `LISTS.bought`: no total to craft rises, no total to get or trade of any other item rises, and no stock count
+  changes except the bought item's own, which only rises. The item itself moves from "to craft" to at most its
+  shortfall, rounded up to what one purchase gives; gil may rise. (b) Changing it from `craft` to `trade`: the same,
+  except that the chosen offer's currencies gain a need of trades × cost, so the only totals that may rise are those of
+  those currencies and of items in `LISTS.tree` of a currency. (c) Changing the way back gives the earlier plan again.
 
 **Model test** `tracker/tests/lists-model.test.js`, permanent, in `npm run test:unit`, built like
 `subs-model.test.js`: seeded generator, seeds 1, 2, 3, 1,000 cases each, `LISTS_MODEL_N` and `LISTS_MODEL_SEED`
 override, a shrinker, under 20 seconds, the test states its invariants itself. Part A: random small game data (yields
-1 to 5, gil offers and other-currency trades with ratios, several recipes per item, a trade loop in some), random
-lists, steps, choices and stock, and random sequences of choice changes, crafts recorded and items bought;
-asserts E1 to E18. Part B, tabs (real `CC.writeSection`): three tabs editing lists; asserts LI1 to LI3, that a refused
-write leaves the store byte-identical, that the store passes `CC.checkDoc`, and that nothing disappears unless a step
-removed it. Part C, devices (real `ET.threeWay`, `ET.applyMerge`): asserts LY1 to LY4 and that a record of either
-device missing afterwards was removed by a step, taken as a one-sided removal, or by an answered question.
+1 to 5, gil offers and other-currency trades with ratios, some offers high quality, several recipes per item, a trade
+loop in some), one owner with several lists and steps, wanted items with `hq`, `coll` and `make`, random ways, order
+and stock in both qualities, and random sequences of way changes, crafts recorded, items bought, wanted items moved
+between lists and steps, and lists reordered; asserts E1 to E18. Part B, tabs (real `CC.writeSection`): three tabs
+editing lists; asserts LI1 to LI3, that a refused write leaves the store byte-identical, that the store passes
+`CC.checkDoc`, that nothing disappears unless a step removed it, and that a store seeded above every size limit is
+kept whole by a write. Part C, devices (real `ET.threeWay`, `ET.applyMerge`): asserts LY1 to LY4, that a record of
+either device missing afterwards was removed by a step, taken as a one-sided removal, or by an answered question, and
+that two devices each just under a limit merge to more than the limit with nothing dropped.
 An invariant is never weakened to get a green run; a failure is escalated.
 
 ## 6. Patch change, prices, Atelier
@@ -248,31 +315,35 @@ An invariant is never weakened to get a green run; a failure is escalated.
 **Patch-change rule.** A list's `data` is the stamp it was last confirmed against. When it differs from the page's
 data and `changes` holds entries after it: a notice on the list, "Game data changed since this list was last checked",
 with one line per affected recipe in the list's present tree ("Rarefied X now needs 3 Y, was 2"; "makes 3, was 1";
-"is no longer a recipe"). Kept, always: every wanted item, amount, flag, step, choice and stock count; nothing is
-rewritten. A wanted item whose recipe is gone stays, shows "no longer in the game data" and asks for nothing. A choice
-the data no longer offers (a vendor that stopped selling) falls back to the list default on screen and stays stored.
+"is no longer a recipe"). Kept, always: every wanted item, amount, flag, step, way and stock count; nothing is
+rewritten. A wanted item whose recipe is gone stays, shows "no longer in the game data" and asks for nothing. A way
+the data no longer offers (a vendor that stopped selling) falls back to the owner's order on screen and stays stored.
 "OK, noted" writes the new stamp. A save whose stamp this page does not know (written by a newer page) shows no notice.
 
 **Shared price service** `tracker/command-center/src/prices.js` (`globalThis.PRICE`, plain script, runs in Node):
 `PRICE.create({ cacheKey, triedKey, query, read, tradable })` returns `cached`, `triedLoad`, `triedSave`, `mayTry`,
 `aged`, `seenAt`, `oldest`, `needed`, `settle`, `fetchPrices` and the four time limits, moved unchanged from `earn.js`
 lines 138 to 205 and 220 to 237. `earn.js` creates the Submersibles service with today's values (`eveniunt-subs-prices`,
-`eveniunt-subs-prices-tried`, `?listings=0&entries=20`, the rounded recent average) and assigns each function to the
-same `EARN.*` name; `usedMarket`, `failureNote`, `PARTIAL_NOTE`, `unitValue` stay in `earn.js`. In Node, `earn.js`
-loads `../prices.js` itself when `PRICE` is missing, so `tracker/tests/earn.test.js` runs unedited. `subs.js` is not
-edited; `submersibles/index.html` gains one script line. Lists creates its own service: keys `eveniunt-lists-prices`
-and `eveniunt-lists-prices-tried`, query `?listings=1&entries=20`, `read` returns `[cheapest listing, recent average,
-world, last upload]` (the reply fields the Tracker's market page already reads). Lists shows the cheapest listing
-"before tax", with the place and the fetch time per item, the same failure sentences (worded for Lists: "showing no
-market prices" instead of merchant prices), one automatic attempt per 15 minutes per place per device, and Refresh.
-Prices live on the device only, never in the save. Price place: `prefs.priceWorld`, else the shared place setting.
-Market prices never change which source the plan picks (D14): the plan is the same online and offline.
+`eveniunt-subs-prices-tried`, `?listings=0&entries=20`, the rounded recent average, and a `tradable` that calls
+`E.tradable`) and assigns each function to the same `EARN.*` name; `usedMarket`, `failureNote`, `PARTIAL_NOTE`,
+`unitValue` stay in `earn.js`. In Node, `earn.js` loads `../prices.js` itself when `PRICE` is missing, so
+`tracker/tests/earn.test.js` runs unedited. `subs.js` is not edited (it uses only `EARN.cached`, `mayTry`, `needed`,
+`oldest`, `tradable` and the fetch; confirmed by the review); `submersibles/index.html` gains one script line. Lists
+creates its own service: keys `eveniunt-lists-prices` and `eveniunt-lists-prices-tried`, query
+`?listings=1&entries=20`, `read` returns `[cheapest listing, recent average, world, last upload]` (the reply fields
+the Tracker's market page already reads). Lists shows the cheapest listing "before tax", with the place and the fetch
+time per item, the same failure sentences (worded for Lists: "showing no market prices" instead of merchant prices),
+one automatic attempt per 15 minutes per place per device, and Refresh. Prices live on the device only, never in the
+save. Price place: `prefs.priceWorld`, else the shared place setting. Market prices never change which way the plan
+picks (D14): the plan is the same online and offline.
 
 **Atelier hand-over.** Every craft row has "Solve in the Atelier", a link to `../atelier/#recipe=<id>`, shown only for
 recipes the cross-check found in the Atelier. On load and on `hashchange` the Atelier, for a recipe it knows: sets the
 job to the recipe's, the mode to recipes, calls `selectRecipe(id)`, renders, then removes the hash with
-`history.replaceState`. An unknown id shows the Atelier's own message and changes nothing. Nothing is written to the
-shared save by the visit. Amounts are not handed over (the Atelier solves one craft).
+`history.replaceState`. An unknown id shows the Atelier's own message and changes nothing. The link itself writes
+nothing to the shared save. (The Atelier's first visit on a device moves its old settings into the save once; the test
+of the link therefore starts from a save in which that move is already recorded, `moved.atelier`.) Amounts are not
+handed over (the Atelier solves one craft).
 
 **From the Tracker (D17).** The Tracker shows every character side by side and has no "current character" (read in
 `tracker/src/app/ui.js`: `groupHtml` draws one group row with one count cell per character). So the button sits in
@@ -283,6 +354,10 @@ the downloaded single file. Link: `<Command Center>/lists/#from=<job 0-7>.<first
 chosen (the page is found by that recipe id, so an older cached Tracker still lands on the right page), and the
 character chosen when given; otherwise it shows "For which character?" with each character's missing count, one tap
 each. Lists then removes the hash. Nothing is saved until Create. An unknown job or recipe opens the screen unfilled.
+**A list made from the crafting log** stores each entry as a wanted item with `make` (D19), because buying the item
+would not complete the log entry: it is crafted even when a gil merchant sells it. No way is stored, so the same item
+needed as a material, in this or any other list, still follows the character's order and is bought when a gil
+merchant sells it. The player can switch "Must be crafted by me" off on the Wanted row.
 
 **Cross-check (D2).** `tracker/tools/lists-crosscheck.js`, called by `build.js`: loads the solver glue and
 WebAssembly that `restore-build-inputs.js` writes to `crafting/atelier/build/`, calls `recipe(id, 'en')` for every id
@@ -303,32 +378,42 @@ scroll; tap targets 40 px on a phone; text 4.5:1.
 
 | Screen | What it holds | Empty state |
 | --- | --- | --- |
-| Your lists | One card per list: name, character, "12 of 40 ready", steps. Buttons: New list, From the crafting log, Combined view (tick lists, open) | "No lists yet. Start one, or build one from the crafting-log pages you have not finished." Two buttons |
-| A list, tab To get | Sections Buy from a merchant (gil), Gather, Trade for other currencies, Buy on the market, Other, Already have, Left over; closed at first, only open sections are drawn. Row: name, "need 12, have 4", minus, plus, an "I have" field, "Have all", "Get it by" select, the reason ("Sold by <seller> in <zone> for 120 gil each"; "You chose this"), quality stamp, next window for a timed node ("opens 14:00 Eorzea time, in 12 min"), price each and total with its fetch time | "Nothing left to get." |
-| A list, tab To craft | Blocks by job in crafting order. Row: name, crafts and what they make, "Made 1", "Made all", "Bought it", "Got it another way", "Get it by" select, "Solve in the Atelier" | "Nothing left to craft." |
-| A list, tab Wanted | Wanted items: amount, High quality, Collectable, step, "Get it by" select with its reason, Finished, Remove; "Add items" search (25 results) | "Add the first item." |
-| List bar | Name, character, step tabs with each step's own totals, "Hide completed" (one button), Defaults, price place and Refresh | none |
-| Defaults sheet | "When an item can be got in several ways, this list tries them in this order:" an ordered list the player can rearrange, with the sentences below | none |
+| Your lists | Lists grouped by character, one card per list: name, "12 of 40 ready", steps. Buttons: New list, From the crafting log, and per character Combined view (tick that character's lists, open) | "No lists yet. Start one, or build one from the crafting-log pages you have not finished." Two buttons |
+| A list, tab To get | Sections Buy from a merchant (gil), Gather, Trade for other currencies, Buy on the market, Other, Already have, Left over; closed at first, only open sections are drawn. Row: name, "need 12, have 4", "4 held for “Other list”" when so, minus, plus, an "I have" field, "Have all", "Get it by" select, the reason ("Sold by <seller> in <zone> for 120 gil each"; "You chose this"), quality stamp, next window for a timed node ("opens 14:00 Eorzea time, in 12 min"), price each and total with its fetch time | "Nothing left to get." |
+| A list, tab To craft | Blocks by job in crafting order. Row: name, crafts and what they make, "spare: 2" when a craft makes more than is needed, "Made 1", "Made all", "Bought it", "Got it another way", "Get it by" select, "Solve in the Atelier" | "Nothing left to craft." |
+| A list, tab Wanted | Wanted items: amount, High quality, Collectable, "Must be crafted by me", step, "Get it by" select with its reason, Finished, Remove; "Add items" search (25 results) | "Add the first item." |
+| List bar | Name, character, step tabs with each step's own share, "Hide completed" (one button), Order of ways, price place and Refresh | none |
+| Order of ways sheet | "When an item can be got in several ways, <character>'s lists try them in this order:" an ordered list the player can rearrange, with the sentences below | none |
 | From the crafting log | Character, job, page; "23 of 40 not ticked in the Tracker"; Create. Opened filled in from the Tracker's button | "Everything on this page is ticked." |
-| Combined view | A list view over the chosen lists and one stock, every row with the same "Get it by" select and craft-row buttons; a line where lists disagree on a choice | "Tick two or more lists." |
+| Combined view | The chosen lists of one character as one list view: each row is the sum of those lists' shares | "Tick two or more lists of one character." |
 
-**Defaults sheet, the sentences:** "1. Buy from a merchant for gil. If an ordinary merchant sells it for gil, you buy
-it, and the materials to craft it are left out." "2. Craft it." "3. Gather it." "4. Trade for it with another
+**Order of ways sheet, the sentences:** "1. Buy from a merchant for gil. If an ordinary merchant sells it for gil, you
+buy it, and the materials to craft it are left out." "2. Craft it." "3. Gather it." "4. Trade for it with another
 currency (scrips, tomestones, seals, tokens). These are not counted as easy, so they come after crafting and
-gathering unless you move them up." "5. Buy on the market board." Below: "You can change this for the whole list here,
-or for one item on its row, at any time."
+gathering unless you move them up." "5. Buy on the market board." Below: "This order is used in all of <character>'s
+lists. You can change it here, or choose a way for one item on its row, at any time. Items from the crafting log are
+always crafted."
+
+**Combined view, settled (review).** (a) It holds lists of one character only, because stock, ways and the order of
+ways belong to a character; lists of two characters cannot be ticked together, and the picker says "Each character
+has its own stock." (b) It shows the ticked lists' shares of that character's whole plan: stock held for an earlier
+list that is not ticked is not offered, and the row says "4 held for “Other list”" (E16). (c) "Get it by", "Bought
+it" and the stock fields write the character's one way and one stock count for the item, exactly as in a single list;
+there is nothing per list to disagree about.
 
 **Changing how an item is got** (D15), the same on To get, To craft, Wanted and the combined view, at any time,
 also after crafts were recorded or materials gathered:
-- The "Get it by" select lists only the ways the item really has, plus "Already have" and "Use the list's order".
+- The "Get it by" select lists only the ways the item really has, plus "Already have" and "Use the usual order". Under
+  it, once per screen: "This applies wherever <character> needs this item."
 - "Bought it" on a craft row: asks nothing when the row needs one, else "How many?" filled with what is still needed;
   adds that amount to the stock, so the item and everything below it drop out at once; then offers, in the status
-  line, "Buy the rest too" with the ways the item has (merchant, market), which sets the row's choice.
-  "Got it another way" does the same without that offer (a drop, a gift, a retainer).
+  line, "Buy the rest too" with the ways the item has (merchant, market), which sets the item's way. On a "Must be
+  crafted by me" row it also switches that off. "Got it another way" does the same without the offer (a drop, a gift,
+  a retainer).
 - Materials already gathered or made for it are never taken away: they stay in the stock and show under "Left over"
   as "12 Iron Ore: no longer needed by this list. Still in your stock, and used by your other lists if they need it."
 - Every such change shows "Undo" in the status line, one tap, for the last 20 changes of this visit; undo puts back
-  the exact earlier choice and stock count. Switching back by hand is always possible.
+  the exact earlier way, flag and stock count. Switching back by hand is always possible.
 
 Wording rules: "I have", "need", "to get", "made", "bought"; no jargon. Under every stock field once per screen: "You
 type what you have. This app never reads the game." Clearing an amount keeps the old amount; only Remove removes,
@@ -340,12 +425,18 @@ Every builder item: a branch; only the named files plus the built copies; `npm r
 nothing) and the rebuilt copies committed; `npm run test:unit`; report what ran and what did not; never merge. Browser
 checks answer Universalis with a stand-in and route `lists/data.js` to a small fixture unless the item says real data.
 The fixture `tracker/tests/fixtures/lists-fixture.json` (made in W2, used by unit tests and checks) holds the owner's
-case: a crafted item with three materials, one of which has a recipe of its own and is also sold by a gil merchant,
-one sold only for another currency, one gathered.
+case: a crafted item with three materials: one has a recipe of its own and is also sold by a gil merchant; one is sold
+for another currency **and also has a recipe** (so "not traded" is a real choice between two ways); one is gathered.
+It also holds an item that makes 3 per craft, a merchant offer marked high quality, and a page of the crafting log
+whose entries include an item that is another entry's material and is sold by a gil merchant.
+**Old builds in tests** are the shipped files, read with `git show <base>:<path>` where `<base>` is
+`git merge-base HEAD origin/main`, never a stand-in written for the test. The checks workflow checks out one commit
+only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 adds `fetch-depth: 0` to
+`.github/workflows/checks.yml`; a test that cannot find `<base>` fails with that reason, it never skips.
 
 - **W0 Baseline and facts (Haiku clerk). Done 2026-11-22:** build clean, unit tests 416 of 416, highest check C144;
   switcher and module counts at `check.js` lines 154, 155, 254, 767 and card counts at 296, 313, 535 to 537, 630, 769
-  (W6 updates them and lists them); no "On the way" text; `site/submersibles/data.js` 62,878 bytes; `shops.json` facts
+  (W6 updates them and lists them); no `check.js` line reads "On the way" (the home page does show it, below); `site/submersibles/data.js` 62,878 bytes; `shops.json` facts
   in section 3; every `gather-*` item entry carries `it` (1,153 of 1,153). Original brief kept below. No edits. Run `npm ci && npx playwright install chromium`, `npm run build`,
   `npm run test:unit`. Report: both results; the highest check id in `check.js` (expected C144); every `check.js` line
   that counts switcher links, modules or reads "On the way"; the size of `site/submersibles/data.js`; whether
@@ -355,36 +446,52 @@ one sold only for another currency, one gathered.
   line. Escalate if: a suite fails before any change.
 - **W1 Data tool (Sonnet builder; after W0).** Files: `tracker/tools/lists-data.py` (new), `tracker/data/lists.json`
   (new), `tracker/data/SOURCES.md` (a "Lists" section with table, licences and stop rules),
-  `tracker/tests/lists-data.test.js` (new), `package.json`. Steps: section 3. Tests LD-1 to LD-6: every ingredient and
+  `tracker/tests/lists-data.test.js` (new), `package.json`. Steps: section 3. Tests LD-1 to LD-7: every ingredient and
   result is in `items`; five recipes checked by hand against the sheet rows quoted in the test (one multi-yield, one
   with a crafted material, one collectable); timed windows equal `conditions.json` wherever both hold the item; a
   trade that gives several keeps its ratio; a second run writes an identical file with empty `changes`; every offer
-  has at least one currency and gil offers sort first. Accept: the test passes; counts (recipes, items, gil offers,
-  other offers) and sizes in the report. Escalate if: no network; no field gives a trade's amount; the data cannot
-  tell gil merchants from other-currency vendors for every offer; the plain file exceeds 4 MB. (Allied-society
-  vendors are not marked in the data; that is settled in section 3, not an escalation.)
+  has at least one currency and gil offers sort first; **LD-7** the tool's compare step, run on a copy of the file with
+  one recipe row altered and one existing `changes` entry, writes both the earlier entry and a new one naming that
+  recipe. Accept: the test passes; counts (recipes, items, gil offers, other offers) and sizes in the report. Escalate
+  if: no network; no field gives a trade's amount; the data cannot tell gil merchants from other-currency vendors for
+  every offer; the plain file exceeds 4 MB. (Allied-society vendors are not marked in the data; that is settled in
+  section 3, not an escalation.)
 - **W2 Engine (Sonnet builder; after W1).** Files: `tracker/command-center/src/lists/engine.js`,
   `tracker/tests/fixtures/lists-fixture.json`, `tracker/tests/lists-engine.test.js` (LE-1 to LE-18, one per invariant;
-  replays of the eight Teamcraft faults of research section 1; **LE-R9, the owner's case** on the fixture: with
-  defaults the gil-merchant material is under `shop.vendor` with its seller and price, it is in no craft block, none
-  of its own materials is in the plan, and the other-currency material is crafted or gathered, not traded; **LE-R10**:
-  after `craftDone` of the top item's material, switching it to `vendor` and `LISTS.bought` each satisfy E18 and
-  `leftover` lists what was freed), `tracker/tests/lists-model.test.js` part A, `package.json`. Accept:
-  `npm run test:unit`; a plan for 500 wanted items of real data under 100 ms in Node (figure reported). Escalate if:
-  an invariant cannot hold as written (E5, E9, E18 and the quality rule are argued on paper only).
-- **W3 Save section and store rules (Sonnet builder; after W2).** Files: `tracker/src/core/save.js` (`CC.checkLists`
-  in `CHECK`, LI1 and LI2 in `writeSection`, `describeUnit` labels), `tracker/tests/core.test.js` (LS-1 to LS-8:
-  checker table, including a header without `def.order` and all six `by` values; round trip; an old checker stand-in
-  keeps the section; LI1 for a list and for a wanted item; LI2; a stored orphan stays writable; two tabs on different
-  items both kept), model part B, `check.js` C145. Accept: `npm run test:unit`, `npm run test:browser`,
-  `CHECK_ONLY=C127,C140,C145 npm run check`. Must not change: `CC.mergeModules`, `CC.mergeUnit`, any Submersibles
-  rule, any existing test. Escalate if: an existing test changes.
+  replays of the eight Teamcraft faults of research section 1; **LE-R9, the owner's case** on the fixture: with the
+  default order the gil-merchant material is under `shop.vendor` with its seller and price, it is in no craft block,
+  none of its own materials is in the plan, and the other-currency material is crafted, not traded; **LE-R10**: after
+  `craftDone` of the top item's material, switching it to `vendor` and `LISTS.bought` each satisfy E18(a), switching
+  it to `trade` satisfies E18(b), and `leftover` lists what was freed; **LE-R11 and LE-R12, the review's two cases**:
+  two lists and an item that makes 3, with every removal and every stock rise checked against E4 and E5; one
+  high-quality X held with a normal-only merchant, as one step and as two, giving the same totals; **LE-R13**: a
+  crafting-log page whose entry is also another entry's material: the entry is crafted once as `make`, the material
+  need is bought from the gil merchant, E17 holds), `tracker/tests/lists-model.test.js` part A, `package.json`.
+  Accept: `npm run test:unit`; a plan for 500 wanted items of real data under 100 ms in Node (figure reported).
+  Escalate if: an invariant cannot hold as written (they are argued on paper only; the model test is the authority).
+- **W3 Save section and store rules (Sonnet builder; after W2).** Files: `.github/workflows/checks.yml` (`fetch-depth: 0`
+  on the checkout, for the tests against shipped builds), `tracker/src/core/save.js` (`CC.checkLists`
+  in `CHECK`, with no size limit; LI2 then LI1 in `writeSection`; `describeUnit` labels), `tracker/tests/core.test.js`
+  (LS-1 to LS-10: checker table, including an owner without an order, all six `by` values, `make`, and a wanted item
+  whose `step` is not in the header kept as it is; round trip; **LS-3 the shipped `save.js` at `<base>`** loaded in a
+  fresh context keeps a full lists section byte for byte through `CC.checkDoc` and a `CC.writeSection` of another
+  module; LI1 for a list and for a wanted item; LI2, and a stale edit inside a removed list rejects with the list's
+  text; a stored orphan stays writable; two tabs on different items both kept; a section with 250 lists, 2,500 wanted
+  items in one list and 25,000 stock counts passes the checker and `CC.unflatModules` unchanged), model part B,
+  `check.js` C145 (the three newly built apps each save and leave the lists section byte-identical; **and the Tracker
+  and Atelier builds shipped at `<base>`**, written to a temporary folder with `git show` and served beside the site,
+  do the same). Accept: `npm run test:unit`, `npm run test:browser`, `CHECK_ONLY=C127,C140,C145 npm run check`. Must
+  not change: `CC.mergeModules`, `CC.mergeUnit`, any Submersibles rule, any existing test. Escalate if: an existing
+  test changes, or `<base>` cannot be read in the check's environment.
 - **W4 Whole-list question in the sync (Sonnet builder; after W3).** Files: `tracker/src/core/merge.js` (the `list`
-  pass in `ET.threeWay`, its branch in `ET.applyMerge` and `ET.describeConflict`), `core.test.js` (LY-1 to LY-6:
-  removed against renamed; removed against a new wanted item; each answer and none; old device stand-in; settle),
-  model part C, `check.js` C146 (the question's wording in the Settings dialog, both answers). Accept:
-  `npm run test:unit`, `CHECK_ONLY=C119,C122,C146 npm run check`. Must not change: the free-company and slot passes,
-  the conflict shape, R2, R3, F-01, INT and SI tests. Escalate if: an existing test needs an edit, or LY4 fails.
+  pass in `ET.threeWay` with the names in `integrity`, its branch in `ET.applyMerge` and `ET.describeConflict`),
+  `core.test.js` (LY-1 to LY-7: removed against renamed; removed against a new wanted item; each answer and none;
+  **the old device runs the shipped `merge.js` and `save.js` at `<base>`** in its own context, and the new device
+  shows what it left as "Restored list" with nothing dropped; settle; two devices whose lists together pass a size
+  limit merge with nothing dropped; the labels of section 4 word for word), model part C, `check.js` C146 (the
+  question's wording in the Settings dialog, both answers). Accept: `npm run test:unit`,
+  `CHECK_ONLY=C119,C122,C146 npm run check`. Must not change: the free-company and slot passes, the conflict shape,
+  R2, R3, F-01, INT and SI tests. Escalate if: an existing test needs an edit, or LY4 fails.
 - **W5 Shared price service (Sonnet builder; after W0).** Files: `tracker/command-center/src/prices.js` (new),
   `src/submersibles/earn.js`, `src/submersibles/index.html`, `build.js` (copy the file), `tracker/tests/prices.test.js`
   (PR-1 to PR-4: two services do not touch each other's records; the limit, freshness and settle tables for a second
@@ -393,51 +500,59 @@ one sold only for another currency, one gathered.
 - **W6 Build, page shell, cross-check (Sonnet builder; after W1, W2, W5).** Files: `build.js` (the `lists/` page,
   `data.js` with `log`, the budget, the cross-check call), `tracker/tools/lists-crosscheck.js`, `src/lists/index.html`,
   `lists.css`, `lists.js` (loads the save and data, shows Your lists and its empty state), `src/sw.js` (`lists/` in
-  `PAGES`), `src/index.html` (switcher link, a Lists card, Lists out of "On the way"), `src/shell.js` (module list,
-  the card's live line), `check.js` C147 (opens from the switcher, works offline after one visit, no page error, no
-  sideways scroll at 360 px). Accept: build twice; `npm run test:unit`; `npm run check` (full). Escalate if: the glue
-  will not run in Node (then build the fallback of section 6 and say so); any recipe disagrees or the Atelier lacks
-  any; the budget is exceeded; an existing check counts switcher links (update it and list it in the report).
+  `PAGES`), `src/index.html` (a switcher link and a Lists card; the home page's "On the way" line, `src/index.html`
+  line 83, names Lists first (checked 2026-11-22): take "Lists crafting planner" out of it; no check reads that text), `src/shell.js` (module list, the card's live
+  line), `check.js` C147 (opens from the switcher, works offline after one visit, no page error, no sideways scroll at
+  360 px) and the count lines W0 named. Accept: build twice; `npm run test:unit`; `npm run check` (full). Escalate if:
+  the glue will not run in Node (then build the fallback of section 6 and say so); any recipe disagrees or the Atelier
+  lacks any; the budget is exceeded.
 - **W7 Lists, wanted items, stock (Sonnet builder; after W3, W6).** Files: `src/lists/store.js` (pure edit functions;
-  every one returns the new section and an undo patch: the units it replaced), `lists.js`, `lists.css`,
-  `tracker/tests/lists-store.test.js` (ST-1 to ST-8: add, amount, cleared amount keeps the item, remove; set and clear
-  a row's choice; `bought` after a recorded craft raises only that item's count; "Buy the rest too" sets the choice;
-  undo of each restores the section byte for byte; twenty undos in a row; no edit lowers a stock count except
-  minus, "I have", a recorded craft and Finished), `check.js` C148 (create, add, amounts, stock entry, cleared amount
-  keeps the item, reload keeps all) and C149 (two tabs: different items both kept; a stale edit of a removed list
-  shows the "Not saved" line). The page writes one save at a time, as `subs.js` `write()` does. Accept:
+  every one returns the new section and an undo patch: the units it replaced; the size limits of section 4 live here
+  and only here), `lists.js`, `lists.css`, `tracker/tests/lists-store.test.js` (ST-1 to ST-10: add, amount, cleared
+  amount keeps the item, remove; set and clear an item's way; `bought` after a recorded craft raises only that item's
+  count; "Buy the rest too" sets the way; "Bought it" on a `make` row switches `make` off; undo of each restores the
+  section byte for byte; twenty undos in a row; no edit lowers a stock count except minus, "I have", a recorded craft
+  and Finished; each limit refuses the edit with its line and changes nothing; a section already over a limit can
+  still be edited and shrunk), `check.js` C148 (create, add, amounts, stock entry, cleared amount keeps the item,
+  reload keeps all) and C149 (two tabs: different items both kept; a stale edit inside a removed list shows the "Not
+  saved" line with the list's text). The page writes one save at a time, as `subs.js` `write()` does. Accept:
   `npm run test:unit`, `CHECK_ONLY=C147,C148,C149 npm run check`. Escalate if: the write pattern needs a store change.
 - **W8 Views and choices (Sonnet builder; after W7).** Files: `lists.js`, `lists.css`, `check.js` C150 (a "get it by"
-  change and a defaults change move the totals at once), C151 (steps and leftovers), C152 (combined view, one stock,
-  the disagreement line), C153 (crafting order by job, Made buttons, Hide completed), C154 (500 wanted items: under
-  3,000 page elements with sections closed, an open section drawn in under one second), **C161** (the owner's case on
-  the fixture with a new list and untouched defaults: the gil-merchant material is under "Buy from a merchant (gil)"
-  with "Sold by … for … gil each", is absent from To craft, none of its materials is on any tab, the other-currency
-  material is not under trades; the Defaults sheet shows the five sentences; moving "Craft it" first brings the craft
-  and its materials back), **C162** ("Made 1" on a craft, then "Bought it" on the same row: the row and everything
-  below it leave To craft and To get at once, no stock count fell, the gathered materials show under "Left over" with
-  the sentence, "Buy the rest too" sets the choice; "Undo" twice restores both steps exactly; a reload keeps what was
-  not undone), **C163** (the "Get it by" select is present and works on a To get row, a To craft row, a Wanted row and
-  a combined-view row, lists only ways the item has, and a craft switched to bought and back shows the first plan
-  again). Accept: those checks and the unit suite. Escalate if: C154 cannot hold without virtual scrolling.
+  change and a change of the order of ways move the totals at once, in every list of that character), C151 (steps:
+  each step's share, the shares add up to the list's totals, moving a wanted item to another step changes no total),
+  C152 (combined view: only one character's lists can be ticked; a subset shows "held for" an unticked earlier list
+  and offers no stock twice; a "Get it by" change made there shows in the single lists too), C153 (crafting order by
+  job, Made buttons, Hide completed), C154 (500 wanted items: under 3,000 page elements with sections closed, an open
+  section drawn in under one second), **C161** (the owner's case on the fixture with a new list and the untouched
+  order: the gil-merchant material is under "Buy from a merchant (gil)" with "Sold by … for … gil each", is absent
+  from To craft, none of its materials is on any tab, the other-currency material is crafted and not under trades;
+  the sheet shows the five sentences; moving "Craft it" first brings the craft and its materials back), **C162**
+  ("Made 1" on a craft, then "Bought it" on the same row: the row and everything below it leave To craft and To get at
+  once, no stock count fell, the gathered materials show under "Left over" with the sentence, "Buy the rest too" sets
+  the way; "Undo" twice restores both steps exactly; a reload keeps what was not undone), **C163** (the "Get it by"
+  select is present and works on a To get row, a To craft row, a Wanted row and a combined-view row, lists only ways
+  the item has, and a craft switched to bought and back shows the first plan again). Accept: those checks and the unit
+  suite. Escalate if: C154 cannot hold without virtual scrolling.
 - **W9 Prices, timed nodes, patch notice (Sonnet builder; after W8).** Files: `lists.js`, `lists.css`, `check.js` C155
   (prices with fetch time; failure sentence; one automatic attempt across a reload; the Submersibles record untouched;
-  the plan's sources are the same with and without prices), C156 (next window at a fixed clock), C157 (fixture with a
+  the plan's ways are the same with and without prices), C156 (next window at a fixed clock), C157 (fixture with a
   `changes` entry: the notice names the change, everything is kept, "OK, noted" clears it). Accept: those checks, C113
   and C117 unedited. Escalate if: a reply field is missing.
 - **W10 Crafting log and Atelier (Sonnet builder; after W8).** Files: `lists.js` (the screen, and reading
   `#from=…&char=…` as section 6 says), `crafting/atelier/src/atelier.js` (the hash link only),
-  `crafting/atelier/tests/atelier.test.js` (link selects the recipe, clears the hash, saves nothing), `check.js` C158
-  (seeded ticks: the new list holds exactly the unticked, applicable recipes of that page, real data; each of them is
-  planned as a craft even when a gil merchant sells it, while its merchant-sold materials are bought; opened with
-  `#from=` and with `&char=`: job, page and character are chosen, the hash is removed, nothing is saved before Create;
-  an unknown recipe id opens the screen unfilled) and C159 (the link opens the built Atelier on that recipe). Ticks
-  are read with the Tracker's own reader in `site/core/`. Accept: unit, browser and those checks. Escalate if: reading
-  ticks needs a core change.
+  `crafting/atelier/tests/atelier.test.js` (starting from a save in which the Atelier's first-visit move is already
+  recorded, `moved.atelier`: the link selects the recipe, clears the hash, and the save is byte-identical afterwards),
+  `check.js` C158 (seeded ticks: the new list holds exactly the unticked, applicable recipes of that page, real data,
+  each as a wanted item with `make` and no stored way; each is planned as a craft even when a gil merchant sells it;
+  an entry that is also another entry's material is crafted once for itself and its material need is bought when a
+  gil merchant sells it; opened with `#from=` and with `&char=`: job, page and character are chosen, the hash is
+  removed, nothing is saved before Create; an unknown recipe id opens the screen unfilled) and C159 (the link opens
+  the built Atelier on that recipe). Ticks are read with the Tracker's own reader in `site/core/`. Accept: unit,
+  browser and those checks. Escalate if: reading ticks needs a core change.
 - **W11 Look and phone pass (Sonnet builder; after W9, W10).** Files: `lists.css`, `tracker/tests/lists-look.test.js`
   (the six roles at 4.5:1 in all 21 themes, both modes; no colour in a rule outside the token block), `check.js` C160
   (every colour on a pictured screen is a role) and evidence block `L2` (each screen at 1440 px light and 360 px dark,
-  the Defaults sheet and a list with a "Left over" line included: `evidence/lists-*.png`). Accept: full
+  the Order of ways sheet and a list with a "Left over" line included: `evidence/lists-*.png`). Accept: full
   `npm run build`, `test:unit`, `test:browser`, `check`. Escalate if: a role cannot reach its ratio by lightness alone.
 - **W12 The Tracker's button (Sonnet builder; after W10).** Read first: `tracker/src/app/ui.js` (`groupHtml`,
   `renderLedger`, the click handling of `data-fold` and `data-gc`, the code that adds the back link `.cc-back` and its
@@ -471,18 +586,31 @@ one sold only for another currency, one gathered.
   browser check answers prices with a stand-in.
 - **Gil merchants must be told apart from other vendors by the data** (D14). If W0 or W1 finds they cannot be, the
   owner's first requirement cannot be met honestly and the work stops there for a decision.
+- **Q4 is open** (section 11). W2, W3, W7 and W8 build option A; an answer of B changes the save layout (ways and the
+  order move back to each list), the engine's sharing rule and those four items. Best answered before W3 ships a
+  layout.
 - The cross-check may find the Atelier's solver data on another game version than the sheets; then the build stops by
   design and the owner is told (not decided here).
-- E5, E9, E18 and the quality rule are proved on paper only; the model test is the authority.
+- The invariants of section 5 are argued on paper only, by one planner and one same-family reviewer; the model test
+  is the authority, and W2 reports any that fails instead of bending it.
 - `save.js` and `merge.js` change: one builder at a time, all three apps rebuilt, C127 and C140 rerun.
 - Allied-society vendors are not marked in the pinned data (W0); settled in section 3: their token offers are `trade`.
 - The data file may exceed the budget; trimming is a decision, not a silent step.
 - Adding a switcher link may break checks that count links (W0 lists them).
 - W12 changes the Tracker's most used row; its tests pin that folding and ticking are untouched.
+- Tests against shipped builds need `origin/main` in the checkout; W3 adds `fetch-depth: 0` to the checks workflow.
 
 ## 10. Known limits (as designed)
 
 - Stock is typed by hand. Retainers, alts and the free-company chest are whatever the player types.
+- One way per item per character (D12): an item cannot be crafted for one list and bought for another at the same
+  time, except that crafting-log entries are always crafted. Moving a list to another character puts it under that
+  character's stock, ways and order.
+- What a craft makes beyond the need ("spare") is shown but not planned with: once the craft is recorded it is typed
+  stock and everything uses it. So before a multi-yield craft is recorded, a later need of the same item in another
+  quality or as a "must craft" entry can look larger than it will be.
+- A list's share can change when another list of the same character changes (a craft can move from one list's share
+  to the next); the character's totals never rise from a removal.
 - Yields are not cross-checked (the Atelier holds none). Market price is the cheapest listing of any quality, before
   tax, from community reports; it is not split by world (that is Market).
 - "Buy from a merchant first" looks only at whether a gil merchant sells the item, not at the price: an expensive
@@ -491,9 +619,12 @@ one sold only for another currency, one gathered.
   gil offer that needs allied reputation is planned like any merchant; the row names the seller and place, and a Grand
   Company rank when the data gives one.
 - A high-quality need goes to a merchant only for an offer marked high quality; whether a given market listing is high quality is not checked.
-- Undo covers the last 20 changes of one visit and is gone after a reload; a choice can always be changed back by hand.
+- Undo covers the last 20 changes of one visit and is gone after a reload; a way can always be changed back by hand.
 - "Left over" lists unused stock of items in this list's tree; it cannot know why the stock is there.
 - The same unit changed in two tabs: the later save wins. A stock count changed on two devices is asked.
+- Sync questions about Lists name the list and the character but show items by number, because Settings does not hold
+  the item names.
+- Size limits stop new entries on a device; a sync can still bring a save above them, and nothing is dropped.
 - A device still on the old version syncs lists unit by unit, so it can leave a kept list empty or an entry without
   its list; the new page shows such entries as "Restored list". This ends when every device has updated.
 - The Tracker's button appears only inside the Command Center, and with several characters the character is chosen in
@@ -502,7 +633,7 @@ one sold only for another currency, one gathered.
 - Sources other than merchant, craft, gather, trade and market (drops, quests, desynthesis, reduction) are "Other": to
   get, your own way. Sharing a list by link or file is a later phase.
 
-## 11. Owner decisions (2026-11-22)
+## 11. Owner decisions (2026-11-22), and one open question
 
 - **Q1, what I have: once per character (option A).** One stock per character that all of that character's lists draw
   on, in the order the lists are put in; a list says how many are held for another list. Lists without a character
@@ -517,7 +648,30 @@ one sold only for another currency, one gathered.
 - **New requirement 2: how an item is got can be changed at any time, from every row**, with a one-tap "Bought it",
   nothing gathered lost, and one-tap undo (D15, D16, E18, C162, C163).
 
-No owner question is open. Escalations that would return to the owner are named in section 9.
+**Q4 (open). When a character has several lists, is "how I get this item" chosen once for the character, or
+separately in each list?** Your decision of 2026-11-21 spoke of settings per list. Once all of a character's lists
+share one stock (Q1), settings per list can make the numbers of one list go up when you remove something from
+another, so the plan needs one of the following.
+- **A. Once per character (recommended; this is what is built until you answer).** What happens: if you say "I buy
+  Iron Ingots", that holds in all of that character's lists, and the order of ways (merchant first, then craft, …) is
+  set once per character. What it improves: removing an item or typing more stock can never make any total go up, in
+  any list; "Bought it" is said once. What it costs: nothing extra to build. What you give up: you cannot craft an
+  item for one list and buy the same item for another list at the same moment (crafting-log entries are still always
+  crafted). Risk left: a list's own figures can shift when a sister list changes, while the character's totals never
+  rise. How sure: fairly; worked through on paper and to be proved by the permanent test.
+- **B. Separately in each list.** What happens: each list keeps its own choices and its own order; lists share only
+  the stock you typed, handed out in list order; what one list crafts beyond its need is not passed to another list
+  until you record the craft. What it improves: each list can be planned its own way. What it costs: about one more
+  builder item and a different save layout; best decided before the save work starts. What you give up: totals are
+  sometimes higher than needed (one list shows 2 spare while another tells you to buy 2 of the same item). Risk left:
+  the same guarantee as A can be kept, but it was not worked through in this plan. How sure: medium.
+- **C. Keep the plan as it was written before the review:** choices per list, and what one list crafts beyond its need
+  is passed on to the others. Costs nothing to write. Risk left: removing an item from one list, or typing that you
+  hold one more, can make another list tell you to buy more; that is the kind of wrong total this module is meant to
+  end, and no test can promise otherwise. How sure: certain, the reviewer gave a worked example.
+- Recommendation: A.
+
+Escalations that would return to the owner are named in section 9.
 
 ## 12. What was read, and what was not verified
 
@@ -536,4 +690,7 @@ game version; the shape of the Tracker's tick section (W10
 reads it through the Tracker's code); the Tracker's click handler for the group row and the exact condition behind its
 back link (W12 reads them first); that `ui.test.js` has no test of the group row's markup (a search for its selectors
 found none); the Universalis reply fields beyond those `live.js` and `earn.js` already read; the planning background
-in the private workspace was not opened.
+in the private workspace was not opened. For the third revision nothing new was read or run: the planning model and
+every invariant of section 5 are argued on paper. The "On the way" question is settled: the home page has
+the line (`src/index.html` line 83), no check reads it (orchestrator, 2026-11-22). Whether the Atelier's first-visit move writes the save,
+and that `moved.atelier` is its marker, are the reviewer's findings, not re-read here.

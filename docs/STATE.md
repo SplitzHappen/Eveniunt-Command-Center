@@ -114,7 +114,8 @@ Nothing at the moment.
      Submersibles' behaviour unchanged.
   The spec is `docs/lists-spec.md` (written 2026-11-21; the owner answered its questions on 2026-11-22 and added two
   rules: buy from a gil merchant before crafting, and "I bought it instead" at any time). Nothing is built yet;
-  the first build step is W0 (a baseline run and data facts).
+  W0 (baseline and data facts) is done. A same-family review found two blockers and four major gaps, all fixed in the
+  spec; one owner question is open (section 11, Q4). An outside review by ChatGPT and Mistral follows before building.
 
 ## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
 
