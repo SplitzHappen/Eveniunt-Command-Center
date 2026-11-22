@@ -1,7 +1,8 @@
-// Eveniunt Command Center, Lists module page (work items W6 to W8 of docs/lists-spec.md): loads the one save and the data, shows "Your lists",
+// Eveniunt Command Center, Lists module page (work items W6 to W9 of docs/lists-spec.md): loads the one save and the data, shows "Your lists",
 // makes and removes lists, and on a list's tabs To get, To craft and Wanted (and the combined view) plans every list of a character together, adds
 // items, changes amounts and flags, finishes and removes them, takes the typed stock ("I have", minus, plus, "Have all"), "Made", "Bought it",
-// "Get it by", the order of ways and the steps' hand-in, and shows Undo. Every change goes through LISTS.store (the edit functions), and the page writes one save
+// "Get it by", the order of ways and the steps' hand-in, and shows Undo. W9 adds market prices (the shared price service, kept on this device only),
+// the next window of a timed node, and the notice that the game data changed since a list was last checked. Every change goes through LISTS.store (the edit functions), and the page writes one save
 // at a time, as the Submersibles page does. Nothing is read from the game: the player types what they have.
 (function () {
   'use strict';
@@ -14,6 +15,209 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
+  // ------------------------------------------------------------------------------------------------ preferences and small edits (W9)
+  // prefs.hideDone and prefs.priceWorld live in the save (spec section 4); prices never do. These edits write one unit and add no Undo entry.
+  function prefEdit(s, key, val) {
+    var orig = S.norm(s), d = clone(orig);
+    d.prefs = d.prefs || {};
+    if (val === undefined || val === null || val === '' || val === false) delete d.prefs[key]; else d.prefs[key] = val;
+    var out = S.norm(d);
+    if (JSON.stringify(out.prefs[key]) === JSON.stringify(orig.prefs[key])) return { section: orig, entry: null };
+    return { section: out, expect: {} };
+  }
+  function setListStamp(s, id) {
+    var orig = S.norm(s);
+    if (!orig.lists[id]) return { error: 'This list was removed on another device or in another tab.' };
+    var d = clone(orig); d.lists[id].data = String(DATA.stamp || '').slice(0, 60);
+    var out = S.norm(d);
+    if (JSON.stringify(out.lists[id]) === JSON.stringify(orig.lists[id])) return { section: orig, entry: null };
+    return { section: out, expect: {} };
+  }
+  function syncPrefs() { SH.view.hide = !!(SH.sec && SH.sec.prefs && SH.sec.prefs.hideDone); }
+
+  // ------------------------------------------------------------------------------------------------ market prices (W9, spec section 6)
+  // The shared price service with Lists' own two keys and query. A stored price is [cheapest listing, recent average, world, last upload]; the
+  // page judges it (a price counts only when it is a positive whole number). Prices live on this device only, never in the save.
+  var REGION_OF = { Elemental: 'Japan', Gaia: 'Japan', Mana: 'Japan', Meteor: 'Japan', Aether: 'North-America', Crystal: 'North-America', Dynamis: 'North-America', Primal: 'North-America', Chaos: 'Europe', Light: 'Europe', Shadow: 'Europe', Materia: 'Oceania' };
+  var PLACES = ['North-America', 'Europe', 'Japan', 'Oceania'].concat(Object.keys(REGION_OF).sort());
+  var PR = { busy: false, error: null, errScope: null, partial: false, tried: {}, running: null, queued: null, want: [], dirty: false };
+  var PC = { raw: undefined, scope: null, c: null };
+  function posInt(n) { return typeof n === 'number' && isFinite(n) && n > 0 && Math.floor(n) === n; }
+  function readReply(x) {
+    if (!x || typeof x !== 'object') return null; // no usable reply: recorded as "no market data", never as 0
+    var ls = Array.isArray(x.listings) ? x.listings : [], l = ls[0] || null;
+    var hist = (Array.isArray(x.recentHistory) ? x.recentHistory : []).map(function (h) { return h && h.pricePerUnit; }).filter(posInt);
+    var avg = hist.length ? Math.round(hist.reduce(function (a, b) { return a + b; }, 0) / hist.length) : Math.round(+x.averagePrice || +x.currentAveragePrice || 0);
+    return [l ? (l.pricePerUnit === undefined ? 0 : l.pricePerUnit) : null, isFinite(avg) && avg > 0 ? avg : 0, l ? String(l.worldName || x.worldName || '') : '', +x.lastUploadTime > 0 ? +x.lastUploadTime : 0];
+  }
+  var PS = window.PRICE.create({ cacheKey: 'eveniunt-lists-prices', triedKey: 'eveniunt-lists-prices-tried', query: '?listings=1&entries=20', read: readReply,
+    tradable: function (id) { return !!DATA && (itemFlags(id) & 1) !== 0; } });
+  function sharedScope() { // the place the Tracker's market page uses: one world, one data centre, or (the default) the region
+    try {
+      var L = ((JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).ui || {}).live || {}, region = REGION_OF[L.dc];
+      if (L.mscope === 'world' && L.world) return L.world;
+      if (L.dc) return L.mscope === 'dc' || !region ? L.dc : region;
+    } catch (e) { /* none */ }
+    return 'North-America';
+  }
+  function priceScope() { return (SH.sec && SH.sec.prefs && SH.sec.prefs.priceWorld) || sharedScope(); }
+  function cache() {
+    var scope = priceScope(), raw = null;
+    try { raw = localStorage.getItem('eveniunt-lists-prices'); } catch (e) { /* private window */ }
+    if (PC.raw === raw && PC.scope === scope) return PC.c;
+    PC.raw = raw; PC.scope = scope; PC.c = PS.cached(scope); PC.map = null;
+    return PC.c;
+  }
+  // { itemId: gil } for the engine: only a cheapest listing that is a positive whole number
+  function priceMap() {
+    var c = cache();
+    if (!c || !c.prices) return null;
+    if (!PC.map) { PC.map = {}; Object.keys(c.prices).forEach(function (id) { var v = c.prices[id]; if (Array.isArray(v) && posInt(v[0])) PC.map[id] = v[0]; }); }
+    return PC.map;
+  }
+  function failNow() { return PR.error && PR.errScope === priceScope() ? PR.error : null; }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fmtClock(t, now) {
+    var d = new Date(t), n = new Date(now), hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    var day = function (x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); }, diff = Math.round((day(d) - day(n)) / 86400000);
+    return diff === 0 ? hm : diff === -1 ? 'yesterday ' + hm : d.getDate() + ' ' + MON[d.getMonth()] + ' ' + hm;
+  }
+  function gilText(n) { return Number(n).toLocaleString('en-US') + ' gil'; }
+  // What one item's price is, case by case (spec section 6; unknown is never 0): { text, gil (counted price or null), seen (fetch time or 0), kept }
+  function priceInfo(item, now) {
+    var c = cache(), v = c && c.prices ? c.prices[item] : undefined, bad = failNow(), place = priceScope();
+    var sorry = 'Market prices could not be fetched; ';
+    if (Array.isArray(v)) {
+      var min = v[0], seen = PS.seenAt(c, item);
+      if (posInt(min)) {
+        return { gil: min, seen: seen, kept: !!bad, text: gilText(min) + ' before tax, ' + place + (v[2] ? ' (cheapest on ' + v[2] + ')' : '') + ', ' + (bad ? 'last seen ' : 'fetched ') + fmtClock(seen, now) + (bad ? '. ' + sorry + 'showing the last known market prices.' : '') };
+      }
+      if (min === null && posInt(v[1])) return { gil: null, seen: 0, text: 'No listings now; recent sales about ' + gilText(v[1]) };
+      return { gil: null, seen: 0, text: 'No market price' };
+    }
+    if (c && c.none && c.none[item] != null) return { gil: null, seen: 0, text: 'No market data for this item' };
+    if (bad) return { gil: null, seen: 0, text: 'Price not fetched. ' + sorry + 'showing no market prices.' };
+    return { gil: null, seen: 0, text: PR.busy ? 'Fetching the price…' : 'Price not fetched' };
+  }
+  function priceRow(ln, now) {
+    var pi = priceInfo(ln.item, now);
+    return '<p class="price-line" data-price="' + (pi.gil || '') + '">' + esc(pi.text) + '</p>';
+  }
+  // "about N gil for M items; K items without a price" over the market rows the chosen lists share (spec section 6)
+  function priceTotal(V, keys, sums, now) {
+    var gil = 0, n = 0, none = [], seen = [], c = cache();
+    keys.forEach(function (k) {
+      var ln = V.plan.lines[k], pi = priceInfo(ln.item, now);
+      if (pi.gil) { gil += pi.gil * sums[k].got; n++; seen.push(ln.item); } else none.push(itemName(ln.item));
+    });
+    var oldest = PS.oldest(c, seen), part = PR.partial && PR.errScope === priceScope() ? ' Some market prices could not be fetched; those items show their last known price.' : '';
+    return '<p class="price-total" data-gil="' + gil + '" data-priced="' + n + '" data-unpriced="' + none.length + '">Buying on the market, before tax: about ' + gilText(gil) + ' for ' + n + ' item' + (n === 1 ? '' : 's') +
+      (none.length ? '; ' + none.length + ' item' + (none.length === 1 ? '' : 's') + ' without a price (' + esc(none.join(', ')) + ')' : '') + (oldest ? ' (prices seen ' + esc(fmtClock(oldest, now)) + ')' : '') + '.' + esc(part) + '</p>';
+  }
+  function placeBar() {
+    var cur = (SH.sec && SH.sec.prefs && SH.sec.prefs.priceWorld) || '';
+    return '<p class="row lists-prices"><label>Market prices from <select data-f="priceWorld"><option value="">' + esc(priceScope()) + ' (shared place setting)</option>' +
+      PLACES.map(function (d) { return '<option' + (cur === d ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select></label> ' + btn('Refresh prices', 'prices') + '</p>';
+  }
+  // One automatic attempt per 15 minutes per place per device (kept in device storage, so a reload honours it too); Refresh tries at once. A Refresh or a change
+  // of place during a fetch is not dropped: one follow-up is kept and runs when the running fetch ends.
+  function loadPrices(force) {
+    var ids = PR.want || [];
+    if (!ids.length || !DATA) return;
+    var scope = priceScope(), now = Date.now();
+    if (PR.busy) { if (force || scope !== PR.running) PR.queued = { force: !!(force || (PR.queued && PR.queued.force)) }; return; }
+    var c = PS.cached(scope);
+    PR.tried = PS.triedLoad(PR.tried);
+    if (!force && (!PS.mayTry(PR.tried, scope, now, false) || (c && !PS.needed(c, ids, now).length))) return;
+    PR.busy = true; PR.running = scope; PS.triedSave(scope, now, PR.tried);
+    PS.fetchPrices(scope, ids, !!force).then(function (r) { if (scope === priceScope()) { PR.errScope = scope; PR.error = r.error || null; PR.partial = !!r.partial; } })
+      .catch(function (e) { if (scope === priceScope()) { PR.errScope = scope; PR.error = (e && e.message) || 'no connection'; } })
+      .then(function () {
+        PR.busy = false; PR.running = null;
+        var q = PR.queued; PR.queued = null;
+        if (q) loadPrices(q.force);
+        var ae = document.activeElement;
+        if (ae && main.contains(ae) && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)) PR.dirty = true; // a redraw would take the focus from a field being typed in
+        else render();
+      });
+  }
+
+  // ------------------------------------------------------------------------------------------------ timed nodes (W9)
+  var ET_HOUR = 175000, ET_DAY = 24 * ET_HOUR;
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function etClock(ms) { return pad2(Math.floor((ms % ET_DAY) / ET_HOUR)) + ':' + pad2(Math.floor((ms % ET_HOUR) / ET_HOUR * 60)); }
+  function realDur(ms) { var m = Math.max(1, Math.ceil(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; }
+  function windowText(hours, minutes, now) {
+    var w = E.nextWindow(hours, minutes, now);
+    if (!w) return '';
+    return w.open ? 'open now, closes ' + etClock(w.closesAt) + ' Eorzea time, in ' + realDur(w.closesAt - now) : 'opens ' + etClock(w.opensAt) + ' Eorzea time, in ' + realDur(w.opensAt - now);
+  }
+  function windowRow(ln, now) {
+    if (!ln.timed) return '';
+    var t = windowText(ln.timed.hours, ln.timed.minutes, now);
+    return t ? '<p class="w-window" data-hours="' + esc(ln.timed.hours.join(',')) + '" data-mins="' + ln.timed.minutes + '">' + esc(t) + '</p>' : '';
+  }
+  function tickWindows() {
+    var now = Date.now();
+    [].forEach.call(main.querySelectorAll('.w-window'), function (el) { var t = windowText(el.getAttribute('data-hours').split(',').map(Number), +el.getAttribute('data-mins'), now); if (t && el.textContent !== t) el.textContent = t; });
+  }
+
+  // ------------------------------------------------------------------------------------------------ the patch notice (W9, spec section 6)
+  function stampParts(s) { var m = /^(\d+)\.(\d+)(\S*)/.exec(String(s || '')); return m ? [+m[1], +m[2], m[3]] : null; }
+  function stampNewer(a, b) { var x = stampParts(a), y = stampParts(b); if (!x || !y) return false; return x[0] !== y[0] ? x[0] > y[0] : x[1] !== y[1] ? x[1] > y[1] : x[2] > y[2]; }
+  function ingText(row) { var p = row[5].map(function (g) { return g[1] + ' ' + itemName(g[0]); }); return p.length > 1 ? p.slice(0, -1).join(', ') + ' and ' + p[p.length - 1] : p[0] || 'nothing'; }
+  function ingMap(row) { var o = {}; row[5].forEach(function (g) { o[g[0]] = (o[g[0]] || 0) + g[1]; }); return o; }
+  // The entries from the list's stamp to the newest, chained by from and to; null when the stamp is not in the chain.
+  function chainFrom(stampText) {
+    var ents = DATA.changes || [], used = {}, cur = stampText, out = [];
+    for (;;) {
+      var i = -1; ents.forEach(function (e, n) { if (i < 0 && !used[n] && e && e.from === cur) i = n; });
+      if (i < 0) break;
+      used[i] = 1; out.push(ents[i]); cur = ents[i].to;
+    }
+    return out.length ? out : null;
+  }
+  // { lines: [...] } the differences, { plain: true } when the details are not available, or null when nothing is to be said
+  function patchNotice(h, id, sc) {
+    var stampText = h && h.data;
+    if (!stampText || !DATA.stamp || stampText === DATA.stamp || stampNewer(stampText, DATA.stamp)) return null;
+    var chain = chainFrom(stampText);
+    if (!chain) return { plain: true };
+    var old = Object.assign({}, DATA.recipes), seen = {};
+    chain.forEach(function (e) {
+      Object.keys(e.recipes || {}).forEach(function (r) { if (!seen[r]) { seen[r] = 1; if (e.recipes[r][0] == null) delete old[r]; else old[r] = e.recipes[r][0]; } });
+      Object.keys(e.gone || {}).forEach(function (r) { if (!seen[r]) { seen[r] = 1; old[r] = e.gone[r]; } });
+    });
+    var lists = [{ id: id, steps: h.steps || {}, targets: targetsOf(sc, id).filter(function (k) { return !sc.targets[k].done; }).map(function (k) { var t = clone(sc.targets[k]); t.id = k.slice(id.length + 1); return t; }) }];
+    var oldTree = E.tree(Object.assign({}, DATA, { recipes: old }), lists), newTree = E.tree(DATA, lists), lines = [];
+    Object.keys(seen).map(Number).sort(function (a, b) { return a - b; }).forEach(function (r) {
+      var o = old[r], n = DATA.recipes[r], row = o || n;
+      if (!row || (o && n && JSON.stringify(o) === JSON.stringify(n))) return;
+      if (!oldTree.has(row[0]) && !newTree.has(row[0]) && !(n && newTree.has(n[0]))) return;
+      var nm = itemName(row[0]);
+      if (o && !n) lines.push(nm + ' can no longer be crafted (it was made from ' + ingText(o) + ').');
+      else if (!o && n) lines.push(nm + ' is now crafted from ' + ingText(n) + '.');
+      else {
+        var before = lines.length;
+        if (o[1] !== n[1]) lines.push(nm + ' now makes ' + n[1] + ', was ' + o[1] + '.');
+        var a = ingMap(o), b = ingMap(n);
+        Object.keys(b).forEach(function (g) { if (a[g] === undefined) lines.push(nm + ' now also needs ' + b[g] + ' ' + itemName(+g) + '.'); else if (a[g] !== b[g]) lines.push(nm + ' now needs ' + b[g] + ' ' + itemName(+g) + ', was ' + a[g] + '.'); });
+        Object.keys(a).forEach(function (g) { if (b[g] === undefined) lines.push(nm + ' no longer needs ' + itemName(+g) + ' (was ' + a[g] + ').'); });
+        if (lines.length === before) lines.push(nm + ' has changed crafting details.');
+      }
+    });
+    return { lines: lines };
+  }
+  function noticeHtml(h, id, sc) {
+    var n = patchNotice(h, id, sc);
+    if (!n) return '';
+    var ok = '<p class="row">' + btn('OK, noted', 'noted') + '</p>';
+    if (n.plain) return '<section class="lists-panel patch-notice" role="status"><p><b>Game data changed since this list was last checked; the details for that version are not available.</b></p><p class="muted">Nothing in this list was changed.</p>' + ok + '</section>';
+    return '<section class="lists-panel patch-notice" role="status"><h2>Game data changed since this list was last checked</h2>' +
+      (n.lines.length ? '<ul class="patch-lines">' + n.lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' : '<p>None of the recipes this list uses changed.</p>') +
+      '<p class="muted">Nothing in this list was changed: every wanted item, amount, setting, step, way and stock count is kept.</p>' + ok + '</section>';
+  }
+
   // data/lists.json plus `log` and `noHandOver`, built in by build.js (packed when that is smaller)
   var DATA = null, RECIPES_OF = null, NAMES = null;
   function loadData() {
@@ -25,7 +229,7 @@
       SH.problem = null;
       var doc = CC.emptyDoc();
       if (r.raw != null) { try { doc = CC.checkDoc(r.raw); } catch (e) { SH.problem = e.message; return; } } // unreadable or newer: never written over
-      SH.chars = doc.chars; SH.sec = doc.modules.lists || null; SH.rev = r.rev; SH.base = SH.sec ? clone(SH.sec) : null;
+      SH.chars = doc.chars; SH.sec = doc.modules.lists || null; SH.rev = r.rev; SH.base = SH.sec ? clone(SH.sec) : null; syncPrefs();
     }).catch(function (e) { SH.problem = e.message; });
   }
 
@@ -66,7 +270,7 @@
       var elsewhere = !!(e && /on another device or in another tab/.test(e.message)); // the store's refusals (LI1 to LI5) all say so
       return CC.read().then(function (r) {
         var doc = r.raw == null ? CC.emptyDoc() : CC.checkDoc(r.raw);
-        SH.rev = r.rev; SH.chars = doc.chars; SH.sec = doc.modules.lists || null; SH.base = SH.sec ? clone(SH.sec) : null;
+        SH.rev = r.rev; SH.chars = doc.chars; SH.sec = doc.modules.lists || null; SH.base = SH.sec ? clone(SH.sec) : null; syncPrefs();
         if (isUndo && elsewhere) { dropEntry(job.o.undoOf); SH.note = S.lines.undo; } else SH.note = 'Not saved on this device: ' + e.message + ' The page now shows what is saved; re-enter any unsaved edits if you still need them.';
         SH.rest = null; render();
       }).catch(function () {
@@ -115,13 +319,13 @@
     });
   }
   // The plan of one owner: every list of that owner together, in list order (spec section 5: a list is never planned alone).
-  function planOf(sc, owner) {
+  function planOf(sc, owner, noPrices) {
     var st = S.stateOf(sc, owner), ids = sortedIds(sc.lists).filter(function (id) { return S.ownerOf(sc.lists[id]) === owner; });
     var lists = ids.map(function (id) {
       return { id: id, steps: sc.lists[id].steps || {}, targets: targetsOf(sc, id).map(function (k) { var t = clone(sc.targets[k]); t.id = k.slice(id.length + 1); return t; }) };
     });
     var order = sc.owners[owner] && sc.owners[owner].order;
-    return E.plan(DATA, { order: order || '', ways: st.ways, have: st.have, lists: lists, prices: null });
+    return E.plan(DATA, { order: order || '', ways: st.ways, have: st.have, lists: lists, prices: noPrices ? null : priceMap() });
   }
   // the plan line a wanted item counts in (the engine's own rule: make, then collectable, then high quality, then ordinary)
   function lineFor(plan, t) {
@@ -237,6 +441,8 @@
     if (ln.part === 'make') p.push('You marked this as must be crafted by me');
     if (ln.part === 'coll') p.push('Collectables are always crafted');
     if (ln.why === 'chosen' && !isCrafted(ln)) p.push('You chose this');
+    if (w.by && w.by !== 'have' && !isCrafted(ln) && waysOf(V, ln.item, 'normal').indexOf(w.by) < 0 && waysOf(V, ln.item, 'hq').indexOf(w.by) < 0) p.push('The way you chose is no longer available in the game data; using the usual order. Your choice is still stored');
+    else if (w.by === 'trade' && w.offer && !isCrafted(ln) && ['normal', 'hq'].every(function (qq) { return !offersFor(ln.item, qq).trade.some(function (o) { return o[4] + '.' + o[0] + '.' + o[1][0][0] === w.offer; }); })) p.push('The trade you chose is no longer in the game data; using the usual one. Your choice is still stored');
     var s = p.join('. ') + (p.length ? '.' : '');
     if (V.plan.cut[ln.item]) s += (s ? ' ' : '') + V.plan.cut[ln.item];
     return s ? '<p class="why">' + esc(s) + '</p>' : '';
@@ -273,7 +479,8 @@
     var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, typed = typedOf(V, ln.item, q), held = heldFor(V, key);
     var h = '<li class="line-row get-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b> <span class="w-count">need ' + x.need + ', have ' + typed + ' ' + stamp(ln) +
       (ln.by === 'have' ? '' : ' · to get ' + x.got + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '')) + '</span>' +
-      (held.length ? ' <span class="held">' + esc(held.join(', ')) + '</span>' : '') + '</div>' + reasonOf(V, ln, x);
+      (held.length ? ' <span class="held">' + esc(held.join(', ')) + '</span>' : '') + '</div>' + reasonOf(V, ln, x) +
+      (ln.by === 'gather' ? windowRow(ln, Date.now()) : '') + (ln.by === 'market' ? priceRow(ln, Date.now()) : '');
     h += '<div class="w-stock"><label>I have <input type="number" inputmode="numeric" min="0" max="999999" data-f="have" data-q="' + q + '" value="' + typed + '"></label> ' +
       btn('−', 'minus', ' aria-label="One less ' + esc(name) + '"') + ' ' + btn('+', 'plus', ' aria-label="One more ' + esc(name) + '"') + ' ' + btn('Have all', 'haveall', ' data-n="' + x.short + '"') + '</div>';
     return h + wayBlock(V, ln) + '</li>';
@@ -324,9 +531,10 @@
         n = keys.length;
         if (!n) return;
         shown += n;
-        if (open) rows = keys.map(function (k) { return getRow(V, k, sums[k]); }).join('');
+        if (open) rows = (id === 'market' ? priceTotal(V, keys, sums, Date.now()) : '') + '<ul class="lines">' + keys.map(function (k) { return getRow(V, k, sums[k]); }).join('') + '</ul>';
+        if (open && id === 'market') keys.forEach(function (k) { if (PR.want.indexOf(V.plan.lines[k].item) < 0) PR.want.push(V.plan.lines[k].item); });
       }
-      blocks += '<section class="gsec" data-sec="' + id + '">' + secHead(id, def[1], n, open) + (open ? '<ul class="lines">' + rows + '</ul>' : '') + '</section>';
+      blocks += '<section class="gsec" data-sec="' + id + '">' + secHead(id, def[1], n, open) + (open ? (id === 'left' ? '<ul class="lines">' + rows + '</ul>' : rows) : '') + '</section>';
     });
     if (!shown) h += '<p class="muted empty-line">Nothing left to get.</p>';
     return h + blocks + '<p class="muted fine">You type what you have. This app never reads the game.</p>';
@@ -370,7 +578,7 @@
     }).join('') + '</div>';
   }
   function barHtml(V) {
-    return '<p class="row lists-opts">' + btn(SH.view.hide ? 'Show completed' : 'Hide completed', 'hide', ' aria-pressed="' + (SH.view.hide ? 'true' : 'false') + '"') + ' ' + btn('Order of ways', 'sheet', ' aria-expanded="' + (SH.view.sheet ? 'true' : 'false') + '"') + '</p>' + (SH.view.sheet ? orderSheet(V) : '');
+    return '<p class="row lists-opts">' + btn(SH.view.hide ? 'Show completed' : 'Hide completed', 'hide', ' aria-pressed="' + (SH.view.hide ? 'true' : 'false') + '"') + ' ' + btn('Order of ways', 'sheet', ' aria-expanded="' + (SH.view.sheet ? 'true' : 'false') + '"') + '</p>' + placeBar() + (SH.view.sheet ? orderSheet(V) : '');
   }
   // step tabs: each step's own share; the hand-in button and its confirm (E19, D28)
   function stepsHtml(V, h, listId) {
@@ -470,7 +678,7 @@
     var need = ln ? (ln.part === 'make' ? ln.need : ln.short) : 0, steps = h.steps || {}, stepIds = stepIdsOf(h);
     var h2 = '<li class="wanted-row' + (t.done ? ' done' : '') + '" data-key="' + esc(key) + '" data-item="' + t.item + '" data-q="' + q + '" data-owner="' + esc(owner) + '"><div class="w-head"><b class="w-name">' + esc(name) + '</b> <span class="w-count">' +
       (t.done ? 'Finished' : 'need ' + (ln ? ln.need : t.qty) + ', have ' + typed) + ' <span class="w-q">(' + qWord(q) + ')</span></span>' +
-      (t.make ? ' <span class="tag">Must be crafted by me: ' + (t.crafted || 0) + ' of ' + t.qty + ' crafted</span>' : '') + '</div>';
+      (t.make ? ' <span class="tag">Must be crafted by me: ' + (t.crafted || 0) + ' of ' + t.qty + ' crafted</span>' : '') + (!DATA.items[t.item] || (t.make && !recs.length) ? ' <span class="tag gone">no longer in the game data</span>' : '') + '</div>';
     var shown = ln && !(t.make && ln.part !== 'make');
     if (shown) h2 += reasonOf(V, ln, null);
     h2 += '<div class="w-edit"><label>Amount <input type="number" inputmode="numeric" min="1" max="99999" data-f="qty" value="' + t.qty + '"></label>';
@@ -507,7 +715,7 @@
     var owner = S.ownerOf(h), V = buildV([id], owner), keys = targetsOf(sc, id), sids = stepIdsOf(h), steps = h.steps || {};
     if (SH.view.step !== null && !steps[SH.view.step]) SH.view.step = null;
     var sums = sumShares(V.plan, V.ids, SH.view.step), tab = SH.view.tab;
-    var out = statusHtml() + '<div class="lists-bar">' + btn('Your lists', 'back') + '</div>' +
+    var out = statusHtml() + '<div class="lists-bar">' + btn('Your lists', 'back') + '</div>' + noticeHtml(h, id, sc) +
       '<section class="lists-panel"><label class="list-title">List name <input type="text" data-f="listname" maxlength="60" value="' + esc(h.name || '') + '"></label>' +
       '<p class="muted">' + esc(nameOfChar(h.charId || '')) + ' · ' + (sids.length ? sids.length + ' step' + (sids.length === 1 ? '' : 's') + ': ' + sids.map(function (s) { return esc(steps[s].name); }).join(', ') : 'one step') + '</p>' +
       '<p class="row"><label>New step <input type="text" data-f="stepname" maxlength="60"></label> ' + btn('Add a step', 'addstep') + '</p>' + totalsLine(V) + barHtml(V) + '</section>' +
@@ -529,7 +737,9 @@
   }
   function render() {
     if (SH.problem) { main.innerHTML = '<div class="lists-note"><b>The save cannot be used here.</b> ' + esc(SH.problem) + ' Nothing has been written over it.' + (SH.note ? ' ' + esc(SH.note) : '') + '</div>'; return; }
+    PR.want = []; PR.dirty = false;
     if (SH.view.combined) renderCombined(); else if (SH.view.list) renderList(); else renderHome();
+    loadPrices(false); // the one automatic attempt of this place (the service's own 15-minute gate decides)
   }
 
   // ------------------------------------------------------------------------------------------------ events
@@ -576,7 +786,9 @@
       case 'tab': SH.view.tab = b.getAttribute('data-tab'); SH.view.confirm = null; SH.view.bought = null; render(); break;
       case 'step': SH.view.step = b.getAttribute('data-step') || null; SH.view.confirm = null; render(); break;
       case 'sec': { var sid = b.getAttribute('data-sec'); SH.view.open[sid] = !SH.view.open[sid]; render(); break; }
-      case 'hide': SH.view.hide = !SH.view.hide; render(); break;
+      case 'hide': { var hv = !SH.view.hide; SH.view.hide = hv; render(); act(function (s) { return prefEdit(s, 'hideDone', hv); }); break; }
+      case 'prices': loadPrices(true); break;
+      case 'noted': { var nid = SH.view.list; act(function (s) { return setListStamp(s, nid); }); break; }
       case 'sheet': SH.view.sheet = !SH.view.sheet; render(); break;
       case 'ask-remove-list': SH.view.confirm = 'list:' + card.getAttribute('data-list'); render(); break;
       case 'keep': SH.view.confirm = null; render(); break;
@@ -645,6 +857,7 @@
     else if (f === 'way') { var v = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: v || null, offer: null }), 'Chose how to get ' + itemName(c.item)); }); }
     else if (f === 'offer') { var key = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: 'trade', offer: key }), 'Chose a trade for ' + itemName(c.item)); }); }
     else if (f === 'tick') { var id = el.closest('[data-list]').getAttribute('data-list'), on = el.checked; act(function (s) { return S.tickCombined(s, id, on); }); }
+    else if (f === 'priceWorld') { var pw = el.value; act(function (s) { return prefEdit(s, 'priceWorld', pw); }); }
     else if (f === 'listname') act(function (s) { return S.renameList(s, listId, el.value); });
   });
 
@@ -654,7 +867,8 @@
     if (SH.busy || SH.queue.length) { SH.reloadLater = true; return Promise.resolve(); }
     return loadSave().then(function () { if (SH.view.list && !sec().lists[SH.view.list]) SH.view.list = null; render(); });
   }
-  window.__lists = { reload: reload, state: SH, data: function () { return DATA; }, section: function () { return SH.sec; }, hold: function (on) { SH.hold = !!on; }, combined: function () { return S.combined(sec()); }, plan: function (owner) { return planOf(sec(), owner); } };
+  window.__lists = { reload: reload, state: SH, data: function () { return DATA; }, section: function () { return SH.sec; }, hold: function (on) { SH.hold = !!on; }, combined: function () { return S.combined(sec()); }, plan: function (owner, noPrices) { return planOf(sec(), owner, noPrices); }, prices: function () { return { place: priceScope(), cache: cache(), error: failNow(), busy: PR.busy }; } };
+  setInterval(tickWindows, 15000); // the minutes to a timed node's window move on without a redraw
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reload(); });
   if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) {

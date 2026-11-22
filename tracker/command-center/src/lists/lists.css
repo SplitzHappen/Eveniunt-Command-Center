@@ -75,3 +75,12 @@
 .tick { display: flex; flex-direction: row; align-items: center; gap: 6px; margin: 6px 0; }
 .tick input { width: 20px; height: 20px; }
 @media (max-width: 480px) { .lists-tabs .tab, .lists-steps .step-tab { flex: 1 1 auto; } }
+
+/* Work item W9: market prices, the next window of a timed node, the notice that the game data changed. */
+.price-line, .w-window { margin: 0 0 8px; font: 600 13px/1.4 var(--f-data); color: var(--ink-2); overflow-wrap: anywhere; }
+.price-total { margin: 0 0 10px; font: 600 13px/1.4 var(--f-data); color: var(--ink-2); overflow-wrap: anywhere; }
+.lists-prices { margin: 8px 0; }
+.lists-prices .btn, .patch-notice .btn { min-height: 40px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.patch-notice { border-top-color: var(--seal); }
+.patch-lines { margin: 0 0 10px; padding-left: 20px; }
+.patch-lines li { margin: 0 0 4px; overflow-wrap: anywhere; }

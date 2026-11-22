@@ -5796,6 +5796,19 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     const listsCtx = async () => {
       const c = await context({ serviceWorkers: 'block' });
       await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + LISTS_FIXTURE + ';' }));
+      // W9: every Lists page answers Universalis with a stand-in (spec section 8, intro). `stand.reply(ids)` is null for the default answer (one cheap listing for each
+      // item), 'abort' for a failed fetch, a number for that status, or { id: reply } (an id left out of it is left out of the answer).
+      const stand = { asked: [], reply: null };
+      await c.ctx.route('https://universalis.app/**', (r) => {
+        const u = new URL(r.request().url()), ids = u.pathname.split('/').pop().split(','), cors = { 'access-control-allow-origin': '*' };
+        stand.asked.push(u.pathname.split('/')[3] + ':' + ids.join(',') + u.search);
+        const x = stand.reply ? stand.reply(ids) : null;
+        if (x === 'abort') return r.abort('failed');
+        if (typeof x === 'number') return r.fulfill({ status: x, contentType: 'application/json', headers: cors, body: '{}' });
+        const items = {}; ids.forEach((id) => { if (!x) items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, worldName: 'Test' }], averagePrice: 100 }; else if (x[id] !== undefined) items[id] = Object.assign({ itemID: +id }, x[id]); });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify(ids.length === 1 ? (items[ids[0]] || {}) : { items }) });
+      });
+      c.stand = stand;
       return c;
     };
     const lReady = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
@@ -6157,6 +6170,211 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.noErrors = real(errors).length === 0 && external.length === 0;
       record('C154', 'Lists page, 500 wanted items of the real data: under 3,000 page elements on To get with the sections closed, and an open section drawn in under one second',
         Object.values(ck).every(Boolean), { ck, wanted: n, measured: m, craftTabElements: craftEls, errors: real(errors), external });
+      void server;
+    });
+
+    // ── Lists, W9: prices, timed nodes, the patch notice. Universalis is answered by the stand-in of listsCtx (the session reaches no outside site). ──
+    // Wanted items whose way is "market" (a stored way), so their rows carry prices: the fixture's tradable items 103, 104, 111, 120, 130, 141.
+    const lSeedMarket = (pg, ids, name) => lSeed(pg, new Function('S', 'sec', 'DATA', 'const ids = ' + JSON.stringify(ids) + '; let t = 7000; const ctx = () => ({ now: t++ });' +
+      'let r = S.newList(sec, { name: ' + JSON.stringify(name || 'Market') + ', charId: null, stamp: DATA.stamp }, ctx()); sec = r.section; const id = r.id;' +
+      'ids.forEach((i) => { r = S.addTarget(sec, id, { item: i, recipe: 0, qty: 2 }, ctx()); sec = r.section; sec = S.setWay(sec, "u", i, { by: "market" }).section; }); return sec;'));
+    const lMarketOpen = async (pg) => { await lOpenFirstList(pg); await lTab(pg, 'get'); await pg.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await pg.waitForSelector('.gsec[data-sec=market] .price-total'); };
+    const lOpenFirstList = async (pg) => { if (await pg.locator('[data-act=back]').count()) await pg.click('[data-act=back]'); await pg.waitForSelector('.list-card'); await pg.locator('.list-card [data-act=open]').first().click(); await pg.waitForSelector('[data-f=listname]'); };
+    const lPriceTexts = (pg) => pg.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec[data-sec=market] .line-row')].map((r) => [r.dataset.item, (r.querySelector('.price-line') || {}).textContent || ''])));
+    const lPriceTotal = (pg) => pg.evaluate(() => { const e = document.querySelector('.price-total'); return e ? { text: e.textContent, gil: +e.dataset.gil, priced: +e.dataset.priced, unpriced: +e.dataset.unpriced } : null; });
+    const lWaitPrices = (pg) => pg.waitForFunction(() => { const e = document.querySelector('.gsec[data-sec=market] .price-line'); return e && !/Fetching/.test(e.textContent); }, null, { timeout: 15000 });
+    const lSettled = (pg) => pg.waitForTimeout(400);
+    const SORRY_NONE = 'Market prices could not be fetched; showing no market prices.', SORRY_KEPT = 'Market prices could not be fetched; showing the last known market prices.';
+
+    // ── C166 (Lists, W9) The seven rows of the price table of section 6, each answered by a stand-in: the row's words, and a total that counts only priced items and names the rest. ──
+    await guard('C166', async () => {
+      const server = await start(PORT5);
+      const ck = {}, ids = [103, 104, 111, 120, 130, 141];
+      // rows 1 to 4: a listing, no listing with a recent average, no listing and no average / a price of 0 / a value that is not a whole number, left out of the reply
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage();
+        c.stand.reply = () => ({ 103: { listings: [{ pricePerUnit: 120, worldName: 'Maduin' }], averagePrice: 100 }, 104: { listings: [], recentHistory: [{ pricePerUnit: 80 }, { pricePerUnit: 100 }] }, 111: { listings: [], averagePrice: 0 },
+          120: { listings: [{ pricePerUnit: 0, worldName: 'Maduin' }] }, 130: { listings: [{ pricePerUnit: 12.5, worldName: 'Maduin' }] } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, ids); await lMarketOpen(page); await lWaitPrices(page);
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.listing = /^120 gil before tax, North-America \(cheapest on Maduin\), fetched \d\d:\d\d$/.test(tx[103]);
+        ck.noListingAverage = tx[104] === 'No listings now; recent sales about 90 gil';
+        ck.noListingNoAverage = tx[111] === 'No market price';
+        ck.zero = tx[120] === 'No market price';
+        ck.notWhole = tx[130] === 'No market price';
+        ck.leftOut = tx[141] === 'No market data for this item';
+        ck.total = tot.gil === 240 && tot.priced === 1 && tot.unpriced === 5 && /about 240 gil for 1 item; 5 items without a price/.test(tot.text) && /Test Ore|Ore Chunk|Thread|Triple Gem|Mythril Bolt|Trade Good|Crafted Dust/.test(tot.text);
+        ck.engineGil = await page.evaluate(() => { const g = __lists.plan('u').gil; return g.market === 240 && g.unknown.length === 5; });
+        ck.noErrors1 = real(c.errors).length === 0 && c.external.length === 0;
+        await c.ctx.close();
+      }
+      // row 4, the other way: one item asked for alone and answered 404
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage(); c.stand.reply = () => 404;
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [111]); await lMarketOpen(page); await lWaitPrices(page);
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.single404 = tx[111] === 'No market data for this item' && tot.priced === 0 && tot.unpriced === 1 && /about 0 gil for 0 items; 1 item without a price/.test(tot.text) && !/could not be fetched/.test(await page.textContent('#view'));
+        await c.ctx.close();
+      }
+      // row 5: the fetch fails and an earlier price is kept
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage();
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [103]); await lMarketOpen(page); await lWaitPrices(page);
+        const first = await lPriceTexts(page);
+        c.stand.reply = () => 'abort';
+        await page.click('[data-act=prices]'); await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.keptPrice = /^100 gil before tax, North-America \(cheapest on Test\), last seen \d\d:\d\d\. Market prices could not be fetched; showing the last known market prices\.$/.test(tx[103]) && /fetched/.test(first[103]) && !/last seen/.test(first[103]);
+        ck.keptTotal = tot.gil === 200 && tot.priced === 1 && /\(prices seen \d\d:\d\d\)/.test(tot.text);
+        await c.ctx.close();
+      }
+      // row 6: the fetch fails and nothing is kept
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage(); c.stand.reply = () => 'abort';
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [103]); await lMarketOpen(page); await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.nothingKept = tx[103] === 'Price not fetched. ' + SORRY_NONE && tot.gil === 0 && tot.priced === 0 && tot.unpriced === 1 && !/prices seen/.test(tot.text);
+        await c.ctx.close();
+      }
+      // row 7: a price fetched an hour ago or more is shown with its time and counted, the total names the oldest time; it is fetched again at the next attempt
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage();
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [103, 104]);
+        const old = await page.evaluate(() => { const at = Date.now() - 7200000; localStorage.setItem('eveniunt-lists-prices', JSON.stringify({ scope: 'North-America', at, prices: { 103: [150, 0, '', 0], 104: [60, 0, '', 0] }, none: {}, seen: { 103: at, 104: at + 600000 } })); localStorage.setItem('eveniunt-lists-prices-tried', JSON.stringify({ 'North-America': { at: Date.now() } })); return at; });
+        await page.reload(); await lReady(page); await lMarketOpen(page); await lSettled(page);
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page), hm = await page.evaluate((t) => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }, old);
+        ck.oldPrice = /^150 gil before tax, North-America, fetched \d\d:\d\d$/.test(tx[103]) && tx[103].endsWith(hm) && c.stand.asked.length === 0;
+        ck.oldTotal = tot.gil === 300 + 120 && tot.priced === 2 && tot.text.indexOf('(prices seen ' + hm + ')') >= 0;
+        await page.evaluate(() => localStorage.removeItem('eveniunt-lists-prices-tried')); await page.reload(); await lReady(page); await lMarketOpen(page); await lWaitPrices(page);
+        await page.waitForFunction(() => /100 gil/.test(document.querySelector('.gsec[data-sec=market] .price-line').textContent), null, { timeout: 15000 });
+        ck.fetchedAgain = c.stand.asked.length === 1 && c.stand.asked[0].indexOf('North-America:103,104?listings=1&entries=20') === 0;
+        ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+        await c.ctx.close();
+      }
+      record('C166', 'Lists page, prices: the seven rows of the price table (a listing; no listing with a recent average; no listing and no average, a price of 0 and a value that is not a whole number; left out of the reply or answered 404; a failed fetch with an earlier price kept; a failed fetch with nothing kept; a price an hour old or older) each show the row\'s words, and the total counts only priced items and names the rest',
+        Object.values(ck).every(Boolean), { ck });
+      void server;
+    });
+
+    // ── C155 (Lists, W9) Prices with their fetch time, the failure sentence, one automatic attempt across a reload, the place and Hide completed saved in the save, prices never in the save,
+    //    the Submersibles price record untouched, and the plan's ways the same with and without prices. ──
+    await guard('C155', async () => {
+      const server = await start(PORT5);
+      const ck = {}, SUBS = JSON.stringify({ scope: 'Maduin', at: 1700000000000, prices: { 2: 2000 }, none: {}, seen: { 2: 1700000000000 } }), SUBS_TRIED = JSON.stringify({ Maduin: { at: 1700000000000 } });
+      const c = await listsCtx(); const page = await c.ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await page.evaluate((a) => { localStorage.setItem('eveniunt-subs-prices', a[0]); localStorage.setItem('eveniunt-subs-prices-tried', a[1]); }, [SUBS, SUBS_TRIED]);
+      await lSeedMarket(page, [103, 111]); await lSeedLists(page, [{ name: 'Crafts', items: [[100, 1]] }]);
+      await lOpenList(page, 'Market'); await lTab(page, 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await lWaitPrices(page);
+      let tx = await lPriceTexts(page);
+      ck.fetchTime = /^100 gil before tax, North-America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && c.stand.asked.length === 1 && /listings=1&entries=20$/.test(c.stand.asked[0]);
+      // the plan's ways are the same with and without prices
+      ck.waysSame = await page.evaluate(() => { const f = (p) => JSON.stringify(Object.keys(p.lines).sort().map((k) => [k, p.lines[k].by, p.lines[k].why, p.lines[k].recipe, p.lines[k].offer ? p.lines[k].offer.key : null])); return f(__lists.plan('u')) === f(__lists.plan('u', true)) && __lists.plan('u').gil.market > 0 && __lists.plan('u', true).gil.market === 0; });
+      // prices are never in the save: the stored section holds no price and no price record
+      const doc = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      ck.notInSave = !/pricePerUnit|before tax|eveniunt-lists-prices|"prices"/.test(doc) && !/Maduin/.test(doc);
+      // one automatic attempt across a reload: with the fetch failing, the reload makes no second attempt inside 15 minutes; Refresh makes exactly one
+      await page.evaluate(() => { localStorage.removeItem('eveniunt-lists-prices'); localStorage.setItem('eveniunt-lists-prices-tried', '{}'); });
+      c.stand.reply = () => 'abort'; c.stand.asked.length = 0;
+      await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]');
+      await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
+      const afterFirst = c.stand.asked.length;
+      tx = await lPriceTexts(page);
+      ck.failureSentence = tx[103] === 'Price not fetched. ' + SORRY_NONE;
+      await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await lSettled(page);
+      ck.oneAttempt = afterFirst === 1 && c.stand.asked.length === 1 && (await page.evaluate(() => JSON.parse(localStorage.getItem('eveniunt-lists-prices-tried'))['North-America'].at > 0));
+      await page.click('[data-act=prices]'); await lSettled(page);
+      ck.refresh = c.stand.asked.length === 2;
+      // the price place is kept in the save (prefs.priceWorld) and chosen for the next attempt; Hide completed is kept too (prefs.hideDone)
+      c.stand.reply = null;
+      await page.selectOption('[data-f=priceWorld]', 'Europe'); await lSettle(page);
+      await page.waitForFunction(() => /Europe/.test(document.querySelector('.price-line') ? document.querySelector('.price-line').textContent : ''), null, { timeout: 15000 });
+      ck.placeAsked = c.stand.asked.some((a) => a.indexOf('Europe:') === 0);
+      ck.placeSaved = (await lStored(page)).prefs.priceWorld === 'Europe';
+      await page.click('[data-act=hide]'); await lSettle(page);
+      ck.hideSaved = (await lStored(page)).prefs.hideDone === true;
+      await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get');
+      ck.hideKept = (await page.locator('[data-act=hide]').textContent()) === 'Show completed' && (await page.locator('[data-f=priceWorld]').inputValue()) === 'Europe';
+      await page.click('[data-act=hide]'); await lSettle(page);
+      ck.hideOff = !('hideDone' in ((await lStored(page)).prefs || {})) || (await lStored(page)).prefs.hideDone === false;
+      // the Submersibles record is exactly as it was
+      const subs = await page.evaluate(() => [localStorage.getItem('eveniunt-subs-prices'), localStorage.getItem('eveniunt-subs-prices-tried')]);
+      ck.subsUntouched = subs[0] === SUBS && subs[1] === SUBS_TRIED;
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C155', 'Lists page, prices: a price shows its fetch time, a failed fetch says "showing no market prices", a reload inside 15 minutes makes no second automatic attempt and Refresh makes exactly one, the price place and Hide completed are kept in the save (prefs) and prices never are, the Submersibles price record is byte for byte as it was, and the plan\'s ways are the same with and without prices',
+        Object.values(ck).every(Boolean), { ck, asked: c.stand.asked, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── C156 (Lists, W9) The next window of a timed node at a fixed clock: Eorzea time and real minutes; an open window says so; an untimed node shows none. ──
+    await guard('C156', async () => {
+      const server = await start(PORT5);
+      const ck = {}, DAY = 4200000, HOUR = 175000, base = 400000 * DAY;
+      const c = await listsCtx(); const page = await c.ctx.newPage();
+      await c.ctx.clock.setFixedTime(base + 12 * HOUR); // 12:00 Eorzea time: the node 104 (hours 1 and 13, 180 Eorzean minutes) opens at 13:00, in 175 seconds
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedLists(page, [{ name: 'Gather', items: [[104, 2], [103, 2]] }]);
+      await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
+      const rows = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec[data-sec=gather] .line-row')].map((r) => [r.dataset.item, (r.querySelector('.w-window') || {}).textContent || ''])));
+      let w = await rows();
+      ck.opensSoon = w[104] === 'opens 13:00 Eorzea time, in 3 min';
+      ck.untimed = w[103] === '' && (await page.locator('.gsec[data-sec=gather] .line-row[data-item="103"]').count()) === 1;
+      await c.ctx.clock.setFixedTime(base + 14 * HOUR); // 14:00: open until 16:00, in 350 seconds
+      await page.reload(); await lReady(page); await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
+      w = await rows();
+      ck.open = w[104] === 'open now, closes 16:00 Eorzea time, in 6 min';
+      await c.ctx.clock.setFixedTime(base + 4 * HOUR + 30000); // 04:00 and a little: the next window is the 13:00 one, 9 Eorzean hours away (1,575 seconds, about 26 minutes)
+      await page.reload(); await lReady(page); await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
+      w = await rows();
+      ck.later = /^opens 13:00 Eorzea time, in 2[67] min$/.test(w[104]);
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C156', 'Lists page, timed nodes: at a fixed clock a timed gathering row says when the next window opens in Eorzea time and in real minutes ("opens 13:00 Eorzea time, in 3 min"), an open window says "open now, closes 16:00 Eorzea time", and an untimed node shows no window',
+        Object.values(ck).every(Boolean), { ck, w, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── C157 (Lists, W9) The notice that the game data changed: two entries in a row, one changing a recipe twice and one removing a material's recipe deep in the tree, compared oldest against today's. ──
+    await guard('C157', async () => {
+      const server = await start(PORT5);
+      const T1 = '1.01 aaaaaaaa bbbbbbbb', T2 = '1.02 aaaaaaaa bbbbbbbb', T3 = '1.03 aaaaaaaa bbbbbbbb', OLD = '0.99 aaaaaaaa bbbbbbbb', NEWER = '1.04 aaaaaaaa bbbbbbbb';
+      const f = JSON.parse(LISTS_FIXTURE), now1000 = f.recipes['1000'], gone1002 = f.recipes['1002'];
+      const r1 = [100, 1, 2, 50, 0, [[101, 2], [102, 1], [103, 2]], 1], r2 = [100, 3, 2, 50, 0, [[101, 2], [102, 1], [103, 2]], 1];
+      delete f.recipes['1002']; f.stamp = T3;
+      f.changes = [{ from: T1, to: T2, recipes: { 1000: [r1, r2] }, gone: { 1002: gone1002 } }, { from: T2, to: T3, recipes: { 1000: [r2, now1000] }, gone: {} }];
+      const ck = {};
+      const c = await context({ serviceWorkers: 'block' }); const page = await c.ctx.newPage();
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + JSON.stringify(f) + ';' }));
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedLists(page, [{ name: 'Behind', items: [[100, 1], [130, 2]], have: { 103: 5 } }, { name: 'Unknown', items: [[100, 1]] }, { name: 'Ahead', items: [[100, 1]] }, { name: 'Current', items: [[100, 1]] }]);
+      await lSeed(page, new Function('S', 'sec', 'DATA', 'const st = ' + JSON.stringify({ Behind: T1, Unknown: OLD, Ahead: NEWER, Current: T3 }) + '; Object.keys(sec.lists).forEach((k) => { sec.lists[k].data = st[sec.lists[k].name]; }); return sec;'));
+      const lines = () => page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent));
+      const stored0 = await lStored(page), strip = (sec) => { const o = JSON.parse(JSON.stringify(sec)); Object.keys(o.lists).forEach((k) => { delete o.lists[k].data; }); return JSON.stringify(o); };
+      await lOpenList(page, 'Behind');
+      const ls = await lines();
+      ck.twoLines = ls.length === 2 && ls.includes('Grand Widget now needs 3 Test Ore, was 2.') && ls.includes('Special Cloth can no longer be crafted (it was made from 2 Thread).');
+      ck.once = new Set(ls).size === ls.length && !ls.some((l) => /makes/.test(l)) && !ls.some((l) => /was 1/.test(l));
+      ck.heading = /Game data changed since this list was last checked/.test(await page.textContent('.patch-notice h2'));
+      ck.keptBefore = strip(await lStored(page)) === strip(stored0) && (await page.locator('.wanted-row').count()) === 2;
+      await page.click('[data-act=noted]'); await lSettle(page);
+      const after = await lStored(page), behind = Object.values(after.lists).find((l) => l.name === 'Behind');
+      ck.noted = behind.data === T3 && (await page.locator('.patch-notice').count()) === 0 && strip(after) === strip(stored0);
+      await page.reload(); await lReady(page); await lOpenList(page, 'Behind');
+      ck.stays = (await page.locator('.patch-notice').count()) === 0;
+      // a stamp outside the chain: the plain sentence, nothing changed; a newer stamp and a current one: no notice
+      await lOpenList(page, 'Unknown');
+      const plain = await page.textContent('.patch-notice');
+      ck.plain = /Game data changed since this list was last checked; the details for that version are not available\./.test(plain) && (await page.locator('.patch-notice li').count()) === 0;
+      await lOpenList(page, 'Ahead'); ck.newer = (await page.locator('.patch-notice').count()) === 0;
+      await lOpenList(page, 'Current'); ck.current = (await page.locator('.patch-notice').count()) === 0;
+      ck.keptAll = strip(await lStored(page)) === strip(stored0);
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C157', 'Lists page, patch notice: with two data changes in a row (one recipe changed twice, a deep material\'s recipe removed) the notice names each change once, oldest row against today\'s, and nothing of the list is changed; "OK, noted" writes the new stamp and the notice stays away; a stamp outside the chain shows the plain sentence; a newer stamp and the current one show no notice',
+        Object.values(ck).every(Boolean), { ck, ls, errors: real(c.errors), external: c.external });
       void server;
     });
 
