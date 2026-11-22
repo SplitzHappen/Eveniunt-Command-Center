@@ -1,0 +1,11 @@
+[
+  {
+    "severity": "NOTE",
+    "file": "tracker/src/core/merge.js",
+    "line": 207,
+    "title": "Partly accepted earlier finding, ruled and probed: an unchanged orphaned wanted item is removed by the player's own explicit list removal (spec case 4 now says only changed or added survivors stay)",
+    "consequence": "If one device explicitly removes a list and its items while another device (still on the old build) holds an unchanged copy of one of those items without the list header, the sync removes that item without a question. This is the player's own removal being propagated under the save's ordinary one-sided rule; nothing the player did not choose to delete is deleted. Changed or added survivors are kept and asked (probed at this head with the real merge code).",
+    "fix": "None needed; the ruling is sound and the spec wording (docs/lists-spec.md section 4, case 4) now matches the behavior. Recorded here so the adjudication is traceable.",
+    "evidence": "Direct run of ET.threeWay/applyMerge at head 1b7641f on the exact scenario: 0 conflicts, item removed unanswered; changed survivor kept with one 'lists' question; added survivor kept. merge.js is unchanged by the fix diff. Ruling in docs/lists-code-review-adjudication.md (accepted in part)."
+  }
+]
