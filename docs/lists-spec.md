@@ -71,7 +71,7 @@ day one through one shared price service.
 ## 3. Data (`tracker/data/lists.json`, built into `site/lists/data.js`)
 
 Tool `tracker/tools/lists-data.py` (`python3 -I`, `--cache DIR`), pins as `tracker/data/SOURCES.md`: game sheets
-`xivapi/ffxiv-datamining` @ `44948e4c`; Teamcraft @ `70429e21` (`shops.json`, `nodes.json`, `gathering-items.json`,
+`xivapi/ffxiv-datamining` @ `44948e4c` (English CSVs at `csv/en/<Sheet>.csv`; checked 2026-11-22: `Recipe.csv` answers at the full hash, the path without `en/` does not); Teamcraft @ `70429e21` (`shops.json`, `nodes.json`, `gathering-items.json`,
 `fishing-sources.json`, `npcs.json`). Compact arrays; ids are game row ids; only items that are a recipe's result or
 ingredient, or a currency of a kept trade.
 
@@ -81,13 +81,19 @@ ingredient, or a currency of a kept trade.
 | `items` | `{ id: [name, flags, merchantSells] }`; flags: tradable, can be HQ, always collectable, crystal | `Item` |
 | `recipes` | `{ id: [item, yield, job 0-7, level, stars, [[item, amount]…], flags] }`; flags: can be HQ, expert, specialist, collectable, quick synthesis, master book | `Recipe` (`ItemResult`, `AmountResult`, `CraftType`, `Ingredient[0-7]`, `AmountIngredient[0-7]`), `RecipeLevelTable` |
 | `gather` | `{ item: [job, level, zone, hours or 0, minutes or 0] }`; timed only when every node of the item is timed (the rule of `tools/info.py` for `conditions.json`) | Teamcraft nodes, gathering items, fishing sources |
-| `trades` | `{ item: [[gives, [[currency, amount]…], alliedSociety 0/1, seller, zone]…] }`, at most four per item, gil offers first and cheapest first; currency 1 is gil | Teamcraft `shops.json` |
+| `trades` | `{ item: [[gives, [[currency, amount]…], hq 0/1, gcRank or 0, npc]…] }`, at most four per item, gil offers first and cheapest first; currency 1 is gil. Seller name and zone come from `npcs` | Teamcraft `shops.json` (`trades[].items[].id/amount/hq`, `trades[].currencies[].id/amount`, `trades[].requiredGCRank`, shop `npcs`) |
+| `npcs` | `{ npc: [name, zone] }` for sellers in `trades` only; an NPC without a name or place shows as "a merchant" | Teamcraft `npcs.json`, same commit (already used by the Tracker) |
 | `log` | `{ job: [[page title, [recipe ids]]…] }`, added by `build.js` from the `craft-*` lists of `tracker-data.json` | the Tracker's own lists |
 | `changes` | `[{ from, to, recipes: { id: [old row, new row] }, gone: [ids] }]`; empty in the first file | the tool, by comparing with the committed file before it writes |
 
 **Gil merchant or not** is read from the offer, never guessed: an offer is `vendor` when its only currency is gil
-(currency 1) and it is not an allied-society offer; every other offer is `trade`. If the pinned data does not state
-each offer's currencies, or cannot mark allied-society offers, W1 stops and escalates.
+(currency 1); every other offer is `trade`. **Facts checked by W0 (2026-11-22):** the pinned `shops.json` has 2,253
+shops and 38,908 offers; every offer lists its currencies (16,560 gil only, 22,348 with another currency, none without
+one). It has **no allied-society marker** and no seller name or zone (shops carry NPC ids). So allied-society vendors
+are not told apart: their offers in tribal tokens are `trade`, which comes after crafting and gathering by default, so
+the owner's "not easier" rule holds without a marker; a gil offer from an allied-society NPC that needs reputation is
+planned as an ordinary gil merchant (known limit). 857 offers carry `requiredGCRank`: the row shows "needs Grand
+Company rank N". 831 offer rows sell high quality (`hq`).
 
 The tool stops, writing nothing, when: a recipe names an item missing from `Item`; a yield or amount is below 1; a
 recipe id in `log` is missing; a trade gives fewer than 1 or has no currency; the recipe count differs from the count
@@ -99,7 +105,7 @@ packed with deflate as `submersibles/data.js` is; `build.js` prints plain and pa
 ```
 modules.lists = {
   v: 1,
-  lists:   { <listId>: { name, charId, order, made, data, def: { order: [sources], allied }, steps: [{ id, name }] } },
+  lists:   { <listId>: { name, charId, order, made, data, def: { order: [sources] }, steps: [{ id, name }] } },
   targets: { "<listId>.<targetId>": { item, recipe, qty, hq, coll, step, done } },
   rows:    { "<listId>.<itemId>":   { by, recipe, hq } },
   have:    { "<owner>.<itemId>":    { nq, hq, coll } },
@@ -110,8 +116,8 @@ modules.lists = {
 - `listId`, `targetId`, step `id`: `[a-z0-9]{4,16}`, made on the device (time and random part). `name` up to 60
   characters; `charId` `c1` to `c8` or `null`; `order` 0 to 9999; `made` a time; `data` the data stamp, up to 60.
 - `def.order`: a permutation of `vendor`, `craft`, `gather`, `trade`, `market`; **the default is that order** (D14).
-  A header without `def.order` reads as the default. `allied`: allied-society vendors allowed (default `false`; when
-  off, their offers count for neither `vendor` nor `trade`). `steps`: up to 20, in order; a list with none is one step.
+  A header without `def.order` reads as the default. (No allied-society switch: the data cannot mark those vendors,
+  section 3.) `steps`: up to 20, in order; a list with none is one step.
 - Target: `item` and `recipe` game ids (`recipe` 0 for a wanted item that is not crafted); `qty` 1 to 99999; `hq`,
   `coll` true or left out; `step` a step id or left out (first step); `done` true once the player marks it finished.
 - Row: `by` one of `vendor`, `craft`, `gather`, `trade`, `market`, `have`, left out for the list default; `recipe`
@@ -192,7 +198,8 @@ shows "Sold by <seller> for N gil; planned as bought" with "Craft it instead" on
 the list is made** (orchestrator review, 2026-11-22): a wanted item placed by "From the crafting log" (or the Tracker's
 button) is stored with the row choice `craft`, because buying it would not complete the log entry; its materials follow
 the order as usual, so a material a gil merchant sells is still bought. The player can change that choice like any other. A high-quality need is
-never sent to a merchant (merchants sell normal quality): the next source in the order is used and the row says why.
+sent only to a merchant offer marked high quality (`hq`); otherwise the next source in the order is used and the row
+says why.
 `line.why` and `line.offer` carry the reason and the offer for the page.
 
 **Left over.** `plan.leftover[listId]`: stock the plan of that owner does not use, of items in `LISTS.tree` of that
@@ -217,8 +224,8 @@ list. It is what a changed choice or a "Bought it" freed; it stays in the stock 
 - **E15** Gil: market gil = amount × price for priced items only; an unpriced item is in `gil.unknown`, never 0.
 - **E16** (above) Stock used over all lists of one owner never exceeds the stock typed.
 - **E17** With default settings and no row choices (a crafting-log list's own wanted items carry the choice `craft`,
-  above, and are outside this rule; their materials are inside it): no item a gil merchant sells (normal quality, not an allied-society
-  offer) is planned as `craft` or `gather`; and every material in the plan is needed by a wanted item or by a craft
+  above, and are outside this rule; their materials are inside it): no item a gil merchant sells (in the quality needed)
+  is planned as `craft` or `gather`; and every material in the plan is needed by a wanted item or by a craft
   that is itself in the plan, so none appears only because an item a gil merchant sells could have been crafted.
 - **E18** Changing an item's choice from `craft` to `vendor`, `trade`, `market` or `have`, or recording it with
   `LISTS.bought`, never raises any amount to craft, never raises the amount to get of any other item, and changes no
@@ -301,7 +308,7 @@ scroll; tap targets 40 px on a phone; text 4.5:1.
 | A list, tab To craft | Blocks by job in crafting order. Row: name, crafts and what they make, "Made 1", "Made all", "Bought it", "Got it another way", "Get it by" select, "Solve in the Atelier" | "Nothing left to craft." |
 | A list, tab Wanted | Wanted items: amount, High quality, Collectable, step, "Get it by" select with its reason, Finished, Remove; "Add items" search (25 results) | "Add the first item." |
 | List bar | Name, character, step tabs with each step's own totals, "Hide completed" (one button), Defaults, price place and Refresh | none |
-| Defaults sheet | "When an item can be got in several ways, this list tries them in this order:" an ordered list the player can rearrange, with the sentences below; "Use allied-society vendors" off | none |
+| Defaults sheet | "When an item can be got in several ways, this list tries them in this order:" an ordered list the player can rearrange, with the sentences below | none |
 | From the crafting log | Character, job, page; "23 of 40 not ticked in the Tracker"; Create. Opened filled in from the Tracker's button | "Everything on this page is ticked." |
 | Combined view | A list view over the chosen lists and one stock, every row with the same "Get it by" select and craft-row buttons; a line where lists disagree on a choice | "Tick two or more lists." |
 
@@ -336,7 +343,10 @@ The fixture `tracker/tests/fixtures/lists-fixture.json` (made in W2, used by uni
 case: a crafted item with three materials, one of which has a recipe of its own and is also sold by a gil merchant,
 one sold only for another currency, one gathered.
 
-- **W0 Baseline and facts (Haiku clerk).** No edits. Run `npm ci && npx playwright install chromium`, `npm run build`,
+- **W0 Baseline and facts (Haiku clerk). Done 2026-11-22:** build clean, unit tests 416 of 416, highest check C144;
+  switcher and module counts at `check.js` lines 154, 155, 254, 767 and card counts at 296, 313, 535 to 537, 630, 769
+  (W6 updates them and lists them); no "On the way" text; `site/submersibles/data.js` 62,878 bytes; `shops.json` facts
+  in section 3; every `gather-*` item entry carries `it` (1,153 of 1,153). Original brief kept below. No edits. Run `npm ci && npx playwright install chromium`, `npm run build`,
   `npm run test:unit`. Report: both results; the highest check id in `check.js` (expected C144); every `check.js` line
   that counts switcher links, modules or reads "On the way"; the size of `site/submersibles/data.js`; whether
   `raw.githubusercontent.com` answers for one pinned sheet; in Teamcraft's pinned `shops.json`, the field holding how
@@ -351,8 +361,8 @@ one sold only for another currency, one gathered.
   trade that gives several keeps its ratio; a second run writes an identical file with empty `changes`; every offer
   has at least one currency and gil offers sort first. Accept: the test passes; counts (recipes, items, gil offers,
   other offers) and sizes in the report. Escalate if: no network; no field gives a trade's amount; the data cannot
-  tell gil merchants from other-currency vendors for every offer; nothing in the pinned data marks allied-society
-  vendors (never guess from names); the plain file exceeds 4 MB.
+  tell gil merchants from other-currency vendors for every offer; the plain file exceeds 4 MB. (Allied-society
+  vendors are not marked in the data; that is settled in section 3, not an escalation.)
 - **W2 Engine (Sonnet builder; after W1).** Files: `tracker/command-center/src/lists/engine.js`,
   `tracker/tests/fixtures/lists-fixture.json`, `tracker/tests/lists-engine.test.js` (LE-1 to LE-18, one per invariant;
   replays of the eight Teamcraft faults of research section 1; **LE-R9, the owner's case** on the fixture: with
@@ -465,7 +475,7 @@ one sold only for another currency, one gathered.
   design and the owner is told (not decided here).
 - E5, E9, E18 and the quality rule are proved on paper only; the model test is the authority.
 - `save.js` and `merge.js` change: one builder at a time, all three apps rebuilt, C127 and C140 rerun.
-- Allied-society vendors may not be marked in the pinned data; then that default cannot be honest and is escalated.
+- Allied-society vendors are not marked in the pinned data (W0); settled in section 3: their token offers are `trade`.
 - The data file may exceed the budget; trimming is a decision, not a silent step.
 - Adding a switcher link may break checks that count links (W0 lists them).
 - W12 changes the Tracker's most used row; its tests pin that folding and ticking are untouched.
@@ -477,8 +487,10 @@ one sold only for another currency, one gathered.
   tax, from community reports; it is not split by world (that is Market).
 - "Buy from a merchant first" looks only at whether a gil merchant sells the item, not at the price: an expensive
   merchant item is still planned as bought, with its price on the row and "Craft it instead" one tap away. The data
-  does not say whether a merchant needs a quest, a rank or a housing plot to reach; the row names the seller and place.
-- A high-quality need is never sent to a merchant; whether a given market listing is high quality is not checked.
+  does not say whether a merchant needs a quest or a housing plot to reach, and does not mark allied-society NPCs, so a
+  gil offer that needs allied reputation is planned like any merchant; the row names the seller and place, and a Grand
+  Company rank when the data gives one.
+- A high-quality need goes to a merchant only for an offer marked high quality; whether a given market listing is high quality is not checked.
 - Undo covers the last 20 changes of one visit and is gone after a reload; a choice can always be changed back by hand.
 - "Left over" lists unused stock of items in this list's tree; it cannot know why the stock is there.
 - The same unit changed in two tabs: the later save wins. A stock count changed on two devices is asked.
@@ -517,10 +529,10 @@ Read: `CLAUDE.md`, `docs/STATE.md`, `docs/model-tiers.md`, `docs/lists-research.
 the recipe functions of `crafting/atelier/bridge/src/lib.rs`, `selectRecipe` in `atelier.js`, `package.json`; for the
 revision, in `tracker/src/app/ui.js` the functions `groupHtml`, `setView`, `renderSection`, `renderLedger` and the
 lines that read the address and add the back link, and a search of `tracker/tests/ui.test.js`.
-Not verified: any file size; that the pinned files can be fetched from the build session; the trade-amount, currency
-and allied-society fields of `shops.json` (`tools/info.py` reads a currency list with id and amount per trade, gil as
-1; whether every offer has one was not checked); that the solver glue runs in Node; that the Atelier's data and the
-sheets are the same game version; which checks count switcher links; the shape of the Tracker's tick section (W10
+Verified by W0 on 2026-11-22: the fields of `shops.json` (section 3), the switcher and card counts in `check.js`,
+the size of the Submersibles data file, and that the pinned sheets and Teamcraft files can be fetched. Not verified:
+the size of the Lists data file; that the solver glue runs in Node; that the Atelier's data and the sheets are the same
+game version; the shape of the Tracker's tick section (W10
 reads it through the Tracker's code); the Tracker's click handler for the group row and the exact condition behind its
 back link (W12 reads them first); that `ui.test.js` has no test of the group row's markup (a search for its selectors
 found none); the Universalis reply fields beyond those `live.js` and `earn.js` already read; the planning background
