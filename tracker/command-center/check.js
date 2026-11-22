@@ -5651,6 +5651,108 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C146 (Lists, W4) Two devices on the stand-ins meet over a list. (A) One device removed a whole list, the other changed an item of it: the Settings sync
+    //    says the devices disagree and changes nothing; the Tracker asks one question for the whole list, names it and says what each answer does; closing the dialog
+    //    answers nothing (the list stays, the next opening asks again); Keep leaves the list and the changed item on both devices and the cloud copy; Remove takes the
+    //    list and its items from both. (B) One device removed a wanted item the other changed: one question that names the list and the item; Keep leaves the changed
+    //    item everywhere, Remove removes it everywhere; nothing is asked again afterwards. ──
+    await guard('C146', async () => {
+      const zlib = require('zlib');
+      const server4 = await start(PORT4, { standins: true });
+      const st = server4.standins;
+      const unpack = (doc) => JSON.parse(zlib.inflateRawSync(Buffer.from(doc.data, 'base64')).toString('utf8'));
+      const ready = async (pg) => { await pg.waitForFunction(() => window.__settings, null, { timeout: 10000 }); await pg.evaluate(() => window.__settings.ready()); };
+      const msgOf = (pg) => pg.evaluate(() => ((document.querySelector('#settings .set-msg') || {}).textContent || ''));
+      const blank = (pg) => pg.evaluate(() => { const m = document.querySelector('#settings .set-msg'); if (m) m.textContent = ''; });
+      const sync = async (pg) => {
+        await pg.bringToFront(); await blank(pg); await pg.click('#settings [data-act=sync]');
+        await pg.waitForFunction(() => /Synced \d|disagree/.test((document.querySelector('#settings .set-msg') || {}).textContent || ''), null, { timeout: 20000 }).catch(() => {});
+        await pg.waitForTimeout(700); return msgOf(pg);
+      };
+      const deviceKey = (ch, rt) => { const key = ch.repeat(64); st.kv.set(key, JSON.stringify({ rt, at: 1, used: 1 })); st.state.refreshes.set(rt, true); return key; };
+      const device = async (ctx, key, withChars) => {
+        const pg = await ctx.newPage(); await pg.goto(ROOT4 + '#settings'); await ready(pg);
+        if (withChars) { await pg.click('#settings [data-act=first]'); await pg.waitForSelector('#settings [data-set=name][data-id=c1]'); for (let i = 0; i < 100 && !(await pg.evaluate(async () => { try { return CC.checkDoc((await CC.read()).raw).chars.length === 1; } catch (e) { return false; } })); i++) await pg.waitForTimeout(100); }
+        await pg.evaluate((d) => localStorage.setItem('eveniunt-cloud-device', JSON.stringify({ device: d, at: 1 })), key);
+        await pg.reload(); await ready(pg);
+        await pg.waitForFunction(() => /Synced \d/.test((document.querySelector('#settings .set-msg') || {}).textContent || ''), null, { timeout: 20000 }).catch(() => {});
+        return pg;
+      };
+      // another page changes the Lists section the way the module does: read, change, write with its own stamp and base
+      const edit = (pg, change) => pg.evaluate(async (src) => {
+        const r = await CC.read(), d = CC.checkDoc(r.raw), base = d.modules.lists || null;
+        const sec = JSON.parse(JSON.stringify(base || { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} }));
+        (new Function('sec', '(' + src + ')(sec)'))(sec);
+        await CC.writeSection('lists', sec, { rev: r.rev, base });
+      }, change.toString());
+      const listsOf = (pg) => pg.evaluate(async () => { try { return CC.checkDoc((await CC.read()).raw).modules.lists || null; } catch (e) { return null; } });
+      const cloudLists = () => (st.state.files.f1 ? ((unpack(st.state.files.f1).modules || {}).lists || null) : null);
+      const seed = (sec) => { sec.lists['lfood00001'] = { name: 'Food', charId: 'c1', order: 0, made: 1760000000000, data: '7.57h1 44948e4c 70429e21' }; sec.targets['lfood00001.t1aaaaaaaa'] = { item: 5057, recipe: 0, qty: 3, at: 1760000001000 }; sec.targets['lfood00001.t2bbbbbbbb'] = { item: 5058, recipe: 0, qty: 1, at: 1760000002000 }; };
+      // the Settings page holds the save as it read it: a change another page wrote reaches it when it opens again
+      const reopen = async (pg) => { await pg.reload(); await ready(pg); await pg.waitForTimeout(800); };
+      // the Tracker opens, asks (or not), and each question is answered 'local', 'remote' or left (Escape)
+      const asking = async (ctx, answer) => {
+        const t = await ctx.newPage(); await t.goto(ROOT4 + 'tracker/');
+        await t.waitForFunction(() => window.__tracker && window.__tracker.ST, null, { timeout: 30000 });
+        const shown = await t.waitForSelector('dialog[open] .conf', { timeout: 20000 }).then(() => true, () => false);
+        let rows = [];
+        if (shown) {
+          rows = await t.evaluate(() => [...document.querySelectorAll('dialog[open] .conf')].map((c) => ({ id: c.querySelector('[data-pick]').dataset.pick, text: c.querySelector('.w').textContent })));
+          if (answer === null) { await t.keyboard.press('Escape'); await t.waitForTimeout(800); }
+          else {
+            for (const r of rows) await t.evaluate(({ id, v }) => { for (const b of document.querySelectorAll('dialog[open] [data-pick]')) if (b.dataset.pick === id && b.dataset.v === v) b.click(); }, { id: r.id, v: answer });
+            await t.click('dialog[open] #apply'); await t.waitForTimeout(3000);
+          }
+        }
+        await t.close(); return { shown, rows };
+      };
+      const names = (sec) => ({ lists: Object.keys((sec || {}).lists || {}).sort(), targets: Object.entries((sec || {}).targets || {}).map(([k, v]) => k + ':' + v.qty).sort() });
+      const outcome = {};
+      // one scenario: a holds the list, b removes `removal`, a changes `change`; the Settings sync reports the disagreement; the Tracker is asked
+      async function scenario(tag, chA, chB, removal, change, answers) {
+        st.state.files = {}; st.state.etag = {};
+        const one = await context(), two = await context();
+        const a = await device(one.ctx, deviceKey(chA, 'rt-146' + tag + 'a'), true);
+        await edit(a, seed); await reopen(a); await sync(a);
+        const b = await device(two.ctx, deviceKey(chB, 'rt-146' + tag + 'b'), false);
+        for (let i = 0; i < 100 && !names(await listsOf(b)).lists.length; i++) await b.waitForTimeout(200);
+        const bHad = names(await listsOf(b));
+        await edit(b, removal); await reopen(b); await sync(b);
+        await edit(a, change); await reopen(a);
+        const msgA = await sync(a), afterA = names(await listsOf(a)), cloudBefore = names(cloudLists());
+        const rounds = [];
+        for (const answer of answers) rounds.push(await asking(one.ctx, answer));
+        await sync(b); await sync(a); await sync(b);
+        const fa = names(await listsOf(a)), fb = names(await listsOf(b)), fc = names(cloudLists());
+        const again = await asking(one.ctx, 'local').then((r) => r.shown);
+        const errs = real(one.errors).concat(real(two.errors));
+        await one.ctx.close(); await two.ctx.close();
+        return { msgA, bHad, afterA, cloudBefore, rounds, final: { a: fa, b: fb, cloud: fc }, askedAfter: again, errors: errs };
+      }
+      const changed = ['lfood00001.t1aaaaaaaa:7', 'lfood00001.t2bbbbbbbb:1'];
+      const removeList = (sec) => { delete sec.lists['lfood00001']; delete sec.targets['lfood00001.t1aaaaaaaa']; delete sec.targets['lfood00001.t2bbbbbbbb']; };
+      const changeItem = (sec) => { sec.targets['lfood00001.t1aaaaaaaa'].qty = 7; };
+      const removeItem = (sec) => { delete sec.targets['lfood00001.t1aaaaaaaa']; };
+      const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+      // (A) the whole list: closed without an answer (asked again), then Keep (this device holds the list and the other removed it)
+      const a1 = await scenario('a', 'e', 'f', removeList, changeItem, [null, 'local']);
+      const okA1 = /disagree on 1 entry/.test(a1.msgA) && same(a1.bHad.lists, ['lfood00001']) && same(a1.afterA.targets, changed) && same(a1.cloudBefore.lists, [])
+        && a1.rounds.length === 2 && a1.rounds.every((r) => r.shown && r.rows.length === 1 && /Lists: list “Food”/.test(r.rows[0].text) && /the list is kept: choosing this keeps it and its 2 wanted items/.test(r.rows[0].text) && /the list is removed: choosing this removes it and its 2 wanted items on both devices/.test(r.rows[0].text))
+        && same(a1.final.a, { lists: ['lfood00001'], targets: changed }) && same(a1.final.b, a1.final.a) && same(a1.final.cloud, a1.final.a) && !a1.askedAfter && a1.errors.length === 0;
+      // (A) Remove: the same disagreement, the owner says the other device is right
+      const a2 = await scenario('b', 'a', 'b', removeList, changeItem, ['remote']);
+      const okA2 = /disagree on 1 entry/.test(a2.msgA) && a2.rounds.length === 1 && a2.rounds[0].shown && a2.rounds[0].rows.length === 1 && same(a2.final.a, { lists: [], targets: [] }) && same(a2.final.b, a2.final.a) && same(a2.final.cloud, a2.final.a) && !a2.askedAfter && a2.errors.length === 0;
+      // (B) removed against changed: a wanted item removed on the other device, changed here
+      const b1 = await scenario('c', 'c', 'd', removeItem, changeItem, ['local']);
+      const okB1 = /disagree on 1 entry/.test(b1.msgA) && b1.rounds.length === 1 && b1.rounds[0].shown && b1.rounds[0].rows.length === 1 && /Lists: “Food”: a wanted item \(item 5057, 7 wanted\)/.test(b1.rounds[0].rows[0].text) && /\(removed\)/.test(b1.rounds[0].rows[0].text)
+        && same(b1.final.a, { lists: ['lfood00001'], targets: changed }) && same(b1.final.b, b1.final.a) && same(b1.final.cloud, b1.final.a) && !b1.askedAfter && b1.errors.length === 0;
+      const b2 = await scenario('d', '1', '2', removeItem, changeItem, ['remote']);
+      const okB2 = /disagree on 1 entry/.test(b2.msgA) && b2.rounds.length === 1 && b2.rounds[0].shown && same(b2.final.a, { lists: ['lfood00001'], targets: ['lfood00001.t2bbbbbbbb:1'] }) && same(b2.final.b, b2.final.a) && same(b2.final.cloud, b2.final.a) && !b2.askedAfter && b2.errors.length === 0;
+      outcome.a1 = a1; outcome.a2 = a2; outcome.b1 = b1; outcome.b2 = b2;
+      record('C146', 'Two devices (stand-ins) meet over a list: (A) removed whole on one device and an item changed on the other: the Settings sync says the devices disagree, the Tracker asks one question that names the list and says what each answer does; closing the dialog changes nothing and it is asked again; Keep leaves the list and the changed item on both devices and the cloud copy, Remove takes the list and its items from all three; (B) a wanted item removed on one device and changed on the other: one question naming the list and the item; Keep leaves the changed item, Remove removes it everywhere; nothing is asked again afterwards',
+        okA1 && okA2 && okB1 && okB2, { okA1, okA2, okB1, okB2, outcome });
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──

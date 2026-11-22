@@ -3077,3 +3077,352 @@ test('LS-15 a real data stamp from lists.json round-trips through the checker', 
   assert.strictEqual(sec.lists.l1aaaaaaaaaa.data, D.stamp);
   assert.strictEqual(JSON.stringify(CC.checkLists(lsClone(sec))), JSON.stringify(sec));
 });
+
+// ── Lists, work item W4: the lists pass in the sync (docs/lists-spec.md, section 4: LY0 to LY6) ───────────────────────────────────
+// Two devices are real states merged by the real ET.threeWay / ET.applyMerge / ET.saveMerge, and through a full sync (ET.cloudSync and
+// ET.cloudFinish against the fake OneDrive). The old device is the shipped merge.js, save.js, model.js and codec.js at <base>, in its own context.
+const LY = { P: 'lfood00001', Q: 'lgear00002', N: 'lnew000003', T1: 't1aaaaaaaa', T2: 't2bbbbbbbb', T3: 't3cccccccc', T4: 't4dddddddd' };
+const lyH = (name, made, extra) => Object.assign({ name, charId: 'c1', order: 0, made: made || 1760000000000, data: '7.57h1 44948e4c 70429e21' }, extra || {});
+const lyT = (item, qty, at, extra) => Object.assign({ item, recipe: 0, qty, at: at || 1760000001000 }, extra || {});
+const lySec = (o) => Object.assign({ v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} }, lsClone(o));
+const lyBase = () => lySec({
+  lists: { [LY.P]: lyH('Food'), [LY.Q]: lyH('Gear', 1760000000500) },
+  targets: { [LY.P + '.' + LY.T1]: lyT(5057, 3), [LY.P + '.' + LY.T2]: lyT(5058, 1, 1760000002000), [LY.Q + '.' + LY.T3]: lyT(5059, 2, 1760000003000) },
+  ways: { 'c1.5057': { by: 'craft' } }, owners: { c1: { order: 'vendor craft gather trade market' } }, have: { 'c1.5057': { nq: 3 } }, prefs: { hideDone: true }
+});
+const lyEdit = (f, sec) => { const x = lsClone(sec || lyBase()); f(x); return x; };
+const lyDrop = (sec, listId) => { const x = lsClone(sec); delete x.lists[listId]; for (const k of Object.keys(x.targets)) if (k.startsWith(listId + '.')) delete x.targets[k]; return x; };
+const lyState = (sec) => { const s = ET.newState(['Kira']); s.modules = { lists: lySec(sec) }; return ET.validateState(s); };
+const lyPort = (sec) => ET.portable(lyState(sec));
+const lyThree = (b, l, r) => ET.threeWay(b === null ? null : lyPort(b), lyPort(l), lyPort(r));
+const lyApply = (onto, res, ch) => lsClone(ET.applyMerge(lyState(onto), res, ch || {}).modules.lists);
+const lyQs = (res) => res.conflicts.filter((c) => c.integrity && c.integrity.kind === 'list');
+const lyHdrKey = (id) => 'm|' + JSON.stringify(['lists', 'lists', id]);
+const lyTgtKey = (list, t) => 'm|' + JSON.stringify(['lists', 'targets', list + '.' + t]);
+const lyCanon = (o) => JSON.stringify(o, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.keys(v).sort().reduce((a, x) => { a[x] = v[x]; return a; }, {}) : v));
+const lyJ = lyCanon; // key order is not part of a merge's result: the two devices build the groups in their own order
+// two devices on the fake OneDrive: b has uploaded its copy `rSec`; a holds `lSec` and has not synced yet. Both started from `base`.
+async function lyPair(base, lSec, rSec) {
+  const g = fakeGraph(), a = lyState(base), b = lyState(base);
+  assert.deepStrictEqual(await ET.cloudSync(a, 'tok', g.f), { done: true, created: true });
+  assert.strictEqual((await ET.cloudSync(b, 'tok', g.f)).done, true);
+  b.modules.lists = lySec(rSec); a.modules.lists = lySec(lSec);
+  // b's copy is the cloud copy (put there as it is: b's own sync would already ask about a list it holds without a header) and b's base
+  g.touch('f1', await ET.cloudDoc(b)); b.sync.drive = { fileId: 'f1', at: new Date().toISOString(), base: JSON.parse(JSON.stringify(ET.portable(b))) };
+  return { g, a, b, cloud: async () => lsClone((await ET.readCloud(g.files.f1)).modules.lists) };
+}
+const lyChoices = (r, side) => Object.fromEntries(r.conflicts.map((c) => [c.id, side]));
+
+test('LY-1 LY1 case 1: a list removed with every wanted item on one side and unchanged on the other is removed with everything in it, no question; a second sync changes nothing', async () => {
+  for (const xLocal of [true, false]) {
+    const B = lyBase(), X = lyDrop(B, LY.P), Y = lyEdit((s) => { s.have['c1.5057'] = { nq: 9 }; }); // Y changed something outside the list: carried over
+    const [L, R] = xLocal ? [X, Y] : [Y, X];
+    const res = lyThree(B, L, R);
+    assert.strictEqual(res.conflicts.length, 0, 'no question, xLocal ' + xLocal);
+    const out = lyApply(L, res, {}), want = lyEdit((s) => { s.have['c1.5057'] = { nq: 9 }; }, X);
+    assert.strictEqual(lyJ(out), lyJ(lySec(want)), 'the list goes with everything in it, the rest is kept');
+    assert.ok(out.lists[LY.Q] && out.targets[LY.Q + '.' + LY.T3], 'the other list is untouched');
+    const again = lyThree(out, out, out); assert.strictEqual(again.conflicts.length, 0); assert.strictEqual(lyJ(lyApply(out, again, {})), lyJ(out));
+    // through a full sync
+    const p = await lyPair(B, L, R), r = await ET.cloudSync(p.a, 'tok', p.g.f);
+    assert.strictEqual(r.done, true, 'a full sync asks nothing'); assert.strictEqual(lyJ(p.a.modules.lists), lyJ(lySec(want)));
+    assert.strictEqual(lyJ(await p.cloud()), lyJ(lySec(want)));
+  }
+});
+
+// cases 2 and 3 are one question for the whole list: Keep (the side that holds the header answers), Remove (the side that lacks it answers), no answer
+async function lyQuestion(name, B, X, Y, expect) {
+  for (const xLocal of [true, false]) {
+    const [L, R] = xLocal ? [X, Y] : [Y, X], keepSide = xLocal ? 'remote' : 'local', removeSide = xLocal ? 'local' : 'remote';
+    const label = name + (xLocal ? ' (this device lacks the header)' : ' (the other device lacks the header)');
+    const res = lyThree(B, L, R), qs = lyQs(res);
+    assert.strictEqual(qs.length, 1, label + ': one question for the whole list');
+    assert.strictEqual(qs[0].id, lyHdrKey(LY.P)); assert.strictEqual(qs[0].integrity.listId, LY.P); assert.strictEqual(qs[0].integrity.listName, (Y.lists[LY.P] || { name: 'Food' }).name);
+    assert.strictEqual(res.conflicts.filter((c) => /^m\|\["lists","(lists|targets)",/.test(c.id) && c.id.includes(LY.P) && c !== qs[0]).length, expect.unitClashes || 0, label + ': the list\'s units raise no questions of their own');
+    assert.strictEqual(qs[0][xLocal ? 'local' : 'remote'], null); assert.ok(qs[0][xLocal ? 'remote' : 'local'] !== null);
+    // no answer (both in the merge and in the unit rule): Keep, nothing deleted
+    const none = lyApply(L, res, {}), keepRows = expect.keep(L, R);
+    assert.deepStrictEqual(Object.keys(none.lists).sort(), [LY.P, LY.Q].sort(), label + ': the list stays unanswered');
+    assert.strictEqual(lyJ(none.targets), lyJ(keepRows), label + ': every wanted item either side holds stays unanswered');
+    assert.ok(res.merged.has(qs[0].id), label + ': threeWay keeps it too');
+    // Keep
+    const keep = lyApply(L, res, { [qs[0].id]: keepSide });
+    assert.strictEqual(lyJ(keep.targets), lyJ(keepRows), label + ': Keep');
+    assert.ok(keep.lists[LY.P]);
+    // Remove
+    const rem = lyApply(L, res, { [qs[0].id]: removeSide });
+    assert.ok(!rem.lists[LY.P] && !Object.keys(rem.targets).some((k) => k.startsWith(LY.P + '.')), label + ': Remove takes the header and every wanted item of the list');
+    assert.ok(rem.lists[LY.Q] && rem.targets[LY.Q + '.' + LY.T3], label + ': Remove leaves the other list alone');
+    assert.strictEqual(lyJ(rem.ways), lyJ(L.ways)); assert.strictEqual(lyJ(rem.have), lyJ(L.have)); // LY5: character data is never part of a list question
+    // the description names the list and says what each answer does
+    const d = ET.describeConflict(qs[0], null, lyState(L));
+    assert.strictEqual(d.what, 'Lists: list “' + (Y.lists[LY.P] || { name: 'Food' }).name + '”'); assert.match(xLocal ? d.local : d.remote, /^the list is removed: choosing this removes it and /); assert.match(xLocal ? d.remote : d.local, /^the list is kept: choosing this keeps it and /);
+    // a full sync: asked again until answered; the answers do what they say; then a second sync changes nothing and asks nothing
+    const p = await lyPair(B, L, R);
+    const cloud0 = lyJ(p.g.files.f1), a0 = lyJ(p.a.modules.lists);
+    const r1 = await ET.cloudSync(p.a, 'tok', p.g.f), r2 = await ET.cloudSync(p.a, 'tok', p.g.f);
+    assert.strictEqual(r1.done, false); assert.strictEqual(lyJ(r1.conflicts), lyJ(r2.conflicts), label + ': the same question again');
+    assert.strictEqual(lyJ(p.g.files.f1), cloud0, 'unanswered: the cloud copy is not changed'); assert.strictEqual(lyJ(p.a.modules.lists), a0, 'unanswered: this device is not changed');
+    await ET.cloudFinish(p.a, 'tok', r2, { [qs[0].id]: keepSide }, p.g.f);
+    assert.strictEqual(lyJ(p.a.modules.lists.targets), lyJ(keepRows), label + ': Keep through a full sync');
+    assert.strictEqual(lyJ((await p.cloud()).targets), lyJ(keepRows));
+    const s2 = await ET.cloudSync(p.a, 'tok', p.g.f); assert.strictEqual(s2.done, true, label + ': nothing asked after the answer');
+    assert.strictEqual(lyJ(p.a.modules.lists.targets), lyJ(keepRows));
+    const q = await lyPair(B, L, R), rq = await ET.cloudSync(q.a, 'tok', q.g.f);
+    await ET.cloudFinish(q.a, 'tok', rq, { [qs[0].id]: removeSide }, q.g.f);
+    assert.ok(!q.a.modules.lists.lists[LY.P] && !(await q.cloud()).lists[LY.P] && !Object.keys((await q.cloud()).targets).some((k) => k.startsWith(LY.P + '.')), label + ': Remove through a full sync');
+    const cloudAfter = lyJ(q.g.files.f1), s3 = await ET.cloudSync(q.a, 'tok', q.g.f);
+    assert.strictEqual(s3.done, true); assert.strictEqual(lyJ(q.g.files.f1), cloudAfter, 'a second sync changes nothing');
+    assert.strictEqual((await ET.cloudSync(q.b, 'tok', q.g.f)).done, true, 'the other device follows the answer without a question'); assert.ok(!q.b.modules.lists.lists[LY.P]);
+  }
+}
+
+test('LY-2 LY1 case 2: a list removed on one side and changed on the other (header changed, item changed, item added, item removed) is one question: Keep, Remove, no answer, and a second sync after each', async () => {
+  const B = lyBase(), P = LY.P, K = (k) => P + '.' + k;
+  const keepAll = (f) => (L, R) => { const y = f(); const o = {}; for (const k of Object.keys(y.targets).sort()) o[k] = y.targets[k]; return lySec({ targets: o }).targets; };
+  const mk = (f) => lyEdit(f);
+  const variants = [
+    ['header changed', mk((s) => { s.lists[P].name = 'Food 2'; }), () => lyBase()],
+    ['item changed', mk((s) => { s.targets[K(LY.T1)].qty = 7; }), () => mk((s) => { s.targets[K(LY.T1)].qty = 7; })],
+    ['item added', mk((s) => { s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); }), () => mk((s) => { s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); })],
+    ['item removed (anything that is not what base held is asked)', mk((s) => { delete s.targets[K(LY.T2)]; }), () => mk((s) => { delete s.targets[K(LY.T2)]; })]
+  ];
+  for (const [name, Y, want] of variants) await lyQuestion('case 2, ' + name, B, lyDrop(B, P), Y, { keep: (L, R) => { const t = lsClone(want().targets); const o = {}; for (const k of Object.keys(t).sort()) o[k] = t[k]; return lySec({ targets: o }).targets; } });
+  void keepAll;
+});
+
+test('LY-3 LY1 case 3: a side that lacks the header but still holds wanted items of the list (an older build, a hand edit) is one question, whether the other side changed or not', async () => {
+  const B = lyBase(), P = LY.P, K = (k) => P + '.' + k;
+  const noHeader = (sec) => { const x = lsClone(sec); delete x.lists[P]; return x; };
+  const ordered = (t) => { const o = {}; for (const k of Object.keys(t).sort()) o[k] = t[k]; return lySec({ targets: o }).targets; };
+  // X holds the items unchanged, Y unchanged
+  await lyQuestion('case 3, items unchanged both sides', B, noHeader(B), B, { keep: () => ordered(B.targets) });
+  // X holds an item changed (header gone), Y unchanged: the changed item is kept
+  const X2 = noHeader(lyEdit((s) => { s.targets[K(LY.T1)].qty = 8; }));
+  await lyQuestion('case 3, X changed an item', B, X2, B, { keep: () => ordered(lyEdit((s) => { s.targets[K(LY.T1)].qty = 8; }).targets) });
+  // X holds only one of the items and an added one, Y changed the header: both sides' items stay
+  const X3 = noHeader(lyEdit((s) => { delete s.targets[K(LY.T2)]; s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); }));
+  const Y3 = lyEdit((s) => { s.lists[P].name = 'Food 2'; });
+  await lyQuestion('case 3, Y changed the header, X holds other items', B, X3, Y3, { keep: () => ordered(lyEdit((s) => { s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); }).targets) });
+  // a wanted item only on the other side survives Keep and no answer (X removed it inside the list, Y changed it)
+  const X4 = noHeader(lyEdit((s) => { delete s.targets[K(LY.T2)]; }));
+  const Y4 = lyEdit((s) => { s.targets[K(LY.T2)].qty = 5; });
+  await lyQuestion('case 3, an item only the other side holds', B, X4, Y4, { keep: () => ordered(lyEdit((s) => { s.targets[K(LY.T2)].qty = 5; }).targets) });
+});
+
+test('LY-4 LY1 case 4: both sides lack the header: no list question; wanted items left on either side stay (shown as "Restored list"), and nothing is dropped', async () => {
+  const B = lyBase(), P = LY.P, K = (k) => P + '.' + k;
+  const noHeader = (f) => lyEdit((s) => { delete s.lists[P]; if (f) f(s); });
+  const L = noHeader((s) => { s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); }), R = noHeader((s) => { s.targets[K(LY.T1)].qty = 9; });
+  for (const [l, r] of [[L, R], [R, L]]) {
+    const res = lyThree(B, l, r);
+    assert.strictEqual(lyQs(res).length, 0, 'no list question');
+    const out = lyApply(l, res, {});
+    assert.ok(!out.lists[P]); assert.deepStrictEqual(Object.keys(out.targets).filter((k) => k.startsWith(P + '.')).sort(), [K(LY.T1), K(LY.T2), K(LY.T4)].sort(), 'every wanted item stays');
+    assert.strictEqual(out.targets[K(LY.T1)].qty, 9);
+    assert.strictEqual(lyJ(lsClone(CC.checkLists(lsClone(out)))), lyJ(out), 'the checker keeps the orphans');
+    const again = lyThree(out, out, out); assert.strictEqual(again.conflicts.length, 0);
+  }
+  // an item removed on one side and changed on the other still keeps (LY0), with its own question
+  const L2 = noHeader((s) => { delete s.targets[K(LY.T2)]; }), R2 = noHeader((s) => { s.targets[K(LY.T2)].qty = 4; });
+  const res2 = lyThree(B, L2, R2);
+  assert.strictEqual(res2.conflicts.length, 1); assert.strictEqual(res2.conflicts[0].integrity.keep, true); assert.strictEqual(lyQs(res2).length, 0);
+  assert.strictEqual(lyApply(L2, res2, {}).targets[K(LY.T2)].qty, 4);
+});
+
+test('LY-5 LY1 case 5: a list that is not in base and was added on one side (or no base at all) is taken with its wanted items, no question', async () => {
+  const B = lyBase(), N = LY.N;
+  const add = lyEdit((s) => { s.lists[N] = lyH('New', 1760000090000); s.targets[N + '.' + LY.T1] = lyT(7001, 2, 1760000091000); s.targets[N + '.' + LY.T2] = lyT(7002, 1, 1760000092000); });
+  for (const [l, r] of [[add, B], [B, add]]) {
+    const res = lyThree(B, l, r); assert.strictEqual(res.conflicts.length, 0);
+    assert.strictEqual(lyJ(lyApply(l, res, {})), lyJ(add));
+  }
+  for (const [l, r] of [[add, lySec({})], [lySec({}), add]]) { const res = lyThree(null, l, r); assert.strictEqual(res.conflicts.length, 0); assert.strictEqual(lyJ(lyApply(l, res, {})), lyJ(add)); }
+  const p = await lyPair(B, add, B); assert.strictEqual((await ET.cloudSync(p.a, 'tok', p.g.f)).done, true); assert.strictEqual(lyJ(p.a.modules.lists), lyJ(add));
+});
+
+test('LY-6 LY0 through the real ET.saveMerge: a wanted item, a way, a stock count and a list header removed on one side and changed on the other stay (both orientations); the labels of section 4 word for word', () => {
+  const B = lyBase(), K = (k) => LY.P + '.' + k;
+  const cases = [
+    ['a wanted item', lyEdit((s) => { delete s.targets[K(LY.T1)]; }), lyEdit((s) => { s.targets[K(LY.T1)].qty = 6; }), (o) => o.targets[K(LY.T1)], 'Lists: “Food”: a wanted item (item 5057, 6 wanted)'],
+    ['a way', lyEdit((s) => { delete s.ways['c1.5057']; }), lyEdit((s) => { s.ways['c1.5057'] = { by: 'vendor' }; }), (o) => o.ways['c1.5057'], 'Lists: how Kira gets item 5057'],
+    ['a stock count', lyEdit((s) => { delete s.have['c1.5057']; }), lyEdit((s) => { s.have['c1.5057'] = { nq: 8 }; }), (o) => o.have['c1.5057'], 'Lists: the amount Kira has of item 5057'],
+    ['an owner\'s order', lyEdit((s) => { delete s.owners.c1; }), lyEdit((s) => { s.owners.c1 = { order: 'craft vendor gather trade market' }; }), (o) => o.owners.c1, 'Lists: Kira\'s order of ways to get items']
+  ];
+  for (const [name, removed, changed, pick, what] of cases) for (const removedHere of [true, false]) {
+    const [L, R] = removedHere ? [removed, changed] : [changed, removed], surv = removedHere ? R : L;
+    // the tab's own save, no answers: the unit stays
+    const out = ET.saveMerge(lyState(L), 'r2', lyPort(R), 'r1', lyPort(B));
+    assert.strictEqual(out.merged, true); assert.strictEqual(lyJ(pick(out.state.modules.lists)), lyJ(pick(surv)), name + ': kept, removedHere ' + removedHere);
+    const res = lyThree(B, L, R), c = res.conflicts[0];
+    assert.strictEqual(res.conflicts.length, 1); assert.strictEqual(c.integrity.kind, 'lists'); assert.strictEqual(c.integrity.keep, true);
+    assert.strictEqual(lyJ(pick(lyApply(L, res, {}))), lyJ(pick(surv)), name + ': applyMerge with no answer keeps it');
+    assert.ok(res.merged.has(c.id), name + ': threeWay keeps it too');
+    assert.strictEqual(pick(lyApply(L, res, { [c.id]: removedHere ? 'local' : 'remote' })), undefined, name + ': answered for the removing side removes it');
+    assert.strictEqual(lyJ(pick(lyApply(L, res, { [c.id]: removedHere ? 'remote' : 'local' }))), lyJ(pick(surv)), name + ': answered for the other side keeps its value');
+    // the label
+    const d = ET.describeConflict(c, null, lyState(L));
+    assert.strictEqual(d.what, what); assert.strictEqual(removedHere ? d.local : d.remote, '(removed)');
+    if (name === 'a stock count') assert.strictEqual(removedHere ? d.remote : d.local, '8 normal');
+  }
+  // the header: a whole-list question (LY1), kept by the tab's own save too
+  for (const removedHere of [true, false]) {
+    const removed = lyDrop(B, LY.P), changed = lyEdit((s) => { s.lists[LY.P].name = 'Food 2'; });
+    const [L, R] = removedHere ? [removed, changed] : [changed, removed];
+    const out = ET.saveMerge(lyState(L), 'r2', lyPort(R), 'r1', lyPort(B));
+    assert.ok(out.state.modules.lists.lists[LY.P] && out.state.modules.lists.targets[LY.P + '.' + LY.T1], 'the tab save keeps the list');
+    assert.strictEqual(lyApply(L, lyThree(B, L, R), {})[removedHere ? 'lists' : 'lists'][LY.P].name, 'Food 2');
+  }
+  // two values of one wanted item are still asked on their own, with the list's name; a value clash is not a removal
+  const L = lyEdit((s) => { s.targets[K(LY.T1)].qty = 4; }), R = lyEdit((s) => { s.targets[K(LY.T1)].qty = 6; });
+  const res = lyThree(B, L, R); assert.strictEqual(res.conflicts.length, 1); assert.strictEqual(res.conflicts[0].integrity.listName, 'Food'); assert.ok(!res.conflicts[0].integrity.keep);
+  assert.strictEqual(lyApply(L, res, {}).targets[K(LY.T1)].qty, 4); assert.strictEqual(lyApply(L, res, { [res.conflicts[0].id]: 'remote' }).targets[K(LY.T1)].qty, 6);
+  const dl = ET.describeConflict(res.conflicts[0], null, lyState(L)); assert.strictEqual(dl.what, 'Lists: “Food”: a wanted item (item 5057, 4 wanted)');
+  // the list header label, also with the removed side
+  const hdrClash = lyThree(B, lyEdit((s) => { s.lists[LY.P].name = 'A'; }), lyEdit((s) => { s.lists[LY.P].name = 'B'; }));
+  assert.strictEqual(ET.describeConflict(hdrClash.conflicts[0], null, lyState(B)).what, 'Lists: list “A”');
+});
+
+test('LY-7 LY0 through a full sync: removed against changed (wanted item, way, stock count) is asked again until answered; each answer does what it says; settled afterwards', async () => {
+  const B = lyBase(), K = (k) => LY.P + '.' + k;
+  const cases = [
+    ['a wanted item', lyEdit((s) => { delete s.targets[K(LY.T1)]; }), lyEdit((s) => { s.targets[K(LY.T1)].qty = 6; }), (o) => o.targets[K(LY.T1)]],
+    ['a way', lyEdit((s) => { delete s.ways['c1.5057']; }), lyEdit((s) => { s.ways['c1.5057'] = { by: 'vendor' }; }), (o) => o.ways['c1.5057']],
+    ['a stock count', lyEdit((s) => { delete s.have['c1.5057']; }), lyEdit((s) => { s.have['c1.5057'] = { nq: 8 }; }), (o) => o.have['c1.5057']]
+  ];
+  for (const [name, removed, changed, pick] of cases) for (const removedHere of [true, false]) {
+    const [L, R] = removedHere ? [removed, changed] : [changed, removed], surv = removedHere ? changed : changed, label = name + ', removed ' + (removedHere ? 'here' : 'there');
+    const p = await lyPair(B, L, R), cloud0 = lyJ(p.g.files.f1), a0 = lyJ(p.a.modules.lists);
+    const r1 = await ET.cloudSync(p.a, 'tok', p.g.f), r2 = await ET.cloudSync(p.a, 'tok', p.g.f);
+    assert.strictEqual(r1.done, false); assert.strictEqual(r1.conflicts.length, 1); assert.strictEqual(lyJ(r1.conflicts), lyJ(r2.conflicts), label + ': asked again');
+    assert.strictEqual(lyJ(p.g.files.f1), cloud0); assert.strictEqual(lyJ(p.a.modules.lists), a0, label + ': nothing deleted, nothing changed while unanswered');
+    // a merge applied with no answer (a tab save, the end of a Settings sync) keeps the unit
+    assert.strictEqual(lyJ(pick(lyApply(L, r1.result, {}))), lyJ(pick(surv)), label + ': the unanswered merge keeps it');
+    // the answer for the other side keeps the surviving value; the answer for the removing side removes it
+    await ET.cloudFinish(p.a, 'tok', r1, lyChoices(r1, removedHere ? 'remote' : 'local'), p.g.f);
+    assert.strictEqual(lyJ(pick(p.a.modules.lists)), lyJ(pick(surv))); assert.strictEqual(lyJ(pick(await p.cloud())), lyJ(pick(surv)));
+    assert.strictEqual((await ET.cloudSync(p.a, 'tok', p.g.f)).done, true, label + ': settled');
+    const q = await lyPair(B, L, R), rq = await ET.cloudSync(q.a, 'tok', q.g.f);
+    await ET.cloudFinish(q.a, 'tok', rq, lyChoices(rq, removedHere ? 'local' : 'remote'), q.g.f);
+    assert.strictEqual(pick(q.a.modules.lists), undefined, label + ': removed on this device'); assert.strictEqual(pick(await q.cloud()), undefined, label + ': removed in the cloud copy');
+    assert.strictEqual((await ET.cloudSync(q.a, 'tok', q.g.f)).done, true); assert.strictEqual((await ET.cloudSync(q.b, 'tok', q.g.f)).done, true); assert.strictEqual(pick(q.b.modules.lists), undefined);
+  }
+});
+
+// the shipped merge.js, save.js, model.js and codec.js at <base> in their own context: an older build knows nothing of lists
+function lyOldET() {
+  const ctx = require('vm').createContext({ console, Date, JSON, Math, Promise, TextEncoder, TextDecoder, setTimeout });
+  for (const f of ['save', 'model', 'codec', 'merge']) require('vm').runInContext(require('child_process').execFileSync('git', ['show', lsBase() + ':tracker/src/core/' + f + '.js'], { cwd: lsRoot, maxBuffer: 64 * 1024 * 1024 }).toString(), ctx, { filename: f + '.js@base' });
+  assert.ok(ctx.ET && typeof ctx.ET.threeWay === 'function' && !ctx.CC.checkLists, 'the shipped build at the merge base has no lists checker');
+  return ctx;
+}
+
+test('LY-8 the old device runs the shipped merge.js and save.js at <base>: what it leaves is shown by the new device as a "Restored list" with nothing dropped; settle, answered and unanswered (LY4)', async () => {
+  const old = lyOldET(), OET = old.ET, B = lyBase(), P = LY.P, K = (k) => P + '.' + k;
+  const oState = (sec) => { const s = OET.newState(['Kira']); s.modules = { lists: lsClone(sec) }; return OET.validateState(s); };
+  const oPort = (sec) => lsClone(OET.portable(oState(sec)));
+  // the old build keeps the whole section as plain data (it does not know it), so a merge on the old device never strips a field
+  assert.strictEqual(lyJ(oState(lsFull()).modules.lists), lyJ(lsFull()), 'the old build keeps a lists section byte for byte');
+  // the old device removed the list; the new device added an item to it meanwhile: the old merge takes the removal of the header and keeps the new item
+  const oldSide = lyDrop(B, P), newSide = lyEdit((s) => { s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); });
+  const oldRes = OET.threeWay(oPort(B), oPort(oldSide), oPort(newSide)), oldOut = lsClone(OET.applyMerge(oState(oldSide), oldRes, {}).modules.lists);
+  assert.ok(!oldOut.lists[P], 'the old device left the list without its header'); assert.deepStrictEqual(Object.keys(oldOut.targets).filter((k) => k.startsWith(P + '.')), [K(LY.T4)], 'and the new item under it');
+  // the new device receives what the old device left: nothing is dropped, the item shows under a restored list
+  const here = lyEdit((s) => { s.targets[K(LY.T4)] = lyT(5060, 1, 1760000009000); s.lists[P].name = 'Food 3'; });
+  for (const [l, r] of [[here, oldOut], [oldOut, here]]) {
+    const res = lyThree(B, l, r), out = lyApply(l, res, {});
+    assert.ok(out.targets[K(LY.T4)], 'the wanted item the old device left is kept');
+    assert.ok(lyQs(res).length <= 1);
+    const keep = lyApply(l, res, lyQs(res).length ? { [lyQs(res)[0].id]: l === here ? 'local' : 'remote' } : {});
+    assert.ok(keep.lists[P] && keep.targets[K(LY.T4)], 'the list is restored with its item');
+  }
+  // both sides lack the header (the old device's result was uploaded and synced back): the item stays and shows as a restored list; a second sync changes nothing
+  const both = lyThree(oldOut, oldOut, oldOut); assert.strictEqual(both.conflicts.length, 0);
+  assert.strictEqual(lyJ(lyApply(oldOut, both, {})), lyJ(oldOut));
+  assert.strictEqual(lyJ(CC.checkLists(lsClone(oldOut))), lyJ(oldOut), 'the new checker keeps the orphan unchanged');
+  // the old device as the remote of a full sync: unanswered the next sync asks again, answered it settles; the old build's own merge of the answered copy keeps everything
+  const g = fakeGraph(), a = lyState(B);
+  await ET.cloudSync(a, 'tok', g.f);
+  const doc = await ET.cloudDoc(lyState(oldOut)); g.touch('f1', doc); // the old device uploaded its result
+  a.modules.lists = lySec(here);
+  const r1 = await ET.cloudSync(a, 'tok', g.f), r2 = await ET.cloudSync(a, 'tok', g.f);
+  assert.strictEqual(r1.done, false); assert.strictEqual(lyJ(r1.conflicts), lyJ(r2.conflicts)); assert.strictEqual(lyQs(r1).length, 1, 'one list question');
+  assert.ok(a.modules.lists.targets[K(LY.T4)], 'unanswered: nothing dropped');
+  await ET.cloudFinish(a, 'tok', r1, lyChoices(r1, 'local'), g.f);
+  assert.ok(a.modules.lists.lists[P] && a.modules.lists.targets[K(LY.T4)] && a.modules.lists.lists[P].name === 'Food 3', 'answered: the list is back with its item');
+  assert.strictEqual((await ET.cloudSync(a, 'tok', g.f)).done, true, 'settled');
+  const merged = lsClone((await ET.readCloud(g.files.f1)).modules.lists);
+  const oSecond = OET.threeWay(oPort(merged), oPort(merged), oPort(merged)); assert.strictEqual(oSecond.conflicts.length, 0);
+  assert.strictEqual(lyJ(lsClone(OET.applyMerge(oState(merged), oSecond, {}).modules.lists)), lyJ(merged), 'the old build keeps what the new one wrote, byte for byte');
+});
+
+test('LY-9 LY4 settle: after every question is answered further syncs change nothing and ask nothing; with questions unanswered further syncs change nothing and ask the same', async () => {
+  const B = lyBase(), P = LY.P, K = (k) => P + '.' + k;
+  const X = lyDrop(B, P), Y = lyEdit((s) => { s.targets[K(LY.T1)].qty = 7; s.have['c1.5057'] = { nq: 1 }; });
+  const X2 = lyEdit((s) => { s.have['c1.5057'] = { nq: 2 }; delete s.ways['c1.5057']; }), Y2 = lyEdit((s) => { s.ways['c1.5057'] = { by: 'gather' }; });
+  const p = await lyPair(B, Object.assign(lsClone(X), { have: lsClone(X2.have), ways: {} }), Object.assign(lsClone(Y), { ways: lsClone(Y2.ways) })); // a list question, a stock clash and a removed-changed way together
+  const cloud0 = lyJ(p.g.files.f1), a0 = lyJ(p.a.modules.lists), asked = [];
+  for (let i = 0; i < 3; i++) { const r = await ET.cloudSync(p.a, 'tok', p.g.f); assert.strictEqual(r.done, false); asked.push(lyJ(r.conflicts)); assert.strictEqual(lyJ(p.g.files.f1), cloud0); assert.strictEqual(lyJ(p.a.modules.lists), a0); }
+  assert.strictEqual(new Set(asked).size, 1, 'the same questions every time');
+  const r = await ET.cloudSync(p.a, 'tok', p.g.f); assert.ok(r.conflicts.length >= 2);
+  for (const side of ['local', 'remote']) {
+    const q = await lyPair(B, Object.assign(lsClone(X), { have: lsClone(X2.have), ways: {} }), Object.assign(lsClone(Y), { ways: lsClone(Y2.ways) }));
+    const rq = await ET.cloudSync(q.a, 'tok', q.g.f); await ET.cloudFinish(q.a, 'tok', rq, lyChoices(rq, side), q.g.f);
+    const after = lyJ(await q.cloud()), mine = lyJ(q.a.modules.lists);
+    for (let i = 0; i < 3; i++) { assert.strictEqual((await ET.cloudSync(q.a, 'tok', q.g.f)).done, true); assert.strictEqual((await ET.cloudSync(q.b, 'tok', q.g.f)).done, true); }
+    assert.strictEqual(lyJ(await q.cloud()), after, 'further syncs change nothing, answered with ' + side); assert.strictEqual(lyJ(q.a.modules.lists), mine);
+    assert.strictEqual(lyJ(q.b.modules.lists), lyJ(q.a.modules.lists), 'both devices end equal');
+  }
+});
+
+test('LY-10 two devices whose lists together pass a size limit merge with nothing dropped (200 lists, 2,000 wanted items in a list, 20,000 stock counts)', () => {
+  const id = (p, n) => p + n.toString(36).padStart(8, '0'), B = lySec({ lists: { [id('l', 0)]: lyH('Shared') } });
+  const side = (tag, from) => {
+    const s = lsClone(B);
+    for (let i = 0; i < 150; i++) s.lists[id('l', tag * 1000 + 1 + i)] = lyH('L' + tag + '-' + i, 1760000000000 + i);
+    for (let i = 0; i < 1200; i++) s.targets[id('l', 0) + '.' + id('t', tag * 10000 + i)] = lyT(100 + i, 1, 1760000000000 + i);
+    for (let i = 0; i < 11000; i++) s.have['c1.' + (from + i)] = { nq: 1 };
+    return s;
+  };
+  const L = side(1, 1000), R = side(2, 100000), res = lyThree(B, L, R);
+  assert.strictEqual(res.conflicts.length, 0);
+  const out = lyApply(L, res, {});
+  assert.strictEqual(Object.keys(out.lists).length, 301); assert.strictEqual(Object.keys(out.targets).length, 2400); assert.strictEqual(Object.keys(out.have).length, 22000);
+  const tab = ET.saveMerge(lyState(L), 'r2', lyPort(R), 'r1', lyPort(B));
+  assert.strictEqual(Object.keys(tab.state.modules.lists.lists).length, 301); assert.strictEqual(Object.keys(tab.state.modules.lists.targets).length, 2400); assert.strictEqual(Object.keys(tab.state.modules.lists.have).length, 22000);
+  assert.strictEqual(lyJ(CC.checkLists(lsClone(out))), lyJ(out), 'the checker drops nothing');
+});
+
+test('LY-11 LY6: the same list id and the same wanted-item id made on two devices with different times are two records: both kept, the same new id on both devices, wanted items move with their list, no question; equal times are one record', async () => {
+  const P = LY.P, K = (k) => P + '.' + k, B = lySec({});
+  const A = lySec({ lists: { [P]: lyH('Made on A', 1760000000100) }, targets: { [K(LY.T1)]: lyT(5057, 3, 1760000000200), [K(LY.T2)]: lyT(5058, 1, 1760000000300) } });
+  const Bd = lySec({ lists: { [P]: lyH('Made on B', 1760000000900) }, targets: { [K(LY.T1)]: lyT(6001, 2, 1760000000950) } });
+  const resAB = lyThree(B, A, Bd), resBA = lyThree(B, Bd, A);
+  assert.strictEqual(resAB.conflicts.length, 0, 'no question'); assert.strictEqual(resBA.conflicts.length, 0);
+  const outAB = lyApply(A, resAB, {}), outBA = lyApply(Bd, resBA, {});
+  assert.strictEqual(lyCanon(outAB), lyCanon(outBA), 'both devices compute the same result, ids included');
+  assert.strictEqual(Object.keys(outAB.lists).length, 2); assert.strictEqual(outAB.lists[P].name, 'Made on A', 'the earlier record keeps its id');
+  const newId = Object.keys(outAB.lists).find((k) => k !== P);
+  assert.match(newId, /^[a-z0-9]{12}$/); assert.strictEqual(outAB.lists[newId].name, 'Made on B');
+  assert.deepStrictEqual(Object.keys(outAB.targets).sort(), [K(LY.T1), K(LY.T2), newId + '.' + LY.T1].sort(), 'wanted items moved with their list, the earlier list keeps its own');
+  assert.strictEqual(outAB.targets[K(LY.T1)].item, 5057); assert.strictEqual(outAB.targets[newId + '.' + LY.T1].item, 6001);
+  assert.strictEqual(lyJ(CC.checkLists(lsClone(outAB))), lyJ(outAB), 'the checker keeps both');
+  // through the full sync: both devices end equal, and the second sync changes nothing
+  const g = fakeGraph(), a = lyState(B), b = lyState(B);
+  await ET.cloudSync(a, 'tok', g.f); await ET.cloudSync(b, 'tok', g.f);
+  a.modules.lists = lsClone(A); b.modules.lists = lsClone(Bd);
+  assert.strictEqual((await ET.cloudSync(b, 'tok', g.f)).done, true); assert.strictEqual((await ET.cloudSync(a, 'tok', g.f)).done, true); assert.strictEqual((await ET.cloudSync(b, 'tok', g.f)).done, true);
+  assert.strictEqual(lyCanon(a.modules.lists), lyCanon(outAB)); assert.strictEqual(lyCanon(b.modules.lists), lyCanon(outAB)); const cl = lyJ(g.files.f1);
+  assert.strictEqual((await ET.cloudSync(a, 'tok', g.f)).done, true); assert.strictEqual(lyJ(g.files.f1), cl);
+  // a wanted item id made twice in one list (the header is one record, in base): both kept, the later under a new id
+  const HB = lySec({ lists: { [P]: lyH('Food') } }), L2 = lyEdit((s) => { s.targets[K(LY.T1)] = lyT(5057, 3, 1760000000200); }, HB), R2 = lyEdit((s) => { s.targets[K(LY.T1)] = lyT(6001, 2, 1760000000950); }, HB);
+  const r2 = lyThree(HB, L2, R2), r2b = lyThree(HB, R2, L2); assert.strictEqual(r2.conflicts.length, 0);
+  const o2 = lyApply(L2, r2, {}), o2b = lyApply(R2, r2b, {});
+  assert.strictEqual(lyCanon(o2), lyCanon(o2b)); assert.strictEqual(Object.keys(o2.targets).length, 2); assert.strictEqual(o2.targets[K(LY.T1)].item, 5057);
+  const t2 = Object.keys(o2.targets).find((k) => k !== K(LY.T1)); assert.match(t2, /^lfood00001\.[a-z0-9]{12}$/); assert.strictEqual(o2.targets[t2].item, 6001);
+  // equal times: one record, the ordinary rules (here: two different amounts, a question about the value)
+  const E1 = lyEdit((s) => { s.targets[K(LY.T1)] = lyT(5057, 3, 1760000000200); }, HB), E2 = lyEdit((s) => { s.targets[K(LY.T1)] = lyT(5057, 4, 1760000000200); }, HB);
+  const re = lyThree(HB, E1, E2); assert.strictEqual(re.conflicts.length, 1); assert.strictEqual(re.conflicts[0].id, lyTgtKey(P, LY.T1)); assert.strictEqual(Object.keys(lyApply(E1, re, {}).targets).length, 1);
+  const EL1 = lySec({ lists: { [P]: lyH('One', 1760000000100) } }), EL2 = lySec({ lists: { [P]: lyH('Two', 1760000000100) } });
+  const rl = lyThree(B, EL1, EL2); assert.strictEqual(rl.conflicts.length, 1); assert.strictEqual(Object.keys(lyApply(EL1, rl, {}).lists).length, 1);
+});

@@ -7,7 +7,7 @@
 // Each of E1 to E19 is one test(). A failure prints the invariant, the seed, the case number and the shrunk case.
 // The invariants are stated here by the test itself; the engine is never asked to check itself, except that the plain
 // data readers (LISTS.way for an offer's text, LISTS.tree) are used where the spec defines them as the reference.
-// Part B (tabs, the real CC.writeSection) is work item W3's; part C (devices) is W4's and is added there.
+// Part B (tabs, the real CC.writeSection) is work item W3's; part C (devices, the real ET.threeWay, ET.applyMerge, ET.saveMerge) is W4's.
 // Interpretations the model makes (the orchestrator confirms them; none weakens a spec invariant):
 //   (1) "total to get, to craft or to trade" are the fields short, got, crafts and, for trade lines only, trades; the number of
 //       purchases of a gil line can rise when a smaller pack becomes the cheaper offer (gil never rises), so it is not compared;
@@ -21,6 +21,8 @@ require(path.join(__dirname, '..', 'command-center', 'src', 'lists', 'engine.js'
 const L = globalThis.LISTS;
 require(path.join(__dirname, '..', 'src', 'core', 'save.js'));
 const CC = globalThis.CC;
+for (const f of ['model', 'codec', 'merge', 'storage']) require(path.join(__dirname, '..', 'src', 'core', f + '.js'));
+const ET = globalThis.ET;
 
 const SEEDS = process.env.LISTS_MODEL_SEED ? [Number(process.env.LISTS_MODEL_SEED)] : [1, 2, 3];
 const PER_SEED = Number(process.env.LISTS_MODEL_N || 1000);
@@ -822,4 +824,297 @@ test('the tabs model ran the cases asked for, within the time limit', async () =
   console.log('# lists model part B: ' + o.ran + ' cases of ' + B_STEPS + ' steps, three tabs (seeds ' + SEEDS.join(',') + ') in ' + o.ms + ' ms');
   assert.equal(o.ran, SEEDS.length * PER_SEED);
   if (!process.env.LISTS_MODEL_N) assert.ok(o.ms < B_TIME_LIMIT_MS, 'took ' + o.ms + ' ms, the limit is ' + B_TIME_LIMIT_MS);
+});
+
+// =========================================================================================================== part C: devices
+// Two devices edit one lists section from a common base (the last sync) with random steps (add, change and remove a list, a wanted item, a way,
+// a stock count, an order, a preference; remove a header only, as an older build or a hand edit can leave it; make the same id on both devices
+// with the same or a different creation time), then meet in the real ET.threeWay and ET.applyMerge (both orientations) and in the tab's own
+// ET.saveMerge. The test states its invariants itself, over units (a list header, a wanted item, a way, an owner's order, a stock count, a
+// preference), from the raw copies and never from the merge:
+//   LY0 a unit removed on one side and changed on the other is kept (also by ET.threeWay, so a merge applied without asking keeps it);
+//   LY1 a question about a whole list is asked exactly when the table says: the header is in base and missing on one side only, unless that side
+//       removed the header and every wanted item and the other still holds exactly what base held; never more than one per list;
+//   LY2 with no answer nothing of either device is missing afterwards, except what the other side removed from an unchanged unit (a one-sided
+//       removal) or what moved to a new id (LY6); with answers, also what an answered question removes;
+//   LY3 with no answer no wanted item lacks its list unless one of the two copies already held it so;
+//   LY4 devices settle: after every question is answered a further sync of either device changes nothing and asks nothing, and with questions
+//       unanswered a further sync asks the same questions;
+//   LY5 a question about a whole list is only ever about its header: ways, orders and stock counts are not touched by its answer;
+//   LY6 the same id made on both devices with a different creation time is two records, both kept, the later under the same new id in both
+//       orientations, a list's wanted items moving with it, no question; with the same creation time it is one record;
+//   SYM the questions and the set of units are the same from both devices;  ANSWERED an answer does what the question says;
+//   SAVEMERGE the tab's own save (no answers) equals the merge applied with no answers;  BIG two devices each just under a size limit merge to
+//   more than the limit with nothing dropped.
+const C_INVS = ['LY0', 'LY1', 'LY2', 'LY3', 'LY4', 'LY5', 'LY6', 'SYM', 'ANSWERED', 'SAVEMERGE', 'BIG'];
+const C_LISTS = ['liaaa', 'libbb', 'liccc'], C_TIDS = ['t1aaa', 't2aaa', 't3aaa', 't4aaa'], C_TIMES = [1760000000100, 1760000000200, 1760000000300];
+const C_TIME_LIMIT_MS = 20000;
+const C_TEMPLATE = ET.newState(['Kira']);
+const cFrame = () => ({ v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} });
+const cPortable = (sec) => ET.portable(Object.assign({}, C_TEMPLATE, { modules: { lists: sec } }));
+const cApply = (onto, res, answers) => clone(ET.applyMerge(Object.assign(clone(C_TEMPLATE), { modules: { lists: clone(onto) } }), res, answers || {}).modules.lists);
+const cUnits = (sec) => {
+  const m = new Map();
+  for (const g of ['lists', 'targets', 'ways', 'owners', 'have']) for (const [k, v] of Object.entries(sec[g] || {})) m.set(g + '|' + k, BJ(v));
+  for (const [k, v] of Object.entries(sec.prefs || {})) if (k !== 'combined') m.set('prefs|' + k, BJ(v));
+  return m;
+};
+const cPath = (id) => { const p = JSON.parse(id.slice(2)); return p[0] === 'lists' && p.length === 3 ? p[1] + '|' + p[2] : null; };
+const cTargets = (U, P) => [...U.keys()].filter((k) => k.startsWith('targets|' + P + '.'));
+const cListOf = (u) => (u.startsWith('lists|') ? u.slice(6) : u.startsWith('targets|') ? u.slice(8).split('.')[0] : null);
+
+function cGenCase(seed, i) {
+  const rnd = makeRnd(seed * 7000003 + i * 104729 + 31), base = cFrame();
+  const nl = 1 + rnd(3);
+  for (let k = 0; k < nl; k++) {
+    base.lists[C_LISTS[k]] = { name: 'Base' + k, charId: 'c1', order: k, made: 1760000000000 };
+    for (let t = 0, nt = rnd(5); t < nt; t++) base.targets[C_LISTS[k] + '.' + C_TIDS[t]] = { item: 10 + t, recipe: 0, qty: 1 + rnd(5), at: 1760000000050 };
+  }
+  if (rnd(2)) base.ways['c1.100'] = { by: 'craft' };
+  if (rnd(2)) base.have['c1.100'] = { nq: 3 };
+  if (rnd(2)) base.owners.c1 = { order: 'vendor craft gather trade market' };
+  if (rnd(2)) base.prefs.hideDone = true;
+  const side = () => { const ops = []; for (let k = 0, n = rnd(6); k < n; k++) ops.push({ k: rnd(14), a: rnd(10000), b: rnd(10000), c: rnd(10000) }); return ops; };
+  return { base, L: side(), R: side() };
+}
+function cApplyOps(sec0, ops, dev) {
+  const sec = clone(sec0);
+  ops.forEach((op, n) => {
+    const lids = Object.keys(sec.lists).sort(), tks = Object.keys(sec.targets).sort(), pick = (arr, x) => arr[x % arr.length], tag = dev * 1000 + n;
+    switch (op.k) {
+      case 0: case 1: { // add a wanted item (sometimes to a list this device has no header for)
+        const l = op.a % 9 === 0 ? pick(C_LISTS, op.b) : lids.length ? pick(lids, op.a) : null; if (!l) break;
+        const key = l + '.' + C_TIDS[op.b % 4]; if (sec.targets[key]) break;
+        sec.targets[key] = { item: tag + 100, recipe: 0, qty: 1 + op.c % 9, at: C_TIMES[op.c % 3] }; break;
+      }
+      case 2: { if (!tks.length) break; const k = pick(tks, op.a); sec.targets[k].qty = 20 + dev * 10 + op.b % 9; break; }
+      case 3: { if (!tks.length) break; delete sec.targets[pick(tks, op.a)]; break; }
+      case 4: { if (!lids.length) break; const l = pick(lids, op.a); delete sec.lists[l]; for (const k of tks) if (k.startsWith(l + '.')) delete sec.targets[k]; break; }
+      case 5: { if (!lids.length) break; delete sec.lists[pick(lids, op.a)]; break; } // the header only
+      case 6: { if (!lids.length) break; sec.lists[pick(lids, op.a)].name = 'D' + dev + 'n' + n; break; }
+      case 7: case 8: { // add a list, sometimes with the id the other device may also use, with a creation time from a small set
+        const l = pick(C_LISTS, op.a); if (sec.lists[l]) break;
+        sec.lists[l] = { name: 'D' + dev + 'L' + n, charId: 'c1', order: 5, made: C_TIMES[op.b % 3] };
+        for (let t = 0, nt = op.c % 3; t < nt; t++) sec.targets[l + '.' + C_TIDS[t]] = { item: tag * 10 + t + 100000, recipe: 0, qty: 1 + t, at: C_TIMES[(op.c + t) % 3] };
+        break;
+      }
+      case 9: sec.ways['c1.' + (100 + op.a % 2)] = { by: ['vendor', 'craft', 'gather'][(op.b + dev) % 3] }; break;
+      case 10: { const ks = Object.keys(sec.ways).sort(); if (ks.length) delete sec.ways[pick(ks, op.a)]; break; }
+      case 11: sec.have['c1.' + (100 + op.a % 2)] = { nq: 10 + dev * 100 + op.b % 50 }; break;
+      case 12: { const ks = Object.keys(sec.have).sort(); if (ks.length) delete sec.have[pick(ks, op.a)]; break; }
+      default: if (op.a % 2) sec.owners.c1 = { order: dev ? 'craft vendor gather trade market' : 'vendor craft gather trade market' }; else delete sec.owners.c1; break;
+    }
+  });
+  return sec;
+}
+// the questions and renames the spec's rules call for, from the raw copies
+function cOracle(B, L, R) {
+  const UB = cUnits(B), UL = cUnits(L), UR = cUnits(R), q = new Map(), moved = new Map();
+  for (const [u] of UB) {
+    if (!u.startsWith('lists|')) continue;
+    const P = u.slice(6), lh = UL.has(u), rh = UR.has(u); if (lh === rh) continue;
+    const Y = lh ? UL : UR, X = lh ? UR : UL, xT = cTargets(X, P), yT = cTargets(Y, P), bT = cTargets(UB, P);
+    if (!xT.length && Y.get(u) === UB.get(u) && yT.length === bT.length && yT.every((k) => UB.get(k) === Y.get(k))) continue;
+    q.set(P, xT.length ? 3 : 2);
+  }
+  const later = (a, b) => (a > b ? 'L' : 'R');
+  const made = (U, u) => JSON.parse(U.get(u)).made, at = (U, u) => JSON.parse(U.get(u)).at;
+  for (const u of UL.keys()) {
+    if (u.startsWith('lists|') && !UB.has(u) && UR.has(u) && made(UL, u) !== made(UR, u)) moved.set(u, later(made(UL, u), made(UR, u)));
+  }
+  for (const u of UL.keys()) {
+    if (!u.startsWith('targets|') || UB.has(u) || !UR.has(u) || at(UL, u) === at(UR, u)) continue;
+    if (moved.has('lists|' + cListOf(u))) continue; // moves with its list
+    moved.set(u, later(at(UL, u), at(UR, u)));
+  }
+  return { q, moved };
+}
+
+async function cRunCase(c, tally) {
+  const viol = [], flag = (inv, msg) => viol.push({ inv, msg });
+  const B = c.base, L = cApplyOps(B, c.L, 0), R = cApplyOps(B, c.R, 1), UB = cUnits(B), UL = cUnits(L), UR = cUnits(R);
+  const orc = cOracle(B, L, R), pB = cPortable(B);
+  const sides = { LR: { l: L, r: R, ul: UL, ur: UR }, RL: { l: R, r: L, ul: UR, ur: UL } };
+  const out = {};
+  for (const [name, s] of Object.entries(sides)) {
+    const res = ET.threeWay(pB, cPortable(s.l), cPortable(s.r)), none = cApply(s.l, res, {});
+    out[name] = { res, none, U: cUnits(none) };
+  }
+  const main = out.LR, U = main.U, qs = main.res.conflicts.filter((x) => x.integrity && x.integrity.kind === 'list');
+  // movedMissing: a key the later side held under an old id and the other side did not hold
+  const movedKeys = (u) => orc.moved.has(u) || (u.startsWith('targets|') && orc.moved.has('lists|' + cListOf(u)));
+  const sameValue = (v) => [...U.values()].includes(v);
+  for (const [name, r] of Object.entries(out)) {
+    const s = sides[name];
+    // LY1
+    const asked = new Set(r.res.conflicts.filter((x) => x.integrity && x.integrity.kind === 'list').map((x) => x.integrity.listId));
+    if (asked.size !== r.res.conflicts.filter((x) => x.integrity && x.integrity.kind === 'list').length) flag('LY1', 'more than one question for a list');
+    if (BJ([...asked].sort()) !== BJ([...orc.q.keys()].sort())) flag('LY1', 'questions asked for ' + BJ([...asked].sort()) + ', the table says ' + BJ([...orc.q.keys()].sort()) + ' (' + name + ')');
+    // LY0 in ET.threeWay itself: a unit removed on one side and changed on the other is in the merged map, so a merge applied without asking keeps it
+    for (const [Us, Uo] of [[s.ul, s.ur], [s.ur, s.ul]]) for (const [u, v] of Uo) {
+      if (!UB.has(u) || Us.has(u) || v === UB.get(u) || movedKeys(u)) continue;
+      const bar = u.indexOf('|');
+      if (!r.res.merged.has('m|' + BJ(['lists', u.slice(0, bar), u.slice(bar + 1)]))) flag('LY0', 'ET.threeWay did not keep ' + u + ', removed on one side and changed on the other (' + name + ')');
+    }
+    for (const P of asked) if (!r.res.merged.has('m|' + BJ(['lists', 'lists', P]))) flag('LY1', 'ET.threeWay did not keep the header of the list it asks about (' + P + ')');
+    // LY0 and LY2: every unit of either copy that is missing afterwards was removed one-sidedly or moved
+    for (const [side, Us, Uo] of [['this', s.ul, s.ur], ['other', s.ur, s.ul]]) for (const [u, v] of Us) {
+      if (r.U.has(u)) continue;
+      if (movedKeys(u)) { if (!sameValue(v)) flag('LY6', 'a moved unit ' + u + ' is not kept under its new id'); continue; }
+      const oneSided = UB.has(u) && !Uo.has(u) && UB.get(u) === v;
+      if (!oneSided) flag(UB.has(u) && !Uo.has(u) ? 'LY0' : 'LY2', 'unit ' + u + ' of the ' + side + ' device is missing afterwards and was not a one-sided removal (' + name + ')');
+    }
+    // LY3: no wanted item without its list unless one of the copies held it so
+    for (const u of r.U.keys()) {
+      if (!u.startsWith('targets|') || r.U.has('lists|' + cListOf(u)) || movedKeys(u)) continue;
+      const P = cListOf(u);
+      if (!((s.ul.has(u) && !s.ul.has('lists|' + P)) || (s.ur.has(u) && !s.ur.has('lists|' + P)))) flag('LY3', 'wanted item ' + u + ' lost its list in the merge');
+    }
+    // LY5: a list question is about the header; nothing of ways, owners, stock or preferences changes with a different answer
+    for (const x of r.res.conflicts) if (x.integrity && x.integrity.kind === 'list' && cPath(x.id) !== 'lists|' + x.integrity.listId) flag('LY5', 'a list question is not about its header: ' + x.id);
+    // a repeated sync with the same inputs asks the same questions (LY4, unanswered)
+    const again = ET.threeWay(pB, cPortable(s.l), cPortable(s.r));
+    if (BJ(again.conflicts) !== BJ(r.res.conflicts) || cUnits(cApply(s.l, again, {})).size !== r.U.size) flag('LY4', 'a repeated sync did not ask the same (' + name + ')');
+    // answers: every question answered at random, then settle
+    const rnd = makeRnd(r.res.conflicts.length * 31 + 7), answers = {};
+    r.res.conflicts.forEach((x, n) => { answers[x.id] = ['local', 'remote'][(rnd(2) + n) % 2]; });
+    const ans = cApply(s.l, r.res, answers), UA = cUnits(ans);
+    const removed = new Set(), nulls = new Set(), own = new Set();
+    for (const x of r.res.conflicts) if (x.integrity && x.integrity.kind === 'list' && (answers[x.id] === 'remote' ? x.remote : x.local) === null) removed.add(x.integrity.listId);
+    for (const x of r.res.conflicts) {
+      const pick = answers[x.id] === 'remote' ? x.remote : x.local;
+      if (x.integrity && x.integrity.kind === 'list') {
+        const P = x.integrity.listId;
+        if (pick === null) { if (UA.has('lists|' + P) || cTargets(UA, P).length) flag('ANSWERED', 'Remove left something of list ' + P); }
+        else { if (!UA.has('lists|' + P)) flag('ANSWERED', 'Keep lost the header of ' + P); for (const k of cTargets(r.U, P)) if (!UA.has(k)) flag('ANSWERED', 'Keep lost ' + k); }
+      } else {
+        const u = cPath(x.id); if (!u) continue; own.add(u);
+        if (removed.has(cListOf(u))) continue;
+        if (pick === null) { nulls.add(u); if (UA.has(u)) flag('ANSWERED', 'an answer for the removing side left ' + u); } else if (UA.get(u) !== pick && !removed.has(cListOf(u))) flag('ANSWERED', 'the answer for ' + u + ' was not applied');
+      }
+    }
+    // LY5: the ways, orders, stock counts and preferences are exactly what the merge without that answer left, except units with a question of their own
+    for (const u2 of new Set([...r.U.keys(), ...UA.keys()])) if (/^(ways|owners|have|prefs)\|/.test(u2) && !own.has(u2) && r.U.get(u2) !== UA.get(u2)) flag('LY5', 'answering the questions changed ' + u2 + ', which no question was about');
+    for (const [side, Us, Uo] of [['this', s.ul, s.ur], ['other', s.ur, s.ul]]) for (const [u, v] of Us) {
+      if (UA.has(u) || movedKeys(u)) continue;
+      const oneSided = UB.has(u) && !Uo.has(u) && UB.get(u) === v, byAnswer = removed.has(cListOf(u)) || nulls.has(u);
+      if (!oneSided && !byAnswer) flag('LY2', 'unit ' + u + ' of the ' + side + ' device is missing after the answers and no answer removed it');
+    }
+    // LY4 settle: every question answered, the answering device syncs again and the other device syncs against what it left
+    const M = ans, again2 = ET.threeWay(cPortable(M), cPortable(M), cPortable(M));
+    if (again2.conflicts.length || BJ(cApply(M, again2, {})) !== BJ(M)) flag('LY4', 'a sync after the answers asked or changed something (' + name + ')');
+    const other = ET.threeWay(cPortable(s.r), cPortable(s.r), cPortable(M));
+    if (other.conflicts.length || cApply(s.r, other, {}) && BJ(cApply(s.r, other, {}).lists) !== BJ(M.lists) && BJ(cUnits(cApply(s.r, other, {}))) !== BJ(UA)) flag('LY4', 'the other device did not settle on what the answers left (' + name + ')');
+  }
+  // SYM and SAVEMERGE
+  if (BJ([...out.LR.U.keys()].sort()) !== BJ([...out.RL.U.keys()].sort())) flag('SYM', 'the set of units differs between the two orientations');
+  if (BJ(out.LR.res.conflicts.map((x) => x.id).sort()) !== BJ(out.RL.res.conflicts.map((x) => x.id).sort())) flag('SYM', 'the questions differ between the two orientations');
+  const tabSt = Object.assign(clone(C_TEMPLATE), { modules: { lists: clone(L) } });
+  const tab = ET.saveMerge(tabSt, 'r2', cPortable(R), 'r1', pB);
+  if (BJ(cUnits(tab.state.modules.lists)) !== BJ(cUnits(out.LR.none)) && canon(cUnits(tab.state.modules.lists)) !== canon(cUnits(out.LR.none))) flag('SAVEMERGE', 'the tab save differs from the merge applied with no answers');
+  // LY6: same id, different time: two records; same time: one
+  for (const [u, side] of orc.moved) {
+    const P = cListOf(u);
+    if (u.startsWith('lists|')) {
+      const laterU = side === 'L' ? UL : UR, earlierU = side === 'L' ? UR : UL;
+      const lv = JSON.parse(laterU.get(u)), ev = JSON.parse(earlierU.get(u));
+      const heads = [...U.entries()].filter(([k]) => k.startsWith('lists|')).map(([k, v]) => [k, JSON.parse(v)]);
+      const eh = heads.find(([k, v]) => v.name === ev.name), lh = heads.find(([k, v]) => v.name === lv.name);
+      if (!eh || !lh || eh[0] !== u || !/^lists\|[a-z0-9]{12}$/.test(lh[0])) flag('LY6', 'both records of ' + P + ' are not kept, the earlier under its id and the later under a 12 character id');
+      else {
+        const nid = lh[0].slice(6);
+        if (out.RL.U.get(lh[0]) !== U.get(lh[0])) flag('LY6', 'the two devices computed different new ids');
+        for (const k of cTargets(laterU, P)) { const nk = 'targets|' + nid + k.slice(('targets|' + P).length); if (U.get(nk) !== laterU.get(k)) flag('LY6', 'wanted item ' + k + ' did not move with its list'); }
+        for (const k of cTargets(earlierU, P)) if (U.get(k) !== earlierU.get(k) && !(UB.has(k))) flag('LY6', 'the earlier list lost ' + k);
+      }
+      tally.ly6List++;
+    } else {
+      const laterU = side === 'L' ? UL : UR, earlierU = side === 'L' ? UR : UL;
+      const lv = laterU.get(u), ev = earlierU.get(u);
+      const vals = [...U.entries()].filter(([k]) => k.startsWith('targets|' + P + '.')).map(([k, v]) => [k, v]);
+      if (!vals.some(([k, v]) => k === u && v === ev) || !vals.some(([k, v]) => k !== u && v === lv && /^targets\|[a-z0-9]+\.[a-z0-9]{12}$/.test(k))) flag('LY6', 'both wanted items of ' + u + ' are not kept (the earlier under its id, the later under a new one)');
+      tally.ly6Target++;
+    }
+  }
+  // tallies of what the run actually met
+  for (const [P, k] of orc.q) tally[k === 3 ? 'listQ3' : 'listQ2']++;
+  for (const x of main.res.conflicts) {
+    const u = cPath(x.id), g = u ? u.split('|')[0] : null;
+    if (x.integrity && x.integrity.kind === 'list') continue;
+    if (x.integrity && x.integrity.keep) tally['keep:' + g] = (tally['keep:' + g] || 0) + 1; else if (u) tally['clash:' + g] = (tally['clash:' + g] || 0) + 1;
+  }
+  for (const [u] of UB) if (u.startsWith('lists|') && !UL.has(u) !== !UR.has(u)) { const P = u.slice(6); if (!orc.q.has(P)) tally.case1++; }
+  for (const [u] of UB) if (u.startsWith('lists|') && !UL.has(u) && !UR.has(u)) tally.case4++;
+  for (const u of UL.keys()) if (u.startsWith('lists|') && !UB.has(u) && !UR.has(u)) tally.case5++;
+  for (const u of UR.keys()) if (u.startsWith('lists|') && !UB.has(u) && !UL.has(u)) tally.case5++;
+  for (const u of U.keys()) if (u.startsWith('targets|') && !U.has('lists|' + cListOf(u))) { tally.orphans++; break; }
+  for (const [u] of UL) if (u.startsWith('lists|') && !UB.has(u) && UR.has(u) && UL.get(u) !== UR.get(u) && !orc.moved.has(u)) { tally.sameTime++; break; }
+  return { viol, L, R };
+}
+function cShrink(c, inv) {
+  return (async () => {
+    let cur = c;
+    for (let pass = 0; pass < 3; pass++) for (const side of ['L', 'R']) for (let i = cur[side].length - 1; i >= 0; i--) {
+      const cand = { base: cur.base, L: cur.L.slice(), R: cur.R.slice() }; cand[side].splice(i, 1);
+      const r = await cRunCase(cand, { ly6List: 0, ly6Target: 0, listQ2: 0, listQ3: 0, case1: 0, case4: 0, case5: 0, orphans: 0, sameTime: 0 });
+      if (r.viol.some((v) => v.inv === inv)) cur = cand;
+    }
+    return cur;
+  })();
+}
+let cSweep = null;
+function cSweepAll() {
+  if (cSweep) return cSweep;
+  return (cSweep = (async () => {
+    const t0 = Date.now(), out = { ran: 0, ms: 0, inv: {}, tally: { ly6List: 0, ly6Target: 0, listQ2: 0, listQ3: 0, case1: 0, case4: 0, case5: 0, orphans: 0, sameTime: 0 } };
+    for (const inv of C_INVS) out.inv[inv] = { count: 0, first: null };
+    for (const seed of SEEDS) for (let i = 0; i < PER_SEED; i++) {
+      const c = cGenCase(seed, i), r = await cRunCase(c, out.tally); out.ran++;
+      for (const v of r.viol) { const o = out.inv[v.inv] = out.inv[v.inv] || { count: 0, first: null }; o.count++; if (!o.first) o.first = { seed, i, c, msg: v.msg }; }
+    }
+    out.ms = Date.now() - t0;
+    for (const inv of Object.keys(out.inv)) {
+      const f = out.inv[inv].first; if (!f) continue;
+      const small = await cShrink(f.c, inv), r = await cRunCase(small, { ly6List: 0, ly6Target: 0, listQ2: 0, listQ3: 0, case1: 0, case4: 0, case5: 0, orphans: 0, sameTime: 0 }), v = r.viol.find((x) => x.inv === inv);
+      f.shrunk = small; f.shrunkMsg = v ? v.msg : f.msg; f.sections = { base: small.base, L: r.L, R: r.R };
+    }
+    return out;
+  })());
+}
+const C_TEXTS = {
+  LY0: 'a unit removed on one side and changed on the other is kept', LY1: 'the whole-list question is asked exactly when the table says', LY2: 'with no answer nothing is missing but one-sided removals and moves',
+  LY3: 'no wanted item loses its list in a merge', LY4: 'devices settle; unanswered, the same questions again', LY5: 'a list question is about its header only', LY6: 'the same id on two devices with different times is two records',
+  SYM: 'both orientations ask the same and hold the same units', ANSWERED: 'an answer does what the question says', SAVEMERGE: 'the tab save equals the merge applied with no answers'
+};
+for (const inv of C_INVS.filter((x) => x !== 'BIG')) test(inv + ' (devices) ' + C_TEXTS[inv], async () => {
+  const o = await cSweepAll();
+  if (o.inv[inv].count) { const f = o.inv[inv].first; assert.fail(inv + ' failed in ' + o.inv[inv].count + ' violations. First: seed ' + f.seed + ', case ' + f.i + '. ' + f.shrunkMsg + '\n  shrunk case: base ' + BJ(f.sections.base) + '\n  device L ops ' + BJ(f.shrunk.L) + ' gives ' + BJ(f.sections.L) + '\n  device R ops ' + BJ(f.shrunk.R) + ' gives ' + BJ(f.sections.R)); }
+});
+test('BIG (devices) two devices each just under a size limit merge to more than the limit with nothing dropped', () => {
+  const id = (p, n) => p + n.toString(36).padStart(8, '0'), sec = cFrame();
+  sec.lists[id('l', 0)] = { name: 'Shared', charId: null, order: 0, made: 1760000000000 };
+  const side = (tag, from) => {
+    const s = clone(sec);
+    for (let i = 0; i < 190; i++) s.lists[id('l', tag * 1000 + 1 + i)] = { name: 'L' + tag + '-' + i, charId: null, order: i, made: 1760000000000 + i };
+    for (let i = 0; i < 1900; i++) s.targets[id('l', 0) + '.' + id('t', tag * 10000 + i)] = { item: 100 + i, recipe: 0, qty: 1, at: 1760000000000 + i };
+    for (let i = 0; i < 19000; i++) s.have['c1.' + (from + i)] = { nq: 1 };
+    return s;
+  };
+  const L = side(1, 1000), R = side(2, 100000), res = ET.threeWay(cPortable(sec), cPortable(L), cPortable(R));
+  assert.equal(res.conflicts.length, 0);
+  const o = cApply(L, res, {}), tab = ET.saveMerge(Object.assign(clone(C_TEMPLATE), { modules: { lists: clone(L) } }), 'r2', cPortable(R), 'r1', cPortable(sec)).state.modules.lists;
+  for (const x of [o, clone(tab)]) { assert.equal(Object.keys(x.lists).length, 381); assert.equal(Object.keys(x.targets).length, 3800); assert.equal(Object.keys(x.have).length, 38000); }
+  assert.equal(BJ(CC.checkLists(clone(o))), BJ(o), 'the checker drops nothing');
+});
+test('the devices model ran the cases asked for, met every kind of question, within the time limit', async () => {
+  const o = await cSweepAll(), t = o.tally;
+  console.log('# lists model part C: ' + o.ran + ' cases, two devices, both orientations (seeds ' + SEEDS.join(',') + ') in ' + o.ms + ' ms; met: whole-list question without items on the removing side ' + t.listQ2 + ', with items ' + t.listQ3 + ', removal taken (case 1) ' + t.case1
+    + ', both lack the header (case 4) ' + t.case4 + ', new list taken (case 5) ' + t.case5 + ', wanted item left without a list ' + t.orphans + ', same id with the same time ' + t.sameTime + ', same id on two devices: lists ' + t.ly6List + ', wanted items ' + t.ly6Target
+    + '; kept-until-answered: ' + Object.keys(t).filter((k) => k.startsWith('keep:')).map((k) => k.slice(5) + ' ' + t[k]).join(', ') + '; value clashes: ' + Object.keys(t).filter((k) => k.startsWith('clash:')).map((k) => k.slice(6) + ' ' + t[k]).join(', '));
+  assert.equal(o.ran, SEEDS.length * PER_SEED);
+  if (!process.env.LISTS_MODEL_N) {
+    assert.ok(o.ms < C_TIME_LIMIT_MS, 'took ' + o.ms + ' ms, the limit is ' + C_TIME_LIMIT_MS);
+    for (const k of ['listQ2', 'listQ3', 'case1', 'case4', 'case5', 'orphans', 'sameTime', 'ly6List', 'ly6Target']) assert.ok(t[k] > 0, 'the model never met: ' + k);
+    for (const g of ['targets', 'ways', 'have', 'owners']) assert.ok(t['keep:' + g] > 0, 'the model never met a kept-until-answered ' + g);
+  }
 });
