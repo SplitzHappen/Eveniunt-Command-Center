@@ -84,3 +84,70 @@
 .patch-notice { border-top-color: var(--seal); }
 .patch-lines { margin: 0 0 10px; padding-left: 20px; }
 .patch-lines li { margin: 0 0 4px; overflow-wrap: anywhere; }
+
+/* Work item W11: the look. Page, panel, text and accent come from the theme tokens (shell.css and shared.css). Six meaning roles, each a fill and a text
+   tone with one fixed hue in every theme (craft blue, gather green, merchant gold, market violet, ready teal, short red); only lightness and chroma
+   change between the light and the dark mode. This token block is the only place in this file that holds a colour; a meaning is always drawn with its word
+   (tests/lists-look.test.js reads the block: 4.5:1 for the text on its fill and on the page, panel and paper in all 21 themes, both modes). */
+:root {
+  --lr-craft-fill: oklch(0.93 0.035 250);    --lr-craft-ink: oklch(0.38 0.08 250);
+  --lr-gather-fill: oklch(0.93 0.035 140);   --lr-gather-ink: oklch(0.38 0.08 140);
+  --lr-merchant-fill: oklch(0.93 0.035 80);  --lr-merchant-ink: oklch(0.38 0.08 80);
+  --lr-market-fill: oklch(0.93 0.035 315);   --lr-market-ink: oklch(0.38 0.08 315);
+  --lr-ready-fill: oklch(0.93 0.035 195);    --lr-ready-ink: oklch(0.38 0.06 195);
+  --lr-short-fill: oklch(0.93 0.035 25);     --lr-short-ink: oklch(0.38 0.08 25);
+}
+:root[data-theme="dark"] {
+  --lr-craft-fill: oklch(0.30 0.045 250);    --lr-craft-ink: oklch(0.90 0.05 250);
+  --lr-gather-fill: oklch(0.30 0.045 140);   --lr-gather-ink: oklch(0.90 0.05 140);
+  --lr-merchant-fill: oklch(0.30 0.045 80);  --lr-merchant-ink: oklch(0.90 0.05 80);
+  --lr-market-fill: oklch(0.30 0.045 315);   --lr-market-ink: oklch(0.90 0.05 315);
+  --lr-ready-fill: oklch(0.30 0.045 195);    --lr-ready-ink: oklch(0.90 0.05 195);
+  --lr-short-fill: oklch(0.30 0.045 25);     --lr-short-ink: oklch(0.90 0.05 25);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lr-craft-fill: oklch(0.30 0.045 250);    --lr-craft-ink: oklch(0.90 0.05 250);
+    --lr-gather-fill: oklch(0.30 0.045 140);   --lr-gather-ink: oklch(0.90 0.05 140);
+    --lr-merchant-fill: oklch(0.30 0.045 80);  --lr-merchant-ink: oklch(0.90 0.05 80);
+    --lr-market-fill: oklch(0.30 0.045 315);   --lr-market-ink: oklch(0.90 0.05 315);
+    --lr-ready-fill: oklch(0.30 0.045 195);    --lr-ready-ink: oklch(0.90 0.05 195);
+    --lr-short-fill: oklch(0.30 0.045 25);     --lr-short-ink: oklch(0.90 0.05 25);
+  }
+}
+.role-craft { --rf: var(--lr-craft-fill); --rt: var(--lr-craft-ink); }
+.role-gather { --rf: var(--lr-gather-fill); --rt: var(--lr-gather-ink); }
+.role-merchant { --rf: var(--lr-merchant-fill); --rt: var(--lr-merchant-ink); }
+.role-market { --rf: var(--lr-market-fill); --rt: var(--lr-market-ink); }
+.role-ready { --rf: var(--lr-ready-fill); --rt: var(--lr-ready-ink); }
+.role-short { --rf: var(--lr-short-fill); --rt: var(--lr-short-ink); }
+.role { display: inline-block; padding: 1px 8px; border: 1px solid var(--rt); background: var(--rf); color: var(--rt); font: 700 12px/1.5 var(--f-data); letter-spacing: .02em; overflow-wrap: anywhere; }
+/* a section of To get and a block of To craft wear the role of their way; a left-over line, the Wanted rows and the cards stay in the theme's tones */
+.gsec[data-sec="vendor"] { --rf: var(--lr-merchant-fill); --rt: var(--lr-merchant-ink); }
+.gsec[data-sec="trade"] { --rf: var(--lr-merchant-fill); --rt: var(--lr-merchant-ink); }
+.gsec[data-sec="gather"] { --rf: var(--lr-gather-fill); --rt: var(--lr-gather-ink); }
+.gsec[data-sec="market"] { --rf: var(--lr-market-fill); --rt: var(--lr-market-ink); }
+.gsec[data-sec="other"], .gsec[data-sec="have"] { --rf: var(--lr-short-fill); --rt: var(--lr-short-ink); }
+.cblock { --rf: var(--lr-craft-fill); --rt: var(--lr-craft-ink); }
+.cblock.cdone { --rf: var(--lr-ready-fill); --rt: var(--lr-ready-ink); }
+.gsec:not([data-sec="left"]) > .gsec-h .sec-toggle, .cblock > h3 { background: var(--rf); color: var(--rt); border: 1px solid var(--rt); border-left-width: 6px; }
+.cblock > h3 { padding: 6px 12px; }
+.line-row:has(.role-craft), .line-row:has(.role-gather), .line-row:has(.role-merchant), .line-row:has(.role-market) { border-left: 5px solid var(--rt); }
+.line-row:has(> .w-head .role-craft) { --rt: var(--lr-craft-ink); }
+.line-row:has(> .w-head .role-gather) { --rt: var(--lr-gather-ink); }
+.line-row:has(> .w-head .role-merchant) { --rt: var(--lr-merchant-ink); }
+.line-row:has(> .w-head .role-market) { --rt: var(--lr-market-ink); }
+.left-row { border-style: dashed; }
+.w-head .role { margin: 0 4px 0 2px; }
+.w-count .role { margin: 0; }
+@media (max-width: 480px) {
+  .lists-main { overflow-x: clip; }
+  .gsec-h, .cblock h3, .sec-toggle { max-width: 100%; box-sizing: border-box; }
+  .lists-bar .btn, .lines .btn, .list-card .btn, .tick, .lists-tabs .tab, .lists-steps .step-tab { min-height: 40px; }
+  .tick input, .w-edit .chk input { min-width: 20px; min-height: 20px; }
+}
+/* fields and selects take the theme's tones (never the browser's own grey) */
+.lists-main input, .lists-main select, .lists-main textarea { background: var(--slip); color: var(--ink); border: 1px solid var(--ink-3); border-radius: 0; padding: 4px 8px; }
+.lists-main input[type=checkbox] { accent-color: var(--seal); }
+.lists-main input:focus-visible, .lists-main select:focus-visible { outline: 2px solid var(--seal); outline-offset: 1px; }
+.gsec[data-sec="left"] .sec-toggle { background: var(--slip); color: var(--ink); border: 1px solid var(--rule); border-left: 6px solid var(--ink-3); }

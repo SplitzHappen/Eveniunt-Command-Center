@@ -7299,6 +7299,128 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server20.close();
     });
 
+
+    // ── Lists, W11: the look and the phone pass. One walk of every screen at 1,440 px light and 360 px dark (stand-in game data): the pictures lists-*.png (Chromium only), the colour audit
+    //    of C160, the evidence block L2. ──
+    const l2Walk = async (vp, scheme, tag) => {
+      const c = await context({ serviceWorkers: 'block', viewport: vp, colorScheme: scheme });
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + LISTS_FIXTURE + ';' }));
+      await c.ctx.route('https://universalis.app/**', (r) => {
+        const ids = new URL(r.request().url()).pathname.split('/').pop().split(','), items = {};
+        ids.forEach((id) => { items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, worldName: 'Test' }], averagePrice: 100 }; });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+      });
+      const page = await c.ctx.newPage(), phone = vp.width < 600, out = { tag, shots: [], wide: [], miss: [], taps: [], clipped: [], screens: [], errors: c.errors, external: c.external };
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const audit = () => page.evaluate(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true }), memo = new Map();
+        const px = (col) => { if (memo.has(col)) return memo.get(col); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = col; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data, r = [d[0], d[1], d[2], d[3] / 255]; memo.set(col, r); return r; };
+        const probe = (t) => { const i = document.createElement('i'); i.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + t + ')'; document.body.appendChild(i); const v = px(getComputedStyle(i).backgroundColor); i.remove(); return v; };
+        // the allowed tones: the theme's page, panel, text and accent tokens and the six roles' fills and texts
+        const toks = ['--paper', '--paper-2', '--paper-3', '--slip', '--ink', '--ink-2', '--ink-3', '--rule', '--seal', '--on-seal', '--ochre'], roles = ['craft', 'gather', 'merchant', 'market', 'ready', 'short'];
+        const allowed = toks.concat(roles.flatMap((r) => ['--lr-' + r + '-fill', '--lr-' + r + '-ink'])).map(probe);
+        const miss = new Map(); let n = 0;
+        const hex = (r) => '#' + r.slice(0, 3).map((x) => x.toString(16).padStart(2, '0')).join('');
+        const check = (col, what, el) => {
+          if (!col || col === 'none' || /^url\(/.test(col)) return; const p = px(col); if (p[3] < 0.99) return; n++;
+          if (allowed.some((t) => Math.max(Math.abs(t[0] - p[0]), Math.abs(t[1] - p[1]), Math.abs(t[2] - p[2])) <= 2)) return;
+          const k = hex(p), e = miss.get(k) || { n: 0, first: what + ' ' + el.tagName.toLowerCase() + '.' + String(el.getAttribute('class') || '').split(' ')[0] }; e.n++; miss.set(k, e);
+        };
+        const sides = ['Top', 'Right', 'Bottom', 'Left'];
+        document.querySelectorAll('.lists-mast, .lists-mast *, .lists-main, .lists-main *, .lists-foot, .lists-foot *').forEach((el) => {
+          const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+          const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
+          const text = [...el.childNodes].some((x) => x.nodeType === 3 && x.textContent.trim()) || /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(el.tagName);
+          if (text) check(cs.color, 'color', el);
+          check(cs.backgroundColor, 'background', el);
+          sides.forEach((s) => { if (parseFloat(cs['border' + s + 'Width']) > 0 && cs['border' + s + 'Style'] !== 'none') check(cs['border' + s + 'Color'], 'border', el); });
+          if (parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none') check(cs.outlineColor, 'outline', el);
+          if (cs.textDecorationLine !== 'none') check(cs.textDecorationColor, 'underline', el);
+        });
+        return { n, miss: [...miss].map(([k, e]) => k + ' x' + e.n + ' ' + e.first) };
+      });
+      const measure = () => page.evaluate(() => {
+        const vis = (e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
+        const taps = [...document.querySelectorAll('.lists-main .btn, .lists-main select, .lists-main input:not([type=checkbox]), .lists-main label.tick, .lists-main label.chk, .lists-main [role=tab]')].filter(vis).map((e) => ({ h: e.getBoundingClientRect().height, what: e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0] + ' ' + String(e.textContent || e.name || '').trim().slice(0, 24) }));
+        const clipped = [...document.querySelectorAll('.lists-main *')].filter((e) => vis(e) && !/^(INPUT|SELECT|TEXTAREA|OPTION)$/.test(e.tagName) && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== 'visible').map((e) => e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0]);
+        return { wide: document.documentElement.scrollWidth - window.innerWidth, taps, clipped };
+      });
+      const shot = async (name) => {
+        await page.waitForTimeout(150);
+        if (SHOT) { await page.screenshot({ path: path.join(ev, 'lists-' + name + '-' + tag + '.png'), fullPage: true }); out.shots.push('lists-' + name + '-' + tag + '.png'); }
+        const m = await measure(), a = await audit();
+        (out.roleWords = out.roleWords || []).push(...await page.evaluate(() => [...document.querySelectorAll('.role')].map((e) => e.className.replace('role role-', '') + ':' + e.textContent.trim().slice(0, 12))));
+        out.screens.push(name); out.wide.push(m.wide); out.clipped.push(...m.clipped.map((x) => name + ': ' + x)); out.miss.push(...a.miss.map((x) => name + ': ' + x)); out.audited = (out.audited || 0) + a.n;
+        if (phone) out.taps.push(...m.taps.filter((t) => t.h < 39.5).map((t) => name + ': ' + t.what + ' ' + t.h.toFixed(1)));
+      };
+      await shot('empty');
+      // a list with a Left over line comes first, while it is the only list (stock is one count for the whole character, so another list would use the gathered ore): Made 1, then Bought it with the full amount, as in C162
+      await lSeedLists(page, [{ name: 'Bought', items: [[100, 2]], have: { 103: 6 } }]);
+      await lOpenList(page, 'Bought', 'craft');
+      const row = page.locator('.craft-row[data-item="100"]');
+      await row.locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await row.locator('[data-act=ask-bought][data-mode=bought]').click(); await row.locator('[data-act=bought]').click(); await lSettle(page);
+      await lTab(page, 'get'); await lOpenAll(page);
+      out.left = await page.locator('.left-row').count(); await shot('left');
+      await lSeedLists(page, [{ name: 'Plan', items: [[130, 3], [120, 9], [140, 2], [170, 1], [100, 2]] }]);
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); await shot('lists');
+      await lOpenList(page, 'Plan', 'get'); await lOpenAll(page);
+      const sel = page.locator('.get-row[data-item="130"] [data-f=way]');
+      if (await sel.count() && (await sel.first().locator('option[value=market]').count())) { await sel.first().selectOption('market'); await lSettle(page); await lOpenAll(page); }
+      out.sections = await page.evaluate(() => [...document.querySelectorAll('.gsec')].map((s) => s.dataset.sec));
+      await shot('get');
+      await lTab(page, 'craft'); await shot('craft');
+      await lTab(page, 'wanted'); await shot('wanted');
+      await lTab(page, 'get'); await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet'); await shot('sheet'); await page.click('[data-act=sheet]');
+      // the combined view of the two lists
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+      const ticks = page.locator('[data-f=tick]'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check();
+      await page.click('[data-act=combined]'); await page.waitForSelector('.lists-tabs'); await lOpenAll(page); await shot('combined');
+      // from the crafting log
+      const ids = await page.evaluate(() => window.__lists.data().log[2][0][1]);
+      await page.goto('about:blank'); await page.goto(ROOT5 + 'lists/#from=2.' + ids[0]); await lReady(page); await page.waitForSelector('.log-screen, .list-card, .lists-empty'); await page.waitForTimeout(300);
+      out.logScreen = !!(await page.$('.log-screen')); await shot('log');
+      out.errs = real(c.errors); await c.ctx.close();
+      return out;
+    };
+    let l2Walks = null;
+    const l2All = async () => {
+      if (l2Walks) return l2Walks;
+      const server = await start(PORT5);
+      l2Walks = [await l2Walk({ width: 1440, height: 1000 }, 'light', 'desktop-light'), await l2Walk({ width: 360, height: 800 }, 'dark', 'phone-dark')];
+      void server; return l2Walks;
+    };
+    // ── C160 (Lists, W11) Every colour on a pictured screen is a role: on each of the nine screens at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the
+    //    theme's page, panel, text and accent tones or one of the six roles' fills and texts (craft, gather, merchant, market, ready, short); each role is drawn with its word. ──
+    await guard('C160', async () => {
+      const w = await l2All();
+      const ck = {};
+      ck.screens = w.every((x) => x.screens.join() === 'empty,left,lists,get,craft,wanted,sheet,combined,log');
+      ck.audited = w.every((x) => x.audited > 400);
+      ck.noOutsideColour = w.every((x) => x.miss.length === 0);
+      const words = w[0].roleWords.concat(w[1].roleWords);
+      ck.words = ['craft:Craft', 'gather:Gather', 'merchant:Merchant', 'market:Market', 'short:to get', 'ready:'].every((p) => words.some((x) => x.startsWith(p)));
+      ck.sections = w.every((x) => ['vendor', 'gather', 'trade'].every((s) => x.sections.includes(s)));
+      ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.length === 0);
+      record('C160', 'Lists look: on the nine pictured screens (empty, lists, To get, To craft, Wanted, Order of ways, a list with Left over, combined view, from the crafting log) at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the theme\'s page, panel, text and accent tones or one of the six roles (craft, gather, merchant, market, ready, short), and each role is drawn with its word',
+        Object.values(ck).every(Boolean), { ck, audited: w.map((x) => x.audited), miss: w.map((x) => x.miss), sections: w.map((x) => x.sections), words: words.slice(0, 40), errors: w.map((x) => x.errs) });
+    });
+    // ── L2 Lists look evidence (not a behaviour check): the nine screens at 1,440 px light and 360 px dark, pictured as lists-<screen>-<desktop-light|phone-dark>.png (Chromium only). Asserts: no sideways page scroll on any
+    //    screen, every button, select, field and tab at least 40 px high at 360 px, no clipped text, a Left over line on its screen, no page errors. ──
+    await guard('L2', async () => {
+      const w = await l2All();
+      const ck = {};
+      ck.noSideways = w.every((x) => x.wide.length === 9 && x.wide.every((n) => n <= 0));
+      ck.taps40 = w[1].taps.length === 0;
+      ck.noClipped = w.every((x) => x.clipped.length === 0);
+      ck.leftOver = w.every((x) => x.left >= 1);
+      ck.log = w.every((x) => x.logScreen);
+      ck.pictures = !SHOT || w.every((x) => x.shots.length === 9 && x.shots.every((f) => fs.existsSync(path.join(ev, f))));
+      ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.length === 0);
+      record('L2', 'Lists look evidence: the nine screens (empty, lists, To get with every section open, To craft, Wanted, the Order of ways sheet, a list with a Left over line, the combined view, from the crafting log) at 1,440 px light and 360 px dark as evidence/lists-*.png (Chromium): no sideways page scroll, every button, select, field and tab at least 40 px high at 360 px, no clipped text, no page errors',
+        Object.values(ck).every(Boolean), { ck, wide: w.map((x) => x.wide), taps: w[1].taps.slice(0, 30), clipped: w.map((x) => x.clipped.slice(0, 20)), shots: w.map((x) => x.shots.length), left: w.map((x) => x.left), errors: w.map((x) => x.errs) });
+    });
+
   } finally {
     await browser.close(); server.close();
   }

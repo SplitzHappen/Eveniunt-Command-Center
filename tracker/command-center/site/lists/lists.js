@@ -419,6 +419,9 @@
     var t = ln.part === 'make' ? 'Must be crafted by me' : ln.part === 'coll' ? 'Collectable' : ln.part === 'hq' ? 'High quality' : 'Ordinary';
     return '<span class="stamp q-' + ln.quality + '">' + t + '</span>';
   }
+  // W11: the way a row is got, told in a word and drawn in its role (craft, gather, merchant, market); a trade is a merchant role told apart by its word
+  var WAY_WORD = { vendor: ['merchant', 'Merchant'], trade: ['merchant', 'Trade'], gather: ['gather', 'Gather'], market: ['market', 'Market'] };
+  function wayPill(ln, craft) { var w = craft ? ['craft', 'Craft'] : WAY_WORD[ln.by]; return w ? ' <span class="role role-' + w[0] + '">' + w[1] + '</span>' : ''; }
   // why this way (D15): the seller, "You chose this", a loop's note
   function reasonOf(V, ln, x) {
     var p = [], off = ln.offer, w = V.sc.ways[V.owner + '.' + ln.item] || {};
@@ -477,8 +480,8 @@
   // a row of To get: one line of the plan, the chosen lists' share of it
   function getRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, typed = typedOf(V, ln.item, q), held = heldFor(V, key);
-    var h = '<li class="line-row get-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b> <span class="w-count">need ' + x.need + ', have ' + typed + ' ' + stamp(ln) +
-      (ln.by === 'have' ? '' : ' · to get ' + x.got + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '')) + '</span>' +
+    var h = '<li class="line-row get-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b>' + wayPill(ln, false) + ' <span class="w-count">need ' + x.need + ', have ' + typed + ' ' + stamp(ln) +
+      (ln.by === 'have' ? '' : ' · <span class="role role-short">to get ' + x.got + '</span>' + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '')) + '</span>' +
       (held.length ? ' <span class="held">' + esc(held.join(', ')) + '</span>' : '') + '</div>' + reasonOf(V, ln, x) +
       (ln.by === 'gather' ? windowRow(ln, Date.now()) : '') + (ln.by === 'market' ? priceRow(ln, Date.now()) : '');
     h += '<div class="w-stock"><label>I have <input type="number" inputmode="numeric" min="0" max="999999" data-f="have" data-q="' + q + '" value="' + typed + '"></label> ' +
@@ -492,7 +495,7 @@
   }
   function craftRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, spare = V.plan.spare[key] || 0, rowKey = 'L|' + key;
-    var h = '<li class="line-row craft-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b> <span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + ' ' + stamp(ln) + '</span>' +
+    var h = '<li class="line-row craft-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b>' + wayPill(ln, true) + ' <span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + ' ' + stamp(ln) + '</span>' +
       (spare ? ' <span class="tag">spare: ' + spare + '</span>' : '');
     if (ln.part === 'make') { var mp = makeProgress(V, ln.item); h += ' <span class="tag">' + mp.crafted + ' of ' + mp.qty + ' crafted</span>'; }
     h += '</div>' + reasonOf(V, ln, x) + '<div class="w-act">' + btn('Made 1', 'made', ' data-crafts="1"') + ' ' + (x.crafts > 1 ? btn('Made all', 'made', ' data-crafts="' + x.crafts + '"') + ' ' : '') +
@@ -747,7 +750,7 @@
       return '<section class="lists-group" aria-label="' + esc(nameOfChar(c)) + '"><h2>' + esc(nameOfChar(c)) + '</h2><p class="row group-bar">' + btn('Combined view', 'combined', ' data-owner="' + owner + '"') + '</p><div class="lists-cards">' + groups[c].map(function (id) {
         var l = lists[id], steps = Math.max(1, count(l.steps)), r = ready[id] || { ready: 0, total: 0 }, asking = SH.view.confirm === 'list:' + id;
         var off = tickOwner !== null && tickOwner !== owner; if (off) anyDisabled = true;
-        return '<article class="list-card" data-list="' + esc(id) + '"><h3>' + esc(l.name || 'Untitled list') + '</h3><p>' + r.ready + ' of ' + r.total + ' ready · ' + steps + ' step' + (steps === 1 ? '' : 's') + '</p>' +
+        return '<article class="list-card" data-list="' + esc(id) + '"><h3>' + esc(l.name || 'Untitled list') + '</h3><p><span class="role role-ready">' + r.ready + ' of ' + r.total + ' ready</span> · ' + steps + ' step' + (steps === 1 ? '' : 's') + '</p>' +
           '<label class="chk tick"><input type="checkbox" data-f="tick"' + (ticked.indexOf(id) >= 0 ? ' checked' : '') + (off ? ' disabled' : '') + '> Combined view</label><p class="row">' +
           btn('Open', 'open') + ' ' + (asking ? '<span class="ask">Remove this list and its ' + r.total + ' wanted item' + (r.total === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-list', '', 'danger') + ' ' + btn('Keep', 'keep')
             : btn('Remove list', 'ask-remove-list')) + '</p></article>';
