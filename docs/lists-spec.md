@@ -731,6 +731,13 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   do the same). Accept: `npm run test:unit`, `npm run test:browser`, `CHECK_ONLY=C127,C140,C145 npm run check`. Must
   not change: `CC.mergeModules`, `CC.mergeUnit`, any Submersibles rule, the gate for every other section, any existing
   test. Escalate if: an existing test changes, or `<base>` cannot be read in the check's environment.
+- **W4 built (2026-11-22), choices the orchestrator accepted:** the whole-list question is `integrity.kind` `list`
+  and a removed-against-changed unit is kind `lists` with keep; the question's id is the header unit, the answer of
+  the side without the header means Remove; case 1 of LY1 is taken silently only when the removing side holds no
+  wanted item of the list and the other side's header and wanted items equal base exactly (any other difference
+  asks); a moved id is the first 12 characters of two 32-bit FNV-style hashes in base 36 of old id, `|` and time.
+  **Left for W7:** when a list moves to a new id (LY6), `prefs.combined` is not rewritten; the page drops an unknown
+  id from the combined selection and the player ticks the moved list again (W7 adds a test).
 - **W4 The lists pass in the sync (Sonnet builder; after W3).** Files: `tracker/src/core/merge.js` (the `lists`
   pass in `ET.threeWay` with LY0, LY1, LY6 and the names in `integrity`; its branch in `ET.applyMerge` and
   `ET.describeConflict`), `core.test.js` (LY-1 to LY-11: **the five cases of LY1's table**, each with Keep, Remove and
