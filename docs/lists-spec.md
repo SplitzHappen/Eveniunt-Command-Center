@@ -846,6 +846,15 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   one removing a material's recipe deep in the tree: the notice names each change once, oldest against today's,
   everything is kept, "OK, noted" clears it; a stamp outside the chain shows the plain sentence). Accept: those
   checks, C113 and C117 unedited. Escalate if: a reply field is missing.
+- **W9 built (2026-11-22), choices accepted:** the shared Lists check helper `listsCtx` answers Universalis with a
+  stand-in (additive only; section 8 already requires a stand-in), since the automatic price attempt now runs when the
+  market section is open; only market rows carry prices, per unit, total "about N gil for M items; K without a price
+  (names)"; the automatic attempt runs only while the market section is open; the shared place follows the Tracker's
+  live setting with a data-centre-to-region map, else North-America; a newer stamp compares major.minor as numbers,
+  then the suffix; Hide completed is saved in `prefs.hideDone` (the W8 correction); price place and "OK, noted" are
+  written without an undo entry; a 15-second timer refreshes "in N min". **Left for W10:** a wanted item whose recipe
+  is gone is tagged but still planned; the engine must make it ask for nothing (section 6). **Limit:** the patch
+  notice shows on a single list's screen, not in the combined view.
 - **W10 Crafting log and Atelier (Sonnet builder; after W8).** Files: `lists.js` (the screen, and reading
   `#from=…&char=…` as section 6 says), `crafting/atelier/src/atelier.js` (the hash link only),
   `crafting/atelier/tests/atelier.test.js` (starting from a save in which the Atelier's first-visit move is already
