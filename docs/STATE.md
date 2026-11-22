@@ -112,7 +112,8 @@ Nothing at the moment.
      window of timed nodes.
   3. Market prices in Lists from the start: the Submersibles price fetching moves into one shared price service, with
      Submersibles' behaviour unchanged.
-  The spec is `docs/lists-spec.md` (written 2026-11-21; three owner questions in its section 11). Nothing is built yet;
+  The spec is `docs/lists-spec.md` (written 2026-11-21; the owner answered its questions on 2026-11-22 and added two
+  rules: buy from a gil merchant before crafting, and "I bought it instead" at any time). Nothing is built yet;
   the first build step is W0 (a baseline run and data facts).
 
 ## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
@@ -121,7 +122,7 @@ Nothing at the moment.
 | --- | --- | --- |
 | 1 | Shell, one shared save, cloud sync | Shipped |
 | 2 | Submersibles | Shipped 2026-11-21 |
-| 3 | Lists (crafting planner) with "Solve in the Atelier" | Next: spec written, owner questions open |
+| 3 | Lists (crafting planner) with "Solve in the Atelier" | Next: spec written and answered; build not started |
 | 4 | Market (profit, shopping list split by world); Gathering (alarms, routes) | Planned |
 | 5 | Currencies & Collectables, Levequests, Ventures & Voyages (retainers and airships) | Planned |
 | 6 | Gear, Treasure Maps, desynthesis in the item details | Planned |
