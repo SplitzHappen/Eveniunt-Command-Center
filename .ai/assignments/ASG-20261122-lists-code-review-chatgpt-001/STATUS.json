@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261122-lists-code-review-chatgpt-001",
-  "status": "PARTIAL",
+  "status": "IN_PROGRESS",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "chatgpt",
@@ -17,8 +17,8 @@
     ".ai/assignments/ASG-20261122-lists-code-review-chatgpt-001/results/findings.json"
   ],
   "result_commit": "15c028dc4108454a5ee793f1b4e0dec65ca10918",
-  "completed_at": "2026-11-22T20:02:56.565Z",
-  "disposition": "Do not publish: stock loss and craft accounting findings; independent review remains incomplete.",
+  "completed_at": null,
+  "disposition": "Review resumed to complete outstanding scope.",
   "missing": [
     "Complete review of all requested tests and browser checks, page rendering and events, data generator and cross-check, build and service worker integration, and remaining save and sync scenarios.",
     "Run the browser checks."
