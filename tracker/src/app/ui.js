@@ -17,6 +17,8 @@
   var RAW = new Map(DATA.sections.map(function (s) { return [s.id, s]; }));
   var SEC = new Map(IDX.sections.map(function (s) { return [s.id, s]; }));
   var HOSTED = /^https?:/.test(location.protocol);
+  // inside the Command Center (hosted, not the downloaded single file): the condition that shows the back link below
+  var IN_CC = HOSTED && 'serviceWorker' in navigator;
   // An app icon installed from the Tracker's own page opens here; the app starts on the Command Center's main menu
   // instead (owner report 2026-11-12: "app opens inside the tracker, not in the main menu"). Opened from the main menu
   // (which marks this tab) or in a browser tab, the Tracker opens as usual.
@@ -478,8 +480,12 @@
     // table of contents. A list with one group, a search inside the list and the global search show rows directly.
     var folded = !(OPENG.has(id) || UI.find || sid.indexOf('find:') === 0 || (sec && sec.groups.length === 1));
     var cnt = groupCounts(g.keys);
+    // the Command Center's Lists page can make a list from what is missing in an open crafting-log group (a link, never a save write)
+    var mk = '', job = ['craft-carpenter', 'craft-blacksmith', 'craft-armorer', 'craft-goldsmith', 'craft-leatherworker', 'craft-weaver', 'craft-alchemist', 'craft-culinarian'].indexOf(sid);
+    if (IN_CC && job >= 0 && !folded && g.keys.length && cnt.some(function (x) { return x[0] < x[1]; }))
+      mk = '<div class="lr mk"><a class="mk-list" data-mklist href="' + esc(new URL('../lists/', location.href).href + '#from=' + job + '.' + g.keys[0].slice(sid.length + 1) + (ST.chars.length === 1 ? '&char=' + ST.chars[0].id : '')) + '">Make a list from what is missing</a></div>';
     return '<div class="lgroup' + (folded ? ' folded' : '') + '" data-g="' + sid + '#' + gi + '"><div class="lr gh"><span class="c0" data-fold="' + sid + '#' + gi + '" tabindex="0" role="button" aria-expanded="' + !folded + '"><span class="fold">▾</span><span class="t">' + esc(label || g.t) + '</span>' + (g.c ? '<span class="k">' + esc(g.c) + '</span>' : '') + '</span>' +
-      ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" tabindex="0" role="button" title="' + esc(c.name) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '. Click to tick or clear the whole group.">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>' +
+      ST.chars.map(function (c, i) { var full = cnt[i][1] && cnt[i][0] === cnt[i][1]; return '<span class="c' + (full ? ' full' : '') + '" data-gc="' + c.id + '" data-gk="' + sid + '#' + gi + '" tabindex="0" role="button" title="' + esc(c.name) + ': ' + cnt[i][0] + ' of ' + cnt[i][1] + '. Click to tick or clear the whole group.">' + (cnt[i][1] ? (full ? '✓' : colWidth() < 44 ? String(cnt[i][0]) : cnt[i][0] + '/' + cnt[i][1]) : '–') + '</span>'; }).join('') + '</div>' + mk +
       (folded ? '' : keys.map(rowHtml).join('')) + '</div>';
   }
   var OPENG = new Set(); // groups opened in the current list (reset each time a list is entered)
@@ -707,6 +713,7 @@
 
   // ── events ──
   document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('[data-mklist]')) return; // the Lists link: an ordinary link, never folds or ticks
     var a = e.target.closest('[data-act]');
     if (a) {
       var act = a.dataset.act;
@@ -778,6 +785,7 @@
   });
   window.addEventListener('popstate', route);
   document.addEventListener('keydown', function (e) {
+    if (e.target.closest && e.target.closest('[data-mklist]')) return;
     if (e.key === 'Enter' && e.target.matches && e.target.matches('.fr[data-act]')) { e.target.click(); return; }
     // entry names (details), group headers (open/close) and group counts (tick/clear) are spans: Enter and Space act like a click
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-open], [data-fold], [data-gc], [data-xfold]')) { e.preventDefault(); e.target.click(); return; }

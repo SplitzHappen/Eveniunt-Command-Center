@@ -6480,6 +6480,56 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── C164 (Lists, W12) The Tracker's link, on the built site with seeded ticks: in an open crafting-log group "Make a list from what is missing" opens Lists on that job and page; with two characters "For which character?" shows both counts and Create makes the list of exactly the missing recipes; with one character the character is already chosen; a fully ticked group has no link. ──
+    await guard('C164', async () => {
+      const server = await start(PORT5);
+      const ck = {}, all = [];
+      const openGroup = async (n) => {
+        const c = await context({ serviceWorkers: 'block' }); all.push(c);
+        const page = await c.ctx.newPage();
+        await page.goto(ROOT5 + 'tracker/');
+        await page.waitForSelector('#dlg[open]', { timeout: 30000 });
+        await page.selectOption('#nchars', String(n));
+        await page.fill('[data-name="0"]', 'Alba'); if (n > 1) await page.fill('[data-name="1"]', 'Brio');
+        await page.click('#go'); await page.waitForSelector('.ov-table', { timeout: 30000 });
+        return { c, page };
+      };
+      const seed = (page) => page.evaluate(() => {
+        const g = window.__tracker.IDX.sections.find((s) => s.id === 'craft-carpenter').groups[0], ST = window.__tracker.ST;
+        globalThis.ET.setMany(ST, ['c1'], g.keys.slice(3), true); // Alba has ticked all but the first three
+        globalThis.ET.saveState(ST, true);
+        window.__tracker.setView('sec', 'craft-carpenter'); window.__tracker.openAll();
+        return g.keys.map((k) => +k.split(':')[1]);
+      }).then(async (ids) => { await page.waitForFunction(() => !globalThis.ET.hasPendingSave(), null, { timeout: 15000 }); await page.waitForTimeout(400); return ids; });
+      // two characters
+      const two = await openGroup(2), ids = await seed(two.page);
+      const link = two.page.locator('[data-mklist]').first();
+      ck.shown = (await link.count()) === 1 && /Make a list from what is missing/.test(await link.textContent()) && (await link.getAttribute('href')) === ROOT5 + 'lists/#from=0.' + ids[0];
+      await link.click(); await two.page.waitForURL(/\/lists\//, { timeout: 30000 }); await lReady(two.page); await two.page.waitForSelector('.log-screen');
+      let st = await lLogState(two.page), tx = await lLogText(two.page);
+      ck.chosen = st.screen && st.job === '0' && st.page === '0' && st.char === null && st.hash === '';
+      ck.asks = /For which character\?/.test(tx) && tx.includes('Alba: 3 not ticked') && tx.includes('Brio: ' + ids.length + ' not ticked');
+      await two.page.click('[data-act=log-char][data-char=c1]');
+      await two.page.click('[data-act=log-create]'); await lSettle(two.page); await two.page.waitForSelector('[data-f=listname]');
+      const ts = lTargets(await lStored(two.page));
+      ck.exact = ts.length === 3 && ids.slice(0, 3).every((r) => ts.some((t) => t.recipe === r && t.make === true));
+      // a fully ticked group has no link
+      const t2 = await openGroup(2);
+      await t2.page.evaluate(() => { const g = window.__tracker.IDX.sections.find((s) => s.id === 'craft-carpenter').groups[0], ST = window.__tracker.ST; ST.chars.forEach((c) => globalThis.ET.setMany(ST, [c.id], g.keys, true)); globalThis.ET.saveState(ST, true); window.__tracker.setView('sec', 'craft-carpenter'); window.__tracker.openAll(); });
+      ck.fullNoLink = (await t2.page.locator('[data-mklist]').count()) === (await t2.page.locator('.lgroup').count()) - 1;
+      // one character: the character is already chosen
+      const one = await openGroup(1), ids1 = await seed(one.page);
+      const l1 = one.page.locator('[data-mklist]').first();
+      ck.oneHref = (await l1.getAttribute('href')) === ROOT5 + 'lists/#from=0.' + ids1[0] + '&char=c1';
+      await l1.click(); await one.page.waitForURL(/\/lists\//, { timeout: 30000 }); await lReady(one.page); await one.page.waitForSelector('.log-screen');
+      st = await lLogState(one.page); tx = await lLogText(one.page);
+      ck.oneChosen = st.job === '0' && st.page === '0' && st.char === 'c1' && st.hash === '' && tx.includes('3 of ' + ids1.length + ' not ticked in the Tracker');
+      ck.noErrors = all.every((c) => real(c.errors).length === 0 && c.external.length === 0);
+      record('C164', 'The Tracker\'s link (built site, seeded ticks): "Make a list from what is missing" in an open crafting-log group opens Lists on that job and page; with two characters "For which character?" shows both counts and Create makes the list of exactly the missing recipes; with one character the character is already chosen; a fully ticked group has no link',
+        Object.values(ck).every(Boolean), { ck, errors: all.map((c) => real(c.errors)), external: all.map((c) => c.external) });
+      void server;
+    });
+
     // ── C161 (Lists, W8) The owner's case on the fixture, with a new list and the untouched order: the gil-merchant material is bought and its materials are left out, the other-currency material is crafted and not traded; the sheet shows the five sentences; "Craft it" first brings the craft and its materials back. ──
     await guard('C161', async () => {
       const server = await start(PORT5);
