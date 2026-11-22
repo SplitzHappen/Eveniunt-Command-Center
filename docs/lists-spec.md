@@ -781,6 +781,12 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   of recipes without an Atelier hand-over in the report. Escalate if: the glue will not run in Node (then build the
   fallback of section 6 and say so); any recipe both hold disagrees, or the Atelier has a recipe the sheets lack; a
   `log` recipe id is missing; the budget is exceeded.
+- **W6 built (2026-11-22), choices accepted:** cross-check 13,892 of 13,892 agree, 0 without hand-over; `lists/data.js`
+  1,852,034 bytes plain, 474,468 packed; switcher link after Submersibles (also on the Submersibles page's switcher);
+  card kicker "Crafting" with a list glyph, live line "N lists" / "No lists yet"; until W8, the Your lists cards show
+  "N wanted items · N steps" (W8 adds "12 of 40 ready"); New list and From the crafting log drawn disabled until W7
+  and W10. Existing check lines updated for the fourth card and the module list: 254, 296, 313, 535 to 537, 630,
+  767, 769. Full `npm run check` 151 of 151 (C26b not run).
 - **W7 Lists, wanted items, stock (Sonnet builder; after W3, W6).** Files: `src/lists/store.js` (pure edit functions;
   every one returns the new section and an undo entry: the units it replaced and the units it wrote; the size limits
   of section 4 live here and only here), `lists.js`, `lists.css`, `tracker/tests/lists-store.test.js` (ST-1 to ST-13:
