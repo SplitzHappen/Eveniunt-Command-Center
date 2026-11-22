@@ -13,7 +13,15 @@
 //  - `make` needs a recipe: the target's own when it is a recipe of the item, else the item's recipe of lowest level.
 //  - collectable stock is given to the collectable lines of one item in recipe order, not list order (so that
 //    reordering lists never moves a total, E9); within a line it is given in list then step order.
-//  - plan lines carry extra fields: from {nq,hq,coll} (stock given by quality), quality, job, yield, node; the plan
+//  - (accepted) market only for a tradable item; a list without steps has one step with the empty id; `make` uses the target's
+//    recipe or else the item's lowest-level recipe; collectable stock goes to one item's collectable lines in recipe order;
+//    "total to get or trade" compares short, got, crafts and, for trade lines only, trades; `LISTS.way` returns an offer for trade
+//    ways only; the vendor offer is chosen by the shortfall; `LISTS.tree` includes the wanted items; nextWindow reads minutes as
+//    Eorzean minutes, merges overlapping windows and gives null for an untimed node; `LISTS.missing` takes ticks and excluded as a
+//    Set, an array or an object; the data index is cached per data object (do not change data after planning).
+//  - D27 to D29 (spec): record takes only unpromised stock; a hand-in removes only the handed-in items' own stock; a cut affects only
+//    parts that pass needs down.
+//  - plan lines carry extra fields: from {nq,hq,coll} (stock given by quality; shares also carry fromDirect, the part given to non-make wanted items), quality, job, yield, node; the plan
 //    carries stepOf { targetKey: stepId } for finishStep.
 (function () {
   'use strict';
@@ -21,6 +29,7 @@
   var DEFAULT_ORDER = ['vendor', 'craft', 'gather', 'trade', 'market'];
   var IX = typeof WeakMap === 'function' ? new WeakMap() : null;
   var EMPTY = [];
+  var QS = ['nq', 'hq', 'coll'];
   var ET_HOUR = 175000, ET_DAY = 24 * ET_HOUR;
 
   function nat(x) { x = Math.floor(+x); return x > 0 && isFinite(x) ? x : 0; }
@@ -254,12 +263,12 @@
       var idxOf = {}; sids.forEach(function (s, i) { idxOf[s] = i; });
       listInfo.push({ id: l.id, sids: sids, idxOf: idxOf, first: sids.length ? sids[0] : '' });
     }
-    function addNeed(item, part, recipe, cl, si, mk, n) {
+    function addNeed(item, part, recipe, cl, si, dir, n) {
       if (n <= 0) return;
       var key = item + '|' + part + '|' + recipe, ln = lines[key];
       if (!ln) { ln = lines[key] = { key: key, item: item, part: part, recipe: recipe, cs: {} }; (byItem[item] = byItem[item] || []).push(ln); }
-      var ck = cl + '|' + si + '|' + mk, c = ln.cs[ck];
-      if (!c) c = ln.cs[ck] = { li: cl, si: si, mk: mk, n: 0 };
+      var ck = cl + '|' + si + '|' + dir, c = ln.cs[ck];
+      if (!c) c = ln.cs[ck] = { li: cl, si: si, dir: dir, n: 0 };
       c.n += n;
     }
     // wanted items
@@ -274,7 +283,7 @@
         var sid = t.step != null && info.idxOf[t.step] !== undefined ? t.step : info.first;
         stepOf[tkey] = sid;
         var crafted = Math.min(nat(t.crafted), qty), n = cls.part === 'make' ? qty - crafted : qty;
-        addNeed(+t.item, cls.part, cls.recipe, li, info.idxOf[sid] || 0, cls.part === 'make' ? 1 : 0, n);
+        addNeed(+t.item, cls.part, cls.recipe, li, info.idxOf[sid] || 0, cls.part === 'make' ? 0 : 1, n);
       }
     }
     // loops and the order items are settled in
@@ -298,14 +307,14 @@
       var sk = c.li + '|' + c.si, s = shares[sk];
       if (!s) s = shares[sk] = { li: c.li, si: c.si, lines: {} };
       var o = s.lines[key];
-      if (!o) o = s.lines[key] = { need: 0, given: 0, outside: 0, short: 0, crafts: 0, trades: 0, got: 0, makes: 0, cost: 0, from: zero(), fromMake: zero() };
+      if (!o) o = s.lines[key] = { need: 0, given: 0, outside: 0, short: 0, crafts: 0, trades: 0, got: 0, makes: 0, cost: 0, from: zero(), fromDirect: zero() };
       return o;
     }
     function childPart(m) { var w = ctx.ways[m]; return w && w.hq ? 'hq' : 'normal'; }
 
     function settleLine(ln, pool, takeOrder, isCut) {
       var cs = Object.keys(ln.cs).map(function (x) { return ln.cs[x]; });
-      cs.sort(function (a, b) { return a.li - b.li || a.si - b.si || a.mk - b.mk; });
+      cs.sort(function (a, b) { return a.li - b.li || a.si - b.si || a.dir - b.dir; });
       var rows = [], need = 0, given = 0, from = zero(), q, i;
       for (i = 0; i < cs.length; i++) {
         var rem = cs[i].n, fr = zero();
@@ -319,8 +328,10 @@
         if (isCut) { by = 'other'; why = 'cut'; }
         else if (ln.recipe) { by = 'craft'; why = ln.part; recipe = ln.recipe; }
         else { by = 'other'; why = 'none'; }
-      } else if (isCut) { by = 'other'; why = 'cut'; }
-      else { var w = wayOf(ctx, item, qual); by = w.by; why = w.why; recipe = w.recipe; if (by === 'trade') offer = w._o; }
+      } else {
+        var w = wayOf(ctx, item, qual); by = w.by; why = w.why; recipe = w.recipe; if (by === 'trade') offer = w._o;
+        if (isCut && (by === 'craft' || by === 'trade')) { by = 'other'; why = 'cut'; recipe = 0; offer = null; } // D29: only a part that passes needs down
+      }
       if (by === 'craft') { rec = data.recipes[recipe]; yld = Math.max(1, rec[1] | 0); }
       if (by === 'vendor') offer = pickGil(offersOf(ctx, item, qual).gil, short);
       var gives = offer ? Math.max(1, offer.gives | 0) : 1, gilPer = 0, cur = [];
@@ -331,15 +342,15 @@
       for (i = 0; i < rows.length; i++) {
         var r = rows[i], s = r.n - r.g, units = 0, cr = 0, tr = 0, mk = 0, outside = 0, cost = 0, cumNow;
         S += s;
-        if (by === 'craft') { cumNow = cdiv(S, yld); cr = cumNow - prev; prev = cumNow; mk = cr * yld; if (cr) for (var m = 0; m < rec[5].length; m++) addNeed(rec[5][m][0], childPart(rec[5][m][0]), 0, r.c.li, r.c.si, r.c.mk, cr * rec[5][m][1]); }
+        if (by === 'craft') { cumNow = cdiv(S, yld); cr = cumNow - prev; prev = cumNow; mk = cr * yld; if (cr) for (var m = 0; m < rec[5].length; m++) addNeed(rec[5][m][0], childPart(rec[5][m][0]), 0, r.c.li, r.c.si, 0, cr * rec[5][m][1]); }
         else if (by === 'vendor' || by === 'trade') {
           cumNow = cdiv(S, gives); tr = cumNow - prev; prev = cumNow; units = tr * gives; cost = tr * gilPer;
-          for (var n2 = 0; tr && n2 < cur.length; n2++) addNeed(cur[n2][0], 'normal', 0, r.c.li, r.c.si, r.c.mk, tr * cur[n2][1]);
+          for (var n2 = 0; tr && n2 < cur.length; n2++) addNeed(cur[n2][0], 'normal', 0, r.c.li, r.c.si, 0, tr * cur[n2][1]);
         } else if (by === 'have') outside = s;
         else { units = s; if (by === 'market' && s) { if (px) cost = s * px; else costUnknown = true; } }
         var sh = share(r.c, ln.key);
         sh.need += r.n; sh.given += r.g; sh.outside += outside; sh.short += s; sh.crafts += cr; sh.trades += tr; sh.got += units; sh.makes += mk; sh.cost += cost;
-        for (q in r.from) { sh.from[q] += r.from[q]; if (r.c.mk) sh.fromMake[q] += r.from[q]; }
+        for (q in r.from) { sh.from[q] += r.from[q]; if (r.c.dir) sh.fromDirect[q] += r.from[q]; }
         tot.crafts += cr; tot.trades += tr; tot.got += units; tot.makes += mk; tot.outside += outside; tot.cost += cost;
       }
       var node = by === 'gather' ? data.gather[item] : null;
@@ -432,18 +443,24 @@
     addStock(h, itemId, q, nat(units));
     return h;
   };
-  // Recording crafts is always allowed (D26, E12). state is { have, targets, ways } of one owner.
-  L.record = function (data, state, o) {
+  // Recording crafts is always allowed (D26, E12, D27). state is { have, targets, ways } of one owner. Materials come from the
+  // stock the plan gave this craft's own material line, then from stock the plan gave to no line (normal before high quality;
+  // only high quality when that material's way has hq); never from stock the plan gave to another line.
+  L.record = function (data, state, plan, o) {
     var have = clone(state.have || {}), targets = clone(state.targets || {}), ways = state.ways || {}, short = [];
     var line = o.line, r = data.recipes[line.recipe], times = nat(o.times);
     if (!r || !times) return { have: have, targets: targets, short: short };
-    var q = o.quality || line.quality || 'nq', y = Math.max(1, r[1] | 0), ing = r[5];
+    var q = o.quality || line.quality || 'nq', y = Math.max(1, r[1] | 0), ing = r[5], orig = state.have || {};
     for (var i = 0; i < ing.length; i++) {
-      var m = ing[i][0], take = times * ing[i][1], e = have[m] || zero(), t1 = 0, t2 = 0;
+      var m = ing[i][0], take = times * ing[i][1], hqWay = !!(ways[m] && ways[m].hq), e = have[m] || zero(), o0 = orig[m] || {};
       e.nq = nat(e.nq); e.hq = nat(e.hq); e.coll = nat(e.coll);
-      if (ways[m] && ways[m].hq) { t2 = Math.min(take, e.hq); e.hq -= t2; }
-      else { t1 = Math.min(take, e.nq); e.nq -= t1; t2 = Math.min(take - t1, e.hq); e.hq -= t2; }
-      if (take - t1 - t2 > 0 && short.indexOf(m) < 0) short.push(m);
+      var own = plan.lines[m + '|' + (hqWay ? 'hq' : 'normal') + '|0'], givenAll = zero(), k2;
+      (plan.items[m] || []).forEach(function (k) { QS.forEach(function (qq) { givenAll[qq] += plan.lines[k].from[qq]; }); });
+      var ownFrom = own ? own.from : zero(), free = { nq: Math.max(0, nat(o0.nq) - givenAll.nq), hq: Math.max(0, nat(o0.hq) - givenAll.hq) };
+      var order = hqWay ? ['hq'] : ['nq', 'hq'], got = 0, t;
+      for (k2 = 0; k2 < order.length; k2++) { t = Math.min(take - got, ownFrom[order[k2]], e[order[k2]]); e[order[k2]] -= t; got += t; }
+      for (k2 = 0; k2 < order.length; k2++) { t = Math.min(take - got, free[order[k2]], e[order[k2]]); e[order[k2]] -= t; got += t; }
+      if (take - got > 0 && short.indexOf(m) < 0) short.push(m);
       if (have[m]) tidy(have, m);
     }
     addStock(have, line.item, q === 'hq' ? 'hq' : q === 'coll' ? 'coll' : 'nq', times * y);
@@ -467,7 +484,7 @@
       Object.keys(s.lines).forEach(function (key) {
         var sh = s.lines[key], item = plan.lines[key].item;
         ['nq', 'hq', 'coll'].forEach(function (q) {
-          var n = sh.from[q] - sh.fromMake[q];
+          var n = sh.fromDirect[q];
           if (n > 0 && have[item]) { have[item][q] = Math.max(0, nat(have[item][q]) - n); }
         });
         if (have[item]) tidy(have, item);

@@ -222,7 +222,7 @@ function checkBase(S, P, flag) {
       if (ln.from.nq || ln.from.hq) flag('E7', key + ': a collectable need was given other stock');
       if (ln.by !== 'craft' && !(ln.by === 'other')) flag('E7', key + ': a collectable need is met by ' + ln.by);
     }
-    if (ln.part === 'make' && (ln.given || ln.by !== 'craft' && ln.by !== 'other')) flag('E6', key + ': a must-craft line was given stock or not crafted');
+    if (ln.part === 'make' && (ln.given || (ln.by !== 'craft' && ln.by !== 'other'))) flag('E6', key + ': a must-craft line was given stock or not crafted');
   }
   // E17 (second half) and E8 and E11: every need comes from a wanted item, a craft or a trade; the exact accounting
   const expect = Object.assign({}, direct);
@@ -269,7 +269,12 @@ function checkBase(S, P, flag) {
   const oc = cutOracle(S, P);
   const cutKeys = Object.keys(P.cut).map(Number).sort((a, b) => a - b);
   if (canon(cutKeys) !== canon(oc)) flag('E14', 'cut ' + canon(cutKeys) + ', the loop search gives ' + canon(oc));
-  for (const c of cutKeys) for (const k2 of P.items[c] || []) { const ln = lines[k2]; if (ln.by !== 'other' || ln.crafts || ln.trades || P.shop.other.indexOf(k2) < 0 && ln.short > 0) flag('E14', 'cut item ' + c + ' is not listed under other'); }
+  for (const c of cutKeys) for (const k2 of P.items[c] || []) {
+    const ln = lines[k2], w = ln.part === 'make' || ln.part === 'coll' ? { by: 'craft' } : L.way(data, toInput(S), c, ln.part === 'hq' ? 'hq' : 'normal');
+    if (ln.by === 'craft' || ln.by === 'trade' || ln.crafts) flag('E14', 'cut item ' + c + ' still passes needs down');
+    if ((w.by === 'craft' || w.by === 'trade') && (ln.by !== 'other' || (ln.short > 0 && P.shop.other.indexOf(k2) < 0))) flag('E14', 'cut item ' + c + ' part ' + ln.part + ' is not listed under other');
+    if (w.by !== 'craft' && w.by !== 'trade' && ln.by !== w.by) flag('E14', 'cut item ' + c + ' part ' + ln.part + ' is not planned by its way (' + w.by + ')');
+  }
   const alone = L.cuts(data, toInput(S)), reachAll = L.cuts(data, { order: S.order, ways: S.ways, have: {}, lists: [{ id: 'x', steps: {}, targets: liveTargets(S).map((x) => ({ id: x.t.id, item: x.t.item, qty: 1 })) }] });
   if (canon(Object.keys(alone).sort()) !== canon(Object.keys(reachAll).sort())) flag('E14', 'the cut depends on amounts or stock');
   if (canon(Object.keys(alone).sort()) !== canon(Object.keys(P.cut).sort())) flag('E14', 'LISTS.cuts and the plan disagree');
@@ -277,7 +282,6 @@ function checkBase(S, P, flag) {
   if (S.order === 'vendor craft gather trade market' && !Object.keys(S.ways).length) {
     for (const [key, ln] of Object.entries(lines)) {
       if (ln.part !== 'normal' && ln.part !== 'hq') continue;
-      if (P.cut[ln.item] !== undefined) continue;
       const q = ln.part === 'hq' ? 1 : 0, has = (data.trades[ln.item] || []).some((o) => (o[2] ? 1 : 0) === q && o[1].length === 1 && o[1][0][0] === 1);
       if (has && ln.by !== 'vendor') flag('E17', key + ' is got by ' + ln.by + ', a gil merchant sells it');
     }
@@ -402,7 +406,7 @@ function applyOp(S, op, flag, trace) {
       note('finish step ' + l.id + '/' + step);
       // what the plan had given the wanted items of the step (the must-craft ones excepted)
       const take = {};
-      for (const sh of P1.shares) if (sh.list === l.id && sh.step === step) for (const [key, v] of Object.entries(sh.lines)) for (const q of QS) { const k = P1.lines[key].item + '.' + q; take[k] = (take[k] || 0) + v.from[q] - v.fromMake[q]; }
+      for (const sh of P1.shares) if (sh.list === l.id && sh.step === step) for (const [key, v] of Object.entries(sh.lines)) for (const q of QS) { const k = P1.lines[key].item + '.' + q; take[k] = (take[k] || 0) + v.fromDirect[q]; }
       for (const id of new Set([...Object.keys(S.have), ...Object.keys(res.have)])) for (const q of QS) {
         const before = (S.have[id] || { nq: 0, hq: 0, coll: 0 })[q], after = (res.have[id] || { nq: 0, hq: 0, coll: 0 })[q];
         if (after !== before - (take[id + '.' + q] || 0)) flag('E19', 'step handed in: stock of ' + id + ' ' + q + ' is ' + after + ', expected ' + (before - (take[id + '.' + q] || 0)));
@@ -441,21 +445,25 @@ function recordOp(S, S2, P1, n, flag, note) {
     let left = times * r[1];
     for (const { l, t } of rows) { const c = Math.min(left, t.qty - Math.min(t.crafted || 0, t.qty)); if (c > 0) { credit[keyOfT(l, t)] = c; left -= c; } }
   }
-  const st = stateOf(S), res = L.record(data, st, { line: ln, times, quality, targets: credit });
+  const st = stateOf(S), res = L.record(data, st, P1, { line: ln, times, quality, targets: credit });
   note('record ' + times + ' of ' + key + ' in ' + quality + (canon(credit) !== '{}' ? ' credits ' + canon(credit) : ''));
   // (a)
   const made = times * r[1], expectShort = [];
   for (const id of new Set([...Object.keys(S.have), ...Object.keys(res.have)])) {
     const a = S.have[id] || { nq: 0, hq: 0, coll: 0 }, b = res.have[id] || { nq: 0, hq: 0, coll: 0 }, ing = r[5].find((x) => x[0] == id), exp = { nq: a.nq, hq: a.hq, coll: a.coll };
     if (ing) {
-      const take = times * ing[1], hqOnly = S.ways[id] && S.ways[id].hq;
-      const t1 = hqOnly ? 0 : Math.min(take, a.nq), t2 = Math.min(take - t1, a.hq);
-      exp.nq -= t1; exp.hq -= t2; if (take - t1 - t2 > 0) expectShort.push(Number(id));
+      // D27: the stock the plan gave this craft's own material line, then stock given to no line; never another line's
+      const take = times * ing[1], hqOnly = !!(S.ways[id] && S.ways[id].hq), own = P1.lines[id + '|' + (hqOnly ? 'hq' : 'normal') + '|0'];
+      const allGiven = sumFrom(P1, id), order = hqOnly ? ['hq'] : ['nq', 'hq'];
+      let need = take;
+      for (const qq of order) { const t = Math.min(need, own ? own.from[qq] : 0); exp[qq] -= t; need -= t; }
+      for (const qq of order) { const t = Math.min(need, Math.max(0, a[qq] - allGiven[qq]), exp[qq]); exp[qq] -= t; need -= t; }
+      if (need > 0) expectShort.push(Number(id));
     }
     if (id == ln.item) exp[quality] += made;
     for (const q of QS) if (b[q] !== exp[q]) flag('E12', 'record: stock of ' + id + ' ' + q + ' is ' + b[q] + ', expected ' + exp[q]);
   }
-  for (const [ing] of r[5]) if (!(S.have[ing]) && !expectShort.includes(ing) && times * r[5].find((x) => x[0] === ing)[1] > 0) expectShort.push(ing);
+  for (const [ing] of r[5]) if (!(S.have[ing]) && !expectShort.includes(ing)) expectShort.push(ing);
   if (canon([...res.short].sort((a, b) => a - b)) !== canon([...new Set(expectShort)].sort((a, b) => a - b))) flag('E12', 'record: short ' + canon(res.short) + ', expected ' + canon(expectShort));
   let credited = 0;
   for (const [k, t] of Object.entries(targetMap(S))) {
