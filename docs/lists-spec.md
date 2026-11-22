@@ -103,6 +103,17 @@ market prices from day one through one shared price service.
 - **D25 A trade offer is fixed by a rule that ignores amounts; a gil offer is the cheapest for the amount** (outside
   review). A gil purchase has nothing below it, so choosing by total cost is safe; a trade's currencies become needs,
   and an offer that changed with the amount could make a currency's need rise when a wanted item is removed.
+- **D27 Recording takes only stock the plan did not promise elsewhere** (W2 model test, 2026-11-22). A recorded craft
+  takes its materials from what the plan gave that craft, then from unpromised stock; never from stock another line
+  holds, so recording can never make another line short. [Normal-then-high-quality regardless of the plan: the model
+  test found a case where it took the high-quality material another line needed.]
+- **D28 Handing in a step removes the items handed in, not their materials** (W2 model test, 2026-11-22). [Taking the
+  materials the plan gave the step: with a craft that makes 2 shared by two lists, that raised the other list's need.]
+- **D29 A cut never overrides a merchant purchase** (orchestrator, 2026-11-22; the W2 builder had a gil-merchant item
+  inside a recipe loop planned as Other). Which item is cut stays as D24 says (independent of stock and wanted items,
+  so E5 holds), but a cut affects only the parts of that item that would pass needs down (a part planned as `craft`
+  or `trade`, and its make and collectable parts). A part whose way is `vendor`, `market`, `gather` or `have` passes
+  nothing down and is planned by its way as usual, so an item a gil merchant sells is still bought (E17).
 - **D26 Recording a craft is one operation on stock and wanted items together** and is always allowed, also when the
   typed materials do not cover it: the player knows what they made. [Refusing: the app would deny a true fact.]
 
@@ -287,7 +298,7 @@ LISTS.plan(data, input) -> plan      // one owner; pure: no clock, no storage, i
 LISTS.way(data, input, itemId, quality) -> { by, why, recipe, offer }   // fixed by the data, the order and the stored way; never by stock or lists
 LISTS.cuts(data, input) -> { itemId: note }  // the loops, from the ways alone (D24)
 LISTS.tree(data, lists) -> Set(itemIds)      // every item the wanted items could need, whatever the ways and stock
-LISTS.record(data, state, { line, times, quality, targets: { targetKey: n } }) -> { have, targets, short: [itemIds] }  // see E12
+LISTS.record(data, state, plan, { line, times, quality, targets: { targetKey: n } }) -> { have, targets, short: [itemIds] }  // see E12, D27
 LISTS.bought(have, itemId, units, quality) -> have       // units of the item added to stock, nothing taken
 LISTS.finishStep(plan, state, listId, stepId) -> { have, targets }       // see E19
 LISTS.missing(data, ticks, excluded, job, page) -> [recipeIds]
@@ -335,7 +346,8 @@ that item's normal part, planned like any item (recursively).
 way would create: `craft` to each material of the way's recipe, `trade` to each non-gil currency of the way's offer,
 nothing for the others; plus recipe edges for every recipe (the make and coll parts can use any). Where a set of items
 reach each other (a self-edge included), the item with the lowest id in the set is **cut**: all its parts are planned
-as `other`, nothing is passed below it, and `plan.cut` and a row note say "<item> and <item> need each other; <item>
+as `other` except a part whose way passes nothing down (D29: `vendor`, `market`, `gather`, `have`, which is planned by
+its way), nothing is passed below it, and `plan.cut` and a row note say "<item> and <item> need each other; <item>
 is listed under Other." The cut item's edges are removed and the search repeated until no loop is left. The cuts
 depend on the data, the order and the ways only.
 
@@ -374,17 +386,21 @@ way or a "Bought it" freed; it stays in the stock and other lists use it.
 crafts, the quality made (the line's own by default) and, for a make line, how much of the output is credited to which
 `make` wanted items (the page fills these in list order, then step order, up to each one's `qty − crafted`). It adds
 crafts × yield of the product to stock in that quality (collectable for a coll line); raises `crafted` on the named
-wanted items by the credited amounts, never above `qty`; and takes crafts × amount of each material: from
-high-quality stock only when that material's way has `hq`, otherwise normal stock first and then high-quality, the
-plan's own order; never below 0. A material it could not take in full is returned in `short`, the count is left at 0,
-and the page says "You recorded more than the materials typed here cover; those counts are now 0. Check what you
-have." Recording is never refused. A `make` wanted item with `crafted` equal to `qty` needs nothing more; it is shown
+wanted items by the credited amounts, never above `qty`; and takes crafts × amount of each material **(D27, from the
+W2 model test, 2026-11-22):** first from the stock the plan gave this craft's own material line, then from stock the
+plan gave to no line at all (normal before high quality, high quality only when the material may be high quality);
+**never from stock the plan gave to another line**; never below 0. A material it could not take that way is returned
+in `short` and the page says "You recorded more than the materials typed here cover. Those materials were not taken
+from what your other lists are counting on; check what you have." Recording is never refused. A `make` wanted item with `crafted` equal to `qty` needs nothing more; it is shown
 as crafted and can be marked Finished.
 
 **Finished (E19).** On a wanted item's row: sets `done`; the stock is not touched (the item is still in the bags);
 undone by clearing `done`. On a step ("This step is handed in"): sets `done` on its wanted items that are not `done`
-and takes out of stock exactly what the plan had given each of them (`given` of their share, in the qualities given);
-`make` wanted items are only marked `done`. Both go through undo.
+and takes out of stock **only the handed-in items themselves**: for each, the stock of that item the plan had given
+its share, in the qualities given (D28, from the W2 model test, 2026-11-22: taking the materials of a craft whose
+output is shared with another list raised that list's needs). Materials are never taken by a hand-in. The confirm
+names the counts and says: "If you crafted any of these without pressing Made, press Made first, so what is left over
+is counted." `make` wanted items are only marked `done`. Both go through undo.
 
 **Invariants** (each a named unit test and a property of the model test):
 - **E1** Same input, same plan; the input is unchanged; ties are broken as written (list order, offers, cuts).
@@ -412,7 +428,8 @@ and takes out of stock exactly what the plan had given each of them (`given` of 
 - **E11** `have`: the line's shortfall equals its `outside`, it has nothing to get or craft and nothing below it, and
   no stock count is used for that shortfall.
 - **E12** Recording. (a) Always: the product's stock rises by exactly crafts × yield in the quality given; each
-  material's stock falls by the smaller of what was there and crafts × amount, in the plan's order; `short` names
+  material's stock falls by what D27 lets it take (this line's given stock, then stock given to no line), at most
+  crafts × amount; stock given to any other line is unchanged; `short` names
   exactly the materials that were not fully there; `crafted` rises by the credited amounts, never above `qty`, and the
   credits never exceed what was made; no other unit changes. (b) When `short` is empty, the crafts recorded are no
   more than the line showed, and the quality made is the line's own (any quality for a make line): that line's crafts
@@ -422,7 +439,8 @@ and takes out of stock exactly what the plan had given each of them (`given` of 
 - **E13** Removing a wanted item and adding an equal one back (same item, recipe, amount, flags, list and step; a new
   id) leaves every total equal. Putting back the very same record, shares included, is undo's job (E20).
 - **E14** Every plan ends, for every loop of crafts, of trades or of both, a self-loop included: the cut item is the
-  lowest id of its loop, is listed under `other` with its note, passes nothing down, and is the same item whatever the
+  lowest id of its loop; its parts that would pass needs down are listed under `other` with its note (a vendor,
+  market, gather or have part is planned by its way, D29), passes nothing down, and is the same item whatever the
   stock and the wanted items.
 - **E15** Gil: market gil = amount × price for priced items only; an unpriced item is in `gil.unknown`, never 0.
 - **E16** Stock given over all lines, lists and steps of an owner never exceeds the stock typed, for every item and
@@ -441,8 +459,8 @@ and takes out of stock exactly what the plan had given each of them (`given` of 
   counts as they were, gives the earlier plan again; after a purchase or a recorded craft, changing the way back gives
   a plan in which no total is higher than before the first change. The exact earlier state, stock included, is
   restored by undo.
-- **E19** Finished. A row's Finished changes no stock count; a step's Finished lowers stock by exactly what the plan
-  had given its wanted items; after either, no total to get, to craft or to trade of any line is higher than before.
+- **E19** Finished. A row's Finished changes no stock count; a step's Finished lowers only the stock of its wanted
+  items themselves, by exactly what the plan had given them (D28), and no material's stock; after either, no total to get, to craft or to trade of any line is higher than before.
 - **E20** Undo (store rule, section 7). An undo that is applied restores every unit the change replaced, byte for
   byte, and changes nothing else; an undo is applied only if every such unit is still exactly as the change wrote it;
   a refused undo changes nothing.
