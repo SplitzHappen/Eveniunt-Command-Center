@@ -992,7 +992,7 @@ function fullState() {
 }
 const MODS = {
   atelier: { chars: { c1: { stats: { j0: { level: 100, craftsmanship: 5000, control: 4900, cp: 650 } }, food: { id: 44, hq: true }, potion: null, cosmicTool: true } }, saved: { s1: { id: 's1', name: 'Macro one', actions: ['MuscleMemory'] } }, prefs: { guideMs: 400 } },
-  lists: { lists: { l1: { name: 'Gear', items: { 123: { qty: 2, have: 1 } } } } },
+  notes: { lists: { l1: { name: 'Gear', items: { 123: { qty: 2, have: 1 } } } } },
   // design 7.1: free companies, submarines and trips side by side, each its own merge unit (invented names)
   submersibles: {
     fcs: { f1: { name: 'Alpha Company', world: 'Maduin', charId: 'c1', order: 0, unlockedSlots: 2, discovered: [1, 2, 3] } },
@@ -1160,12 +1160,12 @@ test('one save: a save written by a newer version is never overwritten', async (
   assert.strictEqual(JSON.parse(ls.get(CC.LS)).v, 99);
 });
 
-test('module sections (Lists, Submersibles, Atelier) survive a backup file, a transfer code and a two-device cloud sync', async () => {
+test('module sections (Notes, Submersibles, Atelier) survive a backup file, a transfer code and a two-device cloud sync', async () => {
   const st = ET.newState(['A', 'B']); st.modules = JSON.parse(JSON.stringify(MODS)); ET.validateState(st);
   const want = CC.checkModules(MODS);
   const file = JSON.parse(ET.exportFile(st));
   assert.strictEqual(file.app, 'eveniunt-command-center');
-  assert.deepStrictEqual(Object.keys(file.save.modules).sort(), ['atelier', 'lists', 'submersibles', 'tracker']);
+  assert.deepStrictEqual(Object.keys(file.save.modules).sort(), ['atelier', 'notes', 'submersibles', 'tracker']);
   assert.deepStrictEqual(ET.importFile(ET.exportFile(st)).modules, want, 'backup file');
   assert.deepStrictEqual((await ET.readTransferCode(await ET.makeTransferCode(st))).modules, want, 'transfer code');
   // two devices: the PC has the module data; the phone starts empty, takes it, adds a submarine; the PC takes that
@@ -1176,13 +1176,13 @@ test('module sections (Lists, Submersibles, Atelier) survive a backup file, a tr
   await ET.cloudSync(phone, 'tok', d.f);
   assert.deepStrictEqual(phone.modules, want, 'the phone has every section');
   phone.modules.submersibles.subs.s3 = { fcId: 'f1', slot: 3, name: 'Sub Three', rank: 1, voyage: null };
-  phone.modules.lists.lists.l2 = { name: 'Food', items: {} };
+  phone.modules.notes.lists.l2 = { name: 'Food', items: {} };
   await ET.cloudSync(phone, 'tok', d.f);
   await ET.cloudSync(st, 'tok', d.f);
   assert.strictEqual(st.modules.submersibles.subs.s3.name, 'Sub Three');
   assert.strictEqual(st.modules.submersibles.subs.s1.voyage.gameSaid, '1d 3h 12m', 'the sample FC, sub and trip arrive whole');
   assert.strictEqual(st.modules.submersibles.trips['s2-1762700000000'].back, 1762750000000);
-  assert.strictEqual(st.modules.lists.lists.l2.name, 'Food');
+  assert.strictEqual(st.modules.notes.lists.l2.name, 'Food');
   assert.strictEqual(st.modules.atelier.chars.c1.stats.j0.craftsmanship, 5000);
   assert.deepStrictEqual((await ET.readCloud(d.files.f1)).modules, st.modules);
 });
@@ -1830,7 +1830,7 @@ test('R2 two-device cloud path: duplicate tie orders, stale upload retry, retain
   for (const [duplicateId, duplicateOrder, expectedRemoval] of [['fa', 0, 'fz'], ['fzz', 2, 'fzz']]) {
     const d = fakeGraph();
     const a = ET.newState(['Alba']);
-    a.modules = { submersibles: { fcs: { fz: bare('A Company', 1) }, subs: {}, trips: {}, settings: {} }, lists: { rows: { q1: { name: 'Keep other module' } } } };
+    a.modules = { submersibles: { fcs: { fz: bare('A Company', 1) }, subs: {}, trips: {}, settings: {} }, notes: { rows: { q1: { name: 'Keep other module' } } } };
     await ET.cloudSync(a, 'tok', d.f);
     const b = ET.newState(['Alba']);
     await ET.cloudSync(b, 'tok', d.f);
@@ -1870,7 +1870,7 @@ test('R2 two-device cloud path: duplicate tie orders, stale upload retry, retain
       assert.ok(globalThis.FLEET.fleet(sec, 0).some((x) => x.id === 's1'), 'the submarine remains visible');
     }
     assert.deepStrictEqual(a.modules, b.modules, 'both devices converge after the explicit choice and repeated syncs');
-    assert.deepStrictEqual(a.modules.lists, { rows: { q1: { name: 'Keep other module' } } }, 'the unrelated module stays intact');
+    assert.deepStrictEqual(a.modules.notes, { rows: { q1: { name: 'Keep other module' } } }, 'the unrelated module stays intact');
   }
 });
 
@@ -2756,4 +2756,324 @@ test('SI-8 (pin, a known limit) a plain Tracker save over a stored orphan submar
   const sec = out.state.modules.submersibles;
   assert.deepStrictEqual(Object.keys(sec.fcs), ['f1'], 'the removed company is back');
   assert.deepStrictEqual(Object.keys(sec.subs).sort(), ['s1', 'sn5'], 'nothing is deleted or orphaned: both submarines are kept');
+});
+
+// ── Lists, work item W3: the save section, its checker and the stale-write rules (docs/lists-spec.md, section 4) ─────────────
+// Old builds are the shipped files, read with `git show <base>:<path>`, base = `git merge-base HEAD origin/main`; a test that cannot find
+// the base fails with that reason (the checks workflow fetches the whole history for this). No stand-in is written for them.
+const lsRoot = path.join(__dirname, '..', '..');
+let lsBaseId = null;
+function lsBase() {
+  if (lsBaseId) return lsBaseId;
+  const git = (...a) => require('child_process').execFileSync('git', a, { cwd: lsRoot, maxBuffer: 64 * 1024 * 1024 });
+  try { lsBaseId = git('merge-base', 'HEAD', 'origin/main').toString().trim(); git('cat-file', '-e', lsBaseId + '^{commit}'); } catch (e) {
+    lsBaseId = null;
+    throw new Error('cannot read the merge base with origin/main (the checkout needs its full history; the checks workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]);
+  }
+  return lsBaseId;
+}
+// the shipped save.js at <base>, loaded in a fresh context (its own CC, its own memory store)
+function lsOldCC() {
+  const src = require('child_process').execFileSync('git', ['show', lsBase() + ':tracker/src/core/save.js'], { cwd: lsRoot, maxBuffer: 64 * 1024 * 1024 }).toString();
+  const ctx = require('vm').createContext({ console, Date, JSON, Math, Promise, TextEncoder, TextDecoder, setTimeout });
+  require('vm').runInContext(src, ctx, { filename: 'save.js@base' });
+  assert.ok(ctx.CC && typeof ctx.CC.writeSection === 'function' && !ctx.CC.checkLists, 'the shipped save.js at the merge base has no lists checker');
+  return ctx.CC;
+}
+const lsClone = (x) => JSON.parse(JSON.stringify(x));
+const lsFrameKeys = ['v', 'lists', 'targets', 'ways', 'owners', 'have', 'prefs'];
+// a full section in the checker's own form (key order, no extras), so a round trip is byte for byte
+const lsFull = () => ({ v: 1,
+  lists: { l1aaaaaaaaaa: { name: 'Food', charId: 'c1', order: 0, made: 1760000000000, data: '7.57h1 44948e4c 70429e21', steps: { s1aaaaaaaaaa: { name: 'First', n: 0 }, s2aaaaaaaaaa: { name: 'Second', n: 1 } } },
+    l2bbbbbbbbbb: { name: 'Gear', charId: null, order: 1, made: 1760000001000, data: '7.57h1 44948e4c 70429e21' } },
+  targets: { 'l1aaaaaaaaaa.t1aaaaaaaaaa': { item: 5057, recipe: 1000, qty: 3, hq: true, make: true, crafted: 1, step: 's2aaaaaaaaaa', at: 1760000002000 },
+    'l1aaaaaaaaaa.t2bbbbbbbbbb': { item: 5058, recipe: 0, qty: 99999, coll: true, step: 'nosuchstep1', done: true, at: 1760000003000 },
+    'l2bbbbbbbbbb.t3cccccccccc': { item: 5059, recipe: 1002, qty: 2, at: 1760000004000 } },
+  ways: { 'c1.5057': { by: 'trade', recipe: 1001, hq: true, offer: '1016902.15.14944' }, 'u.5058': { by: 'have' } }, owners: { c1: { order: 'market trade gather craft vendor' }, u: {} },
+  have: { 'c1.5057': { nq: 4, hq: 2, coll: 0 }, 'u.5058': { nq: 0, hq: 0, coll: 7 } }, prefs: { priceWorld: 'Ravana', hideDone: true, combined: { l1aaaaaaaaaa: 1, l2bbbbbbbbbb: 1 } } });
+const lsStoredRaw = async () => (await CC.read()).raw;
+const lsStored = async () => CC.checkDoc(await lsStoredRaw()).modules.lists;
+const lsUnit = (...p) => 'm|' + JSON.stringify(['lists'].concat(p));
+async function lsSeed(sec) { // store a section exactly as given, with no rule applied (an old build or a hand edit could have left it so)
+  await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.modules.lists = CC.checkModules({ lists: sec }).lists; doc.updated = Date.now(); return doc; });
+  const r = await CC.read(); return { rev: r.rev, section: CC.checkDoc(r.raw).modules.lists };
+}
+
+test('LS-1 CC.checkLists: the empty section is the whole frame; every entry kind is kept as valid; bad entries and fields go, nothing is repaired', () => {
+  assert.strictEqual(typeof CC.checkLists, 'function');
+  const frame = { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} };
+  assert.deepStrictEqual(CC.checkModules({ lists: {} }).lists, frame);
+  assert.deepStrictEqual(Object.keys(CC.checkModules({ lists: { prefs: { priceWorld: 'W' } } }).lists), lsFrameKeys);
+  assert.deepStrictEqual(CC.checkModules({ lists: { v: 7, targets: 5, ways: [], owners: 'x' } }).lists, frame);
+  // owners: without an order, with a malformed one (kept as text, read as the default), with a good one
+  const o = CC.checkModules({ lists: { owners: { c1: {}, c2: { order: 'craft craft' }, c3: { order: 'market trade gather craft vendor' }, u: { order: 5 }, c9: {}, c0: { order: 'x' } } } }).lists.owners;
+  assert.deepStrictEqual(o, { c1: {}, c2: { order: 'craft craft' }, c3: { order: 'market trade gather craft vendor' }, u: {} });
+  // all six `by` values, a bad one dropped (the entry stays), recipe, hq, offer
+  const ways = {};
+  ['vendor', 'craft', 'gather', 'trade', 'market', 'have'].forEach((by, i) => { ways['c1.' + (100 + i)] = { by }; });
+  ways['c1.200'] = { by: 'steal' }; ways['c1.201'] = { by: 'trade', recipe: 77, hq: true, offer: '1016902.15.14944' }; ways['c1.202'] = { offer: 'a.b.c', hq: false, recipe: 0 }; ways['c9.5'] = { by: 'craft' }; ways['c1.x'] = { by: 'craft' };
+  const w = CC.checkModules({ lists: { ways } }).lists.ways;
+  assert.deepStrictEqual(Object.keys(w), ['c1.100', 'c1.101', 'c1.102', 'c1.103', 'c1.104', 'c1.105', 'c1.200', 'c1.201', 'c1.202']);
+  assert.deepStrictEqual(w['c1.105'], { by: 'have' }); assert.deepStrictEqual(w['c1.200'], {}); assert.deepStrictEqual(w['c1.202'], {});
+  assert.deepStrictEqual(w['c1.201'], { by: 'trade', recipe: 77, hq: true, offer: '1016902.15.14944' });
+  // wanted items: every combination of hq, coll, make is kept; crafted; a step that is not in the header; a missing recipe reads as 0
+  const targets = {}; let n = 0;
+  for (const hq of [false, true]) for (const coll of [false, true]) for (const make of [false, true]) {
+    const t = { item: 5057, recipe: 1000, qty: 4 }; if (hq) t.hq = true; if (coll) t.coll = true; if (make) t.make = true; t.crafted = 2;
+    targets['lsaaaaaaaaaa.t' + (n++) + 'xxxx'] = t;
+  }
+  targets['lsaaaaaaaaaa.tstep0000'] = { item: 1, recipe: 0, qty: 1, step: 'gone0000', done: true, at: 5 };
+  targets['lsaaaaaaaaaa.tnorecipe'] = { item: 2, qty: 3 };
+  targets['lsaaaaaaaaaa.tover0000'] = { item: 3, recipe: 9, qty: 2, crafted: 50 };
+  const bad = { 'lsaaaaaaaaaa.tnoitem00': { recipe: 1, qty: 1 }, 'lsaaaaaaaaaa.tnoqty000': { item: 1, recipe: 1 }, 'lsaaaaaaaaaa.tqty0': { item: 1, recipe: 1, qty: 0 }, 'bad': { item: 1, recipe: 1, qty: 1 }, 'ab.cd': { item: 1, recipe: 1, qty: 1 }, 'lsaaaaaaaaaa.tfalse00': { item: 1, recipe: 1, qty: 1, hq: false, make: 'yes', zzz: 1 } };
+  const t = CC.checkModules({ lists: { targets: Object.assign({}, targets, bad) } }).lists.targets;
+  assert.strictEqual(Object.keys(t).length, 8 + 3 + 1);
+  assert.deepStrictEqual(Object.values(t).slice(0, 8).map((x) => [!!x.hq, !!x.coll, !!x.make, x.crafted]), [[false, false, false, 2], [false, false, true, 2], [false, true, false, 2], [false, true, true, 2], [true, false, false, 2], [true, false, true, 2], [true, true, false, 2], [true, true, true, 2]]);
+  assert.deepStrictEqual(t['lsaaaaaaaaaa.tstep0000'], { item: 1, recipe: 0, qty: 1, step: 'gone0000', done: true, at: 5 });
+  assert.deepStrictEqual(t['lsaaaaaaaaaa.tnorecipe'], { item: 2, recipe: 0, qty: 3 });
+  assert.strictEqual(t['lsaaaaaaaaaa.tover0000'].crafted, 50, 'crafted above the amount is kept (the engine reads it as at most the amount)');
+  assert.deepStrictEqual(t['lsaaaaaaaaaa.tfalse00'], { item: 1, recipe: 1, qty: 1 });
+  // headers: a step is kept in any case, bad fields go
+  const l = CC.checkModules({ lists: { lists: { lsaaaaaaaaaa: { name: '  A\u0000  list ', charId: 'c9', order: 10000, made: -1, data: 'x'.repeat(80), steps: { s1xxxxxxxx: { name: 'S', n: 2.5 }, 'S!': { name: 'bad' } }, extra: 1 }, 'bad id': { name: 'x' }, zz: { name: 'short id' } } } }).lists.lists;
+  assert.deepStrictEqual(Object.keys(l), ['lsaaaaaaaaaa']);
+  assert.deepStrictEqual(l.lsaaaaaaaaaa, { name: 'A list', data: 'x'.repeat(60), steps: { s1xxxxxxxx: { name: 'S' } } });
+  assert.deepStrictEqual(CC.checkModules({ lists: { lists: { l1aaaaaaaaaa: { name: 'N', charId: null, order: 9999 } } } }).lists.lists.l1aaaaaaaaaa, { name: 'N', charId: null, order: 9999 });
+  // stock: an all-zero count is kept by the checker; prefs
+  assert.deepStrictEqual(CC.checkModules({ lists: { have: { 'c1.1': { nq: 0, hq: 0, coll: 0 }, 'c1.2': { nq: 1000000, hq: -1, coll: 3 } }, prefs: { priceWorld: 'W', hideDone: false, combined: { l1aaaaaaaaaa: 1, bad: 1, l2bbbbbbbbbb: 0 } } } }).lists,
+    { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: { 'c1.1': { nq: 0, hq: 0, coll: 0 }, 'c1.2': { coll: 3 } }, prefs: { priceWorld: 'W', hideDone: false, combined: { l1aaaaaaaaaa: 1 } } });
+});
+
+test('LS-2 a full section round-trips byte for byte: the checker, the document check, the save and the unit flattening', async () => {
+  const full = lsFull(), text = JSON.stringify(full);
+  assert.strictEqual(JSON.stringify(CC.checkLists(lsClone(full))), text);
+  assert.strictEqual(JSON.stringify(CC.checkModules({ lists: lsClone(full) }).lists), text);
+  const doc = { app: CC.APP, v: CC.VERSION, updated: 1, chars: [], modules: { lists: lsClone(full) }, device: {}, moved: {} };
+  assert.strictEqual(JSON.stringify(CC.checkDoc(lsClone(doc)).modules.lists), text);
+  assert.strictEqual(JSON.stringify(CC.unflatModules(CC.flatModules({ lists: full })).lists), text, 'units two levels down put back together');
+  intReset();
+  const w = await CC.writeSection('lists', lsClone(full), null);
+  assert.strictEqual(JSON.stringify(w.section), text);
+  assert.strictEqual(JSON.stringify(await lsStored()), text);
+  // an unrelated module does not touch it
+  await CC.writeSection('submersibles', { fcs: {}, subs: {}, trips: {}, settings: {} }, { rev: w.rev, base: null });
+  assert.strictEqual(JSON.stringify(await lsStored()), text);
+  // no arrays anywhere in the section
+  assert.ok(!/\[/.test(text.replace(/"[^"]*"/g, '""')), 'no array in the section');
+});
+
+test('LS-3 the shipped save.js at the merge base keeps a full lists section byte for byte through CC.checkDoc and a CC.writeSection of another module', async () => {
+  const old = lsOldCC(), full = lsFull(), text = JSON.stringify(full);
+  assert.strictEqual(old.VERSION, CC.VERSION);
+  const doc = { app: old.APP, v: old.VERSION, updated: 1, chars: [], modules: { lists: lsClone(full) }, device: {}, moved: {} };
+  assert.strictEqual(JSON.stringify(old.checkDoc(lsClone(doc)).modules.lists), text);
+  assert.strictEqual(JSON.stringify(old.checkModules({ lists: lsClone(full) }).lists), text);
+  assert.strictEqual(JSON.stringify(old.unflatModules(old.flatModules({ lists: full })).lists), text);
+  const w = await old.writeSection('lists', lsClone(full), null);
+  assert.strictEqual(JSON.stringify(w.section), text);
+  await old.writeSection('submersibles', { fcs: { fa: { name: 'A', charId: 'c1', order: 0, unlockedSlots: 1, discovered: [1, 2] } }, subs: {}, trips: {}, settings: {} }, { rev: w.rev, base: null });
+  await old.writeSection('atelier', { v: 1, chars: {}, unassigned: null, saved: {}, prefs: {} }, null);
+  const raw = (await old.read()).raw;
+  assert.strictEqual(JSON.stringify(raw.modules.lists), text, 'the old build keeps the section after saving other modules');
+  assert.strictEqual(JSON.stringify(old.checkDoc(lsClone(raw)).modules.lists), text);
+  // and the other way round: what the old build stored is read unchanged by this build
+  assert.strictEqual(JSON.stringify(CC.checkDoc(lsClone(raw)).modules.lists), text);
+});
+
+test('LS-4 LI1 for a list: a header that another tab removed is not stored again by a page that still held it', async () => {
+  intReset();
+  const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+  const gone = lsClone(base); delete gone.lists.l2bbbbbbbbbb; delete gone.targets['l2bbbbbbbbbb.t3cccccccccc']; delete gone.prefs.combined.l2bbbbbbbbbb;
+  await CC.writeSection('lists', gone, { rev: first.rev, base });
+  const before = JSON.stringify(await lsStoredRaw());
+  const edit = lsClone(base); edit.lists.l2bbbbbbbbbb.name = 'Gear 2';
+  await assert.rejects(() => CC.writeSection('lists', edit, { rev: first.rev, base }), { message: 'This list was removed on another device or in another tab.' });
+  assert.strictEqual(JSON.stringify(await lsStoredRaw()), before, 'a refused write stores nothing');
+  assert.ok(!(await lsStored()).lists.l2bbbbbbbbbb);
+});
+
+test('LS-5 LI1 for a wanted item: an item another tab removed from a list that is still stored is not stored again', async () => {
+  intReset();
+  const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+  const gone = lsClone(base); delete gone.targets['l1aaaaaaaaaa.t2bbbbbbbbbb'];
+  await CC.writeSection('lists', gone, { rev: first.rev, base });
+  const before = JSON.stringify(await lsStoredRaw());
+  const edit = lsClone(base); edit.targets['l1aaaaaaaaaa.t2bbbbbbbbbb'].qty = 5;
+  await assert.rejects(() => CC.writeSection('lists', edit, { rev: first.rev, base }), { message: 'This item was removed from the list on another device or in another tab.' });
+  assert.strictEqual(JSON.stringify(await lsStoredRaw()), before);
+  // the same stale page, leaving that item as it was, is merged and the item stays removed
+  const same = lsClone(base); same.lists.l1aaaaaaaaaa.name = 'Food 2';
+  const w = await CC.writeSection('lists', same, { rev: first.rev, base });
+  assert.ok(w.merged && !w.section.targets['l1aaaaaaaaaa.t2bbbbbbbbbb'] && w.section.lists.l1aaaaaaaaaa.name === 'Food 2');
+});
+
+test('LS-6 LI2: a stale edit inside a removed list is refused with the list\'s text; a new wanted item without its list is refused', async () => {
+  intReset();
+  const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+  const gone = lsClone(base); delete gone.lists.l1aaaaaaaaaa; delete gone.targets['l1aaaaaaaaaa.t1aaaaaaaaaa']; delete gone.targets['l1aaaaaaaaaa.t2bbbbbbbbbb']; delete gone.prefs.combined.l1aaaaaaaaaa;
+  await CC.writeSection('lists', gone, { rev: first.rev, base });
+  const before = JSON.stringify(await lsStoredRaw()), text = { message: 'This list was removed on another device or in another tab.' };
+  const edit = lsClone(base); edit.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty = 9;
+  await assert.rejects(() => CC.writeSection('lists', edit, { rev: first.rev, base }), text);
+  const add = lsClone(base); add.targets['l1aaaaaaaaaa.t9zzzzzzzzzz'] = { item: 7, recipe: 0, qty: 1 };
+  await assert.rejects(() => CC.writeSection('lists', add, { rev: first.rev, base }), text);
+  const cur = await lsStored(), now = (await CC.read()).rev;
+  const orphan = lsClone(cur); orphan.targets['nolist000000.t1aaaaaaaaaa'] = { item: 7, recipe: 0, qty: 1 };
+  await assert.rejects(() => CC.writeSection('lists', orphan, { rev: now, base: cur }), text, 'an orphan made with an up-to-date page is refused too');
+  assert.strictEqual(JSON.stringify(await lsStoredRaw()), before);
+});
+
+test('LS-7 a wanted item already stored without its list stays writable', async () => {
+  intReset();
+  const sec = lsFull(); delete sec.lists.l2bbbbbbbbbb;
+  const seeded = await lsSeed(sec); // 'l2bbbbbbbbbb.t3cccccccccc' is an orphan, as an older build's sync could leave it
+  assert.ok(seeded.section.targets['l2bbbbbbbbbb.t3cccccccccc'] && !seeded.section.lists.l2bbbbbbbbbb);
+  const edit = lsClone(seeded.section); edit.targets['l2bbbbbbbbbb.t3cccccccccc'].qty = 5;
+  const w = await CC.writeSection('lists', edit, { rev: seeded.rev, base: seeded.section });
+  assert.strictEqual(w.section.targets['l2bbbbbbbbbb.t3cccccccccc'].qty, 5);
+  // also from a stale page (the stored copy has changed since)
+  const other = lsClone(w.section); other.lists.l1aaaaaaaaaa.name = 'Elsewhere';
+  await CC.writeSection('lists', other, { rev: w.rev, base: w.section });
+  const stale = lsClone(w.section); stale.targets['l2bbbbbbbbbb.t3cccccccccc'].qty = 6;
+  const w2 = await CC.writeSection('lists', stale, { rev: w.rev, base: w.section });
+  assert.strictEqual(w2.section.targets['l2bbbbbbbbbb.t3cccccccccc'].qty, 6); assert.strictEqual(w2.section.lists.l1aaaaaaaaaa.name, 'Elsewhere');
+});
+
+test('LS-8 two tabs editing different items keep both edits; a unit the page did not change stays as stored has it', async () => {
+  intReset();
+  const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+  const a = lsClone(base); a.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty = 7; a.have['c1.9999'] = { nq: 3 };
+  await CC.writeSection('lists', a, { rev: first.rev, base });
+  const b = lsClone(base); b.targets['l1aaaaaaaaaa.t2bbbbbbbbbb'].qty = 8; b.ways['c1.5057'].by = 'craft';
+  const w = await CC.writeSection('lists', b, { rev: first.rev, base });
+  assert.strictEqual(w.merged, true);
+  const s = await lsStored();
+  assert.strictEqual(s.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty, 7); assert.strictEqual(s.targets['l1aaaaaaaaaa.t2bbbbbbbbbb'].qty, 8);
+  assert.deepStrictEqual(s.have['c1.9999'], { nq: 3 }); assert.strictEqual(s.ways['c1.5057'].by, 'craft');
+  assert.deepStrictEqual(s.lists, base.lists);
+  // the same unit changed in two tabs: the later save wins (a known limit)
+  const c = lsClone(base); c.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty = 11;
+  await CC.writeSection('lists', c, { rev: first.rev, base });
+  assert.strictEqual((await lsStored()).targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty, 11);
+});
+
+test('LS-9 a section above every size limit (250 lists, 2,500 wanted items in one list, 25,000 stock counts) passes the checker and the unit flattening unchanged and is written whole', async () => {
+  const id = (p, n) => p + n.toString(36).padStart(11, '0'), sec = { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} };
+  for (let i = 0; i < 250; i++) sec.lists[id('l', i)] = { name: 'List ' + i, charId: null, order: i, made: 1760000000000 + i };
+  for (let i = 0; i < 2500; i++) sec.targets[id('l', 0) + '.' + id('t', i)] = { item: 100 + i, recipe: 0, qty: 1 };
+  for (let i = 0; i < 25000; i++) sec.have['c1.' + (1000 + i)] = { nq: i % 5 + 1 };
+  const text = JSON.stringify(sec);
+  assert.strictEqual(JSON.stringify(CC.checkLists(lsClone(sec))), text);
+  assert.strictEqual(JSON.stringify(CC.unflatModules(CC.flatModules({ lists: sec })).lists), text);
+  intReset();
+  const first = await CC.writeSection('lists', lsClone(sec), null);
+  assert.strictEqual(JSON.stringify(first.section), text);
+  const edit = lsClone(first.section); edit.lists[id('l', 1)].name = 'Renamed';
+  const w = await CC.writeSection('lists', edit, { rev: first.rev, base: first.section });
+  assert.strictEqual(Object.keys(w.section.lists).length, 250); assert.strictEqual(Object.keys(w.section.targets).length, 2500); assert.strictEqual(Object.keys(w.section.have).length, 25000);
+});
+
+test('LS-10 describeUnit: the labels of Lists units, with the list name from the integrity and characters through nameOf', () => {
+  const nameOf = (c) => ({ c1: 'Kira' })[c] || c, d = (path, l, r, integ) => CC.describeUnit('m|' + JSON.stringify(path), l, r, nameOf, integ);
+  assert.strictEqual(d(['lists', 'lists', 'l1aaaaaaaaaa'], '{"name":"Food"}', null, { kind: 'lists', listName: 'Food' }).what, 'Lists: list “Food”');
+  assert.strictEqual(d(['lists', 'lists', 'l1aaaaaaaaaa'], '{"name":"Food"}', null, { kind: 'lists', listName: 'Food' }).remote, '(removed)');
+  assert.strictEqual(d(['lists', 'targets', 'l1aaaaaaaaaa.t1aaaaaaaaaa'], '{"item":5057,"recipe":0,"qty":3}', '{"item":5057,"recipe":0,"qty":4}', { listName: 'Food' }).what, 'Lists: “Food”: a wanted item (item 5057, 3 wanted)');
+  assert.strictEqual(d(['lists', 'ways', 'c1.5057'], '{"by":"craft"}', '{"by":"vendor"}').what, 'Lists: how Kira gets item 5057');
+  assert.strictEqual(d(['lists', 'owners', 'c1'], '{"order":"craft vendor gather trade market"}', null).what, 'Lists: Kira\'s order of ways to get items');
+  const h = d(['lists', 'have', 'c1.5057'], '{"nq":3,"hq":1}', '{"nq":5}');
+  assert.strictEqual(h.what, 'Lists: the amount Kira has of item 5057'); assert.strictEqual(h.local, '3 normal, 1 high-quality'); assert.strictEqual(h.remote, '5 normal');
+  assert.strictEqual(d(['lists', 'have', 'c1.5057'], null, '{"nq":5}').local, '(removed)');
+  assert.strictEqual(CC.describeUnit('m|["submersibles","settings"]', 'a', 'b', nameOf).what, 'Submersibles settings', 'other modules unchanged');
+});
+
+test('LS-11 the empty section checks to the frame; a stale page writing after every list was removed elsewhere, also with the stored section deleted by hand, is refused or merged and never written back whole', async () => {
+  assert.deepStrictEqual(CC.checkLists({}), { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} });
+  const emptied = (b) => { const e = CC.checkLists({}); e.prefs = {}; return e; };
+  intReset();
+  const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+  await CC.writeSection('lists', emptied(), { rev: first.rev, base });
+  assert.deepStrictEqual(await lsStored(), CC.checkLists({}), 'an emptied section stays the frame');
+  const text = JSON.stringify(await lsStoredRaw());
+  const stale = lsClone(base); stale.lists.l1aaaaaaaaaa.name = 'Typed late';
+  await assert.rejects(() => CC.writeSection('lists', stale, { rev: first.rev, base }), /removed on another device/);
+  assert.strictEqual(JSON.stringify(await lsStoredRaw()), text);
+  const untouched = await CC.writeSection('lists', lsClone(base), { rev: first.rev, base });
+  assert.deepStrictEqual(untouched.section, CC.checkLists({}), 'a page that changed nothing does not bring the old copy back');
+  // the stored section deleted by hand
+  intReset();
+  const f2 = await CC.writeSection('lists', lsFull(), null);
+  await CC.transact((raw) => { const doc = CC.checkDoc(raw); delete doc.modules.lists; doc.modules.submersibles = { fcs: {}, subs: {}, trips: {}, settings: {} }; doc.updated = Date.now(); return doc; });
+  const s2 = lsClone(f2.section); s2.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty = 12;
+  await assert.rejects(() => CC.writeSection('lists', s2, { rev: f2.rev, base: f2.section }), /removed on another device/);
+  assert.ok(!(await lsStoredRaw()).modules.lists, 'nothing was written');
+  const u2 = await CC.writeSection('lists', lsClone(f2.section), { rev: f2.rev, base: f2.section });
+  assert.deepStrictEqual(u2.section, CC.checkLists({}));
+  // a brand new list from a page that never read the section is written
+  intReset();
+  const g = await CC.writeSection('submersibles', { fcs: {}, subs: {}, trips: {}, settings: {} }, null);
+  const fresh = CC.checkLists({ lists: { l1aaaaaaaaaa: { name: 'New' } } });
+  const nw = await CC.writeSection('lists', fresh, null);
+  assert.strictEqual(nw.section.lists.l1aaaaaaaaaa.name, 'New'); assert.ok(g.rev !== undefined);
+});
+
+test('LS-12 a combined selection of 5,001 lists and a list with 5,001 steps pass the new checker and the shipped save.js at the merge base unchanged', () => {
+  const old = lsOldCC(), id = (p, n) => p + n.toString(36).padStart(11, '0');
+  const sec = CC.checkLists({}); sec.lists[id('l', 0)] = { name: 'Many steps', steps: {} };
+  for (let i = 0; i < 5001; i++) sec.lists[id('l', 0)].steps[id('s', i)] = { name: 'S' + i, n: i % 9999 };
+  for (let i = 0; i < 5001; i++) sec.prefs.combined = Object.assign(sec.prefs.combined || {}, { [id('l', i)]: 1 });
+  const text = JSON.stringify(sec);
+  assert.strictEqual(Object.keys(sec.prefs.combined).length, 5001);
+  assert.strictEqual(JSON.stringify(CC.checkLists(lsClone(sec))), text);
+  assert.strictEqual(JSON.stringify(old.checkModules({ lists: lsClone(sec) }).lists), text);
+  assert.deepStrictEqual(lsClone(old.unflatModules(old.flatModules({ lists: sec })).lists), sec, 'the shipped build puts every unit back (its group order is its own)');
+  assert.strictEqual(JSON.stringify(CC.unflatModules(CC.flatModules({ lists: sec })).lists), text);
+});
+
+test('LS-13 LI4 for a wanted item, a way and a stock count: a removal of something another tab changed is refused and the store is unchanged', async () => {
+  const reason = { message: 'This was changed on another device or in another tab, so it was not removed.' };
+  for (const [kind, key, change] of [['targets', 'l1aaaaaaaaaa.t2bbbbbbbbbb', (x) => { x.qty = 5; }], ['ways', 'c1.5057', (x) => { x.by = 'craft'; }], ['have', 'c1.5057', (x) => { x.nq = 40; }], ['owners', 'c1', (x) => { x.order = 'vendor craft gather trade market'; }]]) {
+    intReset();
+    const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+    const other = lsClone(base); change(other[kind][key]);
+    await CC.writeSection('lists', other, { rev: first.rev, base });
+    const before = JSON.stringify(await lsStoredRaw());
+    const removing = lsClone(base); delete removing[kind][key];
+    await assert.rejects(() => CC.writeSection('lists', removing, { rev: first.rev, base }), reason, kind);
+    assert.strictEqual(JSON.stringify(await lsStoredRaw()), before, kind + ': the store is unchanged');
+    // removing what nobody else changed is merged
+    const fine = lsClone(base); delete fine[kind][key === 'c1' ? 'u' : key.replace('.5057', '.5058').replace('t2bbbbbbbbbb', 't1aaaaaaaaaa')];
+    const w = await CC.writeSection('lists', fine, { rev: first.rev, base });
+    assert.ok(w.merged);
+  }
+});
+
+test('LS-14 LI5 a conditional write: with `expect` it succeeds when the named units match and is refused whole when one differs', async () => {
+  intReset();
+  const first = await CC.writeSection('lists', lsFull(), null), base = first.section;
+  const k1 = lsUnit('targets', 'l1aaaaaaaaaa.t1aaaaaaaaaa'), k2 = lsUnit('have', 'c1.5057'), kNone = lsUnit('have', 'c1.7777');
+  const expect = { [k1]: JSON.stringify(base.targets['l1aaaaaaaaaa.t1aaaaaaaaaa']), [k2]: JSON.stringify(base.have['c1.5057']), [kNone]: null };
+  const edit = lsClone(base); edit.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty = 8;
+  const w = await CC.writeSection('lists', edit, { rev: first.rev, base, expect });
+  assert.strictEqual(w.section.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty, 8);
+  // another tab changes the count; the conditional write expecting the old text is refused and stores nothing
+  const other = lsClone(w.section); other.have['c1.5057'].nq = 40;
+  const w2 = await CC.writeSection('lists', other, { rev: w.rev, base: w.section });
+  const before = JSON.stringify(await lsStoredRaw()), since = { message: 'This was changed on another device or in another tab since.' };
+  const undo = lsClone(w2.section); undo.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty = 3;
+  await assert.rejects(() => CC.writeSection('lists', undo, { rev: w2.rev, base: w2.section, expect: { [k1]: JSON.stringify(w2.section.targets['l1aaaaaaaaaa.t1aaaaaaaaaa']), [k2]: expect[k2] } }), since);
+  assert.strictEqual(JSON.stringify(await lsStoredRaw()), before);
+  // a unit expected absent but present is refused too; and a refusal also holds from a stale page
+  await assert.rejects(() => CC.writeSection('lists', undo, { rev: w2.rev, base: w2.section, expect: { [k2]: null } }), since);
+  await assert.rejects(() => CC.writeSection('lists', undo, { rev: first.rev, base, expect }), since);
+  assert.strictEqual(JSON.stringify(await lsStoredRaw()), before);
+  // all units matching, written
+  const ok = await CC.writeSection('lists', undo, { rev: w2.rev, base: w2.section, expect: { [k1]: JSON.stringify(w2.section.targets['l1aaaaaaaaaa.t1aaaaaaaaaa']), [k2]: JSON.stringify(w2.section.have['c1.5057']) } });
+  assert.strictEqual(ok.section.targets['l1aaaaaaaaaa.t1aaaaaaaaaa'].qty, 3);
+});
+
+test('LS-15 a real data stamp from lists.json round-trips through the checker', () => {
+  const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'lists.json'), 'utf8'));
+  assert.ok(typeof D.stamp === 'string' && D.stamp.length > 0 && D.stamp.length <= 40);
+  const sec = CC.checkLists({ lists: { l1aaaaaaaaaa: { name: 'N', data: D.stamp } } });
+  assert.strictEqual(sec.lists.l1aaaaaaaaaa.data, D.stamp);
+  assert.strictEqual(JSON.stringify(CC.checkLists(lsClone(sec))), JSON.stringify(sec));
 });

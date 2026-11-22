@@ -7,7 +7,7 @@
 // Each of E1 to E19 is one test(). A failure prints the invariant, the seed, the case number and the shrunk case.
 // The invariants are stated here by the test itself; the engine is never asked to check itself, except that the plain
 // data readers (LISTS.way for an offer's text, LISTS.tree) are used where the spec defines them as the reference.
-// Parts B (tabs) and C (devices) are added by work items W3 and W4.
+// Part B (tabs, the real CC.writeSection) is work item W3's; part C (devices) is W4's and is added there.
 // Interpretations the model makes (the orchestrator confirms them; none weakens a spec invariant):
 //   (1) "total to get, to craft or to trade" are the fields short, got, crafts and, for trade lines only, trades; the number of
 //       purchases of a gil line can rise when a smaller pack becomes the cheaper offer (gil never rises), so it is not compared;
@@ -19,6 +19,8 @@ const assert = require('node:assert/strict');
 const path = require('path');
 require(path.join(__dirname, '..', 'command-center', 'src', 'lists', 'engine.js'));
 const L = globalThis.LISTS;
+require(path.join(__dirname, '..', 'src', 'core', 'save.js'));
+const CC = globalThis.CC;
 
 const SEEDS = process.env.LISTS_MODEL_SEED ? [Number(process.env.LISTS_MODEL_SEED)] : [1, 2, 3];
 const PER_SEED = Number(process.env.LISTS_MODEL_N || 1000);
@@ -603,4 +605,221 @@ test('the model ran the cases asked for, within the time limit', () => {
   console.log('# lists model: ' + o.ran + ' cases of ' + OPS_PER_CASE + ' operations (seeds ' + SEEDS.join(',') + ') in ' + o.ms + ' ms');
   assert.equal(o.ran, SEEDS.length * PER_SEED);
   if (!process.env.LISTS_MODEL_N) assert.ok(o.ms < TIME_LIMIT_MS, 'took ' + o.ms + ' ms, the limit is ' + TIME_LIMIT_MS);
+});
+
+
+// =========================================================================================================== part B: tabs
+// Three tabs of one device edit the Lists section through the real CC.writeSection, each with an undo stack (the conditional write,
+// LI5). Every sequence: a seeded start, then 12 random steps (add, change, remove a list, a wanted item, a way, a count, an order, a
+// preference; a refresh; an undo; a wipe of everything). The test states its invariants itself, over units (a list header, a wanted item,
+// a way, an owner's order, a stock count, a preference):
+//   LI1 nothing the stored copy lost comes back (a header; a wanted item whose list is stored);  LI2 no new wanted item without its list;
+//   LI3 a unit the page did not change stays as stored has it, one it changed is as sent;  LI4 a unit another tab changed is not removed;
+//   LI5 / E20 a write with `expect` is applied only if every named unit is exactly as expected, and then restores the earlier units;
+//   REFUSED a refused write leaves the store byte-identical, with the spec's text;  ACCEPTED a write is refused if and only if a rule above
+//   says so;  CHECKDOC the store passes CC.checkDoc unchanged;  GONE a unit missing afterwards was removed by the page that wrote;
+//   FRAME an emptied section stays the whole frame;  BIG a store seeded above every size limit is kept whole by a write.
+const B_INVS = ['LI1', 'LI2', 'LI3', 'LI4', 'LI5', 'E20', 'REFUSED', 'ACCEPTED', 'CHECKDOC', 'GONE', 'FRAME', 'BIG'];
+const B_GROUPS = ['lists', 'targets', 'ways', 'owners', 'have', 'prefs'];
+const B_STEPS = 12, B_TIME_LIMIT_MS = 20000;
+const BJ = JSON.stringify;
+const B_TEXT = { list: 'This list was removed on another device or in another tab.', item: 'This item was removed from the list on another device or in another tab.',
+  kept: 'This was changed on another device or in another tab, so it was not removed.', since: 'This was changed on another device or in another tab since.' };
+const bUnits = (sec) => { const m = new Map(); for (const g of B_GROUPS) for (const [k, v] of Object.entries((sec && sec[g]) || {})) m.set(g + '|' + k, BJ(v)); return m; };
+const bExpectKey = (u) => { const i = u.indexOf('|'); return 'm|' + BJ(['lists', u.slice(0, i), u.slice(i + 1)]); };
+const bStoredOf = (raw) => (raw && raw.modules && raw.modules.lists) || CC.checkLists({});
+const bListOf = (u) => u.slice(u.indexOf('|') + 1).split('.')[0];
+const bReset = () => { CC.resetMemory(); if (globalThis.localStorage) { localStorage.removeItem(CC.LS); localStorage.removeItem(CC.LS + '-rev'); } };
+function bSetUnit(sec, u, text) { const i = u.indexOf('|'), g = u.slice(0, i), k = u.slice(i + 1); if (text === null) delete sec[g][k]; else sec[g][k] = JSON.parse(text); }
+
+// what the rules say about one write, in the order the spec gives: LI2, LI1, LI4, LI5; returns { id, text } or null
+function bOracle(B, sent, S, M, differs, expect) {
+  const uB = bUnits(B), uL = bUnits(sent), uS = bUnits(S), uM = bUnits(M);
+  for (const u of uM.keys()) if (u.startsWith('targets|') && !uM.has('lists|' + bListOf(u)) && !(uS.has(u) && !uS.has('lists|' + bListOf(u)))) return { id: 'LI2', text: B_TEXT.list };
+  if (differs) {
+    for (const [u, t] of uL) if (u.startsWith('targets|') && t !== uB.get(u) && uB.has('lists|' + bListOf(u)) && !uS.has('lists|' + bListOf(u))) return { id: 'LI2', text: B_TEXT.list };
+    for (const u of uB.keys()) if (u.startsWith('lists|') && !uS.has(u) && uM.has(u)) return { id: 'LI1', text: B_TEXT.list };
+    for (const u of uB.keys()) if (u.startsWith('targets|') && !uS.has(u) && uM.has(u) && uS.has('lists|' + bListOf(u))) return { id: 'LI1', text: B_TEXT.item };
+    for (const [u, t] of uB) if (!uL.has(u) && uS.has(u) && uS.get(u) !== t) return { id: 'LI4', text: B_TEXT.kept };
+  }
+  if (expect) for (const [key, text] of Object.entries(expect)) {
+    const u = [...new Set([...uS.keys(), ...Object.keys(expect).map(() => null)])].find((x) => x && bExpectKey(x) === key);
+    const cur = u ? uS.get(u) : null;
+    if (cur !== text) return { id: 'E20', text: B_TEXT.since };
+  }
+  return null;
+}
+
+const B_KINDS = ['addList', 'addList', 'addTarget', 'addTarget', 'addTarget', 'editTarget', 'editTarget', 'removeTarget', 'removeList', 'rename', 'setWay', 'removeWay', 'setHave', 'setHave', 'removeHave', 'setOrder', 'pref', 'refresh', 'undo', 'undo', 'undo', 'wipe'];
+function bGenCase(seed, i) {
+  const rnd = makeRnd(seed * 1000003 + i * 7919 + 17);
+  const init = { lists: 1 + rnd(3), targets: rnd(5) }, ops = [];
+  for (let k = 0; k < B_STEPS; k++) ops.push({ tab: rnd(3), k: rnd(B_KINDS.length), a: rnd(10000), b: rnd(10000), c: rnd(10000) });
+  return { init, ops };
+}
+function bInitSection(init) {
+  const sec = CC.checkLists({});
+  for (let i = 0; i < init.lists; i++) sec.lists['li' + i + 'seed'] = { name: 'List ' + i, charId: null, order: i, made: 1760000000000 + i };
+  for (let i = 0; i < init.targets; i++) sec.targets['li' + (i % init.lists) + 'seed.ti' + i + 'seed'] = { item: 100 + i, recipe: 0, qty: 1 + i };
+  sec.ways['c1.100'] = { by: 'craft' }; sec.have['c1.100'] = { nq: 2 }; sec.owners.c1 = { order: 'vendor craft gather trade market' };
+  return sec;
+}
+
+async function bRunCase(c) {
+  const viol = [], trace = [], flag = (inv, msg) => viol.push({ inv, msg });
+  bReset();
+  const first = await CC.writeSection('lists', bInitSection(c.init), null);
+  const tabs = [0, 1, 2].map((n) => ({ n, rev: first.rev, view: BJ(first.section), count: 0, undo: [] }));
+  tabs.forEach((t) => { t.view = JSON.parse(t.view); });
+  const everLists = new Set(Object.keys(first.section.lists));
+  const refresh = async (t) => { const r = await CC.read(); t.rev = r.rev; t.view = JSON.parse(BJ(bStoredOf(r.raw))); };
+
+  async function write(t, sent, expect, desc, pushUndo) {
+    const r0 = await CC.read(), S = JSON.parse(BJ(bStoredOf(r0.raw))), before = BJ(r0.raw);
+    const B = CC.checkLists(JSON.parse(BJ(t.view))), Ls = CC.checkLists(JSON.parse(BJ(sent))), differs = r0.rev !== t.rev;
+    const M = differs ? CC.checkLists(CC.mergeModules({ lists: t.view }, { lists: Ls }, { lists: S }).lists) : Ls;
+    const want = bOracle(B, Ls, S, M, differs, expect);
+    let res = null, err = null;
+    try { res = await CC.writeSection('lists', sent, expect ? { rev: t.rev, base: t.view, expect } : { rev: t.rev, base: t.view }); } catch (e) { err = String(e && e.message); }
+    const r1 = await CC.read(), after = BJ(r1.raw), N = bStoredOf(r1.raw);
+    trace.push('tab ' + t.n + ' ' + desc + (err ? ' -> refused: ' + err : ' -> written'));
+    if (err) {
+      if (!want) flag('ACCEPTED', 'a write no rule refuses was refused: ' + err);
+      else if (err !== want.text) flag(want.id, 'refused with "' + err + '", the rule says "' + want.text + '"');
+      if (after !== before) flag('REFUSED', 'a refused write changed the store');
+      await refresh(t);
+      return false;
+    }
+    if (want) flag(want.id, 'a write the rule refuses ("' + want.text + '") was stored');
+    const uS = bUnits(S), uB = bUnits(B), uL = bUnits(Ls), uN = bUnits(N);
+    for (const [u, t2] of uN) {
+      if (uS.get(u) === t2) continue;
+      if (uL.get(u) !== t2 || uL.get(u) === uB.get(u)) flag('LI3', 'unit ' + u + ' differs from stored but the page did not send a change to it');
+    }
+    for (const u of uS.keys()) if (!uN.has(u) && !(uB.has(u) && !uL.has(u))) flag('GONE', 'unit ' + u + ' disappeared and this page did not remove it');
+    for (const [u, t2] of uL) if (uB.get(u) !== t2 && uN.get(u) !== t2 && !(uS.has(u) && uS.get(u) !== uB.get(u) && false)) flag('LI3', 'unit ' + u + ' the page changed is not as sent');
+    for (const u of uN.keys()) if (u.startsWith('targets|') && !uN.has('lists|' + bListOf(u)) && !(uS.has(u) && !uS.has('lists|' + bListOf(u)))) flag('LI2', 'a new wanted item without its list: ' + u);
+    if (expect) for (const [key, text] of Object.entries(expect)) { const u = [...uN.keys()].find((x) => bExpectKey(x) === key); void text; void u; }
+    try { if (BJ(CC.checkDoc(JSON.parse(after)).modules.lists) !== BJ(N) || BJ(CC.checkLists(JSON.parse(BJ(N)))) !== BJ(N)) flag('CHECKDOC', 'the store changes when checked'); } catch (e) { flag('CHECKDOC', String(e && e.message)); }
+    if (Object.keys(N).join() !== 'v,lists,targets,ways,owners,have,prefs') flag('FRAME', 'the section is not the whole frame: ' + Object.keys(N).join());
+    if (pushUndo) {
+      const entry = { before: {}, after: {} };
+      for (const u of new Set([...uB.keys(), ...uL.keys()])) if (uB.get(u) !== uL.get(u)) { entry.before[u] = uB.has(u) ? uB.get(u) : null; entry.after[u] = uL.has(u) ? uL.get(u) : null; }
+      if (Object.keys(entry.before).length) { t.undo.push(entry); if (t.undo.length > 20) t.undo.shift(); }
+    }
+    t.rev = res.rev; t.view = JSON.parse(BJ(res.section));
+    Object.keys(res.section.lists).forEach((id) => everLists.add(id));
+    return true;
+  }
+
+  for (const op of c.ops) {
+    const t = tabs[op.tab], kind = B_KINDS[op.k], V = JSON.parse(BJ(t.view));
+    const listIds = Object.keys(V.lists).sort(), tids = Object.keys(V.targets).sort(), pick = (arr, x) => arr[x % arr.length];
+    const nid = (p) => p + t.n + (t.count++).toString(36).padStart(3, '0');
+    if (kind === 'refresh') { await refresh(t); trace.push('tab ' + t.n + ' refresh'); continue; }
+    if (kind === 'undo') {
+      const e = t.undo.pop(); if (!e) continue;
+      await refresh(t); // an undo is built on the saved copy, and the store checks the units again inside its transaction (D16)
+      const sent = JSON.parse(BJ(t.view)), expect = {};
+      for (const [u, text] of Object.entries(e.before)) bSetUnit(sent, u, text);
+      for (const [u, text] of Object.entries(e.after)) expect[bExpectKey(u)] = text;
+      const r0 = await CC.read(), S = bStoredOf(r0.raw), uS = bUnits(S);
+      const matches = Object.entries(e.after).every(([u, text]) => (uS.has(u) ? uS.get(u) : null) === text);
+      const ok = await write(t, sent, expect, 'undo of ' + Object.keys(e.before).length + ' unit(s)', false);
+      if (ok && !matches) flag('E20', 'an undo was applied though a unit differed from what the change wrote');
+      if (ok) { const uN = bUnits(bStoredOf((await CC.read()).raw)); for (const [u, text] of Object.entries(e.before)) if ((uN.has(u) ? uN.get(u) : null) !== text && !(uS.has(u) && false)) flag('E20', 'an applied undo did not restore ' + u + ' byte for byte'); }
+      if (!ok && matches) { /* refused for another rule (a removed list, say): allowed */ }
+      continue;
+    }
+    let desc = kind;
+    if (kind === 'addList') { const id = nid('l'); V.lists[id] = { name: 'N' + op.a % 50, charId: null, order: op.b % 20, made: 1760000100000 + op.c }; desc += ' ' + id; }
+    else if (kind === 'addTarget') {
+      const pool = op.c % 5 === 0 && everLists.size ? [...everLists].sort() : listIds; if (!pool.length) continue;
+      const l = pick(pool, op.a), id = nid('t'); V.targets[l + '.' + id] = { item: 100 + op.b % 6, recipe: 0, qty: 1 + op.c % 9 }; desc += ' ' + l + '.' + id;
+    }
+    else if (kind === 'editTarget') { if (!tids.length) continue; const k = pick(tids, op.a); V.targets[k].qty = 1 + op.b % 99; if (op.c % 3 === 0) V.targets[k].done = true; else if (op.c % 3 === 1) delete V.targets[k].done; desc += ' ' + k; }
+    else if (kind === 'removeTarget') { if (!tids.length) continue; const k = pick(tids, op.a); delete V.targets[k]; desc += ' ' + k; }
+    else if (kind === 'removeList') {
+      if (!listIds.length) continue; const l = pick(listIds, op.a); delete V.lists[l]; for (const k of tids) if (k.startsWith(l + '.')) delete V.targets[k];
+      if (V.prefs.combined) delete V.prefs.combined[l]; desc += ' ' + l;
+    }
+    else if (kind === 'rename') { if (!listIds.length) continue; const l = pick(listIds, op.a); V.lists[l].name = 'R' + op.b % 50; desc += ' ' + l; }
+    else if (kind === 'setWay') { const k = 'c1.' + (100 + op.a % 4); V.ways[k] = { by: ['vendor', 'craft', 'gather', 'trade', 'market', 'have'][op.b % 6] }; desc += ' ' + k; }
+    else if (kind === 'removeWay') { const ks = Object.keys(V.ways).sort(); if (!ks.length) continue; delete V.ways[pick(ks, op.a)]; }
+    else if (kind === 'setHave') { const k = 'c1.' + (100 + op.a % 4); V.have[k] = { nq: 1 + op.b % 50 }; desc += ' ' + k; }
+    else if (kind === 'removeHave') { const ks = Object.keys(V.have).sort(); if (!ks.length) continue; delete V.have[pick(ks, op.a)]; }
+    else if (kind === 'setOrder') V.owners.c1 = { order: op.a % 2 ? 'craft vendor gather trade market' : 'vendor craft gather trade market' };
+    else if (kind === 'pref') { V.prefs.hideDone = op.a % 2 === 0; if (op.b % 3 === 0) V.prefs.priceWorld = 'W' + op.c % 5; }
+    else if (kind === 'wipe') { V.lists = {}; V.targets = {}; V.ways = {}; V.owners = {}; V.have = {}; V.prefs = {}; }
+    await write(t, V, null, desc, true);
+    if (kind === 'wipe') {
+      const N = bStoredOf((await CC.read()).raw);
+      if (Object.keys(N).join() !== 'v,lists,targets,ways,owners,have,prefs') flag('FRAME', 'an emptied section is not the whole frame');
+    }
+  }
+  return { viol, trace };
+}
+
+function bShrink(c, inv) {
+  let cur = c;
+  return (async () => {
+    for (let pass = 0; pass < 3; pass++) for (let i = cur.ops.length - 1; i >= 0; i--) {
+      const t = { init: cur.init, ops: cur.ops.slice(0, i).concat(cur.ops.slice(i + 1)) };
+      const r = await bRunCase(t); if (r.viol.some((v) => v.inv === inv)) cur = t;
+    }
+    return cur;
+  })();
+}
+
+let bSweep = null;
+function bSweepAll() {
+  if (bSweep) return bSweep;
+  return (bSweep = (async () => {
+    const t0 = Date.now(), out = { ran: 0, ms: 0, inv: {} };
+    for (const inv of B_INVS) out.inv[inv] = { count: 0, first: null };
+    for (const seed of SEEDS) for (let i = 0; i < PER_SEED; i++) {
+      const c = bGenCase(seed, i), r = await bRunCase(c); out.ran++;
+      for (const v of r.viol) { const o = out.inv[v.inv] = out.inv[v.inv] || { count: 0, first: null }; o.count++; if (!o.first) o.first = { seed, i, c, msg: v.msg }; }
+    }
+    out.ms = Date.now() - t0;
+    for (const inv of Object.keys(out.inv)) {
+      const f = out.inv[inv].first; if (!f) continue;
+      const small = await bShrink(f.c, inv), r = await bRunCase(small), v = r.viol.find((x) => x.inv === inv);
+      f.shrunk = small; f.shrunkMsg = v ? v.msg : f.msg; f.trace = r.trace.join('\n    ');
+    }
+    return out;
+  })());
+}
+const B_TEXTS = {
+  LI1: 'nothing the stored copy lost comes back', LI2: 'no new wanted item without its list; a stale edit inside a removed list is refused', LI3: 'a unit the page did not change stays as stored has it; one it changed is as sent',
+  LI4: 'a unit another tab changed is not removed', LI5: 'a conditional write is applied only if the named units are as expected', E20: 'undo restores byte for byte, only when every unit is as the change wrote it',
+  REFUSED: 'a refused write leaves the store byte-identical', ACCEPTED: 'a write is refused only when a rule says so', CHECKDOC: 'the store passes CC.checkDoc unchanged', GONE: 'a unit missing afterwards was removed by the page that wrote',
+  FRAME: 'an emptied section stays the whole frame', BIG: 'a store above every size limit is kept whole by a write'
+};
+for (const inv of B_INVS.filter((x) => x !== 'BIG')) test(inv + ' (tabs) ' + B_TEXTS[inv], async () => {
+  const o = await bSweepAll();
+  if (o.inv[inv].count) { const f = o.inv[inv].first; assert.fail(inv + ' failed in ' + o.inv[inv].count + ' violations. First: seed ' + f.seed + ', case ' + f.i + '. ' + f.shrunkMsg + '\n  shrunk case: ' + f.shrunk.ops.length + ' operation(s) from a start of ' + f.shrunk.init.lists + ' list(s), ' + f.shrunk.init.targets + ' item(s):\n    ' + f.trace + '\n  operations ' + BJ(f.shrunk.ops)); }
+});
+test('BIG (tabs) ' + B_TEXTS.BIG, async () => {
+  const id = (p, n) => p + n.toString(36).padStart(11, '0'), sec = CC.checkLists({});
+  for (let i = 0; i < 250; i++) sec.lists[id('l', i)] = { name: 'L' + i, charId: null, order: i, made: 1760000000000 + i };
+  for (let i = 0; i < 2500; i++) sec.targets[id('l', 0) + '.' + id('t', i)] = { item: 100 + i, recipe: 0, qty: 1 };
+  for (let i = 0; i < 25000; i++) sec.have['c1.' + (1000 + i)] = { nq: 1 };
+  bReset();
+  const first = await CC.writeSection('lists', JSON.parse(BJ(sec)), null);
+  assert.equal(BJ(first.section), BJ(sec), 'the seed is stored whole');
+  const edit = JSON.parse(BJ(first.section)); edit.lists[id('l', 3)].name = 'Edited'; edit.targets[id('l', 0) + '.' + id('t', 5)].qty = 9;
+  const w1 = await CC.writeSection('lists', edit, { rev: first.rev, base: first.section });
+  const other = JSON.parse(BJ(first.section)); other.have['c1.1000'] = { nq: 7 };
+  const w2 = await CC.writeSection('lists', other, { rev: first.rev, base: first.section }); // a stale tab
+  assert.equal(Object.keys(w2.section.lists).length, 250); assert.equal(Object.keys(w2.section.targets).length, 2500); assert.equal(Object.keys(w2.section.have).length, 25000);
+  assert.equal(w2.section.lists[id('l', 3)].name, 'Edited'); assert.equal(w2.section.have['c1.1000'].nq, 7); void w1;
+  const stored = CC.checkDoc((await CC.read()).raw).modules.lists;
+  assert.equal(BJ(CC.checkLists(JSON.parse(BJ(stored)))), BJ(stored));
+});
+test('the tabs model ran the cases asked for, within the time limit', async () => {
+  const o = await bSweepAll();
+  console.log('# lists model part B: ' + o.ran + ' cases of ' + B_STEPS + ' steps, three tabs (seeds ' + SEEDS.join(',') + ') in ' + o.ms + ' ms');
+  assert.equal(o.ran, SEEDS.length * PER_SEED);
+  if (!process.env.LISTS_MODEL_N) assert.ok(o.ms < B_TIME_LIMIT_MS, 'took ' + o.ms + ' ms, the limit is ' + B_TIME_LIMIT_MS);
 });

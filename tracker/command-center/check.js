@@ -5592,6 +5592,65 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C145 (Lists, W3) The Lists section is kept byte for byte by every app. Each of the three newly built apps and the Tracker and Atelier builds shipped at the merge base (written to a temporary folder with git show and
+    //    served beside the site) saves the same full lists section, then saves another module; the lists section read back is identical to what was sent, and the new builds' own checker leaves it unchanged. ──
+    await guard('C145', async () => {
+      const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
+      let base;
+      try { base = gitOut(['merge-base', 'HEAD', 'origin/main']).toString().trim(); gitOut(['cat-file', '-e', base + '^{commit}']); }
+      catch (e) { throw new Error('the merge base with origin/main cannot be read (the checkout needs the history; the workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]); }
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-old-'));
+      const written = {};
+      for (const [name, rel] of [['tracker', 'tracker/site'], ['atelier', 'crafting/atelier/site']]) {
+        const dir = path.join(tmp, name);
+        const files = gitOut(['ls-tree', '-r', '--name-only', base, rel]).toString().split('\n').filter(Boolean);
+        if (!files.length) throw new Error('no files of ' + rel + ' at ' + base);
+        for (const f of files) { const dest = path.join(dir, f.slice(rel.length + 1)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, gitOut(['show', base + ':' + f])); }
+        written[name] = dir;
+      }
+      const mounts = [[BASE + 'old-tracker/', written.tracker], [BASE + 'old-atelier/', written.atelier]];
+      MOUNTS.unshift(...mounts);
+      const server = await start(PORT5);
+      const pages = {}, errs = [];
+      try {
+        for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/'], ['oldTracker', ROOT5 + 'old-tracker/'], ['oldAtelier', ROOT5 + 'old-atelier/']]) {
+          const { ctx, errors } = await context(); errs.push(errors);
+          const pg = await ctx.newPage(); await pg.goto(url);
+          if (/atelier/i.test(name)) { await pg.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 }).catch(() => {}); await pg.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 }).catch(() => {}); }
+          for (let attempt = 0; ; attempt++) {
+            try {
+              await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {});
+              pages[name] = await pg.evaluate(async () => {
+                if (typeof window.CC !== 'object' || !window.CC || typeof CC.writeSection !== 'function') return null;
+                const sample = { v: 1, lists: { l1aaaaaaaaaa: { name: 'Food', charId: 'c1', order: 0, made: 1760000000000, data: '7.57h1 44948e4c 70429e21', steps: { s1aaaaaaaaaa: { name: 'First', n: 0 }, s2aaaaaaaaaa: { name: 'Second', n: 1 } } }, l2bbbbbbbbbb: { name: 'Gear', charId: null, order: 1, made: 1760000001000, data: '7.57h1 44948e4c 70429e21' } },
+                  targets: { 'l1aaaaaaaaaa.t1aaaaaaaaaa': { item: 5057, recipe: 1000, qty: 3, hq: true, make: true, crafted: 1, step: 's2aaaaaaaaaa', at: 1760000002000 }, 'l1aaaaaaaaaa.t2bbbbbbbbbb': { item: 5058, recipe: 0, qty: 99999, coll: true, step: 'nosuchstep1', done: true, at: 1760000003000 } },
+                  ways: { 'c1.5057': { by: 'trade', recipe: 1001, hq: true, offer: '1016902.15.14944' }, 'u.5058': { by: 'have' } }, owners: { c1: { order: 'market trade gather craft vendor' }, u: {} },
+                  have: { 'c1.5057': { nq: 4, hq: 2, coll: 0 }, 'u.5058': { nq: 0, hq: 0, coll: 7 } }, prefs: { priceWorld: 'Ravana', hideDone: true, combined: { l1aaaaaaaaaa: 1, l2bbbbbbbbbb: 1 } } };
+                const sent = JSON.stringify(sample), clone = (x) => JSON.parse(JSON.stringify(x));
+                const first = await CC.writeSection('lists', clone(sample), null);
+                const sub = { fcs: { fa: { name: 'Alpha', charId: 'c1', order: 0, unlockedSlots: 2, world: 'Ravana', discovered: [1, 2, 3] } }, subs: {}, trips: {}, settings: {} };
+                const other = await CC.writeSection('submersibles', sub, { rev: first.rev, base: null }).then(() => 'ok', (e) => String(e && e.message));
+                let tracker = 'not run';
+                if (typeof ET === 'object' && ET && typeof ET.saveState === 'function' && typeof ET.stateFromDoc === 'function') {
+                  const r = await CC.read(), st = ET.stateFromDoc(CC.checkDoc(r.raw)) || (typeof ET.newState === 'function' ? ET.newState(['A']) : null);
+                  tracker = st ? await ET.saveState(st, true).then((v) => (v ? 'saved' : 'refused'), (e) => String(e && e.message)) : 'no state';
+                }
+                const raw = (await CC.read()).raw, listsNow = JSON.stringify(raw.modules.lists), checked = JSON.stringify(CC.checkDoc(clone(raw)).modules.lists);
+                return { sent: listsNow === sent, other, tracker, checkedSame: checked === sent, hasChecker: typeof CC.checkLists };
+              });
+              break;
+            } catch (e) { if (attempt >= 3 || !/context|navigation|destroyed/i.test(String(e.message))) throw e; await pg.waitForTimeout(500); }
+          }
+          await ctx.close();
+        }
+      } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 2); fs.rmSync(tmp, { recursive: true, force: true }); }
+      const newOnes = ['tracker', 'commandCenter', 'atelier'], oldOnes = ['oldTracker', 'oldAtelier'];
+      const ok = Object.keys(pages).length === 5 && Object.values(pages).every((p) => p && p.sent === true && p.other === 'ok') && newOnes.every((n) => pages[n].hasChecker === 'function' && pages[n].checkedSame === true)
+        && oldOnes.every((n) => pages[n].hasChecker === 'undefined') && ['tracker', 'oldTracker'].every((n) => pages[n].tracker === 'saved' || pages[n].tracker === 'not run') && errs.every((e) => real(e).length === 0);
+      record('C145', 'The Lists section survives a save of another module (and the Tracker\'s own save) byte for byte in the three new builds and in the Tracker and Atelier builds shipped at the merge base (git show of ' + base.slice(0, 12) + '); the new builds\' checker CC.checkLists leaves it unchanged', ok, { pages, base });
+      server.close();
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──
