@@ -700,6 +700,15 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   (E19)), `tracker/tests/lists-model.test.js` part A, `package.json`. Accept: `npm run test:unit`; a plan for 500
   wanted items of real data under 100 ms in Node, the loop search included (figure reported). Escalate if: an
   invariant cannot hold as written (they are argued on paper only; the model test is the authority).
+- **W3 ruling (orchestrator, 2026-11-22).** Two existing tests in `tracker/tests/core.test.js` used a made-up module
+  named `lists` as a stand-in for "a section this build does not know" (fixture `MODS` and the R2 two-device test). No
+  shipped build has ever written `modules.lists` (searched: no source writes it), so no player data has that name. The
+  stand-in is renamed to `notes` in those tests, every assertion unchanged; this is the one permitted edit of existing
+  tests in W3. Builder choices accepted: LI5 `expect` keys are the existing unit keys (`m|` + JSON path), values the
+  unit's JSON text or null; LI2's first part and LI5 also run when the stamp is equal; a wanted item missing `item` or
+  `qty` is dropped, a missing `recipe` reads as 0 (never dropped for that alone); `crafted` 0 to 99999, not clamped to
+  `qty`; an all-zero stock count is kept by the checker; step `name` up to 60, `n` 0 to 9999; `offer` matches
+  digits.digits.digits.
 - **W3 Save section and store rules (Sonnet builder; after W2).** Files: `.github/workflows/checks.yml` (`fetch-depth: 0`
   on the checkout, for the tests against shipped builds), `tracker/src/core/save.js` (`CC.checkLists`
   in `CHECK`, always the whole frame, no size limit; for `lists` the gate and LI2, LI1, LI4, LI5 in `writeSection`;
