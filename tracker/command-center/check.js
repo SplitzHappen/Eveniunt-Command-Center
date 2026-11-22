@@ -251,7 +251,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const again = await shellState(page);
       if (SHOT) await page.screenshot({ path: path.join(ev, 'shell-desktop.png') });
       const ok = first.isolated === false && again.isolated === false && again.controller === ROOT + 'sw.js' &&
-        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && again.cards === 3 && real(errors).length === 0;
+        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && again.cards === 4 && real(errors).length === 0;
       record('C1', 'The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it', ok, { first, again, errors: real(errors), external });
       await ctx.close();
     });
@@ -293,7 +293,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT + 'atelier/');
       const aOff = await atelierState(page);
       await ctx.setOffline(false);
-      record('C4', 'Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open', sOff.cards === 3 && tOff.overview && tOff.isolated === false && aOff.isolated === true && aOff.threads > 1,
+      record('C4', 'Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open', sOff.cards === 4 && tOff.overview && tOff.isolated === false && aOff.isolated === true && aOff.threads > 1,
         { shell: sOff, tracker: tOff, atelier: aOff });
       record('C2-4 errors', 'No page or console errors in that profile', real(errors).length === 0, real(errors));
       await ctx.close();
@@ -310,7 +310,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const note = await page.evaluate(() => ({ h1: document.querySelector('h1') && document.querySelector('h1').textContent, back: !!document.querySelector('a[href]') }));
       await page.click('a[href]'); await page.waitForSelector('.modules');
       const s = await shellState(page);
-      record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 3, { note, shellAfter: s.url });
+      record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 4, { note, shellAfter: s.url });
       await ctx.close();
     });
 
@@ -532,9 +532,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await p.waitForSelector('a[data-cc-back]');
       const dHand = await handoverState(p);
       await p.click('a[data-cc-back]'); await p.waitForSelector('.modules'); const s3 = await shellState(p);
-      const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 3 &&
-        aHand.back === ROOT && s2.url === ROOT && s2.isolated === false && s2.cards === 3 &&
-        dHand.back === ROOT && s3.url === ROOT && s3.isolated === false && s3.cards === 3 && real(errors).length === 0 && real(c2.errors).length === 0;
+      const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 4 &&
+        aHand.back === ROOT && s2.url === ROOT && s2.isolated === false && s2.cards === 4 &&
+        dHand.back === ROOT && s3.url === ROOT && s3.isolated === false && s3.cards === 4 && real(errors).length === 0 && real(c2.errors).length === 0;
       record('C14', 'The header link brings the owner back to the shell from the Tracker and from the Atelier, also from an Atelier opened directly with the shell never visited; the shell is not isolated each time',
         ok, { fromTracker: { link: tHand.back, shell: s1 }, fromAtelier: { link: aHand.back, shell: s2 }, fromAtelierOpenedDirectly: { link: dHand.back, shell: s3 }, errors: real(errors).concat(real(c2.errors)) });
       await c2.ctx.close();
@@ -627,7 +627,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       }
       const f = detail.files || {};
       const ok = !detail.error && f.root && f.tracker && f.atelier && f.cosmic && f.oldFrontPageGone && f.privateRecordsAbsent && detail.freshLists.workflowWrites && detail.freshLists.trackerWorkerServes &&
-        detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 3 && detail.shell.controller === ROOT3 + 'sw.js' &&
+        detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 4 && detail.shell.controller === ROOT3 + 'sw.js' &&
         detail.links.broken.length === 0 && /Sinus Ardorum/.test(detail.cosmic.title) && detail.tracker.overview && detail.tracker.controller === ROOT3 + 'tracker/sw.js' && detail.errors.length === 0;
       record('C16', 'The published layout (gate 1E): the repository\'s files and the Pages workflow\'s own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it', ok, detail);
     });
@@ -764,9 +764,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await c2.ctx.setOffline(true); await p2.reload(); await ready(p2);
         const directOffline = await subsState(p2);
         await c2.ctx.close();
-        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && shell.cards === 3 &&
+        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && shell.cards === 4 &&
           fromShell.url === SUBS && fromShell.isolated === false && fromShell.controller === ROOT + 'sw.js' && fromShell.back === ROOT && fromShell.tabs.join() === 'Board,Log,Map,Earnings,Setup' &&
-          backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 3 &&
+          backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 4 &&
           direct.isolated === false && direct.controller === ROOT + 'sw.js' && directOffline.tabs.length === 5 && directOffline.isolated === false &&
           real(errors).length === 0 && real(c2.errors).length === 0 && external.length === 0;
         record('C20', 'The Submersibles module opens from the shell (switcher and home card) and directly, is not isolated, comes under the shell\'s site-wide worker and works offline after one visit; its header leads back to the shell',
@@ -5751,6 +5751,44 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       outcome.a1 = a1; outcome.a2 = a2; outcome.b1 = b1; outcome.b2 = b2;
       record('C146', 'Two devices (stand-ins) meet over a list: (A) removed whole on one device and an item changed on the other: the Settings sync says the devices disagree, the Tracker asks one question that names the list and says what each answer does; closing the dialog changes nothing and it is asked again; Keep leaves the list and the changed item on both devices and the cloud copy, Remove takes the list and its items from all three; (B) a wanted item removed on one device and changed on the other: one question naming the list and the item; Keep leaves the changed item, Remove removes it everywhere; nothing is asked again afterwards',
         okA1 && okA2 && okB1 && okB2, { okA1, okA2, okB1, okB2, outcome });
+    });
+
+    // ── C147 (Lists, W6) The Lists page opens from the switcher and from the home card, shows "Your lists" with its empty state, works offline after one
+    //    visit, raises no page error and has no sideways scroll at 360 px; the data file is the real one (unpacked, with its crafting log and the no-hand-over list).
+    await guard('C147', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context();
+      const page = await ctx.newPage();
+      const LISTS = ROOT5 + 'lists/';
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+      const state = (pg) => pg.evaluate(() => ({ url: location.href, isolated: self.crossOriginIsolated, controller: navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL,
+        text: document.querySelector('#view').textContent.trim(), buttons: [...document.querySelectorAll('#view .btn')].map((b) => b.textContent.trim()), back: (document.querySelector('.cc-back') || {}).href,
+        side: document.documentElement.scrollWidth - innerWidth, current: (document.querySelector('.switcher [aria-current=page]') || {}).textContent,
+        data: window.__lists.data() && { recipes: Object.keys(window.__lists.data().recipes).length, log: Object.keys(window.__lists.data().log).length, noHand: window.__lists.data().noHandOver.length, stamp: window.__lists.data().stamp } }));
+      await page.goto(ROOT5); await shellControlled(page);
+      const shell = await shellState(page);
+      await page.click('.switcher a[data-module="lists"]'); await ready(page);
+      const fromSwitcher = await state(page);
+      await page.click('.cc-back'); await page.waitForSelector('.modules');
+      await page.click('.modules a[data-module="lists"]'); await ready(page);
+      await ctx.setOffline(true);
+      await page.reload(); await ready(page);
+      const offline = await state(page);
+      await ctx.setOffline(false);
+      await page.setViewportSize({ width: 360, height: 740 });
+      await page.reload(); await ready(page);
+      const phone = await state(page);
+      await ctx.close();
+      const want = 'No lists yet. Start one, or build one from the crafting-log pages you have not finished.';
+      const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && shell.cards === 4 &&
+        fromSwitcher.url === LISTS && fromSwitcher.isolated === false && fromSwitcher.controller === ROOT5 + 'sw.js' && fromSwitcher.back === ROOT5 && fromSwitcher.current === 'Lists' &&
+        fromSwitcher.text.startsWith(want) && fromSwitcher.buttons.join() === 'New list,From the crafting log' &&
+        fromSwitcher.data && fromSwitcher.data.recipes > 13000 && fromSwitcher.data.log === 8 && /^\d/.test(fromSwitcher.data.stamp) &&
+        offline.url === LISTS && offline.text.startsWith(want) && offline.data && offline.data.recipes === fromSwitcher.data.recipes &&
+        phone.side <= 0 && phone.text.startsWith(want) && real(errors).length === 0 && external.length === 0;
+      record('C147', 'The Lists page opens from the switcher and the home card, shows "Your lists" with its empty state, is not isolated, works offline after one visit, has no page error and no sideways scroll at 360 px',
+        ok, { shell: { modules: shell.modules, cards: shell.cards }, fromSwitcher, offline, phone, errors: real(errors), external });
+      void server;
     });
 
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,

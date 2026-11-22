@@ -1,0 +1,17 @@
+/* Eveniunt Command Center, Lists (work item W6). Loaded after ../shell.css, whose colour tokens it uses. Phone first: one column,
+   no sideways scroll at 360 px, tap targets 40 px. */
+.lists-main { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 22px 20px 44px; }
+.lists-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.lists-bar .btn, .lists-empty .btn { min-height: 40px; padding: 6px 14px; font: inherit; cursor: pointer; }
+.lists-bar .btn[disabled], .lists-empty .btn[disabled] { opacity: .6; cursor: not-allowed; }
+.lists-group { margin: 0 0 24px; }
+.lists-group h2 { font: 700 11px/1.2 "Cinzel", var(--f-serif); letter-spacing: .26em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px; }
+.lists-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.list-card { background: var(--slip); border: 1px solid var(--rule); border-top: 3px solid var(--seal); box-shadow: var(--shadow); padding: 12px 14px; min-width: 0; }
+.list-card h3 { font: 900 22px/1 "Big Shoulders Display", "Arial Narrow", sans-serif; letter-spacing: .02em; text-transform: uppercase; margin: 0 0 6px; overflow-wrap: anywhere; }
+.list-card p { margin: 0; font: 600 13px/1.4 var(--f-data); color: var(--ink-2); }
+.lists-empty { max-width: 560px; margin: 28px auto; padding: 22px 20px; text-align: center; border: 1px dashed var(--rule); background: var(--slip); }
+.lists-empty p { margin: 0 0 14px; }
+.lists-empty .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.lists-note { padding: 12px 14px; border: 1px solid var(--rule); background: var(--slip); }
+.lists-foot { max-width: 1240px; }
