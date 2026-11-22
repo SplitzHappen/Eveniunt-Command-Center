@@ -125,6 +125,15 @@ offers and nodes, repeated until nothing new is added, so a currency can always 
 | `log` | `{ job: [[page title, [recipe ids]]…] }`, added by `build.js` (W6) from the `craft-*` lists of `tracker-data.json`; `build.js` stops if a recipe id in it is not in `recipes` | the Tracker's own lists |
 | `changes` | `[{ from, to, recipes: { id: [old row, new row] }, gone: { id: old row } }]`, `from` and `to` are stamps; empty in the first file; a later run keeps every earlier entry and adds one | the tool, by comparing with the committed file before it writes |
 
+**Built in W1 (2026-11-22), choices the orchestrator accepted:** `items[2]` (merchantSells) is the Item sheet's
+`PriceMid`; `gather` hours are the sorted spawn hours (0 when not timed) and minutes the node's duration (all 185 timed
+items agree with `conditions.json`); fish are job 2 with the lowest spot's level and zone and no window; flag bits are
+written in the tool's header (items: 1 tradable, 2 can be HQ, 4 always collectable, 8 crystal; recipes: 1 HQ, 2 expert,
+4 specialist, 8 collectable, 16 quick synthesis, 32 master book); a `changes` entry records only a recipe that differs
+or is gone (added recipes are not recorded). First run: 13,892 recipes, 13,848 items, 4,041 gil offers, 1,045 other
+offers, 25 items with more than four offers, 118 currencies closed, no recipe loop; plain 1,758,168 bytes, packed
+317,979 bytes (423,972 as base64), stamp `7.57h1 44948e4c 70429e21`.
+
 **Gil merchant or not** is read from the offer, never guessed: an offer is `vendor` when its only currency is gil
 (currency 1); every other offer is `trade`. **Facts checked by W0 (2026-11-22):** the pinned `shops.json` has 2,253
 shops and 38,908 offers; every offer lists its currencies (16,560 gil only, 22,348 with another currency, none without
