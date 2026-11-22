@@ -830,6 +830,14 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   row's quality, and a craft switched to bought and back shows the first plan again; "I have enough of this" moves the
   row to "Not in your typed stock" with its sentence; a looped item shows under Other with its note). Accept: those
   checks and the unit suite. Escalate if: C154 cannot hold without virtual scrolling.
+- **W8 built (2026-11-22), choices accepted:** a list opens on Wanted; the Order of ways sheet is an inline panel with
+  Move up / Move down and "Back to the usual order" (`store.setOrder`, ST-16); "Use the usual order" clears only `by`
+  and `offer`; merchant rows planned by the order carry "Craft it instead"; the combined view is opened per character
+  from Your lists, other characters' boxes are disabled ("Each character has its own stock."), "held for" counts
+  unticked lists served before the last ticked one, and it has the To get and To craft tabs; step tabs show "N to get,
+  N to craft"; the hand-in shows only when a list has steps; home cards read "12 of 40 ready". C154 on real data: 91
+  page elements with sections closed, the largest section (436 rows) drawn in 44 ms. **Correction for W9:** Hide
+  completed was built as page-only; the spec stores it in `prefs.hideDone`, so W9 saves it there.
 - **W9 Prices, timed nodes, patch notice (Sonnet builder; after W8).** Files: `lists.js`, `lists.css`, `check.js` C155
   (prices with fetch time; failure sentence; one automatic attempt across a reload; the Submersibles record untouched;
   the plan's ways are the same with and without prices), **C166** (the seven rows of the price table of section 6,
