@@ -938,6 +938,17 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   recipe's wanted items; the quality choice on a row lasts for the visit; a purchase past 999,999 is capped (it was
   refused). The patch notice says "can now be crafted from …". Totals at b6d4f0e: unit 576 of 576, browser 61 of 61,
   full check 175 of 175 (C26b not run); new checks C167 to C170; each fix's test was seen failing without the fix.
+- **W15 Fixes from the review of the fixes (Sonnet builder; after W14; `docs/lists-code-review-adjudication.md`, fourth
+  round).** (1) "Made" and "Made all" credit only wanted items the output's quality satisfies: collectable output
+  credits collectable items; high-quality output credits high-quality and then normal items; normal output credits
+  only normal items; list then step order among those; multi-yield output included; the rest of the output stays in
+  stock. (2) A wanted row whose own line has left the plan (crafted in full, finished, or covered) shows its own state
+  ("crafted 1 of 1", its own recipe and job) and never another recipe's line. (3) "Put these in a new list" on the
+  Restored list card asks which character (default: no character), and a list's character can be changed afterwards
+  from the list bar (only to a character, or none; the list's stock owner follows); every target field is kept.
+  (4) C166 waits for each expected price result, not for the absence of "Fetching". Each fix gets a test that fails
+  without it. Accept: build twice, unit, browser, full `npm run check`; no existing test or check edited except C166's
+  wait; `save.js` and `merge.js` unchanged.
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
