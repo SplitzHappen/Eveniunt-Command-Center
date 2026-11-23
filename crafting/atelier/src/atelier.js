@@ -1218,6 +1218,18 @@
     else if (S.target.kind.charAt(0) === 'c' && S.target.kind !== 'custom') S.target.kind = 'full';
     S.result = null;
   }
+  // The hand-over link from Lists, atelier/#recipe=<id>: select that recipe, show it, then remove the hash. Nothing is saved
+  // by the link (no persist call); an id the solver does not know shows the Atelier's own recipe message and changes nothing.
+  function applyHash() {
+    var m = /^#recipe=(\d+)$/.exec(location.hash || '');
+    if (!m || !B) return;
+    var id = +m[1], r = null;
+    try { r = call('recipe', id, S.locale); } catch (e) { r = null; }
+    if (!r || typeof r.job !== 'number' || !JOBS[r.job]) toast(t('Recipe') + ': ?');
+    else { S.job = r.job; S.mode = 'recipes'; selectRecipe(id); renderAll(); }
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ }
+  }
+  window.addEventListener('hashchange', applyHash);
   function setPane(p) {
     S.pane = p;
     document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.pane === p); });
@@ -1545,6 +1557,7 @@
         startSolverWorker();
         renderAll();
         $('#boot').remove();
+        applyHash();
         askOwner();
       }).catch(function (err) { $('#boot').innerHTML = '<p style="max-width:40ch;padding:20px">The solver could not start in this browser: ' + esc(err.message || err) + '</p>'; });
     } catch (err) { $('#boot').innerHTML = '<p style="padding:20px">The solver could not start: ' + esc(err.message) + '</p>'; }

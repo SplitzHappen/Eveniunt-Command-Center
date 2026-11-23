@@ -138,7 +138,56 @@
     return out;
   }
   CC.checkSettings = checkSettings;
-  const CHECK = { atelier: checkAtelier, submersibles: checkSubmersibles, settings: checkSettings };
+  // The Lists section (docs/lists-spec.md, section 4). Always the whole frame, in this key order, so once written it never
+  // disappears; no arrays anywhere (D23); NO size limit (D20): every entry whose fields are valid is kept, however many there are.
+  //   lists:   { <listId>: { name, charId, order, made, data, steps: { <stepId>: { name, n } } } }
+  //   targets: { '<listId>.<targetId>': { item, recipe, qty, hq, coll, make, crafted, step, done, at } }
+  //   ways:    { '<owner>.<itemId>': { by, recipe, hq, offer } }       owners: { <owner>: { order } }
+  //   have:    { '<owner>.<itemId>': { nq, hq, coll } }                prefs: { priceWorld, hideDone, combined: { <listId>: 1 } }
+  // An entry is dropped only when it is malformed (a bad id, or a wanted item without its item or amount (a missing recipe reads as 0)); a bad field is
+  // left out, never repaired. A step id that is not in the list's header, a count of zeros, a crafted count above the amount, an
+  // owner's order text that is not five words: all kept as stored (the engine and the page read them; the checker never deletes).
+  const LIST_ID = /^[a-z0-9]{4,16}$/;
+  const OWNER_ID = /^(c[1-8]|u)$/;
+  const ITEM_ID = /^[1-9][0-9]{0,7}$/;
+  const WAYS = ['vendor', 'craft', 'gather', 'trade', 'market', 'have'];
+  const dotKey = (k, left, right) => { const i = typeof k === 'string' ? k.indexOf('.') : -1; return i > 0 && left.test(k.slice(0, i)) && right.test(k.slice(i + 1)); };
+  function checkLists(sec) {
+    const out = { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} };
+    if (plain(sec.lists)) for (const [id, h] of Object.entries(sec.lists)) {
+      if (!LIST_ID.test(id) || !plain(h)) continue;
+      let steps;
+      if (plain(h.steps)) {
+        steps = {};
+        for (const [sid, st] of Object.entries(h.steps)) if (LIST_ID.test(sid) && plain(st)) steps[sid] = keep({ name: subName(st.name, 60), n: intIn(st.n, 0, 9999) });
+      }
+      out.lists[id] = keep({ name: subName(h.name, 60), charId: typeof h.charId === 'string' && /^c[1-8]$/.test(h.charId) ? h.charId : (h.charId === null ? null : undefined),
+        order: intIn(h.order, 0, 9999), made: time(h.made), data: subName(h.data, 60), steps });
+    }
+    if (plain(sec.targets)) for (const [key, t] of Object.entries(sec.targets)) {
+      if (!dotKey(key, LIST_ID, LIST_ID) || !plain(t)) continue;
+      const item = intIn(t.item, 1, 1e7), recipe = t.recipe === undefined ? 0 : intIn(t.recipe, 0, 1e7), qty = intIn(t.qty, 1, 99999);
+      if (item === undefined || recipe === undefined || qty === undefined) continue; // a wanted item without an item or an amount is not guessed
+      out.targets[key] = keep({ item, recipe, qty, hq: t.hq === true ? true : undefined, coll: t.coll === true ? true : undefined, make: t.make === true ? true : undefined,
+        crafted: intIn(t.crafted, 0, 99999), step: typeof t.step === 'string' && LIST_ID.test(t.step) ? t.step : undefined, done: t.done === true ? true : undefined, at: time(t.at) });
+    }
+    if (plain(sec.ways)) for (const [key, w] of Object.entries(sec.ways)) {
+      if (!dotKey(key, OWNER_ID, ITEM_ID) || !plain(w)) continue;
+      out.ways[key] = keep({ by: WAYS.includes(w.by) ? w.by : undefined, recipe: intIn(w.recipe, 1, 1e7), hq: w.hq === true ? true : undefined,
+        offer: typeof w.offer === 'string' && /^[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9}$/.test(w.offer) ? w.offer : undefined });
+    }
+    if (plain(sec.owners)) for (const [id, o] of Object.entries(sec.owners)) if (OWNER_ID.test(id) && plain(o)) out.owners[id] = keep({ order: typeof o.order === 'string' ? o.order : undefined });
+    if (plain(sec.have)) for (const [key, h] of Object.entries(sec.have)) {
+      if (!dotKey(key, OWNER_ID, ITEM_ID) || !plain(h)) continue;
+      out.have[key] = keep({ nq: intIn(h.nq, 0, 999999), hq: intIn(h.hq, 0, 999999), coll: intIn(h.coll, 0, 999999) });
+    }
+    const p = plain(sec.prefs) ? sec.prefs : {};
+    out.prefs = keep({ priceWorld: subName(p.priceWorld, 32), hideDone: typeof p.hideDone === 'boolean' ? p.hideDone : undefined, combined: undefined });
+    if (plain(p.combined)) { const c = {}; for (const [id, v] of Object.entries(p.combined)) if (LIST_ID.test(id) && (v === 1 || v === true)) c[id] = 1; out.prefs.combined = c; }
+    return out;
+  }
+  CC.checkLists = checkLists;
+  const CHECK = { atelier: checkAtelier, lists: checkLists, submersibles: checkSubmersibles, settings: checkSettings };
   // Every section except the Tracker's (the Tracker checks its own).
   CC.checkModules = function (mods) {
     const out = {};
@@ -250,6 +299,33 @@
   };
   // A plain-language label for a unit, for the "which one is right?" prompt.
   const LABEL = { atelier: 'Atelier', lists: 'Lists', submersibles: 'Submersibles', settings: 'Settings' };
+  // Lists labels (spec section 4, "Wording"): the sync's pass puts listName in integrity; items appear by number.
+  function listsLabel(p, local, remote, nameOf, integrity) {
+    const parse = (t) => { if (typeof t !== 'string') return null; try { const o = JSON.parse(t); return plain(o) ? o : null; } catch (e) { return null; } };
+    const L = parse(local), R = parse(remote), any = L || R || {};
+    const who = (id) => (id === 'u' ? 'lists without a character' : (nameOf ? nameOf(id) : id));
+    const gone = (t) => (t == null ? '(removed)' : null);
+    const listName = integrity && typeof integrity.listName === 'string' && integrity.listName ? '“' + integrity.listName + '”' : '';
+    const owner = typeof p[2] === 'string' ? p[2].split('.')[0] : '';
+    const itemNo = typeof p[2] === 'string' ? p[2].split('.')[1] : '';
+    let what = null, side = null;
+    if (p[1] === 'lists' && p.length === 3) what = 'Lists: list ' + (listName || (any.name ? '“' + any.name + '”' : ''));
+    else if (p[1] === 'targets' && p.length === 3) {
+      const t = L || R || {}, bits = [];
+      if (t.item !== undefined) bits.push('item ' + t.item);
+      if (t.qty !== undefined) bits.push(t.qty + ' wanted');
+      what = 'Lists: ' + (listName ? listName + ': ' : '') + 'a wanted item' + (bits.length ? ' (' + bits.join(', ') + ')' : '');
+    } else if (p[1] === 'ways' && p.length === 3) what = 'Lists: how ' + who(owner) + ' gets item ' + itemNo;
+    else if (p[1] === 'owners' && p.length === 3) what = 'Lists: ' + who(p[2]) + '\'s order of ways to get items';
+    else if (p[1] === 'have' && p.length === 3) {
+      what = 'Lists: the amount ' + who(owner) + ' has of item ' + itemNo;
+      const amount = (o) => (o ? [['nq', 'normal'], ['hq', 'high-quality'], ['coll', 'collectable']].filter((f) => o[f[0]]).map((f) => o[f[0]] + ' ' + f[1]).join(', ') || '0' : null);
+      side = [amount(L), amount(R)];
+    }
+    if (!what) return null;
+    if (p[1] === 'owners' && p[2] === 'u') what = 'Lists: the order of ways to get items for lists without a character';
+    return { who: '', what, local: gone(local) || (side && side[0]) || 'the version on this device', remote: gone(remote) || (side && side[1]) || 'the version on the other device' };
+  }
   CC.describeUnit = function (id, local, remote, nameOf, integrity) {
     let p = []; try { p = JSON.parse(id.slice(2)); } catch (e) { /* shown as is */ }
     const mod = LABEL[p[0]] || p[0];
@@ -280,6 +356,7 @@
         }
       }
     } else if (p[0] === 'submersibles' && p[1] === 'settings') what = 'Submersibles settings';
+    else if (p[0] === 'lists') { const l = listsLabel(p, local, remote, nameOf, integrity); if (l) return l; }
     return { who: '', what, local: local == null ? '(removed)' : 'the version on this device', remote: remote == null ? '(removed)' : 'the version on the other device' };
   };
 
@@ -447,6 +524,42 @@
     return out;
   }
 
+  // The stale-write rules of the Lists section (spec section 4; "no new violation"). base: the page's copy when it last read or
+  // wrote; local: what it sends; stored: the stored section (the empty frame when there is none); result: what would be written.
+  // Order: LI2, LI1, LI4, LI5; LI3 (a unit the page did not change stays as stored has it) is the merge itself.
+  const LI_LIST = 'This list was removed on another device or in another tab.';
+  const LI_ITEM = 'This item was removed from the list on another device or in another tab.';
+  const LI_KEPT = 'This was changed on another device or in another tab, so it was not removed.';
+  const LI_SINCE = 'This was changed on another device or in another tab since.';
+  function listsRules(base, local, stored, result, known, merged) {
+    const grp = (o, g) => (o && plain(o[g]) ? o[g] : {});
+    const J = JSON.stringify, listOf = (k) => k.split('.')[0];
+    // LI2 No new orphan: a wanted item in the result without its list header, unless stored already held it that way.
+    for (const k of Object.keys(grp(result, 'targets')))
+      if (!grp(result, 'lists')[listOf(k)] && !(grp(stored, 'targets')[k] && !grp(stored, 'lists')[listOf(k)])) throw new Error(LI_LIST);
+    if (merged) {
+      // ... and a wanted item the page added or changed whose list is in base and gone from stored.
+      for (const [k, t] of Object.entries(grp(local, 'targets')))
+        if (J(t) !== J(grp(base, 'targets')[k]) && grp(base, 'lists')[listOf(k)] && !grp(stored, 'lists')[listOf(k)]) throw new Error(LI_LIST);
+      // LI1 Nothing comes back: a header, then a wanted item (its list still stored), in base, absent from stored, present in the result.
+      for (const id of Object.keys(grp(base, 'lists'))) if (!grp(stored, 'lists')[id] && grp(result, 'lists')[id]) throw new Error(LI_LIST);
+      for (const k of Object.keys(grp(base, 'targets')))
+        if (!grp(stored, 'targets')[k] && grp(result, 'targets')[k] && grp(stored, 'lists')[listOf(k)]) throw new Error(LI_ITEM);
+      // LI4 Nothing changed elsewhere is removed (D21): a unit in base that the page removed and stored holds with another value.
+      for (const g of ['lists', 'targets', 'ways', 'owners', 'have', 'prefs'])
+        for (const k of Object.keys(grp(base, g)))
+          if (grp(local, g)[k] === undefined && grp(stored, g)[k] !== undefined && J(grp(stored, g)[k]) !== J(grp(base, g)[k])) throw new Error(LI_KEPT);
+    }
+    // LI5 A conditional write (D16): known.expect = { <unit key: 'm|' + JSON path>: <unit as JSON text, or null for absent> }.
+    if (known && plain(known.expect)) {
+      const S = CC.flatModules({ lists: stored });
+      for (const [k, text] of Object.entries(known.expect)) {
+        const cur = S.has(k) ? S.get(k) : null;
+        if (cur !== (text === undefined ? null : text)) throw new Error(LI_SINCE);
+      }
+    }
+  }
+
   // Write one module's section. known = { rev, base }: the stamp and the section this page last read or wrote. If
   // another page saved since, the section is merged with the stored one (units changed only elsewhere are kept).
   // own = { moved, device }: this module's entries in the device-only parts. Resolves to { rev, section, merged }.
@@ -454,12 +567,14 @@
     let out = null;
     const r = await CC.transact((raw, rev) => {
       const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); // an unreadable or newer save throws: nothing is written over it
-      const stored = doc.modules[name];
+      // Lists (spec section 4, "The gate"): the merge and every refusal run whenever the stamp differs, and a missing stored
+      // section is read as the empty frame, so a stale page can never write its old copy back whole.
+      const stored = name === 'lists' ? (doc.modules[name] || CC.checkLists({})) : doc.modules[name];
       let sec = CC.checkModules({ [name]: section })[name] || {};
-      let merged = false;
+      let merged = false, local = sec, base = {};
       if (stored && rev !== (known && known.rev)) {
-        const base = (known && known.base) || {};
-        const local = sec;
+        base = (known && known.base) || {};
+        local = sec;
         sec = CC.mergeModules({ [name]: base }, { [name]: local }, { [name]: stored })[name] || {};
         merged = true;
         // A delayed Submersibles edit can add a submarine after another tab's automatic fold removed
@@ -512,6 +627,7 @@
           }
         }
       }
+      if (name === 'lists') listsRules(CC.checkLists(plain(base) ? clean(base, 0) : {}), local, stored, sec, known, merged);
       // A submarine never points at a company this write leaves out, unless it already did in the stored copy.
       if (name === 'submersibles') {
         const rs = stored || {};
