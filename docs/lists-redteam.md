@@ -107,6 +107,42 @@ list as a file or link (12); B4 source hints for drops, ventures, desynthesis an
 (13); B6 the change notice also for offers and nodes (26); B7 planning off the page's main thread for huge lists (27);
 B8 the Lists checks in their own file (24).
 
-## Round 2
+## Round 2: the proposal attacked
 
-(Written after the second attack.)
+A fresh reviewer (not in round 1, not a builder) checked each proposal against the code, `lists.json` and the pinned game
+sheets (`Item`, `CompanyCraftSequence`, `CompanyCraftPart`, `CompanyCraftProcess`, `CompanyCraftSupplyItem`, `Recipe`,
+`SecretRecipeBook`). Same family. Verdicts:
+
+- **A1 keep, sharpened.** The game's market-board category (`ItemSearchCategory` above 0) removes the 33 tradable
+  currencies wrongly marked as market items; six real market items (Fire Shard, potions) stay. But 183 items are tradable
+  and not on the market board (Skybuilders' crafts among them), so "Currencies to earn" means "used as a non-gil price in a
+  trade and not on the market board", shown as a display group of the existing "other" way; the engine's rules stay.
+- **A2 changed.** The engine keeps reading "has a gather source"; `build.js` builds that table from the spot table, and one
+  shared "chosen spot" function feeds the row's window, level and zone, the drawer and the route grouping.
+- **A3 changed.** The per-item "Need it in high quality" choice stays (it uses `ways.hq`, already saved). The per-list
+  setting becomes a one-step bulk action with undo (a per-list setting would break the per-character rule and need a new
+  save field). **The level warning's premise was wrong:** the Tracker holds no job levels (the only levels are the
+  Atelier's per-job stats, which read 100 when never typed). Use the Tracker's "Master Crafting Books" ticks instead: its
+  110 entries match the game's book names, so a row can warn "Master Carpenter IV not ticked for this character". Book
+  names go in a separate data table, not inside the recipe rows (which would flag every recipe as changed).
+- **A4 changed.** Grouping by zone still hops zones when each item shows its lowest-level spot (the owner's rule D-G1);
+  choosing spots in zones already on the route changes that rule, so it is an owner decision. Timed nodes are reordered
+  only when the page redraws, not every 15 seconds. Crystals section kept.
+- **A5 changed.** The planner's seller must not depend on the other items (that breaks a core rule); keep the planned
+  offer, add a sellers table, and choose among equal-price sellers on the page for display only.
+- **A6 moved to after shipping.** Ticking the Tracker's log means a second, separate save write; undo and the Tracker's
+  linked ticks would need a design first.
+- **A7 changed.** Keep 14, 15, 16, 17 and 20, within the 96 px phone row; 18, 19 and the small items of 21 after shipping.
+- **A8 changed.** Keep the data-pin test, written refresh steps, the data version on the page, item names in sync questions
+  (a name lookup passed from the Command Center, number elsewhere); 24 only as a small switch to the engine's own way rule;
+  25 after shipping.
+- **Moved before shipping:** "copy item name" (tiny; the owner looks items up in game).
+- **B1 is cheaper than assumed:** the company-craft sheets give all 40 submarine parts with their phases, supply items and
+  quantities; each phase can be a step, with no engine or save change.
+- **Missing, added:** a gil vendor locked behind a reputation rank still says "buy" (only the Grand Company rank is kept;
+  not verified further); a stored "market" way for a currency becomes "earn", and the row must say why.
+
+**Final "before shipping" set, in order:** A1; A2 with the shared chosen-spot function; A3 trimmed (high-quality choice and
+bulk action, recipe stamps, the master-book warning); A4; A5 for display only; copy item name; A7's core five; A8 trimmed.
+**Main risk:** the set touches the data shape, every To get section and `save.js` at once; many checks need reach edits
+and may flake, so the cycle runs long; the `save.js` label change rebuilds all three modules.
