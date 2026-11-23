@@ -161,6 +161,28 @@ test('LD-3 timed windows equal conditions.json wherever both hold the item', () 
   assert.equal(D.gatherLegacy, undefined, 'the former table is gone');
 });
 
+test('LD-3b every start hour of the Tracker\'s window is held by a timed spot, and sources without a map position keep their own windows (R7)', () => {
+  const T = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'tracker-data.json'), 'utf8'));
+  const C = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'conditions.json'), 'utf8')).nodes;
+  const item = {};
+  for (const s of T.sections) if (s.id.startsWith('gather-')) for (const g of s.g) for (const e of g.e) item[s.id + ':' + e.i] = e.it;
+  let timed = 0;
+  for (const [key, win] of Object.entries(C)) {
+    const spots = D.gather[item[key]];
+    if (!spots) continue;
+    const hours = new Set();
+    for (const sp of spots) if (sp[7] !== 0) for (const h of sp[7]) hours.add(h);
+    if (hours.size) timed++;
+    // no start time of the Tracker's window may be missing from the item's spots (the earlier test only checked the other way round)
+    assert.deepEqual(win[0].filter((h) => !hours.has(h)), [], key + ': start hours of the Tracker\'s window that no spot holds');
+  }
+  assert.ok(timed >= 150, 'items with a timed spot: ' + timed);
+  // Cloud Cotton Boll (13753): all three of its timed sources are without a map position (Teamcraft nodes 412, 413, 414: starts 0 and 12, 4 and 16, 8 and 20; the sheet says unspoiled botanist node, name row 8)
+  const boll = D.gather[13753];
+  assert.deepEqual(boll.map((s) => [s[0], s[1], s[7], s[8]]), [[1, 8, [0, 12], 120], [1, 8, [4, 16], 120], [1, 8, [8, 20], 120]]);
+  assert.equal(D.nodeNames[8], 'Unspoiled Lush Vegetation Patch');
+});
+
 test('LD-4 a trade that gives several keeps its ratio', () => {
   let several = 0;
   for (const lst of Object.values(D.trades)) for (const o of lst) { assert.ok(o[0] >= 1); if (o[0] > 1) several++; }
@@ -441,7 +463,12 @@ test('LD-18 a folklore node names its book', () => {
 test('LD-19 an item without a map position keeps its zone when known and has no coordinates', () => {
   const none = Object.entries(D.gather).filter(([, l]) => l.every((sp) => sp[4] === 0 && sp[5] === 0));
   assert.equal(none.length, 17);
-  for (const [it, l] of none) { assert.equal(l.length, 1, it); assert.deepEqual(l[0].slice(4), [0, 0, 0, 0, 0, 0, 0]); assert.ok(l[0][2] >= 1); }
+  // R7: an item whose only sources are timed keeps one row for each of them (its own window), the others stay one row without a window
+  for (const [it, l] of none) {
+    if (l.some((sp) => sp[7] !== 0)) { assert.ok(l.every((sp) => Array.isArray(sp[7]) && sp[8] > 0 && sp[1] > 0 && sp[2] >= 1), it); continue; }
+    assert.equal(l.length, 1, it); assert.deepEqual(l[0].slice(4), [0, 0, 0, 0, 0, 0, 0]); assert.ok(l[0][2] >= 1);
+  }
+  assert.equal(none.filter(([, l]) => l.some((sp) => sp[7] !== 0)).length, 4, 'four items have only timed sources without a position');
   assert.ok(none.some(([it]) => D.items[it][0] === 'Lunar Meteorite'), 'Teamcraft places its nodes on no map');
   assert.ok(!everySpot().some((sp) => sp[4] === 0 && sp[5] === 0 && sp[1] !== 0 && sp[3] !== ''), 'a spot with a position has both');
   // a node that has a zone but no position: the zone stays

@@ -6136,8 +6136,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.madeAll = (await gem().count()) === 0 && (await lHave(page))['u.120'].nq === 9;
       await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.completedShown = (await mk().count()) === 0 && /Already crafted/.test(await page.locator('.tab-craft').textContent()) && /3 of 3 crafted/.test(await page.locator('.cdone').textContent());
+      ck.craftedCopy = (await page.locator('.cdone [data-act=copy]').count()) === 1; // R7: Copy name on an "Already crafted" row too
+      await page.locator('.cdone [data-act=copy]').click(); await page.waitForFunction(() => /^(Copied |Could not copy: )/.test(document.getElementById('lstatus').textContent.trim()), null, { timeout: 5000 }).catch(() => { ck.craftedCopy = false; });
       await lSet(page); await page.click('[data-act=hide]');
-      ck.hidden = (await page.locator('.cdone').count()) === 0 && (await page.locator('[data-act=hide]').textContent()) === 'Show completed';
+      ck.hidden = (await page.locator('.cdone').count()) === 0 && (await page.locator('.swb[data-act=hide]').getAttribute('aria-pressed')) === 'true' && (await page.locator('.swb[data-act=hide] .swv').textContent()) === 'On'; // R7: a stable name with a visible On or Off
       await page.click('[data-act=hide]'); await lSetDone(page);
       ck.shownAgain = (await page.locator('.cdone').count()) === 1;
       // Hide completed also hides a finished wanted item
@@ -6210,7 +6212,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.goto(ROOT5 + 'lists/'); await lReady(page);
         await lSeedMarket(page, ids); await lMarketOpen(page); await lWaitPrices(page);
         const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
-        ck.listing = /^120 gil before tax, North-America \(cheapest on Maduin\), fetched \d\d:\d\d$/.test(tx[103]);
+        ck.listing = /^120 gil before tax, North America \(cheapest on Maduin\), fetched \d\d:\d\d$/.test(tx[103]);
         ck.noListingAverage = tx[104] === 'No listings now; recent sales about 90 gil';
         ck.noListingNoAverage = tx[111] === 'No market price';
         ck.zero = tx[120] === 'No market price';
@@ -6239,7 +6241,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         c.stand.reply = () => 'abort';
         await page.click('[data-act=prices]'); await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
         const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
-        ck.keptPrice = /^100 gil before tax, North-America \(cheapest on Test\), last seen \d\d:\d\d\. Market prices could not be fetched; showing the last known market prices\.$/.test(tx[103]) && /fetched/.test(first[103]) && !/last seen/.test(first[103]);
+        ck.keptPrice = /^100 gil before tax, North America \(cheapest on Test\), last seen \d\d:\d\d\. Market prices could not be fetched; showing the last known market prices\.$/.test(tx[103]) && /fetched/.test(first[103]) && !/last seen/.test(first[103]);
         ck.keptTotal = tot.gil === 200 && tot.priced === 1 && /\(prices seen \d\d:\d\d\)/.test(tot.text);
         await c.ctx.close();
       }
@@ -6261,7 +6263,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.reload(); await lReady(page); await lMarketOpen(page); await lSettled(page);
         const tx = await lPriceTexts(page), tot = await lPriceTotal(page), hm = await page.evaluate((t) => { const d = new Date(t), n = new Date(); const t0 = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); return (d.toDateString() === n.toDateString() ? '' : 'yesterday ') + t0; }, old);
         // two hours back is "yesterday" between midnight and 02:00 local time, which the page says (fmtClock); the expected text follows the same rule (found 2026-11-23)
-        ck.oldPrice = tx[103] === '150 gil before tax, North-America, fetched ' + hm && c.stand.asked.length === 0;
+        ck.oldPrice = tx[103] === '150 gil before tax, North America, fetched ' + hm && c.stand.asked.length === 0;
         ck.oldTotal = tot.gil === 300 + 120 && tot.priced === 2 && tot.text.indexOf('(prices seen ' + hm + ')') >= 0;
         await page.evaluate(() => localStorage.removeItem('eveniunt-lists-prices-tried')); await page.reload(); await lReady(page); await lMarketOpen(page); await lWaitPrices(page);
         await page.waitForFunction(() => /100 gil/.test(document.querySelector('.gsec[data-sec=market] .price-line').textContent), null, { timeout: 15000 });
@@ -6285,7 +6287,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lSeedMarket(page, [103, 111]); await lSeedLists(page, [{ name: 'Crafts', items: [[100, 1]] }]);
       await lOpenList(page, 'Market'); await lTab(page, 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await page.waitForFunction(() => /fetched \d\d:\d\d$/.test((document.querySelector('.gsec[data-sec=market] .line-row[data-item="103"] .price-line') || {}).textContent || ''), null, { timeout: 15000 }); // W14: the fetched state itself, never "not Fetching" (which the row's first text also satisfies)
       let tx = await lPriceTexts(page);
-      ck.fetchTime = /^100 gil before tax, North-America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && c.stand.asked.length === 1 && /listings=1&entries=20$/.test(c.stand.asked[0]);
+      ck.fetchTime = /^100 gil before tax, North America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && c.stand.asked.length === 1 && /listings=1&entries=20$/.test(c.stand.asked[0]);
       // the plan's ways are the same with and without prices
       ck.waysSame = await page.evaluate(() => { const f = (p) => JSON.stringify(Object.keys(p.lines).sort().map((k) => [k, p.lines[k].by, p.lines[k].why, p.lines[k].recipe, p.lines[k].offer ? p.lines[k].offer.key : null])); return f(__lists.plan('u')) === f(__lists.plan('u', true)) && __lists.plan('u').gil.market > 0 && __lists.plan('u', true).gil.market === 0; });
       // prices are never in the save: the stored section holds no price and no price record
@@ -6312,7 +6314,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.click('[data-act=hide]'); await lSettle(page);
       ck.hideSaved = (await lStored(page)).prefs.hideDone === true;
       await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get');
-      await lSet(page); ck.hideKept = (await page.locator('[data-act=hide]').textContent()) === 'Show completed' && (await page.locator('[data-f=priceWorld]').inputValue()) === 'Europe';
+      await lSet(page); ck.hideKept = (await page.locator('.swb[data-act=hide] .swv').textContent()) === 'On' && (await page.locator('[data-f=priceWorld]').inputValue()) === 'Europe';
       await page.click('[data-act=hide]'); await lSettle(page);
       ck.hideOff = !('hideDone' in ((await lStored(page)).prefs || {})) || (await lStored(page)).prefs.hideDone === false;
       // the Submersibles record is exactly as it was
@@ -6340,7 +6342,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await c.ctx.clock.setFixedTime(base + 14 * HOUR); // 14:00: open until 16:00, in 350 seconds
       await page.reload(); await lReady(page); await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
       w = await rows();
-      ck.open = w[104] === 'open now, closes 16:00 Eorzea time, in 6 min';
+      ck.open = w[104] === 'open now, closes 16:00 Eorzea time, in about 6 min, Teamcraft';
       await c.ctx.clock.setFixedTime(base + 4 * HOUR + 30000); // 04:00 and a little: the next window is the 13:00 one, 9 Eorzean hours away (1,575 seconds, about 26 minutes)
       await page.reload(); await lReady(page); await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
       w = await rows();
@@ -6716,7 +6718,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT5 + 'lists/'); await lReady(page);
       await lSeedMarket(page, [103, 104]); await lMarketOpen(page); await lWaitPrices(page);
       const tx = await lPriceTexts(page);
-      ck.fetchedAtWaitEnd = /^100 gil before tax, North-America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && /fetched \d\d:\d\d$/.test(tx[104]) && c.stand.asked.length === 1;
+      ck.fetchedAtWaitEnd = /^100 gil before tax, North America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && /fetched \d\d:\d\d$/.test(tx[104]) && c.stand.asked.length === 1;
       ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
       record('C174', 'Lists page, prices: with the stand-in\'s reply held back, the wait that C166 uses returns only when every price row shows its fetched price (not at the first text, "Price not fetched")',
         Object.values(ck).every(Boolean), { ck, tx, errors: real(c.errors), external: c.external });
@@ -6994,7 +6996,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.getEmpty = /Nothing left to get\./.test(await page.locator('.tab-get').textContent()) && (await page.locator('.line-row').count()) === 0;
       ck.noCountFell = Object.keys(h1).every((k) => h2[k] && ['nq', 'hq', 'coll'].every((q) => h2[k][q] >= h1[k][q])) && h2['u.100'].nq === 2;
       await lOpenAll(page);
-      ck.leftOver = (await lSecs(page)).left.some((r) => r.item === 103 && r.text === '3 Test Ore: no longer needed by this list. Still in your stock, and used by your other lists if they need it.');
+      ck.leftOver = (await lSecs(page)).left.some((r) => r.item === 103 && r.text === '3 Test Ore: no longer needed by this list. Still in your stock, and used by your other lists if they need it.Copy name'); // R7: the row has its Copy name
+      ck.leftCopy = (await page.locator('.left-row [data-act=copy]').count()) === 1; // R7: Copy name on a left-over row too
+      await page.locator('.left-row [data-act=copy]').click(); await page.waitForFunction(() => /Copied Test Ore\.|Could not copy: .*Test Ore/.test(document.getElementById('lstatus').textContent), null, { timeout: 5000 }).then(() => { ck.leftCopy = ck.leftCopy && true; }, () => { ck.leftCopy = false; });
       ck.restOffered = (await page.locator('[data-act=rest]').count()) >= 1;
       // Undo twice: the purchase, then the craft
       await page.click('[data-act=undo][data-i="0"]'); await lSettle(page); await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
@@ -8004,6 +8008,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.stamps = f.length >= 6 && f.every(same) && f.filter((x) => x.want.book === 'Master Leatherworker XII').length >= 6 && f.some((x) => x.want.stars > 0);
       const bookRows = f.filter((x) => x.want.book);
       ck.warns = bookRows.length >= 6 && bookRows.every((x) => x.warn) && f.every((x) => x.warn === !!x.want.book);
+      ck.warnNamesBook = await page.evaluate(() => { const st = [...document.querySelectorAll('.craft-row .lstamp.warn')], l2 = [...document.querySelectorAll('.craft-row .bk-l2')]; return st.length >= 6 && l2.length === st.length && l2.every((e) => /^Master [A-Za-z]+ [IVXL]+ not ticked ·/.test(e.textContent.trim())) && st.every((e) => /^Book not ticked$/.test(e.textContent.trim()) && /^Master [A-Za-z]+ [IVXL]+$/.test(e.closest('.rst-dsk').querySelector('.rs-book').textContent.trim())); }); // R7: the warning says which book (a phone's facts line names it; a desktop's stamp stands beside the book's own stamp)
       const first = page.locator('.craft-row', { hasText: 'Master Leatherworker XII' }).first(); await lOpen(first);
       ck.drawerSays = (await first.locator('.drawer').textContent()).includes('Master Leatherworker XII is not ticked for Alba');
       await lCloseRows(page);
@@ -8270,6 +8275,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         if (e.scrollWidth > e.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') add('clipped', 'text cut at the side: ' + nm(e));
         if (e.scrollHeight > e.clientHeight + 1 && cs.overflowY !== 'auto' && cs.overflowY !== 'scroll' && cs.overflowY !== 'visible' && e.textContent.trim()) add('clipped', 'text cut at the bottom: ' + nm(e));
       });
+      // R7 (sixth round): zone and city sub-heads have room: at least 24 px high, so a face taller than the local one never cuts them (the hosted run failed at 14 px)
+      all('.zone-head, .ae-head').forEach((h) => { const r = h.getBoundingClientRect(); if (r.height < 23.5) add('subHeads', Math.round(r.height) + ' px high: ' + nm(h)); });
       const y0 = window.scrollY, ae = document.activeElement;
       all('.lists-main button, .lists-main a[href], .lists-main select, .lists-main input, .lists-main summary, .lists-tabs button, #lstatus button, #lstatus summary').filter((e) => !e.closest('.sr') && !e.disabled && (e.tagName === 'SUMMARY' || !e.closest('details:not([open])'))).forEach((e) => {
         e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); e.focus({ focusVisible: true, preventScroll: true });
@@ -8385,6 +8392,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ['f2Stamps', "const l = document.querySelector('.gsec[data-sec=gather] .get-row .l1'); const s = document.createElement('span'); s.className = 'role role-gather'; s.textContent = 'Gather'; l.appendChild(s);"],
       ['clipped', "const e = document.querySelector('.get-row .lr .opener'); e.style.overflow = 'hidden'; e.style.whiteSpace = 'nowrap'; e.style.width = '60px'; e.style.display = 'block';"],
       ['focus', "const b = document.querySelector('.get-row .pc .lbtn-r'); b.style.outline = '0';"],
+      ['subHeads', "const h = document.querySelector('.zone-head'); h.style.minHeight = '0'; h.style.height = '14px'; h.style.padding = '0 16px';"],
       ['p1Sideways', "document.documentElement.style.minWidth = '700px';"]
     ];
     await guard('DR1', async () => {
@@ -8392,7 +8400,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const w = [await dr1Walk({ width: 1440, height: 1000 }, 'light', 'desktop-light'), await dr1Walk({ width: 360, height: 800 }, 'dark', 'phone-dark')];
       // B7: the phone again in light, and in three themes besides the default (one dark, one light, one dark)
       for (const [scheme, theme] of [['light', null], ['dark', 'abyssal-oath'], ['light', 'uldah-sultanate-gilt'], ['dark', 'electrope-skyline']]) w.push(await dr1Walk({ width: 360, height: 800 }, scheme, 'phone-' + scheme + '-' + (theme || 'default'), theme));
-      const RULES = ['p1Sideways', 'a2Controls', 'a2Bordered', 'a1Primary', 'f1Filled', 'p2Rest', 'p2Open', 'p3First', 'p3Rows', 't2Digit', 't2Label', 's1Status', 'f1Fields', 'a6Taps', 'icons', 'noMore', 'iconName', 'f2Stamps', 'clipped', 'focus'];
+      const RULES = ['p1Sideways', 'a2Controls', 'a2Bordered', 'a1Primary', 'f1Filled', 'p2Rest', 'p2Open', 'p3First', 'p3Rows', 't2Digit', 't2Label', 's1Status', 'f1Fields', 'a6Taps', 'icons', 'noMore', 'iconName', 'f2Stamps', 'clipped', 'focus', 'subHeads'];
       const ck = {};
       RULES.forEach((r) => { ck[r] = w.every((x) => !(x.problems[r] || []).length); });
       ck.screens = w.every((x) => x.screens.length === 21 && x.screens.includes('combined-craft'));
@@ -8569,6 +8577,235 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       }
       record('C189', 'Lists page, data version and spots without a map position: the state line of the list head ends with "game data 7.57h1" (small, body face, the figure in the data face); Adamantite Ore lists its placed spot first and then the spots with no map position in the game data, each with its window',
         Object.values(ck).every(Boolean) && errs.length === 0, { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C190 (Lists, R7) A covering panel, the real data at 360 x 800 and 1,440 x 1,000: with a long history (25 earlier changes) the expanded "Earlier changes" leaves the plan and its own toggle reachable: the panel is
+    //    bounded and scrolls inside, its toggle is in view above the bottom bar, a plan row can be scrolled into view and taps through to itself, the toggle closes it again. The bound is broken on purpose once and the same measure fails on it. ──
+    await guard('C190', async () => {
+      const server = await start(PORT5);
+      const ck = {}, seen = {}, errs = [];
+      const measure = (page, phone) => page.evaluate((ph) => {
+        const st = document.getElementById('lstatus'), det = st.querySelector('.lists-earlier'), sum = det.querySelector('summary'), ul = det.querySelector('ul'), vh = window.innerHeight;
+        const bar = ph ? document.querySelector('.lists-tabs').getBoundingClientRect().top : vh, sr = st.getBoundingClientRect(), sm = sum.getBoundingClientRect();
+        const row = document.querySelector('.get-row .lr'); row.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80);
+        const rr = row.getBoundingClientRect(), hit = document.elementFromPoint(rr.left + rr.width / 2, rr.top + Math.min(rr.height / 2, 20));
+        return { open: det.open, statusH: Math.round(sr.height), vh, bounded: sr.height <= vh * 0.45 && (ul.scrollHeight <= ul.clientHeight + 1 || getComputedStyle(ul).overflowY === 'auto'), scrolls: ul.scrollHeight > ul.clientHeight + 1,
+          toggleInView: sm.top >= 0 && sm.bottom <= bar + 0.5 && sm.height >= (ph ? 39.5 : 16) && document.elementFromPoint(sm.left + sm.width / 2, sm.top + sm.height / 2) === sum, planReachable: !!hit && !!hit.closest('.lr') && rr.top >= 0 && rr.bottom < sr.top, entries: ul.querySelectorAll('li').length };
+      }, phone);
+      for (const [tag, vp] of [['360', { width: 360, height: 800 }], ['1440', { width: 1440, height: 1000 }]]) {
+        const phone = vp.width < 600, { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Hist', charId: 'c1', items: [[4880, 1], [4784, 1], [14, 1], [7718, 1]] }]);
+        await lOpenList(page, 'Hist', 'get'); await lOpenAll(page);
+        await page.evaluate(async () => { const u = window.__lists.state.undo; for (let i = 1; i <= 25; i++) u.push({ label: 'Changed what you have of Test item number ' + i, units: [] }); await window.__lists.reload(); });
+        await page.waitForSelector('.lists-earlier summary');
+        const closed = await page.evaluate(() => document.getElementById('lstatus').getBoundingClientRect().height);
+        await page.click('.lists-earlier summary');
+        const m = await measure(page, phone); seen[tag] = { closed, m };
+        ck['the history opens ' + tag] = m.open && m.entries >= 20;
+        ck['the panel is bounded and scrolls inside ' + tag] = m.bounded && m.scrolls;
+        ck['its own toggle is in view ' + tag] = m.toggleInView;
+        ck['a plan row stays reachable ' + tag] = m.planReachable;
+        await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector('.lists-earlier summary').click(); });
+        ck['the toggle closes it ' + tag] = await page.evaluate(() => !document.querySelector('.lists-earlier').open && document.getElementById('lstatus').getBoundingClientRect().height < 130);
+        if (phone) { // broken on purpose: an unbounded panel is seen by the same measure
+          await page.evaluate(() => document.querySelector('.lists-earlier summary').click()); await page.addStyleTag({ content: '.lists-earlier ul { max-height: none !important; overflow: visible !important; }' });
+          const b = await measure(page, phone); seen.broken = b;
+          ck['the measure fails on an unbounded panel'] = !b.bounded && !b.planReachable;
+        }
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C190', 'Lists page, covering panel (real data, 360 x 800 and 1,440 x 1,000): with 25 earlier changes the expanded history is bounded and scrolls inside, its toggle stays in view above the bottom bar, a plan row stays reachable and the toggle closes it; the same measure fails on an unbounded panel',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C191 (Lists, R7) Market prices by quality, the real data: the price service answers per item with listings of both qualities (ordinary 100 gil, high quality 10,000 gil); a high-quality Bronze Ingot routed to the market never shows or adds the ordinary price
+    //    (the row says "High-quality price unknown", the subtotal counts the ordinary row only and names the high-quality one as without a price), while the ordinary row keeps its price; the saved data has no price. ──
+    await guard('C191', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { ctx, errors, page } = await r3Page({ viewport: vp });
+        const asked = [];
+        await ctx.route('https://universalis.app/**', (r) => {
+          const u = new URL(r.request().url()), ids = u.pathname.split('/').pop().split(','), items = {}; asked.push(ids.join(','));
+          ids.forEach((id) => { items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, hq: false, worldName: 'Test' }, { pricePerUnit: 10000, hq: true, worldName: 'Test' }], averagePrice: 100 }; });
+          r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+        });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Quality', charId: 'c1', items: [[5056, 1], [5056, 2, { hq: true }]] }]);
+        await lSeed(page, (S, sec) => S.setWay(sec, 'c1', 5056, { by: 'market' }).section);
+        await lOpenList(page, 'Quality', 'get'); await lOpenAll(page);
+        await page.waitForFunction(() => document.querySelector('.price-total') && document.querySelector('.price-total').dataset.priced === '1', null, { timeout: 15000 }).catch(() => null);
+        const got = await page.evaluate(() => ({ rows: [...document.querySelectorAll('.gsec[data-sec=market] .get-row')].map((r) => ({ q: r.dataset.q, text: r.textContent.replace(/\s+/g, ' '), price: r.querySelector('.price-line').dataset.price })), total: (() => { const t = document.querySelector('.price-total'); return { gil: +t.dataset.gil, priced: +t.dataset.priced, unpriced: +t.dataset.unpriced, text: t.textContent }; })() }));
+        seen[tag] = got;
+        const hq = got.rows.find((r) => r.q === 'hq'), nq = got.rows.find((r) => r.q === 'nq');
+        ck['the high-quality row says its price is unknown ' + tag] = !!hq && /High-quality price unknown/.test(hq.text) && hq.price === '' && !/100 gil/.test(hq.text) && !/10,000 gil/.test(hq.text);
+        ck['the ordinary row keeps its price ' + tag] = !!nq && /100 gil before tax/.test(nq.text) && nq.price === '100';
+        ck['the subtotal counts the ordinary row only ' + tag] = got.total.gil === 100 && got.total.priced === 1 && got.total.unpriced === 1 && /Bronze Ingot \(high quality\)/.test(got.total.text);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C191', 'Lists page, market prices by quality (real data): a high-quality row routed to the market says "High-quality price unknown" and is left out of the subtotal, an ordinary row of the same item keeps its price (a controlled reply with ordinary 100 and high quality 10,000)',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C192 (Lists, R7) The chosen spot counts the zones of the plan on screen only, the real data: Helmet Crab (lowest spot Lv. 15 Western La Noscea) and Highland Parsley (only Lower La Noscea) in two lists of one character: the crab list alone keeps the crab at its lowest spot and says
+    //    nothing; the combined view of both shows it in Lower La Noscea with the reason; one list holding both does the same. ──
+    await guard('C192', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Crab', charId: 'c1', items: [[4880, 1]] }, { name: 'Parsley', charId: 'c1', items: [[4784, 1]] }, { name: 'Both', charId: 'c2', items: [[4880, 1], [4784, 1]] }]);
+        const crabRow = async () => { const r = page.locator('.get-row[data-item="4880"]'); await lOpen(r); return (await r.textContent()).replace(/\s+/g, ' '); };
+        await lOpenList(page, 'Crab', 'get'); await lOpenAll(page);
+        const alone = await crabRow();
+        ck['alone the crab keeps its lowest spot ' + tag] = /Lv\. 15 [^·]*· Western La Noscea \(X/.test(alone) && !/Chosen:/.test(alone) && !/Lower La Noscea/.test(alone.slice(0, alone.indexOf('Western La Noscea'))); // the other list of the character does not pull it
+        await lOpenList(page, 'Both', 'get'); await lOpenAll(page);
+        const both = await crabRow();
+        ck['one list holding both routes it through Lower La Noscea ' + tag] = /Lv\. 20 [^·]*· Lower La Noscea \(X/.test(both) && /Chosen: on your route in Lower La Noscea/.test(both);
+        await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+        const ticks = page.locator('.lists-group[aria-label="Character c1"] [data-f=tick]:not([disabled])'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check(); await lSettle(page);
+        await page.locator('.lists-group[aria-label="Character c1"] [data-act=combined]').click(); await page.waitForSelector('.lhead.combined'); await lOpenAll(page);
+        const comb = await crabRow();
+        ck['the combined view of both routes it through Lower La Noscea ' + tag] = /Lv\. 20 [^·]*· Lower La Noscea \(X/.test(comb) && /Chosen: on your route in Lower La Noscea/.test(comb);
+        seen[tag] = { alone: alone.slice(0, 300), both: both.slice(0, 300), comb: comb.slice(0, 300) };
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C192', 'Lists page, the chosen spot counts the plan on screen only (real data): a list holding the crab alone keeps its lowest spot although another list of the character has the parsley; the combined view or one list holding both routes it through Lower La Noscea',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C193 (Lists, R7) Spearfishing names, the real data: a fish of teeming waters is shown at "Teeming Waters", one of swimming shadows at "Swimming Shadows" (the node's own name row 21 and 22), a rod fish at its fishing spot, never at "Fishing spot" for a spearfishing node. ──
+    await guard('C193', async () => {
+      const server = await start(PORT5);
+      const { errors, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const pick = await page.evaluate(() => { const D = window.__lists.data(), out = {}; Object.keys(D.spots || {}).forEach((it) => { const sp = D.spots[it], k = sp.every((s) => s[0] === 2 && s[1] === 21) ? 'teeming' : sp.every((s) => s[0] === 2 && s[1] === 22) ? 'shadows' : sp.every((s) => s[0] === 2 && s[1] === 0 && s[11]) ? 'rod' : null; if (k && !out[k] && D.items[it]) out[k] = +it; }); return out; });
+      const ck = { found: !!pick.teeming && !!pick.shadows && !!pick.rod };
+      const seen = { pick };
+      if (ck.found) {
+        await lSeedLists(page, [{ name: 'Fish', charId: 'c1', items: [[pick.teeming, 1], [pick.shadows, 1], [pick.rod, 1]] }]);
+        await lOpenList(page, 'Fish', 'get'); await lOpenAll(page);
+        const txt = async (it) => { const r = page.locator('.get-row[data-item="' + it + '"]'); await lOpen(r); return (await r.textContent()).replace(/\s+/g, ' '); };
+        const t = await txt(pick.teeming), w = await txt(pick.shadows), r = await txt(pick.rod);
+        seen.t = t.slice(0, 260); seen.w = w.slice(0, 260); seen.r = r.slice(0, 260);
+        ck.teeming = /Lv\. \d+ Teeming Waters ·/.test(t) && !/Fishing spot/.test(t);
+        ck.shadows = /Lv\. \d+ Swimming Shadows ·/.test(w) && !/Fishing spot/.test(w);
+        ck.rod = !/Teeming Waters|Swimming Shadows/.test(r) && /Lv\. \d+ [^·]+ ·/.test(r);
+      }
+      ck.noErrors = real(errors).length === 0;
+      record('C193', 'Lists page, spearfishing (real data): a fish of teeming waters is at "Teeming Waters", one of swimming shadows at "Swimming Shadows", a rod fish at its fishing spot name',
+        Object.values(ck).every(Boolean), { ck, seen, errors: real(errors) });
+      void server;
+    });
+
+    // ── C194 (Lists, R7) The wording and layout of the sixth round, the real data: the high-quality choice sits under "Get it by"; the bulk action says it is for all of the character's lists; a currency in Wanted says "Earned it" (and asks "How many did you earn?", Undo "Earned 5 ...");
+    //    phase tabs add "to earn"; no "(ordinary)" on rows; the price place reads "North America" while the saved key keeps its hyphen; a trade sentence ends with the item; the phone has "Character totals"; the Restored card has a filled recovery and a separated Remove; a draft in the
+    //    settings sheet survives another save and goes when sent; and a list's ready tally counts the stock its own share got. ──
+    await guard('C194', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      {
+        const { errors, page } = await r3Page({ viewport: { width: 1440, height: 1000 } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        const names = await r3Names(page);
+        // the high-quality choice under "Get it by", the bulk action's wording
+        await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+        await lSeedLists(page, [{ name: 'Gear', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }]);
+        await lOpenList(page, 'Gear', 'craft');
+        const hqRow = page.locator('.craft-row').filter({ has: page.locator('[data-act=row]') });
+        let place = null;
+        for (let i = 0; i < await hqRow.count() && !place; i++) {
+          const r = hqRow.nth(i); await lOpen(r);
+          if (await r.locator('.w-hq').count()) place = await r.evaluate((e) => { const s = e.querySelector('[data-f=way]').getBoundingClientRect(), h = e.querySelector('.w-hq').getBoundingClientRect(); return { selBottom: s.bottom, hqTop: h.top, selLeft: s.left, hqLeft: h.left }; });
+          else await lCloseRows(page);
+        }
+        seen.hq = place;
+        ck.hqUnderGetItBy = !!place && place.hqTop >= place.selBottom - 1 && Math.abs(place.hqLeft - place.selLeft) < 2;
+        await lCloseRows(page); await lSet(page);
+        const bulk = await page.locator('[data-act=hq-all]').textContent();
+        ck.bulkSaysAll = /^High quality for every material of all of .+’s lists$/.test(bulk.trim());
+        ck.northAmerica = await page.evaluate(() => { const sel = document.querySelector('[data-f=priceWorld]'), o = [...sel.options].map((x) => [x.value, x.textContent]); return o[0][1].startsWith('North America') && o.some((x) => x[0] === 'North-America' && x[1] === 'North America') && /prices: North America/.test(document.querySelector('.lhead .state').textContent) && !/North-America/.test(document.querySelector('.lhead .state').textContent); });
+        ck.hideSwitch = (await page.locator('.swb[data-act=hide]').textContent()).replace(/\s+/g, '') === 'HidecompletedOff';
+        // a draft survives another save, and goes when sent
+        await page.fill('[data-f=stepname]', 'Phase draft');
+        await lSeed(page, (S, sec) => S.setHave(sec, 'c1', 5056, 'nq', 3).section);
+        ck.draftKept = (await page.inputValue('[data-f=stepname]')) === 'Phase draft' && (await page.locator('.lsheet').count()) === 1;
+        await page.click('[data-act=addstep]'); await lSettle(page);
+        ck.draftSent = (await page.locator('.lsheet .stepname div').allTextContents()).includes('Phase draft') && (await page.inputValue('[data-f=stepname]')) === '';
+        await page.fill('[data-f=stepname]', 'Unsent'); await page.keyboard.press('Escape'); await page.waitForSelector('.lsheet', { state: 'detached' }); await lSet(page);
+        ck.draftGoesWithSheet = (await page.inputValue('[data-f=stepname]')) === '';
+        await lSetDone(page);
+        // phase tabs: to earn; Wanted: no "(ordinary)", "Earned it" for a currency
+        await lSeedLists(page, [{ name: 'Scrip', charId: 'c2', items: [[28063, 7], [5056, 1], [5056, 1, { hq: true }]] }]);
+        await lSeed(page, (S, sec) => { const id = Object.keys(sec.lists).filter((k) => sec.lists[k].name === 'Scrip')[0]; let t = 90000; sec = S.addStep(sec, id, 'First', { now: t++ }).section; sec = S.addStep(sec, id, 'Second', { now: t++ }).section; return sec; });
+        await lOpenList(page, 'Scrip', 'get');
+        ck.phaseEarn = await page.evaluate(() => { const tabs = [...document.querySelectorAll('.step-tab .st-fig')]; return tabs.length >= 2 && tabs.some((t) => +t.dataset.earn === 7 && /7 to earn/.test(t.textContent)); });
+        await lTab(page, 'wanted');
+        const rowTxt = async (it, q) => (await page.locator('.wanted-row[data-item="' + it + '"][data-q="' + q + '"]').first().textContent()).replace(/\s+/g, ' ');
+        const nqTxt = await rowTxt(5056, 'nq'), hqTxt = await rowTxt(5056, 'hq');
+        ck.noOrdinary = !/\(ordinary\)/.test(nqTxt) && /\(high quality\)/.test(hqTxt);
+        const cur = page.locator('.wanted-row[data-item="28063"]'); await lOpen(cur);
+        ck.earnedIt = (await cur.locator('[data-act=ask-bought][data-mode=earned]').count()) === 1 && (await cur.locator('[data-act=ask-bought]').first().textContent()) === 'Earned it' && (await cur.locator('[data-act=ask-bought]').count()) === 1 && !/Bought it/.test(await cur.textContent());
+        await cur.locator('[data-act=ask-bought]').click(); await cur.locator('[data-f=boughtn]').fill('5');
+        ck.earnPrompt = /How many did you earn\?/.test(await cur.locator('.w-bought').textContent()) && (await page.locator('[data-act=rest]').count()) === 0;
+        await cur.locator('[data-act=bought]').click(); await lSettle(page);
+        ck.earnUndo = /Earned 5 /.test(await lNote(page)) && (await lHave(page))['c2.28063'].nq === 5 && (await page.locator('[data-act=rest]').count()) === 0;
+        seen.note = await lNote(page); seen.nq = nqTxt.slice(0, 200); seen.hqTxt = hqTxt.slice(0, 200);
+        // a trade sentence ends with the item ("... for 2 Coke.") in the row's drawer and in the list of other offers
+        const coke = +Object.keys(names).find((i) => names[i] === 'Coke');
+        await lSeedLists(page, [{ name: 'Trade', charId: 'c2', items: [[coke, 2]] }]);
+        await lSeed(page, new Function('S', 'sec', 'DATA', 'return S.setWay(sec, "c2", ' + coke + ', { by: "trade" }).section;'));
+        await lOpenList(page, 'Trade', 'get'); await lOpenAll(page);
+        const tr = page.locator('.get-row[data-item="' + coke + '"]'); await lOpen(tr);
+        const trText = (await tr.locator('.drawer').textContent()).replace(/\s+/g, ' ');
+        seen.trade = trText.slice(0, 300);
+        ck.tradeEndsWithItem = /Traded by [^:]+: .+ for \d+ Coke\./.test(trText);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      { // the ready tally: two lists of one character each want one Bronze Ingot and one is typed; the first list's own share has it
+        const { errors, page } = await r3Page({ viewport: { width: 1440, height: 1000 } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'First', charId: 'c1', items: [[5056, 1]], have: { 5056: 1 } }, { name: 'Second', charId: 'c1', items: [[5056, 1]] }]);
+        const tally = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.list-card')].map((c) => [c.querySelector('.open').textContent, c.querySelector('.ready').textContent.replace(/\s+/g, ' ').trim()])));
+        seen.tally = tally;
+        ck.readyOwnShare = /^1\s*of 1 ready/.test(tally.First) && /^0\s*of 1 ready/.test(tally.Second);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      { // the Restored card, a phone: a filled recovery and a Remove of its own; the character cue on the head
+        const { errors, page } = await r3Page({ viewport: { width: 360, height: 800 } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Totals', charId: 'c1', items: [[4880, 1]] }]);
+        await page.evaluate(async () => { await CC.transact((raw) => { const d = CC.checkDoc(raw), sec = d.modules.lists; sec.targets['l9zzzzzzzzzz.t1aaaaaaaaaa'] = { item: 5056, recipe: 0, qty: 2, at: 1 }; d.updated = Date.now(); return d; }); await window.__lists.reload(); });
+        await page.waitForSelector('.lists-restored');
+        const rc = await page.evaluate(() => { const c = document.querySelector('.lists-restored'), p = c.querySelector('[data-act=restore-orphans]'), rm = c.querySelector('[data-act=ask-remove-orphans]'), a = p.getBoundingClientRect(), b = rm.getBoundingClientRect(); return { filled: p.classList.contains('lbtn-p'), filledCount: document.querySelectorAll('.lbtn-p').length, gap: b.top - a.bottom, remove: rm.classList.contains('bad') }; });
+        seen.rc = rc;
+        ck.restoredCard = rc.filled && rc.filledCount === 1 && rc.gap >= 8 && rc.remove;
+        await page.evaluate(async () => { await CC.transact((raw) => { const d = CC.checkDoc(raw); delete d.modules.lists.targets['l9zzzzzzzzzz.t1aaaaaaaaaa']; d.updated = Date.now(); return d; }); await window.__lists.reload(); });
+        await lOpenList(page, 'Totals', 'get');
+        const cue = await page.evaluate(() => { const c = document.querySelector('.lhead .cap'), r = c.getBoundingClientRect(); return { text: c.innerText.trim(), w: Math.round(r.width), h: Math.round(r.height), vis: r.width > 0 && r.height > 0 && getComputedStyle(c).display !== 'none' }; });
+        seen.cue = cue;
+        ck.characterTotalsCue = cue.vis && cue.text === 'Character totals';
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C194', 'Lists page, the sixth round\'s wording and layout (real data): the high-quality choice under "Get it by", the bulk action for all of the character\'s lists, "Earned it" for a currency, "to earn" on a phase tab, no "(ordinary)", "North America" as text with its saved key, a draft kept across a save, the ready tally from a list\'s own share, the Restored card and the phone\'s "Character totals"',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
       void server;
     });
 

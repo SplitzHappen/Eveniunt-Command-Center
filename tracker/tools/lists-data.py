@@ -502,6 +502,16 @@ def build():
             stop("folklore item %s is not in Item" % tcb)
         return clean(ITEM[tcb].get("Name"))
 
+    def loose_name_row(nid, n):
+        """R7: the node kind of a node without a map position, when the export row agrees with Teamcraft's gathering type (else 0)."""
+        ex = EXPORT.get(nid)
+        if not n.get("spawns") or not ex or i(ex.get("GatheringType")) != n.get("type"):
+            return 0  # only a timed source gains a name (an untimed one with no position stays one merged row, as before)
+        gtype, ptype = i(ex.get("GatheringType")), i(ex.get("GatheringPointType"))
+        if not (0 <= gtype <= 3 and ptype in (1, 2, 3, 4, 5)):
+            return 0  # a node kind that cannot be derived from the sheet stays unnamed (spearfishing has no proof here without a notebook row)
+        return name_row(nid, n)
+
     gather = {}
     for it in sorted(closure):
         ns = by_item.get(it) or by_item.get(sublime_of.get(it)) or []
@@ -511,7 +521,7 @@ def build():
             for nid, n in sorted(dict(ns).items()):
                 if nid not in placed:
                     tcb = n.get("folklore") or 0
-                    lrow = [0 if n["type"] in (0, 1) else (1 if n["type"] in (2, 3) else 2), 0, n.get("level", 0), place.get(i(n.get("zoneid")), ""), 0, 0, 0,
+                    lrow = [0 if n["type"] in (0, 1) else (1 if n["type"] in (2, 3) else 2), loose_name_row(nid, n), n.get("level", 0), place.get(i(n.get("zoneid")), ""), 0, 0, 0,
                             sorted(set(n["spawns"])) if n.get("spawns") else 0, (n.get("duration") or 120) if n.get("spawns") else 0,
                             clean(ITEM[tcb].get("Name")) if tcb and tcb in ITEM else 0,
                             1 if (it in (n.get("hiddenItems") or []) and it not in (n.get("items") or [])) else 0]
@@ -525,9 +535,10 @@ def build():
                 rows.append(((n.get("level", 0), dist, nid), [job, name_row(nid, n), n.get("level", 0), zone or place.get(i(n["zoneid"]), ""), x, y, aid,
                              sorted(set(n["spawns"])) if timed else 0, (n.get("duration") or 120) if timed else 0, folklore_of(nid, n), hidden]))
             rows.sort(key=lambda p: p[0])
-            if rows:
-                gather[it] = [r for _, r in rows] + [r for _, r in sorted(loose.values(), key=lambda p: p[0])]
-            else:  # nodes without a map position: one entry that keeps the job, the level and the zone when known
+            timed_loose = [v for v in loose.values() if v[1][7]]
+            if rows or timed_loose:  # R7: placed spots first; the sources without a map position keep their own windows and node kinds after them (an item with only such sources too)
+                gather[it] = [r for _, r in rows] + [r for _, r in sorted((loose.values() if rows else timed_loose), key=lambda p: p[0])]
+            else:  # nodes the data holds no position or window for: one entry that keeps the job, the level and the zone when known
                 n0 = sorted(ns, key=lambda p: (p[1].get("level", 0), p[0]))[0][1]
                 gather[it] = [[0 if n0.get("type") in (0, 1) else (1 if n0.get("type") in (2, 3) else 2), 0,
                                level_of.get(it) or n0.get("level", 0), place.get(i(n0.get("zoneid")), ""), 0, 0, 0, 0, 0, 0, 0]]

@@ -553,6 +553,16 @@
     if (ZC && key) ZC.set(key, { spots: ctx.spots, zones: zones });
     return zones;
   }
+  // R7 (sixth round): the plan on screen. The gather rows of the shown lists that still have something to get (sums: the shown lists' own
+  // shares per plan line, { key: { short } }); the chosen spot counts the zones of these rows only, never of another list of the character.
+  L.gatherScope = function (plan, sums) {
+    var lines = {}, k, ln;
+    for (k in (plan && plan.lines) || {}) {
+      ln = plan.lines[k];
+      if (ln && ln.by === 'gather' && sums && sums[k] && sums[k].short > 0) lines[k] = ln;
+    }
+    return { lines: lines };
+  };
   L.chosenSpot = function (item, ctx) {
     var sp = ctx && ctx.spots && ctx.spots[item];
     if (!sp || !sp.length) return null;

@@ -401,6 +401,19 @@ test('LE-B3b an item whose crafters have identical ingredients plans the same wh
     assert.equal(L.chosenSpot(1, ctx(spots, other)).spot, spots[1][0]);
   });
 
+  test('LE-R7a the chosen spot counts the zones of the rows on screen only: a row of another list, or one with nothing left to get, does not pull it', () => {
+    const spots = { 1: [sp(5, 'A'), sp(30, 'C')], 3: [sp(1, 'C')] };
+    const full = { lines: { '1|normal|0': { item: 1, by: 'gather', short: 2 }, '3|normal|0': { item: 3, by: 'gather', short: 4 } } };
+    const bothShown = L.gatherScope(full, { '1|normal|0': { short: 2 }, '3|normal|0': { short: 4 } });
+    assert.deepEqual(Object.keys(bothShown.lines).sort(), ['1|normal|0', '3|normal|0']);
+    assert.equal(L.chosenSpot(1, ctx(spots, bothShown)).spot, spots[1][1], 'with both rows on screen the shared zone C is chosen');
+    const onlyOne = L.gatherScope(full, { '1|normal|0': { short: 2 } }); // the other row belongs to a list that is not on screen
+    assert.deepEqual(Object.keys(onlyOne.lines), ['1|normal|0']);
+    assert.equal(L.chosenSpot(1, ctx(spots, onlyOne)).spot, spots[1][0], 'a row that is not on screen pulls nothing: the lowest spot stays');
+    assert.equal(L.chosenSpot(1, ctx(spots, L.gatherScope(full, { '1|normal|0': { short: 2 }, '3|normal|0': { short: 0 } }))).spot, spots[1][0], 'nor does a row with nothing left to get');
+    assert.equal(L.chosenSpot(1, ctx(spots, full)).spot, spots[1][1], 'the unscoped plan (the earlier behaviour) is pulled by the other list');
+  });
+
   test('LE-R2d the window is the chosen spot\'s own, never merged across spots', () => {
     const spots = { 1: [sp(50, 'Z1', [1, 5, 9], 180), sp(50, 'Mor Dhona', [13, 17, 21], 180)], 2: [sp(1, 'Mor Dhona')] };
     const c = L.chosenSpot(1, ctx(spots, gp(1, 2)));
