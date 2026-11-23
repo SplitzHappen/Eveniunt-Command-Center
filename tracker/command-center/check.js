@@ -8623,6 +8623,47 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── C195 (Lists, R7) A sheet never clips a focus ring, the real data: the settings sheet and the Order of ways sheet at 1,440 and 360 px wide and at heights that make them scroll (500 px) and heights that do not (800 px): every control's
+    //    keyboard focus ring, once the control is scrolled into view, lies inside the sheet and above its sticky footer. The hosted run cut the ring of an arrow button at the sheet's edge; the scroll margin is removed on purpose once and the same measure fails. ──
+    await guard('C195', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      const measure = (page) => page.evaluate(() => {
+        const sh = document.querySelector('.lsheet'), sr = sh.getBoundingClientRect(), ft = sh.querySelector('.sfoot'), ftop = ft ? ft.getBoundingClientRect().top : sr.bottom, bad = [], ae = document.activeElement; let n = 0;
+        [...sh.querySelectorAll('button, select, input, summary, a[href]')].filter((e) => !e.disabled && !e.closest('.sfoot')).forEach((e) => {
+          e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); e.focus({ focusVisible: true, preventScroll: true });
+          const cs = getComputedStyle(e), w = parseFloat(cs.outlineWidth) || 0, off = parseFloat(cs.outlineOffset) || 0, r = e.getBoundingClientRect(), g = e.matches('input[type=checkbox], input[type=radio]') ? 0 : Math.max(0, off + w); n++;
+          if (cs.outlineStyle === 'none' || w <= 0) return;
+          if (r.top - g < sr.top - 0.5 || r.bottom + g > sr.bottom + 0.5 || r.left - g < sr.left - 0.5 || r.right + g > sr.right + 0.5 || r.bottom + g > ftop + 0.5 && r.top < sr.bottom) bad.push((e.className || e.tagName) + ' ' + Math.round(r.top) + '-' + Math.round(r.bottom));
+        });
+        if (ae && ae.focus) ae.focus({ preventScroll: true });
+        return { n, bad, scrolls: sh.scrollHeight > sh.clientHeight + 1 };
+      });
+      for (const [tag, vp] of [['1440x500', { width: 1440, height: 500 }], ['360x500', { width: 360, height: 500 }], ['360x800', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Sheet', charId: 'c1', items: [[4880, 1], [4784, 1]] }]);
+        await lOpenList(page, 'Sheet', 'get'); await lSet(page);
+        const a = await measure(page);
+        await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet');
+        const b = await measure(page); seen[tag] = { settings: a, order: b };
+        ck['settings sheet clips no ring ' + tag] = a.n >= 4 && a.bad.length === 0;
+        ck['order sheet clips no ring ' + tag] = b.n >= 8 && b.bad.length === 0;
+        if (tag === '360x500') {
+          ck['the order sheet scrolls at 500 px high'] = b.scrolls;
+          await page.addStyleTag({ content: '.lsheet { scroll-padding: 0 !important; }' });
+          const c = await measure(page); seen.broken = c;
+          ck['the same measure fails without the scroll margin'] = c.bad.length > 0;
+        }
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C195', 'Lists page, sheets and focus (real data, 1,440 and 360 px wide, 500 and 800 px high): the keyboard focus ring of every control in the settings sheet and the Order of ways sheet lies inside the sheet and above its footer; without the scroll margin the same measure fails',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
     // ── C191 (Lists, R7) Market prices by quality, the real data: the price service answers per item with listings of both qualities (ordinary 100 gil, high quality 10,000 gil); a high-quality Bronze Ingot routed to the market never shows or adds the ordinary price
     //    (the row says "High-quality price unknown", the subtotal counts the ordinary row only and names the high-quality one as without a price), while the ordinary row keeps its price; the saved data has no price. ──
     await guard('C191', async () => {
