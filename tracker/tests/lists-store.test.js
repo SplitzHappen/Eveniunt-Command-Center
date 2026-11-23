@@ -423,3 +423,35 @@ test('ST-B3 ways.recipe is set through the store, changes the counted recipe, an
   assert.equal(J(planOf(u.section, 'c1')), J(p0));
   assert.ok(S.setWay(sec0, 'c1', 101, { recipe: 'x' }).error);
 });
+
+test('ST-R4 a Free Company project becomes one list: a step per phase, the supply items as wanted items (perSet x sets), one undo entry', () => {
+  // The real submarine part Shark-class Bow (item 21792), from the pinned sheets (the same rows as LD-26 of lists-data.test.js):
+  // CompanyCraftSequence row 530 -> CompanyCraftPart 1700 -> CompanyCraftProcess 800, 801, 802; the supply items are read through CompanyCraftSupplyItem.
+  //   phase 1: 5058 10 x 3, 5093 10 x 3, 7023 10 x 3, 5059 6 x 3;  phase 2: 5093 10 x 3, 7022 10 x 3, 5060 4 x 3;  phase 3: 7606 3 x 3, 5099 10 x 3, 5064 10 x 3
+  const REAL = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'lists.json'), 'utf8'));
+  const sheet = [[[5058, 30], [5093, 30], [7023, 30], [5059, 18]], [[5093, 30], [7022, 30], [5060, 12]], [[7606, 9], [5099, 30], [5064, 30]]];
+  const project = REAL.projects[21792];
+  assert.equal(J(S.phaseSteps(project).map((p) => p.items)), J(sheet), 'ST-R4a the phases and amounts read from the data are those of the sheets');
+  assert.deepEqual(S.phaseSteps(project).map((p) => p.name), ['Phase 1', 'Phase 2', 'Phase 3'], 'ST-R4b the steps are named Phase 1, 2, 3');
+  const sec0 = S.emptySection();
+  const r = ok(S.fromProject(sec0, { name: REAL.items[21792][0], charId: 'c2', stamp: REAL.stamp, project }, ctx()));
+  const ids = Object.keys(r.section.lists);
+  assert.equal(ids.length, 1, 'ST-R4c exactly one list is made');
+  const h = r.section.lists[r.id];
+  assert.equal(h.name, 'Shark-class Bow', 'ST-R4d the list is named after the part');
+  assert.equal(h.charId, 'c2', 'ST-R4e the list belongs to the given character');
+  const stepIds = Object.keys(h.steps).sort((a, b) => h.steps[a].n - h.steps[b].n);
+  assert.deepEqual(stepIds.map((k) => h.steps[k].name), ['Phase 1', 'Phase 2', 'Phase 3'], 'ST-R4f one step per phase, in order');
+  const made = stepIds.map((sid) => Object.keys(r.section.targets).filter((k) => r.section.targets[k].step === sid).map((k) => [r.section.targets[k].item, r.section.targets[k].qty]).sort((a, b) => a[0] - b[0]));
+  assert.equal(J(made), J(sheet.map((ph) => ph.slice().sort((a, b) => a[0] - b[0]))), 'ST-R4g each step holds the wanted items of its phase with amount = per set x sets');
+  assert.equal(Object.keys(r.section.targets).length, 10, 'ST-R4h no other wanted item');
+  assert.equal(r.entry.units.length, 11, 'ST-R4i one entry of one unit per list and wanted item (the list once, with its steps)');
+  const u = ok(S.undo(r.section, r.entry));
+  assert.equal(J(u.section), J(sec0), 'ST-R4j one undo removes the list, its steps and its wanted items');
+  // the plan works as for any list: every supply item is a line of the character's plan
+  const st = S.stateOf(r.section, 'c2');
+  const plan = L.plan(REAL, { order: '', ways: st.ways, have: st.have, lists: [{ id: r.id, steps: h.steps, targets: Object.keys(r.section.targets).map((k) => Object.assign({ id: k.slice(r.id.length + 1) }, r.section.targets[k])) }], prices: null });
+  assert.ok([5058, 5093, 7023, 5059, 7022, 5060, 7606, 5099, 5064].every((i) => Object.keys(plan.lines).some((k) => plan.lines[k].item === i)), 'ST-R4k every supply item is in the plan');
+  // a project with several parts names each step after its part
+  assert.deepEqual(S.phaseSteps([0, [[[[1, 2, 3]]], [[[1, 1, 1], [1, 2, 2]]]]]).map((p) => [p.name, p.items]), [['Part 1, Phase 1', [[1, 6]]], ['Part 2, Phase 1', [[1, 5]]]], 'ST-R4l several parts: the part is in the step name, an item twice in a phase is added up');
+});

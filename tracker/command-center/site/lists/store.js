@@ -190,6 +190,45 @@
     var r = s.finish('Added a step to “' + (h.name || 'Untitled list') + '”'); r.id = id; return guardHeader(s, r, listId);
   };
 
+  // ------------------------------------------------------------------------------------------------ Free Company projects (R4)
+  // o: { name, charId, stamp, project }, project = the data's [kind, parts], a part = [phase...], a phase = [[item, perSet, sets]...].
+  // One list with one step per phase in order ("Phase 1", ...; "Part 2, Phase 1" when the project has several parts, the sheets name none)
+  // and each phase's supply items as wanted items in that step, amount = perSet x sets. Built from newList, addStep and addTarget as one change.
+  S.phaseSteps = function (project) {
+    var parts = (project && project[1]) || [], out = [];
+    parts.forEach(function (phases, p) {
+      phases.forEach(function (sup, n) {
+        var by = {}, items = [];
+        sup.forEach(function (g) { if (by[g[0]] === undefined) { by[g[0]] = items.length; items.push([g[0], 0]); } items[by[g[0]]][1] += g[1] * g[2]; });
+        out.push({ name: (parts.length > 1 ? 'Part ' + (p + 1) + ', ' : '') + 'Phase ' + (n + 1), items: items });
+      });
+    });
+    return out;
+  };
+  function mergeUnits(list) { // one unit per place: the first before, the last after
+    var at = {}, out = [];
+    list.forEach(function (u) { var k = u.g + '\u0000' + u.k; if (at[k] === undefined) { at[k] = out.length; out.push({ g: u.g, k: u.k, before: u.before, after: u.after }); } else out[at[k]].after = u.after; });
+    return out.filter(function (u) { return u.before !== u.after; });
+  }
+  S.fromProject = function (sec, o, ctx) {
+    var plan = S.phaseSteps(o && o.project);
+    if (!plan.length) return fail('That project has no phase.');
+    var r = S.newList(sec, { name: o.name, charId: o.charId, stamp: o.stamp }, ctx);
+    if (r.error) return r;
+    var units = r.entry ? r.entry.units.slice() : [], cur = r.section, id = r.id, label = r.entry && r.entry.label, i, j;
+    for (i = 0; i < plan.length; i++) {
+      var st = S.addStep(cur, id, plan[i].name, ctx);
+      if (st.error) return st;
+      units = units.concat(st.entry ? st.entry.units : []); cur = st.section;
+      for (j = 0; j < plan[i].items.length; j++) {
+        var t = S.addTarget(cur, id, { item: plan[i].items[j][0], qty: plan[i].items[j][1], step: st.id }, ctx);
+        if (t.error) return t;
+        units = units.concat(t.entry ? t.entry.units : []); cur = t.section;
+      }
+    }
+    return { section: cur, entry: { label: label, units: mergeUnits(units) }, id: id };
+  };
+
   // ------------------------------------------------------------------------------------------------ wanted items
   function targetOf(s, listId, targetId) { var k = listId + '.' + targetId; return s.d.targets[k] ? { k: k, t: s.d.targets[k] } : null; }
   // o: { item, recipe, qty, hq, coll, make, step }. Returns { section, entry, id, key }.

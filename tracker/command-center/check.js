@@ -8443,6 +8443,64 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── C187 (Lists, R4) Free Company projects: in a list's Wanted add field, "Shark-class Bow" is found as a Submarine part (and an airship part as an Airship part); adding it makes a new list for the same character, named after the part, with one step per phase (Phase 1 to 3) and each phase's supply items as wanted items, amount = per set x sets (the sheet's rows, real data); the plan has totals; Your lists stamps it "Submarine part"; one Undo removes the list, its steps and its wanted items. Pictures: docs/lists-redesign/build/r4-*. ──
+    await guard('C187', async () => {
+      const server = await start(PORT5);
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), problems = {}, figs = {}, errs = [], external = [], ck = {}, seen = {};
+      // CompanyCraftProcess rows 800, 801, 802 of Shark-class Bow (item 21792): supply item, SetQuantity x SetsRequired
+      const SHEET = [[[5058, 30], [5093, 30], [7023, 30], [5059, 18]], [[5093, 30], [7022, 30], [5060, 12]], [[7606, 9], [5099, 30], [5064, 30]]];
+      const cmp = (a) => JSON.stringify(a.map((ph) => ph.slice().sort((x, y) => x[0] - y[0])));
+      for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
+        const { c, page } = await dr1Page(vp, scheme), phone = vp.width < 600, first = tag === '1440-light';
+        await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+        await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: [[49294, 1]] }]);
+        const look = async (name, o) => {
+          await page.waitForTimeout(250); await page.evaluate(() => window.scrollTo(0, 0));
+          const r = await designRules(page, Object.assign({ screen: name, phone }, o || {}));
+          figs[tag + ' ' + name] = r.fig; Object.keys(r.problems).forEach((k) => { (problems[k] = problems[k] || []).push(...r.problems[k].map((m) => tag + ' ' + name + ': ' + m)); });
+          if (SHOT) await page.screenshot({ path: path.join(BUILD, 'r4-' + name + '-' + tag + '.png'), fullPage: name === 'list' });
+        };
+        await lOpenList(page, 'Gear', 'wanted');
+        const find = async (q) => { await page.fill('[data-f=search]', q); await page.waitForTimeout(150); return page.evaluate(() => [...document.querySelectorAll('.hits .hit')].map((h) => ({ act: h.dataset.act, item: +h.dataset.item, text: h.textContent.replace(/\s+/g, ' ').trim() }))); };
+        const bow = await find('Shark-class Bow');
+        seen.bow = bow;
+        const b0 = bow.find((h) => h.item === 21792) || {}; ck['search finds the submarine part ' + tag] = b0.act === 'add-project' && /^\+listShark-class Bow Submarine part/.test(b0.text || '');
+        const whale = await find('Whale-class Pressure Hull'), air = await find('Bronco-type Hull');
+        const w0 = whale.find((h) => /^\+listWhale-class Pressure Hull /.test(h.text)) || {}; ck['search finds a Whale-class part ' + tag] = w0.act === 'add-project' && w0.text.includes('Submarine part');
+        ck['search finds an airship part ' + tag] = air.some((h) => h.act === 'add-project' && h.text.includes('Airship part') && h.text.includes('Bronco-type Hull'));
+        await find('Shark-class Bow'); await look('search');
+        const before = await lStored(page);
+        await page.click('.hits .hit[data-act=add-project]'); await lSettle(page); await page.waitForTimeout(400);
+        const st = await lStored(page), ids = Object.keys(st.lists), mine = ids.filter((i) => st.lists[i].name === 'Shark-class Bow');
+        ck['one new list for the same character ' + tag] = ids.length === Object.keys(before.lists).length + 1 && mine.length === 1 && st.lists[mine[0]].charId === 'c2';
+        const h = mine.length ? st.lists[mine[0]] : { steps: {} }, sids = Object.keys(h.steps).sort((a, b) => h.steps[a].n - h.steps[b].n);
+        ck['steps are Phase 1 to 3 in order ' + tag] = JSON.stringify(sids.map((k) => h.steps[k].name)) === JSON.stringify(['Phase 1', 'Phase 2', 'Phase 3']);
+        const keys = Object.keys(st.targets).filter((k) => mine.length && k.startsWith(mine[0] + '.'));
+        ck['wanted items equal the sheet ' + tag] = keys.length === 10 && cmp(sids.map((sid) => keys.filter((k) => st.targets[k].step === sid).map((k) => [st.targets[k].item, st.targets[k].qty]))) === cmp(SHEET);
+        const tabs = await lSteps(page), tot = await lTotals(page);
+        seen['steps ' + tag] = tabs; ck['the page shows the three phase steps ' + tag] = tabs.length >= 3 && ['Phase 1', 'Phase 2', 'Phase 3'].every((n) => tabs.some((t) => t.name === n));
+        ck['the plan has totals ' + tag] = !!tot && tot.get + tot.craft > 0;
+        seen['totals ' + tag] = tot;
+        await look('list', { first });
+        if (await page.locator('[data-act=undo][data-i="0"]').count()) { await page.click('[data-act=undo][data-i="0"]'); await lSettle(page); }
+        const after = await lStored(page);
+        ck['one undo removes list, steps and wanted items ' + tag] = JSON.stringify(after) === JSON.stringify(before) && !(await page.locator('.lists-totals').count());
+        if (await page.locator('[data-act=back]').count()) await page.click('[data-act=back]');
+        await lSeed(page, (S, sec, D) => S.fromProject(sec, { name: D.items[21792][0], charId: 'c2', stamp: D.stamp, project: D.projects[21792] }, { now: 9000 }).section);
+        await page.waitForSelector('.list-card'); await page.waitForTimeout(200);
+        ck['Your lists stamps the part ' + tag] = (await page.locator('.list-card', { hasText: 'Shark-class Bow' }).locator('.lstamp.proj').allTextContents()).join('') === 'Submarine part' && (await page.locator('.list-card', { hasText: 'Gear' }).locator('.lstamp.proj').count()) === 0;
+        await look('lists');
+        errs.push(...real(c.errors)); external.push(...c.external);
+        await c.ctx.close();
+      }
+      ck.noProblems = Object.keys(problems).length === 0;
+      ck.pictures = !SHOT || ['search', 'list', 'lists'].every((n) => ['1440-light', '360-dark'].every((t) => fs.existsSync(path.join(BUILD, 'r4-' + n + '-' + t + '.png'))));
+      ck.noErrors = errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('C187', 'Lists page, Free Company projects (real data): "Shark-class Bow" is found as a Submarine part and an airship part as an Airship part; adding it makes a list for the same character named after the part with Phase 1 to 3 as steps and the sheet\'s supply items (amount = per set x sets) as wanted items, the plan has totals, Your lists stamps it, one Undo removes it; the screens break no rule of DR1\'s helper',
+        Object.values(ck).every(Boolean), { ck, seen, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
+      void server;
+    });
+
 
   } finally {
     await browser.close(); server.close();

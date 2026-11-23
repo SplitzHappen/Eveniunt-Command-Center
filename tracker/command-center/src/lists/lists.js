@@ -306,6 +306,19 @@
   function sec() { return SH.sec || S.emptySection(); }
   function nameOfChar(c) { if (!c) return 'No character'; var f = SH.chars.filter(function (x) { return x.id === c; })[0]; return f ? f.name : 'Character ' + c; }
   function itemName(id) { var it = DATA && DATA.items && DATA.items[id]; return it ? it[0] : 'item ' + id; }
+  // Free Company workshop projects (R4): a result item of DATA.projects; its kind 0 is a submarine part, 1 an airship part
+  function projectOf(item) { return (DATA && DATA.projects && DATA.projects[item]) || null; }
+  function projectWord(p) { return p[0] === 1 ? 'Airship part' : 'Submarine part'; }
+  var PROJ_BY_NAME = null;
+  function projectKindByName(name) { // the stamp on Your lists: a list named after a part with only "Phase n" steps (the save has no field for it)
+    if (!PROJ_BY_NAME) { PROJ_BY_NAME = {}; Object.keys((DATA && DATA.projects) || {}).forEach(function (id) { var it = DATA.items[id]; if (it) PROJ_BY_NAME[it[0]] = DATA.projects[id][0]; }); }
+    return Object.prototype.hasOwnProperty.call(PROJ_BY_NAME, name) ? PROJ_BY_NAME[name] : null;
+  }
+  function projectStamp(l) {
+    var k = projectKindByName(l.name), st = l.steps || {}, ids = Object.keys(st);
+    if (k === null || !ids.length || !ids.every(function (i) { return /^(Part \d+, )?Phase \d+$/.test(st[i].name); })) return '';
+    return ' <span class="lstamp plain proj">' + projectWord([k]) + '</span>';
+  }
   function recipesOf(item) {
     if (!RECIPES_OF) {
       RECIPES_OF = {};
@@ -1131,7 +1144,7 @@
         var l = lists[id], steps = Math.max(1, count(l.steps)), r = ready[id] || { ready: 0, total: 0 }, asking = SH.view.confirm === 'list:' + id, menu = SH.view.more === id, nm = l.name || 'Untitled list';
         var offTick = tickOwner !== null && tickOwner !== owner, changed = l.data && DATA.stamp && l.data !== DATA.stamp, pct = r.total ? Math.round(100 * r.ready / r.total) : 0;
         return '<article class="list-card lcard" data-list="' + esc(id) + '"><span class="ready ' + (r.total && r.ready === r.total ? 'r-ready' : 'r-slab') + '"><b>' + r.ready + '</b><i class="role role-ready">of ' + r.total + ' ready</i><span class="bar" aria-hidden="true"><em style="width:' + pct + '%"></em></span></span>' +
-          '<div class="mid"><h3><button type="button" class="open" data-act="open">' + esc(nm) + '</button>' + (changed ? '<span class="lstamp r-short">Game data changed</span>' : '') + '</h3><p>' + steps + ' step' + (steps === 1 ? '' : 's') + (l.made ? ' · made ' + dayMonth(l.made) : '') + '</p>' +
+          '<div class="mid"><h3><button type="button" class="open" data-act="open">' + esc(nm) + '</button>' + (changed ? '<span class="lstamp r-short">Game data changed</span>' : '') + projectStamp(l) + '</h3><p>' + steps + ' step' + (steps === 1 ? '' : 's') + (l.made ? ' · made ' + dayMonth(l.made) : '') + '</p>' +
           '<label class="chk tick ltick"><input type="checkbox" data-f="tick"' + (ticked.indexOf(id) >= 0 ? ' checked' : '') + (offTick ? ' disabled' : '') + '><span>In combined view</span></label></div>' +
           '<div class="rt"><button type="button" class="more" data-act="more" aria-expanded="' + (menu || asking ? 'true' : 'false') + '" aria-label="More for ' + esc(nm) + '">' + svg(ICO.more, 18) + '</button></div>' +
           (menu || asking ? '<div class="cfoot">' + (asking ? '<span class="ask">Remove this list and its ' + r.total + ' wanted item' + (r.total === 1 ? '' : 's') + '?</span> ' + rb('Remove', 'remove-list', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove-list">Remove list</button>') + '</div>' : '') + '</article>';
@@ -1176,6 +1189,8 @@
   }
   // a search result is a row whose whole face is the add action: the item's name, the ways it can be had, and what it is
   function hitHtml(id, name) {
+    var pj = projectOf(id);
+    if (pj) return '<button type="button" class="hit r-accent" data-act="add-project" data-item="' + id + '" aria-label="Make a list for ' + esc(name) + '"><span class="cnt"><b>+</b><i>list</i></span><span class="opener"><span class="l1"><span class="nm">' + esc(name) + '</span> <span class="lstamp plain proj">' + projectWord(pj) + '</span></span><span class="l2">Free Company workshop project. Makes a new list with one step for each phase.</span></span></button>';
     var recs = recipesOf(id), g = DATA.gather && DATA.gather[id], r0 = recs[0] && DATA.recipes[recs[0]], off = offersFor(id, 'normal'), st = '';
     if (recs.length) st += '<span class="role role-craft">Craft</span> ';
     if (g) st += '<span class="role role-gather">Gather</span> ';
@@ -1333,6 +1348,12 @@
       case 'remove-orphans': { var oid = b.closest('[data-orphan]').getAttribute('data-orphan'); SH.view.confirm = null; act(function (s) { return S.removeOrphans(s, oid); }, { after: noUndo }); break; }
       case 'restore-orphans': { var rid2 = b.closest('[data-orphan]').getAttribute('data-orphan'); var rch = b.closest('[data-orphan]').querySelector('[data-f=restorechar]'), rchar = rch && rch.value ? rch.value : null; act(function (s) { return S.restoreList(s, rid2, CTX(), rchar); }, { after: noUndo }); break; }
       case 'remove-list': { var lid = card.getAttribute('data-list'); SH.view.confirm = null; SH.view.more = null; act(function (s) { return S.removeList(s, lid); }); break; }
+      case 'add-project': {
+        var pitem = +b.getAttribute('data-item'), pj = projectOf(pitem), pch = (sec().lists[listId] || {}).charId || null;
+        if (!pj) break;
+        act(function (s) { return S.fromProject(s, { name: itemName(pitem), charId: pch, stamp: DATA.stamp, project: pj }, CTX()); }, { after: function (x) { if (x.id) { openList(x.id); SH.view.tab = 'get'; } } });
+        break;
+      }
       case 'add': {
         var qty = main.querySelector('[data-f=addqty]').value, item = +b.getAttribute('data-item'), rid = recipesOf(item)[0] || 0;
         act(function (s) { return labeled(S.addTarget(s, listId, { item: item, recipe: rid, qty: qty }, CTX()), 'Added ' + itemName(item)); });
