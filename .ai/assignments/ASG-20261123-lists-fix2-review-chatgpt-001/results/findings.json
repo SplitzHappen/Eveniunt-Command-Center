@@ -1,0 +1,29 @@
+[
+  {
+    "severity": "MAJOR",
+    "file": "tracker/command-center/src/lists/store.js",
+    "line": 156,
+    "title": "Changing a list's character can erase a step added in another tab",
+    "consequence": "A stale tab changing only the character can remove another tab's newly saved step and leave targets referring to a step that no longer exists; undoing the character change does not restore the step.",
+    "fix": "Make the character change conditional on the stored header and combined selection still matching, refusing a stale conflicting write, or apply the intended field change to the latest header atomically. Cover concurrent step additions, rename and combined-view changes.",
+    "evidence": "Using the real CC.writeSection and S.setListChar with c1 and c2: both tabs start with listaaaa and stepaaaa; tab B saves stepbbbb; tab A changes c1 to c2 from its old revision and writes with its old base. The merged write succeeds but the header contains only stepaaaa. Undo restores c1 without stepbbbb. The list header is one merge unit and mergeModules chooses the stale local unit. This is an instance of the documented same-unit last-write-wins limitation, newly reachable from the character selector."
+  },
+  {
+    "severity": "MINOR",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 345,
+    "title": "A must-craft flag without a usable recipe now hides the ordinary plan line",
+    "consequence": "The Wanted row can show 'crafted 0 of 2' and omit the actual need while the planner is buying two items, confusing the player and suggesting an incorrect purchase quantity.",
+    "fix": "Distinguish a completed must-craft line from a target whose must-craft flag falls back to an ordinary or high-quality plan because no recipe is available. Show the actual fallback and its note; keep the stored flag.",
+    "evidence": "With a valid saved target for item 1606, recipe 0, qty 2 and make=true, the candidate page shows 'crafted 0 of 2' while the engine plans two from a gil merchant. At the earlier candidate the same row showed 'need 2'. Such combinations are accepted by the checker and can be present in imported or older data; occurrence in ordinary play is unknown."
+  },
+  {
+    "severity": "NOTE",
+    "file": "tracker/src/core/storage.js",
+    "line": 106,
+    "title": "The rationale for treating every absent orphan as an explicit deletion is not established",
+    "consequence": "If an older build has already discarded a changed orphan during an unanswered merge, a later merge can interpret its absence as a deliberate removal; a full real-device cloud sequence was not reproduced.",
+    "fix": "Exercise a complete old-build, two-device sequence with independently retained copies and, if confirmed, preserve or explicitly ask about ambiguous surviving orphans.",
+    "evidence": "The shipped old ET.saveMerge was run with base header plus target qty 1, a local copy missing both, and a stored orphan changed to qty 2. It returned no target with no answers. A separate current ET.threeWay/applyMerge, with the qty-2 orphan as base and local and the empty old result as remote, also removed it without a conflict. Old-build byte-preserving validation does not by itself establish why a later copy lacks a unit. This is a constructed code-level sequence, not a completed cloud-sync reproduction."
+  }
+]
