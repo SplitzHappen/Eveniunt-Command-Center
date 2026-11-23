@@ -49,3 +49,30 @@ noted). ChatGPT: publish after fixes (one major, one minor, one note). Results: 
 | ChatGPT | A stale tab's character change keeps its old list header and drops a step another tab saved; undo does not bring it back | Major | Major | Accepted | The header is one saved unit, so the later save wins (a documented limit), and the new character selector made it easy to hit; renaming and adding a step had the same exposure. Every header edit becomes a conditional write: refused with the usual "Not saved on this device" line when the header changed elsewhere since the page read it | W16 |
 | ChatGPT | A must-craft item with no usable recipe shows "crafted 0 of 2" and hides the real need | Minor | Minor | Accepted | The W15 own-state row should apply only when the make line is really complete; otherwise the item's actual plan line is shown | W16 |
 | ChatGPT, Mistral | Note: an old build's own sync can already drop a changed orphan, so a later absence is not always a deliberate removal | Note | Note | Noted, limit recorded | The old build is already published and behaves so on its own; the new rule adds no deletion the old build would not make, and the case ends once every device has updated. Recorded as a known limit | STATE, Known limits |
+
+## Sixth round: outside look and code review of the redesign (2026-11-23)
+
+Asked for by the owner (option B of the ship request after the red team). ChatGPT: publish after fixes (6 major, 16
+minor). Mistral: publish after fixes (1 major, 2 minor, 6 notes; look matches the mock-ups and house style; game facts
+re-derived from the sheets all match; no data-loss path). Results: branches
+`assignments/ASG-20261123-lists-redesign-review-chatgpt-001` and `-mistral-001`. The hosted checks at `ec24562` also
+failed DR1 and C186: zone sub-heads cut at the bottom and a focus ring cut in the Order of ways sheet (fonts on the
+runner differ from the local ones).
+
+Accepted and fixed in F1 (one builder pass): the phone history panel covering the screen; the phone gather row showing
+the node kind and area within the budget; market prices by quality (a high-quality row never shows the ordinary price;
+unknown when the service cannot tell); the chosen spot counted only from rows of the plan on screen; spearfishing rows
+named by their own node (teeming waters, swimming shadows); the timed window's length labelled as a community figure
+(Teamcraft) until the game's own duration is proved (Mistral's major); zone and city sub-heads with room (the hosted
+failure) and the clipped focus ring; the book warning naming the book; a visible "Character totals" cue on the phone;
+the high-quality choice under "Get it by" and the bulk action saying it applies to all of the character's lists;
+"Earned it" for currencies in Wanted; phase tabs with their "to earn"; the settings draft kept across a redraw; the
+ready tally from each list's own share; Copy name on left-over and crafted rows; the Restored list card's actions
+(filled recovery, separated Remove); "Hide completed" with On/Off; "North America" as display text; no repeated
+"ordinary"; quieter stepper borders; the trade sentence ending with the item ("for 2 Coke"); unplaced sources keeping
+their windows; the window regression test proving every timed source is present; a design check for covering panels.
+
+Not taken now, kept as known limits: sync questions name Lists items by number (both reviewers; the questions are drawn
+by the Tracker, which does not load Lists data; after shipping); offers that differ only in a later currency share one
+saved choice (pre-existing, recorded); job icons as single-colour game shapes rather than the coloured icons (Mistral,
+a matter of taste; contrast is proved in every theme; the owner can ask for colour).
