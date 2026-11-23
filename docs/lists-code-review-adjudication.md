@@ -37,3 +37,15 @@ partly fixed, two minor). Results: branches `assignments/ASG-20261122-lists-fix-
 | ChatGPT | C166 still uses the early-finishing price wait | Minor | Minor | Accepted | Same race as C155; reproduced with a delayed reply | W15 |
 | ChatGPT | The unchanged-orphan sync rule should keep the item or ask | (view) | Note | Rejected, kept as ruled | In a three-way merge the side that lacks the item had it at the last sync and removed it since; old builds keep the lists section byte for byte (pinned by LY-8 and C145), so that absence comes from a removal on that device, the player's own action. Mistral agreed. Recorded as a known limit. | spec, section 4 |
 | Mistral | Note: the same rule, probed and agreed | Note | Note | Noted | | |
+
+## Fifth round: review of the second fixes (2026-11-23)
+
+Asked for by the owner (option B of the third ship request). Mistral: publish (all four fixes verified, one caveat
+noted). ChatGPT: publish after fixes (one major, one minor, one note). Results: branches
+`assignments/ASG-20261123-lists-fix2-review-chatgpt-001` and `assignments/ASG-20261123-lists-fix2-review-mistral-001`.
+
+| Reviewer | Finding | Given | Ours | Ruling | Reason | Fixed in |
+| --- | --- | --- | --- | --- | --- | --- |
+| ChatGPT | A stale tab's character change keeps its old list header and drops a step another tab saved; undo does not bring it back | Major | Major | Accepted | The header is one saved unit, so the later save wins (a documented limit), and the new character selector made it easy to hit; renaming and adding a step had the same exposure. Every header edit becomes a conditional write: refused with the usual "Not saved on this device" line when the header changed elsewhere since the page read it | W16 |
+| ChatGPT | A must-craft item with no usable recipe shows "crafted 0 of 2" and hides the real need | Minor | Minor | Accepted | The W15 own-state row should apply only when the make line is really complete; otherwise the item's actual plan line is shown | W16 |
+| ChatGPT, Mistral | Note: an old build's own sync can already drop a changed orphan, so a later absence is not always a deliberate removal | Note | Note | Noted, limit recorded | The old build is already published and behaves so on its own; the new rule adds no deletion the old build would not make, and the case ends once every device has updated. Recorded as a known limit | STATE, Known limits |

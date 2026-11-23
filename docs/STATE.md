@@ -150,6 +150,9 @@ Last updated: 2026-11-21.
 
 ## Known limits
 
+- Lists: a device still on the build published before Lists can drop a changed orphaned wanted item in its own sync; a
+  later sync then treats that absence as a removal. This ends when every device has updated.
+
 - Lists: an orphaned wanted item (left without its list by an old build's sync) that one device removed is removed by
   the next sync without a question when the other device holds it unchanged; the removal was the player's own action
   on that device (ChatGPT advised asking; ruled otherwise, Mistral agreed). The Restored list card's actions have no

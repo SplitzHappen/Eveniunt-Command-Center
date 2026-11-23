@@ -955,6 +955,15 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   list out of the combined view; restoring asks for the character. C171 to C174 added; the orchestrator re-checked C171
   by undoing only the quality filter (it fails). Totals at ae4cd2c: unit 577 of 577, browser 61 of 61, full check 179 of
   179 (C26b not run).
+- **W16 Fixes from the fifth review (Sonnet builder; after W15).** (1) Every edit of a list header from the page
+  (rename, add a step, change the character, and the restore that creates a header) is a conditional write: the store
+  returns `expect` with the header unit's text as the page last read it (the LI5 mechanism `S.undo` already uses), so a
+  stale tab is refused with the usual "Not saved on this device: …" line and reloads; never a silent loss of another
+  tab's header change; unit tests and a two-tab browser check (stale character change after another tab added a step:
+  refused, the step kept). (2) The W15 own-state wanted row applies only when the make line is complete (crafted equals
+  qty, or finished); a must-craft item without a usable recipe shows its actual plan line and note; test with recipe 0
+  and `make`. Accept: build twice, unit, browser, full `npm run check`; no existing test or check edited; `save.js`,
+  `merge.js`, `engine.js` unchanged.
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
