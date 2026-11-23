@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261123-lists-fix2-review-mistral-001",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "mistral",
@@ -12,8 +12,11 @@
     "head_sha": "d9d03eb528e72ec0fab5f0777e6d9c795e7ca959",
     "ref": "claude/blissful-fermat-hrrqp5"
   },
-  "result_paths": [],
-  "result_commit": null,
-  "completed_at": null,
-  "disposition": null
+  "result_paths": [
+    ".ai/assignments/ASG-20261123-lists-fix2-review-mistral-001/results/REVIEW.md",
+    ".ai/assignments/ASG-20261123-lists-fix2-review-mistral-001/results/findings.json"
+  ],
+  "result_commit": "cfc2de65a4049ed8f86efc9efc539fdc67b895de",
+  "completed_at": "2026-11-23T00:44:29Z",
+  "disposition": "Publish: all four second-round findings verified fixed (ST-18 reproduced failing on the previous head; the other three by logic replays plus the recorded browser checks), save.js/merge.js/engine.js and prices untouched, no regressions; rejected orphan view agreed with a caveat recorded as 1 NOTE."
 }
