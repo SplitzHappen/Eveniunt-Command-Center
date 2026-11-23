@@ -6710,6 +6710,60 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── Lists, W16 (fixes from the fifth review): C175 a header edit from a stale tab is refused, C176 a must-craft item without a usable recipe shows its actual need. ──
+    // ── C175 (Lists, W16) Two tabs on one list: tab B adds a step, tab A (stale) changes the character: refused with "Not saved on this device", the step is kept and the character is unchanged; with a fresh copy it works. ──
+    await guard('C175', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const a = await ctx.newPage(), b = await ctx.newPage();
+      for (const p of [a, b]) { await p.goto(ROOT5 + 'lists/'); await lReady(p); }
+      const ck = {};
+      await a.evaluate(async () => { await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.chars = [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }]; doc.updated = Date.now(); return doc; }); });
+      await lSeedLists(a, [{ name: 'Shared', charId: 'c1', items: [[100, 2]] }]);
+      for (const p of [a, b]) { await p.reload(); await lReady(p); await lOpenList(p, 'Shared'); }
+      await a.evaluate(() => window.__lists.hold(true));
+      await b.fill('[data-f=stepname]', 'stepbbbb'); await b.click('[data-act=addstep]'); await lSettle(b);
+      const stepsOf = (sec) => Object.values(Object.values(sec.lists)[0].steps || {}).map((x) => x.name);
+      let sec = await lStored(b);
+      ck.bAdded = stepsOf(sec).join() === 'stepbbbb';
+      await a.locator('[data-f=listchar]').selectOption('c2'); await lSettle(a);
+      const note = await lNote(a); sec = await lStored(a);
+      ck.refused = note.includes('Not saved on this device: ') && note.includes('another device or in another tab');
+      ck.stepKept = stepsOf(sec).join() === 'stepbbbb';
+      ck.charUnchanged = Object.values(sec.lists)[0].charId === 'c1';
+      await a.evaluate(() => window.__lists.hold(false));
+      await a.locator('[data-f=listchar]').selectOption('c2'); await lSettle(a);
+      sec = await lStored(a);
+      ck.freshWorks = Object.values(sec.lists)[0].charId === 'c2' && stepsOf(sec).join() === 'stepbbbb';
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C175', 'Lists page, two tabs: a character change from a tab that missed another tab\'s new step is refused with "Not saved on this device", the step is kept and the character stays; from a fresh copy it works',
+        Object.values(ck).every(Boolean), { ck, note, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C176 (Lists, W16) A saved wanted item "must be crafted" with recipe 0 and no usable recipe shows its actual plan need, not "crafted 0 of 2", and keeps its stored setting. ──
+    await guard('C176', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec) {
+        let t = 9500; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'NoRecipe', charId: null }, c()); sec = r.section;
+        r = S.addTarget(sec, r.id, { item: 103, recipe: 0, qty: 2, make: true }, c()); sec = r.section;
+        return sec;
+      });
+      await lOpenList(page, 'NoRecipe', 'wanted');
+      const row = await lRow(page, 103).textContent();
+      ck.needShown = /need 2,/.test(row) && !/crafted 0 of 2,/.test(row);
+      ck.flagKept = await page.evaluate(() => Object.values(window.__lists.section().targets).some((t) => t.item === 103 && t.make === true && t.recipe === 0 && t.qty === 2));
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C176', 'Lists page, a must-craft wanted item with no usable recipe (recipe 0) shows its actual need from the plan, not "crafted 0 of 2", and keeps its stored setting',
+        Object.values(ck).every(Boolean), { ck, row, errors: real(errors), external });
+      void server;
+    });
+
     // ── Lists, W10: the crafting log and the Atelier hand-over. The Tracker's section of the save is seeded in the page (ticks, a not-applicable mark, two characters). ──
     const lSeedTracker = (pg, tracker) => pg.evaluate(async (tr) => {
       await CC.transact((raw) => {

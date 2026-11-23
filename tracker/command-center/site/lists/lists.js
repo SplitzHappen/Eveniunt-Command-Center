@@ -341,8 +341,8 @@
   function lineFor(plan, t) {
     var keys = plan.items[t.item] || [], want = t.make ? 'make' : t.coll ? 'coll' : t.hq ? 'hq' : 'normal', found = null, fb = null, rid = recipeOfTarget(t);
     keys.forEach(function (k) { var ln = plan.lines[k]; if (ln.part === want && (want === 'make' || want === 'coll' ? ln.recipe === rid : true) && !found) found = ln; if (ln.part === 'normal' && !fb) fb = ln; });
-    // W15: a must-craft row whose own line has left the plan (crafted in full, finished, covered) has none; it never borrows another recipe's line
-    if (t.make) return found;
+    // W15: a must-craft row crafted in full has no line and never borrows another recipe's line (W16: one not yet complete shows its actual plan line, as when no recipe is usable)
+    if (t.make && (t.crafted || 0) >= t.qty) return found;
     var other = null; keys.forEach(function (k) { var ln = plan.lines[k]; if (!other && ln.part !== 'make' && ln.part !== 'coll') other = ln; });
     return found || fb || other;
   }

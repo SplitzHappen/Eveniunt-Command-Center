@@ -387,3 +387,26 @@ test('ST-18 a restored list can take a character (default none, anything else re
   let t = ok(S.tickCombined(b.sec, b.lid, true)).section; assert.deepEqual(S.combined(t), [b.lid]);
   t = ok(S.setListChar(t, b.lid, 'c2')).section; assert.deepEqual(S.combined(t), []);
 });
+
+test('ST-19 every header edit (rename, add a step, change the character, restore) asks the save to check the header is still as read; a stale tab is refused through the real save', async () => {
+  const { sec, lid } = base();
+  const key = 'm|' + J(['lists', 'lists', lid]);
+  const hdr = J(sec.lists[lid]);
+  const edits = [['rename', S.renameList(sec, lid, 'Other')], ['step', S.addStep(sec, lid, 'Second', ctx())], ['char', S.setListChar(sec, lid, 'c2')]];
+  for (const [what, r] of edits) { ok(r); assert.deepEqual(r.expect, { [key]: hdr }, what + ' guards the header as read'); }
+  const gone = clone(sec); delete gone.lists[lid];
+  assert.deepEqual(ok(S.restoreList(gone, lid, ctx(), 'c1')).expect, { [key]: null }, 'the restore guards that the header is still absent');
+  // two tabs on the real save: tab B adds a step and saves; tab A, on the old copy, tries each header edit
+  CC.resetMemory(); if (globalThis.localStorage) { localStorage.removeItem(CC.LS); localStorage.removeItem(CC.LS + '-rev'); }
+  const first = await CC.writeSection('lists', sec, null);
+  const bAdd = ok(S.addStep(first.section, lid, 'stepbbbb', ctx()));
+  await CC.writeSection('lists', bAdd.section, { rev: first.rev, base: first.section, expect: bAdd.expect });
+  for (const [what, r] of edits) {
+    await assert.rejects(() => CC.writeSection('lists', r.section, { rev: first.rev, base: first.section, expect: r.expect }), /another device or in another tab/, what + ' from the stale tab is refused');
+  }
+  const kept = CC.checkDoc((await CC.read()).raw).modules.lists.lists[lid];
+  assert.equal(Object.values(kept.steps).map((x) => x.name).join(), 'stepbbbb'); assert.equal(kept.charId, 'c1'); assert.equal(kept.name, 'Main');
+  // a restore from a tab that read the list as absent is refused when another tab restored it meanwhile
+  const noList = ok(S.restoreList(gone, lid, ctx(), null));
+  await assert.rejects(() => CC.writeSection('lists', noList.section, { rev: first.rev, base: gone, expect: noList.expect }), /./);
+});

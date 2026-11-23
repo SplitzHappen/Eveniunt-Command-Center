@@ -64,6 +64,11 @@
     };
   }
   function fail(line) { return { error: line }; }
+  // W16: a header edit is a conditional write (LI5): the header unit must still be the text this page read (null: absent, for the restore)
+  function guardHeader(s, r, listId) {
+    if (r.entry) { r.expect = {}; r.expect['m|' + JSON.stringify(['lists', 'lists', listId])] = text(s.orig.lists[listId]); }
+    return r;
+  }
   function nonEmpty(o) { return Object.keys(o).length > 0; }
 
   // ------------------------------------------------------------------------------------------------ ids
@@ -120,7 +125,7 @@
     if (!h) return fail(NO_LIST);
     if (!n) return { section: s.orig, entry: null, kept: true }; // clearing a name keeps the old one
     h.name = n; s.touch('lists', listId);
-    return s.finish('Renamed the list “' + n + '”');
+    return guardHeader(s, s.finish('Renamed the list “' + n + '”'), listId);
   };
   // the list's header and every wanted item of it
   S.removeList = function (sec, listId) {
@@ -149,7 +154,7 @@
     var order = 0;
     Object.keys(d.lists).forEach(function (k) { order = Math.max(order, (d.lists[k].order || 0) + 1); });
     d.lists[listId] = { name: 'Restored list', charId: charId ? String(charId) : null, order: Math.min(order, 9999), made: nowOf(ctx) }; s.touch('lists', listId);
-    var r = s.finish('Put wanted items in a new list'); r.id = listId; return r;
+    var r = s.finish('Put wanted items in a new list'); r.id = listId; return guardHeader(s, r, listId);
   };
   // W15: the list's character, afterwards (only a character or none); the list's stock owner follows it, nothing in the stock moves,
   // and the list leaves the combined view (its ticks are per character).
@@ -162,7 +167,7 @@
     h.charId = c; s.touch('lists', listId);
     var cb = d.prefs && d.prefs.combined;
     if (cb && cb[listId]) { var n = {}; Object.keys(cb).forEach(function (k) { if (k !== listId) n[k] = cb[k]; }); d.prefs.combined = n; s.touch('prefs', 'combined'); }
-    return s.finish('Changed the character of the list “' + (h.name || 'Untitled list') + '”');
+    return guardHeader(s, s.finish('Changed the character of the list “' + (h.name || 'Untitled list') + '”'), listId);
   };
   // "Remove" on a Restored list: its wanted items only; refused when the list is back (then it is an ordinary list)
   S.removeOrphans = function (sec, listId) {
@@ -182,7 +187,7 @@
     ids.forEach(function (k) { n = Math.max(n, (steps[k].n || 0) + 1); });
     steps[id] = { name: cleanName(name) || 'Step ' + (ids.length + 1), n: Math.min(n, 9999) };
     h.steps = steps; s.touch('lists', listId);
-    var r = s.finish('Added a step to “' + (h.name || 'Untitled list') + '”'); r.id = id; return r;
+    var r = s.finish('Added a step to “' + (h.name || 'Untitled list') + '”'); r.id = id; return guardHeader(s, r, listId);
   };
 
   // ------------------------------------------------------------------------------------------------ wanted items
