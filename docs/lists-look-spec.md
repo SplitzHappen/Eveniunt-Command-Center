@@ -444,6 +444,19 @@ item whose ingredients differ between Blacksmith and Armorer lists both crafters
 ingredients too. Report the plain and packed data sizes (budget 1.5 MB packed) and the counts (spots, items with no
 position, crafters per item). Escalate if: the name derivation or the id mapping does not hold, or the budget breaks.
 
+**B2 built (2026-11-23), accepted:** Teamcraft node ids are `GatheringPointBase` ids (1,425 of 1,425); the node's
+point type (from `ExportedGatheringPoint`, equal to its `GatheringPoint` rows' Type) picks the name row: types 1 and 3
+the basic row by gathering type, 2 unspoiled, 4 ephemeral, 5 legendary; spearfishing rows 21 and 22 from
+`SpearfishingNotebook.IsShadowNode`; Diadem types 7 and 8 have no proved name and stop the build if a kept item ever
+uses one. Five rows quoted in LD-15. Coordinates: Teamcraft `x`/`y` are already the game's map coordinates (all 1,065
+positioned nodes match the sheets through the map's size factor and offsets within 0.01; the tool stops beyond 0.06);
+fishing spots match for all 328 placed spots. `zone` is the map's place name ("Lower La Noscea"), not the sub-area;
+`folklore` is the book's item name; `hidden` marks an item hidden at that node. Counts: 1,417 spots for 785 items, 21
+items gathered by both Miner and Botanist, 17 without a position, 600 items with two or more crafting jobs. Data
+593,384 bytes packed. The old `gather` shape stays as `gatherLegacy` until B5 (LD-3 reads it, same assertions).
+**Limit:** a timed node's window length keeps Teamcraft's minutes; the sheet's own duration is in another unit and
+was not proved equal (start hours match for all 195 timed rows).
+
 **B3. Engine and rows for every crafter (Sonnet builder; needs B2).** `engine.js` only as far as D-C1 needs (the
 counted recipe stays today's default unless `ways.recipe` is set; nothing else changes); `lists.js` "Count materials
 for" in the opened row. Tests: the counted recipe follows `ways.recipe`; the plan of an identical-ingredient item does
