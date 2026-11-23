@@ -117,7 +117,11 @@ Last updated: 2026-11-21.
     Totals after the fixes: unit 576 of 576, browser 61 of 61, full check 175 of 175 (C26b not run).
   - Review of the fixes, 2026-11-22 (fourth round, owner's request): Mistral "publish", ChatGPT "publish after
     fixes" (two fixes incomplete, two minor). All four fixed (W15). Totals: unit 577 of 577, browser 61 of 61, full
-    check 179 of 179 (C26b not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
+    check 179 of 179 (C26b not run).
+  - Review of the second fixes, 2026-11-23 (fifth round, owner's request): Mistral "publish", ChatGPT "publish after
+    fixes" (one major: a stale tab could undo another tab's list header change; one minor). Both fixed (W16), and a
+    night-time clock bug in check C166 fixed. Totals: unit 578 of 578, browser 61 of 61, full check 181 of 181 (C26b
+    not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
 
 ## Decided, being planned
 

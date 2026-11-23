@@ -964,6 +964,13 @@ only (`actions/checkout@v4` without `fetch-depth`, checked 2026-11-22), so W3 ad
   qty, or finished); a must-craft item without a usable recipe shows its actual plan line and note; test with recipe 0
   and `make`. Accept: build twice, unit, browser, full `npm run check`; no existing test or check edited; `save.js`,
   `merge.js`, `engine.js` unchanged.
+- **W16 built (2026-11-23), choices accepted:** rename, add a step, change the character and restore return `expect`
+  for the header unit as read (null for the restore), so a stale tab is refused (ST-19, C175); the own-state wanted row
+  applies only when crafted ≥ qty, otherwise the row shows the item's actual plan line, which can be an ordinary or
+  high-quality line but never another recipe's must-craft line (C176); a stale change to the combined-view selection is
+  not guarded (a page preference, last save wins). Found while checking: C166 failed between midnight and 02:00 local
+  time (a price two hours old reads "fetched yesterday HH:MM"); the check now expects the page's own date rule. Totals
+  at 6590246: unit 578 of 578, browser 61 of 61, full check 181 of 181 (C26b not run).
 - **W13 Records (Haiku clerk; after W11, W12).** Files: `docs/STATE.md` (an entry under "Built, waiting for the
   owner's `ship`"; section 10 under "Known limits"), `tracker/command-center/README.md`, `tracker/NOTICE.md` (Lists
   credits). Accept: only those files change; no personal data. Escalate if: a layout changed.
