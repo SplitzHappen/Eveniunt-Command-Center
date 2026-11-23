@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261123-lists-fix2-review-chatgpt-001",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "chatgpt",
@@ -12,8 +12,11 @@
     "head_sha": "d9d03eb528e72ec0fab5f0777e6d9c795e7ca959",
     "ref": "claude/blissful-fermat-hrrqp5"
   },
-  "result_paths": [],
-  "result_commit": null,
-  "completed_at": null,
-  "disposition": null
+  "result_paths": [
+    ".ai/assignments/ASG-20261123-lists-fix2-review-chatgpt-001/results/REVIEW.md",
+    ".ai/assignments/ASG-20261123-lists-fix2-review-chatgpt-001/results/findings.json"
+  ],
+  "result_commit": "37bf2bec7fe953f84d46e601a32dc94b47588990",
+  "completed_at": "2026-11-23T00:46:30.971Z",
+  "disposition": "Publish after fixes: a stale character change can erase a step saved in another tab."
 }
