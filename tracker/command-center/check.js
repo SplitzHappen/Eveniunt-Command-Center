@@ -5819,10 +5819,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     const lMake = async (pg, name) => { await pg.click('[data-act=new]'); await pg.fill('[data-f=newname]', name); await pg.click('[data-act=create]'); await lSettle(pg); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg); };
     const lAdd = async (pg, query, id, qty) => { await pg.fill('[data-f=addqty]', String(qty)); await pg.fill('[data-f=search]', query); await pg.click('button[data-act=add][data-item="' + id + '"]'); await lSettle(pg); };
     const lRow = (pg, id) => pg.locator('.wanted-row[data-item="' + id + '"]');
-    const lType = async (pg, id, field, v) => { const el = lRow(pg, id).locator('[data-f=' + field + ']'); await el.fill(String(v)); await el.press('Tab'); await lSettle(pg); };
+    const lType = async (pg, id, field, v) => { const el = (field === 'qty' ? await lOpen(lRow(pg, id)) : lRow(pg, id)).locator('[data-f=' + field + ']'); await el.fill(String(v)); await el.press('Tab'); await lSettle(pg); };
     const lNote = (pg) => pg.evaluate(() => (document.querySelector('.lists-status') || {}).textContent || '');
     // B4 (L10, reach only): "List settings" is a sheet now; open it to reach a setting, close it (Escape) before the page is used again
     const lSet = async (pg) => { if (!(await pg.locator('.lsheet').count())) { await pg.click('[data-act=settings]'); await pg.waitForSelector('.lsheet'); } };
+    // B5 (L10, reach only): a row's other controls live in its opened row, its notice's lines in the opened notice, and Remove list in the card's "More"
+    const lOpen = async (loc) => { const o = loc.locator('[data-act=row]').first(); if ((await o.getAttribute('aria-expanded')) === 'false') await o.click(); return loc; };
+    const lCloseRows = async (pg) => { const o = pg.locator('.lr.open [data-act=row]'); if (await o.count()) await o.first().click(); };
+    const lShowNotice = async (pg) => { const o = pg.locator('.patch-notice [data-act=notice]'); if ((await o.count()) && (await o.getAttribute('aria-expanded')) === 'false') await o.click(); };
     const lSetDone = async (pg) => { if (await pg.locator('.lsheet').count()) { await pg.keyboard.press('Escape'); await pg.waitForSelector('.lsheet', { state: 'detached' }); } };
     const lTargets = (sec) => Object.values((sec && sec.targets) || {});
     const lQty = (sec, item) => (lTargets(sec).filter((t) => t.item === item)[0] || {}).qty;
@@ -5838,11 +5842,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lSet(page); ck.listOpen = (await page.inputValue('[data-f=listname]')) === 'Food'; await lSetDone(page);
       await lAdd(page, 'grand', 100, 2); await lAdd(page, 'mythril', 130, 1); await lAdd(page, 'collectable piece', 160, 1);
       ck.rows = await page.locator('.wanted-row').count() === 3;
-      ck.qty2 = (await lRow(page, 100).locator('[data-f=qty]').inputValue()) === '2';
+      ck.qty2 = (await (await lOpen(lRow(page, 100))).locator('[data-f=qty]').inputValue()) === '2';
       await lType(page, 100, 'qty', 5);
       ck.qty5 = lQty(await lStored(page), 100) === 5;
       await lType(page, 100, 'qty', '');
-      ck.clearedKeeps = lQty(await lStored(page), 100) === 5 && (await lRow(page, 100).locator('[data-f=qty]').inputValue()) === '5' && (await page.locator('.wanted-row').count()) === 3;
+      ck.clearedKeeps = lQty(await lStored(page), 100) === 5 && (await (await lOpen(lRow(page, 100))).locator('[data-f=qty]').inputValue()) === '5' && (await page.locator('.wanted-row').count()) === 3;
       await lType(page, 130, 'have', 4);
       let sec = await lStored(page);
       ck.have4 = JSON.stringify(sec.have['u.130']) === '{"nq":4,"hq":0,"coll":0}' && /have 4/.test(await lRow(page, 130).locator('.w-count').textContent());
@@ -5853,12 +5857,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lType(page, 130, 'have', 0);
       ck.zeroRemoves = (await lStored(page)).have['u.130'] === undefined;
       await lType(page, 130, 'have', 3);
-      await lRow(page, 160).locator('[data-f=flag][data-flag=hq]').check(); await lSettle(page);
-      await lRow(page, 160).locator('[data-f=flag][data-flag=coll]').check(); await lSettle(page);
+      await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=hq]').check(); await lSettle(page);
+      await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=coll]').check(); await lSettle(page);
       sec = await lStored(page);
       const t160 = lTargets(sec).filter((t) => t.item === 160)[0];
       ck.flagsTogether = t160.hq === true && t160.coll === true;
-      await lRow(page, 100).locator('[data-act=ask-remove]').click(); await lRow(page, 100).locator('[data-act=remove]').click(); await lSettle(page);
+      await (await lOpen(lRow(page, 100))).locator('[data-act=ask-remove]').click(); await (await lOpen(lRow(page, 100))).locator('[data-act=remove]').click(); await lSettle(page);
       ck.removed = lQty(await lStored(page), 100) === undefined && lTargets(await lStored(page)).length === 2;
       ck.undoShown = (await page.locator('[data-act=undo][data-i="0"]').count()) === 1;
       await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
@@ -5868,8 +5872,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const after = await lStored(page);
       ck.reloadSame = JSON.stringify(before) === JSON.stringify(after) && JSON.stringify(after.lists).length > 10;
       await lOpenFirst(page);
-      ck.reloadShows = (await lRow(page, 100).locator('[data-f=qty]').inputValue()) === '5' && (await lRow(page, 130).locator('[data-f=have]').inputValue()) === '3' &&
-        (await lRow(page, 160).locator('[data-f=flag][data-flag=coll]').isChecked()) && (await lRow(page, 160).locator('[data-f=flag][data-flag=hq]').isChecked());
+      ck.reloadShows = (await (await lOpen(lRow(page, 100))).locator('[data-f=qty]').inputValue()) === '5' && (await lRow(page, 130).locator('[data-f=have]').inputValue()) === '3' &&
+        (await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=coll]').isChecked()) && (await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=hq]').isChecked());
       ck.noErrors = real(errors).length === 0 && external.length === 0;
       record('C148', 'Lists page: a new list, wanted items added and removed, amounts changed, a cleared amount keeps the item, stock typed with I have, plus and minus, flags kept together, Undo, and a reload shows all of it',
         Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
@@ -5896,7 +5900,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await a.evaluate(() => window.__lists.reload()); await b.evaluate(() => window.__lists.reload());
       // (2) a stale edit inside a removed list
       await b.evaluate(() => window.__lists.hold(true));
-      await a.click('[data-act=back]'); await a.click('[data-act=ask-remove-list]'); await a.click('[data-act=remove-list]'); await lSettle(a);
+      await a.click('[data-act=back]'); await a.click('.list-card [data-act=more]'); await a.click('[data-act=ask-remove-list]'); await a.click('[data-act=remove-list]'); await lSettle(a);
       ck.listGone = Object.keys((await lStored(a)).lists).length === 0;
       const frozen = JSON.stringify(await lStored(b));
       await lType(b, 100, 'qty', 9);
@@ -5909,7 +5913,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
       await b.evaluate(() => window.__lists.hold(true));
       await lType(a, 100, 'qty', 8);
-      await lRow(b, 100).locator('[data-act=ask-remove]').click(); await lRow(b, 100).locator('[data-act=remove]').click(); await lSettle(b);
+      await (await lOpen(lRow(b, 100))).locator('[data-act=ask-remove]').click(); await (await lOpen(lRow(b, 100))).locator('[data-act=remove]').click(); await lSettle(b);
       const note3 = await lNote(b), after3 = await lStored(b);
       ck.staleRemovalRefused = note3.includes('Not saved on this device: This was changed on another device or in another tab, so it was not removed.') && lQty(after3, 100) === 8;
       ck.noErrors = real(errors).length === 0 && external.length === 0;
@@ -5927,7 +5931,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ck = {};
       await lMake(a, 'Buying'); await lAdd(a, 'mythril', 130, 3);
       await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
-      const buyOne = async (p) => { await lRow(p, 130).locator('[data-act=ask-bought]').click(); await lRow(p, 130).locator('[data-f=boughtn]').fill('1'); await lRow(p, 130).locator('[data-act=bought]').click(); await lSettle(p); };
+      const buyOne = async (p) => { await (await lOpen(lRow(p, 130))).locator('[data-act=ask-bought]').click(); await (await lOpen(lRow(p, 130))).locator('[data-f=boughtn]').fill('1'); await (await lOpen(lRow(p, 130))).locator('[data-act=bought]').click(); await lSettle(p); };
       await buyOne(a);
       ck.bought1 = (await lStored(a)).have['u.130'].nq === 1;
       ck.offers = (await a.locator('[data-act=rest]').count()) >= 1;
@@ -5981,7 +5985,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     const lSteps = (pg) => pg.evaluate(() => [...document.querySelectorAll('.step-tab')].map((e) => ({ name: e.querySelector('.st-name').textContent, get: +e.querySelector('.st-fig').dataset.get, craft: +e.querySelector('.st-fig').dataset.craft, on: e.getAttribute('aria-selected') === 'true' })));
     const lItemsIn = (secs, sec) => (secs[sec] || []).map((r) => r.item);
     const lHave = async (pg) => (await lStored(pg)).have;
-    const lWayOptions = (pg, loc) => loc.locator('[data-f=way] option').evaluateAll((os) => os.map((o) => o.value));
+    const lWayOptions = async (pg, loc) => { await lOpen(loc); return loc.locator('[data-f=way] option').evaluateAll((os) => os.map((o) => o.value)); };
 
     // ── C150 (Lists, W8) A "Get it by" change and a change of the order of ways move the totals at once, in every list of that character; a high-quality row and an ordinary row of one item each show their own way and seller. ──
     await guard('C150', async () => {
@@ -5992,7 +5996,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ck = {};
       await lSeedLists(page, [{ name: 'Alpha', items: [[100, 1]] }, { name: 'Beta', items: [[100, 2], [130, 3]] }]);
       await lOpenList(page, 'Beta'); await lAdd(page, 'mythril', 130, 1); await lTab(page, 'wanted');
-      await lRow(page, 130).nth(1).locator('[data-flag=hq]').check(); await lSettle(page);
+      await (await lOpen(lRow(page, 130).nth(1))).locator('[data-flag=hq]').check(); await lSettle(page);
       await lTab(page, 'get'); await lOpenAll(page);
       let secs = await lSecs(page);
       const vend = (secs.vendor || []).filter((r) => r.item === 130);
@@ -6002,7 +6006,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const t0 = await lTotals(page);
       ck.ingotBought = lItemsIn(secs, 'vendor').includes(101) && !lItemsIn(secs, 'gather').includes(104);
       // (1) one item's way, chosen on a row of list Alpha: the totals move at once, and list Beta shows the change
-      await page.locator('.get-row[data-item="101"] [data-f=way]').selectOption('craft'); await lSettle(page);
+      await (await lOpen(page.locator('.get-row[data-item="101"]'))).locator('[data-f=way]').selectOption('craft'); await lSettle(page);
       const t1 = await lTotals(page);
       ck.waysMoveTotals = t1.craft > t0.craft && t1.get !== t0.get;
       await lOpenList(page, 'Beta', 'craft');
@@ -6010,7 +6014,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lTab(page, 'get'); await lOpenAll(page);
       ck.otherListGather = lItemsIn(await lSecs(page), 'gather').includes(104);
       await page.locator('.get-row[data-item="101"] [data-f=way]').count();
-      await lTab(page, 'craft'); await page.locator('.craft-row[data-item="101"] [data-f=way]').selectOption(''); await lSettle(page);
+      await lTab(page, 'craft'); await (await lOpen(page.locator('.craft-row[data-item="101"]'))).locator('[data-f=way]').selectOption(''); await lSettle(page);
       ck.backToUsual = JSON.stringify(await lTotals(page)) === JSON.stringify(t0) && !(await lBlocks(page)).some((b) => b.rows.some((r) => r.item === 101));
       // (2) the order of ways: "Craft it" first, written once for the character, moves the totals in both lists
       await lSet(page); await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet');
@@ -6038,7 +6042,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lSet(page);
       for (const n of ['Alpha', 'Beta']) { await page.fill('[data-f=stepname]', n); await page.click('[data-act=addstep]'); await lSettle(page); await page.waitForSelector('[data-f=stepname]'); }
       await lSetDone(page);
-      await lRow(page, 130).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page);
+      await (await lOpen(lRow(page, 130))).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page);
       await lTab(page, 'get');
       const sum = (a) => ({ get: a.reduce((x, s) => x + s.get, 0), craft: a.reduce((x, s) => x + s.craft, 0) });
       let steps = await lSteps(page), all = steps[0], parts = steps.slice(1);
@@ -6047,10 +6051,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.sharesAdd = sum(parts).get === all.get && sum(parts).craft === all.craft && all.get > 0 && all.craft > 0;
       ck.sentence = /A step.s figures are its share of .* plan and can move between steps and lists; the totals for .* never go up when you remove something\./.test(await page.locator('.lists-steps + .fine').textContent());
       // (2) moving a wanted item to another step: the character's totals and the list's totals stay, the steps' shares move
-      await lTab(page, 'wanted'); await lRow(page, 100).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page); await lTab(page, 'get');
+      await lTab(page, 'wanted'); await (await lOpen(lRow(page, 100))).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page); await lTab(page, 'get');
       steps = await lSteps(page);
       ck.moveKeepsTotals = JSON.stringify(await lTotals(page)) === JSON.stringify(tot0) && steps[0].get === all.get && steps[0].craft === all.craft && steps[1].get + steps[1].craft === 0 && sum(steps.slice(1)).get === all.get;
-      await lTab(page, 'wanted'); await lRow(page, 100).locator('[data-f=step]').selectOption(''); await lSettle(page); await lTab(page, 'get');
+      await lTab(page, 'wanted'); await (await lOpen(lRow(page, 100))).locator('[data-f=step]').selectOption(''); await lSettle(page); await lTab(page, 'get');
       // (3) a step handed in: the confirm names the counts, the stock of the items themselves goes, no total rises
       const before = await lHave(page), totB = await lTotals(page);
       await page.locator('.step-tab', { hasText: 'Beta' }).click(); await page.click('[data-act=ask-handin]');
@@ -6092,7 +6096,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       secs = await lSecs(page); row = (secs.gather || []).filter((r) => r.item === 103)[0];
       ck.noTwice = !!row && /need 9, have 4/.test(row.text) && !/held for/.test(row.text) && /to get 5/.test(row.text);
       // a way chosen on a combined row is the character's way: the single lists show it
-      await page.locator('.get-row[data-item="103"] [data-f=way]').selectOption('market'); await lSettle(page);
+      await (await lOpen(page.locator('.get-row[data-item="103"]'))).locator('[data-f=way]').selectOption('market'); await lSettle(page);
       ck.wayStored = (await lStored(page)).ways['c1.103'].by === 'market';
       await page.click('[data-act=back]'); await page.locator('.list-card', { hasText: 'Second' }).locator('[data-act=open]').click(); await lTab(page, 'get'); await lOpenAll(page);
       ck.singleShows = lItemsIn(await lSecs(page), 'market').includes(103) && !lItemsIn(await lSecs(page), 'gather').includes(103);
@@ -6118,18 +6122,19 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const jobs = (await lBlocks(page)).map((b) => b.job);
       ck.jobBlocks = jobs.length >= 2 && jobs.every((j, i) => i === 0 || j !== jobs[i - 1]) && jobs.indexOf('Goldsmith') >= 0 && jobs.lastIndexOf('Armorer') > jobs.indexOf('Goldsmith');
       const mk = () => page.locator('.craft-row[data-item="130"]');
-      ck.makeRow = /0 of 3 crafted/.test(await mk().textContent()) && /Must be crafted by me/.test(await mk().textContent()) && (await mk().locator('[data-act=made]').count()) === 2 && (await mk().locator('[data-f=way]').count()) === 0;
-      await mk().locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await lOpen(mk());
+      ck.makeRow = /0 of 3 crafted/.test(await mk().textContent()) && /Must be crafted by me/.test(await mk().textContent()) && (await (await lOpen(mk())).locator('[data-act=made]').count()) === 2 && (await (await lOpen(mk())).locator('[data-f=way]').count()) === 0;
+      await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.shortLine = (await lNote(page)).includes('You recorded more than the materials typed here cover. Those materials were not taken from what your other lists are counting on; check what you have.');
       ck.oneOfThree = /1 of 3 crafted/.test(await mk().textContent()) && lTargets(await lStored(page)).filter((t) => t.item === 130)[0].crafted === 1 && (await lHave(page))['u.130'].nq === 1;
-      await mk().locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.twoOfThree = /2 of 3 crafted/.test(await mk().textContent());
       // Made all on a craft that makes 3 at a time
       const gem = () => page.locator('.craft-row[data-item="120"]');
       ck.gemRow = /3 crafts, makes 9/.test(await gem().textContent());
       await gem().locator('[data-act=made][data-crafts="3"]').click(); await lSettle(page);
       ck.madeAll = (await gem().count()) === 0 && (await lHave(page))['u.120'].nq === 9;
-      await mk().locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.completedShown = (await mk().count()) === 0 && /Already crafted/.test(await page.locator('.tab-craft').textContent()) && /3 of 3 crafted/.test(await page.locator('.cdone').textContent());
       await lSet(page); await page.click('[data-act=hide]');
       ck.hidden = (await page.locator('.cdone').count()) === 0 && (await page.locator('[data-act=hide]').textContent()) === 'Show completed';
@@ -6360,7 +6365,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT5 + 'lists/'); await lReady(page);
       await lSeedLists(page, [{ name: 'Behind', items: [[100, 1], [130, 2]], have: { 103: 5 } }, { name: 'Unknown', items: [[100, 1]] }, { name: 'Ahead', items: [[100, 1]] }, { name: 'Current', items: [[100, 1]] }]);
       await lSeed(page, new Function('S', 'sec', 'DATA', 'const st = ' + JSON.stringify({ Behind: T1, Unknown: OLD, Ahead: NEWER, Current: T3 }) + '; Object.keys(sec.lists).forEach((k) => { sec.lists[k].data = st[sec.lists[k].name]; }); return sec;'));
-      const lines = () => page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent));
+      const lines = async () => { await lShowNotice(page); return page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent)); };
       const stored0 = await lStored(page), strip = (sec) => { const o = JSON.parse(JSON.stringify(sec)); Object.keys(o.lists).forEach((k) => { delete o.lists[k].data; }); return JSON.stringify(o); };
       await lOpenList(page, 'Behind');
       const ls = await lines();
@@ -6437,7 +6442,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const s2 = await lStored(page);
         ck.removed = (await card.count()) === 0 && Object.keys(s2.targets).join() === K + '.t3cccccccccc' && !!s2.lists[K] && (await page.locator('[data-act=undo]').count()) === 0;
         page = await fresh();
-        await page.locator('.list-card').first().locator('[data-act=ask-remove-list]').click(); await page.locator('.list-card').first().locator('[data-act=remove-list]').click(); await lSettle(page);
+        await page.locator('.list-card').first().locator('[data-act=more]').click(); await page.locator('.list-card').first().locator('[data-act=ask-remove-list]').click(); await page.locator('.list-card').first().locator('[data-act=remove-list]').click(); await lSettle(page);
         await page.reload(); await lReady(page);
         ck.noLists = /No lists yet/.test(await page.locator('#view').textContent()) && (await card.count()) === 1 && /Iron Ingot × 2/.test(await card.textContent());
         ck.noErrors = errs.every((c) => real(c.errors).length === 0 && c.external.length === 0);
@@ -6473,20 +6478,20 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       // "Made 1" on recipe 1003 (makes 2) credits only the wanted item of recipe 1003
       await lOpenList(page, 'Ingot two', 'craft');
       const row = (lk) => page.locator('.craft-row[data-lk="' + lk + '"]');
-      await row('101|make|1003').locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(row('101|make|1003'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.madeTwo = (await tgt(1003)).crafted === 2 && !(await tgt(1001)).crafted && (await lHave(page))['u.101'].nq === 2;
       // "Made 1" on recipe 1001 credits only recipe 1001's
       await lOpenList(page, 'Ingot one', 'craft');
-      await row('101|make|1001').locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(row('101|make|1001'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.madeOne = (await tgt(1001)).crafted === 1 && (await tgt(1003)).crafted === 2;
       // "Bought it" on recipe 1003 switches "Must be crafted by me" off on that wanted item only
       await lOpenList(page, 'Ingot two', 'craft');
-      await row('101|make|1003').locator('[data-act=ask-bought][data-mode=bought]').click(); await row('101|make|1003').locator('[data-f=boughtn]').fill('1'); await row('101|make|1003').locator('[data-act=bought]').click(); await lSettle(page);
+      await (await lOpen(row('101|make|1003'))).locator('[data-act=ask-bought][data-mode=bought]').click(); await (await lOpen(row('101|make|1003'))).locator('[data-f=boughtn]').fill('1'); await (await lOpen(row('101|make|1003'))).locator('[data-act=bought]').click(); await lSettle(page);
       ck.boughtTwo = !(await tgt(1003)).make && (await tgt(1001)).make === true;
       // the cap: 999,999 in stock, one more craft
       await lSeedLists(page, [{ name: 'Capped', items: [[130, 3, { make: true }]], have: { 130: 999999, 103: 5 } }]);
       await lOpenList(page, 'Capped', 'craft');
-      await page.locator('.craft-row[data-item="130"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(page.locator('.craft-row[data-item="130"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       ck.capKept = (await lHave(page))['u.130'].nq === 999999 && (await tgt(1011)).crafted === 1;
       ck.capSays = (await lNote(page)).includes('Counts above 999,999 are kept at 999,999.');
       ck.noErrors = real(errors).length === 0 && external.length === 0;
@@ -6510,21 +6515,21 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.rowQuality = (await lRow(page, 101).getAttribute('data-q')) === 'hq' && /\(high quality\)/.test(await lRow(page, 101).textContent());
       await lTab(page, 'craft');
       ck.noChoice = (await page.locator('[data-f=madeq]').count()) === 0;
-      await page.locator('.craft-row[data-item="101"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(page.locator('.craft-row[data-item="101"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       const h = await stock(101);
       ck.hq = h.hq === 1 && !h.nq && !h.coll && lTargets(await lStored(page)).filter((t) => t.item === 101)[0].crafted === 1;
       await lOpenList(page, 'Coll', 'craft');
-      await page.locator('.craft-row[data-item="160"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(page.locator('.craft-row[data-item="160"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       const c = await stock(160);
       ck.coll = c.coll === 1 && !c.nq && !c.hq;
       await lOpenList(page, 'Mixed', 'craft');
-      const sel = page.locator('.craft-row[data-item="161"] [data-f=madeq]');
+      const sel = (await lOpen(page.locator('.craft-row[data-item="161"]'))).locator('[data-f=madeq]');
       ck.choice = (await sel.count()) === 1 && (await sel.locator('option').evaluateAll((o) => o.map((x) => x.value))).join() === 'hq,nq' && (await sel.inputValue()) === 'hq';
-      await page.locator('.craft-row[data-item="161"] [data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(page.locator('.craft-row[data-item="161"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       let m = await stock(161);
       ck.mixedDefault = m.hq === 1 && !m.nq;
       await lOpenList(page, 'Mixed', 'craft');
-      const sel2 = page.locator('.craft-row[data-item="161"] [data-f=madeq]');
+      const sel2 = (await lOpen(page.locator('.craft-row[data-item="161"]'))).locator('[data-f=madeq]');
       ck.choiceKeptAfter = (await sel2.count()) === 0 || (await sel2.locator('option').evaluateAll((o) => o.map((x) => x.value))).join() === 'nq';
       ck.noErrors = real(errors).length === 0 && external.length === 0;
       record('C169', 'Lists page, quality of "Made": a must-craft item that asks for high quality records high quality, collectable before high quality records collectable, the wanted row counts that quality, and one line with two different asked qualities shows a quality choice (high quality first)',
@@ -6545,7 +6550,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT5 + 'lists/'); await lReady(page);
       await lSeedLists(page, [{ name: 'Behind', items: [[100, 1]] }, { name: 'Older', items: [[100, 1]] }]);
       await lSeed(page, new Function('S', 'sec', 'DATA', 'const st = ' + JSON.stringify({ Behind: T1, Older: T0 }) + '; Object.keys(sec.lists).forEach((k) => { sec.lists[k].data = st[sec.lists[k].name]; }); return sec;'));
-      const lines = () => page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent));
+      const lines = async () => { await lShowNotice(page); return page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent)); };
       await lOpenList(page, 'Behind');
       const a = await lines();
       ck.added = a.length === 1 && a[0] === 'Iron Ingot can now be crafted from 3 Test Ore.';
@@ -6572,8 +6577,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const reset = () => lSeed(page, function (S) { return S.emptySection(); });
       const made = async (item, q, all) => {
         const row = page.locator('.craft-row[data-item="' + item + '"]');
-        if (q) await row.locator('[data-f=madeq]').selectOption(q);
-        await row.locator('[data-act=made]' + (all ? ':not([data-crafts="1"])' : '[data-crafts="1"]')).first().click(); await lSettle(page);
+        if (q) await (await lOpen(row)).locator('[data-f=madeq]').selectOption(q);
+        await (await lOpen(row)).locator('[data-act=made]' + (all ? ':not([data-crafts="1"])' : '[data-crafts="1"]')).first().click(); await lSettle(page);
       };
       // (1) high quality first, ordinary second, one list: ordinary chosen credits the ordinary target only; then high quality credits the high-quality one
       await reset(); await lSeedLists(page, [{ name: 'One', items: [[101, 1, { make: true, hq: true }], [101, 1, { make: true }]], have: { 104: 20 } }]);
@@ -6632,10 +6637,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         return sec;
       });
       await lOpenList(page, 'Done', 'wanted');
+      await lOpen(lRow(page, 101));
       const own = await lRow(page, 101).textContent();
       ck.ownState = /crafted 1 of 1/.test(own) && /Crafted by Blacksmith, level 10/.test(own) && !/need 3/.test(own) && !/level 20/.test(own);
       ck.planHasOnlyOther = await page.evaluate(() => Object.keys(__lists.plan('u').lines).filter((k) => /^101\|/.test(k)).join() === '101|make|1003');
       await lOpenList(page, 'Fresh', 'wanted');
+      await lOpen(lRow(page, 101));
       const other = await lRow(page, 101).textContent();
       ck.otherRow = /need 3,/.test(other) && /level 20/.test(other) && !/crafted 1 of 1/.test(other);
       ck.noErrors = real(errors).length === 0 && external.length === 0;
@@ -6846,6 +6853,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const rec = await page.evaluate(() => { const d = window.__lists.data(), id = d.log[7][0][1][0]; return { id, job: d.recipes[id][2], item: d.recipes[id][0] }; });
       await lSeedLists(page, [{ name: 'Atelier link', items: [[rec.item, 1, { make: true }]] }]);
       await lOpenList(page, 'Atelier link', 'craft');
+      await lOpen(page.locator('.craft-row[data-item="' + rec.item + '"]'));
       const link = page.locator('.craft-row a[href="../atelier/#recipe=' + rec.id + '"]');
       ck.linkShown = (await link.count()) === 1 && /Solve in the Atelier/.test(await link.first().textContent());
       const before = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
@@ -6864,7 +6872,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await p2.goto(ROOT5 + 'lists/'); await lReady(p2);
       await lSeedLists(p2, [{ name: 'No link', items: [[100, 1, { make: true }], [102, 1, { make: true }]] }]);
       await lOpenList(p2, 'No link', 'craft');
-      const rows = await p2.evaluate(() => [...document.querySelectorAll('.craft-row')].map((r) => ({ item: +r.dataset.item, link: r.querySelector('a[href*="atelier"]') ? r.querySelector('a[href*="atelier"]').getAttribute('href') : null })));
+      const rows = []; for (const it of [100, 102]) { await lOpen(p2.locator('.craft-row[data-item="' + it + '"]').first()); rows.push(...(await p2.evaluate((i) => [...document.querySelectorAll('.craft-row[data-item="' + i + '"]')].map((r) => ({ item: +r.dataset.item, link: r.querySelector('a[href*="atelier"]') ? r.querySelector('a[href*="atelier"]').getAttribute('href') : null })), it))); }
       ck.noLink = rows.some((r) => r.item === 100 && r.link === null) && rows.some((r) => r.item === 102 && /#recipe=\d+$/.test(r.link || ''));
       ck.noErrors = real(c.errors).length === 0 && c.external.length === 0 && real(c2.errors).length === 0;
       record('C159', 'Lists page: "Solve in the Atelier" opens the built Atelier on that recipe (job, recipes mode, recipe chosen, hash removed) and saves nothing to the Lists section; a recipe the build lists as having no hand-over has no link',
@@ -6974,12 +6982,12 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const s0 = JSON.stringify(await lStored(page));
       const row = () => page.locator('.craft-row[data-item="100"]');
       ck.twoCrafts = /2 crafts/.test(await row().textContent());
-      await row().locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(row())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
       const h1 = await lHave(page);
       ck.made = h1['u.100'].nq === 1 && h1['u.103'].nq === 3 && /1 craft,/.test(await row().textContent());
-      await row().locator('[data-act=ask-bought][data-mode=bought]').click();
-      ck.prefilled = (await row().locator('[data-f=boughtn]').inputValue()) === '1';
-      await row().locator('[data-act=bought]').click(); await lSettle(page);
+      await (await lOpen(row())).locator('[data-act=ask-bought][data-mode=bought]').click();
+      ck.prefilled = (await (await lOpen(row())).locator('[data-f=boughtn]').inputValue()) === '1';
+      await (await lOpen(row())).locator('[data-act=bought]').click(); await lSettle(page);
       const h2 = await lHave(page);
       ck.rowGone = (await page.locator('.craft-row').count()) === 0 && /Nothing left to craft\./.test(await page.locator('.tab-craft').textContent());
       await lTab(page, 'get');
@@ -6993,7 +7001,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.undoTwice = JSON.stringify(await lStored(page)) === s0;
       // fewer units: the row stays for the rest, and "Buy the rest too" sets the way
       await lTab(page, 'craft');
-      await row().locator('[data-act=ask-bought][data-mode=bought]').click(); await row().locator('[data-f=boughtn]').fill('1'); await row().locator('[data-act=bought]').click(); await lSettle(page);
+      await (await lOpen(row())).locator('[data-act=ask-bought][data-mode=bought]').click(); await (await lOpen(row())).locator('[data-f=boughtn]').fill('1'); await (await lOpen(row())).locator('[data-act=bought]').click(); await lSettle(page);
       ck.fewerKeeps = /1 craft,/.test(await row().textContent()) && (await lHave(page))['u.100'].nq === 1;
       const rest = page.locator('[data-act=rest][data-by=market]');
       ck.restWay = (await rest.count()) === 1;
@@ -7017,8 +7025,8 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const ck = {};
       await lSeedLists(page, [{ name: 'Select', items: [[100, 1], [150, 1], [130, 3]] }, { name: 'Select two', items: [[100, 1]] }]);
       await lOpenList(page, 'Select'); await lAdd(page, 'mythril', 130, 1); await lTab(page, 'wanted');
-      await lRow(page, 130).nth(1).locator('[data-flag=hq]').check(); await lSettle(page);
-      ck.wantedSelect = (await lRow(page, 100).locator('[data-f=way]').count()) === 1 && /Crafted by Armorer/.test(await lRow(page, 100).textContent());
+      await (await lOpen(lRow(page, 130).nth(1))).locator('[data-flag=hq]').check(); await lSettle(page);
+      ck.wantedSelect = (await (await lOpen(lRow(page, 100))).locator('[data-f=way]').count()) === 1 && /Crafted by Armorer/.test(await lRow(page, 100).textContent());
       const nqOpts = await lWayOptions(page, lRow(page, 130).nth(0)), hqOpts = await lWayOptions(page, lRow(page, 130).nth(1));
       ck.nqWays = JSON.stringify(nqOpts) === JSON.stringify(['', 'vendor', 'craft', 'trade', 'market', 'have']);
       ck.hqWays = JSON.stringify(hqOpts) === JSON.stringify(['', 'vendor', 'craft', 'market', 'have']);
@@ -7026,28 +7034,28 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const plan0 = async () => { await lTab(page, 'get'); await lOpenAll(page); const g = await lSecs(page); await lTab(page, 'craft'); return JSON.stringify([Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.map((r) => r.item + r.q)])), (await lBlocks(page)).map((b) => [b.job, b.rows.map((r) => r.item + r.q)]), await lTotals(page)]); }; // the rows and totals, not the reason text (it then says "You chose this")
       const first = await plan0();
       const crow = page.locator('.craft-row[data-item="100"]');
-      ck.craftSelect = (await crow.locator('[data-f=way]').count()) === 1 && JSON.stringify(await lWayOptions(page, crow)) === JSON.stringify(['', 'craft', 'market', 'have']);
-      await crow.locator('[data-f=way]').selectOption('market'); await lSettle(page);
+      ck.craftSelect = (await (await lOpen(crow)).locator('[data-f=way]').count()) === 1 && JSON.stringify(await lWayOptions(page, crow)) === JSON.stringify(['', 'craft', 'market', 'have']);
+      await (await lOpen(crow)).locator('[data-f=way]').selectOption('market'); await lSettle(page);
       ck.movedToBuy = (await page.locator('.craft-row[data-item="100"]').count()) === 0;
       await lTab(page, 'get'); await lOpenAll(page);
-      ck.getSelect = lItemsIn(await lSecs(page), 'market').includes(100) && (await page.locator('.get-row[data-item="100"] [data-f=way]').count()) === 1;
-      await page.locator('.get-row[data-item="100"] [data-f=way]').selectOption('craft'); await lSettle(page);
+      ck.getSelect = lItemsIn(await lSecs(page), 'market').includes(100) && (await (await lOpen(page.locator('.get-row[data-item="100"]'))).locator('[data-f=way]').count()) === 1;
+      await (await lOpen(page.locator('.get-row[data-item="100"]'))).locator('[data-f=way]').selectOption('craft'); await lSettle(page);
       await lTab(page, 'craft');
       ck.backToFirst = (await plan0()) === first;
       // I have enough of this
-      await page.locator('.craft-row[data-item="100"] [data-f=way]').selectOption('have'); await lSettle(page);
+      await (await lOpen(page.locator('.craft-row[data-item="100"]'))).locator('[data-f=way]').selectOption('have'); await lSettle(page);
       await lTab(page, 'get'); await lOpenAll(page);
       const secs = await lSecs(page), have = (secs.have || []).filter((r) => r.item === 100)[0];
       ck.notTyped = !!have && /1 not in your typed stock: you said you already have these\./.test(have.text) && !lItemsIn(secs, 'market').includes(100);
       ck.looped = (secs.other || []).some((r) => r.item === 150 && /Self Knot needs itself; Self Knot is listed under Other\./.test(r.text));
-      await page.locator('.get-row[data-item="100"] [data-f=way]').selectOption('');  await lSettle(page);
+      await (await lOpen(page.locator('.get-row[data-item="100"]'))).locator('[data-f=way]').selectOption('');  await lSettle(page);
       // the combined view
       await page.click('[data-act=back]'); await page.locator('.list-card', { hasText: 'Select two' }).locator('[data-f=tick]').check(); await lSettle(page);
       await page.locator('.list-card', { hasText: 'Select' }).first().locator('[data-f=tick]').check(); await lSettle(page);
       await page.locator('.lists-group').first().locator('[data-act=combined]').click(); await page.waitForSelector('.tab[data-tab=craft]');
       await lTab(page, 'craft');
-      ck.combinedSelect = (await page.locator('.craft-row[data-item="100"] [data-f=way]').count()) === 1;
-      await page.locator('.craft-row[data-item="100"] [data-f=way]').selectOption('market'); await lSettle(page);
+      ck.combinedSelect = (await (await lOpen(page.locator('.craft-row[data-item="100"]'))).locator('[data-f=way]').count()) === 1;
+      await (await lOpen(page.locator('.craft-row[data-item="100"]'))).locator('[data-f=way]').selectOption('market'); await lSettle(page);
       await lTab(page, 'get'); await lOpenAll(page);
       ck.combinedMoved = lItemsIn(await lSecs(page), 'market').includes(100) && /need 2,/.test((await lSecs(page)).market.filter((r) => r.item === 100)[0].text);
       ck.noErrors = real(errors).length === 0 && external.length === 0;
@@ -7750,15 +7758,15 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lSeedLists(page, [{ name: 'Bought', items: [[100, 2]], have: { 103: 6 } }]);
       await lOpenList(page, 'Bought', 'craft');
       const row = page.locator('.craft-row[data-item="100"]');
-      await row.locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
-      await row.locator('[data-act=ask-bought][data-mode=bought]').click(); await row.locator('[data-act=bought]').click(); await lSettle(page);
+      await (await lOpen(row)).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(row)).locator('[data-act=ask-bought][data-mode=bought]').click(); await (await lOpen(row)).locator('[data-act=bought]').click(); await lSettle(page);
       await lTab(page, 'get'); await lOpenAll(page);
       out.left = await page.locator('.left-row').count(); await shot('left');
       await lSeedLists(page, [{ name: 'Plan', items: [[130, 3], [120, 9], [140, 2], [170, 1], [100, 2]] }]);
       await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); await shot('lists');
       await lOpenList(page, 'Plan', 'get'); await lOpenAll(page);
-      const sel = page.locator('.get-row[data-item="130"] [data-f=way]');
-      if (await sel.count() && (await sel.first().locator('option[value=market]').count())) { await sel.first().selectOption('market'); await lSettle(page); await lOpenAll(page); }
+      const sel = (await lOpen(page.locator('.get-row[data-item="130"]'))).locator('[data-f=way]');
+      if (await sel.count() && (await sel.first().locator('option[value=market]').count())) { await sel.first().selectOption('market'); await lSettle(page); await lOpenAll(page); await lCloseRows(page); }
       out.sections = await page.evaluate(() => [...document.querySelectorAll('.gsec')].map((s) => s.dataset.sec));
       await shot('get');
       await lTab(page, 'craft'); await shot('craft');
@@ -7829,7 +7837,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       });
       await lOpenList(page, 'Crafters', 'craft');
       const row = (it) => page.locator('.craft-row[data-item="' + it + '"]');
-      const read = async (it) => ({ text: (await row(it).textContent()).replace(/\s+/g, ' '), opts: await row(it).locator('[data-f=countrecipe] option').allTextContents(), n: await row(it).locator('[data-f=countrecipe]').count(),
+      const read = async (it) => ({ opened: await lOpen(row(it)), text: (await row(it).textContent()).replace(/\s+/g, ' '), opts: await row(it).locator('[data-f=countrecipe] option').allTextContents(), n: await row(it).locator('[data-f=countrecipe]').count(),
         job: await page.evaluate((i) => document.querySelector('.craft-row[data-item="' + i + '"]').closest('.cblock').querySelector('h3').textContent, it) });
       const a0 = await read(5056);
       ck.bothCrafters = /Crafters: Blacksmith, level 1; Armorer, level 1\./.test(a0.text);
@@ -7838,7 +7846,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const mats = async () => { await lTab(page, 'get'); await lOpenAll(page); const m = await page.evaluate(() => [...document.querySelectorAll('.gsec .line-row')].map((r) => +r.dataset.item)); await lTab(page, 'craft'); return m; };
       const m0 = await mats();
       ck.blacksmithShard = m0.includes(2) && !m0.includes(3);
-      await row(5056).locator('[data-f=countrecipe]').selectOption('170'); await lSettle(page);
+      await (await lOpen(row(5056))).locator('[data-f=countrecipe]').selectOption('170'); await lSettle(page);
       const a1 = await read(5056), m1 = await mats();
       ck.switched = a1.job === 'Armorer' && a1.text.includes('counted for Armorer.') && m1.includes(3) && !m1.includes(2);
       ck.saved = (await lStored(page)).ways && Object.values((await lStored(page)).ways).some((w) => w.recipe === 170);

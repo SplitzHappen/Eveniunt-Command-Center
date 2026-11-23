@@ -11,7 +11,9 @@
   // SH: the page's working state. sec: the saved section as last read or written (null when none is stored); rev and base: what the next write is
   // measured against (as in subs.js). queue: edits waiting for the write in flight. undo: the last 20 changes of this visit, newest first.
   var SH = { problem: null, chars: [], tracker: null, log: null, sec: null, rev: null, base: null, queue: [], busy: null, reloadLater: false, undo: [], note: '', rest: null,
-    view: { list: null, form: false, confirm: null, bought: null, mode: 'bought', search: '', tab: 'wanted', open: {}, step: null, hide: false, sheet: false, combined: false, combinedOwner: null } };
+    view: { list: null, form: false, confirm: null, bought: null, mode: 'bought', search: '', tab: 'wanted', open: {}, step: null, hide: false, sheet: false, combined: false, combinedOwner: null, row: null, offers: {}, spots: {}, edit: {}, notice: false, noticeAll: false, more: null } };
+  // the phone keeps its stepper in the opened row (one copy of every control: the checks and the page read one "I have" per row)
+  var NARROW = window.matchMedia ? window.matchMedia('(max-width: 700px)') : { matches: false };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
@@ -101,7 +103,8 @@
   }
   function priceRow(ln, now) {
     var pi = priceInfo(ln.item, now);
-    return '<p class="price-line" data-price="' + (pi.gil || '') + '">' + esc(pi.text) + '</p>';
+    var t = pi.text, i = t.indexOf(' before tax'), head = i >= 0 ? t.slice(0, i + 11) : t, more = i >= 0 ? t.slice(i + 11) : ''; // a phone shows the price; the place and the time are in the opened row
+    return '<span class="price-line" data-price="' + (pi.gil || '') + '">' + esc(head) + (more ? '<span class="pl-more">' + esc(more) + '</span>' : '') + '</span>';
   }
   // "about N gil for M items; K items without a price" over the market rows the chosen lists share (spec section 6)
   function priceTotal(V, keys, sums, now) {
@@ -155,7 +158,7 @@
   function windowRow(ln, now) {
     if (!ln.timed) return '';
     var t = windowText(ln.timed.hours, ln.timed.minutes, now);
-    return t ? '<p class="w-window" data-hours="' + esc(ln.timed.hours.join(',')) + '" data-mins="' + ln.timed.minutes + '">' + esc(t) + '</p>' : '';
+    return t ? '<span class="w-window" data-hours="' + esc(ln.timed.hours.join(',')) + '" data-mins="' + ln.timed.minutes + '">' + esc(t) + '</span>' : '';
   }
   function tickWindows() {
     var now = Date.now();
@@ -208,14 +211,17 @@
     });
     return { lines: lines };
   }
+  // F4: a one-line slab under the list head ("Game data changed since this list was last checked · 3 changes in this list · Show"), opening into its lines
   function noticeHtml(h, id, sc) {
     var n = patchNotice(h, id, sc);
     if (!n) return '';
-    var ok = '<p class="row">' + btn('OK, noted', 'noted') + '</p>';
-    if (n.plain) return '<section class="lists-panel patch-notice" role="status"><p><b>Game data changed since this list was last checked; the details for that version are not available.</b></p><p class="muted">Nothing in this list was changed.</p>' + ok + '</section>';
-    return '<section class="lists-panel patch-notice" role="status"><h2>Game data changed since this list was last checked</h2>' +
-      (n.lines.length ? '<ul class="patch-lines">' + n.lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' : '<p>None of the recipes this list uses changed.</p>') +
-      '<p class="muted">Nothing in this list was changed: every wanted item, amount, setting, step, way and stock count is kept.</p>' + ok + '</section>';
+    var ok = rb('OK, noted', 'noted', '', 'lbtn-p');
+    if (n.plain) return '<section class="patch-notice" role="status"><div class="pn-line"><p class="pn-t"><b>Game data changed since this list was last checked; the details for that version are not available.</b> Nothing in this list was changed.</p>' + ok + '</div></section>';
+    var open = SH.view.notice, ls = n.lines, shownLines = open && !SH.view.noticeAll ? ls.slice(0, 5) : ls;
+    return '<section class="patch-notice' + (open ? ' open' : '') + '" role="status"><div class="pn-line"><h2>Game data changed since this list was last checked</h2>' +
+      (ls.length ? '<span class="pn-sum">' + ls.length + ' change' + (ls.length === 1 ? '' : 's') + ' in this list</span>' + lk(open ? 'Hide' : 'Show', 'notice', ' aria-expanded="' + (open ? 'true' : 'false') + '"') : '<span class="pn-sum">None of the recipes this list uses changed.</span>' + ok) + '</div>' +
+      (open && ls.length ? '<div class="pn-body"><ul class="patch-lines">' + shownLines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' + (ls.length > 5 && !SH.view.noticeAll ? '<p class="acts-row">' + lk('Show all ' + ls.length + ' changes', 'notice-all') + '</p>' : '') +
+        '<p class="muted">Nothing in this list was changed: every wanted item, amount, setting, step, way and stock count is kept.</p><p class="acts-row">' + ok + '</p></div>' : '') + '</section>';
   }
 
   // data/lists.json plus `log` and `noHandOver`, built in by build.js (packed when that is smaller)
@@ -430,15 +436,16 @@
   function curText(cur) { return cur.map(function (c) { return c[1] + ' ' + (c[0] === 1 ? 'gil' : itemName(c[0])); }).join(' and '); }
   function isCrafted(ln) { return ln.part === 'make' || ln.part === 'coll'; }
   function qWayOf(ln) { return ln.part === 'hq' ? 'hq' : 'normal'; }
+  // F2: quality stamps stay on every row; the ordinary quality is the default and is not stamped. "Must craft" is the stamp of the tick "Must be crafted by me".
   function stamp(ln) {
-    var t = ln.part === 'make' ? 'Must be crafted by me' : ln.part === 'coll' ? 'Collectable' : ln.part === 'hq' ? 'High quality' : 'Ordinary';
-    return '<span class="stamp q-' + ln.quality + '">' + t + '</span>';
+    var t = ln.part === 'make' ? 'Must craft' : ln.part === 'coll' ? 'Collectable' : ln.part === 'hq' ? 'High quality' : '';
+    return t ? ' <span class="lstamp plain">' + t + '</span>' : '';
   }
   // W11: the way a row is got, told in a word and drawn in its role (craft, gather, merchant, market); a trade is a merchant role told apart by its word
   var WAY_WORD = { vendor: ['merchant', 'Merchant'], trade: ['merchant', 'Trade'], gather: ['gather', 'Gather'], market: ['market', 'Market'] };
   function wayPill(ln, craft) { var w = craft ? ['craft', 'Craft'] : WAY_WORD[ln.by]; return w ? ' <span class="role role-' + w[0] + '">' + w[1] + '</span>' : ''; }
   // why this way (D15): the seller, "You chose this", a loop's note
-  function reasonOf(V, ln, x) {
+  function reasonText(V, ln, x) {
     var p = [], off = ln.offer, w = V.sc.ways[V.owner + '.' + ln.item] || {};
     if (ln.by === 'vendor' && off) {
       var sl = seller(off.npc), g = off.cur[0][1];
@@ -456,52 +463,124 @@
     else if (ln.by === 'market') p.push('Bought on the market board');
     else if (ln.by === 'have') p.push((x ? x.outside : ln.outside) + ' not in your typed stock: you said you already have these');
     else if (ln.by === 'other') p.push('No way to get this is known');
-    if (ln.part === 'make') p.push('You marked this as must be crafted by me');
+    if (ln.part === 'make') p.push('You marked this as “Must be crafted by me”');
     if (ln.part === 'coll') p.push('Collectables are always crafted');
     if (ln.why === 'chosen' && !isCrafted(ln)) p.push('You chose this');
     if (w.by && w.by !== 'have' && !isCrafted(ln) && waysOf(V, ln.item, 'normal').indexOf(w.by) < 0 && waysOf(V, ln.item, 'hq').indexOf(w.by) < 0) p.push('The way you chose is no longer available in the game data; using the usual order. Your choice is still stored');
     else if (w.by === 'trade' && w.offer && !isCrafted(ln) && ['normal', 'hq'].every(function (qq) { return !offersFor(ln.item, qq).trade.some(function (o) { return o[4] + '.' + o[0] + '.' + o[1][0][0] === w.offer; }); })) p.push('The trade you chose is no longer in the game data; using the usual one. Your choice is still stored');
     var s = p.map(function (t) { return t.charAt(0).toUpperCase() + t.slice(1); }).join('. ') + (p.length ? '.' : '');
     if (V.plan.cut[ln.item]) s += (s ? ' ' : '') + V.plan.cut[ln.item];
-    return s ? '<p class="why">' + esc(s) + '</p>' : '';
+    return s;
   }
-  // "Get it by" select, "Craft it instead", the other trades (D15); none on a must-craft or collectable row
+  function reasonOf(V, ln, x) { var s = reasonText(V, ln, x); return s ? '<p class="why">' + esc(s) + '</p>' : ''; }
+  // the opened gather row lists its spots, so the first sentence (which names one of them) is left out
+  function reasonRest(V, ln, x) { var s = reasonText(V, ln, x), i = s.search(/\.( |$)/), r = i < 0 ? '' : s.slice(i + 1).trim(); return r ? '<p class="why">' + esc(r) + '</p>' : ''; }
+  function firstSentence(s) { var i = s.search(/\.( |$)/); return i < 0 ? s : s.slice(0, i + 1); }
+  // ---- the row kit (docs/lists-look-spec.md section 3): icons, spots, the stepper and one row shell shared by To get, To craft and Wanted ----
+  var CHEV = '<svg class="lchev" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M4 2l5 5-5 5"/></svg>';
+  function rb(label, act, extra, cls) { return '<button type="button" class="' + (cls || 'lbtn-o') + '" data-act="' + act + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
+  // D-C1, D-G1: a job's picture; the name is the picture's alt text where no name is written beside it
+  function jobImg(name, alt, cls) { return name ? '<img class="jicon ' + (cls || 'jr') + '" src="classjob/' + name.toLowerCase() + '.png" alt="' + (alt ? esc(name) : '') + '" width="24" height="24">' : ''; }
+  function crafterJobs(item) { var seen = {}, out = []; recipesOf(item).forEach(function (r) { var j = DATA.recipes[r][2]; if (!seen[j]) { seen[j] = 1; out.push(j); } }); return out; }
+  // every crafter's picture on a desktop row; a phone row has room for four, and the opened row lists them all
+  function iconSet(names) {
+    var cap = NARROW.matches ? 4 : 99, more = names.length - cap;
+    return names.length ? ' <span class="jset">' + names.slice(0, cap).map(function (n) { return jobImg(n, true); }).join('') + (more > 0 ? '<span class="jmore">+' + more + '</span>' : '') + '</span>' : '';
+  }
+  function spotsOf(item) { return (DATA.spots && DATA.spots[item]) || []; }
+  function spotName(s) { return s[0] === 2 ? (s[11] || 'Fishing spot') : (DATA.nodeNames && DATA.nodeNames[s[1]]) || ''; }
+  // D-G1: "Lv. 5 Rocky Outcrop · Lower La Noscea (X 26, Y 21) · Aleport"; an item with no position says so and names its zone when it is known
+  function spotText(s) {
+    var pos = s[4] > 0 || s[5] > 0, zone = s[3] || '', nm = spotName(s), head = 'Lv. ' + s[2] + (nm ? ' ' + nm : '');
+    var place = pos ? zone + ' (X ' + +s[4] + ', Y ' + +s[5] + ')' : 'No map position in the game data' + (zone ? ' · ' + zone : '');
+    var ae = pos && s[6] && DATA.aetherytes && DATA.aetherytes[s[6]];
+    return [head, place, ae].filter(Boolean).join(' · ');
+  }
+  function spotExtras(s, now) {
+    var p = [];
+    if (s[7] && s[7].length) { var t = windowText(s[7], s[8], now); if (t) p.push(t); }
+    if (s[9]) p.push('needs ' + s[9]);
+    if (s[10]) p.push('hidden item');
+    return p.join(' · ');
+  }
+  function spotsBlock(ln) {
+    var sp = spotsOf(ln.item), all = !!SH.view.spots[ln.key], now = Date.now(), lim = NARROW.matches ? 2 : 3;
+    if (!sp.length) return '';
+    var h = '<ul class="spots">' + (all ? sp : sp.slice(0, lim)).map(function (s) {
+      var x = spotExtras(s, now);
+      return '<li>' + jobImg(GATHER_JOBS[s[0]], false, 'jd') + '<span>' + esc(spotText(s)) + (x ? ' <span class="sx">' + esc(x) + '</span>' : '') + '</span></li>';
+    }).join('') + '</ul>';
+    return h;
+  }
+  // "N more spots" folds the rest past three (two on a phone); it sits on the line of the drawer's other links
+  function spotsLink(ln) {
+    var sp = spotsOf(ln.item), all = !!SH.view.spots[ln.key], lim = NARROW.matches ? 2 : 3;
+    return sp.length > lim ? lk(all ? 'Show fewer spots' : (sp.length - lim) + ' more spots', 'spots', ' data-k="' + esc(ln.key) + '" aria-expanded="' + (all ? 'true' : 'false') + '"') : '';
+  }
+  // F5, A2: minus, the figure, plus; on a phone it sits in the opened row (a larger one with its label above)
+  function stepperHtml(name, typed, q, drawer) {
+    return '<span class="stepper' + (drawer ? ' big' : '') + '" role="group" aria-label="I have"><button type="button" class="stp" data-act="minus" aria-label="One less ' + esc(name) + '">' + svg(ICO.minus, 14) + '</button>' +
+      '<label class="fld">' + (drawer ? '' : '<small>have</small>') + '<input type="number" inputmode="numeric" min="0" max="999999" data-f="have" data-q="' + q + '" value="' + typed + '" aria-label="I have"></label>' +
+      '<button type="button" class="stp" data-act="plus" aria-label="One more ' + esc(name) + '">' + svg(ICO.plus, 14) + '</button></span>';
+  }
+  function stepperBlock(name, typed, q) { return NARROW.matches ? '<div class="inl"><span class="lab">I have</span>' + stepperHtml(name, typed, q, true) + '</div>' : ''; }
+  // o: cls, attrs, role, rk, fig, word, wcls, name, stamps, icons, l2, mid, prim, done, drawer() (drawn only for the one open row, so closed rows stay cheap)
+  function rowHtml(o) {
+    var open = SH.view.row === o.rk;
+    return '<li class="' + o.cls + (open ? ' open' : '') + '"' + o.attrs + '><div class="lr ' + o.role + (open ? ' open' : '') + (o.done ? ' done' : '') + '"><span class="cnt w1"><i' + (o.wcls ? ' class="' + o.wcls + '"' : '') + '>' + o.word + '</i> <b>' + o.fig + '</b></span>' +
+      '<button type="button" class="opener' + (o.l3 ? ' has3' : '') + '" data-act="row" data-rk="' + esc(o.rk) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="l1"><span class="nm w-name">' + esc(o.name) + '</span>' + CHEV + (o.stamps || '') + (o.icons || '') + '</span><span class="l2">' + o.l2 + '</span>' + (o.l3 ? '<span class="l3">' + o.l3 + '</span>' : '') + '</button>' +
+      '<span class="st-col">' + (o.mid || '') + '</span><span class="pc">' + (o.prim || '') + '</span></div>' + (open ? '<div class="drawer ' + o.role + '">' + o.drawer() + '</div>' : '') + '</li>';
+  }
+  function offerKey(o) { return o[4] + '.' + o[0] + '.' + o[1][0][0]; }
+  function offerText(o) { return seller(o[4]).name + ': ' + curText(o[1]) + ' for ' + o[0]; }
+  // "Get it by" select with its label above, "Craft it instead", the chosen trade with "Other offers (N)" (F4), the link to the order of ways; none on a must-craft or collectable row
   function wayBlock(V, ln) {
     if (isCrafted(ln)) return '';
     var item = ln.item, q = qWayOf(ln), ways = waysOf(V, item, q), stored = (V.sc.ways[V.owner + '.' + item] || {}).by || '';
     var sel = stored === 'have' || ways.indexOf(stored) >= 0 ? stored : '';
-    var h = '<div class="w-way"><label>Get it by <select data-f="way">' + ['']
+    var h = '<div class="w-way"><label class="lfld"><span class="lab">Get it by</span><select data-f="way">' + ['']
       .concat(ways).concat(['have']).map(function (v) { return '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + esc(WAY_LABEL[v]) + '</option>'; }).join('') + '</select></label>';
-    if (ln.by === 'vendor' && ln.why === 'order' && ways.indexOf('craft') >= 0) h += ' ' + btn('Craft it instead', 'setway', ' data-by="craft"');
+    h += '<p class="fine">This applies wherever ' + esc(V.char) + ' needs this item.</p>';
     if (ln.by === 'trade') {
       var trades = offersFor(item, q).trade;
-      if (trades.length > 1) h += '<label>Other trades <select data-f="offer">' + trades.map(function (o) {
-        var key = o[4] + '.' + o[0] + '.' + o[1][0][0], sl = seller(o[4]);
-        return '<option value="' + key + '"' + (ln.offer && ln.offer.key === key ? ' selected' : '') + '>' + esc(sl.name + ': ' + curText(o[1]) + ' for ' + o[0]) + '</option>';
-      }).join('') + '</select></label>';
+      if (trades.length > 1) {
+        var cur = trades.filter(function (o) { return ln.offer && ln.offer.key === offerKey(o); })[0] || trades[0], open = !!SH.view.offers[ln.key];
+        h += '<div class="offers"><p class="why">Chosen trade: ' + esc(offerText(cur)) + '</p><p class="acts-row">' + lk('Other offers (' + (trades.length - 1) + ')', 'offers', ' data-k="' + esc(ln.key) + '" aria-expanded="' + (open ? 'true' : 'false') + '"') + '</p>' +
+          (open ? '<div class="radios" role="radiogroup" aria-label="Other offers">' + trades.map(function (o) {
+            var k = offerKey(o);
+            return '<label class="rad' + (k === offerKey(cur) ? ' on' : '') + '"><input type="radio" name="offer-' + esc(ln.key) + '" data-f="offer" value="' + k + '"' + (k === offerKey(cur) ? ' checked' : '') + '><span>' + esc(offerText(o)) + '</span></label>';
+          }).join('') + '</div>' : '') + '</div>';
+      }
     }
-    h += '</div>';
-    if (!V.applied) { V.applied = true; h += '<p class="muted fine">This applies wherever ' + esc(V.char) + ' needs this item.</p>'; }
-    return h;
+    return h + '</div>';
+  }
+  // the one wrapping line of a drawer's other actions: at most two outline buttons, then text links; "Order of ways" is in every drawer
+  function wayActs(V, ln, btns, links) {
+    var craftIt = ln && !isCrafted(ln) && ln.by === 'vendor' && ln.why === 'order' && waysOf(V, ln.item, qWayOf(ln)).indexOf('craft') >= 0 ? rb('Craft it instead', 'setway', ' data-by="craft"', 'lbtn-o') : '';
+    return '<p class="acts-row">' + (btns || '') + craftIt + lk('Order of ways', 'order-open') + (links || '') + '</p>';
   }
   function boughtBox(V, rowKey, need, q) {
     if (SH.view.bought !== rowKey) return '';
     var other = SH.view.mode === 'other';
-    return '<div class="w-bought"><label>' + (other ? 'How many did you get?' : 'How many did you buy?') + ' <input type="number" inputmode="numeric" min="1" max="999999" data-f="boughtn" value="' + Math.max(1, need) + '"></label> <span>in ' + qWord(q) + ' quality</span> ' +
-      btn('Add to my stock', 'bought') + ' ' + btn('Cancel', 'cancel-bought') + '</div>';
+    return '<div class="w-bought"><label class="lfld"><span class="lab">' + (other ? 'How many did you get?' : 'How many did you buy?') + '</span><input type="number" inputmode="numeric" min="1" max="999999" data-f="boughtn" value="' + Math.max(1, need) + '"></label><p class="fine">in ' + qWord(q) + ' quality</p><p class="acts-row">' +
+      rb('Add to my stock', 'bought', '', 'lbtn-o') + lk('Cancel', 'cancel-bought') + '</p></div>';
   }
   function rowAttrs(V, key, ln, q) { return ' data-lk="' + esc(key) + '" data-item="' + ln.item + '" data-q="' + q + '" data-owner="' + esc(V.owner) + '"'; }
 
-  // a row of To get: one line of the plan, the chosen lists' share of it
+  // a row of To get: count block, name and facts, the stepper (desktop) and the one quiet primary; everything else in the opened row
+  var ROLE_OF = { vendor: 'r-merchant', trade: 'r-merchant', gather: 'r-gather', market: 'r-market' };
   function getRow(V, key, x) {
-    var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, typed = typedOf(V, ln.item, q), held = heldFor(V, key);
-    var h = '<li class="line-row get-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b>' + wayPill(ln, false) + ' <span class="w-count">need ' + x.need + ', have ' + typed + ' ' + stamp(ln) +
-      (ln.by === 'have' ? '' : ' · <span class="role role-short">to get ' + x.got + '</span>' + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '')) + '</span>' +
-      (held.length ? ' <span class="held">' + esc(held.join(', ')) + '</span>' : '') + '</div>' + reasonOf(V, ln, x) +
-      (ln.by === 'gather' ? windowRow(ln, Date.now()) : '') + (ln.by === 'market' ? priceRow(ln, Date.now()) : '');
-    h += '<div class="w-stock"><label>I have <input type="number" inputmode="numeric" min="0" max="999999" data-f="have" data-q="' + q + '" value="' + typed + '"></label> ' +
-      btn('−', 'minus', ' aria-label="One less ' + esc(name) + '"') + ' ' + btn('+', 'plus', ' aria-label="One more ' + esc(name) + '"') + ' ' + btn('Have all', 'haveall', ' data-n="' + x.short + '"') + '</div>';
-    return h + wayBlock(V, ln) + '</li>';
+    var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, typed = typedOf(V, ln.item, q), held = heldFor(V, key), now = Date.now(), outside = ln.by === 'have';
+    var sp = ln.by === 'gather' ? spotsOf(ln.item) : [], why = sp.length ? spotText(sp[0]) : ln.by === 'other' ? reasonText(V, ln, x) : firstSentence(reasonText(V, ln, x));
+    var l2 = '<span class="w-count">need ' + x.need + ', have ' + typed + '</span>' + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '') +
+      (held.length ? ' · <span class="held">' + esc(held.join(', ')) + '</span>' : '') + (why ? '<span class="dsk' + (sp.length ? ' keep' : '') + '"> · ' + esc(why) + '</span>' : '') +
+      '';
+    var l3 = (ln.by === 'gather' ? windowRow(ln, now) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
+    var jobs = []; sp.forEach(function (s) { var n = GATHER_JOBS[s[0]]; if (n && jobs.indexOf(n) < 0) jobs.push(n); });
+    return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : 'to get', wcls: outside ? '' : 'role role-short',
+      name: name, stamps: (V.combined ? wayPill(ln, false) : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3,
+      mid: NARROW.matches ? '' : stepperHtml(name, typed, q, false), prim: outside ? '' : rb('Have all', 'haveall', ' data-n="' + x.short + '"', 'lbtn-r'),
+      drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : ''); } });
   }
   function makeProgress(V, item, recipe) {
     var c = 0, q = 0;
@@ -527,24 +606,26 @@
     rs.forEach(function (r) { jobs[DATA.recipes[r][2]] = 1; });
     if (Object.keys(jobs).length < 2) return '';
     var differ = rs.some(function (r) { return ingKey(r) !== ingKey(rs[0]); }), label = function (r) { return (JOBS[DATA.recipes[r][2]] || 'A crafter') + ', level ' + DATA.recipes[r][3]; };
-    var h = '<div class="w-crafters"><p class="why">Crafters: ' + esc(rs.map(label).join('; ')) + '.</p>';
+    var h = '<div class="w-crafters"><p class="why">Crafters: ' + rs.map(function (r) { return jobImg(JOBS[DATA.recipes[r][2]], false, 'jd') + esc(label(r)); }).join('; ') + '.</p>';
     if (differ) {
       h += '<p class="why">Materials differ by crafter; counted for ' + esc(JOBS[DATA.recipes[ln.recipe][2]] || 'a crafter') + '.</p>';
-      if (ln.part !== 'make' && ln.part !== 'coll') h += '<label>Count materials for <select data-f="countrecipe">' + rs.map(function (r) { return '<option value="' + r + '"' + (r === ln.recipe ? ' selected' : '') + '>' + esc(label(r)) + '</option>'; }).join('') + '</select></label>';
+      if (ln.part !== 'make' && ln.part !== 'coll') h += '<label class="lfld"><span class="lab">Count materials for</span><select data-f="countrecipe">' + rs.map(function (r) { return '<option value="' + r + '"' + (r === ln.recipe ? ' selected' : '') + '>' + esc(label(r)) + '</option>'; }).join('') + '</select></label>';
     }
     return h + '</div>';
   }
   function craftRow(V, key, x) {
-    var ln = V.plan.lines[key], name = itemName(ln.item), q = madeQuality(V.sc, V.owner, ln, key), spare = V.plan.spare[key] || 0, rowKey = 'L|' + key;
-    var h = '<li class="line-row craft-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b>' + wayPill(ln, true) + ' <span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + ' ' + stamp(ln) + '</span>' +
-      (spare ? ' <span class="tag">spare: ' + spare + '</span>' : '');
-    if (ln.part === 'make') { var mp = makeProgress(V, ln.item, ln.recipe); h += ' <span class="tag">' + mp.crafted + ' of ' + mp.qty + ' crafted</span>'; }
-    var mqs = ln.part === 'make' ? madeQualities(V.sc, V.owner, ln.item, ln.recipe) : [];
-    h += '</div>' + reasonOf(V, ln, x) + crafterBlock(ln) + '<div class="w-act">' + (mqs.length > 1 ? '<label>Quality made <select data-f="madeq">' + mqs.map(function (m) { return '<option value="' + m + '"' + (m === q ? ' selected' : '') + '>' + qWord(m) + '</option>'; }).join('') + '</select></label> ' : '') + btn('Made 1', 'made', ' data-crafts="1"') + ' ' + (x.crafts > 1 ? btn('Made all', 'made', ' data-crafts="' + x.crafts + '"') + ' ' : '') +
-      btn('Bought it', 'ask-bought', ' data-mode="bought"') + ' ' + btn('Got it another way', 'ask-bought', ' data-mode="other"');
-    if (!(DATA.noHandOver || []).some(function (r) { return r === ln.recipe; })) h += ' <a class="btn" href="../atelier/#recipe=' + ln.recipe + '">Solve in the Atelier</a>';
-    h += '</div>' + boughtBox(V, rowKey, x.short, q) + wayBlock(V, ln) + '</li>';
-    return h;
+    var ln = V.plan.lines[key], name = itemName(ln.item), q = madeQuality(V.sc, V.owner, ln, key), spare = V.plan.spare[key] || 0, rowKey = 'L|' + key, mp = ln.part === 'make' ? makeProgress(V, ln.item, ln.recipe) : null;
+    var mqs = ln.part === 'make' ? madeQualities(V.sc, V.owner, ln.item, ln.recipe) : [], jobs = crafterJobs(ln.item).map(function (j) { return JOBS[j]; });
+    var l2 = '<span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + '</span>' + (spare ? ' · spare: ' + spare : '') + (mp ? '<span class="cr"> · ' + mp.crafted + ' of ' + mp.qty + ' crafted</span>' : '') + ' · level ' + DATA.recipes[ln.recipe][3];
+    var bar = mp ? '<span class="prog"><span class="bar" aria-hidden="true"><i style="width:' + Math.round(100 * Math.min(1, mp.crafted / Math.max(1, mp.qty))) + '%"></i></span><span class="fig">' + mp.crafted + ' of ' + mp.qty + ' crafted</span></span>' : '';
+    return rowHtml({ cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln), icons: jobs.length > 1 ? iconSet(jobs) : '', l2: l2,
+      mid: bar, prim: x.crafts > 0 ? rb(x.crafts > 1 ? 'Made all' : 'Made 1', 'made', ' data-crafts="' + x.crafts + '"', 'lbtn-r') : '',
+      drawer: function () {
+        var atelier = !(DATA.noHandOver || []).some(function (r) { return r === ln.recipe; });
+        return reasonOf(V, ln, x) + crafterBlock(ln) +
+          (mqs.length > 1 ? '<label class="lfld"><span class="lab">Quality made</span><select data-f="madeq">' + mqs.map(function (m) { return '<option value="' + m + '"' + (m === q ? ' selected' : '') + '>' + qWord(m) + '</option>'; }).join('') + '</select></label>' : '') +
+          boughtBox(V, rowKey, x.short, q) + wayBlock(V, ln) + wayActs(V, ln, (x.crafts > 1 ? rb('Made 1', 'made', ' data-crafts="1"', 'lbtn-o') : '') + rb('Bought it', 'ask-bought', ' data-mode="bought"', 'lbtn-o'), lk('Got it another way', 'ask-bought', ' data-mode="other"') + (atelier ? '<a class="lk" href="../atelier/#recipe=' + ln.recipe + '">Solve in the Atelier</a>' : ''));
+      } });
   }
   function secHead(id, label, n, open, summary) {
     return '<h3 class="gsec-h"><button type="button" class="btn sec-toggle" data-act="sec" data-sec="' + id + '" aria-expanded="' + (open ? 'true' : 'false') + '">' + svg(ICO.chev, 14) + '<span class="sec-title">' + esc(label) + '</span>' + (summary ? '<span class="sec-sum">' + summary + '</span>' : '') + '<span class="count">' + n + '</span></button></h3>';
@@ -558,7 +639,7 @@
     var many = V.ids.length > 1, who = many ? 'these lists' : 'this list', h = '';
     entries.forEach(function (e) {
       [['nq', ''], ['hq', 'high-quality ']].forEach(function (p) {
-        if (e[p[0]] > 0) h += '<li class="left-row" data-item="' + e.item + '">' + e[p[0]] + ' ' + p[1] + esc(itemName(e.item)) + ': no longer needed by ' + who + '. Still in your stock, and used by your other lists if they need it.</li>';
+        if (e[p[0]] > 0) h += '<li class="left-row" data-item="' + e.item + '" data-n="' + e[p[0]] + '"><span class="lt">' + e[p[0]] + ' ' + p[1] + esc(itemName(e.item)) + ': no longer needed by ' + who + '. Still in your stock, and used by your other lists if they need it.</span></li>';
       });
     });
     return h;
@@ -576,12 +657,12 @@
         n = keys.length;
         if (!n) return;
         shown += n;
-        if (open) rows = (id === 'market' ? '<div class="market-line">' + priceTotal(V, keys, sums, Date.now()) + btn('Refresh prices', 'prices', '', 'lk') + '</div>' : '') + '<ul class="lines">' + keys.map(function (k) { return getRow(V, k, sums[k]); }).join('') + '</ul>';
+        if (open) rows = (id === 'market' ? '<div class="market-line">' + priceTotal(V, keys, sums, Date.now()) + lk('Refresh prices', 'prices') + '</div>' : '') + '<ul class="lines">' + keys.map(function (k) { return getRow(V, k, sums[k]); }).join('') + '</ul>';
         if (open && id === 'market') keys.forEach(function (k) { if (PR.want.indexOf(V.plan.lines[k].item) < 0) PR.want.push(V.plan.lines[k].item); });
       }
       blocks += '<section class="gsec" data-sec="' + id + '">' + secHead(id, def[1], n, open) + (open ? (id === 'left' ? '<ul class="lines">' + rows + '</ul>' : rows) : '') + '</section>';
     });
-    if (!shown) h += '<p class="muted empty-line">Nothing left to get.</p>';
+    if (!shown) h += '<p class="muted empty-line"><span class="ring" aria-hidden="true"></span>Nothing left to get.</p>';
     return h + blocks + '<p class="muted fine">You type what you have. This app never reads the game.</p>';
   }
   function craftTab(V, sums) {
@@ -600,8 +681,8 @@
         g.keys.map(function (k) { return craftRow(V, k, sums[k]); }).join('') + '</ul></section>';
     });
     var done = SH.view.hide ? [] : crafted(V);
-    if (done.length) { any = true; h += '<section class="cblock cdone"><div class="job-head"><span class="no"></span><h3>Already crafted</h3><span class="sum">' + done.length + '</span></div><ul class="lines">' + done.map(function (d) { return '<li class="line-row done"><b class="w-name">' + esc(itemName(d.item)) + '</b> <span class="tag">' + d.crafted + ' of ' + d.qty + ' crafted</span></li>'; }).join('') + '</ul></section>'; }
-    return (any ? '' : '<p class="muted empty-line">Nothing left to craft.</p>') + h;
+    if (done.length) { any = true; h += '<section class="cblock cdone"><div class="job-head"><span class="no"></span><h3>Already crafted</h3><span class="sum">' + done.length + '</span></div><ul class="lines">' + done.map(function (d) { return '<li class="line-row done"><div class="lr r-ready done"><span class="cnt"><b>' + d.qty + '</b><i class="role role-ready">finished</i></span><div class="opener"><span class="l1"><span class="nm w-name">' + esc(itemName(d.item)) + '</span></span><span class="l2">' + d.crafted + ' of ' + d.qty + ' crafted</span></div><span class="st-col"></span><span class="pc"></span></div></li>'; }).join('') + '</ul></section>'; }
+    return (any ? '' : '<p class="muted empty-line"><span class="ring" aria-hidden="true"></span>Nothing left to craft.</p>') + h;
   }
   // must-craft items already crafted in full (not yet marked finished): the "completed" rows of To craft
   function crafted(V) {
@@ -611,11 +692,12 @@
   }
   // ------------------------------------------------------------------------------------------------ the kit (docs/lists-look-spec.md section 3): drawn pictures, rail, head, sheets, status line
   var ICO = {
+    minus: '<path d="M3 8h10"/>', plus: '<path d="M3 8h10M8 3v10"/>', more: '<circle cx="4" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="20" cy="12" r="1.7"/>',
     lists: '<path d="M4 6h3M10 6h10M4 12h3M10 12h10M4 18h3M10 18h6"/>', get: '<path d="M12 3v11M7 10l5 5 5-5M4 20h16"/>', craft: '<path d="M13.5 4.5l6 6-3 3-6-6zM12 12L4.5 19.5M3.5 20.5l2-2"/>', wanted: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
     close: '<path d="M4 4l10 10M14 4L4 14"/>', chev: '<path d="M2 4l5 5 5-5"/>', up: '<path d="M3 11l5-6 5 6"/>', down: '<path d="M3 5l5 6 5-6"/>'
   };
-  function svg(d, size) { var vb = d === ICO.close ? 18 : d === ICO.chev ? 14 : d === ICO.up || d === ICO.down ? 16 : 24; return '<svg viewBox="0 0 ' + vb + ' ' + vb + '" width="' + (size || vb) + '" height="' + (size || vb) + '" aria-hidden="true" focusable="false">' + d + '</svg>'; }
+  function svg(d, size) { var vb = d === ICO.close ? 18 : d === ICO.chev ? 14 : d === ICO.up || d === ICO.down || d === ICO.minus || d === ICO.plus ? 16 : 24; return '<svg viewBox="0 0 ' + vb + ' ' + vb + '" width="' + (size || vb) + '" height="' + (size || vb) + '" aria-hidden="true" focusable="false">' + d + '</svg>'; }
   // D-C2: the game's job icon beside the job's name (the name is written next to it, so the picture has an empty alt)
   function jobIcon(name, px) { return '<img class="jicon" src="classjob/' + name.toLowerCase() + '.png" alt="" width="' + px + '" height="' + px + '">'; }
   function lk(label, act, extra) { return '<button type="button" class="lk" data-act="' + act + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
@@ -681,6 +763,7 @@
     var k = SH.view.sheet;
     if (k === 'order') return orderSheet(V);
     if (k === 'prices') return pricesSheet();
+    if (k === 'new') return newSheet();
     if (k === 'settings' && h) return settingsSheet(V, h, listId);
     return '';
   }
@@ -755,29 +838,28 @@
     return loadCore().then(function () { openLog(o); render(); }, function (e) { SH.note = e.message; render(); });
   }
   function renderLog() {
-    var V = SH.view.log, chars = SH.chars || [], head = statusHtml(), job = V.job, pages = job != null ? logPages(job) : [], pg = V.page != null ? pages[V.page] : null;
-    var h = head + '<section class="lists-panel log-screen"><h2>From the crafting log</h2>';
+    var V = SH.view.log, chars = SH.chars || [], job = V.job, pages = job != null ? logPages(job) : [], pg = V.page != null ? pages[V.page] : null;
+    var h = '<section class="lists-panel log-screen"><h2 class="panel-h">From the crafting log</h2><div class="panel-b">';
     if (!chars.length) {
-      main.innerHTML = h + '<p>Set up your characters in the Tracker first: the crafting log is read from what each character has ticked there.</p><p class="row">' + btn('Back', 'log-cancel') + '</p></section>';
+      main.innerHTML = '<section class="empty-state lists-empty log-screen"><div class="es-main"><p class="es-text">Set up your characters in the Tracker first: the crafting log is read from what each character has ticked there.</p><p class="es-kick">No characters</p><h2>From the crafting log</h2><div class="es-act">' + lk('Back', 'log-cancel') + '</div></div>' +
+        '<div class="es-ledger" aria-hidden="true"><svg viewBox="0 0 320 240" preserveAspectRatio="xMidYMid slice" focusable="false"><path class="dl" d="M0 30H320M0 66H320M0 102H320M0 138H320M0 174H320M0 210H320"/><path class="dc" d="M104 40h70l-14 22h-70z"/><path class="dg" d="M134 112h86l-14 22h-86z"/><path class="dm" d="M184 76h74l-14 22h-74z"/></svg></div></section>';
       return;
     }
-    h += '<form class="lists-form" onsubmit="return false">' +
-      '<label>Job <select data-f="logjob"><option value="">Choose a job</option>' + LOG_JOBS.map(function (n, i) { return '<option value="' + i + '"' + (i === job ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' +
-      '<label>Page <select data-f="logpage"' + (job == null ? ' disabled' : '') + '><option value="">Choose a page</option>' + pages.map(function (x, i) { return '<option value="' + i + '"' + (i === V.page ? ' selected' : '') + '>' + esc(x[0]) + '</option>'; }).join('') + '</select></label>';
-    if (V.char) h += '<label>Character <select data-f="logchar">' + chars.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === V.char ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>';
-    h += '</form>';
-    if (!pg) h += '<p class="muted">Choose a job and a page.</p>';
+    h += '<form class="fields" onsubmit="return false">' +
+      (V.char ? '<label class="lfield"><span>Character</span><select data-f="logchar">' + chars.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === V.char ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label>' : '') +
+      '<label class="lfield"><span>Job</span><select data-f="logjob"><option value="">Choose a job</option>' + LOG_JOBS.map(function (n, i) { return '<option value="' + i + '"' + (i === job ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="lfield"><span>Page</span><select data-f="logpage"' + (job == null ? ' disabled' : '') + '><option value="">Choose a page</option>' + pages.map(function (x, i) { return '<option value="' + i + '"' + (i === V.page ? ' selected' : '') + '>' + esc(x[0]) + '</option>'; }).join('') + '</select></label></form>';
+    if (!pg) h += '<p class="muted empty-line">Choose a job and a page.</p><p class="createbar">' + lk('Back', 'log-cancel') + '</p>';
     else if (!V.char) {
-      h += '<h3>For which character?</h3><p class="row">' + chars.map(function (c) { var n = logCounts(c.id, job, V.page).missing.length;
-        return '<button type="button" class="btn" data-act="log-char" data-char="' + esc(c.id) + '">' + esc(c.name) + ': ' + n + ' not ticked</button>'; }).join(' ') + '</p>';
+      h += '<h3 class="which-h">For which character?</h3><div class="which">' + chars.map(function (c) { var n = logCounts(c.id, job, V.page).missing.length;
+        return '<button type="button" class="which-row" data-act="log-char" data-char="' + esc(c.id) + '"><b>' + esc(c.name) + '</b><span class="sr">: </span><span class="nw"><span class="n">' + n + '</span> <span class="w">not ticked</span></span>' + CHEV + '</button>'; }).join('') + '</div><p class="createbar">' + lk('Back', 'log-cancel') + '</p>';
     } else {
       var k = logCounts(V.char, job, V.page);
-      if (!k.missing.length) h += '<p class="log-empty">Everything on this page is ticked.</p>';
-      else h += '<p class="log-count">' + k.missing.length + ' of ' + k.total + ' not ticked in the Tracker</p><ul class="log-items">' + k.missing.map(function (id) { return '<li>' + esc(itemName(DATA.recipes[id][0])) + '</li>'; }).join('') + '</ul>';
-      h += '<p class="row">' + (k.missing.length ? btn('Create', 'log-create') + ' ' : '') + btn('Cancel', 'log-cancel') + '</p>';
-      main.innerHTML = h + '</section>'; return;
+      if (!k.missing.length) h += '<p class="log-empty empty-line">Everything on this page is ticked.</p>';
+      else h += '<div class="answer"><span class="cnt r-craft"><b>' + k.missing.length + '</b><i>crafts</i></span><p class="log-count">' + k.missing.length + ' of ' + k.total + ' not ticked in the Tracker</p></div><ul class="log-items missing">' + k.missing.map(function (id) { return '<li>' + esc(itemName(DATA.recipes[id][0])) + '</li>'; }).join('') + '</ul>';
+      h += '<p class="createbar">' + (k.missing.length ? btn('Create', 'log-create', '', 'lbtn-p big') + ' ' : '') + lk('Back', 'log-cancel') + '</p>';
     }
-    main.innerHTML = h + '<p class="row">' + btn('Cancel', 'log-cancel') + '</p></section>';
+    main.innerHTML = h + '</div></section><p class="muted fine">You type what you have. This app never reads the game.</p>';
   }
   // one list, one wanted item with "Must be crafted by me" and no stored way for each entry, in one change (one Undo)
   function logCreate(charId, job, page, ids) {
@@ -799,7 +881,7 @@
   // ------------------------------------------------------------------------------------------------ screens
   function btn(label, act, extra, cls) { return '<button type="button" class="btn' + (cls ? ' ' + cls : '') + '" data-act="' + act + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
   function topButtons() {
-    return btn('New list', 'new') + ' ' + btn('From the crafting log', 'from-log');
+    return btn('New list', 'new', '', 'lbtn-p') + ' ' + btn('From the crafting log', 'from-log', '', 'lbtn-o');
   }
   // S1, S2: one slim status line, fixed at the bottom of the page (above the bottom bar on a phone); what it offers is a text link. It is drawn outside the page's redraw (#lstatus).
   function statusHtml() { return ''; }
@@ -821,15 +903,17 @@
     statusEl.innerHTML = h;
     if (wasOpen) { var d = statusEl.querySelector('.lists-earlier'); if (d) d.open = true; }
   }
-  function newForm() {
+  // the new list is a sheet of the kit (its fields are the purpose fields of a create step); "Create" is its one primary
+  function newSheet() {
     var chars = SH.chars || [];
-    return '<form class="lists-form" data-form="new" onsubmit="return false"><label>List name <input type="text" data-f="newname" maxlength="60" autocomplete="off"></label>' +
-      '<label>Character <select data-f="newchar">' + chars.map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join('') + '<option value="">No character</option></select></label>' +
-      '<span class="row">' + btn('Create', 'create') + ' ' + btn('Cancel', 'cancel-new') + '</span></form>';
+    var body = '<form class="nform" data-form="new" onsubmit="return false"><label class="lfield"><span>List name</span><input type="text" data-f="newname" maxlength="60" autocomplete="off"></label>' +
+      '<label class="lfield"><span>Character</span><select data-f="newchar">' + chars.map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join('') + '<option value="">No character</option></select></label></form>';
+    return sheetHtml('New list', 'settings-sheet', body, lk('Cancel', 'cancel-new') + '<button type="button" class="btn lbtn-p big" data-act="create">Create</button>');
   }
   // "12 of 40 ready": finished, crafted in full, or covered by what is typed (the whole plan, as the rows are)
-  function readyCounts(sc) {
-    var plans = {}, out = {};
+  function readyCounts(sc, plans) {
+    var out = {};
+    plans = plans || {};
     Object.keys(sc.targets || {}).forEach(function (k) {
       var lid = k.split('.')[0], h = sc.lists[lid]; if (!h) return;
       var owner = S.ownerOf(h), t = sc.targets[k], o = out[lid] || (out[lid] = { ready: 0, total: 0 });
@@ -850,75 +934,109 @@
     var orph = S.orphans(sc), ids = Object.keys(orph);
     return ids.map(function (id) {
       var keys = orph[id].sort(function (a, b) { return (sc.targets[a].at || 0) - (sc.targets[b].at || 0) || (a < b ? -1 : a > b ? 1 : 0); }), asking = SH.view.confirm === 'orphan:' + id;
-      return '<section class="lists-group lists-restored" data-orphan="' + esc(id) + '" aria-label="Restored list"><h2>Restored list</h2>' +
+      return '<section class="lists-group lists-restored" data-orphan="' + esc(id) + '" aria-label="Restored list"><div class="group-head solo"><div class="nm-col"><h2>Restored list</h2></div></div><div class="rcard"><span class="cnt r-short"><b>' + keys.length + '</b><i>wanted</i></span><div class="body">' +
         '<p>' + keys.length + ' wanted item' + (keys.length === 1 ? ' has' : 's have') + ' no list, which can happen after a sync with a device on an older version. They are kept, and no plan counts them until they are in a list.</p>' +
-        '<ul class="restored-items">' + keys.map(function (k) { var t = sc.targets[k]; return '<li data-key="' + esc(k) + '">' + esc(itemName(t.item)) + ' × ' + t.qty + '</li>'; }).join('') + '</ul><p class="row">' +
-        '<label>Character <select data-f="restorechar">' + charOptions('') + '</select></label> ' + btn('Put these in a new list', 'restore-orphans') + ' ' + (asking ? '<span class="ask">Remove these ' + keys.length + ' wanted item' + (keys.length === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-orphans', '', 'danger') + ' ' + btn('Keep', 'keep')
-          : btn('Remove', 'ask-remove-orphans')) + '</p></section>';
+        '<ul class="restored-items">' + keys.map(function (k) { var t = sc.targets[k]; return '<li data-key="' + esc(k) + '">' + esc(itemName(t.item)) + ' × ' + t.qty + '</li>'; }).join('') + '</ul>' +
+        '<label class="lfld"><span class="lab">Character</span><select data-f="restorechar">' + charOptions('') + '</select></label><p class="acts-row">' + btn('Put these in a new list', 'restore-orphans', '', 'lbtn-p') + ' ' +
+        (asking ? '<span class="ask">Remove these ' + keys.length + ' wanted item' + (keys.length === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-orphans', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove-orphans">Remove</button>') + '</p></div></div></section>';
     }).join('');
   }
+  function dayMonth(t) { var d = new Date(t); return d.getDate() + ' ' + MON[d.getMonth()]; }
+  // the empty state of Your lists: a kicker, a display headline, the built sentence, three steps, the actions and a ruled-ledger panel that measures nothing
+  function emptyState(lead, kicker, head, steps, acts, nrec) {
+    var deco = '<div class="es-ledger" aria-hidden="true"><svg viewBox="0 0 320 240" preserveAspectRatio="xMidYMid slice" focusable="false"><path class="dl" d="M0 30H320M0 66H320M0 102H320M0 138H320M0 174H320M0 210H320"/>' +
+      '<path class="dc" d="M104 40h70l-14 22h-70z"/><path class="dg" d="M134 112h86l-14 22h-86z"/><path class="dm" d="M184 76h74l-14 22h-74z"/>' +
+      '<path class="dk" d="M196 150h26l-10 18h-26zM232 150h26l-10 18h-26zM268 150h26l-10 18h-26z"/></svg>' + (nrec ? '<span class="lab">Your lists</span><span class="cnt-l">' + nrec.toLocaleString('en-US') + ' recipes in the game data</span>' : '') + '</div>';
+    return '<section class="empty-state lists-empty"><div class="es-main"><p class="es-text">' + esc(lead) + '</p><p class="es-kick">' + esc(kicker) + '</p><h2>' + esc(head) + '</h2>' +
+      (steps ? '<ol class="es-steps">' + steps.map(function (s, i) { return '<li class="es-step"><b class="' + ['r-craft', 'r-gather', 'r-market'][i] + '">' + (i + 1) + '</b><span><strong>' + esc(s[0]) + '</strong>' + esc(s[1]) + '</span></li>'; }).join('') + '</ol>' : '') + '<div class="es-act">' + acts + '</div></div>' + deco + '</section>';
+  }
   function renderHome() {
-    var sc = sec(), lists = sc.lists, ids = sortedIds(lists), head = statusHtml(), restored = orphansHtml(sc);
+    var sc = sec(), lists = sc.lists, ids = sortedIds(lists), restored = orphansHtml(sc), sheet = SH.view.sheet === 'new' ? newSheet() : '';
     RAIL = { kind: 'home', lists: ids.length };
     if (!ids.length) {
-      main.innerHTML = head + '<div class="lists-empty"><p>No lists yet. Start one, or build one from the crafting-log pages you have not finished.</p><div class="row">' + topButtons() + '</div>' + (SH.view.form ? newForm() : '') + '</div>' + restored;
+      main.innerHTML = emptyState('No lists yet. Start one, or build one from the crafting-log pages you have not finished.', 'No lists yet', 'Nothing to make yet',
+        [['Say what you want to make', 'Add items by name, or start from a crafting-log page.'], ['Type what you have', 'The app never reads the game.'], ['Work down the plan', 'What to get, what to craft, and in which order.']],
+        topButtons(), Object.keys(DATA.recipes || {}).length) + restored + sheet;
       return;
     }
-    var ready = readyCounts(sc), ticked = S.combined(sc), tickOwner = ticked.length ? S.ownerOf(lists[ticked[0]]) : null, anyDisabled = false;
+    var plans = {}, ready = readyCounts(sc, plans), ticked = S.combined(sc), tickOwner = ticked.length ? S.ownerOf(lists[ticked[0]]) : null;
     var groups = {}, order = [];
     ids.forEach(function (id) { var c = lists[id].charId || ''; if (!groups[c]) { groups[c] = []; order.push(c); } groups[c].push(id); });
     order.sort(function (a, b) { return (a === '') - (b === '') || (a < b ? -1 : a > b ? 1 : 0); });
     var body = order.map(function (c) {
-      var owner = c || 'u';
-      return '<section class="lists-group" aria-label="' + esc(nameOfChar(c)) + '"><h2>' + esc(nameOfChar(c)) + '</h2><p class="row group-bar">' + btn('Combined view', 'combined', ' data-owner="' + owner + '"') + '</p><div class="lists-cards">' + groups[c].map(function (id) {
-        var l = lists[id], steps = Math.max(1, count(l.steps)), r = ready[id] || { ready: 0, total: 0 }, asking = SH.view.confirm === 'list:' + id;
-        var off = tickOwner !== null && tickOwner !== owner; if (off) anyDisabled = true;
-        return '<article class="list-card" data-list="' + esc(id) + '"><h3>' + esc(l.name || 'Untitled list') + '</h3><p><span class="role role-ready">' + r.ready + ' of ' + r.total + ' ready</span> · ' + steps + ' step' + (steps === 1 ? '' : 's') + '</p>' +
-          '<label class="chk tick"><input type="checkbox" data-f="tick"' + (ticked.indexOf(id) >= 0 ? ' checked' : '') + (off ? ' disabled' : '') + '> Combined view</label><p class="row">' +
-          btn('Open', 'open') + ' ' + (asking ? '<span class="ask">Remove this list and its ' + r.total + ' wanted item' + (r.total === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-list', '', 'danger') + ' ' + btn('Keep', 'keep')
-            : btn('Remove list', 'ask-remove-list')) + '</p></article>';
+      var owner = c || 'u', who = nameOfChar(c), plan = plans[owner] || (plans[owner] = planOf(sc, owner)), f = figures(plan, plan.lines), off = tickOwner !== null && tickOwner !== owner;
+      var mine = ticked.filter(function (i) { return S.ownerOf(lists[i]) === owner; }).length, state = off ? 'Each character has its own stock.' : mine === 1 ? 'Tick two or more lists of one character.' : '';
+      return '<section class="lists-group" aria-label="' + esc(who) + '"><div class="group-head"><div class="nm-col"><h2>' + esc(who) + '</h2>' + (state ? '<p class="state">' + state + '</p>' : '') + '</div><div class="tal-col"><p class="cap">Totals for ' + esc(who) + ':</p>' +
+        '<div class="tallies" role="group" aria-label="Totals for ' + esc(who) + ': ' + f.get + ' to get, ' + f.craft + ' to craft."><span class="tally ' + (f.get ? 'r-short' : 'r-ready') + '"><b>' + f.get + '</b><span>to get</span></span><span class="tally r-craft"><b>' + f.craft + '</b><span>to craft</span></span></div></div>' +
+        rb('Combined view' + (mine ? ' (' + mine + ')' : ''), 'combined', ' data-owner="' + owner + '"', 'lbtn-o') + '</div><div class="lists-cards">' + groups[c].map(function (id) {
+        var l = lists[id], steps = Math.max(1, count(l.steps)), r = ready[id] || { ready: 0, total: 0 }, asking = SH.view.confirm === 'list:' + id, menu = SH.view.more === id, nm = l.name || 'Untitled list';
+        var offTick = tickOwner !== null && tickOwner !== owner, changed = l.data && DATA.stamp && l.data !== DATA.stamp, pct = r.total ? Math.round(100 * r.ready / r.total) : 0;
+        return '<article class="list-card lcard" data-list="' + esc(id) + '"><span class="ready ' + (r.total && r.ready === r.total ? 'r-ready' : 'r-slab') + '"><b>' + r.ready + '</b><i class="role role-ready">of ' + r.total + ' ready</i><span class="bar" aria-hidden="true"><em style="width:' + pct + '%"></em></span></span>' +
+          '<div class="mid"><h3><button type="button" class="open" data-act="open">' + esc(nm) + '</button>' + (changed ? '<span class="lstamp r-short">Game data changed</span>' : '') + '</h3><p>' + steps + ' step' + (steps === 1 ? '' : 's') + (l.made ? ' · made ' + dayMonth(l.made) : '') + '</p>' +
+          '<label class="chk tick ltick"><input type="checkbox" data-f="tick"' + (ticked.indexOf(id) >= 0 ? ' checked' : '') + (offTick ? ' disabled' : '') + '><span>In combined view</span></label></div>' +
+          '<div class="rt"><button type="button" class="more" data-act="more" aria-expanded="' + (menu || asking ? 'true' : 'false') + '" aria-label="More for ' + esc(nm) + '">' + svg(ICO.more, 18) + '</button></div>' +
+          (menu || asking ? '<div class="cfoot">' + (asking ? '<span class="ask">Remove this list and its ' + r.total + ' wanted item' + (r.total === 1 ? '' : 's') + '?</span> ' + rb('Remove', 'remove-list', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove-list">Remove list</button>') + '</div>' : '') + '</article>';
       }).join('') + '</div></section>';
     }).join('');
-    main.innerHTML = head + '<div class="lists-bar">' + topButtons() + '</div>' + (SH.view.form ? newForm() : '') + (anyDisabled ? '<p class="muted fine">Each character has its own stock.</p>' : '') + body + restored;
+    main.innerHTML = '<div class="topstrip"><div class="tcount"><p class="kick">Your lists</p><span class="lnum">' + ids.length + '</span><span>list' + (ids.length === 1 ? '' : 's') + '</span></div><div class="acts">' + topButtons() + '</div></div>' + body + restored + '<p class="muted fine">You type what you have. This app never reads the game.</p>' + sheet;
   }
-  function flagBox(key, flag, label, on) { return '<label class="chk"><input type="checkbox" data-f="flag" data-flag="' + flag + '"' + (on ? ' checked' : '') + '> ' + esc(label) + '</label>'; }
+  function flagBox(key, flag, label, on) { return '<label class="chk ltick"><input type="checkbox" data-f="flag" data-flag="' + flag + '"' + (on ? ' checked' : '') + '> ' + esc(label) + '</label>'; }
+  // a row of Wanted: the amount asked for on the slab, the facts, every crafter's icon, the stepper (desktop) and "Finished"; the rest in the opened row
   function renderRow(V, listId, h, key) {
-    var sc = V.sc, plan = V.plan, t = sc.targets[key], owner = S.ownerOf(h), ln = t.done ? null : lineFor(plan, t), q = qualityOf(t, ln), tid = key.slice(listId.length + 1);
-    var have = sc.have[owner + '.' + t.item], typed = (have && have[q]) || 0, name = itemName(t.item), recs = recipesOf(t.item);
-    var need = ln ? (ln.part === 'make' ? ln.need : ln.short) : 0, steps = h.steps || {}, stepIds = stepIdsOf(h);
-    var h2 = '<li class="wanted-row' + (t.done ? ' done' : '') + '" data-key="' + esc(key) + '" data-item="' + t.item + '" data-q="' + q + '" data-owner="' + esc(owner) + '"><div class="w-head"><b class="w-name">' + esc(name) + '</b> <span class="w-count">' +
-      (t.done ? 'Finished' : t.make && !ln ? 'crafted ' + Math.min(t.crafted || 0, t.qty) + ' of ' + t.qty + ', have ' + typed : 'need ' + (ln ? ln.need : t.qty) + ', have ' + typed) + ' <span class="w-q">(' + qWord(q) + ')</span></span>' +
-      (t.make ? ' <span class="tag">Must be crafted by me: ' + (t.crafted || 0) + ' of ' + t.qty + ' crafted</span>' : '') + (!DATA.items[t.item] || (t.make && !recs.length) ? ' <span class="tag gone">no longer in the game data</span>' : '') + '</div>';
-    var shown = ln && !(t.make && ln.part !== 'make');
-    if (shown) h2 += reasonOf(V, ln, null);
-    else if (t.make && !ln && !t.done && DATA.recipes[recipeOfTarget(t)]) { var orr = DATA.recipes[recipeOfTarget(t)]; h2 += '<p class="why own-state">Crafted by ' + (JOBS[orr[2]] || 'a crafter') + ', level ' + orr[3] + '.</p>'; } // W15: the row's own recipe and job
-    h2 += '<div class="w-edit"><label>Amount <input type="number" inputmode="numeric" min="1" max="99999" data-f="qty" value="' + t.qty + '"></label>';
-    if (canHq(t.item) || t.hq) h2 += flagBox(key, 'hq', 'High quality', t.hq);
-    if (canColl(t.item) || t.coll) h2 += flagBox(key, 'coll', 'Collectable', t.coll);
-    if (recs.length || t.make) h2 += flagBox(key, 'make', 'Must be crafted by me', t.make);
-    if (stepIds.length) h2 += '<label>Step <select data-f="step"><option value="">' + esc(steps[stepIds[0]].name) + ' (first)</option>' + stepIds.slice(1).map(function (s) {
-      return '<option value="' + esc(s) + '"' + (t.step === s ? ' selected' : '') + '>' + esc(steps[s].name) + '</option>'; }).join('') + '</select></label>';
-    h2 += '</div>';
-    if (shown && !isCrafted(ln)) h2 += wayBlock(V, ln);
-    h2 += '<div class="w-stock"><label>I have <input type="number" inputmode="numeric" min="0" max="999999" data-f="have" data-q="' + q + '" value="' + typed + '"></label> ' +
-      btn('−', 'minus', ' aria-label="One less ' + esc(name) + '"') + ' ' + btn('+', 'plus', ' aria-label="One more ' + esc(name) + '"') + ' ' + (t.done ? '' : btn('Bought it', 'ask-bought')) + '</div>';
-    if (SH.view.bought === key && !t.done) h2 += boughtBox(V, key, need, q);
-    h2 += '<div class="w-act">' + btn(t.done ? 'Not finished' : 'Finished', 'done') + ' ' +
-      (SH.view.confirm === key ? '<span class="ask">Remove this wanted item?</span> ' + btn('Remove', 'remove', '', 'danger') + ' ' + btn('Keep', 'keep') : btn('Remove', 'ask-remove')) + '</div></li>';
-    return h2;
+    var sc = V.sc, plan = V.plan, t = sc.targets[key], owner = S.ownerOf(h), ln = t.done ? null : lineFor(plan, t), q = qualityOf(t, ln);
+    var have = sc.have[owner + '.' + t.item], typed = (have && have[q]) || 0, name = itemName(t.item), recs = recipesOf(t.item), rk = 'w|' + key;
+    var need = ln ? (ln.part === 'make' ? ln.need : ln.short) : 0, steps = h.steps || {}, stepIds = stepIdsOf(h), shown = ln && !(t.make && ln.part !== 'make');
+    var stepName = stepIds.length ? (steps[t.step] || steps[stepIds[0]] || {}).name : '';
+    var l2 = '<span class="w-count">' + (t.done ? 'Finished' : t.make && !ln ? 'crafted ' + Math.min(t.crafted || 0, t.qty) + ' of ' + t.qty + ', have ' + typed : 'need ' + (ln ? ln.need : t.qty) + ', have ' + typed) + ' <span class="w-q">(' + qWord(q) + ')</span></span>' +
+      (t.make && ln ? ' · ' + (t.crafted || 0) + ' of ' + t.qty + ' crafted' : '') + (stepName ? '<span class="stepn"> · ' + esc(stepName) + '</span>' : '');
+    var stamps = (ln ? wayPill(ln, ln.by === 'craft') : '') + (t.coll ? ' <span class="lstamp plain">Collectable</span>' : t.hq ? ' <span class="lstamp plain">High quality</span>' : '') + (t.make ? ' <span class="lstamp plain">Must craft</span>' : '') +
+      (!DATA.items[t.item] || (t.make && !recs.length) ? ' <span class="lstamp plain gone">no longer in the game data</span>' : '');
+    return rowHtml({ cls: 'wanted-row' + (t.done ? ' done' : ''), attrs: ' data-key="' + esc(key) + '" data-item="' + t.item + '" data-q="' + q + '" data-owner="' + esc(owner) + '"', role: t.done ? 'r-ready' : 'r-slab', rk: rk, fig: t.qty, word: t.done ? 'finished' : 'wanted', wcls: t.done ? 'role role-ready' : '',
+      name: name, stamps: stamps, icons: iconSet(crafterJobs(t.item).map(function (j) { return JOBS[j]; })), l2: l2, done: t.done,
+      mid: t.done || NARROW.matches ? '' : stepperHtml(name, typed, q, false), prim: t.done ? '' : rb('Finished', 'done', '', 'lbtn-r'),
+      drawer: function () {
+        var d = '';
+        if (shown) d += reasonOf(V, ln, null);
+        else if (t.make && !ln && !t.done && DATA.recipes[recipeOfTarget(t)]) { var orr = DATA.recipes[recipeOfTarget(t)]; d += '<p class="why own-state">Crafted by ' + (JOBS[orr[2]] || 'a crafter') + ', level ' + orr[3] + '.</p>'; } // W15: the row's own recipe and job
+        var fold = NARROW.matches && !SH.view.edit[key];
+        var ed = '<div class="w-edit"><label class="lfld amt"><span class="lab">Amount</span><input type="number" inputmode="numeric" min="1" max="99999" data-f="qty" value="' + t.qty + '"></label><span class="ticks">';
+        if (canHq(t.item) || t.hq) ed += flagBox(key, 'hq', 'High quality', t.hq);
+        if (canColl(t.item) || t.coll) ed += flagBox(key, 'coll', 'Collectable', t.coll);
+        if (recs.length || t.make) ed += flagBox(key, 'make', 'Must be crafted by me', t.make);
+        ed += '</span>';
+        if (stepIds.length) ed += '<label class="lfld"><span class="lab">Step</span><select data-f="step"><option value="">' + esc(steps[stepIds[0]].name) + ' (first)</option>' + stepIds.slice(1).map(function (s) {
+          return '<option value="' + esc(s) + '"' + (t.step === s ? ' selected' : '') + '>' + esc(steps[s].name) + '</option>'; }).join('') + '</select></label>';
+        ed += '</div>'; if (!fold) d += ed;
+        if (shown && !isCrafted(ln)) d += wayBlock(V, ln);
+        d += stepperBlock(name, typed, q);
+        if (SH.view.bought === key && !t.done) d += boughtBox(V, key, need, q);
+        d += wayActs(V, shown ? ln : null, t.done ? rb('Not finished', 'done', '', 'lbtn-o') : rb('Bought it', 'ask-bought', '', 'lbtn-o'),
+          (fold ? lk('Amount, quality and step', 'edit', ' data-k="' + esc(key) + '"') + ' ' : '') + (SH.view.confirm === key ? '<span class="ask">Remove this wanted item?</span> ' + rb('Remove', 'remove', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove">Remove</button>'));
+        return d;
+      } });
+  }
+  // a search result is a row whose whole face is the add action: the item's name, the ways it can be had, and what it is
+  function hitHtml(id, name) {
+    var recs = recipesOf(id), g = DATA.gather && DATA.gather[id], r0 = recs[0] && DATA.recipes[recs[0]], off = offersFor(id, 'normal'), st = '';
+    if (recs.length) st += '<span class="role role-craft">Craft</span> ';
+    if (g) st += '<span class="role role-gather">Gather</span> ';
+    if (off.gil.length) st += '<span class="role role-merchant">Merchant</span> ';
+    else if (off.trade.length) st += '<span class="role role-merchant">Trade</span> ';
+    var info = r0 ? 'Crafted by ' + (JOBS[r0[2]] || 'a crafter') + ', level ' + r0[3] + '.' : g ? 'Gathered by ' + (GATHER_JOBS[g[0]] || 'a gatherer') + ', level ' + g[1] + '.' : '';
+    return '<button type="button" class="hit r-accent" data-act="add" data-item="' + id + '" aria-label="Add ' + esc(name) + '"><span class="cnt"><b>+</b><i>add</i></span><span class="opener"><span class="l1"><span class="nm">' + esc(name) + '</span> ' + st + '</span><span class="l2">' + esc(info) + '</span></span></button>';
   }
   function hitsHtml() {
     var res = search(SH.view.search);
     if (SH.view.search.trim().length < 2) return '';
-    return '<ul class="hits">' + (res.length ? res.map(function (n) { return '<li><span>' + esc(n[1]) + '</span> ' + btn('Add', 'add', ' data-item="' + n[0] + '" aria-label="Add ' + esc(n[1]) + '"') + '</li>'; }).join('') : '<li class="muted">No item matches.</li>') + '</ul>';
+    return '<div class="hits ledger">' + (res.length ? res.map(function (n) { return hitHtml(n[0], n[1]); }).join('') : '<p class="muted empty-line">No item matches.</p>') + '</div>';
   }
   function wantedTab(V, id, h, keys) {
     var shown = keys.filter(function (k) { var t = V.sc.targets[k]; return !(SH.view.hide && (t.done || (t.make && (t.crafted || 0) >= t.qty))); });
-    return '<section class="lists-panel"><h2>Wanted</h2><div class="add-bar"><label>Add items <input type="search" data-f="search" autocomplete="off" value="' + esc(SH.view.search) + '" placeholder="Type part of an item name"></label> ' +
-      '<label>Amount <input type="number" inputmode="numeric" min="1" max="99999" data-f="addqty" value="1"></label></div>' +
+    return '<section class="lists-panel tab-wanted"><h2 class="sr">Wanted</h2><div class="add-bar"><label class="lfld q"><span class="lab">Add items</span><input type="search" data-f="search" autocomplete="off" value="' + esc(SH.view.search) + '" placeholder="Type part of an item name"></label>' +
+      '<label class="lfld a"><span class="lab">Amount</span><input type="number" inputmode="numeric" min="1" max="99999" data-f="addqty" value="1"></label></div>' +
       '<div class="hits-box">' + hitsHtml() + '</div>' +
-      (shown.length ? '<ul class="wanted">' + shown.map(function (k) { return renderRow(V, id, h, k); }).join('') + '</ul>' : '<p class="muted empty-line">' + (keys.length ? 'Everything here is finished or crafted.' : 'Add the first item.') + '</p>') +
-      '<p class="muted">You type what you have. This app never reads the game. Clearing an amount keeps the old amount; only Remove removes.</p></section>';
+      (shown.length ? '<ul class="wanted lines">' + shown.map(function (k) { return renderRow(V, id, h, k); }).join('') + '</ul>' : '<p class="muted empty-line"><span class="ring" aria-hidden="true"></span>' + (keys.length ? 'Everything here is finished or crafted.' : 'Add the first item.') + '</p>') +
+      '<p class="muted fine">You type what you have. This app never reads the game. Clearing an amount keeps the old amount; only Remove removes.</p></section>';
   }
   function renderList() {
     var sc = sec(), id = SH.view.list, h = sc.lists[id];
@@ -937,8 +1055,8 @@
   // the combined view: the ticked lists of one character, each row the sum of their shares (spec section 7)
   function renderCombined() {
     var sc = sec(), owner = SH.view.combinedOwner, ids = S.combined(sc).filter(function (i) { return S.ownerOf(sc.lists[i]) === owner; });
-    if (ids.length < 2) { RAIL = { kind: 'home' }; main.innerHTML = '<div class="lists-empty"><p>Tick two or more lists of one character.</p><p class="muted">Each character has its own stock.</p></div>'; return; }
-    var V = buildV(ids, owner), sums = sumShares(V.plan, ids, null), tab = SH.view.tab === 'craft' ? 'craft' : 'get', f0 = figures(V.plan, V.plan.lines);
+    if (ids.length < 2) { RAIL = { kind: 'home' }; main.innerHTML = '<p class="muted empty-line lists-empty"><span class="ring" aria-hidden="true"></span>Tick two or more lists of one character.</p><p class="muted fine">Each character has its own stock.</p>'; return; }
+    var V = buildV(ids, owner), sums = (V.combined = true, sumShares(V.plan, ids, null)), tab = SH.view.tab === 'craft' ? 'craft' : 'get', f0 = figures(V.plan, V.plan.lines);
     RAIL = { kind: 'combined', get: f0.get, craft: f0.craft };
     main.innerHTML = headHtml(V, { combined: true }) + '<section class="lists-panel tab-' + tab + '">' + (tab === 'craft' ? craftTab(V, sums) : getTab(V, sums)) + '</section>' + sheetFor(V, null, null);
   }
@@ -1001,12 +1119,12 @@
     ownerListIds(sc, owner).forEach(function (lid) { targetsOf(sc, lid).forEach(function (k) { var t = sc.targets[k]; if (t.item === item && t.make && !t.done && recipeOfTarget(t) === recipe) out.push(k); }); });
     return out;
   }
-  function openList(id) { SH.view.list = id; SH.view.combined = false; SH.view.search = ''; SH.view.confirm = null; SH.view.bought = null; SH.view.step = null; SH.view.sheet = false; SH.note = ''; }
+  function openList(id) { SH.view.row = null; SH.view.notice = false; SH.view.noticeAll = false; SH.view.more = null; SH.view.list = id; SH.view.combined = false; SH.view.search = ''; SH.view.confirm = null; SH.view.bought = null; SH.view.step = null; SH.view.sheet = false; SH.note = ''; }
   function onClick(ev) {
     var b = ev.target.closest('[data-act]'); if (!b || b.disabled) return;
     var a = b.getAttribute('data-act'), r = rowOf(b), c = ctxOf(b), listId = SH.view.list, card = b.closest('[data-list]');
     switch (a) {
-      case 'from-log': loadCore().then(function () { openLog(null); render(); }, function (e) { SH.note = e.message; render(); }); break;
+      case 'from-log': SH.view.row = null; loadCore().then(function () { openLog(null); render(); }, function (e) { SH.note = e.message; render(); }); break;
       case 'log-cancel': SH.view.log = null; render(); break;
       case 'log-char': SH.view.log.char = b.getAttribute('data-char'); render(); break;
       case 'log-create': {
@@ -1014,17 +1132,17 @@
         act(logCreate(lch, LV.job, LV.page, ids), { after: function (x) { SH.view.log = null; if (x.id) openList(x.id); SH.view.tab = 'craft'; } });
         break;
       }
-      case 'new': SH.view.form = true; render(); var nm = main.querySelector('[data-f=newname]'); if (nm) nm.focus(); break;
-      case 'cancel-new': SH.view.form = false; render(); break;
+      case 'new': SH.view.form = true; SH.view.sheet = 'new'; render(); var nm = main.querySelector('[data-f=newname]'); if (nm) nm.focus(); break;
+      case 'cancel-new': SH.view.form = false; SH.view.sheet = false; render(); refocusOpener(); break;
       case 'create': {
-        var form = b.closest('[data-form]'), name = form.querySelector('[data-f=newname]').value, ch = form.querySelector('[data-f=newchar]').value || null;
-        act(function (s) { var x = S.newList(s, { name: name, charId: ch, stamp: DATA.stamp }, CTX()); return x; }, { after: function (x) { SH.view.form = false; if (x.id) openList(x.id); SH.view.tab = 'wanted'; } });
+        var form = main.querySelector('[data-form=new]'), name = form.querySelector('[data-f=newname]').value, ch = form.querySelector('[data-f=newchar]').value || null;
+        act(function (s) { var x = S.newList(s, { name: name, charId: ch, stamp: DATA.stamp }, CTX()); return x; }, { after: function (x) { SH.view.form = false; SH.view.sheet = false; if (x.id) openList(x.id); SH.view.tab = 'wanted'; } });
         break;
       }
       case 'open': openList(card.getAttribute('data-list')); SH.view.tab = 'wanted'; render(); break;
-      case 'back': SH.view.log = null; SH.view.sheet = false; SH.view.list = null; SH.view.combined = false; SH.view.confirm = null; SH.view.bought = null; render(); break;
-      case 'combined': SH.view.combined = true; SH.view.list = null; SH.view.combinedOwner = b.getAttribute('data-owner'); SH.view.tab = 'get'; SH.view.confirm = null; SH.view.bought = null; SH.view.sheet = false; SH.note = ''; render(); break;
-      case 'tab': SH.view.tab = b.getAttribute('data-tab'); SH.view.confirm = null; SH.view.bought = null; render(); break;
+      case 'back': SH.view.row = null; SH.view.more = null; SH.view.log = null; SH.view.sheet = false; SH.view.list = null; SH.view.combined = false; SH.view.confirm = null; SH.view.bought = null; render(); break;
+      case 'combined': SH.view.row = null; SH.view.combined = true; SH.view.list = null; SH.view.combinedOwner = b.getAttribute('data-owner'); SH.view.tab = 'get'; SH.view.confirm = null; SH.view.bought = null; SH.view.sheet = false; SH.note = ''; render(); break;
+      case 'tab': SH.view.tab = b.getAttribute('data-tab'); SH.view.row = null; SH.view.confirm = null; SH.view.bought = null; render(); break;
       case 'step': SH.view.step = b.getAttribute('data-step') || null; SH.view.confirm = null; render(); break;
       case 'sec': { var sid = b.getAttribute('data-sec'); SH.view.open[sid] = !SH.view.open[sid]; render(); break; }
       case 'hide': { var hv = !SH.view.hide; SH.view.hide = hv; render(); act(function (s) { return prefEdit(s, 'hideDone', hv); }); break; }
@@ -1033,13 +1151,25 @@
       case 'settings': SH.view.sheet = 'settings'; render(); break;
       case 'prices-sheet': SH.view.sheet = 'prices'; render(); break;
       case 'sheet': SH.view.sheet = SH.view.sheet === 'order' ? false : 'order'; render(); if (!SH.view.sheet) refocusOpener(b); break;
-      case 'sheet-close': SH.view.sheet = false; render(); refocusOpener(b); break;
+      case 'sheet-close': SH.view.sheet = false; SH.view.form = false; render(); refocusOpener(b); break;
+      case 'row': {
+        var rk = b.getAttribute('data-rk'); SH.view.row = SH.view.row === rk ? null : rk; SH.view.bought = null; SH.view.confirm = null; render();
+        [].some.call(main.querySelectorAll('[data-act=row]'), function (o) { if (o.getAttribute('data-rk') === rk) { o.focus(); return true; } return false; });
+        break;
+      }
+      case 'spots': { var sk = b.getAttribute('data-k'); SH.view.spots[sk] = !SH.view.spots[sk]; render(); break; }
+      case 'offers': { var ok2 = b.getAttribute('data-k'); SH.view.offers[ok2] = !SH.view.offers[ok2]; render(); break; }
+      case 'edit': { var ek = b.getAttribute('data-k'); SH.view.edit[ek] = !SH.view.edit[ek]; render(); break; }
+      case 'order-open': SH.view.sheet = 'order'; render(); break;
+      case 'more': { var mid = card.getAttribute('data-list'); SH.view.more = SH.view.more === mid ? null : mid; SH.view.confirm = null; render(); break; }
+      case 'notice': SH.view.notice = !SH.view.notice; render(); break;
+      case 'notice-all': SH.view.noticeAll = true; render(); break;
       case 'ask-remove-list': SH.view.confirm = 'list:' + card.getAttribute('data-list'); render(); break;
-      case 'keep': SH.view.confirm = null; render(); break;
+      case 'keep': SH.view.confirm = null; SH.view.more = null; render(); break;
       case 'ask-remove-orphans': SH.view.confirm = 'orphan:' + b.closest('[data-orphan]').getAttribute('data-orphan'); render(); break;
       case 'remove-orphans': { var oid = b.closest('[data-orphan]').getAttribute('data-orphan'); SH.view.confirm = null; act(function (s) { return S.removeOrphans(s, oid); }, { after: noUndo }); break; }
       case 'restore-orphans': { var rid2 = b.closest('[data-orphan]').getAttribute('data-orphan'); var rch = b.closest('[data-orphan]').querySelector('[data-f=restorechar]'), rchar = rch && rch.value ? rch.value : null; act(function (s) { return S.restoreList(s, rid2, CTX(), rchar); }, { after: noUndo }); break; }
-      case 'remove-list': { var lid = card.getAttribute('data-list'); SH.view.confirm = null; act(function (s) { return S.removeList(s, lid); }); break; }
+      case 'remove-list': { var lid = card.getAttribute('data-list'); SH.view.confirm = null; SH.view.more = null; act(function (s) { return S.removeList(s, lid); }); break; }
       case 'add': {
         var qty = main.querySelector('[data-f=addqty]').value, item = +b.getAttribute('data-item'), rid = recipesOf(item)[0] || 0;
         act(function (s) { return labeled(S.addTarget(s, listId, { item: item, recipe: rid, qty: qty }, CTX()), 'Added ' + itemName(item)); });
@@ -1094,10 +1224,10 @@
   }
   [main, tabsEl, statusEl].forEach(function (el) { el.addEventListener('click', onClick); }); // the page, the rail and the status line are three places of one screen
   // a closed sheet gives the focus back to the control that opened it; Escape closes it (A7); Tab stays inside it while it is open
-  function refocusOpener() { var o = main.querySelector('[data-act=settings], [data-act=prices-sheet]'); if (o) o.focus(); }
+  function refocusOpener() { var o = main.querySelector('[data-act=settings], [data-act=prices-sheet], [data-act=new]'); if (o) o.focus(); }
   document.addEventListener('keydown', function (ev) {
     if (!SH.view.sheet) return;
-    if (ev.key === 'Escape') { SH.view.sheet = false; render(); refocusOpener(); ev.preventDefault(); return; }
+    if (ev.key === 'Escape') { SH.view.sheet = false; SH.view.form = false; render(); refocusOpener(); ev.preventDefault(); return; }
     if (ev.key !== 'Tab') return;
     var sh = main.querySelector('.lsheet'); if (!sh) return;
     var f = [].filter.call(sh.querySelectorAll('button, input, select, a[href], [tabindex]'), function (e) { return !e.disabled && e.offsetParent !== null; });
@@ -1138,6 +1268,7 @@
   window.__lists = { reload: reload, state: SH, data: function () { return DATA; }, section: function () { return SH.sec; }, hold: function (on) { SH.hold = !!on; }, combined: function () { return S.combined(sec()); }, plan: function (owner, noPrices) { return planOf(sec(), owner, noPrices); }, prices: function () { return { place: priceScope(), cache: cache(), error: failNow(), busy: PR.busy }; } };
   setInterval(tickWindows, 15000); // the minutes to a timed node's window move on without a redraw
   window.addEventListener('hashchange', function () { if (DATA && !SH.problem) readHash(); });
+  if (NARROW.addEventListener) NARROW.addEventListener('change', function () { if (DATA && !SH.problem) render(); });
   if (CC) CC.onChange(reload);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reload(); });
   if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) {
