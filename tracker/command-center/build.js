@@ -54,7 +54,6 @@ cp(path.join(T, 'src', 'app', 'shared.css'), 'shared.css');
 for (const f of ['index.html', 'shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);
 // the main Settings (2026-11-12) runs the Tracker's own core code for characters, cloud sync and backups
 for (const f of ['model', 'codec', 'merge', 'cloud', 'storage']) cp(path.join(T, 'src', 'core', f + '.js'), 'core/' + f + '.js');
-cp(path.join(SRC, 'prices.js'), 'prices.js'); // the shared price service (Submersibles, Lists)
 cp(path.join(T, 'src', 'core', 'save.js'), 'save.js'); // the one save, shared with the Tracker and the Atelier (gate 1C)
 for (const f of fs.readdirSync(path.join(SRC, 'icons'))) cp(path.join(SRC, 'icons', f), 'icons/' + f);
 // The Submersibles module page (step S2): its page, script and styles, the shared alerts script, and data.js with a copy
@@ -71,36 +70,6 @@ for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'recs.js', 'dr
   const usePacked = Buffer.byteLength(packedJs) < Buffer.byteLength(plainJs);
   fs.writeFileSync(path.join(OUT, 'submersibles', 'data.js'), usePacked ? packedJs : plainJs);
   console.log('submersibles/data.js: plain', (Buffer.byteLength(plainJs) / 1024).toFixed(1), 'KB, compressed', (Buffer.byteLength(packedJs) / 1024).toFixed(1), 'KB; kept', usePacked ? 'compressed' : 'plain');
-}
-// The Lists module page (work item W6): its page, script and styles, the planning engine, and data.js with data/lists.json
-// plus `log` (the crafting-log pages of the Tracker's craft-* lists, as recipe ids) and `noHandOver` (recipes the Atelier lacks, no link).
-// The build stops when a log recipe id is not in `recipes`, when the Atelier disagrees with the sheets (tools/lists-crosscheck.js) or when
-// data.js is over the 1.5 MB budget. Both sizes are printed.
-for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js', 'store.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
-{
-  const data = JSON.parse(fs.readFileSync(path.join(T, 'data', 'lists.json'), 'utf8'));
-  const tracker = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8'));
-  const JOBS = ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherworker', 'weaver', 'alchemist', 'culinarian'];
-  const log = {};
-  JOBS.forEach((name, job) => {
-    const sec = tracker.sections.find((x) => x.id === 'craft-' + name);
-    if (!sec) throw new Error('lists log: no craft-' + name + ' list in tracker-data.json');
-    log[job] = sec.g.map((g) => [g.t, g.e.map((e) => {
-      if (!data.recipes[e.i]) throw new Error('lists log: recipe ' + e.i + ' (' + e.n + ', ' + sec.id + ', ' + g.t + ') is not in the recipes of data/lists.json');
-      return e.i;
-    })]);
-  });
-  const cross = require('./../tools/lists-crosscheck.js').check(data);
-  console.log('lists cross-check with the Atelier: compared ' + cross.compared + ', agreed ' + cross.agreed + ', no hand-over ' + cross.noHandOver.length);
-  const full = Object.assign({}, data, { log, noHandOver: cross.noHandOver });
-  const json = JSON.stringify(full);
-  const head = '// Built by command-center/build.js from data/lists.json (sources in data/SOURCES.md) and the craft-* lists of data/tracker-data.json.\n';
-  const plainJs = head + 'window.LISTS_DATA=' + json + ';\n';
-  const packedJs = head + 'window.LISTS_DATA_PACKED="' + zlib.deflateRawSync(Buffer.from(json), { level: 9 }).toString('base64') + '";\n';
-  const usePacked = Buffer.byteLength(packedJs) < Buffer.byteLength(plainJs), out = usePacked ? packedJs : plainJs;
-  if (Buffer.byteLength(out) > 1.5 * 1024 * 1024) throw new Error('lists/data.js is over the 1.5 MB budget: ' + Buffer.byteLength(out) + ' bytes');
-  fs.writeFileSync(path.join(OUT, 'lists', 'data.js'), out);
-  console.log('lists/data.js: plain', Buffer.byteLength(plainJs), 'bytes, packed', Buffer.byteLength(packedJs), 'bytes; kept', usePacked ? 'packed' : 'plain');
 }
 fs.writeFileSync(path.join(OUT, 'manifest.webmanifest'), JSON.stringify({
   name: 'Eveniunt Command Center', short_name: 'Command Center', id: './', start_url: './', scope: './', display: 'standalone',

@@ -526,32 +526,3 @@ test('gate 1D, hosted site: a click on the way back before the one-time first-vi
   }
   server.close();
 });
-
-test('W10: the hand-over link atelier/#recipe=<id> selects the recipe, removes the hash and saves nothing; an unknown id changes nothing', async () => {
-  const { ctx, page, errors } = await open();
-  const readDoc = () => page.evaluate(() => new Promise((res) => { const r = indexedDB.open('eveniunt-command-center'); r.onsuccess = () => { const g = r.result.transaction('save').objectStore('save').get('main'); g.onsuccess = () => { r.result.close(); res(JSON.stringify(g.result)); }; }; }));
-  const state = () => page.evaluate(() => ({ job: window.__atelier.S.job, mode: window.__atelier.S.mode, id: window.__atelier.S.recipeId, hash: location.hash }));
-  // the first visit has moved the Atelier's settings into the save (moved.atelier); that is the starting save of this test
-  await page.evaluate(() => window.__atelier.flush());
-  const seeded = await readDoc();
-  assert.ok(JSON.parse(seeded).moved.atelier, 'the first-visit move is recorded');
-  await page.evaluate(() => { location.hash = '#recipe=35829'; });
-  await page.waitForFunction(() => window.__atelier.S.recipeId === 35829 && !location.hash);
-  let s = await state(); assert.deepEqual([s.job, s.mode, s.id, s.hash], [7, 'recipes', 35829, '']);
-  assert.match(await page.textContent("#spec"), /Rarefied Tacos/);
-  await page.waitForTimeout(900);
-  assert.equal(await readDoc(), seeded, 'the save is byte-identical after the link');
-  // an unknown id: the Atelier's own message, nothing changed, hash removed
-  await page.evaluate(() => { location.hash = '#recipe=987654321'; });
-  await page.waitForFunction(() => !location.hash);
-  assert.match(await page.textContent('#toast, .toast'), /Recipe: \?/);
-  s = await state(); assert.deepEqual([s.job, s.mode, s.id], [7, 'recipes', 35829]);
-  // a fresh load with the hash in the address
-  await page.goto(URL + '#recipe=34415'); await page.reload();
-  await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier && window.__atelier.S.recipeId === 34415 && !location.hash, null, { timeout: 30000 });
-  s = await state(); assert.deepEqual([s.mode, s.id, s.hash], ['recipes', 34415, '']);
-  await page.waitForTimeout(900);
-  assert.equal(await readDoc(), seeded, 'the save is still byte-identical');
-  assert.deepEqual(errors, []);
-  await ctx.close();
-});

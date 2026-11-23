@@ -73,8 +73,6 @@
         live('submersibles', (sum.back ? '<b>' + sum.back + ' back now</b> · ' : '') + (sum.next ? 'next back ' + esc(FLEET.fmtClock(sum.next.sub.voyage.returnAt, now)) + ' (' + esc(FLEET.subLabel(sum.next)) + ')' : 'none out') + ' · ' + nf + ' free compan' + (nf === 1 ? 'y' : 'ies'));
       } else live('submersibles', 'No free company yet');
       var crafters = at && at.chars ? Object.keys(at.chars).length : 0;
-      var ls = doc && doc.modules.lists, nl = ls && ls.lists ? Object.keys(ls.lists).length : 0;
-      live('lists', nl ? nl + ' list' + (nl === 1 ? '' : 's') : 'No lists yet');
       live('atelier', crafters ? 'Crafter stats for ' + crafters + ' character' + (crafters === 1 ? '' : 's') : '');
     }).catch(function () { if (box) box.hidden = true; });
   }
@@ -94,5 +92,5 @@
   if (window.CC) CC.onChange(readSubs);
 
   setInterval(showSave, 30000); // keeps the next-back line current
-  window.__commandCenter = { version: 1, modules: ['tracker', 'atelier', 'submersibles', 'lists'], showSave: showSave, markInstalled: markInstalled };
+  window.__commandCenter = { version: 1, modules: ['tracker', 'atelier', 'submersibles'], showSave: showSave, markInstalled: markInstalled };
 })();

@@ -364,5 +364,3 @@ body.solo .lr > .c { min-height: 44px; }
 .cc-menu-link:hover { background: var(--seal); color: var(--on-seal); }
 .cc-menu-link .mm-ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .cc-menu-link:hover .mm-ico { stroke: var(--on-seal); }
-.lr.mk { display: block; padding: 6px 8px 6px 26px; border-bottom: 1px solid var(--rule); }
-.mk-list { font: 600 13px var(--f-body); color: var(--seal); }
