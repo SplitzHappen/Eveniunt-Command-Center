@@ -1,0 +1,92 @@
+[
+  {
+    "severity": "NOTE",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 114,
+    "title": "Job icons render as flat theme-ink silhouettes (CSS mask), not the game's coloured icons the owner asked for",
+    "consequence": "Nothing is wrong or unreadable; the shapes are the game's and pass 3:1 contrast in all 21 themes, but the look is flatter than the Teamcraft icons the owner asked to see.",
+    "fix": "Owner taste: keep the mask, or drop it and show the coloured PNG (re-measure per-icon contrast per theme; the test exists).",
+    "evidence": "lists.css:114 mask rules; lists-roles.test.js mask test; docs/lists-look-spec.md D-C2; craft-desktop-light.png, get-gather-desktop-light.png"
+  },
+  {
+    "severity": "NOTE",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 660,
+    "title": "Zone and city sub-heads inside Gather / Buy-from-a-merchant are 14 px tall strips",
+    "consequence": "Legible with their counts in the screenshots, but the tightest element on screen; the 44 px head rule covers section heads only.",
+    "fix": "Optionally give .zone-head ~24-28 px height.",
+    "evidence": "lists.css:660; get-gather-desktop-light.png, project-desktop-light.png"
+  },
+  {
+    "severity": "NOTE",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 541,
+    "title": "Phone gather rows at rest hide node name, aetheryte and 'need N, have N' (deliberate, red-team finding 15)",
+    "consequence": "Row stays within 96 px; the count block carries the number and the opened row lists every spot in full. Recorded so it is known to be deliberate.",
+    "fix": "None needed.",
+    "evidence": "lists.css:541; get-gather-phone-dark.png, get-gather-open-desktop-light.png"
+  },
+  {
+    "severity": "NOTE",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/engine.js",
+    "line": 419,
+    "title": "To craft can show the same job as two numbered heads when craft order interleaves jobs",
+    "consequence": "Reads as craft order (heads numbered 1..7), not as a duplicate; no wrong figures.",
+    "fix": "None needed.",
+    "evidence": "engine.js:419-435 block-greedy craft order; craft-hq-desktop-light.png (Leatherworker heads 5 and 7)"
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 670,
+    "title": "Trade reason sentence is terse: '1 Ixali Oaknot for 2.' (the item name is omitted after 'for')",
+    "consequence": "Readable because the row name sits beside it, but the drawer's 'Chosen trade' line repeats it bare; a player could misread which way the exchange goes.",
+    "fix": "End the sentence with the item name: '...for 2 Coke.'",
+    "evidence": "lists.js:670 offerText / reasonText trade branch; project-desktop-light.png Coke row"
+  },
+  {
+    "severity": "NOTE",
+    "area": "look",
+    "file": "docs/lists-redesign/build/measures.json",
+    "line": 0,
+    "title": "Phone budgets met; Wanted first row at 210 px (inside the 256 px strip exception)",
+    "consequence": "All measured limits hold: phone rows <=96 px rest / <=360 px opened, <=2 controls, 1 primary, no sideways scroll; desktop rows <=64 px, 9-11 rows in view.",
+    "fix": "None needed.",
+    "evidence": "docs/lists-redesign/build/measures.json (phone-dark get/craft/wanted/combined, desktop-light blocks)"
+  },
+  {
+    "severity": "MAJOR",
+    "area": "code",
+    "file": "tracker/tools/lists-data.py",
+    "line": 526,
+    "title": "Timed-node window length keeps Teamcraft's minutes; the game sheet's own Duration was never proved equal, so 'closes ..., in N min' can be wrong (start hours verified for all 195 timed rows)",
+    "consequence": "A player can be told a node is open when it has closed, or given a wrong countdown, and be sent to a closed gathering node. Already listed as a known limit in SOURCES.md and STATE.md.",
+    "fix": "Prove the Duration unit of GatheringRarePopTimeTable once and use the sheet value with a stop rule; until then show only 'opens X Eorzea time'.",
+    "evidence": "lists-data.py:515,526 (n.get('duration') or 120); docs/SOURCES.md 'Window' note ('NOT proved'); docs/STATE.md Known limits; GatheringRarePopTimeTable.csv at xivapi/ffxiv-datamining@44948e4c (StartTime 900 / Duration 300 rows); get-gather-open-desktop-light.png window lines"
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/src/core/merge.js",
+    "line": 394,
+    "title": "The item-name lookup for sync questions (save.js 6th parameter) is plumbed and tested but no production caller passes it, so sync questions name Lists items by number everywhere, including the Command Center",
+    "consequence": "In a rare cross-device clash the question reads 'the amount Tamsin Reed has of item 5056' instead of the item's name; nothing is deleted either way, but the choice is harder to check.",
+    "fix": "Pass a name lookup from the Command Center (it can read the Lists data) at merge.js:392 and :394; Tracker keeps numbers until it loads the Lists data.",
+    "evidence": "save.js:303-330 (listsLabel itemName param, number fallback); merge.js:392,394 (5-arg calls); lists-patch.test.js:77-89 (R6-2 test passes a lookup); grep: no 6-arg production call; docs/STATE.md Known limits"
+  },
+  {
+    "severity": "NOTE",
+    "area": "code",
+    "file": "tracker/tests/lists-roles.test.js",
+    "line": 1,
+    "title": "lists-look.test.js replaced by lists-roles.test.js without losing coverage; one browser assertion changed deliberately (S5: unknown never shown as 0)",
+    "consequence": "Contrast (4.5:1 in 21 themes x 2 modes), sRGB, hue floors, no raw colour outside the token block, word per role, 40 px phone targets, status-line form and mono-only-figures are all still asserted, plus new generated-doc/pointer/mask checks; C166 now expects 'No market prices yet' instead of 'about 0 gil for 0 items'.",
+    "fix": "None needed.",
+    "evidence": "git diff cfae181 HEAD -- tracker/tests/lists-look.test.js tracker/tests/lists-roles.test.js; check.js:6230 (single404 assertion)"
+  }
+]
