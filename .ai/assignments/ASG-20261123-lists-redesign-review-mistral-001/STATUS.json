@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "assignment_id": "ASG-20261123-lists-redesign-review-mistral-001",
+  "status": "READY",
+  "work_class": "audit",
+  "requested_by": "claude",
+  "assigned_to": "mistral",
+  "branch": "assignments/ASG-20261123-lists-redesign-review-mistral-001",
+  "package_commit": "8620f8371d0b23e3d723cb790b0f883ef8e2a442",
+  "candidate": {
+    "pr": 4,
+    "head_sha": "ec24562d3a1ee12ac5f99e7bed4b66a3904c3e33",
+    "ref": "claude/blissful-fermat-hrrqp5"
+  },
+  "result_paths": [],
+  "result_commit": null,
+  "completed_at": null,
+  "disposition": null
+}
