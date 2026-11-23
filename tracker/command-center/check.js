@@ -7865,6 +7865,38 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── C178 (Lists, R2) The chosen spot, the real data: a two-item route (Helmet Crab, lowest spot Lv. 15 Western La Noscea, and Highland Parsley, only in Lower La Noscea) shows the crab at its Lower La Noscea spot and says why, while the crab alone keeps its lowest spot and says nothing; Fire Cluster (Mor Dhona 13, 17 and 21, Mor Dhona 1, 5 and 9 and Middle La Noscea 19) alone shows the window of its own node (Eorzea 13, 17 and 21, not the merged "open now" all day), and with a Middle La Noscea item on the list it shows that zone's node (19). ──
+    await guard('C178', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Route', charId: 'c1', items: [[4880, 1], [4784, 1]] }, { name: 'Crab', charId: 'c2', items: [[4880, 1]] }, { name: 'Clusters', charId: 'c3', items: [[14, 1]] }, { name: 'Clusters on route', charId: 'c4', items: [[14, 1], [7718, 1]] }]);
+      const rowText = async (it) => { const r = page.locator('.get-row[data-item="' + it + '"]'); await lOpen(r); return { text: (await r.textContent()).replace(/\s+/g, ' '), hours: await r.locator('.w-window').first().getAttribute('data-hours').catch(() => null), win: await r.locator('.w-window').first().textContent().catch(() => '') }; };
+      const show = async (name) => { await lOpenList(page, name, 'get'); await lOpenAll(page); };
+      await show('Route');
+      const crab = await rowText(4880), pars = await rowText(4784);
+      ck.routeSpot = /Lv\. 20 [^·]*· Lower La Noscea \(X/.test(crab.text) && /Chosen: on your route in Lower La Noscea/.test(crab.text) && !/Lv\. 15 [^·]*· Western La Noscea \(X[^)]*\) · [^·]*· Chosen/.test(crab.text);
+      ck.drawerSays = /haveHave allChosen: on your route in Lower La Noscea\.Lv\. 20 /.test(crab.text); // the opened row's first line, then the spot list with the shown spot first
+      ck.otherRowPlain = /Lower La Noscea/.test(pars.text) && !/Chosen:/.test(pars.text);
+      ck.everySpotListed = /Salt Strand[^]*Brewer's Beacon/.test(crab.text.slice(crab.text.indexOf('Chosen: on your route in Lower La Noscea.')));
+      await show('Crab');
+      const alone = await rowText(4880);
+      ck.aloneLowest = /Lv\. 15 [^·]*· Western La Noscea \(X/.test(alone.text) && !/Chosen:/.test(alone.text);
+      await show('Clusters');
+      const c1 = await rowText(14);
+      ck.ownWindow = c1.hours === '13,17,21' && /Eorzea time/.test(c1.win) && !/open now, closes [0-9:]+ Eorzea time, in 1[0-9]+ h/.test(c1.win);
+      ck.notMerged = c1.hours !== '1,5,9,13,17,19,21';
+      await show('Clusters on route');
+      const c2 = await rowText(14);
+      ck.routeWindow = c2.hours === '19' && /Chosen: on your route in Middle La Noscea/.test(c2.text);
+      ck.noErrors = real(errors).length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('C178', 'Lists page, the chosen spot (real data): a two-item route shows the item at its spot in the zone the other row uses and says why, alone it keeps its lowest spot; a clusters row shows the window of the chosen node (13, 17 and 21, or 19 on a route through Middle La Noscea), never the merged window',
+        Object.values(ck).every(Boolean), { ck, crab, pars, alone, c1, c2, errors: real(errors), external });
+      void server;
+    });
+
     // ── DR1 (Lists, B6) The design rules of docs/design-rules.md, measured on every list screen at 1,440 px light and 360 px dark with the real game data. `designRules(page, opts)` is the reusable helper (rows, opener,
     //    status, purpose fields): it measures the screen in front of it and returns the problems it found by rule. The walk asserts there are none; the self-test breaks each rule on purpose and asserts the helper sees it. ──
     const designRules = (page, opts) => page.evaluate((o) => {

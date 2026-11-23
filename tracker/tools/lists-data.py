@@ -35,9 +35,6 @@ Output tables (all ids are game row ids; compact arrays):
           (0 and 0 when untimed). folklore: the name of the folklore book the node needs, or 0. hidden: 1 when the item is a
           hidden item of the node. A fishing spot (fish, not spearfishing) has a twelfth entry, the spot's name, and the
           node's name row 0. An item whose nodes have no map position has one entry with x and y 0 and the zone if known.
-  gatherLegacy  {item: [job, level, zone, hours or 0, minutes or 0]}   the former shape of gather (the page of
-          work item W6 still reads it until B3 and B5 of docs/lists-look-spec.md move it to gather); the build puts it back
-          under the name gather in the page's data and offers the new table as spots.
   nodeNames  {row: "Rocky Outcrop"}   the names of the rows used, from the game sheet GatheringPointName.
   aetherytes  {id: name}   the aetherytes named in gather (Teamcraft aetherytes.json, type 0; names from PlaceName).
   crafters  {item: [[recipe, job, level]...]}   every recipe of an item, lowest level then lowest recipe id first (the
@@ -418,25 +415,6 @@ def build():
     FSRC = tc("fishing-sources")
     SPOTS = {s["id"]: s for s in tc("fishing-spots")}
 
-    # the legacy shape, exactly as the page of work item W6 reads it
-    legacy = {}
-    for it in sorted(closure):
-        ns = by_item.get(it) or by_item.get(sublime_of.get(it)) or []
-        if ns:
-            ns = sorted(ns, key=lambda p: (bool(p[1].get("spawns")), p[1].get("level", 0), p[0]))
-            n0 = ns[0][1]
-            hours = 0
-            minutes = 0
-            if all(n.get("spawns") for _, n in ns):
-                hours = sorted(set(h for _, n in ns for h in n["spawns"]))
-                minutes = max(n.get("duration") or 120 for _, n in ns)
-            legacy[it] = [0 if n0.get("type") in (0, 1) else 1, level_of.get(it) or n0.get("level", 0),
-                          place.get(i(n0.get("zoneid")), ""), hours, minutes]
-            continue
-        spots = sorted((SPOTS[s["spot"]] for s in FSRC.get(str(it)) or [] if s.get("spot") in SPOTS), key=lambda s: (s.get("level", 0), s["id"]))
-        if spots:
-            legacy[it] = [2, spots[0].get("level", 0), place.get(i(spots[0].get("placeId")), ""), 0, 0]
-
     # the map position of every Teamcraft node, proved against the game sheets: the sheet's own world X and Z
     # (ExportedGatheringPoint, keyed by the node id) through the map's size factor and offsets must give Teamcraft's
     # x and y (the game's map scale); the node id must be a GatheringPointBase with GatheringPoint rows of one point type
@@ -572,7 +550,7 @@ def build():
     if len(stamp) > 40:
         stop("the stamp is %d characters" % len(stamp))
     return {"stamp": stamp, "items": items, "recipes": recipes, "crafters": crafters, "gather": gather,
-            "gatherLegacy": legacy, "nodeNames": node_names, "aetherytes": aeth_used, "trades": trades, "npcs": npcs,
+            "nodeNames": node_names, "aetherytes": aeth_used, "trades": trades, "npcs": npcs,
             "currencies": currencies, "sellers": sellers_of, "books": books, "bookNames": book_names, "projects": projects}
 
 

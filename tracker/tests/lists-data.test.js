@@ -146,13 +146,19 @@ test('LD-3 timed windows equal conditions.json wherever both hold the item', () 
   for (const s of T.sections) if (s.id.startsWith('gather-')) for (const g of s.g) for (const e of g.e) item[s.id + ':' + e.i] = e.it;
   let both = 0;
   for (const [key, win] of Object.entries(C)) {
-    const g = D.gatherLegacy[item[key]];
-    if (!g) continue;
+    const spots = D.gather[item[key]];
+    if (!spots) continue;
     both++;
-    assert.deepEqual([g[3], g[4]], [win[0], win[1]], key);
+    // R2: windows are per spot now (the former table merged them across nodes: a merged window said "open now" all day), so
+    // the Tracker's window (the merge over every node of the item) must contain each timed spot's own window
+    for (const sp of spots) {
+      if (sp[7] === 0) continue;
+      assert.ok(sp[7].every((h) => win[0].includes(h)) && sp[8] <= win[1], key + ': spot ' + JSON.stringify([sp[7], sp[8]]) + ' within ' + JSON.stringify(win));
+    }
   }
   assert.ok(both > 100, 'items compared: ' + both);
-  for (const g of Object.values(D.gatherLegacy)) assert.ok((g[3] === 0 && g[4] === 0) || (Array.isArray(g[3]) && g[3].length && g[4] > 0));
+  for (const spots of Object.values(D.gather)) for (const s of spots) assert.ok((s[7] === 0 && s[8] === 0) || (Array.isArray(s[7]) && s[7].length && s[8] > 0));
+  assert.equal(D.gatherLegacy, undefined, 'the former table is gone');
 });
 
 test('LD-4 a trade that gives several keeps its ratio', () => {

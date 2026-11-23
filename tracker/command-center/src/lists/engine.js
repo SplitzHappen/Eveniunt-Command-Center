@@ -521,4 +521,38 @@
     }
     return null;
   };
+  // R2 (docs/lists-redteam.md, the owner's answer 1A): the one spot a gather row shows. `ctx` is { spots, plan }: spots is the page's
+  // table { item: [[job, nameRow, level, zone, x, y, aetheryte, hours, minutes, folklore, hidden]...] } (best first: lowest level,
+  // then the shortest distance to its aetheryte, then the lowest node id) and plan the result of LISTS.plan. Among the item's
+  // spots it prefers one whose zone has a spot for the most OTHER gather items of the plan (the zones the list's other rows can
+  // use; an item's own spots never vote for it), then the lowest level, then the nearest aetheryte, then the lowest node id (the
+  // last two are the order of the table). Nothing but the plan and the table is read, so one plan always gives the same spot.
+  // Returns null for an item with no spot, else { spot, index, route } with route the zone's other rows (0 when the spot is the
+  // item's lowest) and `why` the plain words, empty unless the spot is not the table's first.
+  var ZC = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function zoneRows(ctx) {
+    var plan = ctx.plan, key = plan && typeof plan === 'object' ? plan : null, hit = ZC && key && ZC.get(key);
+    if (hit && hit.spots === ctx.spots) return hit.zones;
+    var zones = {}, seen = {}, k, ln, sp, j, z, mine;
+    for (k in (plan && plan.lines) || {}) {
+      ln = plan.lines[k];
+      if (!ln || ln.by !== 'gather' || seen[ln.item]) continue;
+      seen[ln.item] = 1; sp = ctx.spots && ctx.spots[ln.item]; mine = {};
+      for (j = 0; sp && j < sp.length; j++) { z = sp[j][3]; if (z && !mine[z]) { mine[z] = 1; zones[z] = (zones[z] || 0) + 1; } }
+    }
+    if (ZC && key) ZC.set(key, { spots: ctx.spots, zones: zones });
+    return zones;
+  }
+  L.chosenSpot = function (item, ctx) {
+    var sp = ctx && ctx.spots && ctx.spots[item];
+    if (!sp || !sp.length) return null;
+    var zones = zoneRows(ctx), own = {}, best = -1, bestN = 0, j, n, isGather = false, k;
+    for (k in (ctx.plan && ctx.plan.lines) || {}) if (ctx.plan.lines[k].item === +item && ctx.plan.lines[k].by === 'gather') { isGather = true; break; }
+    for (j = 0; j < sp.length; j++) if (sp[j][3]) own[sp[j][3]] = 1;
+    for (j = 0; j < sp.length; j++) {
+      n = sp[j][3] ? (zones[sp[j][3]] || 0) - (isGather && own[sp[j][3]] ? 1 : 0) : 0;
+      if (best < 0 || n > bestN || (n === bestN && sp[j][2] < sp[best][2])) { best = j; bestN = n; }
+    }
+    return { spot: sp[best], index: best, route: best ? bestN : 0, why: best ? 'Chosen: on your route in ' + sp[best][3] : '' };
+  };
 })();

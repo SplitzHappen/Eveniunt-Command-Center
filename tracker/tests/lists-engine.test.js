@@ -361,3 +361,59 @@ test('LE-B3b an item whose crafters have identical ingredients plans the same wh
   const strip = (p) => { const c = clone(p); for (const ln of Object.values(c.lines)) { delete ln.recipe; delete ln.job; } for (const o of c.order) delete o.job; return JSON.stringify(c); };
   assert.equal(strip(b).replace(/1099/g, 'R'), strip(a).replace(/1001/g, 'R'));
 });
+
+// ---- R2: the chosen spot of a gather row (docs/lists-redteam.md, the owner's answer 1A) ----
+{
+  const sp = (level, zone, hours, minutes) => [0, 1, level, zone, 10, 10, 5, hours || 0, minutes || 0, 0, 0];
+  const gp = (...items) => ({ lines: Object.fromEntries(items.map((i) => [i + '|normal|0', { item: i, by: 'gather' }])) });
+  const ctx = (spots, plan) => ({ spots, plan });
+
+  test('LE-R2a an item whose lowest spot is elsewhere but another spot is in the route zone gets the route spot, and says why', () => {
+    const spots = { 1: [sp(5, 'Elsewhere'), sp(20, 'Mor Dhona')], 2: [sp(15, 'Mor Dhona')] };
+    const c = L.chosenSpot(1, ctx(spots, gp(1, 2)));
+    assert.equal(c.spot, spots[1][1]); assert.equal(c.index, 1); assert.equal(c.route, 1);
+    assert.equal(c.why, 'Chosen: on your route in Mor Dhona');
+    assert.equal(L.chosenSpot(2, ctx(spots, gp(1, 2))).spot, spots[2][0], 'the other row keeps its only spot');
+  });
+
+  test('LE-R2b a list with one gather item gets its lowest spot, and an own zone never votes for itself', () => {
+    const spots = { 1: [sp(5, 'Elsewhere'), sp(20, 'Mor Dhona'), sp(20, 'Mor Dhona')] };
+    const c = L.chosenSpot(1, ctx(spots, gp(1)));
+    assert.equal(c.spot, spots[1][0]); assert.equal(c.index, 0); assert.equal(c.why, '');
+    assert.equal(L.chosenSpot(1, ctx(spots, { lines: {} })).spot, spots[1][0], 'an empty plan gives the lowest spot');
+    assert.equal(L.chosenSpot(9, ctx(spots, gp(1))), null, 'no spots, no choice');
+  });
+
+  test('LE-R2c ties: most other rows, then lowest level, then the table order (nearest aetheryte, lowest node id); deterministic', () => {
+    // two zones with other rows: Zone B has two rows, Zone C one: B wins although C has the lower level
+    let spots = { 1: [sp(5, 'A'), sp(30, 'C'), sp(40, 'B')], 2: [sp(1, 'B')], 3: [sp(1, 'B'), sp(1, 'C')] };
+    assert.equal(L.chosenSpot(1, ctx(spots, gp(1, 2, 3))).spot, spots[1][2]);
+    // equal row counts: the lower level wins
+    spots = { 1: [sp(5, 'A'), sp(40, 'B'), sp(30, 'C')], 2: [sp(1, 'B')], 3: [sp(1, 'C')] };
+    assert.equal(L.chosenSpot(1, ctx(spots, gp(1, 2, 3))).spot, spots[1][2]);
+    // equal count and level: the first of the table (nearest aetheryte, then lowest id)
+    spots = { 1: [sp(5, 'A'), sp(30, 'B'), sp(30, 'C')], 2: [sp(1, 'B')], 3: [sp(1, 'C')] };
+    const a = L.chosenSpot(1, ctx(spots, gp(1, 2, 3))), b = L.chosenSpot(1, ctx(spots, gp(3, 2, 1)));
+    assert.equal(a.spot, spots[1][1]); assert.deepEqual(a, b, 'the order of the lines does not matter');
+    // a row that is not gathered does not vote
+    const other = gp(2); other.lines['3|normal|0'] = { item: 3, by: 'craft' };
+    spots = { 1: [sp(5, 'A'), sp(30, 'C')], 2: [sp(1, 'B')], 3: [sp(1, 'C')] };
+    assert.equal(L.chosenSpot(1, ctx(spots, other)).spot, spots[1][0]);
+  });
+
+  test('LE-R2d the window is the chosen spot\'s own, never merged across spots', () => {
+    const spots = { 1: [sp(50, 'Z1', [1, 5, 9], 180), sp(50, 'Mor Dhona', [13, 17, 21], 180)], 2: [sp(1, 'Mor Dhona')] };
+    const c = L.chosenSpot(1, ctx(spots, gp(1, 2)));
+    assert.deepEqual([c.spot[7], c.spot[8]], [[13, 17, 21], 180]);
+    const alone = L.chosenSpot(1, ctx(spots, gp(1)));
+    assert.deepEqual([alone.spot[7], alone.spot[8]], [[1, 5, 9], 180]);
+  });
+
+  test('LE-R2e the engine still plans from the gather table the build makes from the spots (has a gather source)', () => {
+    const spots = { 103: [sp(5, 'Z', [2], 120)] };
+    const data = clone(D); data.gather = { 103: [0, 5, 'Z', [2], 120] };
+    const p = plan([list('A', [T('a', 103, 1)])], {}, data);
+    assert.equal(line(p, 103).by, 'gather');
+    assert.deepEqual(L.chosenSpot(103, ctx(spots, p)).spot, spots[103][0]);
+  });
+}

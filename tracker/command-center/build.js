@@ -103,10 +103,16 @@ for (const j of ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherwork
   });
   const cross = require('./../tools/lists-crosscheck.js').check(data);
   console.log('lists cross-check with the Atelier: compared ' + cross.compared + ', agreed ' + cross.agreed + ', no hand-over ' + cross.noHandOver.length);
-  // B2 (docs/lists-look-spec.md): data.gather of the page stays the former shape until B3 and B5 move the page to the new
-  // table, which the page's data carries as `spots` (every spot, best first); the former shape is lists.json's `gatherLegacy`.
-  const full = Object.assign({}, data, { gather: data.gatherLegacy, spots: data.gather, log, noHandOver: cross.noHandOver });
-  delete full.gatherLegacy;
+  // R2 (docs/lists-redteam.md): the engine's `gather` table ({item: [job, level, zone, hours or 0, minutes or 0]}, "this item has a
+  // gather source") is built here from the spot table, which the page's data carries as `spots` (every spot, best first). The
+  // single values are those of the item's lowest-level spot (the plan-free choice); the page's chosen spot (LISTS.chosenSpot)
+  // supplies the row's own spot and window, so a window is always that of one shown spot, never merged across nodes.
+  const gatherOf = {};
+  for (const [item, list] of Object.entries(data.gather)) {
+    const s = list[0];
+    gatherOf[item] = [s[0], s[2], s[3], s[7] && s[7].length ? s[7] : 0, s[7] && s[7].length ? s[8] : 0];
+  }
+  const full = Object.assign({}, data, { gather: gatherOf, spots: data.gather, log, noHandOver: cross.noHandOver });
   const json = JSON.stringify(full);
   const head = '// Built by command-center/build.js from data/lists.json (sources in data/SOURCES.md) and the craft-* lists of data/tracker-data.json.\n';
   const plainJs = head + 'window.LISTS_DATA=' + json + ';\n';

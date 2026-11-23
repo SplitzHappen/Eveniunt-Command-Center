@@ -157,10 +157,12 @@
     if (!w) return '';
     return w.open ? 'open now, closes ' + etClock(w.closesAt) + ' Eorzea time, in ' + realDur(w.closesAt - now) : 'opens ' + etClock(w.opensAt) + ' Eorzea time, in ' + realDur(w.opensAt - now);
   }
-  function windowRow(ln, now) {
-    if (!ln.timed) return '';
-    var t = windowText(ln.timed.hours, ln.timed.minutes, now);
-    return t ? '<span class="w-window" data-hours="' + esc(ln.timed.hours.join(',')) + '" data-mins="' + ln.timed.minutes + '">' + esc(t) + '</span>' : '';
+  // R2: the window is the shown (chosen) spot's own; the engine's merged-free `timed` only stands in for data without spots
+  function windowRow(ln, now, timed) {
+    timed = timed === undefined ? ln.timed : timed;
+    if (!timed) return '';
+    var t = windowText(timed.hours, timed.minutes, now);
+    return t ? '<span class="w-window" data-hours="' + esc(timed.hours.join(',')) + '" data-mins="' + timed.minutes + '">' + esc(t) + '</span>' : '';
   }
   function tickWindows() {
     var now = Date.now();
@@ -461,7 +463,11 @@
     } else if (ln.by === 'craft') {
       var r = DATA.recipes[ln.recipe];
       p.push('Crafted by ' + (JOBS[r[2]] || 'a crafter') + ', level ' + r[3]);
-    } else if (ln.by === 'gather' && ln.node) p.push('Gathered by ' + (GATHER_JOBS[ln.node.job] || 'a gatherer') + ', level ' + ln.node.level + ', in ' + ln.node.zone);
+    } else if (ln.by === 'gather' && ln.node) {
+      var cs = chosenSpot(ln.item, V.plan);
+      if (cs) { p.push('Gathered by ' + (GATHER_JOBS[cs.spot[0]] || 'a gatherer') + ', level ' + cs.spot[2] + (cs.spot[3] ? ', in ' + cs.spot[3] : '')); if (cs.why) p.push(cs.why); }
+      else p.push('Gathered by ' + (GATHER_JOBS[ln.node.job] || 'a gatherer') + ', level ' + ln.node.level + ', in ' + ln.node.zone);
+    }
     else if (ln.by === 'market') p.push('Bought on the market board');
     else if (ln.by === 'have') p.push((x ? x.outside : ln.outside) + ' not in your typed stock: you said you already have these');
     else if (ln.by === 'other') p.push('No way to get this is known');
@@ -496,6 +502,10 @@
     return (i < 0 ? '' : esc(name.slice(0, i)) + ' ') + '<span class="nb">' + esc(i < 0 ? name : name.slice(i + 1)) + CHEV + '</span>';
   }
   function spotsOf(item) { return (DATA.spots && DATA.spots[item]) || []; }
+  // R2: the one spot a gather row shows (engine LISTS.chosenSpot: a zone the plan's other gather rows can use first, then the lowest
+  // level); the row's level, node, zone, position, aetheryte and window, the drawer's sentence and the order of the spot list use it
+  function chosenSpot(item, plan) { return E.chosenSpot(item, { spots: DATA.spots, plan: plan }); }
+  function chosenTimed(c) { return c.spot[7] && c.spot[7].length && c.spot[8] > 0 ? { hours: c.spot[7], minutes: c.spot[8] } : null; }
   function spotName(s) { return s[0] === 2 ? (s[11] || 'Fishing spot') : (DATA.nodeNames && DATA.nodeNames[s[1]]) || ''; }
   // D-G1: "Lv. 5 Rocky Outcrop · Lower La Noscea (X 26, Y 21) · Aleport"; an item with no position says so and names its zone when it is known
   function spotText(s) {
@@ -511,9 +521,10 @@
     if (s[10]) p.push('hidden item');
     return p.join(' · ');
   }
-  function spotsBlock(ln) {
+  function spotsBlock(ln, cs) {
     var sp = spotsOf(ln.item), all = !!SH.view.spots[ln.key], now = Date.now(), lim = NARROW.matches ? 2 : 3;
     if (!sp.length) return '';
+    if (cs && cs.index) sp = [cs.spot].concat(sp.slice(0, cs.index), sp.slice(cs.index + 1)); // the shown spot first; every spot stays listed
     var h = '<ul class="spots">' + (all ? sp : sp.slice(0, lim)).map(function (s) {
       var x = spotExtras(s, now);
       return '<li>' + jobImg(GATHER_JOBS[s[0]], false, 'jd') + '<span>' + esc(spotText(s)) + (x ? ' <span class="sx">' + esc(x) + '</span>' : '') + '</span></li>';
@@ -579,17 +590,17 @@
   var ROLE_OF = { vendor: 'r-merchant', trade: 'r-merchant', gather: 'r-gather', market: 'r-market' };
   function getRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, typed = typedOf(V, ln.item, q), held = heldFor(V, key), now = Date.now(), outside = ln.by === 'have';
-    var sp = ln.by === 'gather' ? spotsOf(ln.item) : [], why = sp.length ? spotText(sp[0]) : ln.by === 'other' ? reasonText(V, ln, x) : firstSentence(reasonText(V, ln, x));
+    var sp = ln.by === 'gather' ? spotsOf(ln.item) : [], cs = sp.length ? chosenSpot(ln.item, V.plan) : null, why = cs ? spotText(cs.spot) + (cs.why ? ' · ' + cs.why : '') : ln.by === 'other' ? reasonText(V, ln, x) : firstSentence(reasonText(V, ln, x));
     var l2 = '<span class="w-count">need ' + x.need + ', have ' + typed + '</span>' + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '') +
       (held.length ? ' · <span class="held">' + esc(held.join(', ')) + '</span>' : '') + (why ? '<span class="dsk' + (sp.length ? ' keep' : '') + '"> · ' + esc(why) + '</span>' : '') +
       '';
-    var l3 = (ln.by === 'gather' ? windowRow(ln, now) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
+    var l3 = (ln.by === 'gather' ? (cs ? windowRow(ln, now, chosenTimed(cs)) : windowRow(ln, now)) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
     var jobs = []; sp.forEach(function (s) { var n = GATHER_JOBS[s[0]]; if (n && jobs.indexOf(n) < 0) jobs.push(n); });
     if (ln.by === 'gather' && l3) l3 = '<span class="jm">' + iconSet(jobs) + '</span>' + l3; // a phone shows a timed row's pictures on the window's line (the row stays within 96 px); a desktop row beside the name
     return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : 'to get', wcls: outside ? '' : 'role role-short',
       name: name, stamps: (V.combined ? wayPill(ln, false) : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3, win: ln.by === 'gather' && !!l3,
       mid: NARROW.matches ? '' : stepperHtml(name, typed, q, false), prim: outside ? '' : rb('Have all', 'haveall', ' data-n="' + x.short + '"', 'lbtn-r'),
-      drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : ''); } });
+      drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln, cs) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : ''); } });
   }
   function makeProgress(V, item, recipe) {
     var c = 0, q = 0;
