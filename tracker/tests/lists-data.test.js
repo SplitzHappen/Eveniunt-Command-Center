@@ -28,7 +28,7 @@ const mc = (raw) => 41 * (raw + 1024) / 2048 + 1;
 function csv(head, rows) {
   return [head.join(',')].concat(rows.map((r) => head.map((h) => (h in r ? r[h] : '')).join(','))).join('\n') + '\n';
 }
-const ITEM_HEAD = ['#', 'Name', 'IsUntradable', 'CanBeHq', 'AlwaysCollectable', 'PriceMid'];
+const ITEM_HEAD = ['#', 'Name', 'IsUntradable', 'CanBeHq', 'AlwaysCollectable', 'PriceMid', 'ItemSearchCategory'];
 const REC_HEAD = ['#', 'CraftType', 'ItemResult', 'Ingredient[0]', 'Ingredient[1]', 'Ingredient[2]', 'Ingredient[3]', 'Ingredient[4]',
   'Ingredient[5]', 'Ingredient[6]', 'Ingredient[7]', 'RecipeLevelTable', 'SecretRecipeBook', 'AmountResult', 'AmountIngredient[0]',
   'AmountIngredient[1]', 'AmountIngredient[2]', 'AmountIngredient[3]', 'AmountIngredient[4]', 'AmountIngredient[5]', 'AmountIngredient[6]',
@@ -45,7 +45,20 @@ function writeCache(dir, o) {
   fs.mkdirSync(path.join(dir, DM), { recursive: true });
   fs.mkdirSync(path.join(dir, TCF), { recursive: true });
   const w = (f, t) => fs.writeFileSync(path.join(dir, f), t);
-  w(DM + '/Item.csv', csv(ITEM_HEAD, ITEMS.map(([id, name]) => ({ '#': id, Name: name, IsUntradable: 'False', CanBeHq: 'True', AlwaysCollectable: 'False', PriceMid: 5 }))));
+  w(DM + '/Item.csv', csv(ITEM_HEAD, ITEMS.map(([id, name]) => ({ '#': id, Name: name, IsUntradable: 'False', CanBeHq: 'True', AlwaysCollectable: 'False', PriceMid: 5, ItemSearchCategory: id === 1 || id === 14 ? 0 : 1 }))));
+  // made-up master book, company-craft sheets (R1): one submarine part (Gadget, 2 phases) and one airship part (Nail, 1 phase)
+  w(DM + '/SecretRecipeBook.csv', csv(['#', 'Name', 'Item'], o.books || [{ '#': 1, Name: 'Master Test I', Item: 13 }]));
+  const C = o.company || {};
+  w(DM + '/CompanyCraftSequence.csv', csv(['#', 'ResultItem', 'Category', 'CompanyCraftPart[0]', 'CompanyCraftPart[1]'], C.seq || [
+    { '#': 1, ResultItem: 20, Category: 7, 'CompanyCraftPart[0]': 1, 'CompanyCraftPart[1]': 0 }, { '#': 2, ResultItem: 12, Category: 5, 'CompanyCraftPart[0]': 2, 'CompanyCraftPart[1]': 0 },
+    { '#': 3, ResultItem: 10, Category: 2, 'CompanyCraftPart[0]': 0, 'CompanyCraftPart[1]': 0 }]));
+  w(DM + '/CompanyCraftPart.csv', csv(['#', 'CompanyCraftProcess[0]', 'CompanyCraftProcess[1]', 'CompanyCraftProcess[2]'], C.part || [
+    { '#': 1, 'CompanyCraftProcess[0]': 1, 'CompanyCraftProcess[1]': 2, 'CompanyCraftProcess[2]': 0 }, { '#': 2, 'CompanyCraftProcess[0]': 3, 'CompanyCraftProcess[1]': 0, 'CompanyCraftProcess[2]': 0 }]));
+  w(DM + '/CompanyCraftProcess.csv', csv(['#', 'SupplyItem[0]', 'SupplyItem[1]', 'SetQuantity[0]', 'SetQuantity[1]', 'SetsRequired[0]', 'SetsRequired[1]'], C.proc || [
+    { '#': 1, 'SupplyItem[0]': 1, 'SupplyItem[1]': 2, 'SetQuantity[0]': 10, 'SetQuantity[1]': 6, 'SetsRequired[0]': 3, 'SetsRequired[1]': 3 },
+    { '#': 2, 'SupplyItem[0]': 2, 'SupplyItem[1]': 0, 'SetQuantity[0]': 4, 'SetQuantity[1]': 0, 'SetsRequired[0]': 2, 'SetsRequired[1]': 0 },
+    { '#': 3, 'SupplyItem[0]': 3, 'SupplyItem[1]': 0, 'SetQuantity[0]': 1, 'SetQuantity[1]': 0, 'SetsRequired[0]': 5, 'SetsRequired[1]': 0 }]));
+  w(DM + '/CompanyCraftSupplyItem.csv', csv(['#', 'Item'], C.sup || [{ '#': 1, Item: 11 }, { '#': 2, Item: 13 }, { '#': 3, Item: 14 }]));
   w(DM + '/Recipe.csv', csv(REC_HEAD, o.recipes));
   w(DM + '/RecipeLevelTable.csv', csv(['#', 'ClassJobLevel', 'Stars'], [{ '#': 1, ClassJobLevel: 7, Stars: 0 }]));
   w(DM + '/PlaceName.csv', csv(['#', 'Name'], [{ '#': 5, Name: 'Test Town' }, { '#': 6, Name: 'Test Zone' }, { '#': 7, Name: 'Test Area' }, { '#': 8, Name: 'Test Aetheryte' }]));
@@ -82,8 +95,9 @@ const SHOPS = () => [
   { id: 3, type: 'SpecialShop', npcs: [600, 650], trades: [{ currencies: [{ id: 1, amount: 100 }], items: [{ id: 20, amount: 1 }] }] },
 ];
 function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'lists-data-test-')); }
-function run(cache, out, recipes) {
-  return spawnSync('python3', ['-I', TOOL, '--cache', cache, '--out', out, '--expect-recipes', String(recipes)], { encoding: 'utf8' });
+function run(cache, out, recipes, proj) {
+  const p = proj || [0, 0];  // the made-up cache has no 40 submarine and 28 airship parts: the expected counts are given
+  return spawnSync('python3', ['-I', TOOL, '--cache', cache, '--out', out, '--expect-recipes', String(recipes), '--expect-submarine', String(p[0]), '--expect-airship', String(p[1])], { encoding: 'utf8' });
 }
 
 // ---------------------------------------------------------------- the committed file
@@ -177,7 +191,7 @@ test('LD-6 every offer has at least one currency and gil offers sort first', () 
   }
   assert.ok(gil > 1000 && other > 100);
   assert.equal(gil, 4041);
-  assert.equal(other, 1045);
+  assert.equal(other, 1065); // 1045 before the workshop projects (R1) closed their 88 result and supply items into the file
 });
 
 test('LD-7 the compare step keeps the earlier entry and adds one holding both old rows', () => {
@@ -479,4 +493,128 @@ test('LD-22 the 11 job icons are kept, are PNGs of at most 16 kB, and the built 
   }
   const sw = fs.readFileSync(path.join(__dirname, '..', 'command-center', 'site', 'sw.js'), 'utf8');
   for (const j of JOBS) assert.ok(sw.includes('lists/classjob/' + j + '.png'), 'the worker caches ' + j);
+});
+
+// ---------------------------------------------------------------- R1 (docs/lists-redteam.md): market flag, currencies, sellers, books, projects
+const ITEMS_BY_NAME = (n) => Object.keys(D.items).filter((k) => D.items[k][0] === n).map(Number);
+const MARKET = (id) => (D.items[id][1] & 1) === 1;
+test('LD-23 no currency has the market way; the six real market items keep it (Item.ItemSearchCategory above 0)', () => {
+  const price = new Set();
+  for (const lst of Object.values(D.trades)) for (const o of lst) for (const [c] of o[1]) if (c !== 1) price.add(c);
+  // the six market-board items that are also a trade price, as the red team's round 2 found them: Fire Shard, three potions and ether, two crafting materials
+  const six = [2, 4551, 4552, 4555, 15857, 15858];
+  for (const id of six) assert.ok(MARKET(id), D.items[id][0] + ' is sold on the market board');
+  assert.deepEqual(D.currencies, [...price].filter((c) => !MARKET(c)).sort((a, b) => a - b));
+  for (const c of D.currencies) assert.ok(!MARKET(c), D.items[c][0] + ' must not be a market item');
+  for (const id of six) assert.ok(!D.currencies.includes(id));
+  // 33 tradable items that the former rule (not untradable) marked as market are priced in trades and are not on the board
+  assert.equal([...price].filter((c) => (D.items[c][1] & 16) && !MARKET(c)).length, 33);
+  for (const n of ["Skybuilders' Scrip", 'Allagan Tomestone of Poetics', 'Storm Seal', 'MGP']) {
+    const id = ITEMS_BY_NAME(n)[0];
+    assert.ok(id && D.currencies.includes(id) && !MARKET(id), n);
+  }
+  assert.ok(!D.currencies.includes(1), 'gil is no currency to earn');
+  // the engine reads the flag: a stored market way for a currency falls back, for a market item it stays
+  require(path.join(__dirname, '..', 'command-center', 'src', 'lists', 'engine.js'));
+  const poetics = ITEMS_BY_NAME('Allagan Tomestone of Poetics')[0];
+  assert.notEqual(globalThis.LISTS.way(D, { order: '', ways: { [poetics]: { by: 'market' } } }, poetics, 'normal').by, 'market');
+  assert.equal(globalThis.LISTS.way(D, { order: '', ways: { 2: { by: 'market' } } }, 2, 'normal').by, 'market');
+});
+
+test('LD-24 the sellers table keeps every gil seller of an item, cheapest first; the planned offer stays', () => {
+  // made-up cache: item 20 is sold for gil by merchant 500 (100, and 280 for 3, which is no whole price per unit), by 600 and 650 (100 each),
+  // by 700 for 100 (its last offer) while its HQ offer (400) and a trade for tokens are no gil seller of the plain item
+  const out = tmp(), cache = tmp(), f = path.join(out, 'l.json');
+  writeCache(cache, { recipes: GOOD(), shops: SHOPS() });
+  assert.equal(run(cache, f, 2).status, 0);
+  const T2 = JSON.parse(fs.readFileSync(f, 'utf8'));
+  assert.deepEqual(T2.sellers[20], [[500, 100], [600, 100], [650, 100], [700, 100]]);
+  assert.equal(T2.trades[20][0][4], 500, 'the planned offer is the lowest seller id, as before');
+  // the real data: an item with several sellers, each with a gil offer of that price in trades
+  const multi = Object.entries(D.sellers).filter(([, v]) => v.length > 1);
+  assert.ok(multi.length > 1000);
+  for (const [it, v] of multi) {
+    const prices = v.map((x) => x[1]);
+    assert.deepEqual(prices, [...prices].sort((a, b) => a - b), 'item ' + it + ' cheapest first');
+    assert.ok(D.trades[it].some((o) => GIL(o) && o[1][0][1] === prices[0]), 'item ' + it + ' has the cheapest gil offer');
+    assert.ok(v.every((x) => D.npcs[x[0]]), 'every seller of item ' + it + ' is named in npcs');
+  }
+  assert.ok(Object.keys(D.sellers).every((it) => D.items[it]));
+});
+
+test('LD-25 master books: a recipe maps to its book item, the book name is the sheet\'s; recipe rows do not change', () => {
+  // Recipe.csv row 30241: ItemResult 7480, CraftType 2, SecretRecipeBook 3; SecretRecipeBook.csv row "3,Master Armorer I,7780"
+  assert.equal(D.books[30241], 7780);
+  assert.equal(D.bookNames[7780], 'Master Armorer I');
+  assert.equal(D.recipes[30241].length, 7, 'the recipe row keeps its shape');
+  const flagged = Object.keys(D.recipes).filter((r) => D.recipes[r][6] & 32).sort();
+  assert.deepEqual(Object.keys(D.books).sort(), flagged, 'books has exactly the recipes with the master-book flag');
+  assert.equal(flagged.length, 3459);
+  for (const b of Object.values(D.books)) assert.ok(D.bookNames[b], 'book ' + b);
+  assert.equal(Object.keys(D.bookNames).length, 110);
+  // the tool, on a made-up cache: the book is read; a book the sheet does not name stops the build
+  const out = tmp(), cache = tmp(), f = path.join(out, 'l.json');
+  const recs = GOOD(); recs[0].SecretRecipeBook = 1;
+  writeCache(cache, { recipes: recs, shops: SHOPS() });
+  assert.equal(run(cache, f, 2).status, 0);
+  const T2 = JSON.parse(fs.readFileSync(f, 'utf8'));
+  assert.deepEqual(T2.books, { 1: 13 }); assert.deepEqual(T2.bookNames, { 13: 'Master Test I' }); assert.equal(T2.recipes[1][6] & 32, 32);
+  const cache2 = tmp(), f2 = path.join(tmp(), 'l.json'); recs[0].SecretRecipeBook = 9;
+  writeCache(cache2, { recipes: recs, shops: SHOPS() });
+  const bad = run(cache2, f2, 2);
+  assert.notEqual(bad.status, 0); assert.match(bad.stderr, /master book 9/); assert.ok(!fs.existsSync(f2));
+});
+
+test('LD-26 workshop projects: one submarine part with its phases from the sheets; every part is read', () => {
+  // CompanyCraftSequence.csv row 530: ResultItem 21792 (Shark-class Bow), Category 7, CompanyCraftPart[2] 1700;
+  // CompanyCraftPart.csv row 1700: CompanyCraftProcess 800, 801, 802;
+  // CompanyCraftProcess.csv row 800: SupplyItem 106, 108, 223, 220; SetQuantity 10, 10, 10, 6; SetsRequired 3, 3, 3, 3
+  //   row 801: SupplyItem 108, 214, 229; SetQuantity 10, 10, 4; SetsRequired 3, 3, 3
+  //   row 802: SupplyItem 12, 110, 319; SetQuantity 3, 10, 10; SetsRequired 3, 3, 3
+  // CompanyCraftSupplyItem.csv: 106 -> 5058, 108 -> 5093, 223 -> 7023, 220 -> 5059, 214 -> 7022, 229 -> 5060, 12 -> 7606, 110 -> 5099, 319 -> 5064
+  assert.deepEqual(D.projects[21792], [0, [[
+    [[5058, 10, 3], [5093, 10, 3], [7023, 10, 3], [5059, 6, 3]],
+    [[5093, 10, 3], [7022, 10, 3], [5060, 4, 3]],
+    [[7606, 3, 3], [5099, 10, 3], [5064, 10, 3]]]]]);
+  assert.equal(D.items[21792][0], 'Shark-class Bow');
+  const all = Object.values(D.projects);
+  assert.equal(all.filter((p) => p[0] === 0).length, 40, 'every submarine part');
+  assert.equal(all.filter((p) => p[0] === 1).length, 28, 'every airship part');
+  for (const [res, [kind, parts]] of Object.entries(D.projects)) {
+    assert.ok(D.items[res] && parts.length === 1, 'project ' + res);
+    for (const phases of parts) {
+      assert.equal(phases.length, 3, 'project ' + res + ' has its three phases');
+      for (const sup of phases) { assert.ok(sup.length >= 1); for (const [it, per, sets] of sup) assert.ok(D.items[it] && per >= 1 && sets >= 1, 'project ' + res + ' supply ' + it); }
+    }
+  }
+  assert.ok(/-class /.test(D.items[21794][0]) && /-type /.test(D.items[10156][0]) && D.projects[10156][0] === 1, 'an airship part is there too');
+  // supply items are closed into the data: each has its recipes or offers or nodes when the game gives any (here: Steel Ingot has a recipe)
+  assert.ok(D.crafters[5058]);
+  // the tool, on a made-up cache
+  const out = tmp(), cache = tmp(), f = path.join(out, 'l.json');
+  writeCache(cache, { recipes: GOOD(), shops: SHOPS() });
+  assert.equal(run(cache, f, 2, [1, 1]).status, 0);
+  const T2 = JSON.parse(fs.readFileSync(f, 'utf8'));
+  assert.deepEqual(T2.projects, { 20: [0, [[[[11, 10, 3], [13, 6, 3]], [[13, 4, 2]]]]], 12: [1, [[[[14, 1, 5]]]]] });
+  for (const id of [20, 12, 11, 13, 14]) assert.ok(T2.items[id], 'item ' + id + ' is in items');
+});
+
+test('LD-27 the tool stops when a part\'s phases cannot be read, or the part counts are not the expected ones', () => {
+  const cases = {
+    'a part with no phase': [{ part: [{ '#': 1, 'CompanyCraftProcess[0]': 0, 'CompanyCraftProcess[1]': 0, 'CompanyCraftProcess[2]': 0 }, { '#': 2, 'CompanyCraftProcess[0]': 3, 'CompanyCraftProcess[1]': 0, 'CompanyCraftProcess[2]': 0 }] }, /has no phase/],
+    'a phase with no supply item': [{ proc: [{ '#': 1, 'SupplyItem[0]': 0, 'SetQuantity[0]': 0, 'SetsRequired[0]': 0 }, { '#': 2, 'SupplyItem[0]': 2, 'SetQuantity[0]': 4, 'SetsRequired[0]': 2 }, { '#': 3, 'SupplyItem[0]': 3, 'SetQuantity[0]': 1, 'SetsRequired[0]': 5 }] }, /no supply item/],
+    'a supply amount of 0': [{ proc: [{ '#': 1, 'SupplyItem[0]': 1, 'SetQuantity[0]': 0, 'SetsRequired[0]': 3 }, { '#': 2, 'SupplyItem[0]': 2, 'SetQuantity[0]': 4, 'SetsRequired[0]': 2 }, { '#': 3, 'SupplyItem[0]': 3, 'SetQuantity[0]': 1, 'SetsRequired[0]': 5 }] }, /reads as item/],
+    'a supply item the sheet does not hold': [{ sup: [{ '#': 1, Item: 11 }, { '#': 2, Item: 13 }] }, /reads as item/],
+    'a missing part row': [{ part: [{ '#': 2, 'CompanyCraftProcess[0]': 3, 'CompanyCraftProcess[1]': 0, 'CompanyCraftProcess[2]': 0 }] }, /not in CompanyCraftPart/],
+  };
+  for (const [name, [company, re]] of Object.entries(cases)) {
+    const cache = tmp(), f = path.join(tmp(), 'l.json');
+    writeCache(cache, { recipes: GOOD(), shops: SHOPS(), company });
+    const r = run(cache, f, 2, [1, 1]);
+    assert.notEqual(r.status, 0, name); assert.match(r.stderr, re, name); assert.ok(!fs.existsSync(f), name);
+  }
+  const cache = tmp(), f = path.join(tmp(), 'l.json');
+  writeCache(cache, { recipes: GOOD(), shops: SHOPS() });
+  const r = run(cache, f, 2, [40, 1]);
+  assert.notEqual(r.status, 0); assert.match(r.stderr, /1 submarine parts, expected 40/); assert.ok(!fs.existsSync(f));
 });

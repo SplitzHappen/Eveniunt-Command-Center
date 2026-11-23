@@ -10,14 +10,17 @@ section "Lists"):
 
   * Game data: xivapi/ffxiv-datamining (English CSVs, game 7.57h1): Item, Recipe, RecipeLevelTable, PlaceName, Map,
     GatheringPointName, GatheringPoint, GatheringPointBase, GatheringSubCategory, ExportedGatheringPoint,
-    SpearfishingNotebook, FishingSpot.
+    SpearfishingNotebook, FishingSpot, SecretRecipeBook, CompanyCraftSequence, CompanyCraftPart, CompanyCraftProcess,
+    CompanyCraftSupplyItem.
     Game data (c) SQUARE ENIX CO., LTD.
   * FFXIV Teamcraft (MIT): shops.json (offers), nodes.json, gathering-items.json, fishing-sources.json,
     fishing-spots.json, npcs.json, aetherytes.json; the 11 job icons of the same commit (apps/client/src/assets/icons/classjob).
 
 Output tables (all ids are game row ids; compact arrays):
   stamp   "<game version> <8 of sheet commit> <8 of Teamcraft commit>", at most 40 characters
-  items   {id: [name, flags, merchantSells]}   flags: 1 tradable, 2 can be HQ, 4 always collectable, 8 crystal.
+  items   {id: [name, flags, merchantSells]}   flags: 1 can be sold on the market board (the Item sheet's ItemSearchCategory
+          above 0; the engine's "market" way reads this bit), 2 can be HQ, 4 always collectable, 8 crystal, 16 tradable (not
+          untradable; the meaning bit 1 had before 2026-11-23: a tradable currency is 16 without 1).
           merchantSells: the Item sheet's PriceMid, the gil price a merchant asks (0 = none).
   recipes {id: [item, yield, job 0-7, level, stars, [[item, amount]...], flags]}
           job: CraftType (0 CRP, 1 BSM, 2 ARM, 3 GSM, 4 LTW, 5 WVR, 6 ALC, 7 CUL).
@@ -41,6 +44,17 @@ Output tables (all ids are game row ids; compact arrays):
           counted recipe of the engine is the first).
   trades  {item: [[gives, [[currency, amount]...], hq 0/1, gcRank or 0, npc]...]}   gil-only offers first.
   npcs    {npc: [name, zone]}   sellers named in trades whose name or place is known.
+  currencies  [item...]   the items that are the non-gil price of a kept trade and are not on the market board (flag 1 off):
+          tomestones, scrips, seals, tokens. Sorted ids.
+  sellers {item: [[npc, price]...]}   every gil seller of an item (an offer whose only currency is gil, normal quality, no
+          Grand Company rank, giving whole units: the gil per unit, only when the offer's gil divides by what it gives, and a
+          known seller), cheapest first, then lowest npc id; the planned offer in `trades` is unchanged.
+  books   {recipe: bookItem}   the master book a recipe needs (Recipe.SecretRecipeBook, via the sheet SecretRecipeBook);
+          exactly the recipes with flag 32. bookNames {bookItem: "Master Carpenter I"}.
+  projects  {resultItem: [kind, [part...]]}   Free Company workshop parts from the company-craft sheets. kind 0 submarine
+          part (CompanyCraftSequence.Category 7), 1 airship part (Category 5). A part is a list of phases in order (the
+          three CompanyCraftProcess rows of a CompanyCraftPart); a phase is [[item, amountPerSet, sets]...] with the item
+          of CompanyCraftSupplyItem, SetQuantity and SetsRequired (the phase needs amountPerSet x sets of each).
   changes [{from, to, recipes: {id: [old row or null, new row]}, gone: {id: old row}}]   (the `log` table is added by W6)
 
 Closure: the file holds every item that is a recipe's result or ingredient and every currency of a kept offer, and for
@@ -51,7 +65,9 @@ below 1; a trade gives fewer than 1 or has no currency; the recipes form a loop;
 characters; or the recipe count differs from EXPECT_RECIPES; a node with a map position has no GatheringPoint row, a different
 gathering type or point type in the sheets, or a position that the sheets' own X and Z do not give in the game's map
 scale; a node that is written has a name that cannot be derived; a spot's folklore book differs from the sheet's; a job
-icon is missing, not a PNG or over 16 kB.
+icon is missing, not a PNG or over 16 kB; a master book that is not in SecretRecipeBook or has no name; a submarine or airship part
+whose sequence has no part, whose part has no phases or a phase with no supply item, or whose supply item, amount or sets cannot be
+read; or the count of submarine parts differs from EXPECT_SUBMARINE (40) or of airship parts from EXPECT_AIRSHIP (28).
 """
 import csv, io, json, os, re, sys, tempfile, urllib.request
 
@@ -59,6 +75,8 @@ DM_COMMIT = "44948e4cda5846eab0baa9872122a888fcc4f1b1"  # xivapi/ffxiv-dataminin
 TC_COMMIT = "70429e214dc952be23114df514a18223dc429449"  # ffxiv-teamcraft/ffxiv-teamcraft, 2026-11-07 (MIT)
 GAME_VERSION = "7.57h1"
 EXPECT_RECIPES = 13892  # the count of the first run (2026-11-22), see data/SOURCES.md
+EXPECT_SUBMARINE = 40  # submarine parts (CompanyCraftSequence.Category 7): 10 classes x 4 parts, 2026-11-23
+EXPECT_AIRSHIP = 28  # airship parts (Category 5): 7 hull types x 4 parts
 
 DM_URL = "https://raw.githubusercontent.com/xivapi/ffxiv-datamining/%s/csv/en/%%s.csv" % DM_COMMIT
 TC_URL = "https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/%s/libs/data/src/lib/json/%%s.json" % TC_COMMIT
@@ -70,6 +88,8 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 OUT = opt("--out", os.path.join(ROOT, "data", "lists.json"))
 CACHE = opt("--cache", "") or tempfile.mkdtemp(prefix="lists-data-")
 EXPECT = int(opt("--expect-recipes", EXPECT_RECIPES))
+EXPECT_SUB = int(opt("--expect-submarine", EXPECT_SUBMARINE))
+EXPECT_AIR = int(opt("--expect-airship", EXPECT_AIRSHIP))
 
 
 def stop(msg):
@@ -213,10 +233,12 @@ def build():
     place = {k: clean(r.get("Name")) for k, r in PLACE.items()}
     PNAME, GTYPE, GPOINT, GBASE, GSUB = (sheet("GatheringPointName"), sheet("GatheringType"), sheet("GatheringPoint"),
                                          sheet("GatheringPointBase"), sheet("GatheringSubCategory"))
+    BOOK, CSEQ, CPART, CPROC, CSUP = (sheet("SecretRecipeBook"), sheet("CompanyCraftSequence"), sheet("CompanyCraftPart"),
+                                      sheet("CompanyCraftProcess"), sheet("CompanyCraftSupplyItem"))
     EXPORT, MAP, SPEAR, FSHEET = sheet("ExportedGatheringPoint"), sheet("Map"), sheet("SpearfishingNotebook"), sheet("FishingSpot")
 
     # ---- recipes
-    recipes = {}
+    recipes, books, book_names = {}, {}, {}
     for rid, r in sorted(RECIPE.items()):
         res = i(r.get("ItemResult"))
         if not res:
@@ -242,6 +264,13 @@ def build():
         flags = sum(b for b, on in ((1, r.get("CanHq") == "True"), (2, r.get("IsExpert") == "True"),
                                     (4, r.get("IsSpecializationRequired") == "True"), (8, coll),
                                     (16, r.get("CanQuickSynth") == "True"), (32, i(r.get("SecretRecipeBook")) > 0)) if on)
+        bk = i(r.get("SecretRecipeBook"))
+        if bk > 0:  # a master book: the sheet must name it and its item
+            b = BOOK.get(bk)
+            if not b or not clean(b.get("Name")) or i(b.get("Item")) not in ITEM or i(b.get("Item")) <= 0:
+                stop("recipe %d needs master book %d, which SecretRecipeBook does not name with an item" % (rid, bk))
+            books[rid] = i(b["Item"])
+            book_names[i(b["Item"])] = clean(b["Name"])
         recipes[rid] = [res, yld, i(r.get("CraftType")), i(t.get("ClassJobLevel")), i(t.get("Stars")), ing, flags]
     if EXPECT and len(recipes) != EXPECT:
         stop("%d recipes, the first run recorded %d" % (len(recipes), EXPECT))
@@ -251,6 +280,7 @@ def build():
 
     # ---- offers (every distinct one), indexed by the item they give
     offers = {}  # item -> {key: [gives, currencies, hq, rank, npc]}
+    gil_sellers = {}  # item -> {(npc, gil per unit)}: every seller of a gil-only, normal-quality, rank-free offer that gives whole units
     for shop in tc("shops"):
         npc = min([n for n in shop.get("npcs") or [] if n], default=0)
         for tr in shop.get("trades") or []:
@@ -264,6 +294,10 @@ def build():
                 rank = tr.get("requiredGCRank") or 0
                 hq = 1 if it.get("hq") else 0
                 key = (it["amount"], json.dumps(cur), hq, rank)
+                if len(cur) == 1 and cur[0][0] == 1 and not hq and not rank and cur[0][1] % it["amount"] == 0:
+                    for n in shop.get("npcs") or []:
+                        if n:
+                            gil_sellers.setdefault(it["id"], set()).add((n, cur[0][1] // it["amount"]))
                 slot = offers.setdefault(it["id"], {})
                 if key in slot:
                     old = slot[key][4]
@@ -271,11 +305,65 @@ def build():
                 else:
                     slot[key] = [it["amount"], cur, hq, rank, npc]
 
+    # ---- Free Company workshop projects: submarine (Category 7) and airship (Category 5) parts
+    projects, n_kind = {}, {0: 0, 1: 0}
+    for sid, r in sorted(CSEQ.items()):
+        kind = {7: 0, 5: 1}.get(i(r.get("Category")))
+        res = i(r.get("ResultItem"))
+        if kind is None or not res:
+            continue
+        if res not in ITEM:
+            stop("company craft %d makes item %d, which is not in Item" % (sid, res))
+        part_ids = [i(r.get("CompanyCraftPart[%d]" % n)) for n in range(8)]
+        part_ids = [p for p in part_ids if p]
+        if not part_ids:
+            stop("company craft %d (%s) has no part" % (sid, clean(ITEM[res].get("Name"))))
+        parts = []
+        for pid in part_ids:
+            if pid not in CPART:
+                stop("company craft %d: part %d is not in CompanyCraftPart" % (sid, pid))
+            phases = []
+            for n in range(3):
+                proc = i(CPART[pid].get("CompanyCraftProcess[%d]" % n))
+                if not proc:
+                    continue
+                if proc not in CPROC:
+                    stop("company craft %d: process %d is not in CompanyCraftProcess" % (sid, proc))
+                sup = []
+                for m in range(12):
+                    sref = i(CPROC[proc].get("SupplyItem[%d]" % m))
+                    per, sets = i(CPROC[proc].get("SetQuantity[%d]" % m)), i(CPROC[proc].get("SetsRequired[%d]" % m))
+                    if not sref:
+                        continue
+                    it = i((CSUP.get(sref) or {}).get("Item"))
+                    if it <= 0 or it not in ITEM or per < 1 or sets < 1:
+                        stop("company craft %d: supply %d of process %d reads as item %d x %d x %d" % (sid, sref, proc, it, per, sets))
+                    sup.append([it, per, sets])
+                if not sup:
+                    stop("company craft %d: process %d has no supply item" % (sid, proc))
+                phases.append(sup)
+            if not phases:
+                stop("company craft %d (%s): part %d has no phase" % (sid, clean(ITEM[res].get("Name")), pid))
+            parts.append(phases)
+        if res in projects:
+            stop("company craft %d: item %d is the result of two sequences" % (sid, res))
+        projects[res] = [kind, parts]
+        n_kind[kind] += 1
+    if EXPECT_SUB and n_kind[0] != EXPECT_SUB:
+        stop("%d submarine parts, expected %d" % (n_kind[0], EXPECT_SUB))
+    if EXPECT_AIR and n_kind[1] != EXPECT_AIR:
+        stop("%d airship parts, expected %d" % (n_kind[1], EXPECT_AIR))
+
     # ---- closure
     closure = set()
     for r in recipes.values():
         closure.add(r[0])
         closure.update(a for a, _ in r[5])
+    for res, (_, parts) in projects.items():
+        closure.add(res)
+        for phases in parts:
+            for sup in phases:
+                closure.update(a for a, _, _ in sup)
     todo = sorted(closure)
     while todo:
         it = todo.pop()
@@ -291,8 +379,9 @@ def build():
     items = {}
     for it in sorted(closure):
         r = ITEM[it]
-        flags = sum(b for b, on in ((1, r.get("IsUntradable") != "True"), (2, r.get("CanBeHq") == "True"),
-                                    (4, r.get("AlwaysCollectable") == "True"), (8, 2 <= it <= 19)) if on)
+        flags = sum(b for b, on in ((1, i(r.get("ItemSearchCategory")) > 0), (2, r.get("CanBeHq") == "True"),
+                                    (4, r.get("AlwaysCollectable") == "True"), (8, 2 <= it <= 19),
+                                    (16, r.get("IsUntradable") != "True")) if on)
         items[it] = [clean(r.get("Name")), flags, i(r.get("PriceMid"))]
 
     # ---- trades: gil-only offers first
@@ -304,6 +393,9 @@ def build():
         lst.sort(key=lambda o: (0 if (len(o[1]) == 1 and o[1][0][0] == 1) else 1, o[1], o[0], o[2], o[3], o[4]))
         trades[it] = lst
         sellers.update(o[4] for o in lst if o[4])
+    currencies = sorted({c for lst in trades.values() for o in lst for c, _ in o[1] if c != 1 and not items[c][1] & 1})
+    sellers_of = {it: [[n, p] for p, n in sorted((p, n) for n, p in found)] for it, found in sorted(gil_sellers.items()) if it in closure}
+    sellers.update(n for lst in sellers_of.values() for n, _ in lst)
     NPC = tc("npcs")
     npcs = {}
     for n in sorted(sellers):
@@ -480,7 +572,8 @@ def build():
     if len(stamp) > 40:
         stop("the stamp is %d characters" % len(stamp))
     return {"stamp": stamp, "items": items, "recipes": recipes, "crafters": crafters, "gather": gather,
-            "gatherLegacy": legacy, "nodeNames": node_names, "aetherytes": aeth_used, "trades": trades, "npcs": npcs}
+            "gatherLegacy": legacy, "nodeNames": node_names, "aetherytes": aeth_used, "trades": trades, "npcs": npcs,
+            "currencies": currencies, "sellers": sellers_of, "books": books, "bookNames": book_names, "projects": projects}
 
 
 def main():
@@ -514,6 +607,13 @@ def main():
                 other += 1
     print("lists-data.py: wrote %s: %d recipes, %d items, %d gil offers, %d other offers, %d bytes" % (
         OUT, len(out["recipes"]), len(out["items"]), gil, other, len(text.encode("utf-8"))))
+    print("lists-data.py: %d market items, %d currencies, %d items with several gil sellers, %d master-book recipes, %d books, "
+          "%d submarine and %d airship parts, %d phases, %d supply items" % (
+              sum(1 for v in out["items"].values() if v[1] & 1), len(out["currencies"]),
+              sum(1 for v in out["sellers"].values() if len(v) > 1), len(out["books"]), len(out["bookNames"]),
+              sum(1 for v in out["projects"].values() if v[0] == 0), sum(1 for v in out["projects"].values() if v[0] == 1),
+              sum(len(pt) for _, parts in out["projects"].values() for pt in parts),
+              sum(len(ph) for _, parts in out["projects"].values() for pt in parts for ph in pt)))
 
 
 if __name__ == "__main__":
