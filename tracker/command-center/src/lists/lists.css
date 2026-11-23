@@ -60,7 +60,7 @@
 /* ---- the list head: an inverted slab that says the answer ---- */
 .lhead { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "kick tal gear" "name tal gear" "state tal gear"; align-items: center; gap: 0 22px; padding: 8px 18px; background: var(--slab); color: var(--on-slab); border-width: 0 0 5px; border-style: solid; border-image: var(--molten) 1; }
 .lhead .kick { grid-area: kick; margin: 0 0 2px; font: 700 11px/1.3 var(--f-kick); letter-spacing: .26em; text-transform: uppercase; color: var(--on-slab-2); overflow-wrap: anywhere; }
-.lhead h1 { grid-area: name; margin: 0; font: 900 28px/1.1 var(--f-serif); overflow-wrap: anywhere; }
+.lhead h1 { grid-area: name; min-width: 0; margin: 0; font: 900 28px/1.2 var(--f-serif); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* R5 (finding 20): one line with an ellipsis; the full name is the title and is in the settings sheet */
 .lhead .state { grid-area: state; margin: 3px 0 0; font: 13px/1.4 var(--f-body); color: var(--on-slab-2); }
 .lhead .state .lk { color: var(--on-slab); margin-right: 14px; font-size: 13px; }
 .lhead .tal-col { grid-area: tal; }
@@ -130,7 +130,7 @@
 .lr { position: relative; overflow: hidden; display: grid; grid-template-columns: 88px minmax(0, 1fr) 176px 140px; align-items: center; min-height: 56px; background: var(--slip); border-bottom: 1px dashed var(--ink-3); }
 .lr.open { border-bottom: 0; background: var(--w); }
 .cnt { position: relative; isolation: isolate; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 20px; color: var(--on-f); }
-.cnt::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: -60px; width: 134px; background: var(--f); transform: skewX(-25deg); }
+.cnt::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: 0; right: 0; background: var(--f); clip-path: polygon(0 0, 100% 0, calc(100% - 26px) 100%, 0 100%); } /* R5 (finding 14): the slash leans a fixed 26 px at any row height and never leaves the 88 px block, so it cannot reach the name */
 .cnt b { font: 900 30px/.95 var(--f-disp); }
 .cnt i { font: normal 700 11px/1.1 var(--f-body); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .cnt.w1 { flex-direction: column-reverse; }
@@ -223,7 +223,6 @@
 .opener.has3 .l2 { grid-column: 1; }
 .opener.has3 .l3 { grid-column: 2; margin-top: 1px; max-width: 480px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
 /* a timed node's window is a line of its own (the location above it is whole) */
-.jm { display: none; }
 .opener.win .nm { line-height: 1.15; }
 .opener.win .l2, .opener.win .l3 { line-height: 1.25; margin-top: 0; }
 .opener.has3.win { display: block; }
@@ -236,7 +235,16 @@
 .jset { display: inline-flex; flex-wrap: wrap; gap: 2px 3px; align-items: center; max-width: 100%; vertical-align: middle; margin-top: -4px; margin-bottom: -4px; }
 .nb { white-space: nowrap; }
 .jicon.jr { width: 24px; height: 24px; }
-.jicon.jd { width: 20px; height: 20px; vertical-align: -5px; margin-right: 5px; }
+.jicon.jd { width: 24px; height: 24px; vertical-align: -7px; margin-right: 5px; }
+/* R5 (finding 16): a job's picture with the game's three-letter abbreviation under it (D-C2 sizes: 24 px on desktop rows and in drawers, 20 px on phone rows, 32 px on job heads) */
+.jt { display: inline-flex; flex-direction: row; align-items: center; gap: 3px; color: var(--ink); flex: none; }
+.jt::after { content: attr(data-abbr); font: 700 11px/1 var(--f-body); letter-spacing: .02em; color: inherit; }
+.jt .jicon { margin: 0; }
+.jt.big .jicon { width: 32px; height: 32px; }
+.job-head .jt { color: var(--on-f); margin-right: 6px; }
+.job-head h3 { align-items: center; }
+.jset { gap: 2px 6px; margin-top: -2px; margin-bottom: -2px; }
+.spots .jicon { margin-right: 4px; }
 .prog { display: flex; flex-direction: column; gap: 4px; width: 150px; }
 .prog .bar { position: relative; display: block; height: 8px; border-top: 2px solid var(--lr-craft-edge); }
 .prog .bar i { position: absolute; left: 0; top: -2px; height: 8px; background: var(--lr-craft-fill); }
@@ -280,7 +288,7 @@
 .spots .sx { color: var(--ink-2); }
 .drawer .w-bought { margin: 6px 0; }
 .left-row { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; min-height: 56px; padding-left: 88px; border-bottom: 1px dashed var(--ink-3); --f: var(--slab); --on-f: var(--on-slab); }
-.left-row::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: -60px; width: 134px; background: var(--f); transform: skewX(-25deg); }
+.left-row::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: 0; width: 88px; background: var(--f); clip-path: polygon(0 0, 100% 0, calc(100% - 26px) 100%, 0 100%); }
 .left-row::after { content: attr(data-n); position: absolute; left: 0; top: 9px; width: 68px; text-align: center; color: var(--on-f); font: 900 30px/.95 var(--f-disp); }
 .left-row .lt::before { content: "left over"; position: absolute; left: 0; bottom: 9px; width: 68px; text-align: center; color: var(--on-f); font: normal 700 11px/1.1 var(--f-body); letter-spacing: .04em; text-transform: uppercase; }
 .left-row .lt { padding: 6px 14px; font: 14px/1.35 var(--f-body); color: var(--ink); overflow-wrap: anywhere; }
@@ -397,7 +405,6 @@
 .fields select { width: 100%; min-height: 48px; font-size: 15px; background: var(--paper); border: var(--edge) solid var(--ink); }
 .answer { overflow: hidden; display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; min-height: 88px; background: var(--paper); border: var(--edge) solid var(--ink); margin: 0 0 16px; }
 .answer .cnt { min-height: 88px; padding-right: 28px; }
-.answer .cnt::before { width: 164px; }
 .answer .cnt b { font-size: 44px; }
 .answer p { margin: 0; padding: 8px 18px; font: 600 15px/1.35 var(--f-body); }
 .missing { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; border: var(--edge) solid var(--ink); background: var(--paper); }
@@ -478,7 +485,7 @@
   .lhead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "kick tal" "name tal" "state gear"; gap: 0 10px; padding: 6px 12px 8px; }
   .lhead .kick { margin: 0; }
   .lhead .lbtn-o { justify-self: end; align-self: end; min-height: 40px; padding: 0 10px; }
-  .lhead h1 { font-size: 22px; }
+  .lhead h1 { font-size: 22px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
   .lhead .cap { display: none; }
   .lhead .state { margin-top: 2px; align-self: start; }
   .lhead .state .lk { min-height: 40px; display: inline-flex; align-items: center; }
@@ -497,7 +504,7 @@
   .market-line .lk { min-height: 40px; display: inline-flex; align-items: center; }
   .lr { grid-template-columns: 64px minmax(0, 1fr) auto; min-height: 72px; }
   .cnt { padding-right: 14px; }
-  .cnt::before { left: -60px; width: 120px; }
+  .cnt::before { clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%); }
   .cnt b { font-size: 26px; }
   .lists-status { left: 0; right: 0; bottom: 64px; transform: none; width: auto; min-height: 40px; padding: 6px 12px; gap: 0 14px; }
   .lists-status .lk { min-height: 40px; display: inline-flex; align-items: center; }
@@ -514,13 +521,12 @@
   .tick input, .w-edit .chk input { min-width: 20px; min-height: 20px; }
   .lists-prices select { width: 100%; }
   .lr .st-col { display: none; }
-  .cnt::before { width: 124px; }
   .opener { padding-left: 18px; }
   .lcard .ready { padding-right: 20px; }
   .lcard .ready i.role { letter-spacing: 0; max-width: 56px; }
   .lcard .ready::before { width: 130px; }
   .lhead .kick { letter-spacing: .1em; }
-  .opener.has3 .l3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+  .opener.has3 .l3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .lr .pc { padding: 0 8px 0 0; }
   .lbtn-r { width: 96px; min-width: 0; padding: 0 8px; }
   .opener { padding: 6px 6px 6px 12px; }
@@ -528,7 +534,8 @@
   .cnt i { letter-spacing: 0; }
   .cnt { padding-right: 10px; }
   .dsk:not(.keep) { display: none; }
-  .l2 { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+  .l2 { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .w-need, .dsk .sep, .sp-n, .sp-a, .sp-why, .l3 .et { display: none; } /* R5 (finding 15): the count block says how many; the spot keeps its level, zone and position and has its own line; the rest is in the opened row */
   .opener { padding-top: 3px; padding-bottom: 3px; }
   .l2 { margin-top: 0; }
   .nm { line-height: 18px; }
@@ -536,12 +543,21 @@
   .l1 .lstamp, .l1 .role { vertical-align: 1px; line-height: 1.1; }
   .l2, .l3 { line-height: 1.3; }
   .l1 .jset { margin: 0; }
-  .opener.win .l1 .jset { display: none; }
-  .opener.win .jm { display: inline; }
-  .opener.win .jm .jset { display: inline-flex; margin: 0 6px 0 0; vertical-align: -4px; }
-  .l1 .jset { display: flex; flex-wrap: nowrap; gap: 2px; margin: 1px 0 0; }
-  .jicon.jr { width: 16px; height: 16px; }
+  /* the pictures float at the right end of the name line, abbreviation under each (up to four crafters; more are a strip under the name) */
+  .l1 .jset { display: flex; flex-wrap: nowrap; position: absolute; top: 0; right: 0; gap: 0 5px; margin: 0; }
+  .opener.jn1 .l1 { padding-right: 30px; min-height: 31px; }
+  .opener.jn2 .l1 { padding-right: 56px; min-height: 31px; }
+  .opener.jn3 .l1 { padding-right: 82px; min-height: 31px; }
+  .opener.jn4 .l1 { padding-right: 108px; min-height: 31px; }
+  .l1 .jset.many { position: static; flex-wrap: wrap; margin: 1px 0 0; }
+  .jt { flex-direction: column; gap: 0; }
+  .jicon.jd { width: 20px; height: 20px; vertical-align: -5px; }
+  .spots .jt { flex-direction: row; gap: 3px; }
+  .spots { gap: 1px; }
+  .spots li { line-height: 1.3; }
+  .jicon.jr { width: 20px; height: 20px; }
   .opener.has3 { display: block; }
+  .opener.has3 .l3 { margin-right: -104px; } /* the window or the price is the row's last line and runs on under the primary (the button's 40 px sit above it), so it is whole on one line */
   .opener.has3 .l3 { max-width: none; white-space: normal; text-align: left; }
   .pl-more { display: none; }
   .lr .l2 .cr { display: inline; }
@@ -660,3 +676,15 @@
   .tallies.three .tally span { letter-spacing: .02em; }
 }
 .lhead .tally.r-slab::before { background: transparent; box-shadow: inset 0 0 0 2px currentColor; }
+
+/* ---- R5: finding 17, one entry is neither a bar nor a rail; finding 15, no stepper in the row between 701 and 1100 px (it is in the opened row) ---- */
+.lists-layout.solo { grid-template-columns: minmax(0, 1fr); }
+.lists-layout.solo .lists-tabs { display: none; }
+@media (701px <= width <= 1100px) {
+  .get-row .lr, .wanted-row .lr { grid-template-columns: 88px minmax(0, 1fr) 140px; }
+  .get-row .lr .st-col, .wanted-row .lr .st-col { display: none; }
+}
+@media (max-width: 700px) {
+  .lists-layout.solo ~ .lists-status, .lists-layout.solo + .lists-status { bottom: 0; }
+  .lists-layout.solo .lists-main { padding-bottom: 80px; }
+}

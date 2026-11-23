@@ -5974,7 +5974,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     const lTab = async (pg, t) => { await pg.click('[data-act=tab][data-tab=' + t + ']'); await pg.waitForSelector('.tab[data-tab=' + t + '][aria-selected=true]'); };
     const lOpenAll = async (pg) => { for (let i = 0; i < 12; i++) { const c = pg.locator('.sec-toggle[aria-expanded=false]'); if (!(await c.count())) break; await c.first().click(); } };
     const lOpenList = async (pg, name, tab) => {
-      if (await pg.locator('[data-act=back]').count()) await pg.click('[data-act=back]');
+      if (await pg.locator('[data-act=back]:visible').count()) await pg.click('[data-act=back]');
       await pg.waitForSelector('.list-card');
       await pg.locator('.list-card', { hasText: name }).first().locator('[data-act=open]').click(); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg);
       if (tab) await lTab(pg, tab);
@@ -6081,7 +6081,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT5 + 'lists/'); await lReady(page);
       const ck = {};
       await lSeedLists(page, [{ name: 'First', charId: 'c1', items: [[103, 4]], have: { 103: 4 } }, { name: 'Second', charId: 'c1', items: [[103, 2]] }, { name: 'Third', charId: 'c1', items: [[103, 3]] }, { name: 'Other', charId: 'c2', items: [[103, 1]] }]);
-      await page.click('[data-act=back]').catch(() => {}); await page.waitForSelector('.list-card');
+      if (await page.locator('[data-act=back]:visible').count()) await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
       const box = (name) => page.locator('.list-card', { hasText: name }).locator('[data-f=tick]');
       await box('Second').check(); await lSettle(page); await box('Third').check(); await lSettle(page);
       ck.otherCharDisabled = await box('Other').isDisabled() && !(await box('First').isDisabled()) && /Each character has its own stock\./.test(await page.locator('#view').textContent());
@@ -6190,7 +6190,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       'let r = S.newList(sec, { name: ' + JSON.stringify(name || 'Market') + ', charId: null, stamp: DATA.stamp }, ctx()); sec = r.section; const id = r.id;' +
       'ids.forEach((i) => { r = S.addTarget(sec, id, { item: i, recipe: 0, qty: 2 }, ctx()); sec = r.section; sec = S.setWay(sec, "u", i, { by: "market" }).section; }); return sec;'));
     const lMarketOpen = async (pg) => { await lOpenFirstList(pg); await lTab(pg, 'get'); await pg.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await pg.waitForSelector('.gsec[data-sec=market] .price-total'); };
-    const lOpenFirstList = async (pg) => { if (await pg.locator('[data-act=back]').count()) await pg.click('[data-act=back]'); await pg.waitForSelector('.list-card'); await pg.locator('.list-card [data-act=open]').first().click(); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg); };
+    const lOpenFirstList = async (pg) => { if (await pg.locator('[data-act=back]:visible').count()) await pg.click('[data-act=back]'); await pg.waitForSelector('.list-card'); await pg.locator('.list-card [data-act=open]').first().click(); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg); };
     const lPriceTexts = (pg) => pg.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec[data-sec=market] .line-row')].map((r) => [r.dataset.item, (r.querySelector('.price-line') || {}).textContent || ''])));
     const lPriceTotal = (pg) => pg.evaluate(() => { const e = document.querySelector('.price-total'); return e ? { text: e.textContent, gil: +e.dataset.gil, priced: +e.dataset.priced, unpriced: +e.dataset.unpriced } : null; });
     // W15: waits for the answer itself: every price row has left its first text ("Price not fetched") and "Fetching", and the page's request is finished
@@ -7954,6 +7954,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const offered = []; for (const it of info.ok) offered.push(await shown(it));
       const refused = []; for (const it of info.no) refused.push(await shown(it));
       ck.onlyHqAble = offered.every((n) => n === 1) && refused.every((n) => n === 0);
+      let keys = [], u = []; if (ck.haveBoth && ck.onlyHqAble) { // R5: without the choice in the drawers the steps below are skipped and the false values above are the failure
       // one material, ticked and undone
       const it = info.ok[0], before = JSON.stringify(await lStored(page));
       const r1 = page.locator('.craft-row[data-item="' + it + '"]').first(); await lOpen(r1);
@@ -7968,13 +7969,14 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       // every material in one change
       await lSet(page); await page.click('[data-act=hq-all]'); await lSettle(page);
       await lSetDone(page);
-      const st2 = await lStored(page), keys = Object.keys(st2.ways).map((k) => +k.split('.')[1]).sort((a, b) => a - b), u = await page.evaluate(() => window.__lists.state.undo.map((e) => ({ label: e.label, units: e.units.length })));
+      const st2 = await lStored(page); keys = Object.keys(st2.ways).map((k) => +k.split('.')[1]).sort((a, b) => a - b); u = await page.evaluate(() => window.__lists.state.undo.map((e) => ({ label: e.label, units: e.units.length })));
       ck.everyMaterial = JSON.stringify(keys) === JSON.stringify(info.all) && Object.values(st2.ways).every((w) => w.hq === true && Object.keys(w).length === 1);
       ck.oneEntry = u.length === 1 && u[0].units === info.all.length && u[0].label === 'Needed high quality for ' + info.all.length + ' materials';
       ck.noNewField = JSON.stringify(Object.keys(st2)) === JSON.stringify(Object.keys(JSON.parse(before)));
       ck.bulkPlanned = await page.evaluate((all) => { const p = window.__lists.plan('c2', true); return all.every((i) => !!p.lines[i + '|hq|0']); }, info.all);
       await page.click('#lstatus [data-act=undo][data-i="0"]'); await lSettle(page);
       ck.undoAll = JSON.stringify(await lStored(page)) === before;
+      }
       ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
       record('C180', 'Lists page, high quality (real data): "Need it in high quality" is in the drawer only of a material that can be made in high quality, stores ways.hq and undoes; "High quality for every material" sets all of them in one change with one Undo entry, no new save field, and its Undo restores the saved ways',
         Object.values(ck).every(Boolean), { ck, ok: info.ok.length, no: info.no.length, all: info.all, keys, u, errors: real(errors), external });
@@ -7995,8 +7997,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
       await lSeedLists(page, [{ name: 'Gear', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }, { name: 'Nobody', items: r3Gear.map((i) => [i, 1]) }]);
       const facts = () => page.evaluate(() => { const D = window.__lists.data(); return [...document.querySelectorAll('.craft-row')].map((r) => { const rid = window.__lists.plan(r.dataset.owner, true).lines[r.dataset.lk].recipe, rc = D.recipes[rid], bk = D.books[rid]; return { rid, want: { book: bk ? D.bookNames[bk] : null, expert: !!(rc[6] & 2), spec: !!(rc[6] & 4), stars: rc[4] }, got: { book: (r.querySelector('.rs-book') || {}).textContent || null, expert: !!r.querySelector('.rs-expert'), spec: !!r.querySelector('.rs-spec'), stars: r.querySelector('.rs-stars') ? parseInt(r.querySelector('.rs-stars').textContent, 10) : 0 }, warn: !!r.querySelector('.lstamp.warn'), text: r.textContent.replace(/\s+/g, ' ') }; }); });
-      await lOpenList(page, 'Gear', 'craft'); await page.waitForFunction(() => !!document.querySelector('.craft-row .lstamp.warn'), null, { timeout: 15000 }).catch(async () => { throw new Error('no warning shown: ' + JSON.stringify(await page.evaluate(() => ({ et: !!(window.ET && window.ET.fromSaveDoc), rows: document.querySelectorAll('.craft-row').length, tr: JSON.stringify(window.__lists.state.tracker), chars: JSON.stringify(window.__lists.state.chars), l1: [...document.querySelectorAll('.craft-row .l1')].map((e) => e.textContent).slice(0, 2) })))); });
-      let f = await facts();
+      await lOpenList(page, 'Gear', 'craft'); ck.warnShown = await page.waitForFunction(() => !!document.querySelector('.craft-row .lstamp.warn'), null, { timeout: 15000 }).then(() => true, () => false); // R5: no warning shown is a false value; the steps that need it are skipped
+      let f = []; if (ck.warnShown) {
+      f = await facts();
       const same = (x) => x.want.book === x.got.book && x.want.expert === x.got.expert && x.want.spec === x.got.spec && x.want.stars === x.got.stars;
       ck.stamps = f.length >= 6 && f.every(same) && f.filter((x) => x.want.book === 'Master Leatherworker XII').length >= 6 && f.some((x) => x.want.stars > 0);
       const bookRows = f.filter((x) => x.want.book);
@@ -8018,6 +8021,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       // no character: the stamps, no warning, and the Tracker's tick of another character is not read for it
       await lOpenList(page, 'Nobody', 'craft'); f = await facts();
       ck.noCharacter = f.length >= 6 && f.every(same) && f.every((x) => !x.warn);
+      }
       ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
       record('C181', 'Lists page, master books (real data): craft rows show the book name, Expert, Specialist and stars from the recipe; "Book not ticked" and "Master Leatherworker XII is not ticked for Alba" until the Tracker\'s tick is set; no character, no warning; 110 of 110 books map to their Tracker entry by exact name',
         Object.values(ck).every(Boolean), { ck, mapped: exact.length, sample: f.slice(0, 2), errors: real(errors), external });
@@ -8038,7 +8042,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.separate = cr.length >= 5 && cr.every((i) => p.crystal.includes(i)) && ga.length >= 5 && ga.every((i) => !p.crystal.includes(i));
       ck.exact = JSON.stringify(cr.concat(ga).sort((a, b) => a - b)) === JSON.stringify(p.gather.slice().sort((a, b) => a - b));
       ck.before = order.indexOf('crystal') >= 0 && order.indexOf('crystal') < order.indexOf('gather') && order.indexOf('crystal') === order.indexOf('gather') - 1;
-      ck.title = (await page.locator('.gsec[data-sec=crystal] .sec-title').textContent()) === 'Crystals' && (await page.locator('.gsec[data-sec=crystal] .count').textContent()) === String(cr.length);
+      ck.title = (await page.locator('.gsec[data-sec=crystal] .sec-title').count()) === 1 && (await page.locator('.gsec[data-sec=crystal] .sec-title').textContent()) === 'Crystals' && (await page.locator('.gsec[data-sec=crystal] .count').textContent()) === String(cr.length); // R5: a missing section is a false value, not a wait
       ck.totals = (await lTotals(page)).get === p.get;
       ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
       record('C182', 'Lists page, crystals (real data): shards, crystals and clusters are their own section directly before Gather, none of them in Gather, together exactly the gathered rows of the plan, the totals to get unchanged',
@@ -8144,7 +8148,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: [[49294, 1]] }]);
       await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
       const getItem = (await lSecs(page)).gather[0].item, craftItem = 49294;
-      const copy = async (loc, name) => { await lOpen(loc); await loc.locator('[data-act=copy]').click(); await page.waitForFunction((n) => (document.getElementById('lstatus').textContent || '').includes('Copied ' + n), name, { timeout: 5000 }); return { clip: await page.evaluate(() => navigator.clipboard.readText()), note: await lNote(page) }; };
+      const copy = async (loc, name) => { await lOpen(loc); if ((await loc.locator('[data-act=copy]').count()) !== 1) return { clip: null, note: '' }; /* R5: no Copy name in the drawer reads as a false value, not a wait */ await loc.locator('[data-act=copy]').click(); await page.waitForFunction((n) => (document.getElementById('lstatus').textContent || '').includes('Copied ' + n), name, { timeout: 5000 }).catch(() => null); return { clip: await page.evaluate(() => navigator.clipboard.readText()), note: await lNote(page) }; };
       const g = await copy(page.locator('.get-row[data-item="' + getItem + '"]'), names[getItem]);
       ck.get = g.clip === names[getItem] && g.note.includes('Copied ' + names[getItem] + '.');
       await lTab(page, 'craft');
@@ -8158,8 +8162,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await p2.addInitScript(() => { Object.defineProperty(Navigator.prototype, 'clipboard', { get: () => undefined }); window.__copied = []; document.addEventListener('copy', () => { const a = document.activeElement; window.__copied.push((a && a.value !== undefined && a.value) || String(getSelection())); }, true); });
       await p2.goto(ROOT5 + 'lists/'); await lReady(p2);
       await lOpenList(p2, 'Gear', 'wanted');
-      const loc = p2.locator('.wanted-row[data-item="' + craftItem + '"]'); await lOpen(loc); await loc.locator('[data-act=copy]').click();
-      await p2.waitForFunction(() => (document.getElementById('lstatus').textContent || '').includes('Copied') || (document.getElementById('lstatus').textContent || '').includes('Could not copy'), null, { timeout: 5000 });
+      const loc = p2.locator('.wanted-row[data-item="' + craftItem + '"]'); await lOpen(loc);
+      if ((await loc.locator('[data-act=copy]').count()) === 1) { await loc.locator('[data-act=copy]').click();
+        await p2.waitForFunction(() => (document.getElementById('lstatus').textContent || '').includes('Copied') || (document.getElementById('lstatus').textContent || '').includes('Could not copy'), null, { timeout: 5000 }).catch(() => null); }
       const fb = { copied: await p2.evaluate(() => window.__copied), note: await lNote(p2), area: await p2.evaluate(() => document.querySelectorAll('textarea').length) };
       ck.fallback = fb.copied.length === 1 && fb.copied[0] === names[craftItem] && fb.note.includes('Copied ' + names[craftItem] + '.') && fb.area === 0;
       ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
@@ -8485,7 +8490,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         if (await page.locator('[data-act=undo][data-i="0"]').count()) { await page.click('[data-act=undo][data-i="0"]'); await lSettle(page); }
         const after = await lStored(page);
         ck['one undo removes list, steps and wanted items ' + tag] = JSON.stringify(after) === JSON.stringify(before) && !(await page.locator('.lists-totals').count());
-        if (await page.locator('[data-act=back]').count()) await page.click('[data-act=back]');
+        if (await page.locator('[data-act=back]:visible').count()) await page.click('[data-act=back]');
         await lSeed(page, (S, sec, D) => S.fromProject(sec, { name: D.items[21792][0], charId: 'c2', stamp: D.stamp, project: D.projects[21792] }, { now: 9000 }).section);
         await page.waitForSelector('.list-card'); await page.waitForTimeout(200);
         ck['Your lists stamps the part ' + tag] = (await page.locator('.list-card', { hasText: 'Shark-class Bow' }).locator('.lstamp.proj').allTextContents()).join('') === 'Submarine part' && (await page.locator('.list-card', { hasText: 'Gear' }).locator('.lstamp.proj').count()) === 0;

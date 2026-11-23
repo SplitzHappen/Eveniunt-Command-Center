@@ -6,17 +6,22 @@
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
-   "firstTop": 197,
-   "inView": 11,
-   "mono": [],
+   "firstTop": 211,
+   "inView": 10,
+   "mono": [
+    "4",
+    "1",
+    "1",
+    "1"
+   ],
    "scrollX": 0,
-   "h2": 1538
+   "h2": 1598
   },
   "getOpen": {
    "rest": 56,
-   "opened": 244
+   "opened": 252
   },
-  "getGatherOpen": 274,
+  "getGatherOpen": 236,
   "craft": {
    "rows": 3,
    "maxH": 56,
@@ -29,7 +34,7 @@
    "scrollX": 0,
    "h2": 1000
   },
-  "craftOpen": 245,
+  "craftOpen": 284,
   "wanted": {
    "rows": 11,
    "maxH": 56,
@@ -42,7 +47,7 @@
    "scrollX": 0,
    "h2": 1143
   },
-  "wantedOpen": 322,
+  "wantedOpen": 330,
   "patch": {
    "h": 172,
    "top": 111
@@ -64,69 +69,79 @@
     "w": 720
    },
    "scrollX": 0,
-   "firstRowBelowMast": 197,
+   "firstRowBelowMast": 211,
    "statusIsButton": false
   },
   "combined": {
-   "rows": 14,
+   "rows": 13,
    "maxH": 64,
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
-   "firstTop": 151,
-   "inView": 11,
-   "mono": [],
+   "firstTop": 165,
+   "inView": 10,
+   "mono": [
+    "2",
+    "1",
+    "1",
+    "1"
+   ],
    "scrollX": 0,
-   "h2": 1436
+   "h2": 1440
   }
  },
  "phone-dark": {
   "get": {
    "rows": 15,
-   "maxH": 78,
+   "maxH": 93,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 189,
+   "firstTop": 199,
    "inView": 6,
-   "mono": [],
+   "mono": [
+    "4",
+    "1",
+    "1",
+    "1"
+   ],
    "scrollX": 0,
-   "h2": 1937
+   "h2": 2042
   },
   "getOpen": {
    "rest": 72,
-   "opened": 311
+   "opened": 315
   },
-  "getGatherOpen": 344,
+  "getGatherOpen": 326,
   "craft": {
    "rows": 3,
-   "maxH": 77,
+   "maxH": 140,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 197,
+   "firstTop": 193,
    "inView": 3,
    "mono": [],
    "scrollX": 0,
-   "h2": 961
+   "h2": 1020
   },
-  "craftOpen": 286,
+  "craftOpen": 332,
   "wanted": {
    "rows": 11,
-   "maxH": 95,
+   "maxH": 141,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 189,
+   "firstTop": 185,
    "inView": 6,
    "mono": [],
    "scrollX": 0,
-   "h2": 1549
+   "h2": 1641
   },
   "wantedOpen": 355,
   "patch": {
    "h": 213,
-   "top": 105
+   "top": 101
   },
   "head": {
    "mast": {
@@ -136,7 +151,7 @@
    },
    "head": {
     "top": 77,
-    "h": 105,
+    "h": 101,
     "w": 340
    },
    "status": {
@@ -145,20 +160,25 @@
     "w": 360
    },
    "scrollX": 0,
-   "firstRowBelowMast": 189,
+   "firstRowBelowMast": 199,
    "statusIsButton": false
   },
   "combined": {
-   "rows": 14,
-   "maxH": 78,
+   "rows": 13,
+   "maxH": 111,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 178,
-   "inView": 6,
-   "mono": [],
+   "firstTop": 196,
+   "inView": 5,
+   "mono": [
+    "2",
+    "1",
+    "1",
+    "1"
+   ],
    "scrollX": 0,
-   "h2": 1883
+   "h2": 2010
   }
  }
 }
