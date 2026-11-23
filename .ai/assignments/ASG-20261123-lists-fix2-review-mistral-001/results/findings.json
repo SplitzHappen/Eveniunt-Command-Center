@@ -1,0 +1,11 @@
+[
+  {
+    "severity": "NOTE",
+    "file": "tracker/src/core/merge.js",
+    "line": 207,
+    "title": "Rejected view, ruled to keep the ordinary rule: an unchanged orphaned wanted item is removed by a sync when the other device removed its list (the player's own action); agreed, with a provenance caveat recorded as a known limit",
+    "consequence": "In the rare state where one device holds an unchanged copy of a wanted item whose list header is already missing (only an old-build sync or a hand edit creates that), and the other device explicitly removes the list, the sync removes the item without a further question. That removal is the player's own explicit choice propagated by the ordinary one-sided rule; changed or added survivors are kept and asked (probed at this head). Nothing is deleted that the player did not choose to delete, except along the documented old-build sync limit.",
+    "fix": "None; the ruling stands and the spec's case-4 wording matches the behavior. Caveat kept as a known limit: when an orphan is present, the merge inputs alone cannot prove why a side lacks a unit, because a still-old build's own sync can drop units on its own side.",
+    "evidence": "Direct run of ET.threeWay/applyMerge at head d9d03eb on the exact scenario (0 conflicts, unchanged survivor removed; changed survivor kept with one 'lists' question; added survivor kept). merge.js unchanged by this fix diff. Ruling and reasons in docs/lists-code-review-adjudication.md 'Fourth round' (rejected view), spec section 4 case 4."
+  }
+]
