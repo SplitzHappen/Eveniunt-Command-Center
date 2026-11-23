@@ -1,6 +1,6 @@
 # Where the Command Center stands
 
-Last updated: 2026-11-21.
+Last updated: 2026-11-23.
 
 ## Recently shipped
 
@@ -96,6 +96,23 @@ Last updated: 2026-11-21.
 - **Sub-agent tiers** (2026-11-17): Opus orchestrates and reviews, Fable plans (Opus on the pro plan), Sonnet builds, Haiku does routine work; `docs/model-tiers.md`.
 - **This repository became the working home** (2026-11-17), with free automatic checks. The Atelier was rebuilt with the
   current shared save code (its copy predated the rank feature and dropped the new learning fields when it saved).
+
+## Taken back for a redesign
+
+- **Lists: the crafting planner (phase 3)** was built, reviewed five times and merged on 2026-11-23 (pull request 4),
+  then taken back out by the owner's decision the same night before it ever published (pull request 6; its publish had
+  failed on a GitHub fault and no later run picked it up). It works and is tested, but its screens look generic: rows of
+  bordered buttons, settings forms always open, status messages styled as buttons, monospace labels, phone rows a
+  screen tall. All of its code stays in the history at the merge commit of pull request 4; its documents are kept here
+  (`docs/lists-spec.md`, `docs/lists-research.md`, `docs/lists-review-adjudication.md`,
+  `docs/lists-code-review-adjudication.md`), and its screens as built are in `docs/lists-redesign/before/`.
+- **Why it happened:** after three modules with many owner rounds on appearance, those lessons were never made standing
+  rules. The plan described behaviour only, the checks measured contrast and size but not design, every review prompt
+  (all written by Claude) left appearance out, and the owner saw screens only after the build.
+- **What changes:** a house style, `docs/design-rules.md`, drawn from the owner's earlier decisions; a design gate for
+  every module (a look spec and static mock-up screens in the real theme, approved by the owner from screenshots before
+  building); an appearance section in every plan and code review prompt; and browser checks that measure the checkable
+  rules. Lists comes back after its redesign, `docs/lists-look-spec.md`, passes that gate.
 
 ## Built, waiting for the owner's `ship`
 
