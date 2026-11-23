@@ -41,10 +41,10 @@
 .w-count .role { margin: 0; }
 /* a section of To get and a job of To craft wear the role of their way */
 .gsec[data-sec="vendor"], .gsec[data-sec="trade"] { --f: var(--lr-merchant-fill); --g: var(--lr-merchant-edge); --on-f: var(--on-mid); --rt: var(--lr-merchant-ink); }
-.gsec[data-sec="gather"] { --f: var(--lr-gather-fill); --g: var(--lr-gather-edge); --on-f: var(--on-mid); --rt: var(--lr-gather-ink); }
+.gsec[data-sec="gather"], .gsec[data-sec="crystal"] { --f: var(--lr-gather-fill); --g: var(--lr-gather-edge); --on-f: var(--on-mid); --rt: var(--lr-gather-ink); }
 .gsec[data-sec="market"] { --f: var(--lr-market-fill); --g: var(--lr-market-edge); --on-f: var(--on-mid); --rt: var(--lr-market-ink); }
 .gsec[data-sec="other"], .gsec[data-sec="have"] { --f: var(--lr-short-fill); --g: var(--lr-short-edge); --on-f: var(--on-mid); --rt: var(--lr-short-ink); }
-.gsec[data-sec="left"] { --f: var(--slab); --g: var(--ink); --on-f: var(--on-slab); --rt: var(--ink); }
+.gsec[data-sec="left"], .gsec[data-sec="earn"] { --f: var(--slab); --g: var(--ink); --on-f: var(--on-slab); --rt: var(--ink); }
 .cblock { --f: var(--lr-craft-fill); --g: var(--lr-craft-edge); --on-f: var(--on-mid); --rt: var(--lr-craft-ink); }
 .cblock.cdone { --f: var(--lr-ready-fill); --g: var(--lr-ready-edge); --on-f: var(--on-mid); --rt: var(--lr-ready-ink); }
 
@@ -633,3 +633,30 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --on-mid: var(--paper); }
 }
+
+/* ---- R3 (docs/lists-redteam.md): zone and city heads inside Gather and Buy from a merchant, the book warning, the high-quality choice ---- */
+.zone-head { display: flex; align-items: center; gap: 8px; height: 14px; padding: 0 16px; background: var(--paper-2); border-left: 6px solid var(--f); box-shadow: inset 0 -1px 0 var(--ink); overflow: hidden; }
+.zone-head .zn { flex: none; max-width: 100%; margin: 0; font: 900 13px/14px var(--f-disp); letter-spacing: .05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zone-head .zs { flex: 1; min-width: 0; font: 700 12px/14px var(--f-body); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zone-head .zn + .zc { margin-left: auto; }
+.zc { font: 600 12px/14px var(--f-data); color: var(--ink-2); }
+.ae-head { display: flex; align-items: center; gap: 10px; min-height: 22px; padding: 0 16px 0 22px; background: var(--paper); border-bottom: 1px dashed var(--ink-3); font: 700 12px/1.2 var(--f-body); color: var(--ink-2); }
+.ae-head .sn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.lstamp.warn { color: var(--lr-short-ink); }
+.bk-l2 { display: none; color: var(--lr-short-ink); font-weight: 700; }
+.drawer .why.bookwarn { padding-left: 8px; border-left: 3px solid var(--lr-short-edge); }
+.w-way .selrow { display: flex; align-items: flex-end; gap: 12px; }
+.w-way .selrow .lfld { flex: 1 1 0; min-width: 0; }
+.w-way .selrow .w-hq { flex: none; max-width: 44%; min-height: 44px; margin: 0; line-height: 1.2; }
+@media (max-width: 700px) {
+  .zone-head { padding: 0 12px; }
+  .ae-head { padding: 0 12px 0 18px; }
+  .rst-dsk { display: none; }
+  .bk-l2 { display: inline; }
+  .drawer .inl .lk { min-height: 40px; display: inline-flex; align-items: center; }
+  .tallies.three { gap: 4px; }
+  .tallies.three .tally { min-width: 0; padding: 2px 6px 3px; }
+  .tallies.three .tally b { font-size: 24px; }
+  .tallies.three .tally span { letter-spacing: .02em; }
+}
+.lhead .tally.r-slab::before { background: transparent; box-shadow: inset 0 0 0 2px currentColor; }

@@ -555,4 +555,66 @@
     }
     return { spot: sp[best], index: best, route: best ? bestN : 0, why: best ? 'Chosen: on your route in ' + sp[best][3] : '' };
   };
+  // ------------------------------------------------------------------------------------------------ R3 (docs/lists-redteam.md): the page's pure helpers
+  // Rows of a route in two levels. rows: [{ key, a, b, rank, name }]: a the first level's label (a zone, a city; '' when none), b the second
+  // (an aetheryte, a seller; '' when none), rank a number for a timed row (smaller first) or null, name the item's name. Returns
+  // [{ a, n, subs: [{ b, n, keys }] }]: the first level with the most rows first (then by name, the unnamed one last), the second the same;
+  // inside, the ranked rows first by rank, then the others by name, then by key. The result depends only on the rows given.
+  function byLabel(x, y, lx, ly) { return (lx === '') - (ly === '') || y.n - x.n || (lx < ly ? -1 : lx > ly ? 1 : 0); }
+  L.groupRows = function (rows) {
+    var top = {}, tops = [];
+    (rows || []).forEach(function (r) {
+      var a = r.a || '', b = r.b || '', g = top[a];
+      if (!g) { g = top[a] = { a: a, n: 0, by: {}, subs: [] }; tops.push(g); }
+      var s = g.by[b];
+      if (!s) { s = g.by[b] = { b: b, n: 0, rows: [] }; g.subs.push(s); }
+      g.n++; s.n++; s.rows.push(r);
+    });
+    function rowCmp(x, y) {
+      var rx = typeof x.rank === 'number', ry = typeof y.rank === 'number';
+      if (rx !== ry) return rx ? -1 : 1;
+      if (rx && x.rank !== y.rank) return x.rank - y.rank;
+      var nx = String(x.name || ''), ny = String(y.name || '');
+      return nx < ny ? -1 : nx > ny ? 1 : x.key < y.key ? -1 : x.key > y.key ? 1 : 0;
+    }
+    tops.sort(function (x, y) { return byLabel(x, y, x.a, y.a); });
+    return tops.map(function (g) {
+      g.subs.sort(function (x, y) { return byLabel(x, y, x.b, y.b); });
+      return { a: g.a, n: g.n, subs: g.subs.map(function (s) { return { b: s.b, n: s.n, keys: s.rows.sort(rowCmp).map(function (r) { return r.key; }) }; }) };
+    });
+  };
+  // The seller a vendor row shows (display only: the planned offer and its price do not change). list: the item's sellers [[npc, gil per
+  // unit]...] (data.sellers), planned: the planned offer's npc, placeOf(npc) the seller's place, visits { place: rows of the plan that go
+  // there, not counting this one }. Among the sellers at the planned seller's price, the one in the most visited place; on a tie the
+  // planned seller, then the lowest npc id. A planned seller that is not in the list (a quantity that does not divide) stays.
+  L.shownSeller = function (list, planned, placeOf, visits) {
+    var price = null, i;
+    for (i = 0; i < (list || []).length; i++) if (list[i][0] === planned) price = list[i][1];
+    if (price === null) return planned;
+    var best = planned, bestN = (visits && visits[placeOf(planned)]) || 0;
+    for (i = 0; i < list.length; i++) {
+      if (list[i][1] !== price || list[i][0] === planned) continue;
+      var n = (visits && visits[placeOf(list[i][0])]) || 0;
+      if (n > bestN || (n === bestN && best !== planned && list[i][0] < best)) { best = list[i][0]; bestN = n; }
+    }
+    return best;
+  };
+  // The Tracker's "Master Crafting Books" entry of each master book: { bookItem: entry id } by the book's exact game name (the Tracker stores
+  // the entry's id and name, not the game's item id). bookNames: { bookItem: name }; entries: [{ i, n }]. A name that two entries share, or
+  // that none has, is not mapped (never a guess); `missing` lists those books.
+  L.bookEntries = function (bookNames, entries) {
+    var by = {}, map = {}, missing = [];
+    (entries || []).forEach(function (e) { by[e.n] = by[e.n] === undefined ? e.i : null; });
+    Object.keys(bookNames || {}).sort(byNum).forEach(function (b) { var i = by[bookNames[b]]; if (i === undefined || i === null) missing.push(+b); else map[b] = i; });
+    return { map: map, missing: missing };
+  };
+  // the items that are materials of a craft of the plan (an ingredient of a crafted line)
+  L.materialsOf = function (data, plan) {
+    var out = {};
+    Object.keys((plan && plan.lines) || {}).forEach(function (k) {
+      var ln = plan.lines[k];
+      if (ln.by === 'craft' && data.recipes[ln.recipe]) data.recipes[ln.recipe][5].forEach(function (g) { out[g[0]] = 1; });
+    });
+    return out;
+  };
 })();

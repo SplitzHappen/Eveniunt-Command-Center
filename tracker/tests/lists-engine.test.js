@@ -417,3 +417,52 @@ test('LE-B3b an item whose crafters have identical ingredients plans the same wh
     assert.deepEqual(L.chosenSpot(103, ctx(spots, p)).spot, spots[103][0]);
   });
 }
+
+// R3 (docs/lists-redteam.md): the page's pure helpers
+{
+  const row = (key, a, b, name, rank) => ({ key, a, b, name, rank: rank === undefined ? null : rank });
+  test('LE-R3a groupRows: the first level with most rows first then by name, the unnamed last; the second level the same; ranked rows first by rank, then by name; the input order does not matter', () => {
+    const rows = [row('k1', 'B', 'x', 'Zed'), row('k2', 'A', 'y', 'Ash'), row('k3', 'B', 'x', 'Ant'), row('k4', 'B', '', 'Bee'), row('k5', '', '', 'Nil'), row('k6', 'A', 'y', 'Elm', 50), row('k7', 'A', 'y', 'Fir', 10), row('k8', 'B', 'x', 'Oak', 900)];
+    const want = [{ a: 'B', n: 4, subs: [{ b: 'x', n: 3, keys: ['k8', 'k3', 'k1'] }, { b: '', n: 1, keys: ['k4'] }] }, { a: 'A', n: 3, subs: [{ b: 'y', n: 3, keys: ['k7', 'k6', 'k2'] }] }, { a: '', n: 1, subs: [{ b: '', n: 1, keys: ['k5'] }] }];
+    assert.deepEqual(L.groupRows(rows), want);
+    assert.deepEqual(L.groupRows(rows.slice().reverse()), want);
+    assert.deepEqual(L.groupRows([row('a', 'M', '', 'n'), row('b', 'K', '', 'n')]).map((g) => g.a), ['K', 'M'], 'equal counts go by name');
+    assert.deepEqual(L.groupRows([]), []);
+    assert.deepEqual(L.groupRows(null), []);
+  });
+  test('LE-R3b shownSeller: among the sellers at the planned price the one in the most visited place; a tie keeps the planned seller; a dearer seller or an unknown planned one never changes it', () => {
+    const place = { 1: 'Old', 2: 'South', 3: 'South', 4: 'Far', 5: 'Old' };
+    const list = [[1, 100], [2, 100], [3, 100], [4, 90], [5, 150]];
+    const at = (planned, visits) => L.shownSeller(list, planned, (n) => place[n], visits);
+    assert.equal(at(1, { South: 1 }), 2, 'the lowest id of the visited place');
+    assert.equal(at(1, { South: 1, Old: 1 }), 1, 'a tie keeps the planned seller');
+    assert.equal(at(1, {}), 1);
+    assert.equal(at(1, null), 1);
+    assert.equal(at(1, { Far: 9, Old: 0 }), 1, 'a seller at another price is not a candidate');
+    assert.equal(at(1, { South: 2, Old: 1 }), 2);
+    assert.equal(at(99, { South: 5 }), 99, 'a planned seller that is not in the list stays');
+    assert.equal(at(2, { Old: 3, South: 1 }), 1, 'the visited place of another candidate wins over the planned one');
+    assert.equal(L.shownSeller(undefined, 7, () => '', {}), 7);
+  });
+  test('LE-R3c bookEntries: by exact name; a name twice or not at all is never matched; the real data maps 110 of 110 master books', () => {
+    const r = L.bookEntries({ 10: 'Master A', 11: 'Master B', 12: 'Master C', 13: 'Master D' }, [{ i: 1, n: 'Master A' }, { i: 2, n: 'Master B' }, { i: 3, n: 'Master B' }, { i: 4, n: 'master c' }]);
+    assert.deepEqual(r.map, { 10: 1 });
+    assert.deepEqual(r.missing, [11, 12, 13]);
+    const lists = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'lists.json'), 'utf8'));
+    const tracker = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'tracker-data.json'), 'utf8'));
+    const entries = [].concat(...tracker.sections.find((s) => s.id === 'masterbooks').g.map((g) => g.e));
+    const real = L.bookEntries(lists.bookNames, entries);
+    assert.equal(Object.keys(lists.bookNames).length, 110);
+    assert.equal(Object.keys(real.map).length, 110);
+    assert.deepEqual(real.missing, []);
+    for (const b of Object.keys(real.map)) assert.equal(entries.find((e) => e.i === real.map[b]).n, lists.bookNames[b]);
+  });
+  test('LE-R3d materialsOf: the ingredients of the crafted lines of a plan, and nothing else', () => {
+    const p = plan([list('A', [T('a', 100, 1, { make: true })])]);
+    const m = L.materialsOf(D, p), want = {};
+    for (const k of Object.keys(p.lines)) if (p.lines[k].by === 'craft') D.recipes[p.lines[k].recipe][5].forEach((g) => { want[g[0]] = 1; });
+    assert.deepEqual(m, want);
+    assert.ok(Object.keys(m).length > 0, 'the fixture item is crafted from materials');
+    assert.deepEqual(L.materialsOf(D, null), {});
+  });
+}

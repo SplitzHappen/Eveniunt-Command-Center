@@ -112,7 +112,16 @@ for (const j of ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherwork
     const s = list[0];
     gatherOf[item] = [s[0], s[2], s[3], s[7] && s[7].length ? s[7] : 0, s[7] && s[7].length ? s[8] : 0];
   }
-  const full = Object.assign({}, data, { gather: gatherOf, spots: data.gather, log, noHandOver: cross.noHandOver });
+  // R3 (docs/lists-redteam.md): the Tracker's "Master Crafting Books" entry of each master book of the game data, matched by the book's exact
+  // game name (the Tracker stores each entry's id and name, not the game's item id), so a row can say the book is not ticked. The build stops
+  // when a book has no entry or two, so a book is never matched by guess.
+  require('./src/lists/engine.js');
+  const mbSec = tracker.sections.find((x) => x.id === 'masterbooks');
+  if (!mbSec) throw new Error('lists books: no masterbooks list in tracker-data.json');
+  const books = globalThis.LISTS.bookEntries(data.bookNames, [].concat(...mbSec.g.map((g) => g.e)));
+  if (books.missing.length) throw new Error('lists books: no single Tracker entry of the same name for the book item(s) ' + books.missing.join(', '));
+  console.log('lists books: ' + Object.keys(books.map).length + ' of ' + Object.keys(data.bookNames).length + ' master books map to a Tracker entry');
+  const full = Object.assign({}, data, { gather: gatherOf, spots: data.gather, log, noHandOver: cross.noHandOver, bookTicks: books.map });
   const json = JSON.stringify(full);
   const head = '// Built by command-center/build.js from data/lists.json (sources in data/SOURCES.md) and the craft-* lists of data/tracker-data.json.\n';
   const plainJs = head + 'window.LISTS_DATA=' + json + ';\n';

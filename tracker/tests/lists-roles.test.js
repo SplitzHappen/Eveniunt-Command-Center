@@ -141,7 +141,7 @@ test('no rule outside the token block holds a colour: only var() of a theme toke
 
 test('monospace is for figures only (design rules T2, F4): the data face is named by four rules and no other', () => {
   const sel = rules.filter((r) => /var\(--f-data\)/.test(r.body.replace(/--f-[\w-]+\s*:[^;]*;/g, ''))).filter((r) => !T.TOKEN_RULES.includes(r.sel)).map((r) => r.sel).sort();
-  assert.deepEqual(sel, ['.lists-main .stepper .fld input', '.ltab .tn', '.sec-sum', '.stepper .fld b'], 'the count in the rail, the figure of a section head and the figure in a stepper (F5: the typed count is in the data face)');
+  assert.deepEqual(sel, ['.lists-main .stepper .fld input', '.ltab .tn', '.sec-sum', '.stepper .fld b', '.zc'], 'the count in the rail, the figure of a section head, the figure in a stepper (F5: the typed count is in the data face) and the row count of a zone head (R3)');
   assert.ok(!/(font-family|font):[^;}]*var\(--f-data\)[^;}]*;[^}]*text-transform:\s*uppercase/.test(body), 'no uppercase label in the data face');
 });
 
@@ -150,7 +150,7 @@ test('every role is drawn with a word: the way words, "to get N" and "N of M rea
   assert.deepEqual(ways.map((w) => w[1]).sort(), ['Gather', 'Market', 'Merchant', 'Trade'], 'a word for each way of getting an item');
   assert.ok(js.includes("var w = craft ? ['craft', 'Craft'] : WAY_WORD[ln.by];"), 'the craft word');
   // the count blocks of the redesign (B4 wrote this for the old rows): a row's block carries its word in the role, "to get" on short, "of M ready" on ready
-  assert.ok(js.includes("word: outside ? 'not typed' : 'to get', wcls: outside ? '' : 'role role-short'"), 'short is "to get N" in a count block');
+  assert.ok(js.includes("word: outside ? 'not typed' : earn ? 'to earn' : 'to get', wcls: outside || earn ? '' : 'role role-short'"), 'short is "to get N" in a count block');
   assert.ok(js.includes('<i class="role role-ready">of \' + r.total + \' ready</i>'), 'ready is "N of M ready"');
   assert.ok(js.includes("' <span class=\"role role-' + w[0] + '\">' + w[1] + '</span>'"), 'a way word is written inside its role span');
   for (const r of SIX) assert.ok(new RegExp('\\.role-' + r + '\\s*\\{').test(body), '.role-' + r + ' is in lists.css');

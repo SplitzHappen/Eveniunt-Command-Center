@@ -7897,6 +7897,277 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── R3 (docs/lists-redteam.md): the real data. Six pieces of the Courtly Lover's leatherworking set (every one a Master Leatherworker XII recipe) are the gear-set-like list: they need gathered crystals and
+    //    materials from six zones, a tomestone, scrips and a gemstone that nothing here gives, and nine intermediates that can be made in high quality. ──
+    const r3Gear = [49294, 49295, 49298, 49300, 49303, 49305];
+    const r3Page = async (opts) => { const c = await context(Object.assign({ serviceWorkers: 'block' }, opts || {})); const page = await c.ctx.newPage(); return Object.assign(c, { page }); };
+    const r3Names = (pg) => pg.evaluate(() => { const D = window.__lists.data(); return Object.fromEntries(Object.keys(D.items).map((i) => [i, D.items[i][0]])); });
+
+    // ── C179 (Lists, R3a) Currencies to earn, the real data: Skysteel Ingot (200 Skybuilders' Scrip) lands the scrip in "Currencies to earn" and not in Other or on the market; the list head counts it apart ("200 to earn", the totals to get and to craft unchanged); the
+    //    engine still plans the scrip as "other"; a market way stored for the scrip says "This is a currency: it is earned, not bought" and still does not buy it; in the gear list the tomestone is in the section and every item of the section is a currency. ──
+    await guard('C179', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Sky', charId: 'c1', items: [[28906, 1]] }, { name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      const head = () => page.evaluate(() => { const e = document.querySelector('.lists-totals'); return { get: +e.dataset.get, craft: +e.dataset.craft, earn: +e.dataset.earn, text: e.textContent.replace(/\s+/g, ' '), label: e.getAttribute('aria-label') }; });
+      await lOpenList(page, 'Sky', 'get'); await lOpenAll(page);
+      let secs = await lSecs(page), h = await head();
+      const plan = await page.evaluate(() => window.__lists.plan('c1', true)), sky = plan.lines['28063|normal|0'];
+      ck.engineUnchanged = !!sky && sky.by === 'other' && sky.got === 200 && plan.shop.other.includes('28063|normal|0');
+      ck.earnSection = lItemsIn(secs, 'earn').join() === '28063' && lItemsIn(secs, 'other').length === 0 && lItemsIn(secs, 'market').length === 0;
+      ck.sectionHead = (await page.locator('.gsec[data-sec=earn] .sec-title').textContent()) === 'Currencies to earn' && /to earn/.test(secs.earn[0].text) && secs.earn[0].text.includes('This is a currency: it is earned, not bought');
+      ck.headApart = h.get === 1 && h.craft === 0 && h.earn === 200 && /200to earn/.test(h.text) && /1 to get, 0 to craft, 200 to earn\./.test(h.label);
+      // a market way stored for the scrip
+      await lSeed(page, (S, sec) => S.setWay(sec, 'c1', 28063, { by: 'market' }).section);
+      await lOpenList(page, 'Sky', 'get'); await lOpenAll(page);
+      secs = await lSecs(page);
+      const row = page.locator('.get-row[data-item="28063"]'); await lOpen(row);
+      const drawer = (await row.locator('.drawer').textContent()).replace(/\s+/g, ' ');
+      ck.storedMarket = lItemsIn(secs, 'earn').join() === '28063' && lItemsIn(secs, 'market').length === 0 && drawer.includes('This is a currency: it is earned, not bought.') && !/no longer available/.test(drawer) && drawer.split('This is a currency').length === 2;
+      // the gear list: the tomestone is earned; every item of the section is a currency and none of Other is
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      secs = await lSecs(page); h = await head();
+      const g = await page.evaluate(() => { const p = window.__lists.plan('c2', true), cur = window.__lists.data().currencies; const ln = Object.values(p.lines); return { cur, earn: ln.filter((l) => l.by === 'other' && cur.includes(l.item)).reduce((n, l) => n + l.got, 0), get: ln.filter((l) => l.by !== 'craft' && l.by !== 'have' && !(l.by === 'other' && cur.includes(l.item))).reduce((n, l) => n + l.got, 0) }; });
+      ck.gearTomestone = lItemsIn(secs, 'earn').includes(48) && lItemsIn(secs, 'earn').every((i) => g.cur.includes(i)) && lItemsIn(secs, 'other').every((i) => !g.cur.includes(i)) && lItemsIn(secs, 'earn').length >= 2;
+      ck.gearFigures = h.earn === g.earn && h.earn > 0 && h.get === g.get;
+      ck.noErrors = real(errors).length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('C179', 'Lists page, currencies (real data): the Skybuilders\' Scrip of a Skysteel Ingot and the tomestone of the gear list are in "Currencies to earn", not in Other or on the market, counted apart in the head ("200 to earn") and not in the totals to get; the engine still plans them as "other"; a stored market way says "This is a currency: it is earned, not bought"',
+        Object.values(ck).every(Boolean), { ck, h, g: { earn: g.earn, get: g.get }, earn: secs.earn && secs.earn.map((r) => r.item), other: (secs.other || []).map((r) => r.item), errors: real(errors), external });
+      void server;
+    });
+
+    // ── C180 (Lists, R3b) High quality, the real data: the drawer of a craft row has "Need it in high quality" only for a material that can be made in high quality (not for a gear piece, not for a material that cannot); ticking it stores ways.hq with an Undo, the row stays open and becomes
+    //    a high-quality row planned as such; "High quality for every material" in List settings sets every such material in one change with one Undo entry and adds no field to the save; its Undo gives the saved ways back exactly. ──
+    await guard('C180', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      await lOpenList(page, 'Gear', 'craft');
+      const info = await page.evaluate(() => { const D = window.__lists.data(), p = window.__lists.plan('c2', true), mats = LISTS.materialsOf(D, p), hq = (i) => !!(D.items[i][1] & 2) && Object.keys(D.recipes).some((r) => D.recipes[r][0] === i && (D.recipes[r][6] & 1)); const crafts = Object.values(p.lines).filter((l) => l.by === 'craft' && l.crafts > 0).map((l) => l.item); return { crafts, ok: crafts.filter((i) => mats[i] && hq(i)), no: crafts.filter((i) => !(mats[i] && hq(i))), all: Object.keys(mats).map(Number).filter(hq).sort((a, b) => a - b) }; });
+      ck.haveBoth = info.ok.length >= 3 && info.no.length >= 3;
+      const box = (it) => page.locator('.craft-row[data-item="' + it + '"] [data-f=hqway]');
+      const shown = async (it) => { const r = page.locator('.craft-row[data-item="' + it + '"]').first(); await lOpen(r); const n = await box(it).count(); await lCloseRows(page); return n; };
+      const offered = []; for (const it of info.ok) offered.push(await shown(it));
+      const refused = []; for (const it of info.no) refused.push(await shown(it));
+      ck.onlyHqAble = offered.every((n) => n === 1) && refused.every((n) => n === 0);
+      // one material, ticked and undone
+      const it = info.ok[0], before = JSON.stringify(await lStored(page));
+      const r1 = page.locator('.craft-row[data-item="' + it + '"]').first(); await lOpen(r1);
+      await box(it).check(); await lSettle(page);
+      const st1 = await lStored(page), note1 = await lNote(page);
+      ck.stored = JSON.stringify(Object.keys(st1.ways)) === JSON.stringify(['c2.' + it]) && st1.ways['c2.' + it].hq === true && /Needed high quality for /.test(note1) && /Undo/.test(note1);
+      const rowAfter = page.locator('.craft-row[data-item="' + it + '"]').first();
+      ck.rowStaysOpen = (await rowAfter.locator('[data-act=row]').getAttribute('aria-expanded')) === 'true' && (await rowAfter.getAttribute('data-q')) === 'hq' && (await box(it).isChecked()) && /High quality/.test(await rowAfter.locator('.l1').textContent());
+      ck.plannedHq = await page.evaluate((i) => !!window.__lists.plan('c2', true).lines[i + '|hq|0'] && !window.__lists.plan('c2', true).lines[i + '|normal|0'], it);
+      await page.click('#lstatus [data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undo1 = JSON.stringify(await lStored(page)) === before;
+      // every material in one change
+      await lSet(page); await page.click('[data-act=hq-all]'); await lSettle(page);
+      await lSetDone(page);
+      const st2 = await lStored(page), keys = Object.keys(st2.ways).map((k) => +k.split('.')[1]).sort((a, b) => a - b), u = await page.evaluate(() => window.__lists.state.undo.map((e) => ({ label: e.label, units: e.units.length })));
+      ck.everyMaterial = JSON.stringify(keys) === JSON.stringify(info.all) && Object.values(st2.ways).every((w) => w.hq === true && Object.keys(w).length === 1);
+      ck.oneEntry = u.length === 1 && u[0].units === info.all.length && u[0].label === 'Needed high quality for ' + info.all.length + ' materials';
+      ck.noNewField = JSON.stringify(Object.keys(st2)) === JSON.stringify(Object.keys(JSON.parse(before)));
+      ck.bulkPlanned = await page.evaluate((all) => { const p = window.__lists.plan('c2', true); return all.every((i) => !!p.lines[i + '|hq|0']); }, info.all);
+      await page.click('#lstatus [data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undoAll = JSON.stringify(await lStored(page)) === before;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C180', 'Lists page, high quality (real data): "Need it in high quality" is in the drawer only of a material that can be made in high quality, stores ways.hq and undoes; "High quality for every material" sets all of them in one change with one Undo entry, no new save field, and its Undo restores the saved ways',
+        Object.values(ck).every(Boolean), { ck, ok: info.ok.length, no: info.no.length, all: info.all, keys, u, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C181 (Lists, R3c) Master books, the real data: every craft row of the Courtly Lover's set shows the game's book name, Expert, Specialist and its stars from the recipe; for Alba, who has not ticked "Master Leatherworker XII" in the Tracker, each row says "Book not ticked" and its drawer
+    //    "Master Leatherworker XII is not ticked for Alba"; when the Tracker's tick is set the warning goes and the stamps stay; a list with no character shows the stamps and no warning; 110 of the 110 books map to a Tracker entry by their exact name, all to the entry the Tracker data holds. ──
+    await guard('C181', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, tracker = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8')), entries = [].concat(...tracker.sections.find((x) => x.id === 'masterbooks').g.map((g) => g.e));
+      const ent = entries.find((e) => e.n === 'Master Leatherworker XII').i, key = 'masterbooks:' + ent;
+      const maps = await page.evaluate(() => { const D = window.__lists.data(); return { n: Object.keys(D.bookNames).length, t: D.bookTicks, names: D.bookNames }; });
+      const exact = Object.keys(maps.names).filter((b) => entries.filter((e) => e.n === maps.names[b]).length === 1 && entries.find((e) => e.n === maps.names[b]).i === maps.t[b]);
+      ck.books110 = maps.n === 110 && Object.keys(maps.t).length === 110 && exact.length === 110;
+      await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }, { name: 'Nobody', items: r3Gear.map((i) => [i, 1]) }]);
+      const facts = () => page.evaluate(() => { const D = window.__lists.data(); return [...document.querySelectorAll('.craft-row')].map((r) => { const rid = window.__lists.plan(r.dataset.owner, true).lines[r.dataset.lk].recipe, rc = D.recipes[rid], bk = D.books[rid]; return { rid, want: { book: bk ? D.bookNames[bk] : null, expert: !!(rc[6] & 2), spec: !!(rc[6] & 4), stars: rc[4] }, got: { book: (r.querySelector('.rs-book') || {}).textContent || null, expert: !!r.querySelector('.rs-expert'), spec: !!r.querySelector('.rs-spec'), stars: r.querySelector('.rs-stars') ? parseInt(r.querySelector('.rs-stars').textContent, 10) : 0 }, warn: !!r.querySelector('.lstamp.warn'), text: r.textContent.replace(/\s+/g, ' ') }; }); });
+      await lOpenList(page, 'Gear', 'craft'); await page.waitForFunction(() => !!document.querySelector('.craft-row .lstamp.warn'), null, { timeout: 15000 }).catch(async () => { throw new Error('no warning shown: ' + JSON.stringify(await page.evaluate(() => ({ et: !!(window.ET && window.ET.fromSaveDoc), rows: document.querySelectorAll('.craft-row').length, tr: JSON.stringify(window.__lists.state.tracker), chars: JSON.stringify(window.__lists.state.chars), l1: [...document.querySelectorAll('.craft-row .l1')].map((e) => e.textContent).slice(0, 2) })))); });
+      let f = await facts();
+      const same = (x) => x.want.book === x.got.book && x.want.expert === x.got.expert && x.want.spec === x.got.spec && x.want.stars === x.got.stars;
+      ck.stamps = f.length >= 6 && f.every(same) && f.filter((x) => x.want.book === 'Master Leatherworker XII').length >= 6 && f.some((x) => x.want.stars > 0);
+      const bookRows = f.filter((x) => x.want.book);
+      ck.warns = bookRows.length >= 6 && bookRows.every((x) => x.warn) && f.every((x) => x.warn === !!x.want.book);
+      const first = page.locator('.craft-row', { hasText: 'Master Leatherworker XII' }).first(); await lOpen(first);
+      ck.drawerSays = (await first.locator('.drawer').textContent()).includes('Master Leatherworker XII is not ticked for Alba');
+      await lCloseRows(page);
+      // the Tracker ticks the book: the warning of its rows goes (the intermediates of other books keep theirs), the stamps stay; then every book is ticked
+      const tick = async (ks) => { await page.evaluate(async (keys) => { await CC.transact((raw) => { const d = CC.checkDoc(raw); keys.forEach((k) => { d.modules.tracker.ticks.c1[k] = 1; }); d.updated = Date.now(); return d; }); await window.__lists.reload(); }, ks); };
+      const others = [...new Set(bookRows.map((x) => x.want.book))].filter((n) => n !== 'Master Leatherworker XII');
+      await tick([key]);
+      await page.waitForFunction(() => ![...document.querySelectorAll('.craft-row')].some((r) => /Master Leatherworker XII/.test(r.textContent) && r.querySelector('.lstamp.warn')), null, { timeout: 15000 });
+      f = await facts();
+      ck.bookGone = f.filter((x) => x.want.book === 'Master Leatherworker XII').every((x) => !x.warn) && f.filter((x) => x.want.book && x.want.book !== 'Master Leatherworker XII').every((x) => x.warn) && f.every(same);
+      await tick(others.map((n) => 'masterbooks:' + entries.find((e) => e.n === n).i));
+      await page.waitForFunction(() => !document.querySelector('.craft-row .lstamp.warn'), null, { timeout: 15000 });
+      f = await facts();
+      ck.warningGone = f.length >= 6 && f.every((x) => !x.warn) && f.every(same) && !/is not ticked/.test(f.map((x) => x.text).join(' '));
+      // no character: the stamps, no warning, and the Tracker's tick of another character is not read for it
+      await lOpenList(page, 'Nobody', 'craft'); f = await facts();
+      ck.noCharacter = f.length >= 6 && f.every(same) && f.every((x) => !x.warn);
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C181', 'Lists page, master books (real data): craft rows show the book name, Expert, Specialist and stars from the recipe; "Book not ticked" and "Master Leatherworker XII is not ticked for Alba" until the Tracker\'s tick is set; no character, no warning; 110 of 110 books map to their Tracker entry by exact name',
+        Object.values(ck).every(Boolean), { ck, mapped: exact.length, sample: f.slice(0, 2), errors: real(errors), external });
+      void server;
+    });
+
+    // ── C182 (Lists, R3d) Crystals, the real data: the gear list's gathered shards, crystals and clusters are their own section before Gather, every item of it flagged as a crystal and none of Gather; together they are exactly the plan's gathered rows; the totals to get do not change. ──
+    await guard('C182', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      const secs = await lSecs(page), order = await page.evaluate(() => [...document.querySelectorAll('.gsec')].map((s) => s.dataset.sec));
+      const p = await page.evaluate(() => { const D = window.__lists.data(), pl = window.__lists.plan('c2', true); return { gather: pl.shop.gather.map((k) => pl.lines[k].item), crystal: Object.keys(D.items).filter((i) => D.items[i][1] & 8).map(Number), get: Object.values(pl.lines).filter((l) => l.by !== 'craft' && l.by !== 'have' && !(l.by === 'other' && D.currencies.includes(l.item))).reduce((n, l) => n + l.got, 0) }; });
+      const cr = lItemsIn(secs, 'crystal'), ga = lItemsIn(secs, 'gather');
+      ck.separate = cr.length >= 5 && cr.every((i) => p.crystal.includes(i)) && ga.length >= 5 && ga.every((i) => !p.crystal.includes(i));
+      ck.exact = JSON.stringify(cr.concat(ga).sort((a, b) => a - b)) === JSON.stringify(p.gather.slice().sort((a, b) => a - b));
+      ck.before = order.indexOf('crystal') >= 0 && order.indexOf('crystal') < order.indexOf('gather') && order.indexOf('crystal') === order.indexOf('gather') - 1;
+      ck.title = (await page.locator('.gsec[data-sec=crystal] .sec-title').textContent()) === 'Crystals' && (await page.locator('.gsec[data-sec=crystal] .count').textContent()) === String(cr.length);
+      ck.totals = (await lTotals(page)).get === p.get;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C182', 'Lists page, crystals (real data): shards, crystals and clusters are their own section directly before Gather, none of them in Gather, together exactly the gathered rows of the plan, the totals to get unchanged',
+        Object.values(ck).every(Boolean), { ck, crystals: cr.length, gather: ga.length, order, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C183 (Lists, R3e) Gather by zone, the real data: the gear list's Gather rows sit under zone heads (each with its row count, the zone with most rows first), then aetheryte heads, every row under the zone and aetheryte of its chosen spot; the zone changes of the plan fall from the item order's
+    //    to one per zone; timed nodes come first in each group by next window and the order is made when the page is drawn: the 15-second tick rewrites the window texts and moves no row, the next redraw puts the rows in the order of the new time. ──
+    await guard('C183', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external, page } = await r3Page();
+      const HOUR = 175000, base = 400000 * 24 * HOUR;
+      await page.clock.install({ time: base });
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      const walk = () => page.evaluate(() => { const D = window.__lists.data(), pl = window.__lists.plan('c2', true), out = [], now = Date.now(); let zone = null, sub = '', heads = [];
+        document.querySelectorAll('.gsec[data-sec=gather] ul.lines > li').forEach((li) => {
+          if (li.classList.contains('zone-head')) { zone = li.querySelector('.zn').textContent; sub = li.querySelector('.zs') ? li.querySelector('.zs').textContent : ''; heads.push({ zone, n: +li.querySelector('.zc').textContent, subs: sub ? [{ sub, n: +li.querySelector('.zc').textContent }] : [] }); }
+          else if (li.classList.contains('ae-head')) { sub = li.querySelector('.sn').textContent; heads[heads.length - 1].subs.push({ sub, n: +li.querySelector('.zc').textContent }); }
+          else if (li.classList.contains('line-row')) {
+            const it = +li.dataset.item, cs = LISTS.chosenSpot(it, { spots: D.spots, plan: pl }), s = cs.spot, w = li.querySelector('.w-window'), hours = w ? w.dataset.hours.split(',').map(Number) : null, nw = hours ? LISTS.nextWindow(hours, +w.dataset.mins, now) : null;
+            out.push({ item: it, zone, sub, spotZone: s[3], spotSub: (s[4] > 0 || s[5] > 0) && s[6] ? D.aetherytes[s[6]] : '', rank: nw ? (nw.open ? 0 : 1) * 1e15 + (nw.open ? nw.closesAt : nw.opensAt) : null, text: w ? w.textContent : '' });
+          }
+        });
+        return { rows: out, heads }; });
+      let w0 = await walk();
+      const rows = w0.rows;
+      ck.rows = rows.length >= 8 && w0.heads.length >= 4;
+      ck.underOwnZone = rows.every((r) => r.zone === r.spotZone && (r.sub === '' ? r.spotSub === '' : r.sub === 'Near ' + r.spotSub));
+      ck.headCounts = w0.heads.every((h) => h.n === rows.filter((r) => r.zone === h.zone).length) && w0.heads.reduce((n, h) => n + h.n, 0) === rows.length && new Set(w0.heads.map((h) => h.zone)).size === w0.heads.length;
+      ck.mostFirst = w0.heads.every((h, i) => !i || w0.heads[i - 1].n > h.n || (w0.heads[i - 1].n === h.n && w0.heads[i - 1].zone < h.zone));
+      const changes = (a) => a.reduce((n, r, i) => n + (i && a[i - 1] !== r ? 1 : 0), 0);
+      const byItem = rows.slice().sort((a, b) => a.item - b.item), before = changes(byItem.map((r) => r.spotZone)), after = changes(rows.map((r) => r.zone));
+      const all = await page.evaluate(() => { const D = window.__lists.data(), pl = window.__lists.plan('c2', true); return pl.shop.gather.map((k) => LISTS.chosenSpot(pl.lines[k].item, { spots: D.spots, plan: pl }).spot[3]); });
+      ck.fewerChanges = after < before && after === w0.heads.length - 1;
+      // inside a group: timed rows first by next window (the page's own engine at this time), then the others
+      const groups = {}; rows.forEach((r) => { (groups[r.zone + '|' + r.sub] = groups[r.zone + '|' + r.sub] || []).push(r); });
+      const ordered = (g) => g.every((r, i) => r.rank !== null || g.slice(i).every((q) => q.rank === null)) && g.filter((r) => r.rank !== null).every((r, i, t) => !i || t[i - 1].rank <= r.rank);
+      ck.timedFirst = Object.values(groups).every(ordered);
+      const timed = Object.values(groups).filter((g) => g.filter((r) => r.rank !== null).length >= 2);
+      ck.twoTimed = timed.length >= 1;
+      const order0 = rows.map((r) => r.item).join(), text0 = rows.map((r) => r.text).join('|');
+      // the tick: six Eorzean hours later the window texts have moved, no row has
+      await page.clock.fastForward(6 * HOUR);
+      const w1 = await walk();
+      ck.tickMovesNoRow = w1.rows.map((r) => r.item).join() === order0 && w1.rows.map((r) => r.text).join('|') !== text0;
+      // the redraw (leave the tab and come back) orders by the new time, which is not the old order
+      await lTab(page, 'craft'); await lTab(page, 'get'); await lOpenAll(page);
+      const w2 = await walk(), g2 = {}; w2.rows.forEach((r) => { (g2[r.zone + '|' + r.sub] = g2[r.zone + '|' + r.sub] || []).push(r); });
+      ck.redrawReorders = w2.rows.map((r) => r.item).join() !== order0 && Object.values(g2).every(ordered);
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C183', 'Lists page, Gather by zone (real data): zone heads with their counts, the zone with most rows first, aetheryte heads, every row under its chosen spot\'s zone, the zone changes fall from ' + before + ' (item order, crystals apart) to ' + after + ', timed nodes first by next window; the 15-second tick moves no row and a redraw orders by the new time',
+        Object.values(ck).every(Boolean), { ck, zoneChangesBefore: before, zoneChangesAfter: after, allGatherRows: all.length, allChangesItemOrder: changes(all), heads: w0.heads, errors: real(errors), external });
+      void server; void ctx;
+    });
+
+    // ── C184 (Lists, R3f) Vendors by city then seller, the real data: Carnage Sword (sold in Old Gridania and South Shroud at one price, planned from Old Gridania) and Mustard Eggs (South Shroud only): together the sword is shown at the South Shroud seller, both under one
+    //    "South Shroud" head; alone it is shown in Old Gridania; the plan's offer and gil are the same either way; every vendor row of a larger list sits under the city of its shown seller, the cities with most rows first. ──
+    await guard('C184', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      const many = [1602, 1603, 1604, 1606, 1613, 1616, 2338, 2364, 2375, 2377, 2389, 2895, 2996, 2997];
+      await lSeedLists(page, [{ name: 'Together', charId: 'c1', items: [[1611, 1], [4652, 1]] }, { name: 'Alone', charId: 'c2', items: [[1611, 1]] }, { name: 'Many', charId: 'c3', items: many.map((i) => [i, 1]) }]);
+      const offer = (owner) => page.evaluate((o) => { const p = window.__lists.plan(o, true), l = p.lines['1611|normal|0']; return { npc: l.offer.npc, cost: l.cost, price: l.offer.cur[0][1], gil: p.gil.vendor }; }, owner);
+      const sellerOf = async (it) => { const r = page.locator('.get-row[data-item="' + it + '"]'); return (await r.locator('.l2').textContent()).replace(/\s+/g, ' '); };
+      await lOpenList(page, 'Together', 'get'); await lOpenAll(page);
+      const heads = await page.locator('.gsec[data-sec=vendor] .zone-head .zn').allTextContents(), subs = await page.locator('.gsec[data-sec=vendor] .ae-head .sn').allTextContents();
+      const together = await sellerOf(1611), t = await offer('c1');
+      ck.together = /Sold by [^·]*? in South Shroud/.test(together) && heads.join() === 'South Shroud';
+      ck.sellerHeads = subs.length >= 1 && new Set(subs).size === subs.length;
+      await lOpenList(page, 'Alone', 'get'); await lOpenAll(page);
+      const alone = await sellerOf(1611), a = await offer('c2');
+      ck.alone = /in Old Gridania/.test(alone) && (await page.locator('.gsec[data-sec=vendor] .zone-head .zn').allTextContents()).join() === 'Old Gridania';
+      ck.planUnchanged = t.npc === a.npc && t.npc === 1000217 && t.cost === a.cost && t.price === a.price;
+      // a larger list: rows under the city of their shown seller, the cities with most rows first
+      await lOpenList(page, 'Many', 'get'); await lOpenAll(page);
+      const m = await page.evaluate(() => { const out = [], hs = []; let city = null;
+        document.querySelectorAll('.gsec[data-sec=vendor] ul.lines > li').forEach((li) => {
+          if (li.classList.contains('zone-head')) { city = li.querySelector('.zn').textContent; hs.push({ city, n: +li.querySelector('.zc').textContent }); }
+          else if (li.classList.contains('line-row')) { const mm = /Sold by (.*?) in (.*?) (?:for|:)/.exec(li.querySelector('.l2').textContent.replace(/\s+/g, ' ')); out.push({ item: +li.dataset.item, city, said: mm ? mm[2] : null }); }
+        });
+        return { out, hs }; });
+      ck.manyRows = m.out.length >= 6 && m.out.every((r) => r.said === r.city);
+      ck.manyHeads = m.hs.every((h) => h.n === m.out.filter((r) => r.city === h.city).length) && m.hs.every((h, i) => !i || m.hs[i - 1].n > h.n || (m.hs[i - 1].n === h.n && m.hs[i - 1].city < h.city)) && m.hs.length < m.out.length;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C184', 'Lists page, vendors (real data): the vendor section is grouped by city then seller; an item sold at one price in two places is shown in the place the plan already goes to (Carnage Sword in South Shroud with Mustard Eggs, in Old Gridania alone) while the planned offer and gil do not change',
+        Object.values(ck).every(Boolean), { ck, heads, subs, together, alone, t, a, hs: m.hs, rows: m.out.length, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C185 (Lists, R3g) Copy name: the drawer of a To get row, a To craft row and a Wanted row has "Copy name"; it puts the item's name on the clipboard and the status line says "Copied <name>."; with no clipboard interface the page falls back to selecting and copying a hidden text box. ──
+    await guard('C185', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external, page } = await r3Page();
+      await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://127.0.0.1:' + PORT5 });
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, names = await r3Names(page);
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: [[49294, 1]] }]);
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      const getItem = (await lSecs(page)).gather[0].item, craftItem = 49294;
+      const copy = async (loc, name) => { await lOpen(loc); await loc.locator('[data-act=copy]').click(); await page.waitForFunction((n) => (document.getElementById('lstatus').textContent || '').includes('Copied ' + n), name, { timeout: 5000 }); return { clip: await page.evaluate(() => navigator.clipboard.readText()), note: await lNote(page) }; };
+      const g = await copy(page.locator('.get-row[data-item="' + getItem + '"]'), names[getItem]);
+      ck.get = g.clip === names[getItem] && g.note.includes('Copied ' + names[getItem] + '.');
+      await lTab(page, 'craft');
+      const c = await copy(page.locator('.craft-row[data-item="' + craftItem + '"]'), names[craftItem]);
+      ck.craft = c.clip === names[craftItem] && c.note.includes('Copied ' + names[craftItem] + '.');
+      await lTab(page, 'wanted');
+      const w = await copy(page.locator('.wanted-row[data-item="' + craftItem + '"]'), names[craftItem]);
+      ck.wanted = w.clip === names[craftItem];
+      // no clipboard interface: the hidden text box is selected and copied
+      const p2 = await ctx.newPage();
+      await p2.addInitScript(() => { Object.defineProperty(Navigator.prototype, 'clipboard', { get: () => undefined }); window.__copied = []; document.addEventListener('copy', () => { const a = document.activeElement; window.__copied.push((a && a.value !== undefined && a.value) || String(getSelection())); }, true); });
+      await p2.goto(ROOT5 + 'lists/'); await lReady(p2);
+      await lOpenList(p2, 'Gear', 'wanted');
+      const loc = p2.locator('.wanted-row[data-item="' + craftItem + '"]'); await lOpen(loc); await loc.locator('[data-act=copy]').click();
+      await p2.waitForFunction(() => (document.getElementById('lstatus').textContent || '').includes('Copied') || (document.getElementById('lstatus').textContent || '').includes('Could not copy'), null, { timeout: 5000 });
+      const fb = { copied: await p2.evaluate(() => window.__copied), note: await lNote(p2), area: await p2.evaluate(() => document.querySelectorAll('textarea').length) };
+      ck.fallback = fb.copied.length === 1 && fb.copied[0] === names[craftItem] && fb.note.includes('Copied ' + names[craftItem] + '.') && fb.area === 0;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C185', 'Lists page, Copy name: every kind of row has it in its drawer, the item\'s name reaches the clipboard and the status line says "Copied <name>."; without a clipboard interface the fallback copies the same name',
+        Object.values(ck).every(Boolean), { ck, g, c, w, fb, errors: real(errors), external });
+      void server;
+    });
+
     // ── DR1 (Lists, B6) The design rules of docs/design-rules.md, measured on every list screen at 1,440 px light and 360 px dark with the real game data. `designRules(page, opts)` is the reusable helper (rows, opener,
     //    status, purpose fields): it measures the screen in front of it and returns the problems it found by rule. The walk asserts there are none; the self-test breaks each rule on purpose and asserts the helper sees it. ──
     const designRules = (page, opts) => page.evaluate((o) => {
@@ -7969,7 +8240,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const crafters = (it) => [...new Set(Object.keys(D.recipes).filter((r) => D.recipes[r][0] === it).map((r) => JN[D.recipes[r][2]]))].sort();
       const gatherers = (it) => [...new Set(((D.spots && D.spots[it]) || []).map((s) => GN[s[0]]))].sort();
       all('.craft-row, .wanted-row, .get-row').forEach((li) => {
-        const it = +li.getAttribute('data-item'), want = li.classList.contains('get-row') ? (li.closest('.gsec') && li.closest('.gsec').getAttribute('data-sec') === 'gather' ? gatherers(it) : []) : crafters(it);
+        const it = +li.getAttribute('data-item'), want = li.classList.contains('get-row') ? (li.closest('.gsec') && ['gather', 'crystal'].includes(li.closest('.gsec').getAttribute('data-sec')) ? gatherers(it) : []) : crafters(it);
         const have = all('.jset img.jicon', li.querySelector('.lr')).map((i) => i.getAttribute('alt')).sort();
         fig.icons += have.length;
         if (JSON.stringify(have) !== JSON.stringify(want)) add('icons', 'icons ' + have.join('/') + ' but the jobs are ' + want.join('/') + ' for item ' + it);
@@ -8139,6 +8410,36 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.eachRuleSeenFailing = RULES.every((r) => (seen[r] || []).length > 0 && seen[r].every(Boolean));
       record('DR1', 'Lists design rules (docs/design-rules.md) measured on every list screen at 1,440 px light and 360 px dark with the real game data: at most 3 controls per row at rest on desktop and 2 on a phone, never more than two bordered buttons side by side outside a sheet footer, at most one primary per row, card, sheet and notice and one filled primary per screen outside sheets and notices, rows at most 64 px (96 px on a phone, 360 px opened), the first row within 200 px of the masthead (256 with the steps) and 4 rows in view on a phone (3 with the steps, 8 on desktop), the data face only on digits and never on a label, button, select or heading, the status line is a role=status line with links and no button border, no text box or select at rest but the purpose fields, 40 px tap targets on a phone, every crafter and gatherer has its icon with no "+N", no way stamp inside its own section, no sideways scroll; and each rule was broken on purpose once and seen',
         Object.values(ck).every(Boolean), { ck, problems: w.map((x) => Object.fromEntries(Object.entries(x.problems).map(([k, v]) => [k, v.slice(0, 6)]))), seen, figures: w.map((x) => x.fig), errors: w.map((x) => x.errs), external: w.map((x) => x.external) });
+      void server;
+    });
+
+    // ── C186 (Lists, R3 look) The design rules on the screens R3 changed, the real data, at 1,440 px light and 360 px dark: the gear list's To get with crystals, Gather by zone and Currencies to earn (and one opened row with "Copy name"), To craft with the master-book stamps and the
+    //    warning (and one opened row with the high-quality choice), the vendor list grouped by city, and the List settings sheet with the bulk action: no rule of DR1's helper is broken on any of them, and the pictures are made (docs/lists-redesign/build/r3-*). ──
+    await guard('C186', async () => {
+      const server = await start(PORT5);
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), problems = {}, figs = {}, errs = [], external = [];
+      for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
+        const { c, page } = await dr1Page(vp, scheme), phone = vp.width < 600;
+        await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+        await lSeedLists(page, [{ name: 'Courtly set', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }, { name: 'Vendors', charId: 'c2', items: [1602, 1603, 1604, 1606, 1613, 1616, 2338, 2364, 2375, 2377, 2389, 2895, 2996, 2997, 1611, 4652].map((i) => [i, 1]) }]);
+        const look = async (name, o) => {
+          await page.waitForTimeout(250); await page.evaluate(() => window.scrollTo(0, 0));
+          const r = await designRules(page, Object.assign({ screen: name, phone }, o || {}));
+          figs[tag + ' ' + name] = r.fig; Object.keys(r.problems).forEach((k) => { (problems[k] = problems[k] || []).push(...r.problems[k].map((m) => tag + ' ' + name + ': ' + m)); });
+          if (SHOT) await page.screenshot({ path: path.join(BUILD, 'r3-' + name + '-' + tag + '.png'), fullPage: name === 'get' || name === 'vendors' });
+        };
+        await lOpenList(page, 'Courtly set', 'get'); await lOpenAll(page); await page.waitForSelector('.gsec[data-sec=crystal] .line-row'); await look('get', { first: true });
+        await lOpen(page.locator('.gsec[data-sec=gather] .get-row').first()); await look('get-open');
+        await lCloseRows(page); await lTab(page, 'craft'); await page.waitForSelector('.craft-row .lstamp.warn', { state: 'attached' }); await look('craft', { first: true });
+        await lOpen(page.locator('.craft-row', { hasText: 'Mastodon Leather' }).first()); await look('craft-open');
+        await lCloseRows(page); await lSet(page); await look('settings'); await lSetDone(page);
+        await lOpenList(page, 'Vendors', 'get'); await lOpenAll(page); await page.waitForSelector('.gsec[data-sec=vendor] .zone-head'); await look('vendors', { first: true });
+        errs.push(...real(c.errors)); external.push(...c.external);
+        await c.ctx.close();
+      }
+      const ck = { noProblems: Object.keys(problems).length === 0, pictures: !SHOT || ['get', 'get-open', 'craft', 'craft-open', 'settings', 'vendors'].every((n) => ['1440-light', '360-dark'].every((t) => fs.existsSync(path.join(BUILD, 'r3-' + n + '-' + t + '.png')))), noErrors: errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/')) };
+      record('C186', 'Lists design rules on the R3 screens (real data, 1,440 px light and 360 px dark): crystals, Gather by zone, Currencies to earn, book stamps and warning, the high-quality choice, Copy name, vendors by city and the settings sheet break no rule of DR1\'s helper',
+        Object.values(ck).every(Boolean), { ck, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
       void server;
     });
 

@@ -371,7 +371,9 @@
     market: 'Buy on the market board.'
   };
   var WAY_LABEL = { vendor: 'Buy from a merchant (gil)', craft: 'Craft it', gather: 'Gather it', trade: 'Trade for other currencies', market: 'Buy on the market board', have: 'I have enough of this (do not count it)', '': 'Use the usual order' };
-  var SECTIONS = [['vendor', 'Buy from a merchant (gil)'], ['gather', 'Gather'], ['trade', 'Trade for other currencies'], ['market', 'Buy on the market'], ['other', 'Other'], ['have', 'Not in your typed stock'], ['left', 'Left over']];
+  // R3: Crystals (shards, crystals and clusters that are gathered) before Gather; Currencies to earn (a display group of the way "other") before Other
+  var SECTIONS = [['vendor', 'Buy from a merchant (gil)'], ['crystal', 'Crystals'], ['gather', 'Gather'], ['trade', 'Trade for other currencies'], ['market', 'Buy on the market'], ['earn', 'Currencies to earn'], ['other', 'Other'], ['have', 'Not in your typed stock'], ['left', 'Left over']];
+  var CUR_LINE = 'This is a currency: it is earned, not bought';
   var RECORD_LINE = 'You recorded more than the materials typed here cover. Those materials were not taken from what your other lists are counting on; check what you have.';
   var QFIELDS = ['need', 'given', 'outside', 'short', 'crafts', 'trades', 'got', 'makes'];
 
@@ -401,10 +403,20 @@
     });
     return out;
   }
+  // R3: a currency that nothing here can give (tomestones, scrips, seals, tokens: the way "other") is earned, not bought, so it is counted apart from "to get"
+  var CURSET = null;
+  function isCurrency(item) { if (!CURSET) { CURSET = {}; (DATA.currencies || []).forEach(function (i) { CURSET[i] = 1; }); } return !!CURSET[item]; }
+  function isEarn(ln) { return ln.by === 'other' && isCurrency(ln.item); }
+  function isCrystal(item) { return (itemFlags(item) & 8) !== 0; }
   function figures(plan, sums) {
-    var get = 0, craft = 0;
-    Object.keys(sums).forEach(function (k) { var ln = plan.lines[k], x = sums[k]; if (ln.by === 'craft') craft += x.crafts; else if (ln.by !== 'have') get += x.got; });
-    return { get: get, craft: craft };
+    var get = 0, craft = 0, earn = 0;
+    Object.keys(sums).forEach(function (k) { var ln = plan.lines[k], x = sums[k]; if (ln.by === 'craft') craft += x.crafts; else if (isEarn(ln)) earn += x.got; else if (ln.by !== 'have') get += x.got; });
+    return { get: get, craft: craft, earn: earn };
+  }
+  // the character's totals as tallies: to get, to craft, and (only when there is something) to earn; their words are the screen's accessible text
+  function talliesHtml(f, who, cls) {
+    return '<div class="tallies' + (f.earn ? ' three' : '') + (cls ? ' ' + cls : '') + '" role="group" aria-label="Totals for ' + esc(who) + ': ' + f.get + ' to get, ' + f.craft + ' to craft' + (f.earn ? ', ' + f.earn + ' to earn' : '') + '." data-get="' + f.get + '" data-craft="' + f.craft + '" data-earn="' + f.earn + '">' +
+      '<span class="tally ' + (f.get ? 'r-short' : 'r-ready') + '"><b>' + f.get + '</b><span>to get</span></span><span class="tally r-craft"><b>' + f.craft + '</b><span>to craft</span></span>' + (f.earn ? '<span class="tally r-slab"><b>' + f.earn + '</b><span>to earn</span></span>' : '') + '</div>';
   }
   // stock the plan gave to lists served before the chosen ones and not chosen: "4 held for “Other list”" (E16)
   function heldFor(V, key) {
@@ -452,7 +464,7 @@
   function reasonText(V, ln, x) {
     var p = [], off = ln.offer, w = V.sc.ways[V.owner + '.' + ln.item] || {};
     if (ln.by === 'vendor' && off) {
-      var sl = seller(off.npc), g = off.cur[0][1];
+      var sl = seller(shownNpc(V, ln)), g = off.cur[0][1]; // R3: among sellers at the same price, the one in a place the plan already visits (display only)
       p.push('Sold by ' + sl.name + (sl.zone ? ' in ' + sl.zone : '') + (off.gives === 1 ? ' for ' + g + ' gil each' : ': ' + off.gives + ' for ' + g + ' gil'));
       if (off.rank) p.push('needs Grand Company rank ' + off.rank);
       if (ln.why === 'order' && waysOf(V, ln.item, qWayOf(ln)).indexOf('craft') >= 0) p.push('planned as bought, because a merchant comes first');
@@ -470,11 +482,12 @@
     }
     else if (ln.by === 'market') p.push('Bought on the market board');
     else if (ln.by === 'have') p.push((x ? x.outside : ln.outside) + ' not in your typed stock: you said you already have these');
-    else if (ln.by === 'other') p.push('No way to get this is known');
+    else if (ln.by === 'other') p.push(isCurrency(ln.item) ? CUR_LINE : 'No way to get this is known');
     if (ln.part === 'make') p.push('You marked this as “Must be crafted by me”');
     if (ln.part === 'coll') p.push('Collectables are always crafted');
     if (ln.why === 'chosen' && !isCrafted(ln)) p.push('You chose this');
-    if (w.by && w.by !== 'have' && !isCrafted(ln) && waysOf(V, ln.item, 'normal').indexOf(w.by) < 0 && waysOf(V, ln.item, 'hq').indexOf(w.by) < 0) p.push('The way you chose is no longer available in the game data; using the usual order. Your choice is still stored');
+    if (w.by === 'market' && isCurrency(ln.item) && !isCrafted(ln)) { if (p.indexOf(CUR_LINE) < 0) p.push(CUR_LINE); } // R3: a market way stored for a currency says why it is not used
+    else if (w.by && w.by !== 'have' && !isCrafted(ln) && waysOf(V, ln.item, 'normal').indexOf(w.by) < 0 && waysOf(V, ln.item, 'hq').indexOf(w.by) < 0) p.push('The way you chose is no longer available in the game data; using the usual order. Your choice is still stored');
     else if (w.by === 'trade' && w.offer && !isCrafted(ln) && ['normal', 'hq'].every(function (qq) { return !offersFor(ln.item, qq).trade.some(function (o) { return o[4] + '.' + o[0] + '.' + o[1][0][0] === w.offer; }); })) p.push('The trade you chose is no longer in the game data; using the usual one. Your choice is still stored');
     var s = p.map(function (t) { return t.charAt(0).toUpperCase() + t.slice(1); }).join('. ') + (p.length ? '.' : '');
     if (V.plan.cut[ln.item]) s += (s ? ' ' : '') + V.plan.cut[ln.item];
@@ -486,6 +499,95 @@
   // the opened gather row lists its spots, so the first sentence (which names one of them) is left out
   function reasonRest(V, ln, x) { var s = reasonText(V, ln, x), i = s.search(/\.( |$)/), r = i < 0 ? '' : s.slice(i + 1).trim(); return r ? '<p class="why">' + withJobIcon(esc(r)) + '</p>' : ''; }
   function firstSentence(s) { var i = s.search(/\.( |$)/); return i < 0 ? s : s.slice(0, i + 1); }
+  // ---- R3: vendors by place, high quality, master books, copy name ----
+  // The places a plan goes to: the zone of the chosen spot of every gather row and the planned seller's place of every vendor row (rows that still
+  // have something to get). A vendor row shows, among the sellers at its planned price, the one in the most visited place (engine shownSeller).
+  function visitsOf(V) {
+    if (V.visits) return V.visits;
+    var v = {};
+    V.plan.shop.gather.forEach(function (k) { var cs = chosenSpot(V.plan.lines[k].item, V.plan), z = cs ? cs.spot[3] : V.plan.lines[k].node && V.plan.lines[k].node.zone; if (z) v[z] = (v[z] || 0) + 1; });
+    V.plan.shop.vendor.forEach(function (k) { var o = V.plan.lines[k].offer, z = o && seller(o.npc).zone; if (z) v[z] = (v[z] || 0) + 1; });
+    return (V.visits = v);
+  }
+  function shownNpc(V, ln) {
+    var off = ln.offer, list = DATA.sellers && DATA.sellers[ln.item];
+    if (!off || !list || !V.plan.shop) return off && off.npc;
+    var own = seller(off.npc).zone, vis = Object.assign({}, visitsOf(V));
+    if (own && vis[own] && V.plan.shop.vendor.some(function (k) { return V.plan.lines[k] === ln; })) vis[own]--; // the row's own place does not count for itself
+    return E.shownSeller(list, off.npc, function (n) { return seller(n).zone; }, vis);
+  }
+  function matsOf(V) { return V.mats || (V.mats = E.materialsOf(DATA, V.plan)); }
+  // a material that can be had in high quality by crafting or from a merchant (the market's "high quality" is not a way the plan can make)
+  function hqAble(V, item) { return canHq(item) && waysOf(V, item, 'hq').some(function (w) { return w !== 'market'; }); }
+  function hqOn(V, item) { return !!(V.sc.ways[V.owner + '.' + item] || {}).hq; }
+  function hqBlock(V, ln) {
+    if (isCrafted(ln) || !matsOf(V)[ln.item]) return '';
+    var on = hqOn(V, ln.item);
+    if (!on && !hqAble(V, ln.item)) return '';
+    return '<label class="chk ltick w-hq"><input type="checkbox" data-f="hqway"' + (on ? ' checked' : '') + '> Need it in high quality</label>';
+  }
+  // the materials of a plan that "High quality for every material" would set (not yet set, and can be had in high quality)
+  function hqTodo(V) { return Object.keys(matsOf(V)).map(Number).filter(function (i) { return !hqOn(V, i) && hqAble(V, i); }).sort(function (a, b) { return a - b; }); }
+  // one change, one Undo: every named material's way gets hq (the store's own setWay, its undo units joined)
+  function hqAllEdit(owner) {
+    return function (s) {
+      var V = { sc: s, owner: owner, plan: planOf(s, owner) }, items = hqTodo(V), sec = s, units = [], i, r;
+      for (i = 0; i < items.length; i++) {
+        r = S.setWay(sec, owner, items[i], { hq: true });
+        if (r.error) return r;
+        if (r.entry) { units = units.concat(r.entry.units); sec = r.section; }
+      }
+      if (!units.length) return { section: s, entry: null };
+      return { section: sec, entry: { label: 'Needed high quality for ' + items.length + ' material' + (items.length === 1 ? '' : 's'), units: units } };
+    };
+  }
+  // master book, expert, specialist and stars of a recipe (data: recipe flags 2 expert, 4 specialist, 32 master book; books { recipe: bookItem })
+  function bookOf(rid) { var b = DATA.books && DATA.books[rid]; return b ? { item: b, name: (DATA.bookNames && DATA.bookNames[b]) || itemName(b) } : null; }
+  function recipeStamps(rid) {
+    var r = DATA.recipes[rid], bk = bookOf(rid), t = '';
+    if (!r) return '';
+    if (bk) t += ' <span class="lstamp plain rs-book">' + esc(bk.name) + '</span>';
+    if (r[6] & 2) t += ' <span class="lstamp plain rs-expert">Expert</span>';
+    if (r[6] & 4) t += ' <span class="lstamp plain rs-spec">Specialist</span>';
+    if (r[4] > 0) t += ' <span class="lstamp plain rs-stars">' + r[4] + (r[4] === 1 ? ' star' : ' stars') + '</span>';
+    return t;
+  }
+  // the opened craft row's one sentence about the recipe: the book (and, when the Tracker says it is not ticked, that), Expert, Specialist and the stars
+  function recipeFacts(rid, warn) {
+    var r = DATA.recipes[rid], bk = bookOf(rid), p = [];
+    if (!r) return '';
+    if (bk) p.push(warn ? bk.name + ' is not ticked for ' + warn.who + ' in the Tracker' : 'Needs ' + bk.name);
+    if (r[6] & 2) p.push('Expert recipe');
+    if (r[6] & 4) p.push('Specialist recipe');
+    if (r[4] > 0) p.push(r[4] + (r[4] === 1 ? ' star' : ' stars'));
+    return p.length ? '<p class="why rfacts' + (warn ? ' bookwarn' : '') + '">' + esc(p.join('. ')) + '.</p>' : '';
+  }
+  // The book warning: the Tracker's "Master Crafting Books" tick of the list's character, read with the Tracker's own reader (as the crafting log does).
+  // No character, no entry for the book, or the reader not loaded yet: no warning (never a guess). The reader is loaded once, then the page redraws.
+  var NEED_CORE = false, CORE_TRIED = false;
+  function bookWarn(V, ln) {
+    var bk = bookOf(ln.recipe);
+    if (!bk || V.owner === 'u') return null;
+    var entry = DATA.bookTicks && DATA.bookTicks[bk.item];
+    if (entry === undefined) return null;
+    if (!(window.ET && window.ET.fromSaveDoc && window.ET.isTicked)) { NEED_CORE = true; return null; }
+    if (!V.tstate) V.tstate = trackerState();
+    return window.ET.isTicked(V.tstate, V.owner, window.ET.key('masterbooks', entry)) ? null : { name: bk.name, who: V.char };
+  }
+  // copy an item's name: the clipboard, else a hidden text box that is selected and copied
+  function copyText(t) {
+    function fallback() {
+      var ta = document.createElement('textarea'), ok = false;
+      ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(function () { return true; }, function () { return fallback(); });
+    return Promise.resolve(fallback());
+  }
+
   // ---- the row kit (docs/lists-look-spec.md section 3): icons, spots, the stepper and one row shell shared by To get, To craft and Wanted ----
   var CHEV = '<svg class="lchev" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M4 2l5 5-5 5"/></svg>';
   function rb(label, act, extra, cls) { return '<button type="button" class="' + (cls || 'lbtn-o') + '" data-act="' + act + '"' + (extra || '') + '>' + esc(label) + '</button>'; }
@@ -542,7 +644,8 @@
       '<label class="fld">' + (drawer ? '' : '<small>have</small>') + '<input type="number" inputmode="numeric" min="0" max="999999" data-f="have" data-q="' + q + '" value="' + typed + '" aria-label="I have"></label>' +
       '<button type="button" class="stp" data-act="plus" aria-label="One more ' + esc(name) + '">' + svg(ICO.plus, 14) + '</button></span>';
   }
-  function stepperBlock(name, typed, q) { return NARROW.matches ? '<div class="inl"><span class="lab">I have</span>' + stepperHtml(name, typed, q, true) + '</div>' : ''; }
+  // R3: on a phone "Copy name" sits beside the stepper (the drawer's links line is full there); elsewhere it is in the links line (wayActs)
+  function stepperBlock(name, typed, q) { return NARROW.matches ? '<div class="inl"><span class="lab">I have</span>' + stepperHtml(name, typed, q, true) + lk('Copy name', 'copy') + '</div>' : ''; }
   // o: cls, attrs, role, rk, fig, word, wcls, name, stamps, icons, l2, mid, prim, done, drawer() (drawn only for the one open row, so closed rows stay cheap)
   function rowHtml(o) {
     var open = SH.view.row === o.rk;
@@ -553,12 +656,12 @@
   function offerKey(o) { return o[4] + '.' + o[0] + '.' + o[1][0][0]; }
   function offerText(o) { return seller(o[4]).name + ': ' + curText(o[1]) + ' for ' + o[0]; }
   // "Get it by" select with its label above, "Craft it instead", the chosen trade with "Other offers (N)" (F4), the link to the order of ways; none on a must-craft or collectable row
-  function wayBlock(V, ln) {
+  function wayBlock(V, ln, beside) {
     if (isCrafted(ln)) return '';
     var item = ln.item, q = qWayOf(ln), ways = waysOf(V, item, q), stored = (V.sc.ways[V.owner + '.' + item] || {}).by || '';
     var sel = stored === 'have' || ways.indexOf(stored) >= 0 ? stored : '';
-    var h = '<div class="w-way"><label class="lfld"><span class="lab">Get it by</span><select data-f="way">' + ['']
-      .concat(ways).concat(['have']).map(function (v) { return '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + esc(WAY_LABEL[v]) + '</option>'; }).join('') + '</select></label>';
+    var h = '<div class="w-way"><div class="selrow"><label class="lfld"><span class="lab">Get it by</span><select data-f="way">' + ['']
+      .concat(ways).concat(['have']).map(function (v) { return '<option value="' + v + '"' + (v === sel ? ' selected' : '') + '>' + esc(WAY_LABEL[v]) + '</option>'; }).join('') + '</select></label>' + (beside || '') + '</div>';
     h += '<p class="fine">This applies wherever ' + esc(V.char) + ' needs this item.</p>';
     if (ln.by === 'trade') {
       var trades = offersFor(item, q).trade;
@@ -574,9 +677,9 @@
     return h + '</div>';
   }
   // the one wrapping line of a drawer's other actions: at most two outline buttons, then text links; "Order of ways" is in every drawer
-  function wayActs(V, ln, btns, links) {
+  function wayActs(V, ln, btns, links, noCopy) {
     var craftIt = ln && !isCrafted(ln) && ln.by === 'vendor' && ln.why === 'order' && waysOf(V, ln.item, qWayOf(ln)).indexOf('craft') >= 0 ? rb('Craft it instead', 'setway', ' data-by="craft"', 'lbtn-o') : '';
-    return '<p class="acts-row">' + (btns || '') + craftIt + lk('Order of ways', 'order-open') + (links || '') + '</p>';
+    return '<p class="acts-row">' + (btns || '') + craftIt + lk('Order of ways', 'order-open') + (noCopy ? '' : lk('Copy name', 'copy')) + (links || '') + '</p>';
   }
   function boughtBox(V, rowKey, need, q) {
     if (SH.view.bought !== rowKey) return '';
@@ -597,10 +700,11 @@
     var l3 = (ln.by === 'gather' ? (cs ? windowRow(ln, now, chosenTimed(cs)) : windowRow(ln, now)) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
     var jobs = []; sp.forEach(function (s) { var n = GATHER_JOBS[s[0]]; if (n && jobs.indexOf(n) < 0) jobs.push(n); });
     if (ln.by === 'gather' && l3) l3 = '<span class="jm">' + iconSet(jobs) + '</span>' + l3; // a phone shows a timed row's pictures on the window's line (the row stays within 96 px); a desktop row beside the name
-    return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : 'to get', wcls: outside ? '' : 'role role-short',
+    var earn = isEarn(ln);
+    return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: earn ? 'r-slab' : ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : earn ? 'to earn' : 'to get', wcls: outside || earn ? '' : 'role role-short',
       name: name, stamps: (V.combined ? wayPill(ln, false) : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3, win: ln.by === 'gather' && !!l3,
       mid: NARROW.matches ? '' : stepperHtml(name, typed, q, false), prim: outside ? '' : rb('Have all', 'haveall', ' data-n="' + x.short + '"', 'lbtn-r'),
-      drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln, cs) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : ''); } });
+      drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln, cs) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln, hqBlock(V, ln)) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : '', NARROW.matches); } });
   }
   function makeProgress(V, item, recipe) {
     var c = 0, q = 0;
@@ -636,15 +740,18 @@
   function craftRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = madeQuality(V.sc, V.owner, ln, key), spare = V.plan.spare[key] || 0, rowKey = 'L|' + key, mp = ln.part === 'make' ? makeProgress(V, ln.item, ln.recipe) : null;
     var mqs = ln.part === 'make' ? madeQualities(V.sc, V.owner, ln.item, ln.recipe) : [], jobs = crafterJobs(ln.item).map(function (j) { return JOBS[j]; });
-    var l2 = '<span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + '</span>' + (spare ? ' · spare: ' + spare : '') + (mp ? '<span class="cr"> · ' + mp.crafted + ' of ' + mp.qty + ' crafted</span>' : '') + ' · level ' + DATA.recipes[ln.recipe][3];
+    var warn = bookWarn(V, ln), rst = recipeStamps(ln.recipe);
+    // the book, Expert, Specialist and stars are stamps beside the name on a desktop; the warning is a stamp there and the first words of the facts line on a phone (a phone row stays within 96 px);
+    // the opened row says it all in one sentence
+    var l2 = (warn ? '<span class="bk-l2">Book not ticked · </span>' : '') + '<span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + '</span>' + (spare ? ' · spare: ' + spare : '') + (mp ? '<span class="cr"> · ' + mp.crafted + ' of ' + mp.qty + ' crafted</span>' : '') + ' · level ' + DATA.recipes[ln.recipe][3];
     var bar = mp ? '<span class="prog"><span class="bar" aria-hidden="true"><i style="width:' + Math.round(100 * Math.min(1, mp.crafted / Math.max(1, mp.qty))) + '%"></i></span><span class="fig">' + mp.crafted + ' of ' + mp.qty + ' crafted</span></span>' : '';
-    return rowHtml({ cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln), icons: iconSet(jobs), l2: l2,
+    return rowHtml({ cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln) + (rst || warn ? '<span class="rst-dsk">' + rst + (warn ? ' <span class="lstamp warn">Book not ticked</span>' : '') + '</span>' : ''), icons: iconSet(jobs), l2: l2,
       mid: bar, prim: x.crafts > 0 ? rb(x.crafts > 1 ? 'Made all' : 'Made 1', 'made', ' data-crafts="' + x.crafts + '"', 'lbtn-r') : '',
       drawer: function () {
         var atelier = !(DATA.noHandOver || []).some(function (r) { return r === ln.recipe; });
-        return reasonOf(V, ln, x) + crafterBlock(ln) +
+        return reasonOf(V, ln, x) + recipeFacts(ln.recipe, warn) + crafterBlock(ln) +
           (mqs.length > 1 ? '<label class="lfld"><span class="lab">Quality made</span><select data-f="madeq">' + mqs.map(function (m) { return '<option value="' + m + '"' + (m === q ? ' selected' : '') + '>' + qWord(m) + '</option>'; }).join('') + '</select></label>' : '') +
-          boughtBox(V, rowKey, x.short, q) + wayBlock(V, ln) + wayActs(V, ln, (x.crafts > 1 ? rb('Made 1', 'made', ' data-crafts="1"', 'lbtn-o') : '') + rb('Bought it', 'ask-bought', ' data-mode="bought"', 'lbtn-o'), lk('Got it another way', 'ask-bought', ' data-mode="other"') + (atelier ? '<a class="lk" href="../atelier/#recipe=' + ln.recipe + '">Solve in the Atelier</a>' : ''));
+          boughtBox(V, rowKey, x.short, q) + wayBlock(V, ln, hqBlock(V, ln)) + wayActs(V, ln, (x.crafts > 1 ? rb('Made 1', 'made', ' data-crafts="1"', 'lbtn-o') : '') + rb('Bought it', 'ask-bought', ' data-mode="bought"', 'lbtn-o'), lk('Got it another way', 'ask-bought', ' data-mode="other"') + (atelier ? '<a class="lk" href="../atelier/#recipe=' + ln.recipe + '">Solve in the Atelier</a>' : ''));
       } });
   }
   function secHead(id, label, n, open, summary) {
@@ -664,6 +771,38 @@
     });
     return h;
   }
+  // R3: which section a plan row is shown in: crystals (gathered shards, crystals and clusters) apart from Gather, currencies apart from Other
+  function inSection(id, ln) {
+    if (id === 'crystal') return isCrystal(ln.item);
+    if (id === 'gather') return !isCrystal(ln.item);
+    if (id === 'earn') return isCurrency(ln.item);
+    if (id === 'other') return !isCurrency(ln.item);
+    return true;
+  }
+  // R3: Gather by zone, then aetheryte (the chosen spot of each row), timed nodes first by the next window; Buy from a merchant by city, then seller
+  // (the seller shown). The order is made when the page is drawn, never on the 15-second tick, which only rewrites the window texts.
+  function routeRows(V, id, keys, sums) {
+    var one = function (k) { return getRow(V, k, sums[k]); };
+    if (id !== 'gather' && id !== 'vendor') return keys.map(one).join('');
+    var now = Date.now(), rows = keys.map(function (k) {
+      var ln = V.plan.lines[k], a = '', b = '', rank = null;
+      if (id === 'gather') {
+        var cs = chosenSpot(ln.item, V.plan), timed = cs ? chosenTimed(cs) : ln.timed, w = timed ? E.nextWindow(timed.hours, timed.minutes, now) : null;
+        a = cs ? cs.spot[3] || '' : (ln.node && ln.node.zone) || '';
+        if (cs && (cs.spot[4] > 0 || cs.spot[5] > 0) && cs.spot[6] && DATA.aetherytes && DATA.aetherytes[cs.spot[6]]) b = DATA.aetherytes[cs.spot[6]];
+        if (w) rank = (w.open ? 0 : 1) * 1e15 + (w.open ? w.closesAt : w.opensAt);
+      } else { var sl = seller(shownNpc(V, ln)); a = sl.zone; b = sl.zone || sl.name !== 'a merchant' ? sl.name : ''; }
+      return { key: k, a: a, b: b, rank: rank, name: itemName(ln.item) };
+    });
+    var subText = function (sb) { return sb.b ? (id === 'gather' ? 'Near ' : '') + sb.b : id === 'gather' ? 'No aetheryte listed' : 'Merchant not named'; };
+    return E.groupRows(rows).map(function (g) {
+      // a zone with one aetheryte (one seller) says it on its own head line; with several, each has a line under the head
+      var many = g.subs.length > 1, lone = !many && g.subs[0].b !== '';
+      return '<li class="zone-head" data-zone="' + esc(g.a) + '"><h4 class="zn">' + esc(g.a || (id === 'gather' ? 'No zone in the game data' : 'Place not known')) + '</h4>' + (lone ? '<span class="zs">' + esc(subText(g.subs[0])) + '</span>' : '') + '<span class="zc">' + g.n + '</span></li>' + g.subs.map(function (sb) {
+        return (many ? '<li class="ae-head" data-sub="' + esc(sb.b) + '"><span class="sn">' + esc(subText(sb)) + '</span><span class="zc">' + sb.n + '</span></li>' : '') + sb.keys.map(one).join('');
+      }).join('');
+    }).join('');
+  }
   function getTab(V, sums) {
     var h = '', shown = 0, blocks = '';
     SECTIONS.forEach(function (def) {
@@ -673,11 +812,12 @@
         if (!n) return;
         if (open) rows = leftRows(V, ents);
       } else {
-        var keys = (id === 'have' ? V.plan.shop.outside : V.plan.shop[id]).filter(function (k) { return sums[k] && sums[k].short > 0; });
+        var src = id === 'have' ? V.plan.shop.outside : id === 'crystal' ? V.plan.shop.gather : id === 'earn' ? V.plan.shop.other : V.plan.shop[id];
+        var keys = src.filter(function (k) { return sums[k] && sums[k].short > 0 && inSection(id, V.plan.lines[k]); });
         n = keys.length;
         if (!n) return;
         shown += n;
-        if (open) rows = (id === 'market' ? '<div class="market-line">' + priceTotal(V, keys, sums, Date.now()) + lk('Refresh prices', 'prices') + '</div>' : '') + '<ul class="lines">' + keys.map(function (k) { return getRow(V, k, sums[k]); }).join('') + '</ul>';
+        if (open) rows = (id === 'market' ? '<div class="market-line">' + priceTotal(V, keys, sums, Date.now()) + lk('Refresh prices', 'prices') + '</div>' : '') + '<ul class="lines">' + routeRows(V, id, keys, sums) + '</ul>';
         if (open && id === 'market') keys.forEach(function (k) { if (PR.want.indexOf(V.plan.lines[k].item) < 0) PR.want.push(V.plan.lines[k].item); });
       }
       blocks += '<section class="gsec" data-sec="' + id + '">' + secHead(id, def[1], n, open) + (open ? (id === 'left' ? '<ul class="lines">' + rows + '</ul>' : rows) : '') + '</section>';
@@ -749,8 +889,7 @@
       gear = '<button type="button" class="lbtn-o" data-act="settings" aria-haspopup="dialog" aria-expanded="' + (SH.view.sheet === 'settings' ? 'true' : 'false') + '">' + svg(ICO.gear, 18) + 'List settings</button>';
     }
     return '<section class="lhead' + (o.combined ? ' combined' : '') + '"><p class="kick">' + esc(who) + (o.combined ? ' · Combined view' : '') + '</p><h1>' + title + '</h1><p class="state">' + stateParts.join(o.combined ? ' ' : ' · ') + '</p>' +
-      '<div class="tal-col"><p class="cap">Totals for ' + esc(who) + ':</p><div class="tallies lists-totals" role="group" aria-label="Totals for ' + esc(who) + ': ' + f.get + ' to get, ' + f.craft + ' to craft." data-get="' + f.get + '" data-craft="' + f.craft + '">' +
-      '<span class="tally ' + (f.get ? 'r-short' : 'r-ready') + '"><b>' + f.get + '</b><span>to get</span></span><span class="tally r-craft"><b>' + f.craft + '</b><span>to craft</span></span></div></div>' + gear + '</section>';
+      '<div class="tal-col"><p class="cap">Totals for ' + esc(who) + ':</p>' + talliesHtml(f, who, 'lists-totals') + '</div>' + gear + '</section>';
   }
   // a sheet: a scrim, a dialog with a labelled close, a title over a double rule, and its footer
   function sheetHtml(title, cls, body, foot) {
@@ -763,7 +902,7 @@
       '<div class="lfield"><span>Steps</span>' + (sids.length ? '<div class="stepname">' + sids.map(function (s) { return '<div>' + esc(steps[s].name) + '</div>'; }).join('') + '</div>' : '') +
       (sids.length ? '<p class="fine steps-note">A step’s figures are its share of ' + esc(V.char) + '’s plan and can move between steps and lists; the totals for ' + esc(V.char) + ' never go up when you remove something.</p>' : '') + '<div class="add-step"><label class="lfield"><span>New step</span><input type="text" data-f="stepname" maxlength="60"></label>' + '<button type="button" class="btn lbtn-o" data-act="addstep">Add a step</button></div></div>' +
       '<div class="switch-row"><button type="button" class="swb" data-act="hide" aria-pressed="' + (SH.view.hide ? 'true' : 'false') + '">' + (SH.view.hide ? 'Show completed' : 'Hide completed') + '<span class="sw" aria-hidden="true"></span></button></div>' +
-      placeSelect() + '<p class="acts-row">' + lk('Order of ways', 'sheet', ' aria-expanded="false"') + '</p>';
+      placeSelect() + '<p class="acts-row">' + lk('Order of ways', 'sheet', ' aria-expanded="false"') + lk('High quality for every material', 'hq-all', ' title="' + esc(hqTodo(V).length ? hqTodo(V).length + ' material' + (hqTodo(V).length === 1 ? '' : 's') + ' of ' + V.char + '’s lists can be made in high quality and are not set yet; one Undo takes it all back' : 'Every material that can be made in high quality is set already') + '"') + '</p>';
     return sheetHtml('List settings', 'settings-sheet', body, '<button type="button" class="lbtn-p big" data-act="sheet-close">Done</button>');
   }
   function pricesSheet() { return sheetHtml('Market prices', 'settings-sheet', placeSelect(), '<button type="button" class="lbtn-p big" data-act="sheet-close">Done</button>'); }
@@ -987,7 +1126,7 @@
       var owner = c || 'u', who = nameOfChar(c), plan = plans[owner] || (plans[owner] = planOf(sc, owner)), f = figures(plan, plan.lines), off = tickOwner !== null && tickOwner !== owner;
       var mine = ticked.filter(function (i) { return S.ownerOf(lists[i]) === owner; }).length, state = off ? 'Each character has its own stock.' : mine === 1 ? 'Tick two or more lists of one character.' : '';
       return '<section class="lists-group" aria-label="' + esc(who) + '"><div class="group-head"><div class="nm-col"><h2>' + esc(who) + '</h2>' + (state ? '<p class="state">' + state + '</p>' : '') + '</div><div class="tal-col"><p class="cap">Totals for ' + esc(who) + ':</p>' +
-        '<div class="tallies" role="group" aria-label="Totals for ' + esc(who) + ': ' + f.get + ' to get, ' + f.craft + ' to craft."><span class="tally ' + (f.get ? 'r-short' : 'r-ready') + '"><b>' + f.get + '</b><span>to get</span></span><span class="tally r-craft"><b>' + f.craft + '</b><span>to craft</span></span></div></div>' +
+        talliesHtml(f, who, '') + '</div>' +
         rb('Combined view' + (mine ? ' (' + mine + ')' : ''), 'combined', ' data-owner="' + owner + '"', 'lbtn-o') + '</div><div class="lists-cards">' + groups[c].map(function (id) {
         var l = lists[id], steps = Math.max(1, count(l.steps)), r = ready[id] || { ready: 0, total: 0 }, asking = SH.view.confirm === 'list:' + id, menu = SH.view.more === id, nm = l.name || 'Untitled list';
         var offTick = tickOwner !== null && tickOwner !== owner, changed = l.data && DATA.stamp && l.data !== DATA.stamp, pct = r.total ? Math.round(100 * r.ready / r.total) : 0;
@@ -1031,7 +1170,7 @@
         d += stepperBlock(name, typed, q);
         if (SH.view.bought === key && !t.done) d += boughtBox(V, key, need, q);
         d += wayActs(V, shown ? ln : null, t.done ? rb('Not finished', 'done', '', 'lbtn-o') : rb('Bought it', 'ask-bought', '', 'lbtn-o'),
-          (fold ? lk('Amount, quality and step', 'edit', ' data-k="' + esc(key) + '"') + ' ' : '') + (SH.view.confirm === key ? '<span class="ask">Remove this wanted item?</span> ' + rb('Remove', 'remove', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove">Remove</button>'));
+          (fold ? lk('Amount, quality and step', 'edit', ' data-k="' + esc(key) + '"') + ' ' : '') + (SH.view.confirm === key ? '<span class="ask">Remove this wanted item?</span> ' + rb('Remove', 'remove', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove">Remove</button>'), NARROW.matches);
         return d;
       } });
   }
@@ -1106,6 +1245,8 @@
       if (!t && !keep && wasSheet !== SH.view.sheet) t = ns.querySelector('.lx');
       if (t) { t.focus(); if (keep && t.getAttribute('data-f') && keep.at != null && t.setSelectionRange && t.type === 'text') { try { t.setSelectionRange(keep.at, keep.end); } catch (e) { /* not a text field */ } } }
     }
+    // R3: a craft row of a master-book recipe needs the Tracker's reader; it is loaded once, then the page is drawn again with the warnings
+    if (NEED_CORE && !CORE_TRIED) { NEED_CORE = false; CORE_TRIED = true; loadCore().then(function () { render(); }, function () { /* no warning without the reader */ }); }
   }
 
   // ------------------------------------------------------------------------------------------------ events
@@ -1181,6 +1322,8 @@
       case 'offers': { var ok2 = b.getAttribute('data-k'); SH.view.offers[ok2] = !SH.view.offers[ok2]; render(); break; }
       case 'edit': { var ek = b.getAttribute('data-k'); SH.view.edit[ek] = !SH.view.edit[ek]; render(); break; }
       case 'order-open': SH.view.sheet = 'order'; render(); break;
+      case 'copy': { var cn = itemName(c.item); copyText(cn).then(function (ok) { SH.note = ok ? 'Copied ' + cn + '.' : 'Could not copy: this browser refused. The name is ' + cn + '.'; paintStatus(); }); break; }
+      case 'hq-all': { var hqo = orderOwner(); act(hqAllEdit(hqo)); break; }
       case 'more': { var mid = card.getAttribute('data-list'); SH.view.more = SH.view.more === mid ? null : mid; SH.view.confirm = null; render(); break; }
       case 'notice': SH.view.notice = !SH.view.notice; render(); break;
       case 'notice-all': SH.view.noticeAll = true; render(); break;
@@ -1271,6 +1414,11 @@
     else if (f === 'madeq') { (SH.view.madeQ = SH.view.madeQ || {})[c.lk] = el.value; c.el.setAttribute('data-q', el.value); }
     else if (f === 'step') act(function (s) { return labeled(S.setStep(s, r.list, r.tid, el.value), 'Moved ' + itemName(r.item) + ' to another step'); });
     else if (f === 'way') { var v = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: v || null, offer: null }), 'Chose how to get ' + itemName(c.item)); }); }
+    else if (f === 'hqway') { // R3: "Need it in high quality" (the way's hq); the row stays open though its line changes quality
+      var hqOnNow = el.checked, hi = c.item, was = hqOnNow ? 'normal' : 'hq', became = hqOnNow ? 'hq' : 'normal';
+      act(function (s) { return labeled(S.setWay(s, c.owner, hi, { hq: hqOnNow }), (hqOnNow ? 'Needed high quality for ' : 'Went back to ordinary quality for ') + itemName(hi)); },
+        { after: function () { if (SH.view.row) SH.view.row = SH.view.row.replace('|' + hi + '|' + was + '|', '|' + hi + '|' + became + '|'); } });
+    }
     else if (f === 'countrecipe') { var cr = +el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { recipe: cr }), 'Counted the materials of ' + itemName(c.item) + ' for ' + (JOBS[DATA.recipes[cr][2]] || 'a crafter')); }); }
     else if (f === 'offer') { var key = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: 'trade', offer: key }), 'Chose a trade for ' + itemName(c.item)); }); }
     else if (f === 'tick') { var id = el.closest('[data-list]').getAttribute('data-list'), on = el.checked; act(function (s) { return S.tickCombined(s, id, on); }); }
