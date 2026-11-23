@@ -97,26 +97,26 @@ Last updated: 2026-11-23.
 - **This repository became the working home** (2026-11-17), with free automatic checks. The Atelier was rebuilt with the
   current shared save code (its copy predated the rank feature and dropped the new learning fields when it saved).
 
-## Taken back for a redesign
-
-- **Lists: the crafting planner (phase 3)** was built, reviewed five times and merged on 2026-11-23 (pull request 4),
-  then taken back out by the owner's decision the same night before it ever published (pull request 6; its publish had
-  failed on a GitHub fault and no later run picked it up). It works and is tested, but its screens look generic: rows of
-  bordered buttons, settings forms always open, status messages styled as buttons, monospace labels, phone rows a
-  screen tall. All of its code stays in the history at the merge commit of pull request 4; its documents are kept here
-  (`docs/lists-spec.md`, `docs/lists-research.md`, `docs/lists-review-adjudication.md`,
-  `docs/lists-code-review-adjudication.md`), and its screens as built are in `docs/lists-redesign/before/`.
-- **Why it happened:** after three modules with many owner rounds on appearance, those lessons were never made standing
-  rules. The plan described behaviour only, the checks measured contrast and size but not design, every review prompt
-  (all written by Claude) left appearance out, and the owner saw screens only after the build.
-- **What changes:** a house style, `docs/design-rules.md`, drawn from the owner's earlier decisions; a design gate for
-  every module (a look spec and static mock-up screens in the real theme, approved by the owner from screenshots before
-  building); an appearance section in every plan and code review prompt; and browser checks that measure the checkable
-  rules. Lists comes back after its redesign, `docs/lists-look-spec.md`, passes that gate.
-
 ## Built, waiting for the owner's `ship`
 
-Nothing at the moment.
+- **Lists redesigned and extended (phase 3: built, waiting for ship).** The crafting planner that was taken back on
+  2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
+  `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
+  `docs/lists-redesign/build/` and copied into the check's evidence as `lists-*.png`). Every crafter of an item is
+  shown with its job icon, and gathering spots carry the game's node names and map coordinates. A red team and a
+  pre-mortem (`docs/lists-redteam.md`) were fixed in steps R1 to R6: currencies to earn (tomestones, scrips and
+  gemstones kept apart from the shopping totals), high quality (a per-material choice and one for every material),
+  master books (the book name, stars and a "book not ticked" warning on a craft row), crystals in their own section,
+  gathering grouped by zone with the spot chosen along the route, vendors grouped by city, "Copy name", submarine and
+  airship parts as project lists with one step per phase, and patch safety (a written refresh checklist, a unit test
+  that the game-data pins of Tracker, Atelier and Lists match, the data version on the list head, and item names in
+  sync questions). Measured at this commit: unit tests 616 of 616, browser tests 61 of 61, full check 195 of 195 (the real push delivery, C26b, cannot run from a session and was not run).
+  **Not tested:** Firefox, Safari, a real phone, a real two-device sync, the live price service (Universalis).
+  **Known limits:** vendors that need reputation still say "buy"; the master-book warning reads the Tracker's ticks and
+  not its "does not apply" mark; a project list's stamp ("Submarine part") is matched by the list's name; the phases
+  of a project are numbered because the game gives them no names; sync questions shown in the Tracker name Lists items
+  by number, because the Tracker does not load the Lists data (to be fixed after shipping); the window length of a
+  timed node keeps Teamcraft's minutes.
 
 ## Next
 

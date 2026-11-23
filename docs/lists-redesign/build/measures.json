@@ -1,53 +1,60 @@
 {
  "desktop-light": {
   "get": {
-   "rows": 15,
+   "rows": 35,
    "maxH": 64,
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
-   "firstTop": 211,
+   "firstTop": 187,
    "inView": 10,
    "mono": [
-    "4",
+    "7.57h1",
+    "2",
     "1",
     "1",
-    "1"
+    "3",
+    "2"
    ],
    "scrollX": 0,
-   "h2": 1598
+   "h2": 2932
   },
   "getOpen": {
    "rest": 56,
    "opened": 252
   },
-  "getGatherOpen": 236,
+  "getGatherOpen": 243,
   "craft": {
-   "rows": 3,
+   "rows": 16,
    "maxH": 56,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 205,
-   "inView": 3,
-   "mono": [],
+   "firstTop": 159,
+   "inView": 9,
+   "mono": [
+    "7.57h1"
+   ],
    "scrollX": 0,
-   "h2": 1000
+   "h2": 1626
   },
   "craftOpen": 284,
+  "hqShown": true,
   "wanted": {
-   "rows": 11,
+   "rows": 10,
    "maxH": 56,
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
    "firstTop": 206,
-   "inView": 11,
-   "mono": [],
+   "inView": 10,
+   "mono": [
+    "7.57h1"
+   ],
    "scrollX": 0,
-   "h2": 1143
+   "h2": 1087
   },
-  "wantedOpen": 330,
+  "wantedOpen": 334,
   "patch": {
    "h": 172,
    "top": 111
@@ -69,79 +76,88 @@
     "w": 720
    },
    "scrollX": 0,
-   "firstRowBelowMast": 211,
+   "firstRowBelowMast": 165,
    "statusIsButton": false
   },
   "combined": {
-   "rows": 13,
+   "rows": 49,
    "maxH": 64,
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
    "firstTop": 165,
-   "inView": 10,
+   "inView": 11,
    "mono": [
+    "7.57h1",
+    "3",
     "2",
     "1",
     "1",
     "1"
    ],
    "scrollX": 0,
-   "h2": 1440
+   "h2": 3856
   }
  },
  "phone-dark": {
   "get": {
-   "rows": 15,
+   "rows": 35,
    "maxH": 93,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 199,
-   "inView": 6,
+   "firstTop": 203,
+   "inView": 5,
    "mono": [
-    "4",
+    "7.57h1",
+    "2",
     "1",
     "1",
-    "1"
+    "3",
+    "2"
    ],
    "scrollX": 0,
-   "h2": 2042
+   "h2": 3855
   },
   "getOpen": {
    "rest": 72,
-   "opened": 311
+   "opened": 330
   },
-  "getGatherOpen": 322,
+  "getGatherOpen": 354,
   "craft": {
-   "rows": 3,
-   "maxH": 139,
+   "rows": 16,
+   "maxH": 95,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 193,
-   "inView": 3,
-   "mono": [],
+   "firstTop": 175,
+   "inView": 5,
+   "mono": [
+    "7.57h1"
+   ],
    "scrollX": 0,
-   "h2": 1019
+   "h2": 2276
   },
-  "craftOpen": 328,
+  "craftOpen": 350,
+  "hqShown": true,
   "wanted": {
-   "rows": 11,
-   "maxH": 140,
+   "rows": 10,
+   "maxH": 96,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 185,
-   "inView": 6,
-   "mono": [],
+   "firstTop": 210,
+   "inView": 5,
+   "mono": [
+    "7.57h1"
+   ],
    "scrollX": 0,
-   "h2": 1639
+   "h2": 1602
   },
-  "wantedOpen": 351,
+  "wantedOpen": 357,
   "patch": {
    "h": 213,
-   "top": 101
+   "top": 127
   },
   "head": {
    "mast": {
@@ -151,7 +167,7 @@
    },
    "head": {
     "top": 77,
-    "h": 101,
+    "h": 127,
     "w": 340
    },
    "status": {
@@ -160,25 +176,27 @@
     "w": 360
    },
    "scrollX": 0,
-   "firstRowBelowMast": 199,
+   "firstRowBelowMast": 181,
    "statusIsButton": false
   },
   "combined": {
-   "rows": 13,
+   "rows": 49,
    "maxH": 93,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 196,
+   "firstTop": 194,
    "inView": 6,
    "mono": [
+    "7.57h1",
+    "3",
     "2",
     "1",
     "1",
     "1"
    ],
    "scrollX": 0,
-   "h2": 1903
+   "h2": 5065
   }
  }
 }

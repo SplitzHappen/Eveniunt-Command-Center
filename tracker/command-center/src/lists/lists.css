@@ -233,7 +233,7 @@
 .role { display: inline-block; padding: 1px 5px; border: 1px solid var(--rt); background: transparent; color: var(--rt); font: 700 11px/1.1 var(--f-body); letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
 .cnt i.role { display: block; padding: 0; border: 0; background: none; color: inherit; font: normal 700 11px/1.1 var(--f-body); letter-spacing: .04em; }
 .lstamp.plain { color: var(--ink-2); }
-.held { font: 700 11px/1.4 var(--f-body); border: 1px dashed var(--ink-3); padding: 0 5px; }
+.held { font: 700 11px/1.4 var(--f-body); border: 1px dashed var(--ink-3); padding: 0 5px; display: inline-block; max-width: 100%; }
 .jset { display: inline-flex; flex-wrap: wrap; gap: 2px 3px; align-items: center; max-width: 100%; vertical-align: middle; margin-top: -4px; margin-bottom: -4px; }
 .nb { white-space: nowrap; }
 .jicon.jr { width: 24px; height: 24px; }
@@ -670,6 +670,7 @@
 .w-way .selrow { display: flex; align-items: flex-end; gap: 12px; }
 .w-way .selrow .lfld { flex: 1 1 0; min-width: 0; }
 .w-way .selrow .w-hq { flex: none; max-width: 44%; min-height: 44px; margin: 0; line-height: 1.2; }
+@media (max-width: 480px) { .w-way .selrow { gap: 8px; } .w-way .selrow .w-hq { max-width: 34%; font-size: 13px; } } /* R7: on a phone the choice takes a third, so the select shows its whole text */
 @media (max-width: 700px) {
   .zone-head { padding: 0 12px; }
   .ae-head { padding: 0 12px 0 18px; }
