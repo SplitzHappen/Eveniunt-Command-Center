@@ -520,13 +520,27 @@
     var qs = madeQualities(sc, owner, ln.item, ln.recipe), pick = (SH.view.madeQ || {})[lk];
     return pick && qs.indexOf(pick) >= 0 ? pick : qs[0] || 'nq';
   }
+  // D-C1: every job that can craft the item, with its level; where their materials differ, which recipe is counted and (not on a must-craft or collectable row, which keep their own recipe) a choice
+  function ingKey(rid) { return JSON.stringify((DATA.recipes[rid][5] || []).map(function (i) { return [i[0], i[1]]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; })); }
+  function crafterBlock(ln) {
+    var rs = recipesOf(ln.item), jobs = {};
+    rs.forEach(function (r) { jobs[DATA.recipes[r][2]] = 1; });
+    if (Object.keys(jobs).length < 2) return '';
+    var differ = rs.some(function (r) { return ingKey(r) !== ingKey(rs[0]); }), label = function (r) { return (JOBS[DATA.recipes[r][2]] || 'A crafter') + ', level ' + DATA.recipes[r][3]; };
+    var h = '<div class="w-crafters"><p class="why">Crafters: ' + esc(rs.map(label).join('; ')) + '.</p>';
+    if (differ) {
+      h += '<p class="why">Materials differ by crafter; counted for ' + esc(JOBS[DATA.recipes[ln.recipe][2]] || 'a crafter') + '.</p>';
+      if (ln.part !== 'make' && ln.part !== 'coll') h += '<label>Count materials for <select data-f="countrecipe">' + rs.map(function (r) { return '<option value="' + r + '"' + (r === ln.recipe ? ' selected' : '') + '>' + esc(label(r)) + '</option>'; }).join('') + '</select></label>';
+    }
+    return h + '</div>';
+  }
   function craftRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = madeQuality(V.sc, V.owner, ln, key), spare = V.plan.spare[key] || 0, rowKey = 'L|' + key;
     var h = '<li class="line-row craft-row"' + rowAttrs(V, key, ln, q) + '><div class="w-head"><b class="w-name">' + esc(name) + '</b>' + wayPill(ln, true) + ' <span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + ' ' + stamp(ln) + '</span>' +
       (spare ? ' <span class="tag">spare: ' + spare + '</span>' : '');
     if (ln.part === 'make') { var mp = makeProgress(V, ln.item, ln.recipe); h += ' <span class="tag">' + mp.crafted + ' of ' + mp.qty + ' crafted</span>'; }
     var mqs = ln.part === 'make' ? madeQualities(V.sc, V.owner, ln.item, ln.recipe) : [];
-    h += '</div>' + reasonOf(V, ln, x) + '<div class="w-act">' + (mqs.length > 1 ? '<label>Quality made <select data-f="madeq">' + mqs.map(function (m) { return '<option value="' + m + '"' + (m === q ? ' selected' : '') + '>' + qWord(m) + '</option>'; }).join('') + '</select></label> ' : '') + btn('Made 1', 'made', ' data-crafts="1"') + ' ' + (x.crafts > 1 ? btn('Made all', 'made', ' data-crafts="' + x.crafts + '"') + ' ' : '') +
+    h += '</div>' + reasonOf(V, ln, x) + crafterBlock(ln) + '<div class="w-act">' + (mqs.length > 1 ? '<label>Quality made <select data-f="madeq">' + mqs.map(function (m) { return '<option value="' + m + '"' + (m === q ? ' selected' : '') + '>' + qWord(m) + '</option>'; }).join('') + '</select></label> ' : '') + btn('Made 1', 'made', ' data-crafts="1"') + ' ' + (x.crafts > 1 ? btn('Made all', 'made', ' data-crafts="' + x.crafts + '"') + ' ' : '') +
       btn('Bought it', 'ask-bought', ' data-mode="bought"') + ' ' + btn('Got it another way', 'ask-bought', ' data-mode="other"');
     if (!(DATA.noHandOver || []).some(function (r) { return r === ln.recipe; })) h += ' <a class="btn" href="../atelier/#recipe=' + ln.recipe + '">Solve in the Atelier</a>';
     h += '</div>' + boughtBox(V, rowKey, x.short, q) + wayBlock(V, ln) + '</li>';
@@ -1009,6 +1023,7 @@
     else if (f === 'madeq') { (SH.view.madeQ = SH.view.madeQ || {})[c.lk] = el.value; c.el.setAttribute('data-q', el.value); }
     else if (f === 'step') act(function (s) { return labeled(S.setStep(s, r.list, r.tid, el.value), 'Moved ' + itemName(r.item) + ' to another step'); });
     else if (f === 'way') { var v = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: v || null, offer: null }), 'Chose how to get ' + itemName(c.item)); }); }
+    else if (f === 'countrecipe') { var cr = +el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { recipe: cr }), 'Counted the materials of ' + itemName(c.item) + ' for ' + (JOBS[DATA.recipes[cr][2]] || 'a crafter')); }); }
     else if (f === 'offer') { var key = el.value; act(function (s) { return labeled(S.setWay(s, c.owner, c.item, { by: 'trade', offer: key }), 'Chose a trade for ' + itemName(c.item)); }); }
     else if (f === 'tick') { var id = el.closest('[data-list]').getAttribute('data-list'), on = el.checked; act(function (s) { return S.tickCombined(s, id, on); }); }
     else if (f === 'priceWorld') { var pw = el.value; act(function (s) { return prefEdit(s, 'priceWorld', pw); }); }

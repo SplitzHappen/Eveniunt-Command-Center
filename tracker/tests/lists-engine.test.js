@@ -334,3 +334,30 @@ test('LE-GONE a must-craft item whose recipe left the game data stays in the lis
   assert.equal(Object.keys(plan([list('A', [gone])], {}, data).lines).length, 0);
   assert.equal(L.tree(data, lists).has(12), false);
 });
+
+// ---- B3 (docs/lists-look-spec.md, D-C1): the counted recipe of an item with several crafters
+test('LE-B3a the counted recipe follows ways.recipe, else the lowest level then lowest id; a must-craft row keeps its own recipe', () => {
+  const lists = [list('A', [T('a', 101, 2)])];
+  const def = plan(lists, { ways: { 101: { by: 'craft' } } });
+  assert.deepEqual([line(def, 101).recipe, line(def, 101).job], [1001, 1], 'default: the level 10 recipe');
+  assert.equal(line(def, 104).need, 4, 'its materials: 4 of 104 (two crafts)');
+  const set = plan(lists, { ways: { 101: { by: 'craft', recipe: 1003 } } });
+  assert.deepEqual([line(set, 101).recipe, line(set, 101).job, line(set, 101).need], [1003, 1, 2], 'ways.recipe 1003 is counted');
+  assert.equal(line(set, 103).need, 3, 'the materials of recipe 1003: 3 of 103');
+  assert.ok(!line(set, 104), 'the materials of the default recipe are no longer asked for');
+  // a recipe of another item is ignored
+  assert.equal(line(plan(lists, { ways: { 101: { by: 'craft', recipe: 1000 } } }), 101).recipe, 1001);
+  // a crafting-log wanted item keeps its own recipe whatever ways.recipe says
+  const mk = plan([list('A', [T('a', 101, 1, { make: true, recipe: 1001 })])], { ways: { 101: { recipe: 1003 } } });
+  assert.ok(line(mk, 101, 'make', 1001) && !line(mk, 101, 'make', 1003));
+});
+
+test('LE-B3b an item whose crafters have identical ingredients plans the same whichever recipe is counted', () => {
+  const data = clone(D);
+  data.recipes[1099] = [101, 1, 2, 30, 0, clone(data.recipes[1001][5]), data.recipes[1001][6]]; // a second job, same ingredients
+  const lists = [list('A', [T('a', 101, 3)])];
+  const a = plan(lists, { ways: { 101: { by: 'craft' } } }, data), b = plan(lists, { ways: { 101: { by: 'craft', recipe: 1099 } } }, data);
+  assert.equal(line(a, 101).recipe, 1001); assert.equal(line(b, 101).recipe, 1099);
+  const strip = (p) => { const c = clone(p); for (const ln of Object.values(c.lines)) { delete ln.recipe; delete ln.job; } for (const o of c.order) delete o.job; return JSON.stringify(c); };
+  assert.equal(strip(b).replace(/1099/g, 'R'), strip(a).replace(/1001/g, 'R'));
+});

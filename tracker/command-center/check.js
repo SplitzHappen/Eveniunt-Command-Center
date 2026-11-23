@@ -7808,6 +7808,46 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         Object.values(ck).every(Boolean), { ck, wide: w.map((x) => x.wide), taps: w[1].taps.slice(0, 30), clipped: w.map((x) => x.clipped.slice(0, 20)), shots: w.map((x) => x.shots.length), left: w.map((x) => x.left), errors: w.map((x) => x.errs) });
     });
 
+    // ── C177 (Lists, B3) Every crafter of an item, the real data: Bronze Ingot (Blacksmith and Armorer, materials differ) shows both crafters, the "differ" line and "Count materials for"; switching changes the materials and the job head and saves
+    //    ways.recipe, an undo restores it; item 36122 (identical ingredients) shows both crafters and no choice. ──
+    await guard('C177', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec, DATA) {
+        let t = 5000; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'Crafters', stamp: DATA.stamp }, c()); sec = r.section; const id = r.id, owner = S.ownerOf(sec.lists[id]);
+        [5056, 36122].forEach((it) => { r = S.addTarget(sec, id, { item: it, recipe: 0, qty: 1 }, c()); sec = r.section; sec = S.setWay(sec, owner, it, { by: 'craft' }).section; });
+        return sec;
+      });
+      await lOpenList(page, 'Crafters', 'craft');
+      const row = (it) => page.locator('.craft-row[data-item="' + it + '"]');
+      const read = async (it) => ({ text: (await row(it).textContent()).replace(/\s+/g, ' '), opts: await row(it).locator('[data-f=countrecipe] option').allTextContents(), n: await row(it).locator('[data-f=countrecipe]').count(),
+        job: await page.evaluate((i) => document.querySelector('.craft-row[data-item="' + i + '"]').closest('.cblock').querySelector('h3').textContent, it) });
+      const a0 = await read(5056);
+      ck.bothCrafters = /Crafters: Blacksmith, level 1; Armorer, level 1\./.test(a0.text);
+      ck.differLine = a0.text.includes('Materials differ by crafter; counted for Blacksmith.');
+      ck.choice = a0.n === 1 && JSON.stringify(a0.opts) === JSON.stringify(['Blacksmith, level 1', 'Armorer, level 1']) && a0.job === 'Blacksmith';
+      const mats = async () => { await lTab(page, 'get'); await lOpenAll(page); const m = await page.evaluate(() => [...document.querySelectorAll('.gsec .line-row')].map((r) => +r.dataset.item)); await lTab(page, 'craft'); return m; };
+      const m0 = await mats();
+      ck.blacksmithShard = m0.includes(2) && !m0.includes(3);
+      await row(5056).locator('[data-f=countrecipe]').selectOption('170'); await lSettle(page);
+      const a1 = await read(5056), m1 = await mats();
+      ck.switched = a1.job === 'Armorer' && a1.text.includes('counted for Armorer.') && m1.includes(3) && !m1.includes(2);
+      ck.saved = (await lStored(page)).ways && Object.values((await lStored(page)).ways).some((w) => w.recipe === 170);
+      await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
+      const a2 = await read(5056);
+      ck.undone = a2.job === 'Blacksmith' && !Object.values((await lStored(page)).ways || {}).some((w) => w.recipe === 170);
+      const b0 = await read(36122);
+      ck.identical = /Crafters: Blacksmith, level 50; Armorer, level 50\./.test(b0.text) && b0.n === 0 && !b0.text.includes('Materials differ');
+      ck.noErrors = real(errors).length === 0 && external.every((u) => u.startsWith('https://universalis.app/')); // the real data has a market price for the items it shows; nothing else leaves the page
+      record('C177', 'Lists page, every crafter (real data): an item whose materials differ between Blacksmith and Armorer shows both crafters, "Materials differ by crafter; counted for Blacksmith" and "Count materials for"; switching changes the materials and the job head, is saved and can be undone; an item with identical ingredients shows both crafters and no choice',
+        Object.values(ck).every(Boolean), { ck, a0, a1, a2, b0, m0, m1, errors: real(errors), external });
+      void server;
+    });
+
   } finally {
     await browser.close(); server.close();
   }

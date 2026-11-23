@@ -410,3 +410,16 @@ test('ST-19 every header edit (rename, add a step, change the character, restore
   const noList = ok(S.restoreList(gone, lid, ctx(), null));
   await assert.rejects(() => CC.writeSection('lists', noList.section, { rev: first.rev, base: gone, expect: noList.expect }), /./);
 });
+
+test('ST-B3 ways.recipe is set through the store, changes the counted recipe, and an undo restores it', () => {
+  const b0 = base(), sec0 = ok(S.setWay(ok(S.addTarget(b0.sec, b0.lid, { item: 101, recipe: 0, qty: 2 }, ctx())).section, 'c1', 101, { by: 'craft' })).section, p0 = planOf(sec0, 'c1');
+  const r = ok(S.setWay(sec0, 'c1', 101, { recipe: 1003 }));
+  assert.equal(r.section.ways['c1.101'].recipe, 1003);
+  assert.deepEqual(r.entry.units.map((u) => u.g), ['ways']);
+  assert.equal(planOf(sec0, 'c1').lines['101|normal|0'].recipe, 1001);
+  assert.equal(planOf(r.section, 'c1').lines['101|normal|0'].recipe, 1003);
+  const u = ok(S.undo(r.section, r.entry));
+  assert.equal(J(u.section), J(sec0));
+  assert.equal(J(planOf(u.section, 'c1')), J(p0));
+  assert.ok(S.setWay(sec0, 'c1', 101, { recipe: 'x' }).error);
+});
