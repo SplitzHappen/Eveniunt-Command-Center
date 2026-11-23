@@ -134,7 +134,6 @@ Gate 1E (round 1) puts the shell at the root of the public site.
 | `src/icons/`, `make-icons.js` | The Command Center's own icons (gate 1E) and the script that draws them |
 | `src/sw.js` | The site-wide service worker (template; `build.js` fills in the build id and file list) |
 | `src/submersibles/` | The Submersibles module page (step S2): `index.html`, `subs.js` (setup, board, send), `subs.css`, `advisor.js` (worked-out voyages, suggestions), `fleet.js` (typed times, statuses, calendar file, alerts; also loaded by the shell), `chart.js` (the Map tab's read-only sea chart, step S4), `recs.js` (the recommendation rule and its settings), `drops.js` (the community drop-rate estimate), `earn.js` (loot values, prices, earnings), `palette.js` (the colour roles computed from the theme), `timeline.js` (the Board's time axis and lanes), `ledger.js` (the Log by day) |
-| `src/lists/` | The Lists module page (phase 3): `index.html`, `lists.js` (the screens), `lists.css`, `engine.js` (the recipe expansion and the plan), `store.js` (the edit functions); the data is `tracker/data/lists.json` |
 | `site/save.js` | The one save (gate 1C), copied from `src/core/save.js` by `build.js` |
 | `restore-build-inputs.js` | Recovers the fonts, the Atelier's solver and its action icons from the committed single-file builds, so both apps can be rebuilt in a session without the toolchain (`--verify` rebuilds and compares byte for byte) |
 | `build.js` | Builds the shell and the Submersibles page into `site/` (62 files; the icons are most of it) |

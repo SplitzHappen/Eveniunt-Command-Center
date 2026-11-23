@@ -39,39 +39,6 @@
     local = fill(local, base || remote);
     remote = fill(remote, base || local);
     const B = flat(base), L = flat(local), R = flat(remote);
-    // Lists (docs/lists-spec.md section 4): units are 'm|' + the JSON path ['lists', group, key]. Helpers for LY0, LY1 and LY6.
-    const HDR = 'm|["lists","lists",', TGT = 'm|["lists","targets",';
-    const anyLists = [B, L, R].some((map) => { for (const k of map.keys()) if (k.startsWith('m|["lists",')) return true; return false; });
-    const listKey = (group, id) => 'm|' + JSON.stringify(['lists', group, id]);
-    const listId = (k, pre) => { if (!k.startsWith(pre)) return null; try { const p = JSON.parse(k.slice(2)); return Array.isArray(p) && p.length === 3 && typeof p[2] === 'string' ? p[2] : null; } catch (e) { return null; } };
-    if (anyLists) {
-      // LY6 The same id made on two devices: a list header or wanted item that is not in base, is on both sides and has a different
-      // creation time on each is two records. The later one (higher time) is stored under a new id computed from its old id and its time
-      // (so both devices compute the same one); a list's wanted items move with it. No question. Equal times: one record, ordinary rules.
-      const hash36 = (text) => { let h1 = 0x811c9dc5, h2 = 5381; for (let i = 0; i < text.length; i++) { const c = text.charCodeAt(i); h1 = Math.imul(h1 ^ c, 16777619) >>> 0; h2 = (Math.imul(h2, 33) ^ c) >>> 0; } return h1.toString(36).padStart(7, '0') + h2.toString(36).padStart(7, '0'); };
-      const newId = (old, time) => hash36(old + '|' + time).slice(0, 12);
-      const timeOf = (text, field) => { try { const o = JSON.parse(text); const n = o ? Number(o[field]) : NaN; return Number.isFinite(n) ? n : 0; } catch (e) { return 0; } };
-      for (const k of [...L.keys()]) {
-        const id = listId(k, HDR);
-        if (id === null || B.has(k) || !R.has(k)) continue;
-        const lt = timeOf(L.get(k), 'made'), rt = timeOf(R.get(k), 'made');
-        if (lt === rt) continue;
-        const later = lt > rt ? L : R, nid = newId(id, Math.max(lt, rt));
-        later.set(listKey('lists', nid), later.get(k)); later.delete(k);
-        for (const tk of [...later.keys()]) {
-          const tid = listId(tk, TGT);
-          if (tid !== null && tid.startsWith(id + '.')) { later.set(listKey('targets', nid + tid.slice(id.length)), later.get(tk)); later.delete(tk); }
-        }
-      }
-      for (const k of [...L.keys()]) {
-        const id = listId(k, TGT);
-        if (id === null || B.has(k) || !R.has(k) || !L.has(k)) continue;
-        const lt = timeOf(L.get(k), 'at'), rt = timeOf(R.get(k), 'at');
-        if (lt === rt) continue;
-        const later = lt > rt ? L : R, dot = id.indexOf('.');
-        later.set(listKey('targets', id.slice(0, dot + 1) + newId(id.slice(dot + 1), Math.max(lt, rt))), later.get(k)); later.delete(k);
-      }
-    }
     const keys = new Set([...B.keys(), ...L.keys(), ...R.keys()]);
     const merged = new Map();
     const conflicts = [];
@@ -193,50 +160,6 @@
         }
       });
     }
-    if (anyLists) {
-      // Lists, LY1: for a list whose header is in base and is missing on one side only (X lacks it, Y holds it): when X removed the
-      // header and every wanted item and Y holds exactly what base held, the removal is taken (the generic rule already did it);
-      // otherwise one question for the whole list. Both sides lacking it, or both holding it, ask nothing about the list.
-      const index = (map) => { const o = new Map(); for (const k of map.keys()) { const id = listId(k, TGT); if (id === null) continue; const P = id.split('.')[0]; if (!o.has(P)) o.set(P, []); o.get(P).push(k); } return o; };
-      const BT = index(B), LTi = index(L), RTi = index(R);
-      const listName = (P) => { for (const map of [merged, L, R, B]) { const o = parseUnit(map.get(listKey('lists', P))); if (o && typeof o.name === 'string' && o.name) return o.name; } return ''; };
-      const folded = new Set();
-      for (const [k, bv] of B) {
-        const P = listId(k, HDR); if (P === null) continue;
-        const lh = L.get(k), rh = R.get(k);
-        if ((lh === undefined) === (rh === undefined)) continue;
-        const xLocal = lh === undefined, Y = xLocal ? R : L, yh = xLocal ? rh : lh;
-        const xT = (xLocal ? LTi : RTi).get(P) || [], yT = (xLocal ? RTi : LTi).get(P) || [], bT = BT.get(P) || [];
-        if (!xT.length && yh === bv && yT.length === bT.length && yT.every((t) => B.get(t) === Y.get(t))) continue; // case 1
-        // Keep stays the default: Y's header and every wanted item either side holds. Removals of items inside the list are not asked on their own.
-        let items = 0;
-        for (const t of new Set([...bT, ...xT, ...yT])) {
-          const lv = L.get(t), rv = R.get(t);
-          if (lv === undefined && rv === undefined) continue;
-          items++;
-          if (lv === undefined || rv === undefined) { merged.set(t, lv === undefined ? rv : lv); folded.add(t); }
-        }
-        merged.set(k, yh);
-        const integrity = { kind: 'list', keep: true, listId: P, listName: listName(P), items };
-        const existing = conflicts.find((c) => c.id === k);
-        if (existing) existing.integrity = integrity;
-        else conflicts.push({ id: k, local: lh === undefined ? null : lh, remote: rh === undefined ? null : rh, integrity });
-      }
-      if (folded.size) conflicts.splice(0, conflicts.length, ...conflicts.filter((c) => !folded.has(c.id)));
-      // LY0: a unit removed on one side and changed on the other stays until the removing side is answered; and the clash of a list or a
-      // wanted item carries the list's name (Settings cannot see the Lists data).
-      for (const c of conflicts) {
-        if (c.integrity) continue;
-        const gid = listId(c.id, HDR), tid = gid === null ? listId(c.id, TGT) : null;
-        const one = (c.local === null) !== (c.remote === null);
-        if (!one && gid === null && tid === null) continue;
-        if (!c.id.startsWith('m|["lists",')) continue;
-        const integrity = { kind: 'lists' };
-        if (one) { integrity.keep = true; merged.set(c.id, c.local !== null ? c.local : c.remote); }
-        if (gid !== null || tid !== null) integrity.listName = listName(gid !== null ? gid : tid.split('.')[0]);
-        c.integrity = integrity;
-      }
-    }
     return { merged, conflicts };
   };
 
@@ -254,7 +177,7 @@
         if (p.length === 3 && p[0] === 'submersibles' && p[1] === 'trips' && trip && trip.s === subId) m.delete(k);
       }
     };
-    const owners = [], listQs = [];
+    const owners = [];
     for (const c of result.conflicts) {
       if (c.integrity && c.integrity.kind === 'slot') {
         const v = chosen(c);
@@ -268,30 +191,9 @@
         continue;
       }
       if (c.integrity && c.integrity.kind === 'owner') { owners.push(c); continue; }
-      // Lists: a whole-list question is applied after the other units; a unit removed on one side and changed on the other stays
-      // unless the removing side is answered (a merge applied without asking removes nothing of the lists)
-      if (c.integrity && c.integrity.kind === 'list') { listQs.push(c); continue; }
-      if (c.integrity && c.integrity.kind === 'lists' && c.integrity.keep) {
-        const v = chosen(c), pick = v === 'remote' ? c.remote : v === 'local' ? c.local : c.local !== null ? c.local : c.remote;
-        if (pick === null) m.delete(c.id); else m.set(c.id, pick);
-        continue;
-      }
       const pick = (choices || {})[c.id] === 'remote' ? c.remote : c.local;
       if (pick === null) m.delete(c.id);
       else m.set(c.id, pick);
-    }
-    // A whole-list question: the answer of the side that holds the header keeps the list with every wanted item of it; the answer of the
-    // side that lacks it removes the header and every wanted item of the list on both sides. No answer keeps (nothing is deleted).
-    for (const c of listQs) {
-      const v = chosen(c), pick = v === 'remote' ? c.remote : v === 'local' ? c.local : c.local !== null ? c.local : c.remote;
-      if (pick === null) {
-        m.delete(c.id);
-        for (const k of [...m.keys()]) {
-          if (!k.startsWith('m|["lists","targets",')) continue;
-          let p; try { p = JSON.parse(k.slice(2)); } catch (e) { continue; }
-          if (typeof p[2] === 'string' && p[2].startsWith(c.integrity.listId + '.')) m.delete(k);
-        }
-      } else m.set(c.id, pick);
     }
     // A free company is decided after its submarines' own rows: choosing its removal removes those submarines and their
     // logged voyages (the prompt names them), so mixed choices cannot leave a submarine without its free company.
@@ -385,12 +287,6 @@
       };
     }
     const who = (id) => (st.chars.find((x) => x.id === id) || { name: id }).name;
-    if (c.integrity && c.integrity.kind === 'list' && globalThis.CC) {
-      // the whole-list question: the side that lacks the list says it is removed (and what that removes), the other says it is kept
-      const g = c.integrity, n = g.items || 0, what = n === 1 ? 'its 1 wanted item' : n ? 'its ' + n + ' wanted items' : 'nothing else';
-      const side = (v) => (v === null ? 'the list is removed: choosing this removes it and ' + what + ' on both devices' : 'the list is kept: choosing this keeps it and ' + what);
-      return { who: '', what: globalThis.CC.describeUnit(c.id, c.local, c.remote, who, g).what, local: side(c.local), remote: side(c.remote) };
-    }
     if (c.id.startsWith('m|') && globalThis.CC) return globalThis.CC.describeUnit(c.id, c.local, c.remote, who, c.integrity);
     const [kind, a, ...rest] = c.id.split('|');
     const what = (k) => { const h = idx && idx.byKey.get(k); return h ? h.e.n + ' (' + h.s.t + ')' : k; };

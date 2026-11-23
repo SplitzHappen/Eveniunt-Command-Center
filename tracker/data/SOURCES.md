@@ -188,26 +188,3 @@ Regenerate (needs raw.githubusercontent.com):
 python3 -I tools/submarines.py --cache /tmp/submarines-cache
 node --test tests/submarines.test.js
 ```
-
-## Lists: recipes, merchants and gathering (work item W1 of `docs/lists-spec.md`, 2026-11-22)
-
-`data/lists.json` is written by `tools/lists-data.py` (`python3 -I tools/lists-data.py --cache DIR`); it is read by the Lists module's engine and built into `site/lists/data.js`. Game version 7.57h1; stamp `7.57h1 44948e4c 70429e21`.
-
-| Table | Source (pinned) | Licence |
-| --- | --- | --- |
-| `items`, `recipes` | `xivapi/ffxiv-datamining` at `44948e4cda5846eab0baa9872122a888fcc4f1b1`, English CSVs `Item`, `Recipe`, `RecipeLevelTable`, `PlaceName` | Game data (c) SQUARE ENIX CO., LTD. |
-| `trades`, `npcs` | `ffxiv-teamcraft/ffxiv-teamcraft` at `70429e214dc952be23114df514a18223dc429449`: `shops.json`, `npcs.json` | MIT |
-| `gather` | the same Teamcraft commit: `nodes.json`, `gathering-items.json`, `fishing-sources.json`, `fishing-spots.json` | MIT |
-
-Notes. A recipe's ingredient slot holds 0 or -1 when empty. An item's `merchantSells` is the Item sheet's `PriceMid` (a gil price, 0 = none). Gather windows follow the rule of `tools/info.py`: timed only when every node of the item is timed; fish carry no window because the pinned files hold none. A gil merchant is an offer whose only currency is gil (currency 1); every other offer is a trade. The pinned `shops.json` marks no allied-society shop, so their token offers count as trades. Every distinct offer is kept; offers equal in what they give, every currency and amount, quality and rank are merged, keeping the lowest seller id. `changes` keeps the old rows of recipes that differ from the previous file. The `log` table is added later by the build.
-
-First run: 13,892 recipes, 13,848 items, 4,041 gil offers, 1,045 other offers, 785 gathered or fished items, 148 named sellers; plain 1,758,168 bytes.
-
-**Stop rules** (nothing is written): a fetch fails; a recipe names an item missing from `Item`; a yield or an amount is below 1; a trade gives fewer than 1 or has no currency; the recipes form a loop; the stamp is over 40 characters; the recipe count differs from `EXPECT_RECIPES` (13,892 on the first run, set in the tool).
-
-Regenerate (needs raw.githubusercontent.com):
-
-```
-python3 -I tools/lists-data.py --cache /tmp/lists-data-cache
-node tests/lists-data.test.js
-```

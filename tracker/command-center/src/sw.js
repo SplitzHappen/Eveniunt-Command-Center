@@ -23,7 +23,7 @@ const TRACKER = SCOPE + 'tracker/';
 const SHELL = new Set(FILES.map((f) => new URL(f, SCOPE).href));
 // Module pages that live inside the shell's own site, not isolated (Submersibles, step S2): kept for offline use with the
 // shell's files, opened network first like the shell's page.
-const PAGES = ['submersibles/', 'lists/'].map((p) => SCOPE + p);
+const PAGES = ['submersibles/'].map((p) => SCOPE + p);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
