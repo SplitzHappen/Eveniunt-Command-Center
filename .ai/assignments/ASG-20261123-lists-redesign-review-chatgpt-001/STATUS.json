@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "assignment_id": "ASG-20261123-lists-redesign-review-chatgpt-001",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "work_class": "audit",
   "requested_by": "claude",
   "assigned_to": "chatgpt",
@@ -12,8 +12,11 @@
     "head_sha": "ec24562d3a1ee12ac5f99e7bed4b66a3904c3e33",
     "ref": "claude/blissful-fermat-hrrqp5"
   },
-  "result_paths": [],
-  "result_commit": null,
-  "completed_at": null,
-  "disposition": null
+  "result_paths": [
+    ".ai/assignments/ASG-20261123-lists-redesign-review-chatgpt-001/results/REVIEW.md",
+    ".ai/assignments/ASG-20261123-lists-redesign-review-chatgpt-001/results/findings.json"
+  ],
+  "result_commit": "b10581a9c0db79a046e95702d2d15c884dec4cdf",
+  "completed_at": "2026-11-23T22:43:02Z",
+  "disposition": "Publish after fixes (6 major, 16 minor findings)."
 }
