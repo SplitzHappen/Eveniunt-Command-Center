@@ -14,7 +14,9 @@ This product includes software from these projects:
 - Eveniunt Tracker data sources (see tracker/data/SOURCES.md):
   - xivapi/ffxiv-datamining (game sheets; FINAL FANTASY XIV data (c) SQUARE ENIX CO., LTD.).
   - FFXIV Teamcraft (https://github.com/ffxiv-teamcraft/ffxiv-teamcraft), MIT License, (c) Flavien Normand:
-    patch labels, gathering-log pages and FATE zones.
+    patch labels, gathering-log pages and FATE zones; the Lists data (shops, gathering nodes, fishing spots,
+    aetherytes); and the 11 crafter and gatherer job icons of the Lists module, which are Square Enix
+    materials copied at a pinned commit (tracker/data/classjob).
   - FFXIV Collect (https://ffxivcollect.com, https://github.com/mattantonelli/ffxiv-collect, MIT License,
     (c) Matt Antonelli): "how to get it" sources and time-limited flags (community data, snapshot of 2026-11-07),
     and the optional online character refresh.
@@ -24,6 +26,6 @@ This product includes software from these projects:
   @fontsource packages under the SIL Open Font License 1.1.
 
 FINAL FANTASY XIV game data, item, recipe and action names and the crafting action icons are
-(c) SQUARE ENIX CO., LTD. All rights reserved. FINAL FANTASY is a registered trademark of Square Enix
+(c) SQUARE ENIX CO., LTD. (the job icons too). All rights reserved. FINAL FANTASY is a registered trademark of Square Enix
 Holdings Co., Ltd. This is a free, non-commercial fan project, not affiliated with or endorsed by
 Square Enix. The Apache License above covers this project's own code only, not Square Enix materials.

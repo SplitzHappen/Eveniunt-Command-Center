@@ -77,6 +77,17 @@ for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'recs.js', 'dr
 // The build stops when a log recipe id is not in `recipes`, when the Atelier disagrees with the sheets (tools/lists-crosscheck.js) or when
 // data.js is over the 1.5 MB budget. Both sizes are printed.
 for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js', 'store.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
+// The 11 job icons (the game's, fetched by tools/lists-data.py at the pinned Teamcraft commit): copied into the built site, so the
+// page never hot-links them and the service worker caches them with the other files. The build stops when one is missing, is not a
+// PNG or is over 16 kB.
+for (const j of ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherworker', 'weaver', 'alchemist', 'culinarian', 'miner', 'botanist', 'fisher']) {
+  const file = path.join(T, 'data', 'classjob', j + '.png');
+  if (!fs.existsSync(file)) throw new Error('lists icons: data/classjob/' + j + '.png is missing');
+  const png = fs.readFileSync(file);
+  if (png.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') throw new Error('lists icons: ' + j + '.png is not a PNG');
+  if (png.length > 16 * 1024) throw new Error('lists icons: ' + j + '.png is ' + png.length + ' bytes, over 16 kB');
+  cp(file, 'lists/classjob/' + j + '.png');
+}
 {
   const data = JSON.parse(fs.readFileSync(path.join(T, 'data', 'lists.json'), 'utf8'));
   const tracker = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8'));
@@ -92,7 +103,10 @@ for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js', 'store.js']
   });
   const cross = require('./../tools/lists-crosscheck.js').check(data);
   console.log('lists cross-check with the Atelier: compared ' + cross.compared + ', agreed ' + cross.agreed + ', no hand-over ' + cross.noHandOver.length);
-  const full = Object.assign({}, data, { log, noHandOver: cross.noHandOver });
+  // B2 (docs/lists-look-spec.md): data.gather of the page stays the former shape until B3 and B5 move the page to the new
+  // table, which the page's data carries as `spots` (every spot, best first); the former shape is lists.json's `gatherLegacy`.
+  const full = Object.assign({}, data, { gather: data.gatherLegacy, spots: data.gather, log, noHandOver: cross.noHandOver });
+  delete full.gatherLegacy;
   const json = JSON.stringify(full);
   const head = '// Built by command-center/build.js from data/lists.json (sources in data/SOURCES.md) and the craft-* lists of data/tracker-data.json.\n';
   const plainJs = head + 'window.LISTS_DATA=' + json + ';\n';
