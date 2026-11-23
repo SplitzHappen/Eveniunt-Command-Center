@@ -1,0 +1,222 @@
+[
+  {
+    "severity": "MAJOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 159,
+    "title": "Earlier changes can cover the whole phone screen and hide its own close control",
+    "consequence": "After ordinary stock edits, expanding history can make the plan and the history toggle unreachable by touch. Reloading to get out also clears the page’s undo history.",
+    "fix": "Keep the latest status and the history toggle in a fixed, reachable line. Open earlier changes above it in a bounded, scrollable panel with a visible close, and keep the bottom navigation clear.",
+    "evidence": "The built status pictures show history below the summary, where the approved design puts it above the status line. In Chromium at 360 × 800, twenty stock increments made the history 1,065 pixels high, with its summary 283 pixels above the viewport. At 1,440 × 1,000 it covered 732 pixels. The fixed container and list have no height bound or internal scrolling."
+  },
+  {
+    "severity": "MAJOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 541,
+    "title": "The phone gathering ledger hides the node a player should look for",
+    "consequence": "A player sees a level and coordinates but cannot tell from the row whether to look for a tree, a rocky outcrop or an unspoiled node. The game-time label and route reason also disappear. Crystals have no zone headers to make up for the missing aetheryte.",
+    "fix": "Put the chosen game node, area and useful timing together in a short route line on the phone. Move secondary information into the drawer, and let the drawer identify the job for the chosen spot when several jobs are shown.",
+    "evidence": "In get-gather-phone-dark.png, Rose Garnet Ore reads “Lv. 100 · Shaaloani” while get-gather-desktop-light.png identifies a Legendary Rocky Outcrop. The phone crystals picture shows two job abbreviations beside coordinates for one job. The phone rule explicitly hides the node, aetheryte, route reason and Eorzea-time wording. The look spec requires the chosen spot at rest."
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 660,
+    "title": "Thin route headers and repeated controls make the shopping ledger harder to scan",
+    "consequence": "Zone, nearby aetheryte and seller look like one run of small text on the phone. Long labels lose their useful end. On desktop the stepper and Have all form a high-contrast wall of repeated boxes, while purchase counts and the number of item types use similar numerals.",
+    "fix": "Give zone and seller lines a little vertical room and a clear relationship, preserve long names, quiet the repeated stepper borders, and label section counts as item types. Restore an at-a-glance gil subtotal for the merchant offer if the row group can supply it.",
+    "evidence": "Compare get-vendors and get-gather at both sizes with the after/get and after/combined pairs. project-phone-dark.png shows “Near Camp Dragon…” on the same thin line as the zone. get-open-desktop-light.png repeats the Mustard Eggs seller and price in the row and the drawer. The merchant subtotal visible in the approved desktop get picture is absent from the build."
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 758,
+    "title": "Craft warnings compete with the item and the work order",
+    "consequence": "Long gear names and repeating warnings are hard to scan on a phone. The generic “Book not ticked” forces a tap to learn which book. On desktop the repeating three-stamp cluster is louder than the crafts, and in the open row the high-quality control is detached from the related choices.",
+    "fix": "Keep the item name and remaining work first. Group a discreet book warning and job information near the relevant job, show the book name where the warning appears, and put the high-quality choice directly under Get it by. Put the counted job beside the alternate jobs when ingredients differ.",
+    "evidence": "The craft, craft-open and craft-hq pairs show the effect on the Courtly Lover set, Grade 4 Gemsap and Ra’Kaznar Ingot. The finished build does follow the owner’s quieter outlined primary and name-adjacent chevron. The desktop recipe stamps are hidden wholesale at phone widths, and the counted-recipe explanation is emitted only in the open drawer at lists.js:747."
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.css",
+    "line": 487,
+    "title": "Phone totals, step shares and list settings compete for the same header space",
+    "consequence": "The phone hides the character-total caption, so the larger counts can look like the list or phase total. The built combined title truncates early and phase tabs extend past the visible edge. The step hand-in control is easy to confuse with a small generic button unrelated to the selected phase.",
+    "fix": "Keep a visible “Character total” cue, give three tallies their own row at narrow widths, keep the version and price place readable, and visibly signal the remaining phases. Place the hand-in action beside the strip on desktop and across the phone below it, as approved.",
+    "evidence": "head-phone-dark.png and combined-phone-dark.png place three 24-pixel figures beside the name. In project and steps, the slab reads 1,656 to get and 221 to craft while All steps for the project has 1,233 and 183. The desktop step action sits below at the left and the phone action occupies only part of the row, unlike after/steps. The committed phone measurements put the first get and Wanted rows 203 and 210 pixels below the masthead against a 200-pixel budget."
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 1114,
+    "title": "The Restored list card makes recovery and removal look like adjacent text",
+    "consequence": "A player trying to recover saved items has to distinguish two nearly touching actions after scrolling past their other lists. The large color stripe consumes space the explanation and actions need.",
+    "fix": "Use the approved filled recovery action and open the character picker from it. Keep the count block short, and put the separately spaced Remove action in a secondary position with its existing confirmation.",
+    "evidence": "In restored-phone-dark.png, the recovery text runs directly into “Remove” and the salmon count band runs the full recovery card. restored-desktop-light.png also shows an unfilled primary and the exposed select. The after/restored pair shows the intended recovery hierarchy. The current catalogued confirmation still asks before removal."
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 1176,
+    "title": "Wanted still reads like a form with repetitive metadata",
+    "consequence": "The amount is a plain number box, the search hint is clipped on the phone, and “ordinary” repeats on every ordinary row. In the phone drawer the visible “Amount, quality and step” link is generic when there are no steps. Project hits sit under the same Amount field even though they always make one part’s list.",
+    "fix": "Use the house stepper for player-entered quantities, keep the search label and short hint readable, omit the ordinary default when special quality is already stamped, and label the drawer control for the fields actually available. Clarify that a project search result makes a list for one part.",
+    "evidence": "wanted-phone-dark.png shows the project hit mixed with a trade hit, wanted-open-phone-dark.png cuts the hint after “item nam”, and wanted-open-desktop-light.png shows the bare Amount box. The after/wanted pair and the later stepper rule supply the comparison. The project click uses the project data directly without reading the Amount field."
+  },
+  {
+    "severity": "MINOR",
+    "area": "look",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 919,
+    "title": "Settings and the order ladder still have avoidable wording and layout friction",
+    "consequence": "The hide setting uses an action that changes names while its switch has no visible On or Off word. Phone users have to scroll to the fifth rung, and the footer’s small reset link competes with Close. The first and fourth rungs repeat their label immediately in the description.",
+    "fix": "Give the switch a stable name and visible state. Keep the five-step ladder, shorten repeated wording, and keep the footer’s main control full width on the phone with reset separate. Use “North America” as the display text while keeping the price service’s saved key.",
+    "evidence": "See order and settings at both widths. The desktop sheet and the phone’s themed controls otherwise follow the approved format. The open patch notice also reads more like a generic alert than the approved colored note, and patch-closed-phone-dark.png takes two lines despite the owner’s request for a compact single line."
+  },
+  {
+    "severity": "MAJOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 50,
+    "title": "High-quality shopping rows use the ordinary-quality market price",
+    "consequence": "A player can budget an order for the ordinary price while the plan requires high-quality stock. The same figure is repeated in the market subtotal and presented as the cheapest listing.",
+    "fix": "Keep market quotes by item and quality, ask the price service for the relevant quality, and total only matching quotes. Show unknown for a high-quality price the service cannot supply or the cache cannot distinguish. Keep the Lists price cache isolated from Submersibles.",
+    "evidence": "Chromium, both widths. A high-quality Bronze Ingot routed to the market with a controlled response that listed ordinary at 100 gil and high quality at 10,000 showed “100 gil” on the high-quality row and in its subtotal. The parser takes the first listing regardless of quality and the cache and price lookup have no quality key. The generic quote predates the redesign, and the new bulk quality action expands its reach."
+  },
+  {
+    "severity": "MAJOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/engine.js",
+    "line": 543,
+    "title": "Gathering can claim a route stop no other displayed row uses",
+    "consequence": "A player follows the stated route and makes a needless zone change, potentially for a timed node. An item in a different list can also influence a single-list display without being part of that trip.",
+    "fix": "Choose from the stops actually assigned to outstanding rows in the current visible plan. Use a deterministic baseline and evaluate any change against the resulting route, then produce the reason from the same result that drives the zone headers and windows.",
+    "evidence": "Chromium at both widths with just Navigator’s Dagger and Unaspected Crystal. The dagger stays in Lower La Noscea at Moraby Drydocks, while the crystal says “Chosen: on your route in Western La Noscea” at the Swiftperch-side node. The dagger could go to Western La Noscea, but the displayed route has neither another row there nor a reduced number of stops. The helper counts all possible zones of other lines and receives the character-wide plan. C178 covers a fixed companion zone, so it passes this implementation."
+  },
+  {
+    "severity": "MAJOR",
+    "area": "code",
+    "file": "tracker/command-center/src/settings.js",
+    "line": 308,
+    "title": "The shipped sync prompt still identifies Lists items by number",
+    "consequence": "When deciding which stock count, method or wanted entry to keep, a player can see an item number with no game name. Picking the wrong side can discard a real edit even though the underlying merge can preserve it until the player answers.",
+    "fix": "Connect a lazy, offline-capable item-name lookup to the actual conflict flow, or present those questions in the Command Center with that lookup. Preserve numeric fallback for unknown items. Add a flow-level check with a real conflicting Lists stock entry.",
+    "evidence": "Settings directs a conflict to the Tracker. tracker/src/core/merge.js:394 calls CC.describeUnit with five arguments, and the new name lookup is the sixth argument at tracker/src/core/save.js:331. No production caller passes it. The passing helper test at tracker/tests/lists-patch.test.js:77 supplies its own lookup and never opens the conflict flow. The build record claims item names in sync questions."
+  },
+  {
+    "severity": "MAJOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 617,
+    "title": "Spearfishing rows tell players to find a generic fishing spot",
+    "consequence": "A player looking for Teeming Waters or Swimming Shadows sees the label for ordinary fishing. The app can send them to the right coordinates with the wrong gathering instruction.",
+    "fix": "Use the nonzero game node-name row for spearfishing. Reserve the fishing-spot name and its fallback for actual rod-fishing entries. Test both a spottable fish and both spearfishing node types.",
+    "evidence": "GatheringPointName rows 21 and 22 are “teeming waters” and “swimming shadows”. The dataset contains 31 such entries across 19 items. Gauntlet Crab uses node 469, row 21, at Yanxia X 15, Y 37.9, but spotName returns “Fishing spot” for all Fisher rows without a separate fishing-spot name. The data tool derived the correct type."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/tools/lists-data.py",
+    "line": 530,
+    "title": "Unplaced gathering sources lose valid timing and node-kind information",
+    "consequence": "When no candidate spot has a usable map, the row can read as untimed even when some source entries have timed windows. A player gets neither the time nor the explanation that source details are incomplete.",
+    "fix": "Keep the distinct source schedules and verified node kinds even without a map when the source provides them. Use the unknown-location wording for the map only, and make the preferred usable location rule explicit.",
+    "evidence": "Cloud Cotton Boll has only unplaced sources in the build. Pinned Teamcraft nodes 412, 413 and 414 have two-hour windows beginning at 0 and 12, 4 and 16, and 8 and 20. ExportedGatheringPoint row 412 identifies an unspoiled harvesting node. The data tool collects the loose entries but keeps a single zero-window row when there are no placed ones. This is separate from the acknowledged absence of a usable map."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 1344,
+    "title": "A list-scoped control silently sets high quality across the character’s plans",
+    "consequence": "A player tuning one list can change unrelated projects and shopping needs. The control’s title explains the scope on hover, but there is no equivalent visible cue on a phone. The setting also leaves high-quality choices for later lists of that character.",
+    "fix": "Keep the character-wide save unit and say so in the visible control or nearby text before it acts. Show which plans or how many materials are affected and keep the existing single Undo.",
+    "evidence": "The settings screenshots label the control “High quality for every material”. settingsSheet puts character scope only in a title. hqAllEdit replans all the character’s lists and saves by character and item at lists.js:536–545. This wide scope is intentional in the design, while the list settings sheet implies a narrower scope."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 1186,
+    "title": "Wanted calls an earned currency a purchase",
+    "consequence": "A player recording earned scrip is invited to buy it and asked how many they bought. That contradicts the same drawer’s market warning and can make a new player look for a way to buy it.",
+    "fix": "Show an earned or acquired action for currency in Wanted. Use that wording in the quantity prompt and undo text while retaining the same stock bookkeeping.",
+    "evidence": "Chromium at both widths with 200 Skybuilders’ Scrip as a wanted entry. Its drawer simultaneously says “This is a currency: it is earned, not bought” and offers “Bought it”. Pressing it asks “How many did you buy?”. The currency remains out of the market section and its stock update uses the normal safe path."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 950,
+    "title": "Phase tabs omit currency that still has to be earned",
+    "consequence": "A phase can look finished in the step strip while there is still earned currency due for a trade. For project lists the tab is the main summary of the phase.",
+    "fix": "Display a phase’s nonzero To earn count alongside its get and craft counts. Keep amounts calculated from the phase share and keep the character-total label distinct.",
+    "evidence": "figures calculates an earn amount for every share, but stepsHtml prints only get and craft. In a phase whose remaining row is seven Skybuilders’ Scrip, the tab consequently reads “0 to get · 0 to craft” while To get lists seven to earn. The project picture exposes the same missing category with Ixali Oaknot under the phase workflow."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 1259,
+    "title": "Another tab can erase a draft still being typed in the settings sheet",
+    "consequence": "A player can lose what they have typed for a new step while the sheet remains open and appears intact. Saved list and stock data survived the reproduction.",
+    "fix": "Keep unsubmitted input per list and sheet when another save or a resize redraws the page. Clear it when submitted or when the player closes the draft intentionally, and leave stored updates on other fields intact.",
+    "evidence": "Chromium at both sizes. Type an unsaved new step and change a different stock entry in a second Lists tab. The first sheet stays visible while the step field becomes empty after the second save arrives. The renderer records the input value at lists.js:1242 but only restores focus and the caret at lines 1259–1264."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 1088,
+    "title": "The ready tally can undercount lists that already have their own share",
+    "consequence": "The dashboard can say a list has zero items ready even when its item is fully covered by stock assigned to that list. A player may duplicate work.",
+    "fix": "Use the stock allocated to each list’s wanted entries for its ready tally. Cover repeated quantities in different lists and phases in the test.",
+    "evidence": "Worked example with two lists belonging to one character, each wanting one Bronze Ingot, and one ingot typed in stock. The first list is allocated the ingot, but readyCounts only counts it if the pooled line has no shortage. The pooled line is one short, so both cards get zero ready. This display logic also existed at the review baseline."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/engine.js",
+    "line": 63,
+    "title": "Some distinct trade offers share the same saved selection",
+    "consequence": "The player can choose an offer and get a different set of trade inputs. This is a pre-existing key limitation exposed by the redesigned Other offers drawer.",
+    "fix": "Identify an offer by the full price and conditions within its quality. Keep old saved keys readable, and only resolve an ambiguous old key using the same former default or a visible prompt.",
+    "evidence": "In the shipped data, Mega-Potion and X-Potion each have distinct offers sharing the same key. One Mega-Potion offer uses one Potion. Another uses one each of Potion, Hi-Potion and Ether. Both have the same unknown seller, quantity and first payment item, so pickTrade returns the first match. Pinned Teamcraft shop 1769524 supplies these entries and names no seller."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/tests/lists-data.test.js",
+    "line": 148,
+    "title": "The window regression test can pass when a window disappears",
+    "consequence": "The release can lose a timed source or its start time while the test still reports that the Lists and Tracker windows are equal.",
+    "fix": "Keep the individual-node rule and add fixture coverage that proves each expected timed source is present with its full timing. On shared comparable items also check complete coverage of expected start times, with explicit exceptions for different sources.",
+    "evidence": "The baseline LD-3 asserted exact agreement with the old merged window. The candidate has a stated reason to move to per-spot windows, but its replacement checks only a subset and a maximum duration, skips untimed spots, and still increments its coverage counter if every spot is untimed. Replacing all windows with two zeroes still satisfies this test’s predicates. The loose-source finding above is a real gap this test cannot see."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/check.js",
+    "line": 8209,
+    "title": "The design checks miss covering panels, readable clipping and route states",
+    "consequence": "A green check does not catch the phone history obstruction or guarantee that the real gear and project examples fit the stated layout budget.",
+    "fix": "Check usable space after both fixed surfaces, clipping of essential location and item data, and an expanded full undo history. Check the first-row budget on the real shopping and project fixtures, then test scopes or exceptions explicitly.",
+    "evidence": "DR1 subtracts only a fixed 64-pixel phone bar from viewport height, allows ellipses and clamps, and walks a short earlier-history fixture. C186 checks first-row placement on its shopping and vendor fixtures, but does not check actual visibility behind history. The committed photo fixture records 203 and 210 pixels for Get and Wanted. L2’s look and tap results cover its named fixture."
+  },
+  {
+    "severity": "MINOR",
+    "area": "code",
+    "file": "tracker/command-center/src/lists/lists.js",
+    "line": 777,
+    "title": "Copy name is missing on leftover and already-crafted rows",
+    "consequence": "A player looking up an item that remains in stock or has just been crafted must copy it by hand or find it again in another view.",
+    "fix": "Expose Copy name from the same row opener or a quiet accessible copy action for these two row types, and include them in the check.",
+    "evidence": "The helper uses the clipboard and its existing fallback on open shopping, craft and Wanted rows. Left over at lists.js:777–784 and Already crafted at lists.js:855–856 use different renderers with no opener or copy action. C185 exercises only the three rows that use the helper."
+  }
+]
