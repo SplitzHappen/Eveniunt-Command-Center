@@ -114,7 +114,9 @@
       if (pi.gil) { gil += pi.gil * sums[k].got; n++; seen.push(ln.item); } else none.push(itemName(ln.item));
     });
     var oldest = PS.oldest(c, seen), part = PR.partial && PR.errScope === priceScope() ? ' Some market prices could not be fetched; those items show their last known price.' : '';
-    return '<p class="price-total" data-gil="' + gil + '" data-priced="' + n + '" data-unpriced="' + none.length + '">Buying on the market, before tax: about ' + gilText(gil) + ' for ' + n + ' item' + (n === 1 ? '' : 's') +
+    var attrs = ' data-gil="' + gil + '" data-priced="' + n + '" data-unpriced="' + none.length + '"';
+    if (!n && none.length) return '<p class="price-total"' + attrs + '>No market prices yet: ' + none.length + ' item' + (none.length === 1 ? '' : 's') + ' without a price (' + esc(none.join(', ')) + ').' + esc(part) + '</p>'; // never "about 0 gil for 0 items"
+    return '<p class="price-total"' + attrs + '>Buying on the market, before tax: about ' + gilText(gil) + ' for ' + n + ' item' + (n === 1 ? '' : 's') +
       (none.length ? '; ' + none.length + ' item' + (none.length === 1 ? '' : 's') + ' without a price (' + esc(none.join(', ')) + ')' : '') + (oldest ? ' (prices seen ' + esc(fmtClock(oldest, now)) + ')' : '') + '.' + esc(part) + '</p>';
   }
   function placeSelect() {
@@ -472,9 +474,11 @@
     if (V.plan.cut[ln.item]) s += (s ? ' ' : '') + V.plan.cut[ln.item];
     return s;
   }
-  function reasonOf(V, ln, x) { var s = reasonText(V, ln, x); return s ? '<p class="why">' + esc(s) + '</p>' : ''; }
+  // D-C2: a job named in a sentence ("Crafted by Weaver", "Gathered by Miner") has its picture before the name
+  function withJobIcon(html) { return html.replace(new RegExp('\\b(Crafted|Gathered) by (' + JOBS.concat(GATHER_JOBS).join('|') + ')\\b'), function (m, a, j) { return a + ' by ' + jobImg(j, false, 'jd') + j; }); }
+  function reasonOf(V, ln, x) { var s = reasonText(V, ln, x); return s ? '<p class="why">' + withJobIcon(esc(s)) + '</p>' : ''; }
   // the opened gather row lists its spots, so the first sentence (which names one of them) is left out
-  function reasonRest(V, ln, x) { var s = reasonText(V, ln, x), i = s.search(/\.( |$)/), r = i < 0 ? '' : s.slice(i + 1).trim(); return r ? '<p class="why">' + esc(r) + '</p>' : ''; }
+  function reasonRest(V, ln, x) { var s = reasonText(V, ln, x), i = s.search(/\.( |$)/), r = i < 0 ? '' : s.slice(i + 1).trim(); return r ? '<p class="why">' + withJobIcon(esc(r)) + '</p>' : ''; }
   function firstSentence(s) { var i = s.search(/\.( |$)/); return i < 0 ? s : s.slice(0, i + 1); }
   // ---- the row kit (docs/lists-look-spec.md section 3): icons, spots, the stepper and one row shell shared by To get, To craft and Wanted ----
   var CHEV = '<svg class="lchev" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M4 2l5 5-5 5"/></svg>';
@@ -482,10 +486,14 @@
   // D-C1, D-G1: a job's picture; the name is the picture's alt text where no name is written beside it
   function jobImg(name, alt, cls) { return name ? '<img class="jicon ' + (cls || 'jr') + '" src="classjob/' + name.toLowerCase() + '.png" alt="' + (alt ? esc(name) : '') + '" width="24" height="24">' : ''; }
   function crafterJobs(item) { var seen = {}, out = []; recipesOf(item).forEach(function (r) { var j = DATA.recipes[r][2]; if (!seen[j]) { seen[j] = 1; out.push(j); } }); return out; }
-  // every crafter's picture on a desktop row; a phone row has room for four, and the opened row lists them all
+  // every crafter's (or gatherer's) picture, always all of them (never "+N"): beside the name on a desktop row, in one strip under it on a phone
   function iconSet(names) {
-    var cap = NARROW.matches ? 4 : 99, more = names.length - cap;
-    return names.length ? ' <span class="jset">' + names.slice(0, cap).map(function (n) { return jobImg(n, true); }).join('') + (more > 0 ? '<span class="jmore">+' + more + '</span>' : '') + '</span>' : '';
+    return names.length ? ' <span class="jset">' + names.map(function (n) { return jobImg(n, true); }).join('') + '</span>' : '';
+  }
+  // D-C1: the name's last word keeps its chevron (a wrapped name never leaves the chevron alone on a line)
+  function nameHtml(name) {
+    var i = String(name).lastIndexOf(' ');
+    return (i < 0 ? '' : esc(name.slice(0, i)) + ' ') + '<span class="nb">' + esc(i < 0 ? name : name.slice(i + 1)) + CHEV + '</span>';
   }
   function spotsOf(item) { return (DATA.spots && DATA.spots[item]) || []; }
   function spotName(s) { return s[0] === 2 ? (s[11] || 'Fishing spot') : (DATA.nodeNames && DATA.nodeNames[s[1]]) || ''; }
@@ -528,7 +536,7 @@
   function rowHtml(o) {
     var open = SH.view.row === o.rk;
     return '<li class="' + o.cls + (open ? ' open' : '') + '"' + o.attrs + '><div class="lr ' + o.role + (open ? ' open' : '') + (o.done ? ' done' : '') + '"><span class="cnt w1"><i' + (o.wcls ? ' class="' + o.wcls + '"' : '') + '>' + o.word + '</i> <b>' + o.fig + '</b></span>' +
-      '<button type="button" class="opener' + (o.l3 ? ' has3' : '') + '" data-act="row" data-rk="' + esc(o.rk) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="l1"><span class="nm w-name">' + esc(o.name) + '</span>' + CHEV + (o.stamps || '') + (o.icons || '') + '</span><span class="l2">' + o.l2 + '</span>' + (o.l3 ? '<span class="l3">' + o.l3 + '</span>' : '') + '</button>' +
+      '<button type="button" class="opener' + (o.l3 ? ' has3' : '') + (o.win ? ' win' : '') + '" data-act="row" data-rk="' + esc(o.rk) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="l1"><span class="nm w-name">' + nameHtml(o.name) + '</span>' + (o.stamps || '') + (o.icons || '') + '</span><span class="l2">' + o.l2 + '</span>' + (o.l3 ? '<span class="l3">' + o.l3 + '</span>' : '') + '</button>' +
       '<span class="st-col">' + (o.mid || '') + '</span><span class="pc">' + (o.prim || '') + '</span></div>' + (open ? '<div class="drawer ' + o.role + '">' + o.drawer() + '</div>' : '') + '</li>';
   }
   function offerKey(o) { return o[4] + '.' + o[0] + '.' + o[1][0][0]; }
@@ -577,8 +585,9 @@
       '';
     var l3 = (ln.by === 'gather' ? windowRow(ln, now) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
     var jobs = []; sp.forEach(function (s) { var n = GATHER_JOBS[s[0]]; if (n && jobs.indexOf(n) < 0) jobs.push(n); });
+    if (ln.by === 'gather' && l3) l3 = '<span class="jm">' + iconSet(jobs) + '</span>' + l3; // a phone shows a timed row's pictures on the window's line (the row stays within 96 px); a desktop row beside the name
     return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : 'to get', wcls: outside ? '' : 'role role-short',
-      name: name, stamps: (V.combined ? wayPill(ln, false) : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3,
+      name: name, stamps: (V.combined ? wayPill(ln, false) : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3, win: ln.by === 'gather' && !!l3,
       mid: NARROW.matches ? '' : stepperHtml(name, typed, q, false), prim: outside ? '' : rb('Have all', 'haveall', ' data-n="' + x.short + '"', 'lbtn-r'),
       drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : ''); } });
   }
@@ -618,7 +627,7 @@
     var mqs = ln.part === 'make' ? madeQualities(V.sc, V.owner, ln.item, ln.recipe) : [], jobs = crafterJobs(ln.item).map(function (j) { return JOBS[j]; });
     var l2 = '<span class="w-count">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', makes ' + x.makes + '</span>' + (spare ? ' · spare: ' + spare : '') + (mp ? '<span class="cr"> · ' + mp.crafted + ' of ' + mp.qty + ' crafted</span>' : '') + ' · level ' + DATA.recipes[ln.recipe][3];
     var bar = mp ? '<span class="prog"><span class="bar" aria-hidden="true"><i style="width:' + Math.round(100 * Math.min(1, mp.crafted / Math.max(1, mp.qty))) + '%"></i></span><span class="fig">' + mp.crafted + ' of ' + mp.qty + ' crafted</span></span>' : '';
-    return rowHtml({ cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln), icons: jobs.length > 1 ? iconSet(jobs) : '', l2: l2,
+    return rowHtml({ cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln), icons: iconSet(jobs), l2: l2,
       mid: bar, prim: x.crafts > 0 ? rb(x.crafts > 1 ? 'Made all' : 'Made 1', 'made', ' data-crafts="' + x.crafts + '"', 'lbtn-r') : '',
       drawer: function () {
         var atelier = !(DATA.noHandOver || []).some(function (r) { return r === ln.recipe; });
@@ -741,7 +750,7 @@
     var body = '<label class="lfield"><span>List name</span><input type="text" data-f="listname" maxlength="60" value="' + esc(h.name || '') + '"></label>' +
       '<label class="lfield"><span>Character</span><select data-f="listchar">' + charOptions(h.charId || '') + '</select></label>' +
       '<div class="lfield"><span>Steps</span>' + (sids.length ? '<div class="stepname">' + sids.map(function (s) { return '<div>' + esc(steps[s].name) + '</div>'; }).join('') + '</div>' : '') +
-      '<div class="add-step"><label class="lfield"><span>New step</span><input type="text" data-f="stepname" maxlength="60"></label>' + '<button type="button" class="btn lbtn-o" data-act="addstep">Add a step</button></div></div>' +
+      (sids.length ? '<p class="fine steps-note">A step’s figures are its share of ' + esc(V.char) + '’s plan and can move between steps and lists; the totals for ' + esc(V.char) + ' never go up when you remove something.</p>' : '') + '<div class="add-step"><label class="lfield"><span>New step</span><input type="text" data-f="stepname" maxlength="60"></label>' + '<button type="button" class="btn lbtn-o" data-act="addstep">Add a step</button></div></div>' +
       '<div class="switch-row"><button type="button" class="swb" data-act="hide" aria-pressed="' + (SH.view.hide ? 'true' : 'false') + '">' + (SH.view.hide ? 'Show completed' : 'Hide completed') + '<span class="sw" aria-hidden="true"></span></button></div>' +
       placeSelect() + '<p class="acts-row">' + lk('Order of ways', 'sheet', ' aria-expanded="false"') + '</p>';
     return sheetHtml('List settings', 'settings-sheet', body, '<button type="button" class="lbtn-p big" data-act="sheet-close">Done</button>');
@@ -775,7 +784,7 @@
     var out = '<div class="lists-steps" role="tablist" aria-label="Steps">' + tabs.map(function (t) {
       var f = figures(V.plan, sumShares(V.plan, [listId], t[0])), on = SH.view.step === t[0];
       return '<button type="button" role="tab" class="btn step-tab" data-act="step" data-step="' + (t[0] === null ? '' : esc(t[0])) + '" aria-selected="' + (on ? 'true' : 'false') + '"><span class="st-name">' + esc(t[1]) + '</span> <span class="st-fig" data-get="' + f.get + '" data-craft="' + f.craft + '">' + f.get + ' to get · ' + f.craft + ' to craft</span></button>';
-    }).join('') + '</div><p class="muted fine">A step’s figures are its share of ' + esc(V.char) + '’s plan and can move between steps and lists; the totals for ' + esc(V.char) + ' never go up when you remove something.</p>';
+    }).join('') + '</div>';
     if (SH.view.step !== null && h.steps[SH.view.step]) {
       var sid = SH.view.step, ask = SH.view.confirm === 'step:' + sid;
       out += '<p class="row">' + (ask ? '' : btn('This step is handed in', 'ask-handin')) + '</p>';
@@ -937,7 +946,7 @@
       return '<section class="lists-group lists-restored" data-orphan="' + esc(id) + '" aria-label="Restored list"><div class="group-head solo"><div class="nm-col"><h2>Restored list</h2></div></div><div class="rcard"><span class="cnt r-short"><b>' + keys.length + '</b><i>wanted</i></span><div class="body">' +
         '<p>' + keys.length + ' wanted item' + (keys.length === 1 ? ' has' : 's have') + ' no list, which can happen after a sync with a device on an older version. They are kept, and no plan counts them until they are in a list.</p>' +
         '<ul class="restored-items">' + keys.map(function (k) { var t = sc.targets[k]; return '<li data-key="' + esc(k) + '">' + esc(itemName(t.item)) + ' × ' + t.qty + '</li>'; }).join('') + '</ul>' +
-        '<label class="lfld"><span class="lab">Character</span><select data-f="restorechar">' + charOptions('') + '</select></label><p class="acts-row">' + btn('Put these in a new list', 'restore-orphans', '', 'lbtn-p') + ' ' +
+        '<label class="lfld"><span class="lab">Character</span><select data-f="restorechar">' + charOptions('') + '</select></label><p class="acts-row">' + btn('Put these in a new list', 'restore-orphans', '', 'lbtn-r') + ' ' +
         (asking ? '<span class="ask">Remove these ' + keys.length + ' wanted item' + (keys.length === 1 ? '' : 's') + '?</span> ' + btn('Remove', 'remove-orphans', '', 'lbtn-o bad') + ' ' + lk('Keep', 'keep') : '<button type="button" class="lk bad" data-act="ask-remove-orphans">Remove</button>') + '</p></div></div></section>';
     }).join('');
   }
@@ -997,7 +1006,7 @@
       drawer: function () {
         var d = '';
         if (shown) d += reasonOf(V, ln, null);
-        else if (t.make && !ln && !t.done && DATA.recipes[recipeOfTarget(t)]) { var orr = DATA.recipes[recipeOfTarget(t)]; d += '<p class="why own-state">Crafted by ' + (JOBS[orr[2]] || 'a crafter') + ', level ' + orr[3] + '.</p>'; } // W15: the row's own recipe and job
+        else if (t.make && !ln && !t.done && DATA.recipes[recipeOfTarget(t)]) { var orr = DATA.recipes[recipeOfTarget(t)]; d += '<p class="why own-state">' + withJobIcon('Crafted by ' + (JOBS[orr[2]] || 'a crafter') + ', level ' + orr[3] + '.') + '</p>'; } // W15: the row's own recipe and job
         var fold = NARROW.matches && !SH.view.edit[key];
         var ed = '<div class="w-edit"><label class="lfld amt"><span class="lab">Amount</span><input type="number" inputmode="numeric" min="1" max="99999" data-f="qty" value="' + t.qty + '"></label><span class="ticks">';
         if (canHq(t.item) || t.hq) ed += flagBox(key, 'hq', 'High quality', t.hq);
@@ -1023,7 +1032,7 @@
     if (off.gil.length) st += '<span class="role role-merchant">Merchant</span> ';
     else if (off.trade.length) st += '<span class="role role-merchant">Trade</span> ';
     var info = r0 ? 'Crafted by ' + (JOBS[r0[2]] || 'a crafter') + ', level ' + r0[3] + '.' : g ? 'Gathered by ' + (GATHER_JOBS[g[0]] || 'a gatherer') + ', level ' + g[1] + '.' : '';
-    return '<button type="button" class="hit r-accent" data-act="add" data-item="' + id + '" aria-label="Add ' + esc(name) + '"><span class="cnt"><b>+</b><i>add</i></span><span class="opener"><span class="l1"><span class="nm">' + esc(name) + '</span> ' + st + '</span><span class="l2">' + esc(info) + '</span></span></button>';
+    return '<button type="button" class="hit r-accent" data-act="add" data-item="' + id + '" aria-label="Add ' + esc(name) + '"><span class="cnt"><b>+</b><i>add</i></span><span class="opener"><span class="l1"><span class="nm">' + esc(name) + '</span> ' + st + '</span><span class="l2">' + withJobIcon(esc(info)) + '</span></span></button>';
   }
   function hitsHtml() {
     var res = search(SH.view.search);

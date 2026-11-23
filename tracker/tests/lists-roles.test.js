@@ -54,7 +54,7 @@ test('the token block holds the six roles in both modes: a field, a graphic, a t
 const used = new Set();
 for (const r of rules) { if (T.TOKEN_RULES.includes(r.sel)) continue; for (const t of T.usedTokens(r.body)) used.add(t); }
 const theme = new Set(['--paper', '--paper-2', '--paper-3', '--slip', '--ink', '--ink-2', '--ink-3', '--rule', '--grid', '--slab', '--on-slab', '--on-slab-2', '--seal', '--on-seal', '--hi', '--molten', '--shadow', '--scrim', '--on-mid', '--ochre', '--lb-a', '--lb-b', '--lb-c']);
-const NOT_COLOUR = new Set(['--edge', '--f-disp', '--f-kick', '--f-body', '--f-data', '--f-serif', '--r']);
+const NOT_COLOUR = new Set(['--jm', '--edge', '--f-disp', '--f-kick', '--f-body', '--f-data', '--f-serif', '--r']);
 
 test('every colour token the rules use is in a role, a pointer, a theme token or a size/face', () => {
   const unknown = [...used].filter((t) => !T.roleOf[t] && !T.POINTERS[t] && !theme.has(t) && !NOT_COLOUR.has(t));
@@ -139,9 +139,9 @@ test('no rule outside the token block holds a colour: only var() of a theme toke
   for (const p of ['var(--ink)', '1px solid var(--rule)', 'var(--lr-craft-fill)', 'transparent', '"red"', 'none', '12px/1.5 var(--f-data)', 'Big Shoulders Display', 'linear-gradient(var(--hi), var(--hi))']) assert.ok(!rawColour(p), p);
 });
 
-test('monospace is for figures only (design rules T2, F4): the data face is named by three rules and no other', () => {
+test('monospace is for figures only (design rules T2, F4): the data face is named by four rules and no other', () => {
   const sel = rules.filter((r) => /var\(--f-data\)/.test(r.body.replace(/--f-[\w-]+\s*:[^;]*;/g, ''))).filter((r) => !T.TOKEN_RULES.includes(r.sel)).map((r) => r.sel).sort();
-  assert.deepEqual(sel, ['.ltab .tn', '.sec-sum', '.stepper .fld b'], 'the count in the rail, the figure of a section head and the figure in a stepper');
+  assert.deepEqual(sel, ['.lists-main .stepper .fld input', '.ltab .tn', '.sec-sum', '.stepper .fld b'], 'the count in the rail, the figure of a section head and the figure in a stepper (F5: the typed count is in the data face)');
   assert.ok(!/(font-family|font):[^;}]*var\(--f-data\)[^;}]*;[^}]*text-transform:\s*uppercase/.test(body), 'no uppercase label in the data face');
 });
 
@@ -149,8 +149,9 @@ test('every role is drawn with a word: the way words, "to get N" and "N of M rea
   const ways = [...js.matchAll(/(\w+): \['(craft|gather|merchant|market)', '([A-Z][a-z]+)'\]/g)].map((m) => [m[2], m[3]]);
   assert.deepEqual(ways.map((w) => w[1]).sort(), ['Gather', 'Market', 'Merchant', 'Trade'], 'a word for each way of getting an item');
   assert.ok(js.includes("var w = craft ? ['craft', 'Craft'] : WAY_WORD[ln.by];"), 'the craft word');
-  assert.ok(js.includes('<span class="role role-short">to get \' + x.got'), 'short is "to get N"');
-  assert.ok(js.includes('<span class="role role-ready">\' + r.ready + \' of \' + r.total + \' ready</span>'), 'ready is "N of M ready"');
+  // the count blocks of the redesign (B4 wrote this for the old rows): a row's block carries its word in the role, "to get" on short, "of M ready" on ready
+  assert.ok(js.includes("word: outside ? 'not typed' : 'to get', wcls: outside ? '' : 'role role-short'"), 'short is "to get N" in a count block');
+  assert.ok(js.includes('<i class="role role-ready">of \' + r.total + \' ready</i>'), 'ready is "N of M ready"');
   assert.ok(js.includes("' <span class=\"role role-' + w[0] + '\">' + w[1] + '</span>'"), 'a way word is written inside its role span');
   for (const r of SIX) assert.ok(new RegExp('\\.role-' + r + '\\s*\\{').test(body), '.role-' + r + ' is in lists.css');
   assert.ok(/\.role\s*\{[^}]*border:[^}]*var\(--rt\)/.test(body), 'a role shows its edge as well as its fill');
@@ -190,4 +191,22 @@ test('the sheet is a dialog that closes with its Close, a tap outside and Escape
   assert.ok(js.includes('<div class="lscrim" data-act="sheet-close"></div>'), 'a tap outside closes it');
   assert.ok(js.includes("ev.key === 'Escape'"), 'Escape closes it');
   assert.ok(js.includes('SH.view.sheet') && js.includes('sheetFor(V, h, id)') && js.includes('sheetFor(V, null, null)'), 'the sheet is drawn from the page state on every redraw');
+});
+
+test('job pictures are drawn in the row\'s ink through a mask, and read at 3:1 as a graphic in all 21 themes, light and dark (the pale grey glyphs of B5 did not)', () => {
+  const r = rules.find((x) => x.sel === '.jicon' && /mask/.test(x.body));
+  assert.ok(r && /background-color:\s*currentColor/.test(r.body) && /color:\s*var\(--ink\)/.test(r.body), 'the glyph takes the ink of the row, not the picture\'s own pale grey');
+  const jobs = ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherworker', 'weaver', 'alchemist', 'culinarian', 'miner', 'botanist', 'fisher'];
+  for (const j of jobs) assert.ok(new RegExp('\\.jicon\\[src\\$="' + j + '\\.png"\\]\\s*\\{\\s*--jm:\\s*url\\(classjob/' + j + '\\.png\\)').test(body), j + ' has its mask');
+  assert.ok(/\.job-head \.jicon\s*\{[^}]*color:\s*var\(--on-f\)/.test(body), 'on a job head the glyph takes the text colour of the field');
+  const low = [];
+  for (const row of THEMES) for (const mode of ['light', 'dark']) {
+    const ctx = T.envOf(row, mode), e = ctx.env, where = row[1] + ' ' + mode;
+    for (const b of ['--paper', '--paper-2', '--slip']) if (ratio(e['--ink'], e[b]) < 3) low.push(where + ' ink on ' + b);
+    for (const rl of SIX) {
+      if (ratio(e['--ink'], T.rgbOf('--lr-' + rl + '-wash', ctx)) < 3) low.push(where + ' ink on the ' + rl + ' wash (drawer)');
+      if (ratio(T.rgbOf('--on-mid', ctx), T.rgbOf('--lr-' + rl + '-fill', ctx)) < 3) low.push(where + ' text colour on the ' + rl + ' field (job head)');
+    }
+  }
+  assert.deepEqual(low, []);
 });

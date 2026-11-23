@@ -107,19 +107,34 @@
 .cdone .job-head .no { display: none; }
 .cdone .job-head h3 { padding-left: 16px; }
 .jicon { width: 32px; height: 32px; flex: none; image-rendering: auto; }
+/* D-C2: the game's job picture is a shape, drawn in the ink of the row (or the text on a role field) through a mask, so it reads in every theme and mode (3:1 at least, tested);
+   the picture itself is pushed out of its own box, the alt text stays for screen readers */
+.jicon { color: var(--ink); background-color: currentColor; -webkit-mask: var(--jm) center / contain no-repeat; mask: var(--jm) center / contain no-repeat; object-fit: none; object-position: -400px 0; }
+.job-head .jicon { color: var(--on-f); }
+.jicon[src$="carpenter.png"] { --jm: url(classjob/carpenter.png); }
+.jicon[src$="blacksmith.png"] { --jm: url(classjob/blacksmith.png); }
+.jicon[src$="armorer.png"] { --jm: url(classjob/armorer.png); }
+.jicon[src$="goldsmith.png"] { --jm: url(classjob/goldsmith.png); }
+.jicon[src$="leatherworker.png"] { --jm: url(classjob/leatherworker.png); }
+.jicon[src$="weaver.png"] { --jm: url(classjob/weaver.png); }
+.jicon[src$="alchemist.png"] { --jm: url(classjob/alchemist.png); }
+.jicon[src$="culinarian.png"] { --jm: url(classjob/culinarian.png); }
+.jicon[src$="miner.png"] { --jm: url(classjob/miner.png); }
+.jicon[src$="botanist.png"] { --jm: url(classjob/botanist.png); }
+.jicon[src$="fisher.png"] { --jm: url(classjob/fisher.png); }
 .market-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 8px 16px; font: 14px/1.4 var(--f-body); border-bottom: 1px dashed var(--ink-3); }
 .market-line .price-total { flex: 1; margin: 0; }
 .lines { list-style: none; margin: 0; padding: 0; display: block; }
 
 /* ---- the ledger row of the kit (rows themselves are drawn by the screens; a row has a rest and an opened state) ---- */
-.lr { position: relative; overflow: hidden; display: grid; grid-template-columns: 88px minmax(0, 1fr) 176px 140px; align-items: center; min-height: 56px; max-height: 64px; background: var(--slip); border-bottom: 1px dashed var(--ink-3); }
-.lr.open { max-height: none; border-bottom: 0; background: var(--w); }
+.lr { position: relative; overflow: hidden; display: grid; grid-template-columns: 88px minmax(0, 1fr) 176px 140px; align-items: center; min-height: 56px; background: var(--slip); border-bottom: 1px dashed var(--ink-3); }
+.lr.open { border-bottom: 0; background: var(--w); }
 .cnt { position: relative; isolation: isolate; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 20px; color: var(--on-f); }
 .cnt::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: -60px; width: 134px; background: var(--f); transform: skewX(-25deg); }
 .cnt b { font: 900 30px/.95 var(--f-disp); }
 .cnt i { font: normal 700 11px/1.1 var(--f-body); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .cnt.w1 { flex-direction: column-reverse; }
-.opener { position: relative; display: block; width: 100%; min-width: 0; align-self: stretch; padding: 5px 12px 5px 14px; font: inherit; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; }
+.opener { position: relative; display: block; width: 100%; min-width: 0; align-self: stretch; padding: 4px 12px 4px 14px; font: inherit; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; }
 .opener:focus-visible { outline-offset: -3px; }
 .lchev { width: 14px; height: 14px; fill: none; stroke: var(--ink-2); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .lr.open .lchev { transform: rotate(90deg); }
@@ -143,6 +158,8 @@
 .lists-earlier summary { display: inline-block; cursor: pointer; text-decoration: underline; font-weight: 700; }
 .lists-earlier ul { list-style: none; margin: 4px 0 0; padding: 0; }
 .lists-earlier li { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; border-top: 1px dashed var(--on-slab-2); }
+
+.lists-status .lk:focus-visible, .lists-status summary:focus-visible { outline: 3px solid var(--on-slab); outline-offset: 2px; }
 
 /* ---- sheets: a dialog over a scrim, a title over a double rule, a labelled close, a footer that stays in reach ---- */
 .lscrim { position: fixed; z-index: 40; inset: 0; background: var(--scrim); }
@@ -176,7 +193,7 @@
 .rung.first { border-left: 6px solid var(--seal); }
 .rung .no { position: relative; isolation: isolate; align-self: start; height: 64px; display: flex; align-items: center; justify-content: center; padding-right: 10px; font: 900 32px/1 var(--f-disp); color: var(--on-f); }
 .rung .no::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: 0; left: -40px; width: 82px; background: var(--f); transform: skewX(-25deg); }
-.rung .no .dot { font-size: 0; line-height: 0; } /* the full stop stays in the text ("1. Craft it.") and is not drawn */
+.rung .no .dot { display: inline; width: 0; height: 0; border-radius: 0; box-shadow: none; font-size: 0; line-height: 0; } /* the full stop stays in the text ("1. Craft it.") and is not drawn */
 .rung .tx { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 8px 12px 8px 18px; font: 14px/1.4 var(--f-body); }
 .rung .tx::before { content: attr(data-label); display: block; font: 900 15px/1.2 var(--f-disp); letter-spacing: .04em; text-transform: uppercase; color: var(--s); }
 .rung .mv { display: flex; align-items: center; gap: 6px; padding: 0 10px; }
@@ -205,14 +222,20 @@
 .opener.has3 .l1 { grid-column: 1 / -1; }
 .opener.has3 .l2 { grid-column: 1; }
 .opener.has3 .l3 { grid-column: 2; margin-top: 1px; max-width: 480px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+/* a timed node's window is a line of its own (the location above it is whole) */
+.jm { display: none; }
+.opener.win .nm { line-height: 1.15; }
+.opener.win .l2, .opener.win .l3 { line-height: 1.25; margin-top: 0; }
+.opener.has3.win { display: block; }
+.opener.has3.win .l3 { max-width: none; text-align: left; }
 .cr { }
 .role { display: inline-block; padding: 1px 5px; border: 1px solid var(--rt); background: transparent; color: var(--rt); font: 700 11px/1.1 var(--f-body); letter-spacing: .06em; text-transform: uppercase; overflow-wrap: anywhere; }
 .cnt i.role { display: block; padding: 0; border: 0; background: none; color: inherit; font: normal 700 11px/1.1 var(--f-body); letter-spacing: .04em; }
 .lstamp.plain { color: var(--ink-2); }
 .held { font: 700 11px/1.4 var(--f-body); border: 1px dashed var(--ink-3); padding: 0 5px; }
-.jset { display: inline-flex; flex-wrap: wrap; gap: 2px 3px; align-items: center; max-width: 100%; vertical-align: middle; }
+.jset { display: inline-flex; flex-wrap: wrap; gap: 2px 3px; align-items: center; max-width: 100%; vertical-align: middle; margin-top: -4px; margin-bottom: -4px; }
+.nb { white-space: nowrap; }
 .jicon.jr { width: 24px; height: 24px; }
-.jmore { margin-left: 2px; font: 700 12px/1 var(--f-body); color: var(--ink-2); }
 .jicon.jd { width: 20px; height: 20px; vertical-align: -5px; margin-right: 5px; }
 .prog { display: flex; flex-direction: column; gap: 4px; width: 150px; }
 .prog .bar { position: relative; display: block; height: 8px; border-top: 2px solid var(--lr-craft-edge); }
@@ -229,7 +252,7 @@
 .stepper .stp { display: inline-flex; align-items: center; justify-content: center; padding: 0; color: var(--ink); }
 .stepper .stp svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
 .stepper .fld { display: flex; }
-.lists-main .stepper .fld input { width: 100%; flex: 1; min-height: 0; padding: 0; border: 0; background: transparent; text-align: center; font: 600 15px/1.1 var(--f-body); -moz-appearance: textfield; }
+.lists-main .stepper .fld input { width: 100%; flex: 1; min-height: 0; padding: 0; border: 0; background: transparent; text-align: center; font: 600 15px/1.1 var(--f-data); -moz-appearance: textfield; }
 .stepper .fld input::-webkit-outer-spin-button, .stepper .fld input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stepper.big { height: 44px; }
 .stepper.big .fld { width: 72px; }
@@ -429,6 +452,7 @@
 .chk { display: flex; flex-direction: row; align-items: center; gap: 8px; min-height: 40px; }
 .lists-main .btn:focus-visible, .lists-main .lk:focus-visible, .lists-main .lbtn-r:focus-visible, .lists-main .lbtn-o:focus-visible, .lists-main .lbtn-p:focus-visible, .lists-main .opener:focus-visible { outline: 3px solid var(--seal); outline-offset: 2px; }
 .lists-main .opener:focus-visible { outline-offset: -3px; }
+.lists-main .lists-steps .step-tab:focus-visible, .lists-main .sec-toggle:focus-visible { outline-offset: -3px; } /* inside the box that clips them */
 /* fields and selects take the theme's tones (never the browser's own grey) */
 .lists-main input, .lists-main select, .lists-main textarea { background: var(--slip); color: var(--ink); border: 1px solid var(--ink-3); border-radius: 0; padding: 4px 8px; }
 .lists-main input[type=checkbox], .lists-main input[type=radio] { accent-color: var(--seal); }
@@ -459,6 +483,8 @@
   .lhead .state { margin-top: 2px; align-self: start; }
   .lhead .state .lk { min-height: 40px; display: inline-flex; align-items: center; }
   .lhead.combined { grid-template-areas: "kick tal" "name tal" "state state"; }
+  .lhead.combined .state { white-space: nowrap; }
+  .lhead.combined .state .lk { margin-right: 10px; font-size: 12px; }
   .lists-steps + .fine { font-size: 12px; line-height: 1.35; }
   .tally { min-width: 62px; padding: 2px 12px 3px; }
   .tally b { font-size: 28px; }
@@ -468,12 +494,15 @@
   .job-head { grid-template-columns: 80px minmax(0, 1fr) auto; }
   .job-head .sum { padding-right: 12px; }
   .market-line { padding: 6px 12px; font-size: 13px; }
-  .lr { grid-template-columns: 64px minmax(0, 1fr) auto; min-height: 72px; max-height: 96px; }
+  .market-line .lk { min-height: 40px; display: inline-flex; align-items: center; }
+  .lr { grid-template-columns: 64px minmax(0, 1fr) auto; min-height: 72px; }
   .cnt { padding-right: 14px; }
   .cnt::before { left: -60px; width: 120px; }
   .cnt b { font-size: 26px; }
   .lists-status { left: 0; right: 0; bottom: 64px; transform: none; width: auto; min-height: 40px; padding: 6px 12px; gap: 0 14px; }
   .lists-status .lk { min-height: 40px; display: inline-flex; align-items: center; }
+  .lists-earlier summary { min-height: 40px; display: inline-flex; align-items: center; }
+  .lsheet .sfoot .lk { min-height: 40px; display: inline-flex; align-items: center; }
   .lsheet { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-height: 92vh; padding: 20px 14px 0; }
   .lsheet .lx { min-height: 40px; }
   .lsheet .sfoot { margin: 12px -14px 0; padding: 10px 14px 12px; }
@@ -487,11 +516,11 @@
   .lr .st-col { display: none; }
   .cnt::before { width: 124px; }
   .opener { padding-left: 18px; }
-  .lcard .ready { padding-right: 18px; }
+  .lcard .ready { padding-right: 20px; }
+  .lcard .ready i.role { letter-spacing: 0; max-width: 56px; }
   .lcard .ready::before { width: 130px; }
   .lhead .kick { letter-spacing: .1em; }
-  .opener.has3 .l2 { -webkit-line-clamp: 1; }
-  .opener.has3 .l3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .opener.has3 .l3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
   .lr .pc { padding: 0 8px 0 0; }
   .lbtn-r { width: 96px; min-width: 0; padding: 0 8px; }
   .opener { padding: 6px 6px 6px 12px; }
@@ -499,17 +528,33 @@
   .cnt i { letter-spacing: 0; }
   .cnt { padding-right: 10px; }
   .dsk:not(.keep) { display: none; }
-  .l2 { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .l2 { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+  .opener { padding-top: 3px; padding-bottom: 3px; }
+  .l2 { margin-top: 0; }
+  .nm { line-height: 18px; }
+  .l1 { line-height: 18px; }
+  .l1 .lstamp, .l1 .role { vertical-align: 1px; line-height: 1.1; }
+  .l2, .l3 { line-height: 1.3; }
+  .l1 .jset { margin: 0; }
+  .opener.win .l1 .jset { display: none; }
+  .opener.win .jm { display: inline; }
+  .opener.win .jm .jset { display: inline-flex; margin: 0 6px 0 0; vertical-align: -4px; }
+  .l1 .jset { display: flex; flex-wrap: nowrap; gap: 2px; margin: 1px 0 0; }
+  .jicon.jr { width: 16px; height: 16px; }
   .opener.has3 { display: block; }
-  .opener.has3 .jset { display: none; }
   .opener.has3 .l3 { max-width: none; white-space: normal; text-align: left; }
   .pl-more { display: none; }
   .lr .l2 .cr { display: inline; }
-  .jicon.jr { width: 20px; height: 20px; }
   .drawer { padding: 6px 12px 8px 14px; }
   .stepn { display: none; }
   .drawer .why { font-size: 13px; }
   .drawer .why { margin-bottom: 4px; }
+  .drawer .lab { margin: 4px 0 3px; }
+  .drawer .inl { margin: 2px 0 4px; }
+  .drawer .acts-row { gap: 0 10px; margin: 4px 0 0; }
+  .drawer .acts-row .lbtn-o { margin: 4px 0; }
+  .drawer .acts-row .lk { min-height: 40px; display: inline-flex; align-items: center; font-size: 12px; }
+
   .drawer .fine { font-size: 12px; margin: 3px 0 4px; }
   .drawer select, .drawer input[type=number] { max-width: none; }
   .left-row { grid-template-columns: 64px minmax(0, 1fr); }
@@ -552,7 +597,11 @@
   .drawer .w-edit .amt input { width: 100%; }
   .spots li { font-size: 13px; }
   .hit { grid-template-columns: 64px minmax(0, 1fr); }
-  .pn-line { padding: 6px 12px; }
+  .pn-line { display: block; padding: 4px 12px 5px; min-height: 0; }
+  .pn-line h2 { display: inline; font-size: 14px; line-height: 20px; margin-right: 6px; }
+  .pn-line .pn-sum, .pn-line .pn-t { display: inline; line-height: 20px; }
+  .pn-line .lk { display: inline-block; min-height: 0; line-height: 18px; padding: 11px 6px; margin: -11px 0 -11px 2px; vertical-align: baseline; } /* an inline link keeps its 40 px hit area through its padding, so the notice stays two lines */
+  .pn-line .lbtn-p { display: flex; margin: 6px 0 2px; }
   .patch-notice { border-left-width: 8px; }
   .lcard .ltick { min-height: 40px; }
 }

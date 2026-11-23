@@ -6049,7 +6049,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const tot0 = await lTotals(page);
       ck.stepTabs = steps.length === 3 && steps[0].name === 'All steps' && parts[0].name === 'Alpha' && parts[1].name === 'Beta' && parts[0].get + parts[0].craft > 0;
       ck.sharesAdd = sum(parts).get === all.get && sum(parts).craft === all.craft && all.get > 0 && all.craft > 0;
-      ck.sentence = /A step.s figures are its share of .* plan and can move between steps and lists; the totals for .* never go up when you remove something\./.test(await page.locator('.lists-steps + .fine').textContent());
+      ck.sentence = /A step.s figures are its share of .* plan and can move between steps and lists; the totals for .* never go up when you remove something\./.test(await (async () => { await lSet(page); const t = await page.locator('.lsheet .steps-note').textContent(); await page.click('.lsheet [data-act=sheet-close]'); return t; })()); // reach edit: the sentence moved from above the views into the List settings sheet, next to the steps
       // (2) moving a wanted item to another step: the character's totals and the list's totals stay, the steps' shares move
       await lTab(page, 'wanted'); await (await lOpen(lRow(page, 100))).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page); await lTab(page, 'get');
       steps = await lSteps(page);
@@ -6227,7 +6227,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.goto(ROOT5 + 'lists/'); await lReady(page);
         await lSeedMarket(page, [111]); await lMarketOpen(page); await lWaitPrices(page);
         const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
-        ck.single404 = tx[111] === 'No market data for this item' && tot.priced === 0 && tot.unpriced === 1 && /about 0 gil for 0 items; 1 item without a price/.test(tot.text) && !/could not be fetched/.test(await page.textContent('#view'));
+        ck.single404 = tx[111] === 'No market data for this item' && tot.priced === 0 && tot.unpriced === 1 && /No market prices yet: 1 item without a price/.test(tot.text) && !/about 0 gil/.test(tot.text) && !/could not be fetched/.test(await page.textContent('#view'));
         await c.ctx.close();
       }
       // row 5: the fetch fails and an earlier price is kept
@@ -7816,6 +7816,10 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.leftOver = w.every((x) => x.left >= 1);
       ck.log = w.every((x) => x.logScreen);
       ck.pictures = !SHOT || w.every((x) => x.shots.length === 9 && x.shots.every((f) => fs.existsSync(path.join(ev, f))));
+      // B7: the final pictures of every screen (1,440 px light, 360 px dark; the real game data, made by docs/lists-redesign/build/shoot-built.js) are copied here as lists-<screen>-<size>.png; the check fails when one is missing
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), finals = fs.readdirSync(BUILD).filter((f) => /-(desktop-light|phone-dark)\.png$/.test(f));
+      if (SHOT) finals.forEach((f) => fs.copyFileSync(path.join(BUILD, f), path.join(ev, 'lists-' + f.replace(/^lists-empty-/, 'empty-'))));
+      ck.finalPictures = finals.length >= 42 && finals.every((f) => !SHOT || fs.existsSync(path.join(ev, 'lists-' + f.replace(/^lists-empty-/, 'empty-'))));
       ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.length === 0);
       record('L2', 'Lists look evidence: the nine screens (empty, lists, To get with every section open, To craft, Wanted, the Order of ways sheet, a list with a Left over line, the combined view, from the crafting log) at 1,440 px light and 360 px dark as evidence/lists-*.png (Chromium): no sideways page scroll, every button, select, field and tab at least 40 px high at 360 px, no clipped text, no page errors',
         Object.values(ck).every(Boolean), { ck, wide: w.map((x) => x.wide), taps: w[1].taps.slice(0, 30), clipped: w.map((x) => x.clipped.slice(0, 20)), shots: w.map((x) => x.shots.length), left: w.map((x) => x.left), errors: w.map((x) => x.errs) });
@@ -7860,6 +7864,252 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         Object.values(ck).every(Boolean), { ck, a0, a1, a2, b0, m0, m1, errors: real(errors), external });
       void server;
     });
+
+    // ── DR1 (Lists, B6) The design rules of docs/design-rules.md, measured on every list screen at 1,440 px light and 360 px dark with the real game data. `designRules(page, opts)` is the reusable helper (rows, opener,
+    //    status, purpose fields): it measures the screen in front of it and returns the problems it found by rule. The walk asserts there are none; the self-test breaks each rule on purpose and asserts the helper sees it. ──
+    const designRules = (page, opts) => page.evaluate((o) => {
+      const problems = {}, add = (rule, msg) => { (problems[rule] = problems[rule] || []).push(String(msg).slice(0, 140)); };
+      const vis = (e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
+      const all = (sel, root) => [...(root || document).querySelectorAll(sel)].filter(vis);
+      const nm = (e) => e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0] + ' "' + String(e.textContent || '').trim().slice(0, 24) + '"';
+      const phone = !!o.phone, fig = { rows: 0, icons: 0, stamps: 0 };
+      const mast = document.querySelector('header.mast').getBoundingClientRect(), D = window.__lists.data();
+      // P1: no sideways scroll
+      if (document.documentElement.scrollWidth - window.innerWidth > 0) add('p1Sideways', 'scrolls sideways by ' + (document.documentElement.scrollWidth - window.innerWidth));
+      // rows: A2 (controls at rest), P2 (height at rest and opened), A1 (one primary)
+      const rows = all('.lr'); fig.rows = rows.length;
+      rows.forEach((r) => {
+        const open = r.classList.contains('open'), h = r.getBoundingClientRect().height;
+        if (!open) {
+          const ctl = all('button, a[href], select, input, textarea', r).filter((c) => !c.closest('.stepper')).length + (all('.stepper', r).length ? 1 : 0);
+          if (ctl > (phone ? 2 : 3)) add('a2Controls', ctl + ' controls at rest in ' + nm(r));
+          if (h > (phone ? 96.5 : 64.5)) add('p2Rest', Math.round(h) + ' px at rest: ' + nm(r));
+        } else {
+          const li = r.closest('li'), t = li ? li.getBoundingClientRect().height : h;
+          if (phone && t > 360.5) add('p2Open', Math.round(t) + ' px opened: ' + nm(r));
+        }
+      });
+      ['.lr', '.lcard', '.rcard', '.lsheet', '.patch-notice', '.empty-state', '.answer'].forEach((s) => all(s).forEach((c) => { const n = all('.lbtn-r, .lbtn-p', c).length; if (n > 1) add('a1Primary', n + ' primaries in ' + nm(c)); }));
+      // F1: at most one filled primary on a screen outside sheets and notices
+      const filled = all('.lbtn-p').filter((b) => !b.closest('.lsheet, .patch-notice')); if (filled.length > 1) add('f1Filled', filled.length + ' filled primaries: ' + filled.map((b) => b.textContent.trim()).join(', '));
+      // A2: never more than two bordered buttons side by side outside a sheet's footer or a segmented control
+      const bordered = all('.lbtn-o, .lbtn-r, .lbtn-p, .stepper').filter((b) => !b.closest('.sfoot, .lists-steps')), lines = new Map();
+      bordered.forEach((b) => { const p = b.parentElement, k = Math.round(b.getBoundingClientRect().top / 4), m = lines.get(p) || new Map(); m.set(k, (m.get(k) || 0) + 1); lines.set(p, m); });
+      lines.forEach((m, p) => m.forEach((n) => { if (n > 2) add('a2Bordered', n + ' bordered buttons side by side in ' + nm(p)); }));
+      // P3: the first row on a phone (only the screens asked for)
+      if (phone && o.first && rows.length) {
+        const strip = all('.lists-steps').length > 0, top = rows[0].getBoundingClientRect().top - mast.bottom, need = Math.min(strip ? 3 : 4, rows.length);
+        const inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= window.innerHeight - 64; }).length;
+        fig.first = Math.round(top); fig.inView = inView;
+        if (top > (strip ? 256 : 200)) add('p3First', 'the first row starts ' + Math.round(top) + ' px under the masthead');
+        if (inView < need) add('p3Rows', inView + ' rows in view, need ' + need);
+      }
+      if (!phone && o.first && rows.length) { const need = Math.min(8, rows.length), inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= window.innerHeight; }).length; fig.inView = inView; if (inView < need) add('p3Rows', inView + ' rows in view, need ' + need); }
+      // T2: the data face holds a digit, and no label, button, select or heading uses it
+      all('.lists-mast *, .lists-main *, .lists-tabs *, #lstatus, #lstatus *').forEach((e) => {
+        if (!/Plex Mono/i.test(getComputedStyle(e).fontFamily)) return;
+        const own = [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim(), txt = /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) ? String(e.value) : own;
+        if (!/^(SVG|PATH|IMG)$/i.test(e.tagName) && (own || /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName)) && !/\d/.test(txt)) add('t2Digit', 'no digit in the data face: ' + nm(e));
+        if (/^(LABEL|BUTTON|SELECT|H1|H2|H3|H4|LEGEND)$/.test(e.tagName)) add('t2Label', 'the data face on ' + nm(e));
+      });
+      // S1: the status line
+      const st = document.getElementById('lstatus');
+      if (st && vis(st)) {
+        const cs = getComputedStyle(st), h = st.getBoundingClientRect().height, lh = parseFloat(cs.lineHeight) || 19, inner = h - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        if (st.tagName === 'BUTTON') add('s1Status', 'the status line is a button');
+        if (st.getAttribute('role') !== 'status') add('s1Status', 'the status line has no role=status');
+        if (Math.round(inner / lh) <= 1 && h > 44.5) add('s1Status', 'one line is ' + Math.round(h) + ' px high');
+        if (['Top', 'Right', 'Bottom', 'Left'].every((s) => parseFloat(cs['border' + s + 'Width']) > 0)) add('s1Status', 'the status line has a four-sided border');
+        all('button, a', st).filter((b) => !b.classList.contains('lk')).forEach((b) => add('s1Status', 'an action that is not a link: ' + nm(b)));
+        if (cs.position !== 'fixed') add('s1Status', 'the status line is not fixed');
+      }
+      // F1: with no drawer or sheet in the way, the only text boxes and selects are the add fields, the desktop steppers and the crafting-log fields (and the character of a Restored list, a field of the step it is for)
+      all('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea').filter((f) => !f.closest('.lsheet, .drawer, .sr')).forEach((f) => {
+        const ok = f.closest('.add-bar, .fields') || f.getAttribute('data-f') === 'restorechar' || (f.closest('.stepper') && !phone);
+        if (!ok) add('f1Fields', 'a field at rest: ' + nm(f));
+      });
+      // A6: every tap target at least 40 px high at 360 px (a card's whole face is its link)
+      if (phone) all('.lists-main button, .lists-main select, .lists-main input:not([type=checkbox]):not([type=radio]), .lists-main summary, .lists-main [role=tab], .lists-main a[href], .lists-main label.chk, .lists-tabs button, #lstatus button, #lstatus summary').forEach((e) => {
+        if (e.closest('.sr')) return; const h = (e.matches('.lcard .open') ? e.closest('.lcard') : e).getBoundingClientRect().height; if (h < 39.5) add('a6Taps', Math.round(h) + ' px: ' + nm(e));
+      });
+      // D-C1, D-C2: every crafter and gatherer on a list screen has its icon, all of them (no "+N"), and no name stands without one
+      const JN = ['Carpenter', 'Blacksmith', 'Armorer', 'Goldsmith', 'Leatherworker', 'Weaver', 'Alchemist', 'Culinarian'], GN = ['Miner', 'Botanist', 'Fisher'];
+      const crafters = (it) => [...new Set(Object.keys(D.recipes).filter((r) => D.recipes[r][0] === it).map((r) => JN[D.recipes[r][2]]))].sort();
+      const gatherers = (it) => [...new Set(((D.spots && D.spots[it]) || []).map((s) => GN[s[0]]))].sort();
+      all('.craft-row, .wanted-row, .get-row').forEach((li) => {
+        const it = +li.getAttribute('data-item'), want = li.classList.contains('get-row') ? (li.closest('.gsec') && li.closest('.gsec').getAttribute('data-sec') === 'gather' ? gatherers(it) : []) : crafters(it);
+        const have = all('.jset img.jicon', li.querySelector('.lr')).map((i) => i.getAttribute('alt')).sort();
+        fig.icons += have.length;
+        if (JSON.stringify(have) !== JSON.stringify(want)) add('icons', 'icons ' + have.join('/') + ' but the jobs are ' + want.join('/') + ' for item ' + it);
+        if (all('.jmore, .jset .more', li).length || /\+\d/.test(all('.jset', li).map((j) => j.textContent).join(''))) add('noMore', 'a "+N" in the strip of item ' + it);
+        const names = JN.concat(GN).filter((j) => new RegExp('\\b' + j + '\\b').test(li.textContent.replace(/\s+/g, ' ')));
+        names.forEach((j) => { if (!all('img.jicon', li).some((i) => i.getAttribute('alt') === j || (i.getAttribute('alt') === '' && (i.nextSibling && String(i.nextSibling.textContent).indexOf(j) === 0 || i.parentElement.textContent.indexOf(j) >= 0)))) add('iconName', j + ' is named without its icon in item ' + it); });
+      });
+      all('.hit').forEach((li) => { JN.concat(GN).filter((j) => new RegExp('\\b' + j + '\\b').test(li.textContent)).forEach((j) => { if (!all('img.jicon', li).some((i) => i.getAttribute('alt') === j || (i.nextSibling && String(i.nextSibling.textContent).indexOf(j) === 0))) add('iconName', j + ' is named without its icon in a search result'); }); });
+      all('.job-head h3').forEach((h) => { if (!all('img.jicon', h).length) add('iconName', 'a job head without its icon: ' + nm(h)); });
+      // F2: no way stamp inside the section of the same way (To get), none of "Craft" inside To craft
+      // the combined view draws the stamps (F2: its sections are by way, but its rows come from several lists)
+      const WORD = { vendor: 'Merchant', trade: 'Trade', gather: 'Gather', market: 'Market' };
+      if (!document.querySelector('.lhead.combined')) all('.gsec').forEach((s) => { const w = WORD[s.getAttribute('data-sec')]; all('.l1 .role', s).forEach((r) => { if (w && r.textContent.trim() === w) add('f2Stamps', w + ' stamp inside the ' + w + ' section'); }); });
+      if (!document.querySelector('.lhead.combined')) all('.cblock .l1 .role-craft').forEach((r) => add('f2Stamps', 'a Craft stamp inside To craft'));
+      fig.stamps = all('.l1 .role').length;
+      // B7: no clipped text (an ellipsis or a line clamp is a chosen cut and is the one allowed), and a keyboard focus that is drawn and not cut off by a box that clips
+      all('.lists-main *, .lists-tabs *, #lstatus *').forEach((e) => {
+        if (/^(INPUT|SELECT|TEXTAREA|OPTION|SVG|PATH|IMG)$/i.test(e.tagName)) return;
+        const cs = getComputedStyle(e); if (cs.overflowX === 'visible' && cs.overflowY === 'visible') return;
+        if (cs.textOverflow === 'ellipsis' || /clamp|box/.test(cs.webkitLineClamp + cs.display) && cs.webkitLineClamp !== 'none') return;
+        if (e.scrollWidth > e.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') add('clipped', 'text cut at the side: ' + nm(e));
+        if (e.scrollHeight > e.clientHeight + 1 && cs.overflowY !== 'auto' && cs.overflowY !== 'scroll' && cs.overflowY !== 'visible' && e.textContent.trim()) add('clipped', 'text cut at the bottom: ' + nm(e));
+      });
+      const y0 = window.scrollY, ae = document.activeElement;
+      all('.lists-main button, .lists-main a[href], .lists-main select, .lists-main input, .lists-main summary, .lists-tabs button, #lstatus button, #lstatus summary').filter((e) => !e.closest('.sr') && !e.disabled && (e.tagName === 'SUMMARY' || !e.closest('details:not([open])'))).forEach((e) => {
+        e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); e.focus({ focusVisible: true, preventScroll: true });
+        const cs = getComputedStyle(e), w = parseFloat(cs.outlineWidth) || 0, off = parseFloat(cs.outlineOffset) || 0, r = e.getBoundingClientRect();
+        if (cs.outlineStyle === 'none' || w <= 0) { if (!/checkbox|radio/.test(e.type || '') || cs.boxShadow === 'none') add('focus', 'no focus ring on ' + nm(e)); return; }
+        const grow = e.matches('input[type=checkbox], input[type=radio]') ? 0 : Math.max(0, off + w), box = { l: r.left - grow, t: r.top - grow, r: r.right + grow, b: r.bottom + grow };
+        for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) {
+          const ac = getComputedStyle(a); if (ac.overflowX === 'visible' && ac.overflowY === 'visible') continue;
+          const ar = a.getBoundingClientRect(); if (box.l < ar.left - 0.5 || box.r > ar.right + 0.5 || box.t < ar.top - 0.5 || box.b > ar.bottom + 0.5) { add('focus', 'the focus ring of ' + nm(e) + ' is cut by ' + nm(a)); break; }
+        }
+      });
+      if (ae && ae.focus) ae.focus({ preventScroll: true }); else if (document.activeElement) document.activeElement.blur();
+      window.scrollTo(0, y0);
+      return { screen: o.screen, problems, fig };
+    }, opts);
+    const DR1_PLAN = [['Crawler Silk', 2], ['Rubber', 2], ['Heartfelt Gift Component', 3], ['Earth Cluster', 4], ['Wind Cluster', 4], ['Lightning Cluster', 4], ['Stalk of Ramie', 6], ['Mythril Bolt', 3], ['Titanium Ingot', 2], ['Cloud Cloth', 2], ['High House Boots', 2]];
+    const dr1Page = async (vp, scheme, theme) => {
+      const c = await context({ serviceWorkers: 'block', viewport: vp, colorScheme: scheme });
+      if (theme) await c.ctx.addInitScript((a) => { try { localStorage.setItem('eveniunt-tracker-ui', JSON.stringify({ theme: a[0], look: { shared: { theme: a[1] } } })); } catch (e) { /* none */ } }, [scheme, theme]); // a theme other than the default, in one mode
+      await c.ctx.route('https://universalis.app/**', (r) => {
+        const ids = new URL(r.request().url()).pathname.split('/').pop().split(','), items = {};
+        ids.forEach((id) => { items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, worldName: 'Test' }], averagePrice: 100 }; });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+      });
+      const page = await c.ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await page.evaluate(async () => { await CC.transact((raw) => { const d = raw ? CC.checkDoc(raw) : CC.emptyDoc(); d.chars = [{ id: 'c1', name: 'Tamsin Reed', lodestone: null, cls: null, gc: 1 }, { id: 'c2', name: 'Joss Marlowe', lodestone: null, cls: null, gc: 1 }]; d.updated = Date.now(); return d; }); await window.__lists.reload(); });
+      return { c, page };
+    };
+    // two characters, three lists (one with two steps), typed stock and amounts as examples; real item names of the game data
+    const dr1Seed = (page) => page.evaluate(async (plan) => {
+      const S = LISTS.store, D = window.__lists.data(), r = await CC.read();
+      let sec = S.emptySection(), t = 5000; const ctx = () => ({ now: t++ }), nm = {};
+      Object.keys(D.items).forEach((id) => { if (!(D.items[id][0] in nm)) nm[D.items[id][0]] = +id; });
+      const mk = (name, charId, want, extra) => {
+        let x = S.newList(sec, { name, charId, stamp: D.stamp }, ctx()); sec = x.section; const id = x.id;
+        want.forEach((w) => { const it = nm[w[0]]; if (!it) return; const rec = Object.keys(D.recipes).filter((k) => D.recipes[k][0] === it).sort((a, b) => D.recipes[a][3] - D.recipes[b][3] || a - b)[0] || 0; x = S.addTarget(sec, id, Object.assign({ item: it, recipe: rec, qty: w[1] }, w[2] || {}), ctx()); if (x.section) sec = x.section; });
+        if (extra) extra(id);
+      };
+      mk('Plan', 'c1', plan.concat([['Heartfelt Gift', 1, { make: true }]]), (id) => { sec = S.addStep(sec, id, 'Gear', ctx()).section; sec = S.addStep(sec, id, 'Gifts', ctx()).section; });
+      mk('Bought', 'c1', [['Rubber', 1]]); mk('Weaving', 'c2', [['Bronze Ingot', 2], ['Rubber', 1]]);
+      await CC.writeSection('lists', sec, { rev: r.rev, base: null }); await window.__lists.reload();
+    }, DR1_PLAN);
+    const dr1Get = async (page) => { await lOpenList(page, 'Plan', 'get'); await lOpenAll(page); };
+    const dr1Walk = async (vp, scheme, tag, theme) => {
+      const { c, page } = await dr1Page(vp, scheme, theme), phone = vp.width < 600, out = { tag, screens: [], problems: {}, fig: {}, errors: c.errors, external: c.external };
+      const top = () => page.evaluate(() => window.scrollTo(0, 0));
+      const look = async (name, o) => { await page.waitForTimeout(200); await top(); const r = await designRules(page, Object.assign({ screen: name, phone }, o || {})); out.screens.push(name); out.fig[name] = r.fig; Object.keys(r.problems).forEach((k) => { (out.problems[k] = out.problems[k] || []).push(...r.problems[k].map((m) => name + ': ' + m)); }); };
+      await look('empty');
+      await page.click('[data-act=from-log]'); await page.waitForSelector('.log-screen'); await page.selectOption('[data-f=logjob]', '3'); await page.selectOption('[data-f=logpage]', '0'); await look('log-which');
+      await page.click('[data-act=log-char][data-char=c1]'); await page.waitForSelector('.log-count'); await look('log');
+      await page.click('[data-act=log-cancel]'); await page.waitForSelector('.empty-state');
+      await dr1Seed(page); await page.waitForSelector('.list-card'); await look('lists');
+      await page.evaluate(async () => { // a Restored list: wanted items whose list is missing
+        const r = await CC.read(), d = CC.checkDoc(r.raw), sec = JSON.parse(JSON.stringify(d.modules.lists)), D = window.__lists.data(), nm = {};
+        Object.keys(D.items).forEach((id) => { if (!(D.items[id][0] in nm)) nm[D.items[id][0]] = +id; });
+        sec.targets['l9zzzzzzzzzz.t1aaaaaaaaaa'] = { item: nm['Cloud Cloth'], recipe: 0, qty: 2, at: 1 }; sec.targets['l9zzzzzzzzzz.t2bbbbbbbbbb'] = { item: nm['Rubber'], recipe: 0, qty: 1, at: 2 };
+        await CC.transact((raw) => { const doc = CC.checkDoc(raw); doc.modules.lists = sec; doc.updated = Date.now(); return doc; }); await window.__lists.reload();
+      });
+      await page.waitForSelector('.lists-restored'); await look('restored');
+      await page.evaluate(async () => { await CC.transact((raw) => { const doc = CC.checkDoc(raw); Object.keys(doc.modules.lists.targets).forEach((k) => { if (k.indexOf('l9zzzzzzzzzz.') === 0) delete doc.modules.lists.targets[k]; }); doc.updated = Date.now(); return doc; }); await window.__lists.reload(); });
+      await dr1Get(page); await look('get', { first: true });
+      await page.locator('.get-row .opener').first().click(); await look('get-open');
+      await page.locator('.gsec[data-sec=gather] .get-row .opener').first().click(); await look('get-gather-open');
+      await page.locator('.get-row.open .opener').click();
+      await lTab(page, 'craft'); await look('craft', { first: true });
+      const many = await page.evaluate(() => { const rs = [...document.querySelectorAll('.craft-row')]; let b = 0; rs.forEach((r, i) => { if (r.querySelectorAll('.jset img').length > rs[b].querySelectorAll('.jset img').length) b = i; }); return b; });
+      await page.locator('.craft-row .opener').nth(many).click(); await look('craft-open');
+      await page.locator('.craft-row.open .opener').click();
+      await lTab(page, 'wanted'); await page.fill('[data-f=search]', 'cloud c'); await look('wanted-search'); await page.fill('[data-f=search]', ''); await look('wanted', { first: true });
+      await page.locator('.wanted-row .opener').nth(1).click(); await look('wanted-open');
+      await page.locator('.wanted-row.open .opener').click();
+      await page.evaluate(async () => { // the patch notice: the list was last checked at an older version; one recipe changed (an example)
+        const D = window.__lists.data(), r = await CC.read(), d = CC.checkDoc(r.raw), sec = d.modules.lists, id = Object.keys(sec.lists).filter((k) => sec.lists[k].name === 'Plan')[0];
+        const it = Object.keys(D.items).filter((i) => D.items[i][0] === 'Titanium Ingot').map(Number)[0], rid = Object.keys(D.recipes).filter((k) => D.recipes[k][0] === it)[0], row = JSON.parse(JSON.stringify(D.recipes[rid]));
+        row[5][0][1] = row[5][0][1] + 1; D.changes = [{ from: '7.0', to: D.stamp, recipes: { [rid]: [row] } }]; sec.lists[id].data = '7.0';
+        await CC.transact((raw) => { const doc = CC.checkDoc(raw); doc.modules.lists = sec; doc.updated = Date.now(); return doc; }); await window.__lists.reload();
+      });
+      await lTab(page, 'get'); await page.waitForSelector('.patch-notice'); await look('patch-closed', { first: true });
+      await page.click('.patch-notice [data-act=notice]'); await look('patch');
+      await page.click('.patch-notice [data-act=noted]'); await lSettle(page);
+      for (let i = 0; i < 2; i++) { const hv = page.locator('.get-row [data-act=haveall]').nth(i); if (await hv.count()) { await hv.click(); await lSettle(page); } }
+      await look('status'); await page.click('.lists-earlier summary'); await look('status-earlier');
+      await page.click('[data-act=settings]'); await page.waitForSelector('.lsheet'); await look('settings');
+      await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet'); await look('order');
+      await page.click('[data-act=sheet]'); await page.waitForSelector('.lsheet', { state: 'detached' });
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); const ticks = page.locator('[data-f=tick]:not([disabled])'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check(); await lSettle(page);
+      await page.click('[data-act=combined]'); await page.waitForSelector('.lhead.combined'); await lOpenAll(page); await look('combined', { first: true });
+      await lTab(page, 'craft'); await look('combined-craft', { first: true });
+      out.errs = real(c.errors); await c.ctx.close();
+      return out;
+    };
+    // deliberate breaks: each rule is broken on purpose in the page and the helper must see it (a rule that cannot fail proves nothing)
+    const DR1_BREAKS = [
+      ['a2Controls', "const p = document.querySelectorAll('.get-row .lr:not(.open) .pc')[1]; ['One', 'Two'].forEach((t) => { const b = document.createElement('button'); b.className = 'lk'; b.textContent = t; p.appendChild(b); });"],
+      ['a2Bordered', "const a = document.createElement('div'); a.style.display = 'flex'; for (let i = 0; i < 3; i++) { const b = document.createElement('button'); b.className = 'lbtn-o'; b.style.minWidth = '60px'; b.textContent = 'B' + i; a.appendChild(b); } document.querySelector('.drawer').appendChild(a);"],
+      ['a1Primary', "const p = document.querySelectorAll('.get-row .lr:not(.open) .pc')[2]; const b = document.createElement('button'); b.className = 'lbtn-r'; b.textContent = 'Second'; p.appendChild(b);"],
+      ['f1Filled', "['One', 'Two'].forEach((t) => { const b = document.createElement('button'); b.className = 'lbtn-p'; b.textContent = t; document.querySelector('.tab-get').prepend(b); });"],
+      ['p2Rest', "document.querySelectorAll('.get-row .lr:not(.open)')[3].style.minHeight = '140px';"],
+      ['p2Open', "document.querySelector('.get-row.open .drawer').style.minHeight = '420px';"],
+      ['p3First', "const d = document.createElement('div'); d.style.height = '320px'; document.querySelector('.lists-steps').before(d);"],
+      ['p3Rows', "document.querySelector('.tab-get').style.paddingTop = '330px';"],
+      ['t2Digit', "const e = document.querySelector('.cnt i'); e.style.fontFamily = '\"IBM Plex Mono\", monospace';"],
+      ['t2Label', "const e = document.querySelector('.sec-toggle'); e.style.fontFamily = '\"IBM Plex Mono\", monospace';"],
+      ['s1Status', "document.getElementById('lstatus').style.border = '2px solid red';"],
+      ['s1Status', "const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Undo'; document.getElementById('lstatus').appendChild(b);"],
+      ['f1Fields', "const i = document.createElement('input'); i.type = 'text'; i.style.minHeight = '44px'; document.querySelector('.lhead').appendChild(i);"],
+      ['a6Taps', "const b = document.querySelector('.get-row .pc .lbtn-r'); b.style.minHeight = '0'; b.style.height = '20px';"],
+      ['icons', "const g = document.querySelector('.gsec[data-sec=gather] .get-row .l1 .jset img'); g.remove();"],
+      ['noMore', "const j = document.querySelector('.gsec[data-sec=gather] .get-row .l1 .jset'); const m = document.createElement('span'); m.className = 'jmore'; m.textContent = '+3'; j.appendChild(m);"],
+      ['iconName', "const p = document.createElement('p'); p.className = 'why'; p.textContent = 'Crafted by Weaver, level 5.'; document.querySelector('.get-row.open .drawer').prepend(p);"],
+      ['f2Stamps', "const l = document.querySelector('.gsec[data-sec=gather] .get-row .l1'); const s = document.createElement('span'); s.className = 'role role-gather'; s.textContent = 'Gather'; l.appendChild(s);"],
+      ['clipped', "const e = document.querySelector('.get-row .lr .opener'); e.style.overflow = 'hidden'; e.style.whiteSpace = 'nowrap'; e.style.width = '60px'; e.style.display = 'block';"],
+      ['focus', "const b = document.querySelector('.get-row .pc .lbtn-r'); b.style.outline = '0';"],
+      ['p1Sideways', "document.documentElement.style.minWidth = '700px';"]
+    ];
+    await guard('DR1', async () => {
+      const server = await start(PORT5);
+      const w = [await dr1Walk({ width: 1440, height: 1000 }, 'light', 'desktop-light'), await dr1Walk({ width: 360, height: 800 }, 'dark', 'phone-dark')];
+      // B7: the phone again in light, and in three themes besides the default (one dark, one light, one dark)
+      for (const [scheme, theme] of [['light', null], ['dark', 'abyssal-oath'], ['light', 'uldah-sultanate-gilt'], ['dark', 'electrope-skyline']]) w.push(await dr1Walk({ width: 360, height: 800 }, scheme, 'phone-' + scheme + '-' + (theme || 'default'), theme));
+      const RULES = ['p1Sideways', 'a2Controls', 'a2Bordered', 'a1Primary', 'f1Filled', 'p2Rest', 'p2Open', 'p3First', 'p3Rows', 't2Digit', 't2Label', 's1Status', 'f1Fields', 'a6Taps', 'icons', 'noMore', 'iconName', 'f2Stamps', 'clipped', 'focus'];
+      const ck = {};
+      RULES.forEach((r) => { ck[r] = w.every((x) => !(x.problems[r] || []).length); });
+      ck.screens = w.every((x) => x.screens.length === 21 && x.screens.includes('combined-craft'));
+      ck.notVacuous = w.every((x) => x.screens.reduce((n, s) => n + (x.fig[s].icons || 0), 0) >= 40 && x.screens.reduce((n, s) => n + (x.fig[s].rows || 0), 0) >= 150);
+      ck.stampsWhereSectionsAreNotByWay = w.every((x) => x.fig.combined.stamps > 0 && x.fig['wanted'].stamps > 0);
+      ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.every((u) => u.startsWith('https://universalis.app/')));
+      // the self-test, at 360 px on To get: break each rule on purpose, the helper must see exactly that rule
+      const seen = {};
+      {
+        const { c, page } = await dr1Page({ width: 360, height: 800 }, 'dark');
+        await dr1Seed(page); await dr1Get(page);
+        await page.locator('.get-row [data-act=haveall]').first().click(); await lSettle(page);
+        await page.locator('.get-row .opener').first().click(); await page.waitForTimeout(200);
+        for (const [rule, js] of DR1_BREAKS) {
+          await page.evaluate(() => window.__lists.reload()); await page.waitForTimeout(150); await page.evaluate(() => window.scrollTo(0, 0));
+          await page.evaluate(js);
+          const r = await designRules(page, { screen: 'break ' + rule, phone: true, first: true });
+          (seen[rule] = seen[rule] || []).push((r.problems[rule] || []).length > 0);
+        }
+        await c.ctx.close();
+      }
+      ck.eachRuleSeenFailing = RULES.every((r) => (seen[r] || []).length > 0 && seen[r].every(Boolean));
+      record('DR1', 'Lists design rules (docs/design-rules.md) measured on every list screen at 1,440 px light and 360 px dark with the real game data: at most 3 controls per row at rest on desktop and 2 on a phone, never more than two bordered buttons side by side outside a sheet footer, at most one primary per row, card, sheet and notice and one filled primary per screen outside sheets and notices, rows at most 64 px (96 px on a phone, 360 px opened), the first row within 200 px of the masthead (256 with the steps) and 4 rows in view on a phone (3 with the steps, 8 on desktop), the data face only on digits and never on a label, button, select or heading, the status line is a role=status line with links and no button border, no text box or select at rest but the purpose fields, 40 px tap targets on a phone, every crafter and gatherer has its icon with no "+N", no way stamp inside its own section, no sideways scroll; and each rule was broken on purpose once and seen',
+        Object.values(ck).every(Boolean), { ck, problems: w.map((x) => Object.fromEntries(Object.entries(x.problems).map(([k, v]) => [k, v.slice(0, 6)]))), seen, figures: w.map((x) => x.fig), errors: w.map((x) => x.errs), external: w.map((x) => x.external) });
+      void server;
+    });
+
 
   } finally {
     await browser.close(); server.close();
