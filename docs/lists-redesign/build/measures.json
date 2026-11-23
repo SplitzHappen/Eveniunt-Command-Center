@@ -1,0 +1,80 @@
+{
+ "desktop-light": {
+  "mast": {
+   "top": 0,
+   "h": 97,
+   "w": 1440
+  },
+  "head": {
+   "top": 103,
+   "h": 105,
+   "w": 1240
+  },
+  "status": {
+   "top": 921,
+   "h": 63,
+   "w": 720
+  },
+  "tabs": {
+   "top": 97,
+   "h": 1759,
+   "w": 84
+  },
+  "scrollX": 0,
+  "firstRowBelowMast": 227,
+  "tabHeights": [
+   70,
+   70,
+   70,
+   70
+  ],
+  "statusLinks": [
+   24,
+   24
+  ],
+  "statusIsButton": false,
+  "sheet": {
+   "h": 642,
+   "w": 560
+  }
+ },
+ "phone-dark": {
+  "mast": {
+   "top": 0,
+   "h": 77,
+   "w": 360
+  },
+  "head": {
+   "top": 77,
+   "h": 105,
+   "w": 340
+  },
+  "status": {
+   "top": 665,
+   "h": 71,
+   "w": 360
+  },
+  "tabs": {
+   "top": 736,
+   "h": 64,
+   "w": 360
+  },
+  "scrollX": 0,
+  "firstRowBelowMast": 250,
+  "tabHeights": [
+   62,
+   62,
+   62,
+   62
+  ],
+  "statusLinks": [
+   40,
+   40
+  ],
+  "statusIsButton": false,
+  "sheet": {
+   "h": 653,
+   "w": 360
+  }
+ }
+}
