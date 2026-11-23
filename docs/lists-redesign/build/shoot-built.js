@@ -40,7 +40,7 @@ const OTHER = [['Bronze Ingot', 2], ['Rubber', 1]];
         if (extra) extra(id); return id;
       };
       const plan = mk('Plan', 'c1', sets.PLAN.concat([['Heartfelt Gift', 1, { make: true }]]), (id) => { sec = S.addStep(sec, id, 'Gear', ctx()).section; sec = S.addStep(sec, id, 'Gifts', ctx()).section; });
-      mk('Bought', 'c1', [['Rubber', 1]]); mk('Weaving', 'c2', sets.OTHER);
+      mk('Bought', 'c1', [['Rubber', 1]]); mk('Weaving', 'c2', sets.OTHER); [['Bronze Ingot', 2], ['Copper Ore', 6]].forEach((h) => { const hv = S.setHave(sec, 'c2', nm[h[0]], 'nq', h[1]); if (hv.error) throw new Error(hv.error); sec = hv.section; }); // the wanted ingots are in stock, so the ore typed for them is left over (a Left over line)
       await CC.writeSection('lists', sec, { rev: r.rev, base: null });
       await window.__lists.reload();
     }, { PLAN, OTHER });
@@ -50,11 +50,11 @@ const OTHER = [['Bronze Ingot', 2], ['Rubber', 1]];
     await page.evaluate(async () => {
       const r = await CC.read(), d = CC.checkDoc(r.raw), sec = JSON.parse(JSON.stringify(d.modules.lists)), D = window.__lists.data();
       const nm = {}; Object.keys(D.items).forEach((id) => { if (!(D.items[id][0] in nm)) nm[D.items[id][0]] = +id; });
-      sec.targets['zzzzzz.t1'] = { item: nm['Cloud Cloth'], recipe: 0, qty: 2, at: 1 }; sec.targets['zzzzzz.t2'] = { item: nm['Rubber'], recipe: 0, qty: 1, at: 2 };
+      sec.targets['l9zzzzzzzzzz.t1aaaaaaaaaa'] = { item: nm['Cloud Cloth'], recipe: 0, qty: 2, at: 1 }; sec.targets['l9zzzzzzzzzz.t2bbbbbbbbbb'] = { item: nm['Rubber'], recipe: 0, qty: 1, at: 2 };
       await CC.transact((raw) => { const doc = CC.checkDoc(raw); doc.modules.lists = sec; doc.updated = Date.now(); return doc; }); await window.__lists.reload();
     });
-    await page.waitForTimeout(300).then(() => page.evaluate(() => window.scrollTo(0, 0))); await shot('restored', true);
-    await page.evaluate(async () => { await CC.transact((raw) => { const doc = CC.checkDoc(raw); Object.keys(doc.modules.lists.targets).forEach((k) => { if (k.indexOf('zzzzzz.') === 0) delete doc.modules.lists.targets[k]; }); doc.updated = Date.now(); return doc; }); await window.__lists.reload(); });
+    await page.waitForSelector('.lists-restored'); await page.waitForTimeout(300).then(() => page.evaluate(() => window.scrollTo(0, 0))); await shot('restored', true);
+    await page.evaluate(async () => { await CC.transact((raw) => { const doc = CC.checkDoc(raw); Object.keys(doc.modules.lists.targets).forEach((k) => { if (k.indexOf('l9zzzzzzzzzz.') === 0) delete doc.modules.lists.targets[k]; }); doc.updated = Date.now(); return doc; }); await window.__lists.reload(); });
     await page.waitForTimeout(300);
     // the list: To get with every section open, then one row opened
     await page.locator('.list-card', { hasText: 'Plan' }).locator('[data-act=open]').click(); await page.waitForSelector('.lhead');
@@ -102,6 +102,12 @@ const OTHER = [['Bronze Ingot', 2], ['Rubber', 1]];
     await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet'); await shot('order', false);
     await page.click('[data-act=sheet]'); await page.waitForSelector('.lsheet', { state: 'detached' });
     await page.evaluate(() => window.scrollTo(0, 0)); await page.click('.lists-earlier summary'); await shot('status', false);
+    // a Left over line (the second character's list), and a chosen step (the first character's list)
+    await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); await page.locator('.list-card', { hasText: 'Weaving' }).locator('[data-act=open]').click(); await page.waitForSelector('.lhead');
+    await page.click('[data-act=tab][data-tab=get]'); for (let i = 0; i < 8; i++) { const c = page.locator('.sec-toggle[aria-expanded=false]'); if (!(await c.count())) break; await c.first().click(); }
+    await page.evaluate(() => window.scrollTo(0, 0)); await shot('left', true);
+    await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); await page.locator('.list-card', { hasText: 'Plan' }).locator('[data-act=open]').click(); await page.waitForSelector('.lhead');
+    await page.click('[data-act=tab][data-tab=get]'); await page.click('.step-tab[data-step]:not([data-step=""])'); await page.waitForSelector('[data-act=ask-handin]'); await page.evaluate(() => window.scrollTo(0, 0)); await shot('steps', false);
     // the combined view of the two lists of one character
     await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); const ticks = page.locator('[data-f=tick]:not([disabled])'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check(); await settle();
     await page.click('[data-act=combined]'); await page.waitForSelector('.lhead.combined'); for (let i = 0; i < 8; i++) { const c = page.locator('.sec-toggle[aria-expanded=false]'); if (!(await c.count())) break; await c.first().click(); }
