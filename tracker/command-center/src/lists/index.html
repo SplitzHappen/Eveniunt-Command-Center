@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lists · Eveniunt Command Center</title>
+<meta name="description" content="Eveniunt Command Center: crafting lists for Final Fantasy XIV, with what to gather, buy and craft.">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../icons/icon-192.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f2234">
+<link rel="stylesheet" href="../fonts.css">
+<link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../shell.css">
+<link rel="stylesheet" href="lists.css">
+<script>
+  // Follow the Tracker's light / dark choice (read only), as the shell does.
+  try { var t = (JSON.parse(localStorage.getItem('eveniunt-tracker-ui') || '{}') || {}).theme; if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) { /* private window */ }
+</script>
+</head>
+<body class="lists-page">
+<script src="../look.js"></script>
+<header class="mast cc-mast lists-mast">
+  <a class="cc-menu-link cc-back" href="../" aria-label="Back to the Command Center main menu"><svg class="mm-ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 10l4 6"/><rect x="10" y="4" width="3.5" height="3.5" rx=".6"/><rect x="15" y="4" width="3.5" height="3.5" rx=".6"/><rect x="10" y="10" width="3.5" height="3.5" rx=".6"/><rect x="15" y="10" width="3.5" height="3.5" rx=".6"/></svg><span>Main menu</span></a>
+  <a class="wordmark lb-mark" href="./" aria-label="Lists"><span class="lb-top">Eveniunt</span><span class="lb-word">Lists</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
+  <nav class="switcher" aria-label="Main menu">
+    <a href="../" data-module="home">Home</a>
+    <a href="../tracker/" data-module="tracker">Tracker</a>
+    <a href="../atelier/" data-module="atelier">Atelier</a>
+    <a href="../submersibles/" data-module="submersibles">Submersibles</a>
+    <a href="./" data-module="lists" aria-current="page">Lists</a>
+    <a href="../#settings" data-module="settings">⚙ Settings</a>
+  </nav>
+  <span class="status" id="status" role="status" aria-live="polite"></span>
+</header>
+
+<main class="lists-main" id="view" aria-live="polite"><p class="muted empty-line">Opening your lists…</p></main>
+
+<footer class="foot lists-foot">
+  <p>Recipes, items and the crafting log from the game (xivapi/ffxiv-datamining); shops, nodes and sellers via FFXIV Teamcraft (MIT). This app reads nothing from the game: you enter what you have.</p>
+  <p>FINAL FANTASY XIV © SQUARE ENIX CO., LTD. Game data and names belong to their owners. A free, non-commercial fan project, not affiliated with Square Enix.</p>
+</footer>
+<script src="../save.js"></script>
+<script src="data.js"></script>
+<script src="../prices.js"></script>
+<script src="engine.js"></script>
+<script src="store.js"></script>
+<script src="lists.js"></script>
+</body>
+</html>

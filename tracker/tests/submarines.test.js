@@ -498,12 +498,12 @@ test('R1: the section submersibles-recommendations survives checkDoc, another mo
   assert.deepStrictEqual(CC.checkDoc(doc).modules[NAME], rec, 'checkDoc keeps it exactly');
   // another module's writeSection
   const first = await CC.writeSection(NAME, rec, null);
-  await CC.writeSection('lists', { lists: { l1: { name: 'Gear', items: {} } } }, { rev: first.rev, base: null });
+  await CC.writeSection('notes', { lists: { l1: { name: 'Gear', items: {} } } }, { rev: first.rev, base: null });
   const stored = CC.checkDoc((await CC.read()).raw).modules;
   assert.deepStrictEqual(stored[NAME], rec, 'another module\'s write leaves it');
-  assert.deepStrictEqual(stored.lists.lists.l1.name, 'Gear');
+  assert.deepStrictEqual(stored.notes.lists.l1.name, 'Gear');
   // mergeModules: changed on one side only is taken; an unrelated module's change leaves it; both sides keep it
-  const other = { lists: { lists: { l2: { name: 'Food', items: {} } } } };
+  const other = { notes: { lists: { l2: { name: 'Food', items: {} } } } };
   const merged = CC.mergeModules({ [NAME]: rec }, Object.assign({ [NAME]: rec }, other), { [NAME]: rec });
   assert.deepStrictEqual(merged[NAME], rec, 'a merge keeps it');
   const rec2 = { choices: Object.assign({}, rec.choices, { fuel: false }) };
@@ -1259,9 +1259,9 @@ test('K1: every key of the stored shape is its own merge unit, and the section s
   const doc = { app: CC.APP, v: CC.VERSION, updated: 1, chars: [], modules: { [NAME]: sec }, device: {}, moved: {} };
   assert.deepStrictEqual(CC.checkDoc(doc).modules[NAME], sec, 'checkDoc keeps it');
   const first = await CC.writeSection(NAME, sec, { rev: (await CC.read()).rev, base: null });
-  await CC.writeSection('lists', { lists: { l1: { name: 'Gear', items: {} } } }, { rev: first.rev, base: null });
+  await CC.writeSection('notes', { lists: { l1: { name: 'Gear', items: {} } } }, { rev: first.rev, base: null });
   assert.deepStrictEqual(CC.checkDoc((await CC.read()).raw).modules[NAME], sec, 'another module\'s write leaves it');
-  const other = { lists: { lists: { l2: { name: 'Food', items: {} } } } };
+  const other = { notes: { lists: { l2: { name: 'Food', items: {} } } } };
   assert.deepStrictEqual(CC.mergeModules({ [NAME]: sec }, Object.assign({ [NAME]: sec }, other), { [NAME]: sec })[NAME], sec, 'a merge keeps it');
   delete globalThis.localStorage; CC.resetMemory();
 });
