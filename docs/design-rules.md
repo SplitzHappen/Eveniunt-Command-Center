@@ -160,6 +160,10 @@ would say more; centred text blocks under a centred icon; hairlines carrying the
 
 ## 12. How a module's look is approved
 
+**Adopted 2026-11-23:** the measured limits of this file (row heights, controls and primaries per row, the first row's distance
+from the masthead, rows in view) are standing rules for every module, not only Lists (owner, answer to the Lists look spec's Q3).
+
+
 Behaviour and look are planned, reviewed and checked separately. A module is not built before its look is approved.
 
 1. **A look spec.** One document per module (`docs/<module>-look-spec.md`): for every screen, its one idea (C1), what is

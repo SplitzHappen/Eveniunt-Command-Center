@@ -1109,3 +1109,14 @@ Tracker's click handler lines, the Atelier's first-visit move and its `moved.ate
 run. Argued on paper only and left to W2's and W4's tests: that the cuts of D24 keep E4 and E5; that a fixed trade
 offer keeps E5; E12(b); E19; that LY6's renaming settles on both devices; that the lists branch in `ET.applyMerge`
 leaves every other section's result as it is.
+
+## Addendum, 2026-11-23: data and behaviour changes for the redesign
+
+Owner decisions of 2026-11-23 (details in `docs/lists-look-spec.md` section 2, D-C1, D-C2, D-G1, D-G2). The save does
+not change. The data file gains `crafters` (every recipe of an item with its job and level), `nodeNames` (from the
+game sheet `GatheringPointName`), `aetherytes` (names), and a fuller `gather` (every spot, best first: job, the game's
+node name row, level, zone, map X and Y, nearest aetheryte, window, folklore book, hidden item; fish with their spot).
+The engine keeps its default counted recipe (lowest level, then lowest id) unless the player sets `ways.recipe`; every
+crafter is shown, nobody is asked to choose. Where a node's name, an id mapping or an icon cannot be derived, the build
+stops rather than guess. The 11 job icons are Square Enix materials, fetched at the pinned Teamcraft commit and kept in
+the repository; they are credited with the game data.

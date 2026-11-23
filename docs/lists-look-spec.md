@@ -57,6 +57,60 @@ design figure; M1 measures it.
   they assert. Each such edit is listed in the hand-back. [Keeping every control at rest so no check changes: that is
   the rejected look.]
 
+### Owner decisions of 2026-11-23 (after the mock-ups)
+
+The owner approved the direction of the mock-ups ("I can work with these aesthetics") with the orchestrator's five
+fixes, answered Q1 to Q3 (section 8) and added three requirements. Written by the orchestrator (Opus) because the
+planning tier's model was over its usage limit; same-family.
+
+- **F1 Quiet primary.** A row's primary ("Have all", "Made all") is an outline in the row's role colour with bold
+  body text, not a filled accent block; the count block is the loudest thing on a row. The filled accent stays for a
+  sheet's or notice's single primary only. [Filled pink on every row: eight identical loud blocks down a column.]
+- **F2 No stamp that repeats its section.** A way stamp ("Merchant", "Gather", "Trade", "Market") is not drawn inside
+  the section of the same way; it is drawn in the combined view and on Wanted rows, where sections are not by way.
+  "Must craft", "Collectable", "High quality" stamps stay everywhere.
+- **F3 Desktop row anatomy.** The chevron sits right after the name, not in the middle of the row. A craft row's
+  progress is a single bar with its figure ("0 of 2 crafted"), filled in the craft role; an empty bar is a 2 px
+  track in the line tone, never outlined boxes.
+- **F4 Budgets.** The patch notice is a one-line slab under the list head ("Game data changed: 3 recipes in this
+  list. Show"), opening into its lines; the first row stays within 200 px of the masthead. The trade drawer shows the
+  chosen offer and a "Other offers (N)" opener instead of a full radio list, keeping the drawer within 360 px.
+- **F5 Wording.** "Quality of Made" is "Quality made".
+- **D-C1 Every crafter, no pick** (owner: "tell me all the crafters that can do it and don't make me or you pick
+  one"). A craft row, a craft drawer and a Wanted row show every job that can craft the item, each as its icon with
+  the job name for screen readers; no one is asked to choose. Measured on the pinned data: 600 items have recipes from
+  two or more jobs; for 189 the ingredients are identical, for 411 they differ, for 8 the level differs. Where they
+  differ the plan still counts one recipe: the existing default (lowest level, then lowest recipe id), said on the row
+  in one line ("Materials differ by crafter; counted for Blacksmith"), with an optional "Count materials for" choice
+  in the opened row that stores `ways.recipe` (already in the save; no save change). Crafting-log lists keep their
+  page's recipe. "Made", "Bought it", credits and "Solve in the Atelier" follow the counted recipe. To craft's job
+  heads group by the counted recipe's job; the other jobs show as icons on the row.
+- **D-C2 Job icons** (owner: "the crafters and gatherers icons from the game on top of their names just like
+  teamcraft does them"). The game's 8 crafter and 3 gatherer icons, from the pinned Teamcraft repository
+  (`apps/client/src/assets/icons/classjob/<job>.png`; all 11 answer at commit `70429e21`), fetched by the data tool,
+  size-checked, copied into the built site, cached by the service worker, never hot-linked; credited as Square Enix
+  materials in `tracker/data/SOURCES.md` and the NOTICE. Sizes: 24 px on desktop rows and in drawers, 20 px on phone
+  rows, 32 px on To craft job heads; each `img` has the job's name as `alt` (or `alt=""` with the name next to it).
+- **D-G1 Gathering locations done properly.** Every spot of every gathered item, both jobs where Miner and Botanist
+  can both gather it, with: the game's node name and level ("Lv. 5 Rocky Outcrop"), the zone, X and Y as the game's
+  map shows them, the nearest aetheryte on the same map, the timed window, the unspoiled, ephemeral or legendary word
+  (from the game's own name), the folklore book when one is needed, and a hidden-item note. Fish: the fishing spot's
+  name, zone, X and Y, level. At rest a gather row shows the gatherer icons and the best spot in one line
+  ("Lv. 5 Rocky Outcrop · Western La Noscea (X 26, Y 21) · Aleport"); the opened row lists every spot, best first,
+  with "N more spots" folding the rest past three. Best spot: lowest level, then the shortest distance to its
+  aetheryte, then lowest node id. An item with no position says "No map position in the game data" and names the
+  zone if known; never a made-up place.
+- **D-G2 Node names from the game, never hand-written** (owner: "check how the game actually has it, because that
+  name can be completely wrong"). Each node's name comes from the game sheets: `GatheringPointName` rows 1 to 4 are
+  mineral deposit, rocky outcrop, mature tree, lush vegetation patch; 5 to 8 their unspoiled forms, 9 to 12
+  ephemeral, 13 to 16 legendary, 17 onward concealed; `GatheringType` 0 to 3 are Mining, Quarrying, Logging,
+  Harvesting; `GatheringPoint` links a point to its `GatheringPointBase` (type, level, items), territory and place.
+  The data tool derives each node's name row from the node's gathering type and its unspoiled/ephemeral/legendary
+  kind, capitalises it as the game shows it ("Rocky Outcrop"), and **stops the build** when a node's name cannot be
+  derived or the mapping between Teamcraft node ids and `GatheringPoint` rows does not hold. A test quotes five
+  nodes' sheet rows by hand (one of each basic kind and one unspoiled). **Unverified:** that the in-game map writes
+  the level as "Lv. 5" before the name; if the game shows it otherwise, only the row text changes.
+
 ## 3. The kit (shared by every Lists screen)
 
 Sizes are for 1440 px, then "phone:" for up to 700 px, measured at 360 px. Faces: display = Big Shoulders 900
@@ -363,59 +417,58 @@ ran and what did not.
 **M2. The owner approves from the screenshots.** No item runs past this point without it. Changes asked for are drawn
 again by M1.
 
-### After approval
+### After approval (rewritten 2026-11-23)
 
-**B1. Lists back on a branch (Sonnet builder).** Files: whatever the removal (pull request 6) took out, restored by
-reverting that merge on a branch; no hand edits. Steps: `npm ci`, `npm run build` twice, `npm run test:unit`,
-`npm run test:browser`, `npm run check`. Acceptance: the second build changes nothing; the totals equal those of the
-W16 note (unit 578, browser 61, check 181 with C26b not run), or each difference is explained. Escalate if: the
-revert conflicts, or any suite fails before a change.
+**B1. Lists back on the branch (Sonnet builder).** Restore exactly what pull request 6 took out, by reverting that
+merge on the branch (`git revert` of the merge commit of pull request 6); no hand edits; the documents already on the
+branch win where both touched a file. Steps: `npm ci`, `npm run build` twice, `npm run test:unit`, `npm run
+test:browser`, `npm run check`. Acceptance: the second build changes nothing; totals equal the W16 note (unit 578,
+browser 61, check 181 with C26b not run) or each difference is explained. Escalate if: the revert conflicts beyond the
+documents, or a suite fails before any change.
 
-**B2. Roles and kit (Sonnet builder; needs B1).** Files: `src/lists/lists.css`, `tracker/tests/lists-look.test.js`,
-new `docs/lists-colour-roles.md` written by a small tool in the pattern of `tracker/tools/subs-roles.js` (new
-`tracker/tools/lists-roles.js`), `package.json`. Steps: add to each of the six roles a field with its text, a graphic
-tone, a text tone and a wash, plus the deep ground for the empty state; add the kit's classes of section 3. Tests:
-field text 4.5:1, graphic 3:1 and text tone 4.5:1 on page and panel, ink on a wash 7:1, in 21 themes × 2 modes; no
-colour outside the token block; the generated list is up to date. Acceptance: build twice, unit suite. Escalate if: a
-tone cannot reach its ratio by lightness alone.
+**B2. Data: job icons, every crafter, every gathering spot with the game's node names (Sonnet builder; needs B1).**
+Files: `tracker/tools/lists-data.py`, `tracker/data/lists.json`, new `tracker/data/classjob/*.png` (11 icons),
+`tracker/data/SOURCES.md`, `tracker/NOTICE.md` and the root `NOTICE`, `tracker/tests/lists-data.test.js`,
+`tracker/command-center/build.js` (copy the icons; size budget), `src/sw.js` (cache them). Data changes (D-C1, D-C2,
+D-G1, D-G2, and the dated section of `docs/lists-spec.md`): `crafters: { item: [[recipe, job, level]…] }`; `gather`
+becomes `{ item: [[job, nameRow, level, zone, x, y, aetheryte, hours, minutes, folklore, hidden]…] }` sorted best first
+(fish: `[2, 0, level, zone, x, y, aetheryte, 0, 0, 0, 0, spotName]`); `nodeNames: { row: "Rocky Outcrop" }` from
+`GatheringPointName`; `aetherytes: { id: name }` for those named. X and Y as the game's map shows them: derived from
+the node's map position with the map's size factor and offset (the same conversion the Tracker uses for its
+coordinates; find it in `tracker/tools/` and reuse it), one decimal. Stop rules added: a node whose name row cannot be
+derived; a Teamcraft node id that maps to no `GatheringPoint` row; an icon missing, not a PNG, or over 16 kB. Tests:
+LD-15 five nodes' names quoted from the sheets (one per basic kind and one unspoiled); LD-16 a shard that both Miner
+and Botanist gather has both jobs; LD-17 a timed unspoiled node with its window; LD-18 a folklore node names its book;
+LD-19 an item without position keeps its zone and no coordinates; LD-20 a fish with its spot and coordinates; LD-21 an
+item whose ingredients differ between Blacksmith and Armorer lists both crafters, and an item with identical
+ingredients too. Report the plain and packed data sizes (budget 1.5 MB packed) and the counts (spots, items with no
+position, crafters per item). Escalate if: the name derivation or the id mapping does not hold, or the budget breaks.
 
-**B3. Frame: tab bar, list head, sheets, status line (Sonnet builder; needs B2).** Files: `src/lists/index.html`,
-`lists.js` (markup functions only), `lists.css`, `check.js` (reach edits only, decision L10). Sections 3, 4.5, 4.6,
-4.11. Acceptance: build twice; unit, browser and full check; every edited check line listed with its reason.
-Escalate if: a check's assertion, a store function or the engine would have to change; the open sheet or drawer does
-not survive the page's redraw after a save.
+**B3. Engine and rows for every crafter (Sonnet builder; needs B2).** `engine.js` only as far as D-C1 needs (the
+counted recipe stays today's default unless `ways.recipe` is set; nothing else changes); `lists.js` "Count materials
+for" in the opened row. Tests: the counted recipe follows `ways.recipe`; the plan of an identical-ingredient item does
+not change with it; the model test passes unweakened.
 
-**B4. Rows: To get, To craft, Wanted, combined (Sonnet builder; needs B3).** Files as B3. Sections 4.2 to 4.4, 4.7.
-Acceptance and escalation as B3; also C154 (500 wanted items: page elements and draw time) still passes.
+**B4. Roles, kit and frame (Sonnet builder; needs B3).** As the former B2 and B3: the role tones, the kit of section 3
+with F1 to F5, the tab bar, list head, sheets, status line; icons placed as D-C2. Acceptance: build twice; unit,
+browser and full check; every edited check line listed with its reason (reach edits only).
 
-**B5. Your lists, crafting log, Restored list, patch notice, empty states (Sonnet builder; needs B3).** Files as B3.
-Sections 4.1, 4.8 to 4.10, 4.12. Acceptance and escalation as B3.
+**B5. Rows: To get (with the gather rows of D-G1), To craft (crafter icons of D-C1), Wanted, combined; then Your lists,
+crafting log, Restored list, patch notice (F4), empty states (Sonnet builder; needs B4).** As the former B4 and B5;
+C154 still passes.
 
-**B6. The checks that pin the rules, and the evidence (Sonnet builder; needs B4, B5).** Files: `check.js` only.
-- A helper `designRules(page, opts)` (rows, opener, status, purpose fields) so a later module can reuse it, and a
-  block `DR1` that walks the L2 fixture at 1440 px and 360 px over every list screen and asserts: at rest at most
-  three controls per row on desktop and two on a phone, never more than two bordered buttons side by side outside a
-  sheet footer or segmented control, at most one primary per row, card, sheet and notice; phone row at most 96 px at
-  rest and 360 px opened, desktop row at most 64 px; the first row at most 200 px under the masthead (256 with the
-  step strip) and at least four rows in view at 360 × 800 (three with the strip), eight at 1440 × 1000; every visible
-  text in the data face holds a digit, and no label, button, select or heading uses it; the status element is not a
-  `button`, is at most 44 px for one line and has no four-sided button border, and its actions are links; with no
-  sheet and no drawer open, the only visible text boxes and selects are the Wanted add fields, the desktop steppers
-  and the crafting-log fields; tap targets at least 40 px at 360 px.
-- `L2` writes the after pictures to `tracker/command-center/evidence/lists-*.png` for the screens of M1.
-- Acceptance: full `npm run check` green with `DR1` in `evidence/checks.json`; each assertion was seen failing once
-  against the restored old page of B1 (reported). Escalate if: a rule cannot be measured as written.
+**B6. The checks that pin the rules (`DR1`), and the evidence (Sonnet builder; needs B5).** As the former B6, plus:
+every crafter and gatherer name on a list screen has its icon; no way stamp inside a section of the same way; at most
+one filled primary per screen outside sheets and notices (F1).
 
-**B7. Final pass (Sonnet builder; needs B6).** Files: `lists.css`. At 360 × 800 light and dark and in three themes
-besides the default, walk every screen; fix clipped text, a target under 40 px, a hidden focus ring; confirm reduced
-motion. Hand-back: the bold-test sentence per picture, and each built picture beside its approved mock-up with every
-difference listed. Acceptance: build twice; unit, browser, full check.
+**B7. Final pass and the owner's pictures (Sonnet builder; needs B6).** As the former B7; then the after pictures of
+every screen at 1440 px light and 360 px dark, beside the approved mock-ups, with every difference listed, for the
+owner to look at before the ship request.
 
-**B8. Records (Haiku clerk; needs B7).** Files: `docs/STATE.md` (an entry under "Built, waiting for the owner's
-`ship`"), `tracker/command-center/README.md`. Acceptance: only those two files change.
+**B8. Records (Haiku clerk; needs B7).** As before.
 
-The independent review of B1 to B7 is the reviewer tier's, with the appearance section of `docs/design-rules.md`
-section 12.
+The review of B1 to B7 carries the appearance section of `docs/design-rules.md` section 12 (outside reviewers
+included); the orchestrator writes that section into every review prompt.
 
 ## 7. Risks, and the first thing to verify
 
@@ -430,7 +483,7 @@ section 12.
 - Not designed here because no picture or code was seen: the exact form of the new-list step and of the confirms.
   They take the sheet form of the kit; M0 reports what they are today.
 
-## 8. Owner questions
+## 8. Owner questions (answered 2026-11-23: Q1 in the opened row, Q2 "Made all", Q3 adopt for every module)
 
 **Q1. Where "Get it by" sits on a row.** You asked for the way of getting an item to be changeable from every row.
 - In the opened row (recommended): tap the row, and "Get it by" is there with its reason. Every row still has it, one
