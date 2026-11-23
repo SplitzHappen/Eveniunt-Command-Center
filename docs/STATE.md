@@ -1,9 +1,32 @@
 # Where the Command Center stands
 
-Last updated: 2026-11-21.
+Last updated: 2026-11-23.
 
 ## Recently shipped
 
+- **Lists: the crafting planner (phase 3)** (shipped 2026-11-23, owner's `ship` after five review rounds; pull request 4, spec `docs/lists-spec.md`, research `docs/lists-research.md`, review records `docs/lists-review-adjudication.md` and `docs/lists-code-review-adjudication.md`).
+  - Lists are kept per character, each with its steps. Each character has one stock, typed by hand.
+  - Every row says "get it by". Gil merchants come first. "Bought it" can be used at any time, with undo.
+  - Views: To get, To craft, Wanted, and a combined view for each character.
+  - A list can start from the crafting log. The Tracker links to it (inside the Command Center only). "Solve in the Atelier" opens the recipe there.
+  - Market prices come from one shared price service, also used by Submersibles. Timed nodes show their next window.
+  - A notice appears when game data changes a list's recipe.
+  - The save: a new `modules.lists` section. Older builds keep it. A sync never deletes a list or an item without the player's answer.
+  - Reviews: one Claude review, plus ChatGPT and Mistral reviews of the plan. 35 findings were applied (20 and 15). The permanent model test found and fixed 2 more.
+  - Tests: unit 570 of 570, browser 61 of 61, full check 171 of 171. C26b was not run (its browser push service is unreachable from the session).
+  - Final code review by Claude (same model family, so not independent), 2026-11-22: ship after one fix. Fixed: the
+    tests against the old build were pinned to the last build without Lists (31cb0ba), which would otherwise have turned
+    the checks red after merging. Two notes kept as known limits (below).
+  - Outside code reviews, 2026-11-22 (third round, owner's request): ChatGPT "do not publish", Mistral "publish after
+    fixes". Seven findings accepted and fixed (W14), one accepted in part; `docs/lists-code-review-adjudication.md`.
+    Totals after the fixes: unit 576 of 576, browser 61 of 61, full check 175 of 175 (C26b not run).
+  - Review of the fixes, 2026-11-22 (fourth round, owner's request): Mistral "publish", ChatGPT "publish after
+    fixes" (two fixes incomplete, two minor). All four fixed (W15). Totals: unit 577 of 577, browser 61 of 61, full
+    check 179 of 179 (C26b not run).
+  - Review of the second fixes, 2026-11-23 (fifth round, owner's request): Mistral "publish", ChatGPT "publish after
+    fixes" (one major: a stale tab could undo another tab's list header change; one minor). Both fixed (W16), and a
+    night-time clock bug in check C166 fixed. Totals: unit 578 of 578, browser 61 of 61, full check 181 of 181 (C26b
+    not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
 - **Submersibles: the pull request of 17 to 21 November** (shipped 2026-11-21, owner's `ship` after five outside review rounds; specs in `docs/submersibles-*.md`). Its parts:
   - **Submersibles step S6: gil advice from the player's own log** (built 2026-11-17). Earnings ranks routes by gil per
     hour once a route has 10 logged voyages; the Board then advises routes from the log, using the prices cached on the
@@ -99,34 +122,7 @@ Last updated: 2026-11-21.
 
 ## Built, waiting for the owner's `ship`
 
-- **Lists: the crafting planner (phase 3)**, built 2026-11-22 on pull request 4, spec `docs/lists-spec.md`, research `docs/lists-research.md`, review record `docs/lists-review-adjudication.md`.
-  - Lists are kept per character, each with its steps. Each character has one stock, typed by hand.
-  - Every row says "get it by". Gil merchants come first. "Bought it" can be used at any time, with undo.
-  - Views: To get, To craft, Wanted, and a combined view for each character.
-  - A list can start from the crafting log. The Tracker links to it (inside the Command Center only). "Solve in the Atelier" opens the recipe there.
-  - Market prices come from one shared price service, also used by Submersibles. Timed nodes show their next window.
-  - A notice appears when game data changes a list's recipe.
-  - The save: a new `modules.lists` section. Older builds keep it. A sync never deletes a list or an item without the player's answer.
-  - Reviews: one Claude review, plus ChatGPT and Mistral reviews of the plan. 35 findings were applied (20 and 15). The permanent model test found and fixed 2 more.
-  - Tests: unit 570 of 570, browser 61 of 61, full check 171 of 171. C26b was not run (its browser push service is unreachable from the session).
-  - Final code review by Claude (same model family, so not independent), 2026-11-22: ship after one fix. Fixed: the
-    tests against the old build were pinned to the last build without Lists (31cb0ba), which would otherwise have turned
-    the checks red after merging. Two notes kept as known limits (below).
-  - Outside code reviews, 2026-11-22 (third round, owner's request): ChatGPT "do not publish", Mistral "publish after
-    fixes". Seven findings accepted and fixed (W14), one accepted in part; `docs/lists-code-review-adjudication.md`.
-    Totals after the fixes: unit 576 of 576, browser 61 of 61, full check 175 of 175 (C26b not run).
-  - Review of the fixes, 2026-11-22 (fourth round, owner's request): Mistral "publish", ChatGPT "publish after
-    fixes" (two fixes incomplete, two minor). All four fixed (W15). Totals: unit 577 of 577, browser 61 of 61, full
-    check 179 of 179 (C26b not run).
-  - Review of the second fixes, 2026-11-23 (fifth round, owner's request): Mistral "publish", ChatGPT "publish after
-    fixes" (one major: a stale tab could undo another tab's list header change; one minor). Both fixed (W16), and a
-    night-time clock bug in check C166 fixed. Totals: unit 578 of 578, browser 61 of 61, full check 181 of 181 (C26b
-    not run). The owner's own checks (a real sync, two tabs, a phone) are not done.
-
-## Decided, being planned
-
-- **Lists** (blueprint phase 3): built and waiting for the owner's `ship`; see the entry under "Built, waiting for the
-  owner's `ship`" above. The spec is `docs/lists-spec.md`.
+Nothing at the moment.
 
 ## Module order (blueprint, owner decision of 2026-11-09, confirmed 2026-11-21)
 
@@ -134,7 +130,7 @@ Last updated: 2026-11-21.
 | --- | --- | --- |
 | 1 | Shell, one shared save, cloud sync | Shipped |
 | 2 | Submersibles | Shipped 2026-11-21 |
-| 3 | Lists (crafting planner) with "Solve in the Atelier" | Built, waiting for ship |
+| 3 | Lists (crafting planner) with "Solve in the Atelier" | Shipped 2026-11-23 |
 | 4 | Market (profit, shopping list split by world); Gathering (alarms, routes) | Planned |
 | 5 | Currencies & Collectables, Levequests, Ventures & Voyages (retainers and airships) | Planned |
 | 6 | Gear, Treasure Maps, desynthesis in the item details | Planned |
@@ -142,10 +138,11 @@ Last updated: 2026-11-21.
 
 ## Next
 
-1. The owner's own checks, which no automated run covers: a real sync between two devices (one still on the version published before 2026-11-21), two tabs saving at the same moment, a pass on a phone, and a real push notification ("Send a test" in Settings).
-2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
+1. The owner's own checks, which no automated run covers: a real sync between two devices (one still on the version published before 2026-11-21), two tabs saving at the same moment, a pass on a phone, and a real push notification ("Send a test" in Settings). For Lists as well: a list made and changed on two devices and synced, two tabs editing one list, the page on a phone and in Firefox or Safari, real market prices, and "Solve in the Atelier" from a real list.
+2. The next module in the blueprint order: phase 4, Market (profit per craft, a shopping list split by world, price history) and Gathering (alarms and routes). Market reuses the Lists engine and the shared price service.
+3. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
    compared with the original design (kept outside this repository) and the gaps closed.
-3. Not planned, by the owner's decision of 2026-11-19: combining a submarine's own record when it was renamed on one
+4. Not planned, by the owner's decision of 2026-11-19: combining a submarine's own record when it was renamed on one
    device and sent on the other (still asked between devices; the later save wins between tabs).
 
 ## Parked by the owner
