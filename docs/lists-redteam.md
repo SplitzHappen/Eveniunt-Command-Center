@@ -146,3 +146,65 @@ sheets (`Item`, `CompanyCraftSequence`, `CompanyCraftPart`, `CompanyCraftProcess
 bulk action, recipe stamps, the master-book warning); A4; A5 for display only; copy item name; A7's core five; A8 trimmed.
 **Main risk:** the set touches the data shape, every To get section and `save.js` at once; many checks need reach edits
 and may flake, so the cycle runs long; the `save.js` label change rebuilds all three modules.
+
+## Owner's answers (2026-11-23) and the build plan
+
+**Answers:** 1A — a gather row shows the spot in a zone the list already visits for other items, falling back to the
+lowest level; the row says why it chose it, and every spot stays listed (this changes decision D-G1's "lowest level
+first"). 2B — submarine parts are built before shipping. Plan written by the orchestrator (the planning tier's model was
+over its limit); same family.
+
+Every item: only its named files plus rebuilt copies; `engine.js` changes only where an item says so, keeping every
+invariant (the model test passes unweakened); existing checks get reach edits only (no assertion changes) unless an item
+names the assertion; each new test is seen failing without its part; `npm run build` twice, unit, browser, full check;
+appearance measured against `docs/design-rules.md` (and `DR1` stays green); screenshots looked at.
+
+- **R1 Data (builder).** `lists-data.py`, `lists.json`, `SOURCES.md`, `lists-data.test.js`. (a) `market` flag from the
+  game's `Item.ItemSearchCategory` above 0 (replaces "not untradable" for the market way); (b) `currencies`: items used as a
+  non-gil price in a kept trade and not on the market board; (c) `sellers: { item: [[npc, price]…] }` for every gil seller
+  (the planned offer stays as today); (d) `books: { recipe: bookItem }` and `bookNames` from `Recipe.SecretRecipeBook` and
+  `SecretRecipeBook` (a separate table, so recipe rows do not change); (e) `projects`: the company-craft sheets
+  (`CompanyCraftSequence`, `CompanyCraftPart`, `CompanyCraftProcess`, `CompanyCraftSupplyItem`) for every submarine part
+  (all 40) and airship part: result item, parts, phases in order, each phase's supply items with amount per set and sets;
+  supply items closed into the data (their recipes, offers, spots); a stop rule if a part's phases cannot be read. Tests:
+  no currency has the market way and the six real market items keep it; a seller table entry for an item with several
+  sellers; one master-book recipe with its book name quoted from the sheet; one submarine part with its phases quoted.
+- **R2 Gathering engine input and the chosen spot (builder).** `build.js` builds the engine's `gather` table from
+  `spots` (the engine keeps reading "has a gather source"); `gatherLegacy` removed with LD-3 re-pointed to the new shape
+  (equivalent assertions); one shared `chosenSpot(item, plan)` used by the row's window, level and zone, the drawer and
+  grouping: among the item's spots, prefer one in a zone that other gather rows of the same plan already use (most rows
+  first), then lowest level, then nearest aetheryte, then lowest id; deterministic for a given plan. Tests: an item whose
+  lowest spot is elsewhere but another spot is in the route's zone shows the route spot and says why; windows come from
+  the shown spot.
+- **R3 Page: currencies, high quality, books, crystals, vendors, copy (builder).** (a) "Currencies to earn" section (a
+  display group of the existing "other" way for `currencies`), counted apart from "to get"; a stored market way for a
+  currency shows "This is a currency: it is earned, not bought"; (b) the drawer's "Need it in high quality" on HQ-able
+  materials (`ways.hq`) and a list-level bulk action "High quality for every material" with one undo; (c) stamps: master
+  book (its name), expert, specialist, stars; a warning on the row when the Tracker's "Master Crafting Books" entry for
+  that book is not ticked for the list's character ("Master Carpenter IV is not ticked for Tamsin Reed"), read through the
+  Tracker's own reader as W10 does; (d) Crystals as their own section (shards, crystals, clusters), before Gather;
+  (e) Gather grouped by zone, then aetheryte, with timed nodes ordered by next window, reordered only on redraw; (f) Vendor
+  section grouped by city and seller; among equal-price sellers the page shows the one in a place the list already
+  visits; (g) "Copy name" on every row (clipboard, with the status line saying "Copied").
+- **R4 Submarine and airship parts (builder; needs R1).** Search finds project results ("Shark-class Bow"); adding one
+  makes a list with one step per phase, each phase's supply items as wanted items (amount × sets), and the plan works as
+  for any list; the steps carry the phase names; a test with one real submarine part (its phases and amounts from the
+  sheet) and a browser check.
+- **R5 Look fixes (builder).** From the look red team: 14 the count block's slash never covers the name (fixed height,
+  padding); 15 no answer hidden by an ellipsis: on a phone "need N, have N" is dropped (the count block says it), spot and
+  window get their own line within the 96 px row, and the stepper hides between 701 and 1100 px; 16 job icons at the
+  spec's 20/24/32 px with the game abbreviation (CRP, BSM, ARM, GSM, LTW, WVR, ALC, CUL, MIN, BTN, FSH) under each, every
+  crafter still shown; 17 no bottom bar or rail when there is one entry; 20 a long list name ellipsizes (two lines at most
+  on a phone) with the full name on hover and in the sheet; plus thousands separators in gil amounts.
+- **R6 Patch safety and sync names (builder).** A written refresh checklist in `tracker/data/SOURCES.md` (which tools,
+  in which order, for the Tracker, Atelier and Lists data); a unit test that the game-data pins of the three match; the
+  data version on the Lists page (list head state line); item names in sync questions: `save.js` labels take a name
+  lookup passed by the Command Center and fall back to the number elsewhere (all three modules rebuilt); the page uses
+  the engine's own way rule instead of its copy (`waysOf`/`offersFor`), behaviour unchanged.
+- **R7 Pictures, records, and the ship request (builder, then orchestrator).** Every screen retaken at 1440 light and 360
+  dark, looked at beside the approved mock-ups; `DR1` green; records in `docs/STATE.md`; then the pull request.
+
+After shipping, in order: "Made" ticks the Tracker's log (needs a design: two save sections and undo); several log pages
+or a whole job in one list; share and export; source hints for drops, ventures, desynthesis and reduction; gear-set
+import; the change notice for offers and nodes; planning off the main thread for huge lists; the Lists checks in their
+own file; the remaining small look items (18, 19, 21) and the clock-controlled checks.
