@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "assignment_id": "ASG-20261123-lists-redesign-review-chatgpt-001",
+  "status": "READY",
+  "work_class": "audit",
+  "requested_by": "claude",
+  "assigned_to": "chatgpt",
+  "branch": "assignments/ASG-20261123-lists-redesign-review-chatgpt-001",
+  "package_commit": "d6f0cd72605ad6e49e69d555098d25b5ecef388f",
+  "candidate": {
+    "pr": 4,
+    "head_sha": "ec24562d3a1ee12ac5f99e7bed4b66a3904c3e33",
+    "ref": "claude/blissful-fermat-hrrqp5"
+  },
+  "result_paths": [],
+  "result_commit": null,
+  "completed_at": null,
+  "disposition": null
+}
