@@ -507,8 +507,15 @@ def build():
         ns = by_item.get(it) or by_item.get(sublime_of.get(it)) or []
         rows = []
         if ns:
+            loose = {}  # R6: nodes without a map position of an item that also has placed ones keep their window, after the placed spots
             for nid, n in sorted(dict(ns).items()):
                 if nid not in placed:
+                    tcb = n.get("folklore") or 0
+                    lrow = [0 if n["type"] in (0, 1) else (1 if n["type"] in (2, 3) else 2), 0, n.get("level", 0), place.get(i(n.get("zoneid")), ""), 0, 0, 0,
+                            sorted(set(n["spawns"])) if n.get("spawns") else 0, (n.get("duration") or 120) if n.get("spawns") else 0,
+                            clean(ITEM[tcb].get("Name")) if tcb and tcb in ITEM else 0,
+                            1 if (it in (n.get("hiddenItems") or []) and it not in (n.get("items") or [])) else 0]
+                    loose.setdefault(json.dumps(lrow), ((lrow[2], nid), lrow))
                     continue
                 x, y, zone = placed[nid]
                 job = 0 if n["type"] in (0, 1) else (1 if n["type"] in (2, 3) else 2)
@@ -519,7 +526,7 @@ def build():
                              sorted(set(n["spawns"])) if timed else 0, (n.get("duration") or 120) if timed else 0, folklore_of(nid, n), hidden]))
             rows.sort(key=lambda p: p[0])
             if rows:
-                gather[it] = [r for _, r in rows]
+                gather[it] = [r for _, r in rows] + [r for _, r in sorted(loose.values(), key=lambda p: p[0])]
             else:  # nodes without a map position: one entry that keeps the job, the level and the zone when known
                 n0 = sorted(ns, key=lambda p: (p[1].get("level", 0), p[0]))[0][1]
                 gather[it] = [[0 if n0.get("type") in (0, 1) else (1 if n0.get("type") in (2, 3) else 2), 0,

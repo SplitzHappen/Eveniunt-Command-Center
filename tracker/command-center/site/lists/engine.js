@@ -110,22 +110,25 @@
     var l = ctx.ix.ofItem[item];
     return l ? l[0] : 0;
   }
+  // Whether an item has a way in one quality: the engine's own rule, used by wayOf and exported for the page (R6).
+  function isAvail(ctx, item, q, by, w) {
+    var data = ctx.data;
+    switch (by) {
+      case 'have': return true;
+      case 'craft': var rid = recipeChoice(ctx, item, w.recipe); return !!rid && (q === 'normal' || (data.recipes[rid][6] & 1) === 1);
+      case 'vendor': return offersOf(ctx, item, q).gil.length > 0;
+      case 'trade': return offersOf(ctx, item, q).trade.length > 0;
+      case 'gather': return q === 'normal' && !!(data.gather && data.gather[item]);
+      case 'market': return (flagsOf(data, item) & 1) === 1;
+      default: return false;
+    }
+  }
   // The way of an item in one quality ('normal' or 'hq'): fixed by the data, the order and the stored way (D12, D14).
   function wayOf(ctx, item, q) {
     var ck = item + '|' + q, c = ctx.wc[ck];
     if (c) return c;
     var data = ctx.data, w = ctx.ways[item] || {}, res = null;
-    function avail(by) {
-      switch (by) {
-        case 'have': return true;
-        case 'craft': var rid = recipeChoice(ctx, item, w.recipe); return !!rid && (q === 'normal' || (data.recipes[rid][6] & 1) === 1);
-        case 'vendor': return offersOf(ctx, item, q).gil.length > 0;
-        case 'trade': return offersOf(ctx, item, q).trade.length > 0;
-        case 'gather': return q === 'normal' && !!(data.gather && data.gather[item]);
-        case 'market': return (flagsOf(data, item) & 1) === 1;
-        default: return false;
-      }
-    }
+    function avail(by) { return isAvail(ctx, item, q, by, w); }
     function make(by, why) {
       var r = { by: by, why: why, recipe: 0, offer: null, _o: null };
       if (by === 'craft') r.recipe = recipeChoice(ctx, item, w.recipe);
@@ -142,6 +145,13 @@
     var r = wayOf(makeCtx(data, input), +itemId, quality === 'hq' ? 'hq' : 'normal');
     return { by: r.by, why: r.why, recipe: r.recipe, offer: r.offer };
   };
+
+  // The ways an item has in one quality, in the default order (stored recipe optional), and its offers: the page's lists of choices (R6).
+  L.waysFor = function (data, itemId, quality, storedRecipe) {
+    var ctx = makeCtx(data, {}), item = +itemId, q = quality === 'hq' ? 'hq' : 'normal', w = { recipe: storedRecipe };
+    return DEFAULT_ORDER.filter(function (by) { return by !== 'have' && isAvail(ctx, item, q, by, w); });
+  };
+  L.offersFor = function (data, itemId, quality) { return offersOf(makeCtx(data, {}), +itemId, quality === 'hq' ? 'hq' : 'normal'); };
 
   // ------------------------------------------------------------------------------------------------ loops (D24)
   // The items an item can lead to: every recipe's materials, and the non-gil currencies of its trade ways (both qualities).

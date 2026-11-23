@@ -8286,8 +8286,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       return { screen: o.screen, problems, fig };
     }, opts);
     const DR1_PLAN = [['Crawler Silk', 2], ['Rubber', 2], ['Heartfelt Gift Component', 3], ['Earth Cluster', 4], ['Wind Cluster', 4], ['Lightning Cluster', 4], ['Stalk of Ramie', 6], ['Mythril Bolt', 3], ['Titanium Ingot', 2], ['Cloud Cloth', 2], ['High House Boots', 2]];
-    const dr1Page = async (vp, scheme, theme) => {
+    const dr1Page = async (vp, scheme, theme, fixedTime) => {
       const c = await context({ serviceWorkers: 'block', viewport: vp, colorScheme: scheme });
+      if (fixedTime) await c.ctx.clock.setFixedTime(fixedTime); // R6: a screen whose text holds a window reads a fixed clock, so its length never depends on the real time
       if (theme) await c.ctx.addInitScript((a) => { try { localStorage.setItem('eveniunt-tracker-ui', JSON.stringify({ theme: a[0], look: { shared: { theme: a[1] } } })); } catch (e) { /* none */ } }, [scheme, theme]); // a theme other than the default, in one mode
       await c.ctx.route('https://universalis.app/**', (r) => {
         const ids = new URL(r.request().url()).pathname.split('/').pop().split(','), items = {};
@@ -8423,9 +8424,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     //    warning (and one opened row with the high-quality choice), the vendor list grouped by city, and the List settings sheet with the bulk action: no rule of DR1's helper is broken on any of them, and the pictures are made (docs/lists-redesign/build/r3-*). ──
     await guard('C186', async () => {
       const server = await start(PORT5);
-      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), problems = {}, figs = {}, errs = [], external = [];
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), problems = {}, figs = {}, errs = [], external = [], clocks = [];
+      const C186_CLOCK = 400000 * 4200000 + 12 * 175000; // R6: 12:00 Eorzea time on a fixed day, so the opened timed row's window text is always the same
       for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
-        const { c, page } = await dr1Page(vp, scheme), phone = vp.width < 600;
+        const { c, page } = await dr1Page(vp, scheme, undefined, C186_CLOCK), phone = vp.width < 600;
+        clocks.push(await page.evaluate(() => Date.now()));
         await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
         await lSeedLists(page, [{ name: 'Courtly set', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }, { name: 'Vendors', charId: 'c2', items: [1602, 1603, 1604, 1606, 1613, 1616, 2338, 2364, 2375, 2377, 2389, 2895, 2996, 2997, 1611, 4652].map((i) => [i, 1]) }]);
         const look = async (name, o) => {
@@ -8443,7 +8446,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         errs.push(...real(c.errors)); external.push(...c.external);
         await c.ctx.close();
       }
-      const ck = { noProblems: Object.keys(problems).length === 0, pictures: !SHOT || ['get', 'get-open', 'craft', 'craft-open', 'settings', 'vendors'].every((n) => ['1440-light', '360-dark'].every((t) => fs.existsSync(path.join(BUILD, 'r3-' + n + '-' + t + '.png')))), noErrors: errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/')) };
+      const ck = { clockFixed: clocks.length === 2 && clocks.every((t) => t >= C186_CLOCK && t < C186_CLOCK + 60000), noProblems: Object.keys(problems).length === 0, pictures: !SHOT || ['get', 'get-open', 'craft', 'craft-open', 'settings', 'vendors'].every((n) => ['1440-light', '360-dark'].every((t) => fs.existsSync(path.join(BUILD, 'r3-' + n + '-' + t + '.png')))), noErrors: errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/')) };
       record('C186', 'Lists design rules on the R3 screens (real data, 1,440 px light and 360 px dark): crystals, Gather by zone, Currencies to earn, book stamps and warning, the high-quality choice, Copy name, vendors by city and the settings sheet break no rule of DR1\'s helper',
         Object.values(ck).every(Boolean), { ck, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
       void server;
@@ -8533,6 +8536,38 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await page.context().close();
       }
       record('C188', 'Lists page, long list name and the one-entry rail: one line with an ellipsis at 1,440 px, at most two lines at 360 px, the full name as the title and in the settings sheet; no rail or bottom bar for one entry, both with a list open',
+        Object.values(ck).every(Boolean) && errs.length === 0, { ck, seen, errors: errs });
+      void server;
+    });
+
+
+    // ── C189 (Lists, R6) The data version and the spots without a map position: the list head's state line ends with "game data 7.57h1" (the first word of the data's stamp), small, in the body face with the figure in the data face; an item with
+    //    placed and unplaced nodes (Adamantite Ore) lists the placed spot first and, after it, spots that say "No map position in the game data" with their windows. ──
+    await guard('C189', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Ore', charId: 'c2', items: [[12538, 1]] }]);
+        await lOpenList(page, 'Ore', 'get'); await lOpenAll(page);
+        const stamp = await page.evaluate(() => String(window.__lists.data().stamp));
+        const head = await page.evaluate(() => { const st = document.querySelector('.lhead .state'), g = st && st.querySelector('.gdv'), f = g && g.querySelector('.fig'), cs = (e) => getComputedStyle(e);
+          return { text: st ? st.textContent : '', last: !!g && st.lastElementChild === g, gText: g ? g.textContent : '', figText: f ? f.textContent : '', gFace: g ? cs(g).fontFamily : '', fFace: f ? cs(f).fontFamily : '', size: g ? parseFloat(cs(g).fontSize) : 99 }; });
+        seen[tag] = { stamp, head };
+        ck['the state line ends with the data version ' + tag] = head.last && /game data 7\.57h1$/.test(head.text) && head.text.endsWith('game data ' + stamp.split(' ')[0]);
+        ck['the words are small and in the body face, the figure in the data face ' + tag] = head.gText === 'game data 7.57h1' && head.figText === '7.57h1' && head.size <= 13 && /Atkinson/.test(head.gFace) && /Plex Mono/.test(head.fFace);
+        await lOpen(page.locator('.gsec[data-sec=gather] .get-row').first());
+        const more = page.locator('.get-row [data-act=spots]'); if (await more.count()) await more.first().click(); // every spot, not the first three
+        const spots = await page.evaluate(() => [...document.querySelectorAll('.get-row .spots li')].map((e) => e.textContent));
+        seen[tag].spots = spots;
+        const loose = spots.map((t, i) => (/No map position in the game data/.test(t) ? i : -1)).filter((i) => i >= 0);
+        ck['the placed spot comes first, the unplaced ones after it ' + tag] = spots.length >= 2 && /\(X [\d.]+, Y [\d.]+\)/.test(spots[0]) && loose.length >= 1 && loose[0] >= 1 && loose.every((v, k) => v === loose[0] + k) && loose[loose.length - 1] === spots.length - 1;
+        ck['an unplaced spot keeps its window ' + tag] = spots.some((t) => /No map position in the game data/.test(t) && /Eorzea time/.test(t));
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      record('C189', 'Lists page, data version and spots without a map position: the state line of the list head ends with "game data 7.57h1" (small, body face, the figure in the data face); Adamantite Ore lists its placed spot first and then the spots with no map position in the game data, each with its window',
         Object.values(ck).every(Boolean) && errs.length === 0, { ck, seen, errors: errs });
       void server;
     });

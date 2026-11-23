@@ -300,7 +300,7 @@
   // A plain-language label for a unit, for the "which one is right?" prompt.
   const LABEL = { atelier: 'Atelier', lists: 'Lists', submersibles: 'Submersibles', settings: 'Settings' };
   // Lists labels (spec section 4, "Wording"): the sync's pass puts listName in integrity; items appear by number.
-  function listsLabel(p, local, remote, nameOf, integrity) {
+  function listsLabel(p, local, remote, nameOf, integrity, itemName) {
     const parse = (t) => { if (typeof t !== 'string') return null; try { const o = JSON.parse(t); return plain(o) ? o : null; } catch (e) { return null; } };
     const L = parse(local), R = parse(remote), any = L || R || {};
     const who = (id) => (id === 'u' ? 'lists without a character' : (nameOf ? nameOf(id) : id));
@@ -308,17 +308,19 @@
     const listName = integrity && typeof integrity.listName === 'string' && integrity.listName ? '“' + integrity.listName + '”' : '';
     const owner = typeof p[2] === 'string' ? p[2].split('.')[0] : '';
     const itemNo = typeof p[2] === 'string' ? p[2].split('.')[1] : '';
+    // R6: an item shows by name when the caller passes a lookup that knows it (the Command Center's Settings), else by number as before
+    const itemText = (n) => { let s = ''; try { s = itemName ? itemName(+n) : ''; } catch (e) { /* the number */ } return typeof s === 'string' && s ? s : 'item ' + n; };
     let what = null, side = null;
     if (p[1] === 'lists' && p.length === 3) what = 'Lists: list ' + (listName || (any.name ? '“' + any.name + '”' : ''));
     else if (p[1] === 'targets' && p.length === 3) {
       const t = L || R || {}, bits = [];
-      if (t.item !== undefined) bits.push('item ' + t.item);
+      if (t.item !== undefined) bits.push(itemText(t.item));
       if (t.qty !== undefined) bits.push(t.qty + ' wanted');
       what = 'Lists: ' + (listName ? listName + ': ' : '') + 'a wanted item' + (bits.length ? ' (' + bits.join(', ') + ')' : '');
-    } else if (p[1] === 'ways' && p.length === 3) what = 'Lists: how ' + who(owner) + ' gets item ' + itemNo;
+    } else if (p[1] === 'ways' && p.length === 3) what = 'Lists: how ' + who(owner) + ' gets ' + itemText(itemNo);
     else if (p[1] === 'owners' && p.length === 3) what = 'Lists: ' + who(p[2]) + '\'s order of ways to get items';
     else if (p[1] === 'have' && p.length === 3) {
-      what = 'Lists: the amount ' + who(owner) + ' has of item ' + itemNo;
+      what = 'Lists: the amount ' + who(owner) + ' has of ' + itemText(itemNo);
       const amount = (o) => (o ? [['nq', 'normal'], ['hq', 'high-quality'], ['coll', 'collectable']].filter((f) => o[f[0]]).map((f) => o[f[0]] + ' ' + f[1]).join(', ') || '0' : null);
       side = [amount(L), amount(R)];
     }
@@ -326,7 +328,7 @@
     if (p[1] === 'owners' && p[2] === 'u') what = 'Lists: the order of ways to get items for lists without a character';
     return { who: '', what, local: gone(local) || (side && side[0]) || 'the version on this device', remote: gone(remote) || (side && side[1]) || 'the version on the other device' };
   }
-  CC.describeUnit = function (id, local, remote, nameOf, integrity) {
+  CC.describeUnit = function (id, local, remote, nameOf, integrity, itemName) {
     let p = []; try { p = JSON.parse(id.slice(2)); } catch (e) { /* shown as is */ }
     const mod = LABEL[p[0]] || p[0];
     let what = mod + ': ' + p.slice(1).join(' › ');
@@ -356,7 +358,7 @@
         }
       }
     } else if (p[0] === 'submersibles' && p[1] === 'settings') what = 'Submersibles settings';
-    else if (p[0] === 'lists') { const l = listsLabel(p, local, remote, nameOf, integrity); if (l) return l; }
+    else if (p[0] === 'lists') { const l = listsLabel(p, local, remote, nameOf, integrity, itemName); if (l) return l; }
     return { who: '', what, local: local == null ? '(removed)' : 'the version on this device', remote: remote == null ? '(removed)' : 'the version on the other device' };
   };
 

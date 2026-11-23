@@ -450,21 +450,8 @@
   function typedOf(V, item, q) { var h = V.sc.have[V.owner + '.' + item]; return (h && h[q]) || 0; }
 
   // ways an item has in one quality ('normal' or 'hq'), in the default order; what the engine's own availability rule allows
-  function offersFor(item, q) {
-    var out = { gil: [], trade: [] };
-    ((DATA.trades && DATA.trades[item]) || []).forEach(function (o) { if ((o[2] ? 'hq' : 'normal') === q) (o[1].length === 1 && o[1][0][0] === 1 ? out.gil : out.trade).push(o); });
-    return out;
-  }
-  function waysOf(V, item, q) {
-    var w = V.sc.ways[V.owner + '.' + item] || {}, off = offersFor(item, q), res = [];
-    var rid = w.recipe && DATA.recipes[w.recipe] && DATA.recipes[w.recipe][0] === item ? w.recipe : (recipesOf(item)[0] || 0);
-    if (off.gil.length) res.push('vendor');
-    if (rid && (q === 'normal' || (DATA.recipes[rid][6] & 1))) res.push('craft');
-    if (q === 'normal' && DATA.gather && DATA.gather[item]) res.push('gather');
-    if (off.trade.length) res.push('trade');
-    if (itemFlags(item) & 1) res.push('market');
-    return res;
-  }
+  function offersFor(item, q) { return LISTS.offersFor(DATA, item, q); }
+  function waysOf(V, item, q) { return LISTS.waysFor(DATA, item, q, (V.sc.ways[V.owner + '.' + item] || {}).recipe); }
   function seller(npc) { var n = DATA.npcs && DATA.npcs[npc]; return n && n[0] ? { name: n[0], zone: n[1] || '' } : { name: 'a merchant', zone: '' }; }
   function curText(cur) { return cur.map(function (c) { return c[0] === 1 ? gilText(c[1]) : c[1] + ' ' + itemName(c[0]); }).join(' and '); }
   function isCrafted(ln) { return ln.part === 'make' || ln.part === 'coll'; }
@@ -505,7 +492,7 @@
     if (ln.why === 'chosen' && !isCrafted(ln)) p.push('You chose this');
     if (w.by === 'market' && isCurrency(ln.item) && !isCrafted(ln)) { if (p.indexOf(CUR_LINE) < 0) p.push(CUR_LINE); } // R3: a market way stored for a currency says why it is not used
     else if (w.by && w.by !== 'have' && !isCrafted(ln) && waysOf(V, ln.item, 'normal').indexOf(w.by) < 0 && waysOf(V, ln.item, 'hq').indexOf(w.by) < 0) p.push('The way you chose is no longer available in the game data; using the usual order. Your choice is still stored');
-    else if (w.by === 'trade' && w.offer && !isCrafted(ln) && ['normal', 'hq'].every(function (qq) { return !offersFor(ln.item, qq).trade.some(function (o) { return o[4] + '.' + o[0] + '.' + o[1][0][0] === w.offer; }); })) p.push('The trade you chose is no longer in the game data; using the usual one. Your choice is still stored');
+    else if (w.by === 'trade' && w.offer && !isCrafted(ln) && ['normal', 'hq'].every(function (qq) { return !offersFor(ln.item, qq).trade.some(function (o) { return o.key === w.offer; }); })) p.push('The trade you chose is no longer in the game data; using the usual one. Your choice is still stored');
     var s = p.map(function (t) { return t.charAt(0).toUpperCase() + t.slice(1); }).join('. ') + (p.length ? '.' : '');
     if (V.plan.cut[ln.item]) s += (s ? ' ' : '') + V.plan.cut[ln.item];
     return s;
@@ -679,8 +666,8 @@
       '<button type="button" class="opener' + (o.icons ? (o.icons.split('class="jt').length > 5 ? ' jn-many' : ' jn' + (o.icons.split('class="jt').length - 1)) : '') + (o.l3 ? ' has3' : '') + (o.win ? ' win' : '') + '" data-act="row" data-rk="' + esc(o.rk) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="l1"><span class="nm w-name">' + nameHtml(o.name) + '</span>' + (o.stamps || '') + (o.icons || '') + '</span><span class="l2">' + o.l2 + '</span>' + (o.l3 ? '<span class="l3">' + o.l3 + '</span>' : '') + '</button>' +
       '<span class="st-col">' + (o.mid || '') + '</span><span class="pc">' + (o.prim || '') + '</span></div>' + (open ? '<div class="drawer ' + o.role + '">' + o.drawer() + '</div>' : '') + '</li>';
   }
-  function offerKey(o) { return o[4] + '.' + o[0] + '.' + o[1][0][0]; }
-  function offerText(o) { return seller(o[4]).name + ': ' + curText(o[1]) + ' for ' + o[0]; }
+  function offerKey(o) { return o.key; }
+  function offerText(o) { return seller(o.npc).name + ': ' + curText(o.cur) + ' for ' + o.gives; }
   // "Get it by" select with its label above, "Craft it instead", the chosen trade with "Other offers (N)" (F4), the link to the order of ways; none on a must-craft or collectable row
   function wayBlock(V, ln, beside) {
     if (isCrafted(ln)) return '';
@@ -913,6 +900,9 @@
       stateParts.push('prices: ' + esc(place));
       gear = '<button type="button" class="lbtn-o" data-act="settings" aria-haspopup="dialog" aria-expanded="' + (SH.view.sheet === 'settings' ? 'true' : 'false') + '">' + svg(ICO.gear, 18) + 'List settings</button>';
     }
+    // R6: the game-data version the plan is built on ("7.57h1", the first word of the data's stamp), last in the state line
+    var gdv = String(DATA.stamp || '').split(' ')[0];
+    if (gdv) stateParts.push('<span class="gdv">game data <span class="fig">' + esc(gdv) + '</span></span>');
     return '<section class="lhead' + (o.combined ? ' combined' : '') + '"><p class="kick">' + esc(who) + (o.combined ? ' · Combined view' : '') + '</p><h1 title="' + esc(o.combined ? V.ids.map(function (i) { return V.sc.lists[i].name || 'Untitled list'; }).join(', ') : o.h.name || 'Untitled list') + '">' + title + '</h1><p class="state">' + stateParts.join(o.combined ? ' ' : ' · ') + '</p>' +
       '<div class="tal-col"><p class="cap">Totals for ' + esc(who) + ':</p>' + talliesHtml(f, who, 'lists-totals') + '</div>' + gear + '</section>';
   }

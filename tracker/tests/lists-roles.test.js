@@ -141,7 +141,7 @@ test('no rule outside the token block holds a colour: only var() of a theme toke
 
 test('monospace is for figures only (design rules T2, F4): the data face is named by four rules and no other', () => {
   const sel = rules.filter((r) => /var\(--f-data\)/.test(r.body.replace(/--f-[\w-]+\s*:[^;]*;/g, ''))).filter((r) => !T.TOKEN_RULES.includes(r.sel)).map((r) => r.sel).sort();
-  assert.deepEqual(sel, ['.lists-main .stepper .fld input', '.ltab .tn', '.sec-sum', '.stepper .fld b', '.zc'], 'the count in the rail, the figure of a section head, the figure in a stepper (F5: the typed count is in the data face) and the row count of a zone head (R3)');
+  assert.deepEqual(sel, ['.lhead .state .gdv .fig', '.lists-main .stepper .fld input', '.ltab .tn', '.sec-sum', '.stepper .fld b', '.zc'], 'the count in the rail, the figure of a section head, the figure in a stepper (F5: the typed count is in the data face) the row count of a zone head (R3) and the data version in the list head (R6)');
   assert.ok(!/(font-family|font):[^;}]*var\(--f-data\)[^;}]*;[^}]*text-transform:\s*uppercase/.test(body), 'no uppercase label in the data face');
 });
 

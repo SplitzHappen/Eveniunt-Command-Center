@@ -63,6 +63,8 @@
 .lhead h1 { grid-area: name; min-width: 0; margin: 0; font: 900 28px/1.2 var(--f-serif); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* R5 (finding 20): one line with an ellipsis; the full name is the title and is in the settings sheet */
 .lhead .state { grid-area: state; margin: 3px 0 0; font: 13px/1.4 var(--f-body); color: var(--on-slab-2); }
 .lhead .state .lk { color: var(--on-slab); margin-right: 14px; font-size: 13px; }
+.lhead .state .gdv .fig { font: 600 13px/1.4 var(--f-data); }
+.lhead.combined .state .gdv { margin-left: 4px; }
 .lhead .tal-col { grid-area: tal; }
 .lhead .lbtn-o { grid-area: gear; color: var(--on-slab); }
 .lhead .lbtn-o:hover { color: var(--on-slab); }
@@ -487,7 +489,8 @@
   .lhead .lbtn-o { justify-self: end; align-self: end; min-height: 40px; padding: 0 10px; }
   .lhead h1 { font-size: 22px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
   .lhead .cap { display: none; }
-  .lhead .state { margin-top: 2px; align-self: start; }
+  .lhead .state { margin-top: 0; align-self: start; font-size: 12px; line-height: 1.1; } /* R6: the data version makes the state line three lines in a narrow column; 12 px and a tight line keep the head within the first-row limit */
+  .lhead .state .gdv .fig { font-size: 12px; line-height: 1.1; }
   .lhead .state .lk { min-height: 40px; display: inline-flex; align-items: center; }
   .lhead.combined { grid-template-areas: "kick tal" "name tal" "state state"; }
   .lhead.combined .state { white-space: nowrap; }

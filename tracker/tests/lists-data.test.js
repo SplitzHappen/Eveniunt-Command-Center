@@ -412,13 +412,14 @@ test('LD-16 a shard that Miner and Botanist both gather lists both jobs; every s
   const both = Object.values(D.gather).filter((l) => l.some((sp) => sp[0] === 0) && l.some((sp) => sp[0] === 1));
   assert.ok(both.length >= 15, 'items gathered by both: ' + both.length);
   // best first: lowest level, then the nearest aetheryte (spots without one last), then the node id
-  for (const l of Object.values(D.gather)) for (let k = 1; k < l.length; k++) assert.ok(l[k - 1][2] <= l[k][2], 'sorted by level');
+  // (R6: the spots without a map position of an item that also has placed ones come after them, in their own level order)
+  for (const l of Object.values(D.gather)) for (let k = 1; k < l.length; k++) if ((l[k - 1][4] > 0 || l[k - 1][5] > 0) === (l[k][4] > 0 || l[k][5] > 0)) assert.ok(l[k - 1][2] <= l[k][2], 'sorted by level');
 });
 
 test('LD-17 a timed unspoiled node carries its window', () => {
   // Node 211 (Spruce Log, 5395): point type 2 (unspoiled), GatheringType 2, level 50. Teamcraft: spawns at Eorzea hour 9, stays 180 minutes.
   // GatheringRarePopTimeTable row 1 (the GatheringPointTransient row of its GatheringPoint 30999): StartTime[0] 900 = 09:00.
-  assert.deepEqual(spotsOf(5395), [[1, 7, 50, 'Coerthas Central Highlands', 29.2, 12.8, spotsOf(5395)[0][6], [9], 180, 0, 0]]);
+  assert.deepEqual(spotsOf(5395)[0], [1, 7, 50, 'Coerthas Central Highlands', 29.2, 12.8, spotsOf(5395)[0][6], [9], 180, 0, 0]); // R6: a node without a position follows it
   assert.ok(D.aetherytes[spotsOf(5395)[0][6]]);
   assert.match(D.nodeNames[7], /^Unspoiled /);
   for (const sp of everySpot()) assert.ok((sp[7] === 0 && sp[8] === 0) || (Array.isArray(sp[7]) && sp[7].length && sp[8] > 0));
