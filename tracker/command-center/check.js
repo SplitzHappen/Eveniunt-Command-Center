@@ -6249,8 +6249,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await lSeedMarket(page, [103, 104]);
         const old = await page.evaluate(() => { const at = Date.now() - 7200000; localStorage.setItem('eveniunt-lists-prices', JSON.stringify({ scope: 'North-America', at, prices: { 103: [150, 0, '', 0], 104: [60, 0, '', 0] }, none: {}, seen: { 103: at, 104: at + 600000 } })); localStorage.setItem('eveniunt-lists-prices-tried', JSON.stringify({ 'North-America': { at: Date.now() } })); return at; });
         await page.reload(); await lReady(page); await lMarketOpen(page); await lSettled(page);
-        const tx = await lPriceTexts(page), tot = await lPriceTotal(page), hm = await page.evaluate((t) => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }, old);
-        ck.oldPrice = /^150 gil before tax, North-America, fetched \d\d:\d\d$/.test(tx[103]) && tx[103].endsWith(hm) && c.stand.asked.length === 0;
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page), hm = await page.evaluate((t) => { const d = new Date(t), n = new Date(); const t0 = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); return (d.toDateString() === n.toDateString() ? '' : 'yesterday ') + t0; }, old);
+        // two hours back is "yesterday" between midnight and 02:00 local time, which the page says (fmtClock); the expected text follows the same rule (found 2026-11-23)
+        ck.oldPrice = tx[103] === '150 gil before tax, North-America, fetched ' + hm && c.stand.asked.length === 0;
         ck.oldTotal = tot.gil === 300 + 120 && tot.priced === 2 && tot.text.indexOf('(prices seen ' + hm + ')') >= 0;
         await page.evaluate(() => localStorage.removeItem('eveniunt-lists-prices-tried')); await page.reload(); await lReady(page); await lMarketOpen(page); await lWaitPrices(page);
         await page.waitForFunction(() => /100 gil/.test(document.querySelector('.gsec[data-sec=market] .price-line').textContent), null, { timeout: 15000 });
