@@ -642,9 +642,9 @@
     var ae = pos && s[6] && DATA.aetherytes && DATA.aetherytes[s[6]];
     return 'Lv. ' + s[2] + (nm ? '<span class="sp-n"> ' + esc(nm) + '</span>' : '') + ' · ' + esc(place) + (ae ? '<span class="sp-a"> · ' + esc(ae) + '</span>' : '');
   }
-  function spotExtras(s, now) {
+  function spotExtras(s, now, noWindow) {
     var p = [];
-    if (s[7] && s[7].length) { var t = windowText(s[7], s[8], now); if (t) p.push(t); }
+    if (!noWindow && s[7] && s[7].length) { var t = windowText(s[7], s[8], now); if (t) p.push(t); }
     if (s[9]) p.push('needs ' + s[9]);
     if (s[10]) p.push('hidden item');
     return p.join(' · ');
@@ -653,8 +653,8 @@
     var sp = spotsOf(ln.item), all = !!SH.view.spots[ln.key], now = Date.now(), lim = NARROW.matches ? 2 : 3;
     if (!sp.length) return '';
     if (cs && cs.index) sp = [cs.spot].concat(sp.slice(0, cs.index), sp.slice(cs.index + 1)); // the shown spot first; every spot stays listed
-    var h = '<ul class="spots">' + (all ? sp : sp.slice(0, lim)).map(function (s) {
-      var x = spotExtras(s, now);
+    var h = '<ul class="spots">' + (all ? sp : sp.slice(0, lim)).map(function (s, i) {
+      var x = spotExtras(s, now, NARROW.matches && i === 0 && !!cs); // a phone's row already says the shown spot's window on its last line
       return '<li>' + (jobTag(GATHER_JOBS[s[0]], 'jd') || '') + '<span>' + esc(spotText(s)) + (x ? ' <span class="sx">' + esc(x) + '</span>' : '') + '</span></li>';
     }).join('') + '</ul>';
     return h;
@@ -720,14 +720,14 @@
   function getRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = ln.quality, typed = typedOf(V, ln.item, q), held = heldFor(V, key), now = Date.now(), outside = ln.by === 'have';
     var sp = ln.by === 'gather' ? spotsOf(ln.item) : [], cs = sp.length ? chosenSpot(ln.item, V.plan) : null, whyHtml = cs ? spotHtml(cs.spot) + (cs.why ? '<span class="sp-why"> · ' + esc(cs.why) + '</span>' : '') : '', why = cs ? '' : ln.by === 'other' ? reasonText(V, ln, x) : firstSentence(reasonText(V, ln, x));
-    var l2 = '<span class="w-count w-need">need ' + x.need + ', have ' + typed + '</span>' + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '') +
+    var l2 = (V.combined ? '<span class="wp2">' + wayPill(ln, false) + '</span>' : '') + '<span class="w-count w-need">need ' + x.need + ', have ' + typed + '</span>' + (ln.by === 'vendor' || ln.by === 'trade' ? ' (' + x.trades + ' purchase' + (x.trades === 1 ? '' : 's') + ')' : '') +
       (held.length ? ' · <span class="held">' + esc(held.join(', ')) + '</span>' : '') + (whyHtml ? '<span class="dsk keep"><span class="sep"> · </span>' + whyHtml + '</span>' : why ? '<span class="dsk"><span class="sep"> · </span>' + esc(why) + '</span>' : '') +
       '';
     var l3 = (ln.by === 'gather' ? (cs ? windowRow(ln, now, chosenTimed(cs)) : windowRow(ln, now)) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
     var jobs = []; sp.forEach(function (s) { var n = GATHER_JOBS[s[0]]; if (n && jobs.indexOf(n) < 0) jobs.push(n); });
     var earn = isEarn(ln);
     return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: earn ? 'r-slab' : ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : earn ? 'to earn' : 'to get', wcls: outside || earn ? '' : 'role role-short',
-      name: name, stamps: (V.combined ? wayPill(ln, false) : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3, win: ln.by === 'gather' && !!l3,
+      name: name, stamps: (V.combined ? '<span class="wp1">' + wayPill(ln, false) + '</span>' : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3, win: ln.by === 'gather' && !!l3,
       mid: MIDLESS.matches ? '' : stepperHtml(name, typed, q, false), prim: outside ? '' : rb('Have all', 'haveall', ' data-n="' + x.short + '"', 'lbtn-r'),
       drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now).text) + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln, cs) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln, hqBlock(V, ln)) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : '', MIDLESS.matches); } });
   }

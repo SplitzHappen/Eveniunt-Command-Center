@@ -8191,10 +8191,11 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         if (!open) {
           const ctl = all('button, a[href], select, input, textarea', r).filter((c) => !c.closest('.stepper')).length + (all('.stepper', r).length ? 1 : 0);
           if (ctl > (phone ? 2 : 3)) add('a2Controls', ctl + ' controls at rest in ' + nm(r));
-          if (h > (phone ? 96.5 : 64.5)) add('p2Rest', Math.round(h) + ' px at rest: ' + nm(r));
+          const many = all('.jset img.jicon', r).length >= 5; // R5 (owner ruling 2026-11-23): a phone row with 5 or more crafters may be 140 px at rest and 430 px opened; every other row keeps 96 and 360
+          if (h > (phone ? (many ? 140.5 : 96.5) : 64.5)) add('p2Rest', Math.round(h) + ' px at rest: ' + nm(r));
         } else {
           const li = r.closest('li'), t = li ? li.getBoundingClientRect().height : h;
-          if (phone && t > 360.5) add('p2Open', Math.round(t) + ' px opened: ' + nm(r));
+          if (phone && t > (all('.jset img.jicon', r).length >= 5 ? 430.5 : 360.5)) add('p2Open', Math.round(t) + ' px opened: ' + nm(r));
         }
       });
       ['.lr', '.lcard', '.rcard', '.lsheet', '.patch-notice', '.empty-state', '.answer'].forEach((s) => all(s).forEach((c) => { const n = all('.lbtn-r, .lbtn-p', c).length; if (n > 1) add('a1Primary', n + ' primaries in ' + nm(c)); }));
@@ -8260,7 +8261,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const WORD = { vendor: 'Merchant', trade: 'Trade', gather: 'Gather', market: 'Market' };
       if (!document.querySelector('.lhead.combined')) all('.gsec').forEach((s) => { const w = WORD[s.getAttribute('data-sec')]; all('.l1 .role', s).forEach((r) => { if (w && r.textContent.trim() === w) add('f2Stamps', w + ' stamp inside the ' + w + ' section'); }); });
       if (!document.querySelector('.lhead.combined')) all('.cblock .l1 .role-craft').forEach((r) => add('f2Stamps', 'a Craft stamp inside To craft'));
-      fig.stamps = all('.l1 .role').length;
+      fig.stamps = all('.l1 .role, .wp2 .role').length;
       // B7: no clipped text (an ellipsis or a line clamp is a chosen cut and is the one allowed), and a keyboard focus that is drawn and not cut off by a box that clips
       all('.lists-main *, .lists-tabs *, #lstatus *').forEach((e) => {
         if (/^(INPUT|SELECT|TEXTAREA|OPTION|SVG|PATH|IMG)$/i.test(e.tagName)) return;
@@ -8503,6 +8504,36 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.noErrors = errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
       record('C187', 'Lists page, Free Company projects (real data): "Shark-class Bow" is found as a Submarine part and an airship part as an Airship part; adding it makes a list for the same character named after the part with Phase 1 to 3 as steps and the sheet\'s supply items (amount = per set x sets) as wanted items, the plan has totals, Your lists stamps it, one Undo removes it; the screens break no rule of DR1\'s helper',
         Object.values(ck).every(Boolean), { ck, seen, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
+      void server;
+    });
+
+    // ── C188 (Lists, R5) A long list name and the one-entry rail: the head's name is one line with an ellipsis at 1,440 px and at most two lines at 360 px, its full name is the title; with only Your lists there is neither a rail nor a bottom bar, with a list open there are both. ──
+    await guard('C188', async () => {
+      const server = await start(PORT5);
+      const NAME = 'The Courtly Lover set for the whole guild and a good deal more'.slice(0, 60); // the store keeps 60 characters
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: NAME, charId: 'c2', items: [[49294, 1]] }]);
+        await page.waitForSelector('.list-card');
+        const tabs = () => page.evaluate(() => { const t = document.getElementById('tabs'), b = t.getBoundingClientRect(); return { shown: b.width > 0 && b.height > 0, n: t.querySelectorAll('.ltab').length }; });
+        const home = await tabs();
+        ck['one entry has no rail or bar ' + tag] = home.n === 1 && !home.shown;
+        await lOpenList(page, NAME.slice(0, 20), 'get');
+        const list = await tabs();
+        ck['a list has its rail or bar ' + tag] = list.n >= 3 && list.shown;
+        const h = await page.evaluate(() => { const e = document.querySelector('.lhead h1'), cs = getComputedStyle(e), lh = parseFloat(cs.lineHeight); return { lines: Math.round(e.getBoundingClientRect().height / lh), clipped: e.scrollWidth > e.clientWidth || e.scrollHeight > e.clientHeight + 1, title: e.getAttribute('title') }; });
+        seen[tag] = { home, list, h };
+        ck['the name has its limit of lines ' + tag] = tag === '1440' ? h.lines === 1 : h.lines >= 1 && h.lines <= 2;
+        ck['the long name is cut, not wrapped past the limit ' + tag] = h.clipped;
+        ck['the full name is the title ' + tag] = h.title === NAME;
+        await lSet(page); ck['the full name is in the settings sheet ' + tag] = (await page.inputValue('[data-f=listname]')) === NAME; await lSetDone(page);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      record('C188', 'Lists page, long list name and the one-entry rail: one line with an ellipsis at 1,440 px, at most two lines at 360 px, the full name as the title and in the settings sheet; no rail or bottom bar for one entry, both with a list open',
+        Object.values(ck).every(Boolean) && errs.length === 0, { ck, seen, errors: errs });
       void server;
     });
 

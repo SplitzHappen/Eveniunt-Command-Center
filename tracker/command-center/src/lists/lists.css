@@ -549,11 +549,14 @@
   .opener.jn2 .l1 { padding-right: 56px; min-height: 31px; }
   .opener.jn3 .l1 { padding-right: 82px; min-height: 31px; }
   .opener.jn4 .l1 { padding-right: 108px; min-height: 31px; }
-  .l1 .jset.many { position: static; flex-wrap: wrap; margin: 1px 0 0; }
+  .l1 .jset.many { position: static; flex-wrap: wrap; margin: 0; }
+  .wp1 { display: none; }  /* a combined row's way stamp moves to the facts line on a phone, so the name keeps two lines */
   .jt { flex-direction: column; gap: 0; }
   .jicon.jd { width: 20px; height: 20px; vertical-align: -5px; }
   .spots .jt { flex-direction: row; gap: 3px; }
   .spots { gap: 1px; }
+  .w-way .fine { margin: 2px 0 4px; }
+  .drawer select, .lists-main .drawer input[type=number] { min-height: 40px; }
   .spots li { line-height: 1.3; }
   .jicon.jr { width: 20px; height: 20px; }
   .opener.has3 { display: block; }
@@ -688,3 +691,6 @@
   .lists-layout.solo ~ .lists-status, .lists-layout.solo + .lists-status { bottom: 0; }
   .lists-layout.solo .lists-main { padding-bottom: 80px; }
 }
+
+.wp2 { display: none; }
+@media (max-width: 700px) { .wp2 { display: inline; } .wp2 .role { margin-right: 4px; } }
