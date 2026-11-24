@@ -4,6 +4,36 @@ Last updated: 2026-11-23.
 
 ## Recently shipped
 
+- **Lists, the crafting planner (blueprint phase 3; shipped 2026-11-24, owner's `ship`; pull request 7, merge `df139ee`).** The crafting planner that was taken back on
+  2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
+  `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
+  `docs/lists-redesign/build/` and copied into the check's evidence as `lists-*.png`). Every crafter of an item is
+  shown with its job icon, and gathering spots carry the game's node names and map coordinates. A red team and a
+  pre-mortem (`docs/lists-redteam.md`) were fixed in steps R1 to R6: currencies to earn (tomestones, scrips and
+  gemstones kept apart from the shopping totals), high quality (a per-material choice and one for every material),
+  master books (the book name, stars and a "book not ticked" warning on a craft row), crystals in their own section,
+  gathering grouped by zone with the spot chosen along the route, vendors grouped by city, "Copy name", submarine and
+  airship parts as project lists with one step per phase, and patch safety (a written refresh checklist, a unit test
+  that the game-data pins of Tracker, Atelier and Lists match, and the data version on the list head). An outside
+  look and code review (ChatGPT and Mistral, sixth round, rulings in `docs/lists-code-review-adjudication.md`) was
+  fixed in F1: prices by quality, phone rows with the node kind and area, spearfishing node names, sub-heads with room
+  and unclipped focus rings (the hosted failure at `ec24562`), and the smaller wording and look items listed there,
+  each pinned by a check seen failing without its fix (new checks C190 to C195). After the owner found the computer
+  screens one colour per section (2026-11-24), look v2 (`docs/lists-look-v2.md`) put the section and job heads on the
+  theme's dark bar with one small colour block, and gave each row its own state (can be done now, some in hand with a
+  progress line, waiting, done); C160 now accepts every tone of the six roles, and the new check LV2 pins the row
+  states. The owner chose to ship this look now and restyle Lists with the whole app afterwards (see Next). The first publish
+  of the merge was refused by the Pages service ("Deployment failed, try again later"); one fresh run of the publish
+  workflow on `main` succeeded the same morning. Measured
+  at `f80b87e`: unit tests all passing, browser tests all passing, full check 202 of 202 (the real push delivery,
+  C26b, cannot run from a session and was not run).
+  **Not tested:** Firefox, Safari, a real phone, a real two-device sync, the live price service (Universalis).
+  **Known limits:** vendors that need reputation still say "buy"; the master-book warning reads the Tracker's ticks and
+  not its "does not apply" mark; a project list's stamp ("Submarine part") is matched by the list's name; the phases
+  of a project are numbered because the game gives them no names; sync questions shown in the Tracker name Lists items
+  by number, because the Tracker does not load the Lists data (to be fixed after shipping); the window length of a
+  timed node keeps Teamcraft's minutes (labelled "Teamcraft" on the row); offers that differ only in a later currency
+  share one saved choice; job icons are single-colour game shapes.
 - **Submersibles: the pull request of 17 to 21 November** (shipped 2026-11-21, owner's `ship` after five outside review rounds; specs in `docs/submersibles-*.md`). Its parts:
   - **Submersibles step S6: gil advice from the player's own log** (built 2026-11-17). Earnings ranks routes by gil per
     hour once a route has 10 logged voyages; the Board then advises routes from the log, using the prices cached on the
@@ -99,42 +129,20 @@ Last updated: 2026-11-23.
 
 ## Built, waiting for the owner's `ship`
 
-- **Lists redesigned and extended (phase 3: built, waiting for ship).** The crafting planner that was taken back on
-  2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
-  `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
-  `docs/lists-redesign/build/` and copied into the check's evidence as `lists-*.png`). Every crafter of an item is
-  shown with its job icon, and gathering spots carry the game's node names and map coordinates. A red team and a
-  pre-mortem (`docs/lists-redteam.md`) were fixed in steps R1 to R6: currencies to earn (tomestones, scrips and
-  gemstones kept apart from the shopping totals), high quality (a per-material choice and one for every material),
-  master books (the book name, stars and a "book not ticked" warning on a craft row), crystals in their own section,
-  gathering grouped by zone with the spot chosen along the route, vendors grouped by city, "Copy name", submarine and
-  airship parts as project lists with one step per phase, and patch safety (a written refresh checklist, a unit test
-  that the game-data pins of Tracker, Atelier and Lists match, and the data version on the list head). An outside
-  look and code review (ChatGPT and Mistral, sixth round, rulings in `docs/lists-code-review-adjudication.md`) was
-  fixed in F1: prices by quality, phone rows with the node kind and area, spearfishing node names, sub-heads with room
-  and unclipped focus rings (the hosted failure at `ec24562`), and the smaller wording and look items listed there,
-  each pinned by a check seen failing without its fix (new checks C190 to C195). After the owner found the computer
-  screens one colour per section (2026-11-24), look v2 (`docs/lists-look-v2.md`) put the section and job heads on the
-  theme's dark bar with one small colour block, and gave each row its own state (can be done now, some in hand with a
-  progress line, waiting, done); C160 now accepts every tone of the six roles, and the new check LV2 pins the row
-  states. The owner chose to ship this look now and restyle Lists with the whole app afterwards (see Next). Measured
-  at `f80b87e`: unit tests all passing, browser tests all passing, full check 202 of 202 (the real push delivery,
-  C26b, cannot run from a session and was not run).
-  **Not tested:** Firefox, Safari, a real phone, a real two-device sync, the live price service (Universalis).
-  **Known limits:** vendors that need reputation still say "buy"; the master-book warning reads the Tracker's ticks and
-  not its "does not apply" mark; a project list's stamp ("Submarine part") is matched by the list's name; the phases
-  of a project are numbered because the game gives them no names; sync questions shown in the Tracker name Lists items
-  by number, because the Tracker does not load the Lists data (to be fixed after shipping); the window length of a
-  timed node keeps Teamcraft's minutes (labelled "Teamcraft" on the row); offers that differ only in a later currency
-  share one saved choice; job icons are single-colour game shapes.
+Nothing.
 
 ## Next
 
 0. **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
    Submersibles, Lists and Settings, and the Atelier ignoring the chosen game theme. Step 1, mock-ups of the six
-   screens in one shared style starting from the Atelier, is being built (`docs/one-look-spec.md`, branch
-   `one-look`, not yet pushed); the owner approves them before any module code changes.
+   screens in one shared style (`docs/one-look-spec.md`, `docs/one-look/`), is done and the owner chose, 2026-11-24:
+   section titles in the Atelier's book style (Roman numeral, serif title, italic line) everywhere; every screen's main
+   button as the Atelier's "Solve" block; Submersibles changes only its shared parts (header, company heads, fields,
+   current tab), its lanes, state blocks and top summary stay. Next: plan the build (shared header, fields and buttons,
+   the Atelier following the chosen theme, then one module per pull request, and a check that stops modules drifting),
+   then the design-rules change these choices need. The owner sees this as "for now": once every module exists, one
+   final pass makes sure the whole app fits together.
 1. The owner's own checks, which no automated run covers: a real sync between two devices (one still on the version published before 2026-11-21), two tabs saving at the same moment, a pass on a phone, and a real push notification ("Send a test" in Settings).
 2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
    compared with the original design (kept outside this repository) and the gaps closed.
