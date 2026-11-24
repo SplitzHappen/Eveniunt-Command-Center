@@ -8941,6 +8941,79 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
     });
 
 
+    // C196: one look, the drift check (docs/one-look-foundation-spec.md, F4; design rule M6). One fixture fragment of every shared part is
+    // injected into each live page (Home, Settings, Submersibles, Lists, Tracker, Atelier), at 1440 and 360, in the default light theme and in
+    // Azure Dragoon dark; what the parts and the header compute must be equal on every page. A module rule that restyles a shared part fails here.
+    await guard('C196', async () => {
+      const server = await start(PORT5);
+      const fixture = fs.readFileSync(path.join(CC, 'one-look-fixture.html'), 'utf8');
+      const PAGES96 = [['home', ''], ['settings', '#settings'], ['submersibles', 'submersibles/'], ['lists', 'lists/'], ['tracker', 'tracker/'], ['atelier', 'atelier/']];
+      const CHOICES96 = [['default light', null, 'light'], ['azure-dragoon dark', { theme: 'dark', look: { shared: { theme: 'azure-dragoon' } } }, 'dark']];
+      const measure = () => {
+        const q = (sel) => document.querySelector(sel), cs = (el) => getComputedStyle(el), out = {};
+        const face = (f) => String(f).split(',')[0].trim(); // the face itself: the Atelier's font tokens add Japanese, Chinese and Korean fallbacks after it (listed in one-look-allow.json)
+        const font = (el) => { const c = cs(el); return [face(c.fontFamily), c.fontSize, c.fontWeight, c.fontStyle].join(' | '); };
+        const box = (el) => { const r = el.getBoundingClientRect(), c = cs(el); return { h: Math.round(r.height * 10) / 10, bb: c.borderBottomStyle + ' ' + c.borderBottomWidth + ' ' + c.borderBottomColor, bt: c.borderTopStyle + ' ' + c.borderTopWidth + ' ' + c.borderTopColor, bl: c.borderLeftStyle + ' ' + c.borderLeftWidth + ' ' + c.borderLeftColor, bg: c.backgroundColor, fg: c.color, mh: c.minHeight }; };
+        const put = (k, el, what) => { if (!el) { out[k] = 'MISSING'; return; } const b = box(el); out[k] = what.map((w) => w === 'font' ? font(el) : b[w]).join(' ; '); };
+        const hdr = q('.ol-hdr'), root = cs(document.documentElement);
+        put('header border', hdr, ['bb']);
+        out['header height (desktop only)'] = innerWidth > 700 && hdr ? String(Math.round(hdr.getBoundingClientRect().height * 10) / 10) : 'n/a';
+        put('wordmark word', q('.ol-hdr .ol-mk-word'), ['font', 'h']);
+        put('wordmark kicker', q('.ol-hdr .ol-mk-top'), ['font']);
+        put('main menu', q('.ol-hdr .ol-menu'), ['h', 'bt', 'font']);
+        out['nav display'] = q('.ol-hdr .ol-nav') ? cs(q('.ol-hdr .ol-nav')).display : 'MISSING';
+        put('chap numeral', q('#ol-fixture .ol-chap .ol-num'), ['font']);
+        put('chap h2', q('#ol-fixture .ol-chap h2'), ['font']);
+        put('chap sub', q('#ol-fixture .ol-chap .ol-sub'), ['font']);
+        put('chap rule', q('#ol-fixture .ol-chap'), ['bb', 'mh']);
+        put('seal', q('#ol-fixture .ol-seal'), ['bg', 'font', 'h', 'fg']);
+        out['seal fill equals --seal'] = String(cs(q('#ol-fixture .ol-seal')).backgroundColor === cs(q('#ol-fx-probe')).backgroundColor);
+        put('field input', q('#ol-fixture .ol-fld input'), ['bb', 'h', 'font']);
+        put('field select', q('#ol-fixture .ol-fld select'), ['bb', 'h', 'font']);
+        put('btn-p', q('#ol-fixture .ol-btn-p'), ['bg', 'h', 'font', 'fg']);
+        put('btn-2', q('#ol-fixture .ol-btn-2'), ['bt', 'h', 'font', 'fg', 'bg']);
+        put('btn-q', q('#ol-fixture .ol-btn-q'), ['h', 'font', 'fg']);
+        out['btn-q underline'] = cs(q('#ol-fixture .ol-btn-q')).textDecorationLine + ' ' + cs(q('#ol-fixture .ol-btn-q')).textDecorationThickness;
+        put('state block', q('#ol-fixture .ol-sb'), ['h', 'font', 'fg']);
+        put('state block word', q('#ol-fixture .ol-sb b'), ['font']);
+        put('index line', q('#ol-fixture .ol-ix'), ['mh', 'bl', 'font']);
+        put('index name', q('#ol-fixture .ol-ix .ol-name'), ['font']);
+        put('slab', q('#ol-fixture .ol-slab'), ['bg', 'fg', 'mh']);
+        put('slab title', q('#ol-fixture .ol-slab h1'), ['font']);
+        put('segment', q('#ol-fixture .ol-seg'), ['bt', 'bg']);
+        put('stepper', q('#ol-fixture .ol-step'), ['bt', 'bg']);
+        for (const v of ['--paper', '--seal', '--back', '--f-serif', '--on-seal', '--slab']) out['var ' + v] = v === '--f-serif' ? face(root.getPropertyValue(v)) : root.getPropertyValue(v).trim();
+        return out;
+      };
+      const rowsAll = [], diffs = [], errs = [];
+      for (const [cname, stored, scheme] of CHOICES96) for (const [w, h] of [[1440, 1000], [360, 800]]) {
+        const byPage = {};
+        for (const [name, rel] of PAGES96) {
+          const { errors, page } = await r3Page({ viewport: { width: w, height: h }, colorScheme: scheme });
+          if (stored) await page.context().addInitScript((v) => { try { localStorage.setItem('eveniunt-tracker-ui', JSON.stringify(v)); } catch (e) { /* none */ } }, stored);
+          await page.goto(ROOT5 + rel);
+          if (name === 'tracker') await trackerSetup(page);
+          else if (name === 'atelier') await page.waitForFunction(() => !document.getElementById('boot') && window.__atelier, null, { timeout: 60000 });
+          else if (name === 'submersibles' || name === 'lists') await page.waitForSelector('html[data-ready="1"], #view', { timeout: 30000 });
+          await page.waitForSelector('.ol-hdr .ol-menu', { timeout: 30000 });
+          await page.evaluate(() => document.fonts.ready);
+          await page.evaluate((html) => { document.body.insertAdjacentHTML('beforeend', html); }, fixture);
+          await page.waitForTimeout(150);
+          byPage[name] = await page.evaluate(measure);
+          errs.push(...errors.filter((e) => !/Failed to load resource|favicon|net::ERR/.test(e)));
+          await page.context().close();
+        }
+        const keys = Object.keys(byPage.home), bad = {};
+        for (const k of keys) { const vals = PAGES96.map(([n]) => byPage[n][k]); if (new Set(vals).size > 1 || vals.some((v) => v === 'MISSING')) bad[k] = Object.fromEntries(PAGES96.map(([n]) => [n, byPage[n][k]])); }
+        rowsAll.push({ choice: cname, width: w, measures: keys.length, differing: Object.keys(bad).length });
+        if (Object.keys(bad).length) diffs.push({ choice: cname, width: w, bad });
+        if (byPage.home['seal fill equals --seal'] !== 'true') diffs.push({ choice: cname, width: w, seal: 'the seal is not filled with --seal' });
+      }
+      record('C196', 'One look, drift check: the header and every shared part (section title, seal, field, buttons, state block, index line, answer band) compute the same on Home, Settings, Submersibles, Lists, Tracker and Atelier, at 1440 and 360, default light and Azure Dragoon dark; the seal is filled with --seal',
+        diffs.length === 0 && rowsAll.length === 4 && errs.length === 0, { rows: rowsAll, diffs: diffs.slice(0, 4), errors: errs.slice(0, 4) });
+      void server;
+    });
+
   } finally {
     await browser.close(); server.close();
   }

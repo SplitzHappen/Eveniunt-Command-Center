@@ -134,3 +134,28 @@ test('the old header rules are gone from the module sheets (the hooks that check
     assert.ok(!/(^|[\s,{}])\.(mast|cc-mast|subs-mast|lists-mast|lb-tag|cc-menu-link|mast-tools)\b/m.test(c), f.join('/') + ' still styles the old header');
   }
 });
+
+// ---- F4: the drift check, static half (the computed half is check C196) ----
+test('a module sheet defines a token that one-look.css defines or applyLook sets only if one-look-allow.json lists it; the list may only shrink', () => {
+  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+  const toks = (s) => new Set([...strip(s).matchAll(/(?:^|[;\s{])(--[\w-]+)\s*:/g)].map((m) => m[1]));
+  const own = toks(SRC), set = new Set([...read('crafting', 'atelier', 'src', 'atelier.js').matchAll(/set\('(--[\w-]+)'/g)].map((m) => m[1]));
+  const shared = new Set([...own, ...set]);
+  const allow = JSON.parse(fs.readFileSync(path.join(__dirname, 'one-look-allow.json'), 'utf8'));
+  assert.ok(/may only shrink/.test(allow._note), 'the allow file says it may only shrink');
+  const sheets = ['tracker/src/app/shared.css', 'tracker/command-center/src/shell.css', 'tracker/src/app/tracker.css', 'crafting/atelier/src/atelier.css', 'tracker/command-center/src/submersibles/subs.css', 'tracker/command-center/src/lists/lists.css'];
+  for (const f of sheets) {
+    const mine = [...toks(read(...f.split('/')))].filter((t) => shared.has(t)), listed = allow.sheets[f] || [];
+    const extra = mine.filter((t) => !listed.includes(t)), stale = listed.filter((t) => !mine.includes(t));
+    assert.deepEqual(extra, [], f + ' defines a shared token not in the allow file (use the shared one): ' + extra.join(' '));
+    assert.deepEqual(stale, [], f + ' no longer defines these: remove them from the allow file: ' + stale.join(' '));
+  }
+  assert.deepEqual(Object.keys(allow.sheets).filter((f) => !sheets.includes(f)), [], 'the allow file names only the module sheets');
+});
+
+test('the drift fixture holds one of each shared part and is not shipped', () => {
+  const fx = fs.readFileSync(path.join(T, 'command-center', 'one-look-fixture.html'), 'utf8');
+  for (const c of ['ol-chap', 'ol-num', 'ol-sub', 'ol-sum', 'ol-closed', 'ol-subgroup', 'ol-slab', 'ol-sb', 'ol-solid', 'ol-outline', 'ol-hatch', 'ol-done', 'ol-ix', 'ol-fld', 'ol-sel', 'ol-chk', 'ol-step', 'ol-seg', 'ol-seal', 'ol-key', 'ol-btn-p', 'ol-btn-2', 'ol-btn-q']) assert.ok(new RegExp('class="[^"]*\\b' + c + '\\b').test(fx), 'fixture lacks ' + c);
+  assert.ok(!fs.existsSync(path.join(T, 'command-center', 'site', 'one-look-fixture.html')), 'the fixture is not copied into site/');
+  assert.ok(!/[‘-”]|Tamsin|Joss|\/home\//.test(fx), 'plain words, no names or paths');
+});

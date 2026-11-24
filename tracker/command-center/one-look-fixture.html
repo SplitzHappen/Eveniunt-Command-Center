@@ -1,0 +1,17 @@
+<!-- One of each shared part of the one look (tracker/src/app/one-look.css), in plain words with no game figures. The drift
+     check (check.js, C196) injects this into every live page and measures it; it is not copied into site/. -->
+<div id="ol-fixture" data-ol-fixture>
+  <div class="ol-chap"><span class="ol-num">I</span><div><h2>A section title</h2><p class="ol-sub">An italic line under the title</p></div><div class="ol-sum"><span class="ol-fig">3 of 5</span></div></div>
+  <div class="ol-chap ol-closed"><span class="ol-num">II</span><div><h2>A closed section</h2></div><div class="ol-sum"><span class="ol-fig">0 of 4</span></div></div>
+  <div class="ol-subgroup"><span>A group</span><span class="ol-fig">2</span></div>
+  <div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">Answer</span><h1>A plain answer</h1><p class="ol-sl-sub">One short sentence under it.</p></div><div class="ol-sl-ans"><span class="ol-numeral">12<small>Units</small></span></div></div>
+  <div class="ol-fx-row"><span class="ol-sb ol-solid ol-r-back"><b>3</b><i>Back</i></span> <span class="ol-sb ol-outline ol-r-out"><b>2</b><i>Out</i></span> <span class="ol-sb ol-hatch ol-r-idle"><b>1</b><i>Idle</i></span> <span class="ol-sb ol-done"><b>4</b><i>Done</i></span></div>
+  <a class="ol-ix ol-on" href="#ol-fixture"><span class="ol-tag">TAG</span><span class="ol-name">A name</span><span class="ol-lead"></span><span class="ol-val">12</span></a>
+  <label class="ol-fld"><span class="ol-lbl">A label</span><input class="ol-fig" value="12"></label>
+  <label class="ol-fld"><span class="ol-lbl">A choice</span><span class="ol-sel"><select><option>One</option><option>Two</option></select></span></label>
+  <label class="ol-chk"><input type="checkbox" checked> A tick box</label>
+  <span class="ol-step"><button type="button" aria-label="Less">-</button><span class="ol-fig">3</span><button type="button" aria-label="More">+</button></span>
+  <span class="ol-seg"><button type="button" aria-pressed="true">First</button><button type="button" aria-pressed="false">Second</button></span>
+  <div class="ol-fx-row"><button class="ol-seal" type="button">Solve <span class="ol-key">Ctrl</span></button> <button class="ol-btn-p" type="button">Save</button> <button class="ol-btn-2" type="button">Cancel</button> <button class="ol-btn-q" type="button">Later</button></div>
+  <span id="ol-fx-probe" style="display:block;height:1px;background:var(--seal)"></span>
+</div>
