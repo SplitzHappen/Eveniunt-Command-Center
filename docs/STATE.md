@@ -16,8 +16,8 @@ Last updated: 2026-11-23.
   shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
   are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
   unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone. **Publish:** the merge's publish and one fresh run both failed on the
-  Pages service's side ("Fetching artifact metadata failed"); the hourly publish is the fallback (see the next entry
-  of this file's history for its result).
+  Pages service's side ("Fetching artifact metadata failed"); the hourly publish of 12:42 UTC succeeded, so the site
+  carries this version.
 - **Lists, the crafting planner (blueprint phase 3; shipped 2026-11-24, owner's `ship`; pull request 7, merge `df139ee`).** The crafting planner that was taken back on
   2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
   `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
