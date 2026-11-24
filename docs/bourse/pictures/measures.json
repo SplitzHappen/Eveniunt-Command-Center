@@ -66,9 +66,9 @@
  },
  "trip-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 246,
   "largest": {
    "size": 56,
@@ -79,9 +79,9 @@
  },
  "trip-saved-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 238,
   "largest": {
    "size": 56,
@@ -105,10 +105,10 @@
  },
  "profit-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 66,
+  "rowMax": 96,
+  "rowMin": 64,
   "rowsInView": 5,
-  "firstRowFromHeader": 252,
+  "firstRowFromHeader": 243,
   "largest": {
    "size": 56,
    "text": "38,240"
@@ -118,8 +118,8 @@
  },
  "watch-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 65,
+  "rowMax": 82,
+  "rowMin": 64,
   "rowsInView": 6,
   "firstRowFromHeader": 199,
   "largest": {
@@ -196,9 +196,9 @@
  },
  "trip-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 246,
   "largest": {
    "size": 56,
@@ -209,9 +209,9 @@
  },
  "trip-saved-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 238,
   "largest": {
    "size": 56,
@@ -235,10 +235,10 @@
  },
  "profit-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 66,
+  "rowMax": 96,
+  "rowMin": 64,
   "rowsInView": 5,
-  "firstRowFromHeader": 252,
+  "firstRowFromHeader": 243,
   "largest": {
    "size": 56,
    "text": "38,240"
@@ -248,8 +248,8 @@
  },
  "watch-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 65,
+  "rowMax": 82,
+  "rowMin": 64,
   "rowsInView": 6,
   "firstRowFromHeader": 199,
   "largest": {
@@ -326,9 +326,9 @@
  },
  "trip-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 246,
   "largest": {
    "size": 56,
@@ -339,9 +339,9 @@
  },
  "trip-saved-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 238,
   "largest": {
    "size": 56,
@@ -365,10 +365,10 @@
  },
  "profit-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 66,
+  "rowMax": 96,
+  "rowMin": 64,
   "rowsInView": 5,
-  "firstRowFromHeader": 252,
+  "firstRowFromHeader": 243,
   "largest": {
    "size": 56,
    "text": "38,240"
@@ -378,8 +378,8 @@
  },
  "watch-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 65,
+  "rowMax": 82,
+  "rowMin": 64,
   "rowsInView": 6,
   "firstRowFromHeader": 199,
   "largest": {
@@ -456,9 +456,9 @@
  },
  "trip-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 246,
   "largest": {
    "size": 56,
@@ -469,9 +469,9 @@
  },
  "trip-saved-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 238,
   "largest": {
    "size": 56,
@@ -495,10 +495,10 @@
  },
  "profit-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 66,
+  "rowMax": 96,
+  "rowMin": 64,
   "rowsInView": 5,
-  "firstRowFromHeader": 252,
+  "firstRowFromHeader": 243,
   "largest": {
    "size": 56,
    "text": "38,240"
@@ -508,8 +508,8 @@
  },
  "watch-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 86,
-  "rowMin": 65,
+  "rowMax": 82,
+  "rowMin": 64,
   "rowsInView": 6,
   "firstRowFromHeader": 199,
   "largest": {
@@ -534,9 +534,9 @@
  },
  "settings-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 85,
+  "rowMax": 82,
   "rowMin": 65,
-  "rowsInView": 5,
+  "rowsInView": 6,
   "firstRowFromHeader": 246,
   "largest": {
    "size": 56,
@@ -569,6 +569,32 @@
    "text": "No trip yet"
   },
   "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "states-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 0,
+  "firstRowFromHeader": 968,
+  "largest": {
+   "size": 48,
+   "text": "I"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "states-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 96,
+  "rowMin": 65,
+  "rowsInView": 0,
+  "firstRowFromHeader": 1224,
+  "largest": {
+   "size": 32,
+   "text": "I"
+  },
+  "actsMax": 1,
   "monoWithoutDigit": []
  }
 }

@@ -5,9 +5,9 @@ Made 2026-11-24 with `node docs/bourse/tools/make-mock.mjs` then `node docs/bour
 set the way the app stores it (`eveniunt-tracker-ui`). Every price, age, sale and tax figure is an example; item and world
 names are from the pinned game data (7.57h1).
 
-**Pictures (48).** The five main screens (Trip A, Trip B "savings first", Item, Profit, Watch) at 1,440 x 1,000 and 360 x 800
-in Crystarium Dawnglass light and dark, Azure Dragoon dark and Ul'dah Sultanate Gilt light (40); the settings sheet and the
-empty trip at 1,440 light and 360 dark (4); one comparison sheet per theme (4), with the real Home, Lists, Submersibles and
+**Pictures (50).** The five main screens (Trip A, Trip B "savings first", Item, Profit, Watch) at 1,440 x 1,000 and 360 x 800
+in Crystarium Dawnglass light and dark, Azure Dragoon dark and Ul'dah Sultanate Gilt light (40); the settings sheet, the
+empty trip and the states page at 1,440 light and 360 dark (6); one comparison sheet per theme (4), with the real Home, Lists, Submersibles and
 Atelier pictures of `docs/one-look/foundation-pictures/` on the top row.
 
 **Measured** (`measures.json`, all 44 screen pictures): no sideways scroll at 360 px (P1); the largest text in view is the
@@ -31,6 +31,7 @@ sheet; keyboard focus (the pages have no behaviour).
 | Profit | Bold | Yes | The strongest screen: gold rank blocks, one bar scale, 40 px figures per row, hatched "not priced yet". |
 | Watch | Bold | Yes | Green "Under" rows against outlined "Above" rows; the alert as the slim status line. On the computer picture the status line covers part of the last row in view, as a fixed line does; in the app the page ends above it (P8). |
 | Settings sheet | Calm, by intent | Yes | A form; book chapters and underlined fields as in the Atelier. |
+| States page | Bold | Yes | Notices in the error and waiting roles with their words, dashed empty lines, a loss row, an "HQ only" row and a "Bait?" row. Not a screen: each part appears where it belongs. |
 | Empty trip | Bold | Yes | Built like the Lists and Submersibles empty states (plate, headline, three slanted steps, seal, decoration). |
 
 **What the comparison sheets show.** In all four themes the header, the book-style chapters, the seal and the state blocks

@@ -178,6 +178,25 @@ None. The gil role class is an addition to the shared stylesheet, not a departur
 - Empty state: step numbers were faint and small (a selector caught the state block); fixed.
 - Watch: the alert status line is one line, full width on the phone.
 
+### After the red team (same-family review, 2026-11-24)
+
+- Every row says the price's age first ("seen 14 min ago · …"), so a phone that cuts the facts line never cuts the age.
+- Names may take three lines on the phone (15 px), so the longest real names ("Grade 2 Gemdraught of Intelligence")
+  are never cut to "Gemdraught o…"; rows stay within 96 px.
+- "14 min" instead of "14M" (which read as 14 million gil); the Item answer says "gil each for 6", the unit price for
+  the amount needed.
+- The answer band's figures and labels no longer clip on the phone ("8,644", "To price"; shorter label under the big
+  number).
+- "Not on the market now" means no listing of the quality needed; an ordinary need with only high-quality listings is
+  its own row state ("HQ only", hatched, the price shown as unknown for normal quality).
+- The gil bar and the empty state's decoration take their colour through the role (`var(--f)` under the gil role),
+  never the shared colour token directly.
+- **A states page** (`docs/bourse/mock/states.html`, pictures `states-*.png`): the four notices (prices not fetched,
+  slowed down, ranking budget spent, maintenance soon), the three empty parts (choose a home world, nothing watched,
+  find an item) and three row states (a craft that loses gil, an item listed only in high quality, a listing far below
+  recent sales). Not drawn: 30 stops and 200 watched items (the same rows repeated; the browser checks measure them on
+  real data).
+
 ## 8. Picture notes and the bold test
 
 `docs/bourse/pictures/notes.md`: what was measured, what was not, and one line per screen ("bold" or "still tame").

@@ -15,7 +15,7 @@ let chromium;
 try { ({ chromium } = require(path.join(ROOT, 'node_modules', 'playwright'))); } catch (e) { ({ chromium } = require('playwright')); }
 const OUT = path.join(ROOT, 'docs', 'bourse', 'pictures');
 const MAIN = ['trip', 'trip-saved', 'item', 'profit', 'watch'];
-const EXTRA = ['settings', 'empty'];
+const EXTRA = ['settings', 'empty', 'states'];
 const SIZES = [[1440, 1000], [360, 800]];
 const CHOICES = [['crystarium-dawnglass', 'light'], ['crystarium-dawnglass', 'dark'], ['azure-dragoon', 'dark'], ['uldah-sultanate-gilt', 'light']];
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.woff2': 'font/woff2', '.json': 'application/json', '.svg': 'image/svg+xml' };
