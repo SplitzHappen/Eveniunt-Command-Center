@@ -119,6 +119,23 @@ test('in all 21 themes, light and dark: contrast floors of design rule K5', () =
   console.log('lists roles: lowest text on field ' + Math.min(...SIX.map((r) => m[r + ' on-mid on fill'].v)).toFixed(2) + ', lowest text tone on page or panel ' + Math.min(...SIX.map((r) => m[r + ' text tone on page, panel'].v)).toFixed(2) + ', lowest graphic tone ' + Math.min(...SIX.map((r) => m[r + ' graphic tone on page, panel'].v)).toFixed(2) + ' (21 themes x 2 modes x 6 roles)');
 });
 
+test('look v2 pairs (docs/lists-look-v2.md V1): ink on a role wash at 7, the graphic tone on its wash at 3, in all 21 themes, light and dark; the second ink on a wash and the graphic tone on the slab are printed only (V1 fallback: washed rows set ink-2 to ink)', () => {
+  const F = T.FLOORS, low = [], lowest = { 'ink on wash': [99, ''], 'second ink on wash (printed only; washed rows use ink)': [99, ''], 'graphic tone on wash': [99, ''], 'graphic tone on slab (printed only)': [99, ''] };
+  const note = (k, v, where) => { if (v < lowest[k][0]) lowest[k] = [v, where]; };
+  for (const row of THEMES) for (const mode of ['light', 'dark']) {
+    const ctx = T.envOf(row, mode), e = ctx.env, where = row[1] + ' ' + mode;
+    for (const r of SIX) {
+      const g = T.rgbOf('--lr-' + r + '-edge', ctx), w = T.rgbOf('--lr-' + r + '-wash', ctx);
+      const a = ratio(e['--ink'], w), b = ratio(e['--ink-2'], w), c = ratio(g, w), d = ratio(g, e['--ink']);
+      note('ink on wash', a, where + ' ' + r); note('second ink on wash (printed only; washed rows use ink)', b, where + ' ' + r); note('graphic tone on wash', c, where + ' ' + r); note('graphic tone on slab (printed only)', d, where + ' ' + r);
+      if (a < F.inkOnWash) low.push(where + ' ' + r + ' ink on its wash ' + a.toFixed(2));
+      if (c < 3) low.push(where + ' ' + r + ' graphic tone on its wash ' + c.toFixed(2));
+    }
+  }
+  console.log('look v2 lowest: ' + Object.keys(lowest).map((k) => k + ' ' + lowest[k][0].toFixed(2) + ' (' + lowest[k][1] + ')').join('; '));
+  assert.deepEqual(low, []);
+});
+
 const NAMES = 'black white red blue green yellow orange purple pink gray grey gold navy teal tan silver maroon olive lime aqua fuchsia brown crimson coral salmon tomato khaki ivory beige indigo violet magenta cyan'.split(' ');
 const rawColour = (val) => { // a colour written out in a value: strings and var() names do not count
   const bare = val.replace(/"[^"]*"|'[^']*'/g, '').replace(/var\(\s*--[\w-]+/g, 'var(');
