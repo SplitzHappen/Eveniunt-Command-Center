@@ -4,6 +4,20 @@ Last updated: 2026-11-23.
 
 ## Recently shipped
 
+- **One look, step 2: the shared foundation** (shipped 2026-11-24, owner's `ship`; pull request 8, merge `3f6c3fe`; spec `docs/one-look-foundation-spec.md`; mock-ups of
+  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
+  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
+  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
+  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
+  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
+  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
+  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
+  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
+  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
+  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
+  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone. **Publish:** the merge's publish and one fresh run both failed on the
+  Pages service's side ("Fetching artifact metadata failed"); the hourly publish of 12:42 UTC succeeded, so the site
+  carries this version.
 - **Lists, the crafting planner (blueprint phase 3; shipped 2026-11-24, owner's `ship`; pull request 7, merge `df139ee`).** The crafting planner that was taken back on
   2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
   `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
@@ -129,18 +143,7 @@ Last updated: 2026-11-23.
 
 ## Built, waiting for the owner's `ship`
 
-- **One look, step 2: the shared foundation** (pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
-  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
-  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
-  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
-  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
-  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
-  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
-  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
-  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
-  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
-  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
-  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone.
+Nothing.
 
 ## Next
 
@@ -153,7 +156,9 @@ Last updated: 2026-11-23.
    current tab), its lanes, state blocks and top summary stay. Next: plan the build (shared header, fields and buttons,
    the Atelier following the chosen theme, then one module per pull request, and a check that stops modules drifting),
    then the design-rules change these choices need. The owner sees this as "for now": once every module exists, one
-   final pass makes sure the whole app fits together.
+   final pass makes sure the whole app fits together. Step 2 (the foundation) shipped 2026-11-24. Next: Market, the
+   next module, built on the shared parts; existing screens move onto them one pull request each (and the Tracker's
+   and Atelier's "now part of the Command Center" notice goes when their screens move).
 1. The owner's own checks, which no automated run covers: a real sync between two devices (one still on the version published before 2026-11-21), two tabs saving at the same moment, a pass on a phone, and a real push notification ("Send a test" in Settings).
 2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
    compared with the original design (kept outside this repository) and the gaps closed.
