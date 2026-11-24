@@ -1,0 +1,574 @@
+{
+ "trip-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 96,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 9,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "38,240"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "watch-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 8,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "3"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-360-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 246,
+  "largest": {
+   "size": 56,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-360-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 238,
+  "largest": {
+   "size": 56,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-360-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 56,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-360-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 66,
+  "rowsInView": 5,
+  "firstRowFromHeader": 252,
+  "largest": {
+   "size": 56,
+   "text": "38,240"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "watch-360-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 65,
+  "rowsInView": 6,
+  "firstRowFromHeader": 199,
+  "largest": {
+   "size": 56,
+   "text": "3"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "trip-1440-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-1440-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-1440-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 96,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-1440-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 9,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "38,240"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "watch-1440-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 8,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "3"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 246,
+  "largest": {
+   "size": 56,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 238,
+  "largest": {
+   "size": 56,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 56,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 66,
+  "rowsInView": 5,
+  "firstRowFromHeader": 252,
+  "largest": {
+   "size": 56,
+   "text": "38,240"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "watch-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 65,
+  "rowsInView": 6,
+  "firstRowFromHeader": 199,
+  "largest": {
+   "size": 56,
+   "text": "3"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "trip-1440-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-1440-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-1440-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 96,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-1440-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 9,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "38,240"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "watch-1440-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 8,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "3"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-360-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 246,
+  "largest": {
+   "size": 56,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-360-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 238,
+  "largest": {
+   "size": 56,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-360-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 56,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-360-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 66,
+  "rowsInView": 5,
+  "firstRowFromHeader": 252,
+  "largest": {
+   "size": 56,
+   "text": "38,240"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "watch-360-azure-dragoon-dark": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 65,
+  "rowsInView": 6,
+  "firstRowFromHeader": 199,
+  "largest": {
+   "size": 56,
+   "text": "3"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "trip-1440-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-1440-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-1440-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 96,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-1440-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 9,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "38,240"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "watch-1440-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 56,
+  "rowsInView": 8,
+  "firstRowFromHeader": 352,
+  "largest": {
+   "size": 96,
+   "text": "3"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-360-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 246,
+  "largest": {
+   "size": 56,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "trip-saved-360-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 238,
+  "largest": {
+   "size": 56,
+   "text": "40,810"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "item-360-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 56,
+   "text": "18,900"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "profit-360-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 66,
+  "rowsInView": 5,
+  "firstRowFromHeader": 252,
+  "largest": {
+   "size": 56,
+   "text": "38,240"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "watch-360-uldah-sultanate-gilt-light": {
+  "sideways": false,
+  "rowMax": 86,
+  "rowMin": 65,
+  "rowsInView": 6,
+  "firstRowFromHeader": 199,
+  "largest": {
+   "size": 56,
+   "text": "3"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "settings-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 57,
+  "rowMin": 57,
+  "rowsInView": 8,
+  "firstRowFromHeader": 372,
+  "largest": {
+   "size": 96,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "settings-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 85,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 246,
+  "largest": {
+   "size": 56,
+   "text": "266,438"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "empty-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 104,
+   "text": "No trip yet"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ },
+ "empty-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "firstRowFromHeader": null,
+  "largest": {
+   "size": 60,
+   "text": "No trip yet"
+  },
+  "actsMax": 0,
+  "monoWithoutDigit": []
+ }
+}
