@@ -6,7 +6,7 @@
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
-   "firstTop": 187,
+   "firstTop": 199,
    "inView": 10,
    "mono": [
     "7.57h1",
@@ -17,13 +17,13 @@
     "2"
    ],
    "scrollX": 0,
-   "h2": 2932
+   "h2": 3024
   },
   "getOpen": {
    "rest": 56,
-   "opened": 252
+   "opened": 230
   },
-  "getGatherOpen": 243,
+  "getGatherOpen": 236,
   "craft": {
    "rows": 16,
    "maxH": 56,
@@ -38,7 +38,7 @@
    "scrollX": 0,
    "h2": 1626
   },
-  "craftOpen": 284,
+  "craftOpen": 304,
   "hqShown": true,
   "wanted": {
    "rows": 10,
@@ -54,7 +54,7 @@
    "scrollX": 0,
    "h2": 1087
   },
-  "wantedOpen": 334,
+  "wantedOpen": 312,
   "patch": {
    "h": 172,
    "top": 111
@@ -76,7 +76,7 @@
     "w": 720
    },
    "scrollX": 0,
-   "firstRowBelowMast": 165,
+   "firstRowBelowMast": 175,
    "statusIsButton": false
   },
   "combined": {
@@ -85,8 +85,8 @@
    "maxCtl": 3,
    "maxBordered": 2,
    "maxPrim": 1,
-   "firstTop": 165,
-   "inView": 11,
+   "firstTop": 175,
+   "inView": 10,
    "mono": [
     "7.57h1",
     "3",
@@ -96,7 +96,7 @@
     "1"
    ],
    "scrollX": 0,
-   "h2": 3856
+   "h2": 4008
   }
  },
  "phone-dark": {
@@ -106,7 +106,7 @@
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 203,
+   "firstTop": 211,
    "inView": 5,
    "mono": [
     "7.57h1",
@@ -117,28 +117,28 @@
     "2"
    ],
    "scrollX": 0,
-   "h2": 3855
+   "h2": 3943
   },
   "getOpen": {
    "rest": 72,
-   "opened": 330
+   "opened": 323
   },
-  "getGatherOpen": 354,
+  "getGatherOpen": 365,
   "craft": {
    "rows": 16,
    "maxH": 95,
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 175,
+   "firstTop": 171,
    "inView": 5,
    "mono": [
     "7.57h1"
    ],
    "scrollX": 0,
-   "h2": 2276
+   "h2": 2272
   },
-  "craftOpen": 350,
+  "craftOpen": 385,
   "hqShown": true,
   "wanted": {
    "rows": 10,
@@ -146,18 +146,18 @@
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 210,
+   "firstTop": 206,
    "inView": 5,
    "mono": [
     "7.57h1"
    ],
    "scrollX": 0,
-   "h2": 1602
+   "h2": 1598
   },
-  "wantedOpen": 357,
+  "wantedOpen": 349,
   "patch": {
    "h": 213,
-   "top": 127
+   "top": 123
   },
   "head": {
    "mast": {
@@ -167,7 +167,7 @@
    },
    "head": {
     "top": 77,
-    "h": 127,
+    "h": 123,
     "w": 340
    },
    "status": {
@@ -176,7 +176,7 @@
     "w": 360
    },
    "scrollX": 0,
-   "firstRowBelowMast": 181,
+   "firstRowBelowMast": 187,
    "statusIsButton": false
   },
   "combined": {
@@ -185,8 +185,8 @@
    "maxCtl": 2,
    "maxBordered": 1,
    "maxPrim": 1,
-   "firstTop": 194,
-   "inView": 6,
+   "firstTop": 197,
+   "inView": 5,
    "mono": [
     "7.57h1",
     "3",
@@ -196,7 +196,7 @@
     "1"
    ],
    "scrollX": 0,
-   "h2": 5065
+   "h2": 5210
   }
  }
 }
