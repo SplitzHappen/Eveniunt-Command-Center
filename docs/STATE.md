@@ -129,7 +129,18 @@ Last updated: 2026-11-23.
 
 ## Built, waiting for the owner's `ship`
 
-Nothing.
+- **One look, step 2: the shared foundation** (pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
+  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
+  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
+  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
+  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
+  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
+  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
+  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
+  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
+  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
+  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
+  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone.
 
 ## Next
 
