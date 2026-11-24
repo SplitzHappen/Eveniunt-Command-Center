@@ -113,9 +113,13 @@ Last updated: 2026-11-23.
   look and code review (ChatGPT and Mistral, sixth round, rulings in `docs/lists-code-review-adjudication.md`) was
   fixed in F1: prices by quality, phone rows with the node kind and area, spearfishing node names, sub-heads with room
   and unclipped focus rings (the hosted failure at `ec24562`), and the smaller wording and look items listed there,
-  each pinned by a check seen failing without its fix (new checks C190 to C195). Measured at `0913a3a`: unit tests 618
-  of 618, browser tests 9 of 9 groups, full check 201 of 201 (the real push delivery, C26b, cannot run from a session
-  and was not run).
+  each pinned by a check seen failing without its fix (new checks C190 to C195). After the owner found the computer
+  screens one colour per section (2026-11-24), look v2 (`docs/lists-look-v2.md`) put the section and job heads on the
+  theme's dark bar with one small colour block, and gave each row its own state (can be done now, some in hand with a
+  progress line, waiting, done); C160 now accepts every tone of the six roles, and the new check LV2 pins the row
+  states. The owner chose to ship this look now and restyle Lists with the whole app afterwards (see Next). Measured
+  at `f80b87e`: unit tests all passing, browser tests all passing, full check 202 of 202 (the real push delivery,
+  C26b, cannot run from a session and was not run).
   **Not tested:** Firefox, Safari, a real phone, a real two-device sync, the live price service (Universalis).
   **Known limits:** vendors that need reputation still say "buy"; the master-book warning reads the Tracker's ticks and
   not its "does not apply" mark; a project list's stamp ("Submarine part") is matched by the list's name; the phases
@@ -126,6 +130,11 @@ Last updated: 2026-11-23.
 
 ## Next
 
+0. **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
+   cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
+   Submersibles, Lists and Settings, and the Atelier ignoring the chosen game theme. Step 1, mock-ups of the six
+   screens in one shared style starting from the Atelier, is being built (`docs/one-look-spec.md`, branch
+   `one-look`, not yet pushed); the owner approves them before any module code changes.
 1. The owner's own checks, which no automated run covers: a real sync between two devices (one still on the version published before 2026-11-21), two tabs saving at the same moment, a pass on a phone, and a real push notification ("Send a test" in Settings).
 2. Done 2026-11-18: the chart's orientation was compared with a game screenshot and matches; the built module was
    compared with the original design (kept outside this repository) and the gaps closed.
