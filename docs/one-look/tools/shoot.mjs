@@ -24,9 +24,9 @@ function measure(arg) {
   const shown = (el) => { const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden'; };
   const all = [...document.body.querySelectorAll('*')].filter((el) => shown(el) && inView(el.getBoundingClientRect()));
   const own = (el) => [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
-  // C2: the largest text in view, and whether it is a figure or a state word
+  // C2: the largest text in view (not the wordmark or chapter numerals, which are not answers), and whether it is a figure or a state word
   let big = { px: 0, text: '', figure: false };
-  all.forEach((el) => { const t = own(el); if (!t || el.closest('svg')) return; const px = parseFloat(getComputedStyle(el).fontSize); if (px > big.px) big = { px, text: t.slice(0, 24), figure: /\d/.test(t) || !!el.closest('.sb,.numeral') }; });
+  all.forEach((el) => { const t = own(el); if (!t || el.closest('svg,.hdr,.chap .num')) return; const px = parseFloat(getComputedStyle(el).fontSize); if (px > big.px) big = { px, text: t.slice(0, 24), figure: /\d/.test(t) || !!el.closest('.sb,.numeral') }; });
   // heaviest line (px): borders in view, and the molten edge (a border image)
   let heavy = 0, heavyWhere = '';
   all.forEach((el) => { const cs = getComputedStyle(el); ['Top', 'Right', 'Bottom', 'Left'].forEach((s) => { const w = parseFloat(cs['border' + s + 'Width']); if (cs['border' + s + 'Style'] !== 'none' && w > heavy) { heavy = w; heavyWhere = el.className.toString().slice(0, 30) || el.tagName; } }); });
@@ -48,7 +48,7 @@ function measure(arg) {
     ledgerRowHeights: { count: heights.length, min: heights.length ? Math.min(...heights) : null, max: heights.length ? Math.max(...heights) : null },
     rowsInView: rows.filter((el) => { const r = el.getBoundingClientRect(); return r.top < vh - (vw <= 700 ? 56 : 0) && r.bottom > 0; }).length,
     firstRowFromHeader: first, tapTargetsTooSmall: small,
-    fontsLoaded: ['900 40px "Big Shoulders Display"', '700 11px "Cinzel"', '600 17px "Fraunces"', '400 15px "Atkinson Hyperlegible"', '600 15px "IBM Plex Mono"'].map((f) => document.fonts.check(f)).every(Boolean),
+    fontsLoaded: ![...document.fonts].some((f) => f.status === 'error'),
   };
 }
 
