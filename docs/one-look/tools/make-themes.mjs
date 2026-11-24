@@ -1,0 +1,79 @@
+// Writes docs/one-look/mock/themes.css: 42 blocks (21 themes x light, dark) of the theme tokens, computed by the same
+// formulas as applyLook() in the built look.js at contrast 50, plus per-mode derived, state and kind tokens.
+// The formulas below are a COPY of look.js; the later shared stylesheet must use look.js itself, not this copy.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, '..', '..', '..');
+const LOOK = path.join(ROOT, 'tracker', 'command-center', 'site', 'look.js');
+const OUT = path.join(HERE, '..', 'mock', 'themes.css');
+
+export function readThemes() {
+  const src = fs.readFileSync(LOOK, 'utf8');
+  const a = src.indexOf('var THEMES = ['), b = src.indexOf('];', a);
+  if (a < 0 || b < 0) throw new Error('THEMES array not found in look.js');
+  return new Function('return ' + src.slice(a + 'var THEMES = '.length, b + 1))();
+}
+
+const hexRgb = (h) => { h = String(h || '').trim().replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); const n = parseInt(h, 16); return !/^[0-9a-f]{6}$/i.test(h) ? null : [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const rgbHex = (r) => '#' + r.map((x) => ('0' + Math.max(0, Math.min(255, Math.round(x))).toString(16)).slice(-2)).join('');
+const lum = (r) => { const c = r.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+const mix = (a, b, t) => rgbHex(a.map((x, i) => x + (b[i] - x) * t));
+const onSeal = (ac) => { const l = lum(ac) + 0.05; return 1.05 / l >= 4.5 ? '#ffffff' : l / (lum([17, 17, 17]) + 0.05) >= 4.5 ? '#111111' : '#000000'; };
+
+// the tokens applyLook() sets, in the order it sets them (contrast 50)
+export function tokens(theme, mode, contrast = 50) {
+  const c = theme[mode === 'dark' ? 3 : 2];
+  const bg = hexRgb(c[0]), fg = hexRgb(c[1]), ac = hexRgb(c[2]), pg = hexRgb(c[3]);
+  const k = 0.55 + (contrast / 100) * 0.9;
+  const dk = lum(bg) < lum(fg);
+  return [
+    ['--paper', rgbHex(bg)], ['--paper-2', mix(bg, fg, 0.05 * k)], ['--paper-3', mix(bg, fg, 0.1 * k)], ['--slip', mix(bg, dk ? fg : [255, 255, 255], dk ? 0.07 : 0.6)],
+    ['--ink', rgbHex(fg)], ['--ink-2', mix(fg, bg, Math.max(0.08, 0.32 / k))], ['--ink-3', mix(fg, bg, Math.max(0.2, 0.5 / Math.sqrt(k)))], ['--rule', mix(bg, fg, Math.min(0.5, 0.18 * k))],
+    ['--grid', 'rgba(' + fg.join(',') + ',' + (0.055 * k).toFixed(3) + ')'],
+    ['--seal', rgbHex(ac)], ['--on-seal', onSeal(ac)], ['--hi', 'rgba(' + ac.join(',') + ',.16)'],
+    ['--ochre', rgbHex(pg)],
+    ['--lb-a', dk ? mix(ac, [255, 255, 255], 0.55) : mix(ac, fg, 0.25)], ['--lb-b', rgbHex(ac)], ['--lb-c', rgbHex(pg)],
+    ['--lb-glow', 'rgba(' + ac.join(',') + ',' + (dk ? '.5' : '.28') + ')'],
+    ['color-scheme', dk ? 'dark' : 'light'],
+  ];
+}
+
+// state hues (subs.css) and kind hues (lists.css): one hue per meaning in every theme, light or dark value only
+const STATE = {
+  light: { '--back': '#0f7a42', '--on-back': '#ffffff', '--out': '#2343d6', '--on-out': '#ffffff', '--idle': '#8f5600', '--on-idle': '#ffffff', '--bad': '#b3261e', '--on-bad': '#ffffff', '--on-mid': 'var(--ink)' },
+  dark: { '--back': '#4fd18b', '--on-back': '#06210f', '--out': '#7d93ff', '--on-out': '#0b0d1a', '--idle': '#f0b347', '--on-idle': '#2a1800', '--bad': '#ff8a80', '--on-bad': '#3a0905', '--on-mid': 'var(--paper)' },
+};
+const KIND = {
+  '--lr-craft-fill': 'oklch(0.72 0.13 250)', '--lr-gather-fill': 'oklch(0.74 0.15 140)', '--lr-merchant-fill': 'oklch(0.80 0.15 80)',
+  '--lr-market-fill': 'oklch(0.72 0.14 315)', '--lr-ready-fill': 'oklch(0.78 0.11 195)', '--lr-short-fill': 'oklch(0.72 0.15 25)',
+  '--rank-m': 'oklch(0.7 0.1 232)', '--gil-m': 'oklch(0.8 0.15 92)', '--loot-m': 'oklch(0.7 0.1 188)', '--route-m': 'oklch(0.7 0.1 340)',
+};
+// derived from the theme tokens, so identical in every theme (they only hold var() and colour-mix())
+const DERIVED = {
+  '--slab': 'var(--ink)', '--on-slab': 'var(--paper)', '--on-slab-2': 'color-mix(in srgb, var(--paper) 72%, var(--ink))',
+  '--molten': 'linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal)) 48%, var(--lb-c, var(--ochre)))',
+  '--hazard': 'repeating-linear-gradient(-65deg, var(--hz, var(--ink-2)) 0 8px, transparent 8px 16px)',
+  '--locked': 'var(--ink-2)',
+  '--back-bg': 'color-mix(in srgb, var(--back) 16%, var(--slip))', '--out-bg': 'color-mix(in srgb, var(--out) 10%, var(--slip))', '--idle-bg': 'color-mix(in srgb, var(--idle) 10%, var(--slip))',
+};
+
+const block = (sel, pairs) => sel + ' {\n' + pairs.map(([k, v]) => '  ' + k + ': ' + v + ';').join('\n') + '\n}\n';
+
+export function build() {
+  const themes = readThemes().slice().sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  if (themes.length !== 21) throw new Error('expected 21 themes, found ' + themes.length);
+  let css = '/* Generated by docs/one-look/tools/make-themes.mjs from tracker/command-center/site/look.js (contrast 50). Do not edit. */\n';
+  for (const mode of ['light', 'dark']) {
+    css += block('html[data-mode="' + mode + '"]', [...Object.entries(STATE[mode]), ...Object.entries(KIND), ...Object.entries(DERIVED)]);
+  }
+  for (const t of themes) for (const mode of ['light', 'dark']) css += block('html[data-look="' + t[0] + '"][data-mode="' + mode + '"]', tokens(t, mode));
+  return css;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  fs.writeFileSync(OUT, build());
+  console.log('wrote ' + path.relative(ROOT, OUT));
+}
