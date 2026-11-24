@@ -1,0 +1,150 @@
+# Market module (blueprint phase 4): questions for the owner
+
+Written 2026-11-24, before any research or design. "Market" is the working name until question 1 is answered; the
+files are renamed then. Every question has a suggested default, so "default" (or "all defaults") is a valid answer.
+Answer by number, for example: "1 Bourse; 5 I world-visit a lot; everything else default".
+
+What was read first: `CLAUDE.md`, `docs/STATE.md`, `docs/model-tiers.md`, `docs/design-rules.md`,
+`docs/one-look-spec.md`, `docs/one-look-foundation-spec.md`, `tracker/src/app/one-look.css`, the foundation pictures,
+`docs/lists-research.md`, the price and market parts of `docs/lists-spec.md`, the blueprint (Market row, rule CC-12,
+phase 4), the shared price service `tracker/command-center/src/prices.js` and its two callers (Submersibles
+`earn.js`, Lists `lists.js`), and the Tracker's own Market Board (`tracker/src/app/live.js`).
+
+Three facts from that reading are behind some questions:
+- There are three price fetchers today. Submersibles and Lists share one service (with different questions to it);
+  the Tracker's Live → Market Board has its own, and its own shopping list kept on one device only (not synced).
+- Lists counts the cheapest listing of any quality, so it cannot tell a high-quality price from a normal one; it
+  shows "High-quality price unknown" instead.
+- The app never reads the game. Anything about your own retainers or sales would be typed by hand.
+
+## A. Name and place in the app
+
+1. **Name.** The word appears as the big wordmark in the header (like ATELIER, LISTS) and in the page list.
+   Options: *Market* (plain, what players say); *Bourse* (French "exchange"; pairs with Atelier); *Exchange*;
+   *Comptoir* (French trading post; less known); *Bazaar*; *Ledger*; *Gil Ledger*; *Sapphire Avenue* (the name of
+   Ul'dah's market in the game; ties the module to one city and to a game place name); *Mercantile*; *Counting House*.
+   Default: **Market**. (If you want the Atelier's flavour, Bourse is the best match: short, fits the wordmark.)
+2. **The Tracker's Live → Market Board page.** (a) The new module replaces it: that page becomes a link to the new
+   module, and its shopping list is copied over once; (b) keep both; (c) keep things as they are. Default: **(a)**,
+   as the Lists plan already foresaw.
+3. **Scope of this round.** The blueprint pairs Market with Gathering in phase 4. Default: **Market only now**;
+   Gathering gets its own round.
+
+## B. How you use the market board today
+
+4. **Where you play.** Which region and data center, and which home worlds do your characters have? Do all eight
+   share one world? Default: **use what is already set in the Tracker and in each character** (I will read it from
+   the app, not ask again).
+5. **Travel.** Do you visit other worlds of your data center to buy? Other data centers of your region? Or stay home?
+   Default: **visit worlds in my data center freely; other data centers only for big purchases**.
+6. **Buying or selling.** Mostly buying materials, mostly selling, or both? Default: **both**.
+7. **Why you craft.** Mostly for your own use (collections, gear), mostly for profit, or both? Default: **mostly my
+   own use, sometimes for profit**.
+8. **Your retainers' sales.** The app cannot see what your retainers are selling. Would you type in what you put up
+   (item, quantity, price) so the app can tell you when you are undercut and keep a ledger of what sold? Default:
+   **no, not in the first version**; you would check undercuts in the game.
+9. **What you look up most.** Name up to three things you look up today. Default: **an item's price across worlds;
+   what is profitable to craft; where to buy a list's materials cheapest**.
+10. **Platform.** PC, PlayStation, or Mac? (On PC, "Copy name" pastes straight into the game's market search.)
+    Default: **PC**.
+
+## C. Other price tools
+
+11. **What you use now.** Teamcraft, the Universalis website, Saddlebag Exchange, Garland Tools, in-game only,
+    something else? Default: **Teamcraft and the Universalis website**.
+12. **What you dislike in them,** and **what you would keep.** Free text. Default: **no strong views; follow the
+    research** (I will gather the community's complaints, as for Lists).
+
+## D. Screens and devices
+
+13. **Which screens you would open most.** Pick up to three: an item's prices on every world; a profit ranking of
+    crafts; a shopping trip that buys a list's materials world by world; an item's price history; a watch list.
+    Default: **shopping trip, item prices, profit ranking**.
+14. **Which device for which, and what the module opens on.** Default: **computer for profit and history; phone in
+    hand at the market board for the shopping trip. It opens on the shopping trip when a list has items to buy on the
+    market, otherwise on the item search**.
+
+## E. Prices: place and freshness
+
+15. **The default price place.** Your home world, your data center, or the whole region (every data center you can
+    travel to)? Default: **my data center for the shopping trip and profit; the item screen shows every world of the
+    region side by side**.
+16. **When a price is too old.** Prices are what other players' game clients last reported, minutes to days ago.
+    The age is always shown; past which age should a price be marked "old"? Default: **older than 12 hours is
+    "old", older than 3 days is "very old" and not used for profit**.
+17. **Fetching.** Fetch on opening a screen (one automatic try per 15 minutes per place and device, as Lists and
+    Submersibles do now, plus Refresh), or only when you press Refresh? Default: **on opening, same rule**.
+18. **Quantity-aware prices.** The cheapest listing may be 1 unit when you need 99. Should prices be worked out for
+    the amount you need (walking up the listings), with a note when the cheapest is a single unit? Default: **yes**.
+19. **Bait listings.** Ignore listings far below the usual price (often gone in minutes, or a lone unit)? Default:
+    **never hide them; mark them "far below recent sales" and price the amount you need anyway**.
+
+## F. Profit
+
+20. **The sale price used for profit.** (a) The cheapest current listing minus 1 gil (what you would undercut to);
+    (b) the middle price of recent sales (what actually sold); (c) both shown, ranked by one. Default: **(c), ranked
+    by recent sales, with the current cheapest beside it**.
+21. **Material cost.** Each material at its cheapest of merchant or market price? Materials you gather yourself: at
+    their market value (what you could have sold them for) or free? Default: **cheapest of merchant or market;
+    gathered materials at market value, with a switch to count them as free; crystals and shards at market price**.
+22. **High quality.** Assume you sell high quality when an item can be high quality, with materials at normal-quality
+    prices? Default: **yes; the item's high-quality and normal prices are both shown, never mixed**.
+23. **Tax.** The market tax depends on the city your retainer sells from and changes over time (the community price
+    site publishes the current rates). Default: **use the rate of a city you name; if none is named, use the highest
+    current rate, so profit is never overstated**.
+24. **What is ranked, and sales speed.** Gil per craft, or gil per gil spent (return)? (Gil per hour needs the craft
+    time, which the app does not know.) And should crafts that sell less than once a day sink? Default: **gil per
+    craft, with the return and the sales per day beside it; sink below one sale a day; never hide**.
+25. **Which recipes are ranked.** All recipes, only those your characters can make now (levels and ticked master
+    books from the Tracker), or a list you choose? Default: **those my characters can make now**.
+
+## G. The shopping trip, fed by Lists
+
+26. **Splitting by world.** Buy each item on its cheapest world, or fewer stops for a little more gil? Default:
+    **fewest stops while paying at most 10% more than the cheapest split; a split stack across worlds when one world
+    has too few**.
+27. **Route order and other data centers.** Default: **home world first, then the other worlds of my data center by
+    most items; other data centers left out, with one switch to include them (then visited last)**.
+28. **What "done" means.** Ticking an item bought (all or part of the amount) also adds it to "I have" in the Lists
+    list it came from, with Undo. Default: **yes**.
+29. **Which lists feed the trip.** One list, several lists combined (as Lists' combined view), or every list of a
+    character? Default: **the lists I choose, combined**.
+
+## H. Price history
+
+30. **How far back.** Default: **7 days of sales shown, 30 days when the price site has them**.
+31. **How it is shown.** A small chart, a table of recent sales, or a line of figures (low, middle, high, sales per
+    day)? Default: **the line of figures plus one small chart on the item screen**.
+32. **Keeping history on the device.** Only what the price site gives at the time, or also a record of prices the
+    app has seen? Default: **only what the price site gives; nothing stored** (the save stays small).
+
+## I. Watched items and alerts
+
+33. **A watch list** of items with a target price, synced with your save. Default: **yes**.
+34. **Alerts** ("tell me when X is below N gil") can work only while the app is open in a tab. Default: **no alerts
+    in the first version; the watch list marks what is below its target when you open it**.
+
+## J. The look
+
+35. **Which existing screens it should feel closest to.** The Atelier's book (serif titles, index lines with
+    leaders, the Solve block), Submersibles' bold slabs and huge numerals, Lists' ledger, or Home? Default: **the
+    shared "workbook": the Atelier's book for the item and profit pages, with Submersibles' bold answer slab on top
+    of each screen**.
+36. **What to avoid.** Default: **no stock-ticker look (no candlesticks, no red and green arrows as the only
+    signal), no wide many-column tables, no pill badges or rounded cards**.
+37. **Density.** Default: **dense on a computer (at least 8 rows in view, like the Board), one thing at a time on a
+    phone**.
+38. **The big answer of each screen.** Default: **item screen: the cheapest price now and where; profit: the best gil
+    per craft; shopping trip: the total gil and the number of stops; history: this week's middle price against last
+    week's**. Gil figures in the gold "gil" colour Submersibles already uses.
+
+## K. Save and data
+
+39. **What is kept in the shared save (synced between devices).** Default: **the watch list, the shopping trip's
+    ticks, the profit settings and the price place; prices themselves never** (they stay on each device, as now).
+40. **High-quality prices in Lists.** Once the shared price service can ask for prices by quality, Lists would show
+    high-quality prices too instead of "unknown". Default: **yes, in the same pull request**.
+
+## Answers
+
+Not yet received.
