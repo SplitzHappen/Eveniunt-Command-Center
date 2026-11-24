@@ -4,17 +4,9 @@ body { min-height: 100vh; display: flex; flex-direction: column; background: var
 a { color: inherit; }
 .muted { color: var(--ink-2); }
 
-/* masthead: the Limit Break wordmark, the main menu under a double rule */
-.cc-mast { align-items: flex-end; gap: 14px 28px; width: 100%; max-width: 1240px; }
-.cc-mast .lb-word { font-size: 64px; }
-.switcher { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; padding-bottom: 4px; }
-.switcher a { padding: 7px 13px; text-decoration: none; color: var(--ink-2); font-weight: 600; letter-spacing: .02em; border-bottom: 3px solid transparent; }
-.switcher a:hover { color: var(--ink); border-bottom-color: var(--rule); }
-.switcher a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--seal); }
-.status { width: 100%; font-size: 12px; color: var(--ink-3); }
+/* the header is the shared one (one-look.css); the status line sits in its tool slot */
+.status { font-size: 12px; color: var(--ink-3); align-self: center; }
 .status:empty { display: none; }
-@media (max-width: 860px) { .cc-mast .lb-word { font-size: 44px; } .switcher { margin-left: 0; width: 100%; } }
-@media (max-width: 560px) { .cc-mast .lb-word { font-size: 34px; } .switcher a { padding: 6px 9px; font-size: 14px; } }
 
 /* the front page */
 .cc-home { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 26px 20px 44px; }
@@ -96,9 +88,3 @@ a { color: inherit; }
 .small { font-size: 12px; }
 @media (max-width: 560px) { .set-char { grid-template-columns: 24px 1fr; } .set-char .set-lab:last-child { grid-column: 2; } }
 
-/* the way back to the main menu (owner request 2026-11-12: clearly labelled, not small, a better icon) */
-.cc-menu-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px 6px 10px; border: 2px solid var(--seal); background: var(--slip); color: var(--ink);
-  font: 700 14px/1 var(--f-body); letter-spacing: .02em; text-decoration: none; white-space: nowrap; box-shadow: var(--shadow); }
-.cc-menu-link:hover { background: var(--seal); color: var(--on-seal); }
-.cc-menu-link .mm-ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.cc-menu-link:hover .mm-ico { stroke: var(--on-seal); }

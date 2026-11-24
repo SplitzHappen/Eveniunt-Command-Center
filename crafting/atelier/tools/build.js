@@ -48,7 +48,8 @@ const css = read(path.join(A, '..', '..', 'tracker', 'src', 'app', 'one-look.css
 const data = read(path.join(A, 'data', 'atelier-data.json')).replace(/</g, '\\u003c');
 for (const [n, s] of [['glue', glue], ['engine', engine], ['save', save], ['app', app]]) if (/<\/script/i.test(s)) throw new Error(n + ' contains </script>');
 const build = crypto.createHash('sha256').update(glue + wasm + engine + save + app + css + data + iconsJson).digest('hex').slice(0, 12);
-let html = read(path.join(A, 'src', 'atelier.html'));
+// the one header (tracker/tools/one-look-header.js) is filled in before the page's own {{...}} step
+let html = require('../../../tracker/tools/one-look-header.js').fill(read(path.join(A, 'src', 'atelier.html')));
 const rep = { ICONS: iconsJson, FONTS: fonts, CSS: css, DATA: data, GLUE: glue, WASM: wasm, ENGINE: engine, SAVE: save, APP: app, BUILD: build };
 html = html.replace(/\{\{([A-Z]+)\}\}/g, (m, k) => { if (!(k in rep)) throw new Error('missing ' + k); return rep[k]; });
 if (/(src|href)\s*=\s*["']https?:/i.test(html)) throw new Error('external reference');

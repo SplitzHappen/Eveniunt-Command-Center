@@ -60,9 +60,6 @@
 :root[data-motion="on"] :is(.chart-sweep, .chart-halo, .chart-start-ping) { display: none; }
 
 /* Revision 2 kit. --hazard reads --hz where it is declared, so a rule that needs another stripe colour writes the gradient itself (the Board does). */
-.subs-mast { max-width: none; padding-top: 12px; padding-bottom: 10px; align-items: center; }
-.subs-mast .lb-word { font-size: 44px; }
-@media (max-width: 700px) { .subs-mast .lb-word { font-size: 30px; } .subs-mast .lb-top { font-size: 9px; } }
 .subs-layout { flex: 1; display: grid; grid-template-columns: 92px minmax(0, 1fr); width: 100%; }
 .tabs { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; border-right: var(--edge) solid var(--ink); background: var(--paper-2); }
 .tabs button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; font: 900 15px/1 var(--f-disp); letter-spacing: .06em; text-transform: uppercase; padding: 8px 4px; border: 1px solid transparent; border-radius: var(--r); background: none; color: var(--ink-2); cursor: pointer; transition: background .12s, color .12s; }
@@ -703,7 +700,6 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: va
   .fc-tools .btn { padding: 4px 8px; line-height: 1.2; text-align: center; white-space: normal; }
   .fc-tools .btn:first-child:not(:only-child) { flex: none; }
   .fc-tools .btn:last-child { flex: 1 1 0; min-width: 0; }
-  .subs-mast { padding-top: 6px; padding-bottom: 6px; }
 }
 @media (max-width: 700px) { .planner .route-line b { font-size: 26px; } }
 

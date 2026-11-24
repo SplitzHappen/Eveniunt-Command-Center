@@ -3,8 +3,6 @@
    Every colour is a theme token or one token of the six Lists roles in the token block below (docs/lists-colour-roles.md is generated from it). */
 
 /* ---- the frame: a rail on the left from 701 px, a bar fixed to the bottom on a phone; the page's content beside it ---- */
-.lists-mast { max-width: none; padding-top: 12px; padding-bottom: 10px; align-items: center; }
-.lists-mast .lb-word { font-size: 44px; }
 .lists-layout { flex: 1; display: grid; grid-template-columns: 84px minmax(0, 1fr); width: 100%; }
 .lists-tabs { display: flex; flex-direction: column; gap: 2px; padding: 12px 6px; border-right: var(--edge) solid var(--ink); background: var(--paper-2); }
 .ltab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 56px; padding: 9px 2px 8px; border: 0; border-radius: 0; background: transparent; color: var(--ink-2); font: inherit; cursor: pointer; }
@@ -483,8 +481,6 @@
 /* ---- the phone: the rail becomes a bar fixed to the bottom, the switcher gives way to it, every tap target is 40 px ---- */
 @media (max-width: 700px) {
   .lists-page .switcher { display: none; }
-  .lists-mast .lb-word { font-size: 30px; }
-  .lists-mast .lb-top { font-size: 9px; }
   .lists-layout { grid-template-columns: minmax(0, 1fr); }
   .lists-tabs { position: fixed; z-index: 35; left: 0; right: 0; bottom: 0; height: 64px; flex-direction: row; justify-content: space-around; gap: 0; padding: 0; border-right: 0; border-top: var(--edge) solid var(--ink); }
   .ltab { flex: 1; min-width: 0; flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: center; gap: 0 5px; padding: 4px 2px; }

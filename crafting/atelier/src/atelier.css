@@ -51,14 +51,6 @@ select option:checked { background-color: var(--paper-3); color: var(--ink); }
 .hidden { display: none !important; }
 .grow { flex: 1; }
 
-/* ── masthead: a book's title page, double rule beneath ── */
-.mast {
-  display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;
-  max-width: 1760px; margin: 0 auto;
-  padding-top: 22px; padding-bottom: 14px;
-  padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
-  border-bottom: 4px double var(--ink);
-}
 /* Limit Break wordmark (owner choice): molten capitals over a three-bar gauge, coloured by the active theme */
 .lb-mark { display: inline-grid; justify-items: start; gap: 4px; text-decoration: none; color: inherit; min-width: 0; }
 .lb-top { font: 700 15px/1 "Cinzel", var(--f-serif); letter-spacing: .62em; text-transform: uppercase; color: var(--lb-b, var(--seal)); padding-left: 4px; }
@@ -68,14 +60,11 @@ select option:checked { background-color: var(--paper-3); color: var(--ink); }
 .lb-gauge { display: flex; gap: 8px; width: 100%; padding: 2px 6px 0 6px; box-sizing: border-box; }
 .lb-gauge i { flex: 1; height: 11px; border: 2px solid var(--lb-b, var(--seal)); transform: skewX(-25deg); background: linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal))); }
 .lb-gauge i:last-child { background: linear-gradient(90deg, var(--lb-a), var(--lb-b) 62%, transparent 62%); }
-.lb-charging .mast .lb-gauge i:last-child, .lb-gauge.charging i:last-child { background: linear-gradient(90deg, var(--lb-a), var(--lb-b)) no-repeat left / 0% 100%; animation: lbcharge 1.3s ease-in-out infinite; }
+.lb-gauge.charging i:last-child { background: linear-gradient(90deg, var(--lb-a), var(--lb-b)) no-repeat left / 0% 100%; animation: lbcharge 1.3s ease-in-out infinite; }
 @keyframes lbcharge { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 .lb-mark:hover .lb-word { filter: drop-shadow(0 0 26px var(--lb-glow, transparent)) brightness(1.08); }
-.lb-tag { font: 600 11px/1.5 var(--f-data); letter-spacing: .28em; text-transform: uppercase; color: var(--ink-2); padding-bottom: 14px; border-left: 2px solid var(--lb-b, var(--seal)); padding-left: 12px; align-self: flex-end; }
-@media (max-width: 860px) { .lb-word { font-size: 58px; } .lb-top { font-size: 11px; } .lb-gauge i { height: 8px; } .lb-tag { display: none; } }
-.mast .grow { flex: 1; }
-.mast-tools { display: flex; gap: 6px; align-items: center; padding-bottom: 4px; }
-.mast select { background-color: var(--paper); border: 0; border-bottom: 1px solid var(--ink); border-radius: 0; padding: 4px 2px; font: 600 14px var(--f-serif); cursor: pointer; }
+@media (max-width: 860px) { .lb-word { font-size: 58px; } .lb-top { font-size: 11px; } .lb-gauge i { height: 8px; } }
+.ol-tools select { background-color: var(--paper); border: 0; border-bottom: 1px solid var(--ink); border-radius: 0; padding: 4px 2px; font: 600 14px var(--f-serif); cursor: pointer; }
 
 /* ── the bench: Recipe | Crafter across the top, the Work across the full width ── */
 .bench {
@@ -95,7 +84,6 @@ select option:checked { background-color: var(--paper-3); color: var(--ink); }
   .bench > #pane-rotation { margin-top: 0; padding-top: 0; border-top: 0; }
   .bench > section { display: none; }
   .bench > section.on { display: block; }
-  .mast { padding-top: 14px; padding-bottom: 10px; }
   .tabs { display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 19; background: var(--paper); border-bottom: 1px solid var(--rule);
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   .tabs button { background: none; border: 0; padding: 12px 4px 10px; font: 600 16px var(--f-serif); color: var(--ink-2); box-shadow: inset 0 -3px 0 transparent; }
@@ -525,9 +513,6 @@ input[type=range] { accent-color: var(--seal); width: 180px; }
 dialog .help, .crafter-who-help { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
 
 /* gate 1D: the way back to the Command Center, and the one-time hand-over notice (hosted pages only) */
-.cc-back { text-decoration: none; white-space: nowrap; gap: 4px; }
-.cc-back:hover { text-decoration: underline; }
-@media (max-width: 520px) { .cc-back .cc-txt { display: none; } .cc-back { padding-left: 6px; padding-right: 6px; } }
 .handover { margin: 10px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); padding: 10px 14px; border: 1px solid var(--rule); border-left: 3px solid var(--seal); background: var(--paper-2); color: var(--ink); font: 400 14px/1.5 var(--f-body); }
 .handover p { margin: 0; }
 .handover .handover-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

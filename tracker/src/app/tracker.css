@@ -4,13 +4,6 @@
    only for ticks, the current place and progress. */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 body { font-family: var(--f-body); }
-.mast { position: relative; align-items: center; padding-top: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); gap: 18px; }
-.mast .wordmark { gap: 2px; }
-.mast .wordmark .lb-top { font-size: 10px; letter-spacing: .55em; }
-.mast .wordmark .lb-word { font-size: 38px; }
-.mast .wordmark .lb-gauge { gap: 5px; padding-top: 1px; }
-.mast .wordmark .lb-gauge i { height: 6px; border-width: 1.5px; }
-.mast .lb-tag { display: none; }
 .menu-btn { display: none; }
 .search input { width: 260px; min-height: 36px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); padding: 6px 10px; font: 400 14px var(--f-body); }
 .search input:focus { outline: none; border-color: var(--seal); }
@@ -18,7 +11,6 @@ body { font-family: var(--f-body); }
 .sync-state.warn { cursor: help; }
 .sync-state .ss-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--seal); opacity: .7; flex: none; }
 .sync-state .ss-dot.warn { background: #d08a1a; opacity: 1; }
-.mast-tools .btn { border-radius: 8px; }
 
 /* ── shell ── */
 .shell { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 0 32px;
@@ -167,8 +159,6 @@ textarea.inp { font: 400 12px var(--f-data); }
   .lh { top: 0; position: relative; }
 }
 @media (max-width: 520px) {
-  .mast { gap: 10px; }
-  .mast-tools { width: 100%; }
   .search { flex: 1; }
   .search input { width: 100%; }
   .er .nm { font-size: 14px; }
@@ -358,11 +348,5 @@ body.solo .lr > .c { min-height: 44px; }
 #dlg { position: fixed; }
 .empty-start { max-width: 60ch; margin: 10vh auto; padding: 0 16px; }
 
-/* the way back to the main menu (owner request 2026-11-12: clearly labelled, not small, a better icon) */
-.cc-menu-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px 6px 10px; border: 2px solid var(--seal); background: var(--slip); color: var(--ink);
-  font: 700 14px/1 var(--f-body); letter-spacing: .02em; text-decoration: none; white-space: nowrap; box-shadow: var(--shadow); }
-.cc-menu-link:hover { background: var(--seal); color: var(--on-seal); }
-.cc-menu-link .mm-ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.cc-menu-link:hover .mm-ico { stroke: var(--on-seal); }
 .lr.mk { display: block; padding: 6px 8px 6px 26px; border-bottom: 1px solid var(--rule); }
 .mk-list { font: 600 13px var(--f-body); color: var(--seal); }

@@ -80,3 +80,57 @@ test('the built Tracker and Atelier hold the stylesheet; the Command Center ship
   const h = read('tracker', 'command-center', 'site', 'index.html'), o = order(h);
   assert.ok(o[0] > 0 && o[0] < o[1] && o[1] < o[2], 'load order: shared.css, one-look.css, shell.css');
 });
+
+// ---- F3: the one header on every page ----
+const PAGES = {
+  'the Tracker (single file)': ['tracker', 'dist', 'eveniunt-tracker.html'], 'the Tracker (site)': ['tracker', 'site', 'index.html'],
+  'the Atelier (single file)': ['crafting', 'atelier', 'dist', 'eveniunt-atelier.html'], 'the Atelier (site)': ['crafting', 'atelier', 'site', 'index.html'],
+  'Home and Settings': ['tracker', 'command-center', 'site', 'index.html'], 'Submersibles': ['tracker', 'command-center', 'site', 'submersibles', 'index.html'], 'Lists': ['tracker', 'command-center', 'site', 'lists', 'index.html']
+};
+const count = (s, re) => (s.match(re) || []).length;
+
+test('each built page holds exactly one shared header with one tool slot, no tag line and no old masthead', () => {
+  for (const [name, f] of Object.entries(PAGES)) {
+    const h = read(...f);
+    assert.equal(count(h, /class="ol-hdr[ "]/g), 1, name + ': one class="ol-hdr"');
+    assert.equal(count(h, /class="ol-tools[ "]/g), 1, name + ': one ol-tools');
+    assert.equal(count(h, /class="ol-nav[ "]/g), 1, name + ': one ol-nav');
+    assert.equal(count(h, /class="ol-mark"/g), 1, name + ': one wordmark');
+    assert.ok(!/lb-tag/.test(h), name + ': no tag line');
+    assert.ok(!/class="mast/.test(h) && !/<header class="([^"]* )?mast[ "]/.test(h), name + ': no old masthead');
+    assert.ok(!/<!--\/?ol-header/.test(h), name + ': no marker left in the page');
+    const hdr = h.slice(h.indexOf('<header class="ol-hdr'), h.indexOf('</header>'));
+    assert.ok(!/[⚙☰⌂]/.test(hdr), name + ': no text symbol in the header');
+    assert.ok(/mast-tools/.test(hdr), name + ': the tool slot keeps its hook class');
+  }
+});
+
+test('the header carries the app pages with their hooks; the current one is marked; the Main menu is drawn where the page has no hosted-only code', () => {
+  const nav = (h) => h.slice(h.indexOf('<nav class="ol-nav'), h.indexOf('</nav>', h.indexOf('<nav class="ol-nav')));
+  for (const [name, f, here, menu] of [['Home', PAGES['Home and Settings'], 'home', true], ['Submersibles', PAGES.Submersibles, 'submersibles', true], ['Lists', PAGES.Lists, 'lists', true], ['Tracker', PAGES['the Tracker (single file)'], 'tracker', false], ['Atelier', PAGES['the Atelier (single file)'], 'atelier', false]]) {
+    const h = read(...f), n = nav(h);
+    assert.deepEqual([...n.matchAll(/data-module="(\w+)"/g)].map((m) => m[1]), ['home', 'tracker', 'atelier', 'submersibles', 'lists', 'settings'], name);
+    assert.deepEqual([...n.matchAll(/data-module="(\w+)"[^>]*aria-current="page"/g)].map((m) => m[1]), [here], name + ': current page');
+    assert.deepEqual([...n.matchAll(/>([^<]+)<\/a>/g)].map((m) => m[1]), ['Home', 'Tracker', 'Atelier', 'Submersibles', 'Lists', 'Settings'], name + ': labels');
+    assert.equal(/data-cc-back/.test(h.slice(h.indexOf('<header class="ol-hdr'), h.indexOf('</header>'))), menu && name !== 'Home', name + ': the Main menu link (not on Home) is in the markup only where static');
+    assert.equal(/<nav class="ol-nav[^>]* hidden/.test(h), !menu, name + ': the nav is hidden where the hosted-only code shows it');
+    assert.equal(/class="ol-menu[ "]/.test(h.slice(h.indexOf('<header class="ol-hdr'), h.indexOf('</header>'))), menu, name + ': Main menu in the markup');
+  }
+  assert.ok(/class="ol-menu" href=".\/" aria-current="page"/.test(read(...PAGES['Home and Settings'])), 'on Home the Main menu is the current page');
+});
+
+test('the header helper refuses a page without its marker and a header without its parts', () => {
+  const H = require('../tools/one-look-header.js');
+  assert.throws(() => H.fill('<p>no marker</p>'), /no marker/);
+  assert.throws(() => H.fill('<!--ol-header word="X" here="home"-->x<!--/ol-header-->'), /missing/);
+  const one = H.fill('<!--ol-header word="Market" here="none" home="../" href="./" menu="static"-->\n<b>tool</b>\n<!--/ol-header-->');
+  assert.ok(/<b>tool<\/b><\/div><nav class="ol-nav/.test(one) && !/aria-current/.test(one.slice(one.indexOf('<nav'))), 'a new module gets the same header with no current page');
+});
+
+test('the old header rules are gone from the module sheets (the hooks that checks read stay)', () => {
+  for (const f of [['tracker', 'src', 'app', 'shared.css'], ['tracker', 'src', 'app', 'tracker.css'], ['crafting', 'atelier', 'src', 'atelier.css'], ['tracker', 'command-center', 'src', 'shell.css'], ['tracker', 'command-center', 'src', 'submersibles', 'subs.css'], ['tracker', 'command-center', 'src', 'lists', 'lists.css']]) {
+    const c = read(...f).replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.equal(count(c, /\{/g), count(c, /\}/g), f.join('/') + ': braces balance (a removed rule must not take a closing brace)');
+    assert.ok(!/(^|[\s,{}])\.(mast|cc-mast|subs-mast|lists-mast|lb-tag|cc-menu-link|mast-tools)\b/m.test(c), f.join('/') + ' still styles the old header');
+  }
+});

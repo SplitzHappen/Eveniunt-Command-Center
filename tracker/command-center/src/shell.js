@@ -25,7 +25,7 @@
 
   // Install button, shown only when the browser offers installation.
   var deferred = null;
-  var mast = document.querySelector('.mast');
+  var mast = document.querySelector('.ol-tools'); // the install button sits in the header's tool slot
   var btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'install'; btn.hidden = true; btn.textContent = 'Install app';
   if (mast) mast.appendChild(btn);

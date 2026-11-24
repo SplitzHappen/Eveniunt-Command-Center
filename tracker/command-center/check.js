@@ -251,7 +251,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const again = await shellState(page);
       if (SHOT) await page.screenshot({ path: path.join(ev, 'shell-desktop.png') });
       const ok = first.isolated === false && again.isolated === false && again.controller === ROOT + 'sw.js' &&
-        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && again.cards === 4 && real(errors).length === 0;
+        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","Settings"]' && again.cards === 4 && real(errors).length === 0;
       record('C1', 'The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it', ok, { first, again, errors: real(errors), external });
       await ctx.close();
     });
@@ -764,7 +764,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await c2.ctx.setOffline(true); await p2.reload(); await ready(p2);
         const directOffline = await subsState(p2);
         await c2.ctx.close();
-        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && shell.cards === 4 &&
+        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","Settings"]' && shell.cards === 4 &&
           fromShell.url === SUBS && fromShell.isolated === false && fromShell.controller === ROOT + 'sw.js' && fromShell.back === ROOT && fromShell.tabs.join() === 'Board,Log,Map,Earnings,Setup' &&
           backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 4 &&
           direct.isolated === false && direct.controller === ROOT + 'sw.js' && directOffline.tabs.length === 5 && directOffline.isolated === false &&
@@ -5781,7 +5781,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const phone = await state(page);
       await ctx.close();
       const want = 'No lists yet. Start one, or build one from the crafting-log pages you have not finished.';
-      const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && shell.cards === 4 &&
+      const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","Settings"]' && shell.cards === 4 &&
         fromSwitcher.url === LISTS && fromSwitcher.isolated === false && fromSwitcher.controller === ROOT5 + 'sw.js' && fromSwitcher.back === ROOT5 && fromSwitcher.current === 'Lists' &&
         fromSwitcher.text.startsWith(want) && fromSwitcher.buttons.join() === 'New list,From the crafting log' &&
         fromSwitcher.data && fromSwitcher.data.recipes > 13000 && fromSwitcher.data.log === 8 && /^\d/.test(fromSwitcher.data.stamp) &&
@@ -8186,7 +8186,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const all = (sel, root) => [...(root || document).querySelectorAll(sel)].filter(vis);
       const nm = (e) => e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0] + ' "' + String(e.textContent || '').trim().slice(0, 24) + '"';
       const phone = !!o.phone, fig = { rows: 0, icons: 0, stamps: 0 };
-      const mast = document.querySelector('header.mast').getBoundingClientRect(), D = window.__lists.data();
+      const mast = document.querySelector('header.ol-hdr').getBoundingClientRect(), D = window.__lists.data();
       // P1: no sideways scroll
       if (document.documentElement.scrollWidth - window.innerWidth > 0) add('p1Sideways', 'scrolls sideways by ' + (document.documentElement.scrollWidth - window.innerWidth));
       // rows: A2 (controls at rest), P2 (height at rest and opened), A1 (one primary)

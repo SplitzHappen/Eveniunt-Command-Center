@@ -1616,7 +1616,7 @@
       el.remove();
       try { var n = ccDevice(); n.handoverSeen = Date.now(); localStorage.setItem(CC_DEVICE, JSON.stringify(n)); } catch (e) { /* private window: shown again next time */ }
     });
-    var mast = document.querySelector('.mast'); if (mast) mast.insertAdjacentElement('afterend', el);
+    var mast = document.querySelector('.ol-hdr'); if (mast) mast.insertAdjacentElement('afterend', el);
   }
   // ── installable app (hosted only; the single offline file is unchanged) ──
   (function pwa() {
@@ -1647,12 +1647,13 @@
     window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; btn.classList.remove('hidden'); });
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Atelier installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
-    // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. A plain link, first
-    // among the header tools; on narrow screens only the house sign shows.
+    // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. The Main menu, first in
+    // the shared header, with the app's pages beside it (hosted only).
     var home = new URL('../', location.href).href;
-    var back = document.createElement('a'); back.className = 'btn sm ghost cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Eveniunt Command Center: home');
-    back.innerHTML = '<span aria-hidden="true">\u2302</span><span class="cc-txt">Command Center</span>';
-    if (tools) tools.insertBefore(back, tools.firstChild);
+    var back = document.createElement('a'); back.className = 'ol-menu cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Back to the Command Center main menu');
+    back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6"/><rect x="12" y="5" width="4" height="4"/><rect x="17" y="5" width="4" height="4"/><rect x="12" y="11" width="4" height="4"/><rect x="17" y="11" width="4" height="4"/></svg><span class="cc-txt">Main menu</span>';
+    var hin = document.querySelector('.ol-hdr-in'); if (hin) hin.insertBefore(back, hin.firstChild);
+    var nav = document.querySelector('.ol-nav'); if (nav) nav.hidden = false;
     handover(home, 'Atelier');
   })();
   window.__atelier = { SH: SH, switchChar: switchChar, flush: writeShared, S: S, threads: function () { return CORES; }, iconUrl: iconUrl, enName: function (k) { return EN_NAME[k]; }, solveNow: solveNow, openGuide: openGuide, guideReport: guideReport, call: function () { return call.apply(null, arguments); } };
