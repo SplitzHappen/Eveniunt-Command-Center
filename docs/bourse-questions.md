@@ -1,7 +1,7 @@
-# Market module (blueprint phase 4): questions for the owner
+# Bourse, the market module (blueprint phase 4): questions for the owner
 
-Written 2026-11-24, before any research or design. "Market" is the working name until question 1 is answered; the
-files are renamed then. Every question has a suggested default, so "default" (or "all defaults") is a valid answer.
+Written 2026-11-24, before any research or design. "Market" was the working name; the owner named the module **Bourse** (question 1) and the files
+were renamed. Every question has a suggested default, so "default" (or "all defaults") is a valid answer.
 Answer by number, for example: "1 Bourse; 5 I world-visit a lot; everything else default".
 
 What was read first: `CLAUDE.md`, `docs/STATE.md`, `docs/model-tiers.md`, `docs/design-rules.md`,
@@ -145,6 +145,47 @@ Three facts from that reading are behind some questions:
 40. **High-quality prices in Lists.** Once the shared price service can ask for prices by quality, Lists would show
     high-quality prices too instead of "unknown". Default: **yes, in the same pull request**.
 
-## Answers
+## Answers (owner, 2026-11-24)
 
-Not yet received.
+The owner asked to be interviewed interactively rather than answer the written batch, so the questions were asked in
+five short rounds of multiple choice. Answers are given against the numbers above; where a round worded a question
+differently, the answer is recorded as the owner gave it. Questions not asked in the rounds take their default and are
+marked "default (not asked)"; the owner can change any of them.
+
+| # | Answer |
+| --- | --- |
+| 1 | **Bourse.** |
+| 2 | (a) The Bourse replaces the Tracker's Live → Market Board; that page becomes a link and its shopping list is copied over once, then syncs. |
+| 3 | Default (not asked): the Bourse only; Gathering gets its own round. |
+| 4 | Default (not asked): read from the Tracker's place setting and each character. |
+| 5 | **The whole region**: the owner travels to other data centers regularly for the cheapest price. |
+| 6, 7 | **All of the above**: buying, selling, crafting for own use and for profit. |
+| 8 | Not in version one: no typed retainer listings, undercut watching or sales ledger. |
+| 9 | All four screens matter: shopping trip, item prices, profit ranking, watch list and history. |
+| 10 | **PC.** |
+| 11 | Teamcraft, the Universalis website, Saddlebag Exchange and the in-game market board. |
+| 12 | Not asked: follow the research. |
+| 13 | **All four**: shopping trip, item prices, profit ranking, watch list and history. |
+| 14 | Default (not asked): computer for profit and history, phone for the trip; opens on the trip when a list has market items. |
+| 15 | Default (not asked), adjusted to answer 5: the region for the trip and the item screen; profit at the owner's home data center with the region beside it. |
+| 16 | **The owner sets the limits in the module settings**; defaults are the looser pair: older than 1 day is "old", older than 7 days is "very old" and left out of profit. |
+| 17-19 | Default (not asked): fetch on opening (one automatic try per 15 minutes per place and device, plus Refresh); prices for the amount needed; bait listings marked, never hidden. |
+| 20 | (c) Both shown, ranked by the middle of recent sales, the cheapest current listing beside it. |
+| 21 | Gathered materials at market value, with a switch to count them as free; cheapest of merchant or market; crystals at market price. |
+| 22 | High-quality and normal prices always separate; profit assumes the high-quality sale when the item can be high quality, materials at normal price. |
+| 23 | **This week's lowest city rate, and the app lists every city's rate for the week** so the owner can see whether to move retainers to another city. |
+| 24 | Default (not asked): gil per craft, with the return and sales per day beside it; slow sellers sink, never hidden. |
+| 25 | **All recipes** (what the characters cannot make yet is marked). |
+| 26 | **All three ways, chosen by the owner**: cheapest whatever the stops, fewest stops, or a set trade-off; the owner picks which comes first and the threshold (default 10%). |
+| 27 | **Fewest data-center hops, with the biggest savings first.** |
+| 28 | **Both, chosen in the module settings; default: tick only** (a tick does not change Lists unless the owner turns that on). |
+| 29 | Default (not asked): the lists chosen, combined. |
+| 30, 31 | 7 days of sales (30 when available), a line of figures plus one small chart. |
+| 32 | Default (implied by 31): nothing stored beyond what the price site gives. |
+| 33, 34 | **A watch list with in-app alerts** (alerts fire only while the app is open in a tab; the screen says so). |
+| 35 | The workbook mix: the Atelier's book with Submersibles' bold answer slab on top. |
+| 36 | Avoid all four: stock-ticker look, wide tables, pills and rounded cards, small grey numbers. |
+| 37 | Dense on a computer (at least 8 rows in view), one thing at a time on a phone. |
+| 38 | **Show both in the mock-ups** (the proposed answers and a savings-led version); the owner chooses from the pictures. |
+| 39 | Default (not asked): watch list, trip ticks, profit and Bourse settings, price place in the save; prices never. |
+| 40 | Yes, in the same pull request: Lists shows high-quality prices. |
