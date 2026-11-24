@@ -251,7 +251,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const again = await shellState(page);
       if (SHOT) await page.screenshot({ path: path.join(ev, 'shell-desktop.png') });
       const ok = first.isolated === false && again.isolated === false && again.controller === ROOT + 'sw.js' &&
-        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && again.cards === 3 && real(errors).length === 0;
+        JSON.stringify(again.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && again.cards === 4 && real(errors).length === 0;
       record('C1', 'The shell is not cross-origin isolated (Google sign-in can work here) and its site-wide worker controls it', ok, { first, again, errors: real(errors), external });
       await ctx.close();
     });
@@ -293,7 +293,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await page.goto(ROOT + 'atelier/');
       const aOff = await atelierState(page);
       await ctx.setOffline(false);
-      record('C4', 'Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open', sOff.cards === 3 && tOff.overview && tOff.isolated === false && aOff.isolated === true && aOff.threads > 1,
+      record('C4', 'Offline after one visit: the shell, the Tracker (with its save) and the Atelier (isolated, multi-thread) open', sOff.cards === 4 && tOff.overview && tOff.isolated === false && aOff.isolated === true && aOff.threads > 1,
         { shell: sOff, tracker: tOff, atelier: aOff });
       record('C2-4 errors', 'No page or console errors in that profile', real(errors).length === 0, real(errors));
       await ctx.close();
@@ -310,7 +310,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       const note = await page.evaluate(() => ({ h1: document.querySelector('h1') && document.querySelector('h1').textContent, back: !!document.querySelector('a[href]') }));
       await page.click('a[href]'); await page.waitForSelector('.modules');
       const s = await shellState(page);
-      record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 3, { note, shellAfter: s.url });
+      record('C5', 'Offline, a module never opened shows a short note with a way back to the shell', note.h1 === 'You are offline' && note.back && s.cards === 4, { note, shellAfter: s.url });
       await ctx.close();
     });
 
@@ -532,9 +532,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       await p.waitForSelector('a[data-cc-back]');
       const dHand = await handoverState(p);
       await p.click('a[data-cc-back]'); await p.waitForSelector('.modules'); const s3 = await shellState(p);
-      const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 3 &&
-        aHand.back === ROOT && s2.url === ROOT && s2.isolated === false && s2.cards === 3 &&
-        dHand.back === ROOT && s3.url === ROOT && s3.isolated === false && s3.cards === 3 && real(errors).length === 0 && real(c2.errors).length === 0;
+      const ok = tHand.back === ROOT && s1.url === ROOT && s1.isolated === false && s1.cards === 4 &&
+        aHand.back === ROOT && s2.url === ROOT && s2.isolated === false && s2.cards === 4 &&
+        dHand.back === ROOT && s3.url === ROOT && s3.isolated === false && s3.cards === 4 && real(errors).length === 0 && real(c2.errors).length === 0;
       record('C14', 'The header link brings the owner back to the shell from the Tracker and from the Atelier, also from an Atelier opened directly with the shell never visited; the shell is not isolated each time',
         ok, { fromTracker: { link: tHand.back, shell: s1 }, fromAtelier: { link: aHand.back, shell: s2 }, fromAtelierOpenedDirectly: { link: dHand.back, shell: s3 }, errors: real(errors).concat(real(c2.errors)) });
       await c2.ctx.close();
@@ -627,7 +627,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       }
       const f = detail.files || {};
       const ok = !detail.error && f.root && f.tracker && f.atelier && f.cosmic && f.oldFrontPageGone && f.privateRecordsAbsent && detail.freshLists.workflowWrites && detail.freshLists.trackerWorkerServes &&
-        detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 3 && detail.shell.controller === ROOT3 + 'sw.js' &&
+        detail.workerFiles.missing.length === 0 && detail.shell && detail.shell.isolated === false && detail.shell.cards === 4 && detail.shell.controller === ROOT3 + 'sw.js' &&
         detail.links.broken.length === 0 && /Sinus Ardorum/.test(detail.cosmic.title) && detail.tracker.overview && detail.tracker.controller === ROOT3 + 'tracker/sw.js' && detail.errors.length === 0;
       record('C16', 'The published layout (gate 1E): the repository\'s files and the Pages workflow\'s own assemble step put the shell at the root with its worker, the modules at their addresses, the four Cosmic pages and the fresh-list paths; every home-page link resolves and the Tracker opens from it', ok, detail);
     });
@@ -764,9 +764,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         await c2.ctx.setOffline(true); await p2.reload(); await ready(p2);
         const directOffline = await subsState(p2);
         await c2.ctx.close();
-        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","⚙ Settings"]' && shell.cards === 3 &&
+        const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && shell.cards === 4 &&
           fromShell.url === SUBS && fromShell.isolated === false && fromShell.controller === ROOT + 'sw.js' && fromShell.back === ROOT && fromShell.tabs.join() === 'Board,Log,Map,Earnings,Setup' &&
-          backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 3 &&
+          backHome.url === ROOT && offline.isolated === false && offline.tabs.length === 5 && shellOffline.cards === 4 &&
           direct.isolated === false && direct.controller === ROOT + 'sw.js' && directOffline.tabs.length === 5 && directOffline.isolated === false &&
           real(errors).length === 0 && real(c2.errors).length === 0 && external.length === 0;
         record('C20', 'The Submersibles module opens from the shell (switcher and home card) and directly, is not isolated, comes under the shell\'s site-wide worker and works offline after one visit; its header leads back to the shell',
@@ -5592,6 +5592,1482 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       server.close();
     });
 
+    // ── C145 (Lists, W3) The Lists section is kept byte for byte by every app. Each of the three newly built apps and the Tracker and Atelier builds shipped at the merge base (written to a temporary folder with git show and
+    //    served beside the site) saves the same full lists section, then saves another module; the lists section read back is identical to what was sent, and the new builds' own checker leaves it unchanged. ──
+    await guard('C145', async () => {
+      const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
+      let base;
+      // pinned to the last published build without Lists (after Lists is merged, a merge base with main would already have it)
+      try { base = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4'; gitOut(['cat-file', '-e', base + '^{commit}']); }
+      catch (e) { throw new Error('the last build without Lists, 31cb0ba, cannot be read (the checkout needs the history; the workflow uses fetch-depth: 0): ' + String(e.message).split('\n')[0]); }
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-old-'));
+      const written = {};
+      for (const [name, rel] of [['tracker', 'tracker/site'], ['atelier', 'crafting/atelier/site']]) {
+        const dir = path.join(tmp, name);
+        const files = gitOut(['ls-tree', '-r', '--name-only', base, rel]).toString().split('\n').filter(Boolean);
+        if (!files.length) throw new Error('no files of ' + rel + ' at ' + base);
+        for (const f of files) { const dest = path.join(dir, f.slice(rel.length + 1)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, gitOut(['show', base + ':' + f])); }
+        written[name] = dir;
+      }
+      const mounts = [[BASE + 'old-tracker/', written.tracker], [BASE + 'old-atelier/', written.atelier]];
+      MOUNTS.unshift(...mounts);
+      const server = await start(PORT5);
+      const pages = {}, errs = [];
+      try {
+        for (const [name, url] of [['tracker', ROOT5 + 'tracker/'], ['commandCenter', ROOT5 + 'submersibles/'], ['atelier', ROOT5 + 'atelier/'], ['oldTracker', ROOT5 + 'old-tracker/'], ['oldAtelier', ROOT5 + 'old-atelier/']]) {
+          const { ctx, errors } = await context(); errs.push(errors);
+          const pg = await ctx.newPage(); await pg.goto(url);
+          if (/atelier/i.test(name)) { await pg.waitForFunction(() => self.crossOriginIsolated === true, null, { timeout: 60000 }).catch(() => {}); await pg.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 60000 }).catch(() => {}); }
+          for (let attempt = 0; ; attempt++) {
+            try {
+              await pg.waitForFunction(() => typeof window.CC === 'object' && window.CC, null, { timeout: 30000 }).catch(() => {});
+              pages[name] = await pg.evaluate(async () => {
+                if (typeof window.CC !== 'object' || !window.CC || typeof CC.writeSection !== 'function') return null;
+                const sample = { v: 1, lists: { l1aaaaaaaaaa: { name: 'Food', charId: 'c1', order: 0, made: 1760000000000, data: '7.57h1 44948e4c 70429e21', steps: { s1aaaaaaaaaa: { name: 'First', n: 0 }, s2aaaaaaaaaa: { name: 'Second', n: 1 } } }, l2bbbbbbbbbb: { name: 'Gear', charId: null, order: 1, made: 1760000001000, data: '7.57h1 44948e4c 70429e21' } },
+                  targets: { 'l1aaaaaaaaaa.t1aaaaaaaaaa': { item: 5057, recipe: 1000, qty: 3, hq: true, make: true, crafted: 1, step: 's2aaaaaaaaaa', at: 1760000002000 }, 'l1aaaaaaaaaa.t2bbbbbbbbbb': { item: 5058, recipe: 0, qty: 99999, coll: true, step: 'nosuchstep1', done: true, at: 1760000003000 } },
+                  ways: { 'c1.5057': { by: 'trade', recipe: 1001, hq: true, offer: '1016902.15.14944' }, 'u.5058': { by: 'have' } }, owners: { c1: { order: 'market trade gather craft vendor' }, u: {} },
+                  have: { 'c1.5057': { nq: 4, hq: 2, coll: 0 }, 'u.5058': { nq: 0, hq: 0, coll: 7 } }, prefs: { priceWorld: 'Ravana', hideDone: true, combined: { l1aaaaaaaaaa: 1, l2bbbbbbbbbb: 1 } } };
+                const sent = JSON.stringify(sample), clone = (x) => JSON.parse(JSON.stringify(x));
+                const first = await CC.writeSection('lists', clone(sample), null);
+                const sub = { fcs: { fa: { name: 'Alpha', charId: 'c1', order: 0, unlockedSlots: 2, world: 'Ravana', discovered: [1, 2, 3] } }, subs: {}, trips: {}, settings: {} };
+                const other = await CC.writeSection('submersibles', sub, { rev: first.rev, base: null }).then(() => 'ok', (e) => String(e && e.message));
+                let tracker = 'not run';
+                if (typeof ET === 'object' && ET && typeof ET.saveState === 'function' && typeof ET.stateFromDoc === 'function') {
+                  const r = await CC.read(), st = ET.stateFromDoc(CC.checkDoc(r.raw)) || (typeof ET.newState === 'function' ? ET.newState(['A']) : null);
+                  tracker = st ? await ET.saveState(st, true).then((v) => (v ? 'saved' : 'refused'), (e) => String(e && e.message)) : 'no state';
+                }
+                const raw = (await CC.read()).raw, listsNow = JSON.stringify(raw.modules.lists), checked = JSON.stringify(CC.checkDoc(clone(raw)).modules.lists);
+                return { sent: listsNow === sent, other, tracker, checkedSame: checked === sent, hasChecker: typeof CC.checkLists };
+              });
+              break;
+            } catch (e) { if (attempt >= 3 || !/context|navigation|destroyed/i.test(String(e.message))) throw e; await pg.waitForTimeout(500); }
+          }
+          await ctx.close();
+        }
+      } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 2); fs.rmSync(tmp, { recursive: true, force: true }); }
+      const newOnes = ['tracker', 'commandCenter', 'atelier'], oldOnes = ['oldTracker', 'oldAtelier'];
+      const ok = Object.keys(pages).length === 5 && Object.values(pages).every((p) => p && p.sent === true && p.other === 'ok') && newOnes.every((n) => pages[n].hasChecker === 'function' && pages[n].checkedSame === true)
+        && oldOnes.every((n) => pages[n].hasChecker === 'undefined') && ['tracker', 'oldTracker'].every((n) => pages[n].tracker === 'saved') && errs.every((e) => real(e).length === 0);
+      record('C145', 'The Lists section survives a save of another module (and the Tracker\'s own save) byte for byte in the three new builds and in the Tracker and Atelier builds shipped at the merge base (git show of ' + base.slice(0, 12) + '); the new builds\' checker CC.checkLists leaves it unchanged', ok, { pages, base });
+      server.close();
+    });
+
+    // ── C146 (Lists, W4) Two devices on the stand-ins meet over a list. (A) One device removed a whole list, the other changed an item of it: the Settings sync
+    //    says the devices disagree and changes nothing; the Tracker asks one question for the whole list, names it and says what each answer does; closing the dialog
+    //    answers nothing (the list stays, the next opening asks again); Keep leaves the list and the changed item on both devices and the cloud copy; Remove takes the
+    //    list and its items from both. (B) One device removed a wanted item the other changed: one question that names the list and the item; Keep leaves the changed
+    //    item everywhere, Remove removes it everywhere; nothing is asked again afterwards. ──
+    await guard('C146', async () => {
+      const zlib = require('zlib');
+      const server4 = await start(PORT4, { standins: true });
+      const st = server4.standins;
+      const unpack = (doc) => JSON.parse(zlib.inflateRawSync(Buffer.from(doc.data, 'base64')).toString('utf8'));
+      const ready = async (pg) => { await pg.waitForFunction(() => window.__settings, null, { timeout: 10000 }); await pg.evaluate(() => window.__settings.ready()); };
+      const msgOf = (pg) => pg.evaluate(() => ((document.querySelector('#settings .set-msg') || {}).textContent || ''));
+      const blank = (pg) => pg.evaluate(() => { const m = document.querySelector('#settings .set-msg'); if (m) m.textContent = ''; });
+      const sync = async (pg) => {
+        await pg.bringToFront(); await blank(pg); await pg.click('#settings [data-act=sync]');
+        await pg.waitForFunction(() => /Synced \d|disagree/.test((document.querySelector('#settings .set-msg') || {}).textContent || ''), null, { timeout: 20000 }).catch(() => {});
+        await pg.waitForTimeout(700); return msgOf(pg);
+      };
+      const deviceKey = (ch, rt) => { const key = ch.repeat(64); st.kv.set(key, JSON.stringify({ rt, at: 1, used: 1 })); st.state.refreshes.set(rt, true); return key; };
+      const device = async (ctx, key, withChars) => {
+        const pg = await ctx.newPage(); await pg.goto(ROOT4 + '#settings'); await ready(pg);
+        if (withChars) { await pg.click('#settings [data-act=first]'); await pg.waitForSelector('#settings [data-set=name][data-id=c1]'); for (let i = 0; i < 100 && !(await pg.evaluate(async () => { try { return CC.checkDoc((await CC.read()).raw).chars.length === 1; } catch (e) { return false; } })); i++) await pg.waitForTimeout(100); }
+        await pg.evaluate((d) => localStorage.setItem('eveniunt-cloud-device', JSON.stringify({ device: d, at: 1 })), key);
+        await pg.reload(); await ready(pg);
+        await pg.waitForFunction(() => /Synced \d/.test((document.querySelector('#settings .set-msg') || {}).textContent || ''), null, { timeout: 20000 }).catch(() => {});
+        return pg;
+      };
+      // another page changes the Lists section the way the module does: read, change, write with its own stamp and base
+      const edit = (pg, change) => pg.evaluate(async (src) => {
+        const r = await CC.read(), d = CC.checkDoc(r.raw), base = d.modules.lists || null;
+        const sec = JSON.parse(JSON.stringify(base || { v: 1, lists: {}, targets: {}, ways: {}, owners: {}, have: {}, prefs: {} }));
+        (new Function('sec', '(' + src + ')(sec)'))(sec);
+        await CC.writeSection('lists', sec, { rev: r.rev, base });
+      }, change.toString());
+      const listsOf = (pg) => pg.evaluate(async () => { try { return CC.checkDoc((await CC.read()).raw).modules.lists || null; } catch (e) { return null; } });
+      const cloudLists = () => (st.state.files.f1 ? ((unpack(st.state.files.f1).modules || {}).lists || null) : null);
+      const seed = (sec) => { sec.lists['lfood00001'] = { name: 'Food', charId: 'c1', order: 0, made: 1760000000000, data: '7.57h1 44948e4c 70429e21' }; sec.targets['lfood00001.t1aaaaaaaa'] = { item: 5057, recipe: 0, qty: 3, at: 1760000001000 }; sec.targets['lfood00001.t2bbbbbbbb'] = { item: 5058, recipe: 0, qty: 1, at: 1760000002000 }; };
+      // the Settings page holds the save as it read it: a change another page wrote reaches it when it opens again
+      const reopen = async (pg) => { await pg.reload(); await ready(pg); await pg.waitForTimeout(800); };
+      // the Tracker opens, asks (or not), and each question is answered 'local', 'remote' or left (Escape)
+      const asking = async (ctx, answer) => {
+        const t = await ctx.newPage(); await t.goto(ROOT4 + 'tracker/');
+        await t.waitForFunction(() => window.__tracker && window.__tracker.ST, null, { timeout: 30000 });
+        const shown = await t.waitForSelector('dialog[open] .conf', { timeout: 20000 }).then(() => true, () => false);
+        let rows = [];
+        if (shown) {
+          rows = await t.evaluate(() => [...document.querySelectorAll('dialog[open] .conf')].map((c) => ({ id: c.querySelector('[data-pick]').dataset.pick, text: c.querySelector('.w').textContent })));
+          if (answer === null) { await t.keyboard.press('Escape'); await t.waitForTimeout(800); }
+          else {
+            for (const r of rows) await t.evaluate(({ id, v }) => { for (const b of document.querySelectorAll('dialog[open] [data-pick]')) if (b.dataset.pick === id && b.dataset.v === v) b.click(); }, { id: r.id, v: answer });
+            await t.click('dialog[open] #apply'); await t.waitForTimeout(3000);
+          }
+        }
+        await t.close(); return { shown, rows };
+      };
+      const names = (sec) => ({ lists: Object.keys((sec || {}).lists || {}).sort(), targets: Object.entries((sec || {}).targets || {}).map(([k, v]) => k + ':' + v.qty).sort() });
+      const outcome = {};
+      // one scenario: a holds the list, b removes `removal`, a changes `change`; the Settings sync reports the disagreement; the Tracker is asked
+      async function scenario(tag, chA, chB, removal, change, answers) {
+        st.state.files = {}; st.state.etag = {};
+        const one = await context(), two = await context();
+        const a = await device(one.ctx, deviceKey(chA, 'rt-146' + tag + 'a'), true);
+        await edit(a, seed); await reopen(a); await sync(a);
+        const b = await device(two.ctx, deviceKey(chB, 'rt-146' + tag + 'b'), false);
+        for (let i = 0; i < 100 && !names(await listsOf(b)).lists.length; i++) await b.waitForTimeout(200);
+        const bHad = names(await listsOf(b));
+        await edit(b, removal); await reopen(b); await sync(b);
+        await edit(a, change); await reopen(a);
+        const msgA = await sync(a), afterA = names(await listsOf(a)), cloudBefore = names(cloudLists());
+        const rounds = [];
+        for (const answer of answers) rounds.push(await asking(one.ctx, answer));
+        await sync(b); await sync(a); await sync(b);
+        const fa = names(await listsOf(a)), fb = names(await listsOf(b)), fc = names(cloudLists());
+        const again = await asking(one.ctx, 'local').then((r) => r.shown);
+        const errs = real(one.errors).concat(real(two.errors));
+        await one.ctx.close(); await two.ctx.close();
+        return { msgA, bHad, afterA, cloudBefore, rounds, final: { a: fa, b: fb, cloud: fc }, askedAfter: again, errors: errs };
+      }
+      const changed = ['lfood00001.t1aaaaaaaa:7', 'lfood00001.t2bbbbbbbb:1'];
+      const removeList = (sec) => { delete sec.lists['lfood00001']; delete sec.targets['lfood00001.t1aaaaaaaa']; delete sec.targets['lfood00001.t2bbbbbbbb']; };
+      const changeItem = (sec) => { sec.targets['lfood00001.t1aaaaaaaa'].qty = 7; };
+      const removeItem = (sec) => { delete sec.targets['lfood00001.t1aaaaaaaa']; };
+      const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+      // (A) the whole list: closed without an answer (asked again), then Keep (this device holds the list and the other removed it)
+      const a1 = await scenario('a', 'e', 'f', removeList, changeItem, [null, 'local']);
+      const okA1 = /disagree on 1 entry/.test(a1.msgA) && same(a1.bHad.lists, ['lfood00001']) && same(a1.afterA.targets, changed) && same(a1.cloudBefore.lists, [])
+        && a1.rounds.length === 2 && a1.rounds.every((r) => r.shown && r.rows.length === 1 && /Lists: list “Food”/.test(r.rows[0].text) && /the list is kept: choosing this keeps it and its 2 wanted items/.test(r.rows[0].text) && /the list is removed: choosing this removes it and its 2 wanted items on both devices/.test(r.rows[0].text))
+        && same(a1.final.a, { lists: ['lfood00001'], targets: changed }) && same(a1.final.b, a1.final.a) && same(a1.final.cloud, a1.final.a) && !a1.askedAfter && a1.errors.length === 0;
+      // (A) Remove: the same disagreement, the owner says the other device is right
+      const a2 = await scenario('b', 'a', 'b', removeList, changeItem, ['remote']);
+      const okA2 = /disagree on 1 entry/.test(a2.msgA) && a2.rounds.length === 1 && a2.rounds[0].shown && a2.rounds[0].rows.length === 1 && same(a2.final.a, { lists: [], targets: [] }) && same(a2.final.b, a2.final.a) && same(a2.final.cloud, a2.final.a) && !a2.askedAfter && a2.errors.length === 0;
+      // (B) removed against changed: a wanted item removed on the other device, changed here
+      const b1 = await scenario('c', 'c', 'd', removeItem, changeItem, ['local']);
+      const okB1 = /disagree on 1 entry/.test(b1.msgA) && b1.rounds.length === 1 && b1.rounds[0].shown && b1.rounds[0].rows.length === 1 && /Lists: “Food”: a wanted item \(item 5057, 7 wanted\)/.test(b1.rounds[0].rows[0].text) && /\(removed\)/.test(b1.rounds[0].rows[0].text)
+        && same(b1.final.a, { lists: ['lfood00001'], targets: changed }) && same(b1.final.b, b1.final.a) && same(b1.final.cloud, b1.final.a) && !b1.askedAfter && b1.errors.length === 0;
+      const b2 = await scenario('d', '1', '2', removeItem, changeItem, ['remote']);
+      const okB2 = /disagree on 1 entry/.test(b2.msgA) && b2.rounds.length === 1 && b2.rounds[0].shown && same(b2.final.a, { lists: ['lfood00001'], targets: ['lfood00001.t2bbbbbbbb:1'] }) && same(b2.final.b, b2.final.a) && same(b2.final.cloud, b2.final.a) && !b2.askedAfter && b2.errors.length === 0;
+      outcome.a1 = a1; outcome.a2 = a2; outcome.b1 = b1; outcome.b2 = b2;
+      record('C146', 'Two devices (stand-ins) meet over a list: (A) removed whole on one device and an item changed on the other: the Settings sync says the devices disagree, the Tracker asks one question that names the list and says what each answer does; closing the dialog changes nothing and it is asked again; Keep leaves the list and the changed item on both devices and the cloud copy, Remove takes the list and its items from all three; (B) a wanted item removed on one device and changed on the other: one question naming the list and the item; Keep leaves the changed item, Remove removes it everywhere; nothing is asked again afterwards',
+        okA1 && okA2 && okB1 && okB2, { okA1, okA2, okB1, okB2, outcome });
+    });
+
+    // ── C147 (Lists, W6) The Lists page opens from the switcher and from the home card, shows "Your lists" with its empty state, works offline after one
+    //    visit, raises no page error and has no sideways scroll at 360 px; the data file is the real one (unpacked, with its crafting log and the no-hand-over list).
+    await guard('C147', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context();
+      const page = await ctx.newPage();
+      const LISTS = ROOT5 + 'lists/';
+      const ready = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+      const state = (pg) => pg.evaluate(() => ({ url: location.href, isolated: self.crossOriginIsolated, controller: navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL,
+        text: document.querySelector('#view').textContent.trim(), buttons: [...document.querySelectorAll('#view .btn')].map((b) => b.textContent.trim()), back: (document.querySelector('.cc-back') || {}).href,
+        side: document.documentElement.scrollWidth - innerWidth, current: (document.querySelector('.switcher [aria-current=page]') || {}).textContent,
+        data: window.__lists.data() && { recipes: Object.keys(window.__lists.data().recipes).length, log: Object.keys(window.__lists.data().log).length, noHand: window.__lists.data().noHandOver.length, stamp: window.__lists.data().stamp } }));
+      await page.goto(ROOT5); await shellControlled(page);
+      const shell = await shellState(page);
+      await page.click('.switcher a[data-module="lists"]'); await ready(page);
+      const fromSwitcher = await state(page);
+      await page.click('.cc-back'); await page.waitForSelector('.modules');
+      await page.click('.modules a[data-module="lists"]'); await ready(page);
+      await ctx.setOffline(true);
+      await page.reload(); await ready(page);
+      const offline = await state(page);
+      await ctx.setOffline(false);
+      await page.setViewportSize({ width: 360, height: 740 });
+      await page.reload(); await ready(page);
+      const phone = await state(page);
+      await ctx.close();
+      const want = 'No lists yet. Start one, or build one from the crafting-log pages you have not finished.';
+      const ok = JSON.stringify(shell.modules) === '["Home","Tracker","Atelier","Submersibles","Lists","⚙ Settings"]' && shell.cards === 4 &&
+        fromSwitcher.url === LISTS && fromSwitcher.isolated === false && fromSwitcher.controller === ROOT5 + 'sw.js' && fromSwitcher.back === ROOT5 && fromSwitcher.current === 'Lists' &&
+        fromSwitcher.text.startsWith(want) && fromSwitcher.buttons.join() === 'New list,From the crafting log' &&
+        fromSwitcher.data && fromSwitcher.data.recipes > 13000 && fromSwitcher.data.log === 8 && /^\d/.test(fromSwitcher.data.stamp) &&
+        offline.url === LISTS && offline.text.startsWith(want) && offline.data && offline.data.recipes === fromSwitcher.data.recipes &&
+        phone.side <= 0 && phone.text.startsWith(want) && real(errors).length === 0 && external.length === 0;
+      record('C147', 'The Lists page opens from the switcher and the home card, shows "Your lists" with its empty state, is not isolated, works offline after one visit, has no page error and no sideways scroll at 360 px',
+        ok, { shell: { modules: shell.modules, cards: shell.cards }, fromSwitcher, offline, phone, errors: real(errors), external });
+      void server;
+    });
+
+    // ── Lists, W7: the page's edits on the small fixture (stand-in game data, no network): C148 one tab, C149 two tabs, C165 undo across tabs. ──
+    const LISTS_FIXTURE = fs.readFileSync(path.join(T, 'tests', 'fixtures', 'lists-fixture.json'), 'utf8');
+    const listsCtx = async () => {
+      const c = await context({ serviceWorkers: 'block' });
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + LISTS_FIXTURE + ';' }));
+      // W9: every Lists page answers Universalis with a stand-in (spec section 8, intro). `stand.reply(ids)` is null for the default answer (one cheap listing for each
+      // item), 'abort' for a failed fetch, a number for that status, or { id: reply } (an id left out of it is left out of the answer).
+      const stand = { asked: [], reply: null };
+      await c.ctx.route('https://universalis.app/**', (r) => {
+        const u = new URL(r.request().url()), ids = u.pathname.split('/').pop().split(','), cors = { 'access-control-allow-origin': '*' };
+        stand.asked.push(u.pathname.split('/')[3] + ':' + ids.join(',') + u.search);
+        const x = stand.reply ? stand.reply(ids) : null;
+        if (x === 'abort') return r.abort('failed');
+        if (typeof x === 'number') return r.fulfill({ status: x, contentType: 'application/json', headers: cors, body: '{}' });
+        const items = {}; ids.forEach((id) => { if (!x) items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, worldName: 'Test' }], averagePrice: 100 }; else if (x[id] !== undefined) items[id] = Object.assign({ itemID: +id }, x[id]); });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify(ids.length === 1 ? (items[ids[0]] || {}) : { items }) });
+      });
+      c.stand = stand;
+      return c;
+    };
+    const lReady = (pg) => pg.waitForSelector('html[data-ready="1"]', { timeout: 30000 });
+    const lSettle = (pg) => pg.waitForFunction(() => window.__lists && !window.__lists.state.busy && !window.__lists.state.queue.length, null, { timeout: 15000 });
+    const lStored = (pg) => pg.evaluate(async () => { const d = CC.checkDoc((await CC.read()).raw); return d.modules.lists || null; });
+    const lOpenFirst = async (pg) => { await pg.click('.list-card [data-act=open]'); await pg.waitForSelector('.wanted-row, .empty-line'); };
+    const lMake = async (pg, name) => { await pg.click('[data-act=new]'); await pg.fill('[data-f=newname]', name); await pg.click('[data-act=create]'); await lSettle(pg); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg); };
+    const lAdd = async (pg, query, id, qty) => { await pg.fill('[data-f=addqty]', String(qty)); await pg.fill('[data-f=search]', query); await pg.click('button[data-act=add][data-item="' + id + '"]'); await lSettle(pg); };
+    const lRow = (pg, id) => pg.locator('.wanted-row[data-item="' + id + '"]');
+    const lType = async (pg, id, field, v) => { const el = (field === 'qty' ? await lOpen(lRow(pg, id)) : lRow(pg, id)).locator('[data-f=' + field + ']'); await el.fill(String(v)); await el.press('Tab'); await lSettle(pg); };
+    const lNote = (pg) => pg.evaluate(() => (document.querySelector('.lists-status') || {}).textContent || '');
+    // B4 (L10, reach only): "List settings" is a sheet now; open it to reach a setting, close it (Escape) before the page is used again
+    const lSet = async (pg) => { if (!(await pg.locator('.lsheet').count())) { await pg.click('[data-act=settings]'); await pg.waitForSelector('.lsheet'); } };
+    // B5 (L10, reach only): a row's other controls live in its opened row, its notice's lines in the opened notice, and Remove list in the card's "More"
+    const lOpen = async (loc) => { const o = loc.locator('[data-act=row]').first(); if ((await o.getAttribute('aria-expanded')) === 'false') await o.click(); return loc; };
+    const lCloseRows = async (pg) => { const o = pg.locator('.lr.open [data-act=row]'); if (await o.count()) await o.first().click(); };
+    const lShowNotice = async (pg) => { const o = pg.locator('.patch-notice [data-act=notice]'); if ((await o.count()) && (await o.getAttribute('aria-expanded')) === 'false') await o.click(); };
+    const lSetDone = async (pg) => { if (await pg.locator('.lsheet').count()) { await pg.keyboard.press('Escape'); await pg.waitForSelector('.lsheet', { state: 'detached' }); } };
+    const lTargets = (sec) => Object.values((sec && sec.targets) || {});
+    const lQty = (sec, item) => (lTargets(sec).filter((t) => t.item === item)[0] || {}).qty;
+
+    // ── C148 (Lists, W7) One tab: make a list, add wanted items, change amounts, type stock (I have, minus, plus), a cleared amount keeps the item, flags are kept together, and a reload keeps all. ──
+    await guard('C148', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lMake(page, 'Food');
+      await lSet(page); ck.listOpen = (await page.inputValue('[data-f=listname]')) === 'Food'; await lSetDone(page);
+      await lAdd(page, 'grand', 100, 2); await lAdd(page, 'mythril', 130, 1); await lAdd(page, 'collectable piece', 160, 1);
+      ck.rows = await page.locator('.wanted-row').count() === 3;
+      ck.qty2 = (await (await lOpen(lRow(page, 100))).locator('[data-f=qty]').inputValue()) === '2';
+      await lType(page, 100, 'qty', 5);
+      ck.qty5 = lQty(await lStored(page), 100) === 5;
+      await lType(page, 100, 'qty', '');
+      ck.clearedKeeps = lQty(await lStored(page), 100) === 5 && (await (await lOpen(lRow(page, 100))).locator('[data-f=qty]').inputValue()) === '5' && (await page.locator('.wanted-row').count()) === 3;
+      await lType(page, 130, 'have', 4);
+      let sec = await lStored(page);
+      ck.have4 = JSON.stringify(sec.have['u.130']) === '{"nq":4,"hq":0,"coll":0}' && /have 4/.test(await lRow(page, 130).locator('.w-count').textContent());
+      await lRow(page, 130).locator('[data-act=plus]').click(); await lSettle(page);
+      await lRow(page, 130).locator('[data-act=plus]').click(); await lSettle(page);
+      await lRow(page, 130).locator('[data-act=minus]').click(); await lSettle(page);
+      ck.plusMinus = (await lStored(page)).have['u.130'].nq === 5;
+      await lType(page, 130, 'have', 0);
+      ck.zeroRemoves = (await lStored(page)).have['u.130'] === undefined;
+      await lType(page, 130, 'have', 3);
+      await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=hq]').check(); await lSettle(page);
+      await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=coll]').check(); await lSettle(page);
+      sec = await lStored(page);
+      const t160 = lTargets(sec).filter((t) => t.item === 160)[0];
+      ck.flagsTogether = t160.hq === true && t160.coll === true;
+      await (await lOpen(lRow(page, 100))).locator('[data-act=ask-remove]').click(); await (await lOpen(lRow(page, 100))).locator('[data-act=remove]').click(); await lSettle(page);
+      ck.removed = lQty(await lStored(page), 100) === undefined && lTargets(await lStored(page)).length === 2;
+      ck.undoShown = (await page.locator('[data-act=undo][data-i="0"]').count()) === 1;
+      await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undoneBack = lQty(await lStored(page), 100) === 5;
+      const before = await lStored(page);
+      await page.reload(); await lReady(page);
+      const after = await lStored(page);
+      ck.reloadSame = JSON.stringify(before) === JSON.stringify(after) && JSON.stringify(after.lists).length > 10;
+      await lOpenFirst(page);
+      ck.reloadShows = (await (await lOpen(lRow(page, 100))).locator('[data-f=qty]').inputValue()) === '5' && (await lRow(page, 130).locator('[data-f=have]').inputValue()) === '3' &&
+        (await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=coll]').isChecked()) && (await (await lOpen(lRow(page, 160))).locator('[data-f=flag][data-flag=hq]').isChecked());
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C148', 'Lists page: a new list, wanted items added and removed, amounts changed, a cleared amount keeps the item, stock typed with I have, plus and minus, flags kept together, Undo, and a reload shows all of it',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C149 (Lists, W7) Two tabs on one save: different wanted items both kept; a stale edit inside a list another tab removed shows "Not saved" with the list's text and changes
+    //    nothing; a stale removal of an item the other tab changed is refused. A tab's copy is held stale with __lists.hold. ──
+    await guard('C149', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const a = await ctx.newPage(), b = await ctx.newPage();
+      for (const p of [a, b]) { await p.goto(ROOT5 + 'lists/'); await lReady(p); }
+      const ck = {};
+      await lMake(a, 'Shared'); await lAdd(a, 'grand', 100, 2); await lAdd(a, 'mythril', 130, 3);
+      await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
+      ck.bothShow = (await lRow(b, 100).count()) === 1 && (await lRow(b, 130).count()) === 1;
+      // (1) different items, both stale
+      for (const p of [a, b]) await p.evaluate(() => window.__lists.hold(true));
+      await lType(a, 100, 'qty', 4); await lType(b, 130, 'qty', 6);
+      let sec = await lStored(a);
+      ck.differentItems = lQty(sec, 100) === 4 && lQty(sec, 130) === 6;
+      for (const p of [a, b]) await p.evaluate(() => window.__lists.hold(false));
+      await a.evaluate(() => window.__lists.reload()); await b.evaluate(() => window.__lists.reload());
+      // (2) a stale edit inside a removed list
+      await b.evaluate(() => window.__lists.hold(true));
+      await a.click('[data-act=back]'); await a.click('.list-card [data-act=more]'); await a.click('[data-act=ask-remove-list]'); await a.click('[data-act=remove-list]'); await lSettle(a);
+      ck.listGone = Object.keys((await lStored(a)).lists).length === 0;
+      const frozen = JSON.stringify(await lStored(b));
+      await lType(b, 100, 'qty', 9);
+      const note = await lNote(b), after2 = await lStored(b);
+      ck.staleInRemoved = note.includes('Not saved on this device: This list was removed on another device or in another tab.') && JSON.stringify(after2) === frozen && Object.keys(after2.lists).length === 0 && lTargets(after2).length === 0;
+      await b.evaluate(() => window.__lists.hold(false));
+      // (3) a stale removal of an item the other tab changed
+      await b.evaluate(() => window.__lists.reload());
+      await lMake(a, 'Second'); await lAdd(a, 'grand', 100, 2);
+      await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
+      await b.evaluate(() => window.__lists.hold(true));
+      await lType(a, 100, 'qty', 8);
+      await (await lOpen(lRow(b, 100))).locator('[data-act=ask-remove]').click(); await (await lOpen(lRow(b, 100))).locator('[data-act=remove]').click(); await lSettle(b);
+      const note3 = await lNote(b), after3 = await lStored(b);
+      ck.staleRemovalRefused = note3.includes('Not saved on this device: This was changed on another device or in another tab, so it was not removed.') && lQty(after3, 100) === 8;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C149', 'Lists page, two tabs: different wanted items are both kept; a stale edit inside a list the other tab removed says Not saved with the list\'s text and stores nothing; a stale removal of an item the other tab changed is refused',
+        Object.values(ck).every(Boolean), { ck, notes: [note, note3], errors: real(errors), external });
+      void server;
+    });
+
+    // ── C165 (Lists, W7) Undo across tabs: tab A buys 1, tab B types 10 for the same item, tab A's Undo is refused with its line and the count stays 10; without tab B's edit the Undo works. ──
+    await guard('C165', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const a = await ctx.newPage(), b = await ctx.newPage();
+      for (const p of [a, b]) { await p.goto(ROOT5 + 'lists/'); await lReady(p); }
+      const ck = {};
+      await lMake(a, 'Buying'); await lAdd(a, 'mythril', 130, 3);
+      await b.evaluate(() => window.__lists.reload()); await b.waitForSelector('.list-card'); await lOpenFirst(b);
+      const buyOne = async (p) => { await (await lOpen(lRow(p, 130))).locator('[data-act=ask-bought]').click(); await (await lOpen(lRow(p, 130))).locator('[data-f=boughtn]').fill('1'); await (await lOpen(lRow(p, 130))).locator('[data-act=bought]').click(); await lSettle(p); };
+      await buyOne(a);
+      ck.bought1 = (await lStored(a)).have['u.130'].nq === 1;
+      ck.offers = (await a.locator('[data-act=rest]').count()) >= 1;
+      await a.evaluate(() => window.__lists.hold(true));
+      await lType(b, 130, 'have', 10);
+      ck.typed10 = (await lStored(b)).have['u.130'].nq === 10;
+      await a.click('[data-act=undo][data-i="0"]'); await lSettle(a);
+      const note = await lNote(a);
+      ck.refused = note.includes('Undo was not done: this was changed again since, here or on another device. Nothing was changed.') && (await lStored(a)).have['u.130'].nq === 10;
+      ck.entryDropped = !/Bought 1 Mythril Bolt/.test(await lNote(a));
+      // without tab B's edit the Undo works
+      await a.evaluate(() => window.__lists.hold(false)); await a.evaluate(() => window.__lists.reload()); await b.evaluate(() => window.__lists.reload());
+      await lType(a, 130, 'have', 0);
+      await buyOne(a);
+      ck.bought2 = (await lStored(a)).have['u.130'].nq === 1;
+      await a.click('[data-act=undo][data-i="0"]'); await lSettle(a);
+      ck.undone = (await lStored(a)).have['u.130'] === undefined && !(await lNote(a)).includes('Undo was not done');
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C165', 'Lists page, undo across tabs: tab A buys 1, tab B types 10 for the same item, tab A\'s Undo is refused with its line and the count stays 10; without tab B\'s edit the Undo works',
+        Object.values(ck).every(Boolean), { ck, note, errors: real(errors), external });
+      void server;
+    });
+
+    // ── Lists, W8: the tabs (To get, To craft, Wanted), steps, the combined view and the order of ways. Stand-in game data for C150 to C153, C161 to C163; the real data for C154. ──
+    // A page's section is changed in the page itself, with the store's own edit functions, then written with the page's own save call (the way the page writes).
+    const lSeed = async (pg, build) => {
+      await pg.evaluate(async (src) => {
+        const S = LISTS.store, r = await CC.read(), doc = r.raw == null ? CC.emptyDoc() : CC.checkDoc(r.raw), cur = doc.modules.lists || null;
+        const out = new Function('S', 'sec', 'DATA', 'return (' + src + ')(S, sec, DATA)')(S, cur ? JSON.parse(JSON.stringify(cur)) : S.emptySection(), window.__lists.data());
+        await CC.writeSection('lists', out, { rev: r.rev, base: cur ? JSON.parse(JSON.stringify(cur)) : null });
+        await window.__lists.reload();
+      }, build.toString());
+      await lSettle(pg);
+    };
+    // lists and wanted items made in one go: spec = [{ name, charId, items: [[item, qty, flags?]], have: { item: n } }]
+    const lSeedLists = (pg, spec) => lSeed(pg, new Function('S', 'sec', 'DATA', 'const spec = ' + JSON.stringify(spec) + ';' +
+      'let t = 5000; const ctx = () => ({ now: t++ }); spec.forEach((l) => { let r = S.newList(sec, { name: l.name, charId: l.charId || null, stamp: DATA.stamp }, ctx()); sec = r.section; const id = r.id;' +
+      '(l.items || []).forEach((i) => { const rec = Object.keys(DATA.recipes).filter((k) => DATA.recipes[k][0] === i[0]).sort((a, b) => DATA.recipes[a][3] - DATA.recipes[b][3] || a - b)[0] || 0; r = S.addTarget(sec, id, Object.assign({ item: i[0], recipe: rec, qty: i[1] }, i[2] || {}), ctx()); sec = r.section; });' +
+      'Object.keys(l.have || {}).forEach((it) => { sec = S.setHave(sec, l.charId || "u", +it, "nq", l.have[it]).section; }); }); return sec;'));
+    const lTab = async (pg, t) => { await pg.click('[data-act=tab][data-tab=' + t + ']'); await pg.waitForSelector('.tab[data-tab=' + t + '][aria-selected=true]'); };
+    const lOpenAll = async (pg) => { for (let i = 0; i < 12; i++) { const c = pg.locator('.sec-toggle[aria-expanded=false]'); if (!(await c.count())) break; await c.first().click(); } };
+    const lOpenList = async (pg, name, tab) => {
+      if (await pg.locator('[data-act=back]:visible').count()) await pg.click('[data-act=back]');
+      await pg.waitForSelector('.list-card');
+      await pg.locator('.list-card', { hasText: name }).first().locator('[data-act=open]').click(); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg);
+      if (tab) await lTab(pg, tab);
+    };
+    const lSecs = (pg) => pg.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec')].map((s) => [s.dataset.sec, [...s.querySelectorAll('.line-row, .left-row')].map((r) => ({ item: +r.dataset.item, q: r.dataset.q, text: r.textContent.replace(/\s+/g, ' ').trim() }))])));
+    const lBlocks = (pg) => pg.evaluate(() => [...document.querySelectorAll('.cblock')].map((b) => ({ job: b.querySelector('h3').textContent, rows: [...b.querySelectorAll('.line-row')].map((r) => ({ item: +r.dataset.item, q: r.dataset.q, text: r.textContent.replace(/\s+/g, ' ').trim() })) })));
+    const lTotals = (pg) => pg.evaluate(() => { const e = document.querySelector('.lists-totals'); return e ? { get: +e.dataset.get, craft: +e.dataset.craft } : null; });
+    const lSteps = (pg) => pg.evaluate(() => [...document.querySelectorAll('.step-tab')].map((e) => ({ name: e.querySelector('.st-name').textContent, get: +e.querySelector('.st-fig').dataset.get, craft: +e.querySelector('.st-fig').dataset.craft, on: e.getAttribute('aria-selected') === 'true' })));
+    const lItemsIn = (secs, sec) => (secs[sec] || []).map((r) => r.item);
+    const lHave = async (pg) => (await lStored(pg)).have;
+    const lWayOptions = async (pg, loc) => { await lOpen(loc); return loc.locator('[data-f=way] option').evaluateAll((os) => os.map((o) => o.value)); };
+
+    // ── C150 (Lists, W8) A "Get it by" change and a change of the order of ways move the totals at once, in every list of that character; a high-quality row and an ordinary row of one item each show their own way and seller. ──
+    await guard('C150', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Alpha', items: [[100, 1]] }, { name: 'Beta', items: [[100, 2], [130, 3]] }]);
+      await lOpenList(page, 'Beta'); await lAdd(page, 'mythril', 130, 1); await lTab(page, 'wanted');
+      await (await lOpen(lRow(page, 130).nth(1))).locator('[data-flag=hq]').check(); await lSettle(page);
+      await lTab(page, 'get'); await lOpenAll(page);
+      let secs = await lSecs(page);
+      const vend = (secs.vendor || []).filter((r) => r.item === 130);
+      ck.twoRows = vend.length === 2 && vend.some((r) => r.q === 'nq' && /Sold by Berin in Test Town: 3 for 280 gil/.test(r.text) && !/Eli/.test(r.text)) && vend.some((r) => r.q === 'hq' && /Sold by Eli in Test Town for 400 gil each/.test(r.text) && /High quality/.test(r.text) && !/Berin/.test(r.text));
+      await lOpenList(page, 'Alpha', 'get'); await lOpenAll(page);
+      secs = await lSecs(page);
+      const t0 = await lTotals(page);
+      ck.ingotBought = lItemsIn(secs, 'vendor').includes(101) && !lItemsIn(secs, 'gather').includes(104);
+      // (1) one item's way, chosen on a row of list Alpha: the totals move at once, and list Beta shows the change
+      await (await lOpen(page.locator('.get-row[data-item="101"]'))).locator('[data-f=way]').selectOption('craft'); await lSettle(page);
+      const t1 = await lTotals(page);
+      ck.waysMoveTotals = t1.craft > t0.craft && t1.get !== t0.get;
+      await lOpenList(page, 'Beta', 'craft');
+      ck.otherListSeesWay = (await lBlocks(page)).some((b) => b.rows.some((r) => r.item === 101)) && JSON.stringify(await lTotals(page)) === JSON.stringify(t1);
+      await lTab(page, 'get'); await lOpenAll(page);
+      ck.otherListGather = lItemsIn(await lSecs(page), 'gather').includes(104);
+      await page.locator('.get-row[data-item="101"] [data-f=way]').count();
+      await lTab(page, 'craft'); await (await lOpen(page.locator('.craft-row[data-item="101"]'))).locator('[data-f=way]').selectOption(''); await lSettle(page);
+      ck.backToUsual = JSON.stringify(await lTotals(page)) === JSON.stringify(t0) && !(await lBlocks(page)).some((b) => b.rows.some((r) => r.item === 101));
+      // (2) the order of ways: "Craft it" first, written once for the character, moves the totals in both lists
+      await lSet(page); await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet');
+      await page.click('[data-act=order-up][data-way=craft]'); await lSettle(page);
+      const t2 = await lTotals(page);
+      ck.orderMovesTotals = t2.craft > t0.craft;
+      ck.orderStored = (await lStored(page)).owners.u.order === 'craft vendor gather trade market';
+      await lSetDone(page); await lOpenList(page, 'Alpha', 'craft');
+      ck.orderInOtherList = JSON.stringify(await lTotals(page)) === JSON.stringify(t2) && (await lBlocks(page)).some((b) => b.rows.some((r) => r.item === 101));
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C150', 'Lists page: a "Get it by" change and a change of the order of ways move the totals at once and show in every list of that character; a high-quality row and an ordinary row of one item each show their own way and seller',
+        Object.values(ck).every(Boolean), { ck, t0, t1, t2, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C151 (Lists, W8) Steps: each step's share, the shares add up to the list's totals, moving a wanted item to another step changes no total; "This step is handed in" lowers the stock by what the step used and no total rises. ──
+    await guard('C151', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Stepped', items: [[100, 2], [130, 3]], have: { 130: 3 } }]);
+      await lOpenList(page, 'Stepped', 'wanted');
+      await lSet(page);
+      for (const n of ['Alpha', 'Beta']) { await page.fill('[data-f=stepname]', n); await page.click('[data-act=addstep]'); await lSettle(page); await page.waitForSelector('[data-f=stepname]'); }
+      await lSetDone(page);
+      await (await lOpen(lRow(page, 130))).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page);
+      await lTab(page, 'get');
+      const sum = (a) => ({ get: a.reduce((x, s) => x + s.get, 0), craft: a.reduce((x, s) => x + s.craft, 0) });
+      let steps = await lSteps(page), all = steps[0], parts = steps.slice(1);
+      const tot0 = await lTotals(page);
+      ck.stepTabs = steps.length === 3 && steps[0].name === 'All steps' && parts[0].name === 'Alpha' && parts[1].name === 'Beta' && parts[0].get + parts[0].craft > 0;
+      ck.sharesAdd = sum(parts).get === all.get && sum(parts).craft === all.craft && all.get > 0 && all.craft > 0;
+      ck.sentence = /A step.s figures are its share of .* plan and can move between steps and lists; the totals for .* never go up when you remove something\./.test(await (async () => { await lSet(page); const t = await page.locator('.lsheet .steps-note').textContent(); await page.click('.lsheet [data-act=sheet-close]'); return t; })()); // reach edit: the sentence moved from above the views into the List settings sheet, next to the steps
+      // (2) moving a wanted item to another step: the character's totals and the list's totals stay, the steps' shares move
+      await lTab(page, 'wanted'); await (await lOpen(lRow(page, 100))).locator('[data-f=step]').selectOption({ label: 'Beta' }); await lSettle(page); await lTab(page, 'get');
+      steps = await lSteps(page);
+      ck.moveKeepsTotals = JSON.stringify(await lTotals(page)) === JSON.stringify(tot0) && steps[0].get === all.get && steps[0].craft === all.craft && steps[1].get + steps[1].craft === 0 && sum(steps.slice(1)).get === all.get;
+      await lTab(page, 'wanted'); await (await lOpen(lRow(page, 100))).locator('[data-f=step]').selectOption(''); await lSettle(page); await lTab(page, 'get');
+      // (3) a step handed in: the confirm names the counts, the stock of the items themselves goes, no total rises
+      const before = await lHave(page), totB = await lTotals(page);
+      await page.locator('.step-tab', { hasText: 'Beta' }).click(); await page.click('[data-act=ask-handin]');
+      const ask = await page.locator('.lists-confirm').textContent();
+      ck.confirmNames = /3 Mythril Bolt/.test(ask) && /press Made first, so what is left over is counted/.test(ask);
+      await page.click('[data-act=handin]'); await lSettle(page);
+      const after = await lHave(page), totA = await lTotals(page);
+      ck.stockFell = before['u.130'] && before['u.130'].nq === 3 && after['u.130'] === undefined && JSON.stringify(Object.keys(before).filter((k) => k !== 'u.130')) === JSON.stringify(Object.keys(after));
+      ck.noTotalRose = totA.get <= totB.get && totA.craft <= totB.craft;
+      ck.itemFinished = lTargets(await lStored(page)).filter((t) => t.item === 130)[0].done === true && lTargets(await lStored(page)).filter((t) => t.item === 100)[0].done !== true;
+      await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undoHandIn = (await lHave(page))['u.130'].nq === 3 && lTargets(await lStored(page)).filter((t) => t.item === 130)[0].done !== true;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C151', 'Lists page, steps: each step shows its own share and the shares add up to the list\'s totals; moving a wanted item to another step changes no total; "This step is handed in" names the counts, lowers the stock by what the step used and raises no total; Undo restores it',
+        Object.values(ck).every(Boolean), { ck, steps, tot0, totB, totA, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C152 (Lists, W8) Combined view: only one character's lists can be ticked; a subset shows "held for" an unticked earlier list and offers no stock twice; a "Get it by" change made there shows in the single lists too. ──
+    await guard('C152', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'First', charId: 'c1', items: [[103, 4]], have: { 103: 4 } }, { name: 'Second', charId: 'c1', items: [[103, 2]] }, { name: 'Third', charId: 'c1', items: [[103, 3]] }, { name: 'Other', charId: 'c2', items: [[103, 1]] }]);
+      if (await page.locator('[data-act=back]:visible').count()) await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+      const box = (name) => page.locator('.list-card', { hasText: name }).locator('[data-f=tick]');
+      await box('Second').check(); await lSettle(page); await box('Third').check(); await lSettle(page);
+      ck.otherCharDisabled = await box('Other').isDisabled() && !(await box('First').isDisabled()) && /Each character has its own stock\./.test(await page.locator('#view').textContent());
+      ck.tickStored = (await lStored(page)).prefs.combined && Object.keys((await lStored(page)).prefs.combined).length === 2;
+      await page.locator('.lists-group', { hasText: 'Character c1' }).locator('[data-act=combined]').click(); await page.waitForSelector('.tab[data-tab=get]');
+      await lOpenAll(page);
+      let secs = await lSecs(page), row = (secs.gather || []).filter((r) => r.item === 103)[0];
+      ck.heldFor = !!row && /need 5, have 4/.test(row.text) && /4 held for “First”/.test(row.text) && /to get 5/.test(row.text);
+      // all three ticked: nothing is held, and the stock is offered once
+      await page.click('[data-act=back]'); await box('First').check(); await lSettle(page);
+      await page.locator('.lists-group', { hasText: 'Character c1' }).locator('[data-act=combined]').click(); await page.waitForSelector('.tab[data-tab=get]'); await lOpenAll(page);
+      secs = await lSecs(page); row = (secs.gather || []).filter((r) => r.item === 103)[0];
+      ck.noTwice = !!row && /need 9, have 4/.test(row.text) && !/held for/.test(row.text) && /to get 5/.test(row.text);
+      // a way chosen on a combined row is the character's way: the single lists show it
+      await (await lOpen(page.locator('.get-row[data-item="103"]'))).locator('[data-f=way]').selectOption('market'); await lSettle(page);
+      ck.wayStored = (await lStored(page)).ways['c1.103'].by === 'market';
+      await page.click('[data-act=back]'); await page.locator('.list-card', { hasText: 'Second' }).locator('[data-act=open]').click(); await lTab(page, 'get'); await lOpenAll(page);
+      ck.singleShows = lItemsIn(await lSecs(page), 'market').includes(103) && !lItemsIn(await lSecs(page), 'gather').includes(103);
+      // fewer than two ticked: the empty state
+      await page.click('[data-act=back]'); await box('First').uncheck(); await lSettle(page); await box('Third').uncheck(); await lSettle(page);
+      await page.locator('.lists-group', { hasText: 'Character c1' }).locator('[data-act=combined]').click();
+      ck.emptyState = /Tick two or more lists of one character\./.test(await page.locator('#view').textContent());
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C152', 'Lists page, combined view: only one character\'s lists can be ticked; a subset shows "held for" an unticked earlier list and offers the stock once; a "Get it by" change made there shows in the single lists; fewer than two ticked shows the empty state',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C153 (Lists, W8) To craft: blocks by job in crafting order, Made 1 and Made all, "2 of 3 crafted" on a must-craft row, a recording beyond the typed materials shows its line, Hide completed. ──
+    await guard('C153', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Crafts', items: [[100, 1], [130, 3, { make: true }], [120, 9]] }]);
+      await lOpenList(page, 'Crafts', 'craft');
+      const jobs = (await lBlocks(page)).map((b) => b.job);
+      ck.jobBlocks = jobs.length >= 2 && jobs.every((j, i) => i === 0 || j !== jobs[i - 1]) && jobs.indexOf('Goldsmith') >= 0 && jobs.lastIndexOf('Armorer') > jobs.indexOf('Goldsmith');
+      const mk = () => page.locator('.craft-row[data-item="130"]');
+      await lOpen(mk());
+      ck.makeRow = /0 of 3 crafted/.test(await mk().textContent()) && /Must be crafted by me/.test(await mk().textContent()) && (await (await lOpen(mk())).locator('[data-act=made]').count()) === 2 && (await (await lOpen(mk())).locator('[data-f=way]').count()) === 0;
+      await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.shortLine = (await lNote(page)).includes('You recorded more than the materials typed here cover. Those materials were not taken from what your other lists are counting on; check what you have.');
+      ck.oneOfThree = /1 of 3 crafted/.test(await mk().textContent()) && lTargets(await lStored(page)).filter((t) => t.item === 130)[0].crafted === 1 && (await lHave(page))['u.130'].nq === 1;
+      await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.twoOfThree = /2 of 3 crafted/.test(await mk().textContent());
+      // Made all on a craft that makes 3 at a time
+      const gem = () => page.locator('.craft-row[data-item="120"]');
+      ck.gemRow = /3 crafts, makes 9/.test(await gem().textContent());
+      await gem().locator('[data-act=made][data-crafts="3"]').click(); await lSettle(page);
+      ck.madeAll = (await gem().count()) === 0 && (await lHave(page))['u.120'].nq === 9;
+      await (await lOpen(mk())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.completedShown = (await mk().count()) === 0 && /Already crafted/.test(await page.locator('.tab-craft').textContent()) && /3 of 3 crafted/.test(await page.locator('.cdone').textContent());
+      ck.craftedCopy = (await page.locator('.cdone [data-act=copy]').count()) === 1; // R7: Copy name on an "Already crafted" row too
+      await page.locator('.cdone [data-act=copy]').click(); await page.waitForFunction(() => /^(Copied |Could not copy: )/.test(document.getElementById('lstatus').textContent.trim()), null, { timeout: 5000 }).catch(() => { ck.craftedCopy = false; });
+      await lSet(page); await page.click('[data-act=hide]');
+      ck.hidden = (await page.locator('.cdone').count()) === 0 && (await page.locator('.swb[data-act=hide]').getAttribute('aria-pressed')) === 'true' && (await page.locator('.swb[data-act=hide] .swv').textContent()) === 'On'; // R7: a stable name with a visible On or Off
+      await page.click('[data-act=hide]'); await lSetDone(page);
+      ck.shownAgain = (await page.locator('.cdone').count()) === 1;
+      // Hide completed also hides a finished wanted item
+      await lTab(page, 'wanted'); await lRow(page, 120).locator('[data-act=done]').click(); await lSettle(page);
+      await lSet(page); await page.click('[data-act=hide]');
+      ck.wantedHidden = (await lRow(page, 120).count()) === 0 && (await lRow(page, 100).count()) === 1;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C153', 'Lists page, To craft: blocks by job in crafting order, Made 1 and Made all, "2 of 3 crafted" on a must-craft row, a recording beyond the typed materials shows its line, Hide completed hides crafted and finished items',
+        Object.values(ck).every(Boolean), { ck, jobs, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C154 (Lists, W8) 500 wanted items of the real data: under 3,000 page elements with the sections closed, an open section drawn in under one second. ──
+    await guard('C154', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec, DATA) {
+        let r = S.newList(sec, { name: 'Big', stamp: DATA.stamp }, { now: 7000 }); sec = r.section; const id = r.id, items = [], seen = {};
+        Object.keys(DATA.recipes).forEach((k) => { const it = DATA.recipes[k][0]; if (items.length < 500 && !seen[it] && DATA.recipes[k][3] >= 20 && DATA.recipes[k][3] % 7 === 0) { seen[it] = 1; items.push([it, +k]); } });
+        items.forEach((x, i) => { sec.targets[id + '.t' + String(i).padStart(7, '0')] = { item: x[0], recipe: x[1], qty: 1 + (i % 3), at: 8000 + i }; });
+        return sec;
+      });
+      const n = lTargets(await lStored(page)).length;
+      await lOpenList(page, 'Big', 'get');
+      const m = await page.evaluate(() => {
+        const t0 = performance.now(); document.querySelector('[data-act=tab][data-tab=get]').click(); const closed = performance.now() - t0;
+        const elements = document.querySelectorAll('*').length;
+        const heads = [...document.querySelectorAll('.sec-toggle')].map((b) => ({ sec: b.dataset.sec, n: +b.querySelector('.count').textContent }));
+        heads.sort((a, b) => b.n - a.n);
+        const big = heads[0], t1 = performance.now(); document.querySelector('.sec-toggle[data-sec="' + big.sec + '"]').click(); const opened = performance.now() - t1;
+        return { elements, closed, opened, big, heads, openElements: document.querySelectorAll('*').length };
+      });
+      await lTab(page, 'craft');
+      const craftEls = await page.evaluate(() => document.querySelectorAll('*').length);
+      ck.count = n === 500;
+      ck.elements = m.elements < 3000;
+      ck.opened = m.opened < 1000 && m.big.n > 0;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C154', 'Lists page, 500 wanted items of the real data: under 3,000 page elements on To get with the sections closed, and an open section drawn in under one second',
+        Object.values(ck).every(Boolean), { ck, wanted: n, measured: m, craftTabElements: craftEls, errors: real(errors), external });
+      void server;
+    });
+
+    // ── Lists, W9: prices, timed nodes, the patch notice. Universalis is answered by the stand-in of listsCtx (the session reaches no outside site). ──
+    // Wanted items whose way is "market" (a stored way), so their rows carry prices: the fixture's tradable items 103, 104, 111, 120, 130, 141.
+    const lSeedMarket = (pg, ids, name) => lSeed(pg, new Function('S', 'sec', 'DATA', 'const ids = ' + JSON.stringify(ids) + '; let t = 7000; const ctx = () => ({ now: t++ });' +
+      'let r = S.newList(sec, { name: ' + JSON.stringify(name || 'Market') + ', charId: null, stamp: DATA.stamp }, ctx()); sec = r.section; const id = r.id;' +
+      'ids.forEach((i) => { r = S.addTarget(sec, id, { item: i, recipe: 0, qty: 2 }, ctx()); sec = r.section; sec = S.setWay(sec, "u", i, { by: "market" }).section; }); return sec;'));
+    const lMarketOpen = async (pg) => { await lOpenFirstList(pg); await lTab(pg, 'get'); await pg.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await pg.waitForSelector('.gsec[data-sec=market] .price-total'); };
+    const lOpenFirstList = async (pg) => { if (await pg.locator('[data-act=back]:visible').count()) await pg.click('[data-act=back]'); await pg.waitForSelector('.list-card'); await pg.locator('.list-card [data-act=open]').first().click(); await lSet(pg); await pg.waitForSelector('[data-f=listname]'); await lSetDone(pg); };
+    const lPriceTexts = (pg) => pg.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec[data-sec=market] .line-row')].map((r) => [r.dataset.item, (r.querySelector('.price-line') || {}).textContent || ''])));
+    const lPriceTotal = (pg) => pg.evaluate(() => { const e = document.querySelector('.price-total'); return e ? { text: e.textContent, gil: +e.dataset.gil, priced: +e.dataset.priced, unpriced: +e.dataset.unpriced } : null; });
+    // W15: waits for the answer itself: every price row has left its first text ("Price not fetched") and "Fetching", and the page's request is finished
+    const lWaitPrices = (pg) => pg.waitForFunction(() => { const r = [...document.querySelectorAll('.gsec[data-sec=market] .price-line')]; return r.length > 0 && r.every((e) => !/^Fetching/.test(e.textContent) && e.textContent.trim() !== 'Price not fetched') && !__lists.prices().busy; }, null, { timeout: 15000 });
+    const lSettled = (pg) => pg.waitForTimeout(400);
+    const SORRY_NONE = 'Market prices could not be fetched; showing no market prices.', SORRY_KEPT = 'Market prices could not be fetched; showing the last known market prices.';
+
+    // ── C166 (Lists, W9) The seven rows of the price table of section 6, each answered by a stand-in: the row's words, and a total that counts only priced items and names the rest. ──
+    await guard('C166', async () => {
+      const server = await start(PORT5);
+      const ck = {}, ids = [103, 104, 111, 120, 130, 141];
+      // rows 1 to 4: a listing, no listing with a recent average, no listing and no average / a price of 0 / a value that is not a whole number, left out of the reply
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage();
+        c.stand.reply = () => ({ 103: { listings: [{ pricePerUnit: 120, worldName: 'Maduin' }], averagePrice: 100 }, 104: { listings: [], recentHistory: [{ pricePerUnit: 80 }, { pricePerUnit: 100 }] }, 111: { listings: [], averagePrice: 0 },
+          120: { listings: [{ pricePerUnit: 0, worldName: 'Maduin' }] }, 130: { listings: [{ pricePerUnit: 12.5, worldName: 'Maduin' }] } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, ids); await lMarketOpen(page); await lWaitPrices(page);
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.listing = /^120 gil before tax, North America \(cheapest on Maduin\), fetched \d\d:\d\d$/.test(tx[103]);
+        ck.noListingAverage = tx[104] === 'No listings now; recent sales about 90 gil';
+        ck.noListingNoAverage = tx[111] === 'No market price';
+        ck.zero = tx[120] === 'No market price';
+        ck.notWhole = tx[130] === 'No market price';
+        ck.leftOut = tx[141] === 'No market data for this item';
+        ck.total = tot.gil === 240 && tot.priced === 1 && tot.unpriced === 5 && /about 240 gil for 1 item; 5 items without a price/.test(tot.text) && /Test Ore|Ore Chunk|Thread|Triple Gem|Mythril Bolt|Trade Good|Crafted Dust/.test(tot.text);
+        ck.engineGil = await page.evaluate(() => { const g = __lists.plan('u').gil; return g.market === 240 && g.unknown.length === 5; });
+        ck.noErrors1 = real(c.errors).length === 0 && c.external.length === 0;
+        await c.ctx.close();
+      }
+      // row 4, the other way: one item asked for alone and answered 404
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage(); c.stand.reply = () => 404;
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [111]); await lMarketOpen(page); await lWaitPrices(page);
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.single404 = tx[111] === 'No market data for this item' && tot.priced === 0 && tot.unpriced === 1 && /No market prices yet: 1 item without a price/.test(tot.text) && !/about 0 gil/.test(tot.text) && !/could not be fetched/.test(await page.textContent('#view'));
+        await c.ctx.close();
+      }
+      // row 5: the fetch fails and an earlier price is kept
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage();
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [103]); await lMarketOpen(page); await lWaitPrices(page);
+        const first = await lPriceTexts(page);
+        c.stand.reply = () => 'abort';
+        await page.click('[data-act=prices]'); await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.keptPrice = /^100 gil before tax, North America \(cheapest on Test\), last seen \d\d:\d\d\. Market prices could not be fetched; showing the last known market prices\.$/.test(tx[103]) && /fetched/.test(first[103]) && !/last seen/.test(first[103]);
+        ck.keptTotal = tot.gil === 200 && tot.priced === 1 && /\(prices seen \d\d:\d\d\)/.test(tot.text);
+        await c.ctx.close();
+      }
+      // row 6: the fetch fails and nothing is kept
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage(); c.stand.reply = () => 'abort';
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [103]); await lMarketOpen(page); await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page);
+        ck.nothingKept = tx[103] === 'Price not fetched. ' + SORRY_NONE && tot.gil === 0 && tot.priced === 0 && tot.unpriced === 1 && !/prices seen/.test(tot.text);
+        await c.ctx.close();
+      }
+      // row 7: a price fetched an hour ago or more is shown with its time and counted, the total names the oldest time; it is fetched again at the next attempt
+      {
+        const c = await listsCtx(); const page = await c.ctx.newPage();
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedMarket(page, [103, 104]);
+        const old = await page.evaluate(() => { const at = Date.now() - 7200000; localStorage.setItem('eveniunt-lists-prices', JSON.stringify({ scope: 'North-America', at, prices: { 103: [150, 0, '', 0], 104: [60, 0, '', 0] }, none: {}, seen: { 103: at, 104: at + 600000 } })); localStorage.setItem('eveniunt-lists-prices-tried', JSON.stringify({ 'North-America': { at: Date.now() } })); return at; });
+        await page.reload(); await lReady(page); await lMarketOpen(page); await lSettled(page);
+        const tx = await lPriceTexts(page), tot = await lPriceTotal(page), hm = await page.evaluate((t) => { const d = new Date(t), n = new Date(); const t0 = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); return (d.toDateString() === n.toDateString() ? '' : 'yesterday ') + t0; }, old);
+        // two hours back is "yesterday" between midnight and 02:00 local time, which the page says (fmtClock); the expected text follows the same rule (found 2026-11-23)
+        ck.oldPrice = tx[103] === '150 gil before tax, North America, fetched ' + hm && c.stand.asked.length === 0;
+        ck.oldTotal = tot.gil === 300 + 120 && tot.priced === 2 && tot.text.indexOf('(prices seen ' + hm + ')') >= 0;
+        await page.evaluate(() => localStorage.removeItem('eveniunt-lists-prices-tried')); await page.reload(); await lReady(page); await lMarketOpen(page); await lWaitPrices(page);
+        await page.waitForFunction(() => /100 gil/.test(document.querySelector('.gsec[data-sec=market] .price-line').textContent), null, { timeout: 15000 });
+        ck.fetchedAgain = c.stand.asked.length === 1 && c.stand.asked[0].indexOf('North-America:103,104?listings=1&entries=20') === 0;
+        ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+        await c.ctx.close();
+      }
+      record('C166', 'Lists page, prices: the seven rows of the price table (a listing; no listing with a recent average; no listing and no average, a price of 0 and a value that is not a whole number; left out of the reply or answered 404; a failed fetch with an earlier price kept; a failed fetch with nothing kept; a price an hour old or older) each show the row\'s words, and the total counts only priced items and names the rest',
+        Object.values(ck).every(Boolean), { ck });
+      void server;
+    });
+
+    // ── C155 (Lists, W9) Prices with their fetch time, the failure sentence, one automatic attempt across a reload, the place and Hide completed saved in the save, prices never in the save,
+    //    the Submersibles price record untouched, and the plan's ways the same with and without prices. ──
+    await guard('C155', async () => {
+      const server = await start(PORT5);
+      const ck = {}, SUBS = JSON.stringify({ scope: 'Maduin', at: 1700000000000, prices: { 2: 2000 }, none: {}, seen: { 2: 1700000000000 } }), SUBS_TRIED = JSON.stringify({ Maduin: { at: 1700000000000 } });
+      const c = await listsCtx(); const page = await c.ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await page.evaluate((a) => { localStorage.setItem('eveniunt-subs-prices', a[0]); localStorage.setItem('eveniunt-subs-prices-tried', a[1]); }, [SUBS, SUBS_TRIED]);
+      await lSeedMarket(page, [103, 111]); await lSeedLists(page, [{ name: 'Crafts', items: [[100, 1]] }]);
+      await lOpenList(page, 'Market'); await lTab(page, 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await page.waitForFunction(() => /fetched \d\d:\d\d$/.test((document.querySelector('.gsec[data-sec=market] .line-row[data-item="103"] .price-line') || {}).textContent || ''), null, { timeout: 15000 }); // W14: the fetched state itself, never "not Fetching" (which the row's first text also satisfies)
+      let tx = await lPriceTexts(page);
+      ck.fetchTime = /^100 gil before tax, North America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && c.stand.asked.length === 1 && /listings=1&entries=20$/.test(c.stand.asked[0]);
+      // the plan's ways are the same with and without prices
+      ck.waysSame = await page.evaluate(() => { const f = (p) => JSON.stringify(Object.keys(p.lines).sort().map((k) => [k, p.lines[k].by, p.lines[k].why, p.lines[k].recipe, p.lines[k].offer ? p.lines[k].offer.key : null])); return f(__lists.plan('u')) === f(__lists.plan('u', true)) && __lists.plan('u').gil.market > 0 && __lists.plan('u', true).gil.market === 0; });
+      // prices are never in the save: the stored section holds no price and no price record
+      const doc = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      ck.notInSave = !/pricePerUnit|before tax|eveniunt-lists-prices|"prices"/.test(doc) && !/Maduin/.test(doc);
+      // one automatic attempt across a reload: with the fetch failing, the reload makes no second attempt inside 15 minutes; Refresh makes exactly one
+      await page.evaluate(() => { localStorage.removeItem('eveniunt-lists-prices'); localStorage.setItem('eveniunt-lists-prices-tried', '{}'); });
+      c.stand.reply = () => 'abort'; c.stand.asked.length = 0;
+      await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]');
+      await page.waitForFunction(() => /could not be fetched/.test(document.querySelector('#view').textContent), null, { timeout: 15000 });
+      const afterFirst = c.stand.asked.length;
+      tx = await lPriceTexts(page);
+      ck.failureSentence = tx[103] === 'Price not fetched. ' + SORRY_NONE;
+      await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get'); await page.click('.sec-toggle[data-sec=market][aria-expanded=false]'); await lSettled(page);
+      ck.oneAttempt = afterFirst === 1 && c.stand.asked.length === 1 && (await page.evaluate(() => JSON.parse(localStorage.getItem('eveniunt-lists-prices-tried'))['North-America'].at > 0));
+      await page.click('[data-act=prices]'); await lSettled(page);
+      ck.refresh = c.stand.asked.length === 2;
+      // the price place is kept in the save (prefs.priceWorld) and chosen for the next attempt; Hide completed is kept too (prefs.hideDone)
+      c.stand.reply = null;
+      await lSet(page); await page.selectOption('[data-f=priceWorld]', 'Europe'); await lSettle(page);
+      await page.waitForFunction(() => /Europe/.test(document.querySelector('.price-line') ? document.querySelector('.price-line').textContent : ''), null, { timeout: 15000 });
+      ck.placeAsked = c.stand.asked.some((a) => a.indexOf('Europe:') === 0);
+      ck.placeSaved = (await lStored(page)).prefs.priceWorld === 'Europe';
+      await page.click('[data-act=hide]'); await lSettle(page);
+      ck.hideSaved = (await lStored(page)).prefs.hideDone === true;
+      await page.reload(); await lReady(page); await lOpenList(page, 'Market', 'get');
+      await lSet(page); ck.hideKept = (await page.locator('.swb[data-act=hide] .swv').textContent()) === 'On' && (await page.locator('[data-f=priceWorld]').inputValue()) === 'Europe';
+      await page.click('[data-act=hide]'); await lSettle(page);
+      ck.hideOff = !('hideDone' in ((await lStored(page)).prefs || {})) || (await lStored(page)).prefs.hideDone === false;
+      // the Submersibles record is exactly as it was
+      const subs = await page.evaluate(() => [localStorage.getItem('eveniunt-subs-prices'), localStorage.getItem('eveniunt-subs-prices-tried')]);
+      ck.subsUntouched = subs[0] === SUBS && subs[1] === SUBS_TRIED;
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C155', 'Lists page, prices: a price shows its fetch time, a failed fetch says "showing no market prices", a reload inside 15 minutes makes no second automatic attempt and Refresh makes exactly one, the price place and Hide completed are kept in the save (prefs) and prices never are, the Submersibles price record is byte for byte as it was, and the plan\'s ways are the same with and without prices',
+        Object.values(ck).every(Boolean), { ck, asked: c.stand.asked, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── C156 (Lists, W9) The next window of a timed node at a fixed clock: Eorzea time and real minutes; an open window says so; an untimed node shows none. ──
+    await guard('C156', async () => {
+      const server = await start(PORT5);
+      const ck = {}, DAY = 4200000, HOUR = 175000, base = 400000 * DAY;
+      const c = await listsCtx(); const page = await c.ctx.newPage();
+      await c.ctx.clock.setFixedTime(base + 12 * HOUR); // 12:00 Eorzea time: the node 104 (hours 1 and 13, 180 Eorzean minutes) opens at 13:00, in 175 seconds
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedLists(page, [{ name: 'Gather', items: [[104, 2], [103, 2]] }]);
+      await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
+      const rows = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.gsec[data-sec=gather] .line-row')].map((r) => [r.dataset.item, (r.querySelector('.w-window') || {}).textContent || ''])));
+      let w = await rows();
+      ck.opensSoon = w[104] === 'opens 13:00 Eorzea time, in 3 min';
+      ck.untimed = w[103] === '' && (await page.locator('.gsec[data-sec=gather] .line-row[data-item="103"]').count()) === 1;
+      await c.ctx.clock.setFixedTime(base + 14 * HOUR); // 14:00: open until 16:00, in 350 seconds
+      await page.reload(); await lReady(page); await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
+      w = await rows();
+      ck.open = w[104] === 'open now, closes 16:00 Eorzea time, in about 6 min, Teamcraft';
+      await c.ctx.clock.setFixedTime(base + 4 * HOUR + 30000); // 04:00 and a little: the next window is the 13:00 one, 9 Eorzean hours away (1,575 seconds, about 26 minutes)
+      await page.reload(); await lReady(page); await lOpenList(page, 'Gather', 'get'); await lOpenAll(page);
+      w = await rows();
+      ck.later = /^opens 13:00 Eorzea time, in 2[67] min$/.test(w[104]);
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C156', 'Lists page, timed nodes: at a fixed clock a timed gathering row says when the next window opens in Eorzea time and in real minutes ("opens 13:00 Eorzea time, in 3 min"), an open window says "open now, closes 16:00 Eorzea time", and an untimed node shows no window',
+        Object.values(ck).every(Boolean), { ck, w, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── C157 (Lists, W9) The notice that the game data changed: two entries in a row, one changing a recipe twice and one removing a material's recipe deep in the tree, compared oldest against today's. ──
+    await guard('C157', async () => {
+      const server = await start(PORT5);
+      const T1 = '1.01 aaaaaaaa bbbbbbbb', T2 = '1.02 aaaaaaaa bbbbbbbb', T3 = '1.03 aaaaaaaa bbbbbbbb', OLD = '0.99 aaaaaaaa bbbbbbbb', NEWER = '1.04 aaaaaaaa bbbbbbbb';
+      const f = JSON.parse(LISTS_FIXTURE), now1000 = f.recipes['1000'], gone1002 = f.recipes['1002'];
+      const r1 = [100, 1, 2, 50, 0, [[101, 2], [102, 1], [103, 2]], 1], r2 = [100, 3, 2, 50, 0, [[101, 2], [102, 1], [103, 2]], 1];
+      delete f.recipes['1002']; f.stamp = T3;
+      f.changes = [{ from: T1, to: T2, recipes: { 1000: [r1, r2] }, gone: { 1002: gone1002 } }, { from: T2, to: T3, recipes: { 1000: [r2, now1000] }, gone: {} }];
+      const ck = {};
+      const c = await context({ serviceWorkers: 'block' }); const page = await c.ctx.newPage();
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + JSON.stringify(f) + ';' }));
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedLists(page, [{ name: 'Behind', items: [[100, 1], [130, 2]], have: { 103: 5 } }, { name: 'Unknown', items: [[100, 1]] }, { name: 'Ahead', items: [[100, 1]] }, { name: 'Current', items: [[100, 1]] }]);
+      await lSeed(page, new Function('S', 'sec', 'DATA', 'const st = ' + JSON.stringify({ Behind: T1, Unknown: OLD, Ahead: NEWER, Current: T3 }) + '; Object.keys(sec.lists).forEach((k) => { sec.lists[k].data = st[sec.lists[k].name]; }); return sec;'));
+      const lines = async () => { await lShowNotice(page); return page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent)); };
+      const stored0 = await lStored(page), strip = (sec) => { const o = JSON.parse(JSON.stringify(sec)); Object.keys(o.lists).forEach((k) => { delete o.lists[k].data; }); return JSON.stringify(o); };
+      await lOpenList(page, 'Behind');
+      const ls = await lines();
+      ck.twoLines = ls.length === 2 && ls.includes('Grand Widget now needs 3 Test Ore, was 2.') && ls.includes('Special Cloth can no longer be crafted (it was made from 2 Thread).');
+      ck.once = new Set(ls).size === ls.length && !ls.some((l) => /makes/.test(l)) && !ls.some((l) => /was 1/.test(l));
+      ck.heading = /Game data changed since this list was last checked/.test(await page.textContent('.patch-notice h2'));
+      ck.keptBefore = strip(await lStored(page)) === strip(stored0) && (await page.locator('.wanted-row').count()) === 2;
+      await page.click('[data-act=noted]'); await lSettle(page);
+      const after = await lStored(page), behind = Object.values(after.lists).find((l) => l.name === 'Behind');
+      ck.noted = behind.data === T3 && (await page.locator('.patch-notice').count()) === 0 && strip(after) === strip(stored0);
+      await page.reload(); await lReady(page); await lOpenList(page, 'Behind');
+      ck.stays = (await page.locator('.patch-notice').count()) === 0;
+      // a stamp outside the chain: the plain sentence, nothing changed; a newer stamp and a current one: no notice
+      await lOpenList(page, 'Unknown');
+      const plain = await page.textContent('.patch-notice');
+      ck.plain = /Game data changed since this list was last checked; the details for that version are not available\./.test(plain) && (await page.locator('.patch-notice li').count()) === 0;
+      await lOpenList(page, 'Ahead'); ck.newer = (await page.locator('.patch-notice').count()) === 0;
+      await lOpenList(page, 'Current'); ck.current = (await page.locator('.patch-notice').count()) === 0;
+      ck.keptAll = strip(await lStored(page)) === strip(stored0);
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C157', 'Lists page, patch notice: with two data changes in a row (one recipe changed twice, a deep material\'s recipe removed) the notice names each change once, oldest row against today\'s, and nothing of the list is changed; "OK, noted" writes the new stamp and the notice stays away; a stamp outside the chain shows the plain sentence; a newer stamp and the current one show no notice',
+        Object.values(ck).every(Boolean), { ck, ls, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── Lists, W14 (fixes from the outside code reviews): C167 the "Restored list" card on an orphan the shipped build leaves, C168 recipe-specific "Made" and "Bought it" and the cap at 999,999,
+    //    C169 the quality "Made" records, C170 the patch notice for an added recipe. ──
+    // ── C167 (Lists, W14) Wanted items whose list header is missing, left by the build shipped before Lists (it writes the section as plain data; written to a temporary folder with git show and served beside the site): the
+    //    page keeps them, shows them under "Restored list", plans nothing for them, and offers "Put these in a new list" (the header under the old id, nothing moves) and "Remove", both through undo. ──
+    await guard('C167', async () => {
+      const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
+      const base = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4';
+      try { gitOut(['cat-file', '-e', base + '^{commit}']); } catch (e) { throw new Error('the last build without Lists, 31cb0ba, cannot be read: ' + String(e.message).split('\n')[0]); }
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-orphan-')), dir = path.join(tmp, 'tracker'), rel = 'tracker/site';
+      for (const f of gitOut(['ls-tree', '-r', '--name-only', base, rel]).toString().split('\n').filter(Boolean)) { const dest = path.join(dir, f.slice(rel.length + 1)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, gitOut(['show', base + ':' + f])); }
+      const mounts = [[BASE + 'old-tracker/', dir]];
+      MOUNTS.unshift(...mounts);
+      const server = await start(PORT5);
+      const ck = {};
+      const errs = [];
+      try {
+        const O = 'l1aaaaaaaaaa', K = 'l2bbbbbbbbbb';
+        const sample = { v: 1, lists: { [K]: { name: 'Kept', charId: null, order: 0, made: 1760000001000 } },
+          targets: { [O + '.t1aaaaaaaaaa']: { item: 101, recipe: 1001, qty: 2, at: 1760000002000 }, [O + '.t2bbbbbbbbbb']: { item: 103, recipe: 0, qty: 7, at: 1760000003000 }, [K + '.t3cccccccccc']: { item: 100, recipe: 1000, qty: 1, at: 1760000004000 } },
+          ways: {}, owners: {}, have: {}, prefs: {} };
+        // a fresh browser context each: the shipped build writes the section (it keeps it as plain data), then the Lists page opens it
+        const fresh = async () => {
+          const c = await listsCtx(); errs.push(c);
+          const old = await c.ctx.newPage(); await old.goto(ROOT5 + 'old-tracker/');
+          await old.waitForFunction(() => typeof window.CC === 'object' && window.CC && typeof CC.writeSection === 'function', null, { timeout: 30000 });
+          await old.evaluate(async (sec) => { await CC.writeSection('lists', sec, null); }, sample);
+          await old.close();
+          const page = await c.ctx.newPage(); await page.goto(ROOT5 + 'lists/'); await lReady(page);
+          return page;
+        };
+        // (A) the card, nothing planned, "Put these in a new list"
+        let page = await fresh();
+        const s0 = JSON.stringify(await lStored(page)), card = { locator: (x) => page.locator('.lists-restored').locator(x), count: () => page.locator('.lists-restored').count(), textContent: () => page.locator('.lists-restored').textContent() };
+        ck.storedKept = Object.keys(JSON.parse(s0).targets).filter((k) => k.startsWith(O + '.')).length === 2 && !JSON.parse(s0).lists[O];
+        const txt = await card.textContent();
+        ck.card = (await card.count()) === 1 && (await card.locator('h2').textContent()) === 'Restored list' && /Iron Ingot × 2/.test(txt) && /Test Ore × 7/.test(txt) && (await page.locator('.list-card').count()) === 1;
+        ck.planned = JSON.stringify(await page.evaluate(() => __lists.plan('u').shares.map((s) => s.list))) === JSON.stringify([K]);
+        await card.locator('[data-act=restore-orphans]').click(); await lSettle(page);
+        const s1 = await lStored(page);
+        ck.restored = !!s1.lists[O] && s1.lists[O].name === 'Restored list' && JSON.stringify(s1.targets) === JSON.stringify(JSON.parse(s0).targets) && (await card.count()) === 0 && (await page.locator('.list-card').count()) === 2;
+        ck.planNow = JSON.stringify(await page.evaluate(() => __lists.plan('u').shares.map((s) => s.list).sort())) === JSON.stringify([O, K]);
+        ck.noUndoOffered = (await page.locator('[data-act=undo]').count()) === 0; // the save refuses to make an orphan again (LI2), so no Undo is offered for this
+        // (B) Remove: asked first, Keep keeps, Remove removes only these items; with no list left the card is still there
+        page = await fresh();
+        await card.locator('[data-act=ask-remove-orphans]').click();
+        ck.asks = /Remove these 2 wanted items\?/.test(await card.textContent());
+        await card.locator('[data-act=keep]').click(); ck.keeps = (await card.count()) === 1 && JSON.stringify(await lStored(page)) === s0;
+        await card.locator('[data-act=ask-remove-orphans]').click(); await card.locator('[data-act=remove-orphans]').click(); await lSettle(page);
+        const s2 = await lStored(page);
+        ck.removed = (await card.count()) === 0 && Object.keys(s2.targets).join() === K + '.t3cccccccccc' && !!s2.lists[K] && (await page.locator('[data-act=undo]').count()) === 0;
+        page = await fresh();
+        await page.locator('.list-card').first().locator('[data-act=more]').click(); await page.locator('.list-card').first().locator('[data-act=ask-remove-list]').click(); await page.locator('.list-card').first().locator('[data-act=remove-list]').click(); await lSettle(page);
+        await page.reload(); await lReady(page);
+        ck.noLists = /No lists yet/.test(await page.locator('#view').textContent()) && (await card.count()) === 1 && /Iron Ingot × 2/.test(await card.textContent());
+        ck.noErrors = errs.every((c) => real(c.errors).length === 0 && c.external.length === 0);
+      } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 1); fs.rmSync(tmp, { recursive: true, force: true }); }
+      record('C167', 'Lists page, "Restored list": wanted items left without a list by the build shipped before Lists are kept and shown under "Restored list" (also with no list at all), no plan counts them, "Put these in a new list" gives them a header under the old id and moves nothing, "Remove" asks first and removes only them; no Undo is offered for either (the save refuses to make an orphan again)',
+        Object.values(ck).every(Boolean), { ck, errors: errs.map((c) => real(c.errors)), external: errs.map((c) => c.external) });
+      server.close();
+    });
+
+    // ── C168 (Lists, W14) Two recipes of one product (Iron Ingot, recipes 1001 and 1003, one wanted item each in two lists): the row shows the line of its own recipe; "Made" and "Bought it" act only on that recipe's wanted item;
+    //    a craft that would pass 999,999 keeps 999,999, counts the craft and says so. ──
+    await guard('C168', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec) {
+        let t = 9000; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'Ingot one', charId: null }, c()); sec = r.section; const a = r.id;
+        sec = S.addTarget(sec, a, { item: 101, recipe: 1001, qty: 2, make: true }, c()).section;
+        r = S.newList(sec, { name: 'Ingot two', charId: null }, c()); sec = r.section; const b = r.id;
+        sec = S.addTarget(sec, b, { item: 101, recipe: 1003, qty: 3, make: true }, c()).section;
+        sec = S.setHave(sec, 'u', 103, 'nq', 50).section; sec = S.setHave(sec, 'u', 104, 'nq', 50).section;
+        return sec;
+      });
+      const tgt = async (rec) => lTargets(await lStored(page)).filter((t) => t.recipe === rec)[0];
+      // each row shows the line of its own recipe
+      await lOpenList(page, 'Ingot two', 'wanted');
+      ck.rowTwo = /need 3,/.test(await lRow(page, 101).textContent());
+      await lOpenList(page, 'Ingot one', 'wanted');
+      ck.rowOne = /need 2,/.test(await lRow(page, 101).textContent());
+      // "Made 1" on recipe 1003 (makes 2) credits only the wanted item of recipe 1003
+      await lOpenList(page, 'Ingot two', 'craft');
+      const row = (lk) => page.locator('.craft-row[data-lk="' + lk + '"]');
+      await (await lOpen(row('101|make|1003'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.madeTwo = (await tgt(1003)).crafted === 2 && !(await tgt(1001)).crafted && (await lHave(page))['u.101'].nq === 2;
+      // "Made 1" on recipe 1001 credits only recipe 1001's
+      await lOpenList(page, 'Ingot one', 'craft');
+      await (await lOpen(row('101|make|1001'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.madeOne = (await tgt(1001)).crafted === 1 && (await tgt(1003)).crafted === 2;
+      // "Bought it" on recipe 1003 switches "Must be crafted by me" off on that wanted item only
+      await lOpenList(page, 'Ingot two', 'craft');
+      await (await lOpen(row('101|make|1003'))).locator('[data-act=ask-bought][data-mode=bought]').click(); await (await lOpen(row('101|make|1003'))).locator('[data-f=boughtn]').fill('1'); await (await lOpen(row('101|make|1003'))).locator('[data-act=bought]').click(); await lSettle(page);
+      ck.boughtTwo = !(await tgt(1003)).make && (await tgt(1001)).make === true;
+      // the cap: 999,999 in stock, one more craft
+      await lSeedLists(page, [{ name: 'Capped', items: [[130, 3, { make: true }]], have: { 130: 999999, 103: 5 } }]);
+      await lOpenList(page, 'Capped', 'craft');
+      await (await lOpen(page.locator('.craft-row[data-item="130"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      ck.capKept = (await lHave(page))['u.130'].nq === 999999 && (await tgt(1011)).crafted === 1;
+      ck.capSays = (await lNote(page)).includes('Counts above 999,999 are kept at 999,999.');
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C168', 'Lists page, two recipes of one product: each row shows its own recipe\'s line, "Made" credits and "Bought it" switches off "Must be crafted by me" only on the wanted items of that recipe, in either list; a craft that would pass 999,999 keeps 999,999 in stock, still counts the craft and says "Counts above 999,999 are kept at 999,999."',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C169 (Lists, W14) "Made" on a must-craft line records the quality the wanted items ask for: high quality; collectable before high quality; and with two different qualities on one line a choice on the row
+    //    (high quality by default). ──
+    await guard('C169', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'HQ', items: [[101, 2, { make: true, hq: true }]], have: { 104: 20 } }, { name: 'Coll', items: [[160, 2, { make: true, coll: true, hq: true }]], have: { 103: 20 } },
+        { name: 'Mixed', items: [[161, 1, { make: true, hq: true }], [161, 1, { make: true }]], have: { 103: 20 } }]);
+      const stock = async (id) => (await lHave(page))['u.' + id];
+      await lOpenList(page, 'HQ', 'wanted');
+      ck.rowQuality = (await lRow(page, 101).getAttribute('data-q')) === 'hq' && /\(high quality\)/.test(await lRow(page, 101).textContent());
+      await lTab(page, 'craft');
+      ck.noChoice = (await page.locator('[data-f=madeq]').count()) === 0;
+      await (await lOpen(page.locator('.craft-row[data-item="101"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      const h = await stock(101);
+      ck.hq = h.hq === 1 && !h.nq && !h.coll && lTargets(await lStored(page)).filter((t) => t.item === 101)[0].crafted === 1;
+      await lOpenList(page, 'Coll', 'craft');
+      await (await lOpen(page.locator('.craft-row[data-item="160"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      const c = await stock(160);
+      ck.coll = c.coll === 1 && !c.nq && !c.hq;
+      await lOpenList(page, 'Mixed', 'craft');
+      const sel = (await lOpen(page.locator('.craft-row[data-item="161"]'))).locator('[data-f=madeq]');
+      ck.choice = (await sel.count()) === 1 && (await sel.locator('option').evaluateAll((o) => o.map((x) => x.value))).join() === 'hq,nq' && (await sel.inputValue()) === 'hq';
+      await (await lOpen(page.locator('.craft-row[data-item="161"]'))).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      let m = await stock(161);
+      ck.mixedDefault = m.hq === 1 && !m.nq;
+      await lOpenList(page, 'Mixed', 'craft');
+      const sel2 = (await lOpen(page.locator('.craft-row[data-item="161"]'))).locator('[data-f=madeq]');
+      ck.choiceKeptAfter = (await sel2.count()) === 0 || (await sel2.locator('option').evaluateAll((o) => o.map((x) => x.value))).join() === 'nq';
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C169', 'Lists page, quality of "Made": a must-craft item that asks for high quality records high quality, collectable before high quality records collectable, the wanted row counts that quality, and one line with two different asked qualities shows a quality choice (high quality first)',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C170 (Lists, W14) The patch notice names a recipe the patch added ("can now be crafted"), also when an earlier patch changed no recipe (an empty entry in the chain). ──
+    await guard('C170', async () => {
+      const server = await start(PORT5);
+      const T0 = '1.00 aaaaaaaa bbbbbbbb', T1 = '1.01 aaaaaaaa bbbbbbbb', T2 = '1.02 aaaaaaaa bbbbbbbb';
+      const f = JSON.parse(LISTS_FIXTURE);
+      f.stamp = T2;
+      f.changes = [{ from: T0, to: T1, recipes: {}, gone: {} }, { from: T1, to: T2, recipes: { 1003: [null, f.recipes['1003']] }, gone: {} }];
+      const ck = {};
+      const c = await context({ serviceWorkers: 'block' }); const page = await c.ctx.newPage();
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + JSON.stringify(f) + ';' }));
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedLists(page, [{ name: 'Behind', items: [[100, 1]] }, { name: 'Older', items: [[100, 1]] }]);
+      await lSeed(page, new Function('S', 'sec', 'DATA', 'const st = ' + JSON.stringify({ Behind: T1, Older: T0 }) + '; Object.keys(sec.lists).forEach((k) => { sec.lists[k].data = st[sec.lists[k].name]; }); return sec;'));
+      const lines = async () => { await lShowNotice(page); return page.evaluate(() => [...document.querySelectorAll('.patch-notice li')].map((e) => e.textContent)); };
+      await lOpenList(page, 'Behind');
+      const a = await lines();
+      ck.added = a.length === 1 && a[0] === 'Iron Ingot can now be crafted from 3 Test Ore.';
+      await lOpenList(page, 'Older');
+      const b = await lines();
+      ck.throughEmptyEntry = b.length === 1 && b[0] === a[0] && !/not available/.test(await page.textContent('.patch-notice'));
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C170', 'Lists page, patch notice: a recipe the patch added is named ("Iron Ingot can now be crafted from 3 Test Ore."), also for a list whose stamp is before an earlier patch that changed no recipe',
+        Object.values(ck).every(Boolean), { ck, a, b, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── Lists, W15 (fixes from the review of the fixes): C171 "Made" credits only the wanted items its quality satisfies, C172 a finished row shows its own recipe, C173 the character of a restored list and of a list,
+    //    C174 the price wait of C166 waits for the fetched text (the reply is held back). ──
+    // ── C171 (Lists, W15) Iron Ingot (recipe 1001, makes 1) and Test Trade Good-like item 120 (recipe 1010, makes 3): an unfinished high-quality target and an ordinary one of the same recipe, in either order and in two lists. ──
+    await guard('C171', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, dbg = {};
+      const crafted = async (item) => lTargets(await lStored(page)).filter((t) => t.item === item).map((t) => (t.hq ? 'hq' : t.coll ? 'coll' : 'nq') + (t.qty) + ':' + (t.crafted || 0)).sort().join(' ');
+      const stock = async (id) => ((await lHave(page))['u.' + id]) || {};
+      const reset = () => lSeed(page, function (S) { return S.emptySection(); });
+      const made = async (item, q, all) => {
+        const row = page.locator('.craft-row[data-item="' + item + '"]');
+        if (q) await (await lOpen(row)).locator('[data-f=madeq]').selectOption(q);
+        await (await lOpen(row)).locator('[data-act=made]' + (all ? ':not([data-crafts="1"])' : '[data-crafts="1"]')).first().click(); await lSettle(page);
+      };
+      // (1) high quality first, ordinary second, one list: ordinary chosen credits the ordinary target only; then high quality credits the high-quality one
+      await reset(); await lSeedLists(page, [{ name: 'One', items: [[101, 1, { make: true, hq: true }], [101, 1, { make: true }]], have: { 104: 20 } }]);
+      await lOpenList(page, 'One', 'craft');
+      await made(101, 'nq');
+      ck.ordinaryOnly = (await crafted(101)) === 'hq1:0 nq1:1' && (await stock(101)).nq === 1 && !(await stock(101)).hq;
+      await lOpenList(page, 'One', 'craft');
+      await made(101, null);
+      ck.thenHq = (await crafted(101)) === 'hq1:1 nq1:1' && (await stock(101)).hq === 1;
+      // (2) ordinary first in list order, high quality in a later list: high-quality output still goes to the high-quality target first, the rest to the ordinary one
+      await reset(); await lSeedLists(page, [{ name: 'First', items: [[120, 2, { make: true }]], have: { 103: 20 } }, { name: 'Second', items: [[120, 4, { make: true, hq: true }]] }]);
+      await lOpenList(page, 'First', 'craft');
+      await made(120, 'hq');
+      ck.hqFirstAcrossLists = (await crafted(120)) === 'hq4:3 nq2:0' && (await stock(120)).hq === 3;
+      await lOpenList(page, 'First', 'craft');
+      await made(120, 'hq');
+      ck.multiYieldRest = (await crafted(120)) === 'hq4:4 nq2:2' && (await stock(120)).hq === 6;
+      // (3) multi-yield ordinary: the three go to the ordinary target, the high-quality one gets none
+      await reset(); await lSeedLists(page, [{ name: 'Mixed', items: [[120, 2, { make: true, hq: true }], [120, 4, { make: true }]], have: { 103: 20 } }]);
+      await lOpenList(page, 'Mixed', 'craft');
+      await made(120, 'nq');
+      ck.multiYieldOrdinary = (await crafted(120)) === 'hq2:0 nq4:3' && (await stock(120)).nq === 3;
+      // (4) "Made all" with ordinary chosen: the ordinary target is finished, the high-quality one is not credited, the rest stays in stock
+      await reset(); await lSeedLists(page, [{ name: 'All', items: [[101, 2, { make: true, hq: true }], [101, 1, { make: true }]], have: { 104: 20 } }]);
+      await lOpenList(page, 'All', 'craft');
+      await made(101, 'nq', true);
+      ck.madeAll = (await crafted(101)) === 'hq2:0 nq1:1' && (await stock(101)).nq === 3 && !(await stock(101)).hq;
+      // (5) collectable: collectable output credits the collectable target only; ordinary chosen credits the ordinary one
+      await reset(); await lSeedLists(page, [{ name: 'Coll', items: [[160, 1, { make: true, coll: true }], [160, 1, { make: true }]], have: { 103: 20 } }]);
+      await lOpenList(page, 'Coll', 'craft');
+      await made(160, 'nq');
+      ck.collOrdinary = (await crafted(160)) === 'coll1:0 nq1:1';
+      await lOpenList(page, 'Coll', 'craft');
+      await made(160, null);
+      ck.collFirst = (await crafted(160)) === 'coll1:1 nq1:1' && (await stock(160)).coll === 1;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C171', 'Lists page, "Made" and "Made all" credit only the wanted items the made quality satisfies: ordinary output only ordinary items, high-quality output high-quality then ordinary items (list order inside each, also across lists), collectable output collectable items; a multi-yield craft gives the rest to the next item and the remainder stays in stock',
+        Object.values(ck).every(Boolean), { ck, dbg, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C172 (Lists, W15) A must-craft row that is crafted in full and has left the plan shows its own recipe and job, never the line of another recipe of the product (Iron Ingot, recipes 1001 at level 10 and 1003 at level 20). ──
+    await guard('C172', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec) {
+        let t = 9000; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'Done', charId: null }, c()); sec = r.section; const a = r.id;
+        r = S.addTarget(sec, a, { item: 101, recipe: 1001, qty: 1, make: true }, c()); sec = r.section; sec.targets[r.key].crafted = 1;
+        r = S.newList(sec, { name: 'Fresh', charId: null }, c()); sec = r.section; const b = r.id;
+        sec = S.addTarget(sec, b, { item: 101, recipe: 1003, qty: 3, make: true }, c()).section;
+        sec = S.setHave(sec, 'u', 103, 'nq', 50).section;
+        return sec;
+      });
+      await lOpenList(page, 'Done', 'wanted');
+      await lOpen(lRow(page, 101));
+      const own = await lRow(page, 101).textContent();
+      ck.ownState = /crafted 1 of 1/.test(own) && /Crafted by Blacksmith, level 10/.test(own) && !/need 3/.test(own) && !/level 20/.test(own);
+      ck.planHasOnlyOther = await page.evaluate(() => Object.keys(__lists.plan('u').lines).filter((k) => /^101\|/.test(k)).join() === '101|make|1003');
+      await lOpenList(page, 'Fresh', 'wanted');
+      await lOpen(lRow(page, 101));
+      const other = await lRow(page, 101).textContent();
+      ck.otherRow = /need 3,/.test(other) && /level 20/.test(other) && !/crafted 1 of 1/.test(other);
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C172', 'Lists page, two recipes of one product with one crafted in full: the finished recipe\'s wanted row shows "crafted 1 of 1" and its own recipe\'s job and level, never the other recipe\'s need or job; the other row still shows its own',
+        Object.values(ck).every(Boolean), { ck, own, other, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C173 (Lists, W15) "Put these in a new list" asks which character (default: no character); a list's character can be changed from the list bar to a character or to none; every target field is kept. ──
+    await guard('C173', async () => {
+      const gitOut = (args) => execFileSync('git', args, { cwd: path.join(T, '..'), maxBuffer: 256 * 1024 * 1024 });
+      const base = '31cb0ba3a104eeb4c29809a4585421a7fa99e8b4';
+      try { gitOut(['cat-file', '-e', base + '^{commit}']); } catch (e) { throw new Error('the last build without Lists, 31cb0ba, cannot be read: ' + String(e.message).split('\n')[0]); }
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lists-orphan-')), dir = path.join(tmp, 'tracker'), rel = 'tracker/site';
+      for (const f of gitOut(['ls-tree', '-r', '--name-only', base, rel]).toString().split('\n').filter(Boolean)) { const dest = path.join(dir, f.slice(rel.length + 1)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, gitOut(['show', base + ':' + f])); }
+      const mounts = [[BASE + 'old-tracker/', dir]];
+      MOUNTS.unshift(...mounts);
+      const server = await start(PORT5);
+      const ck = {}, errs = [], dbg = {};
+      try {
+        const O = 'l1aaaaaaaaaa';
+        const orphans = { [O + '.t1aaaaaaaaaa']: { item: 101, recipe: 1001, qty: 2, crafted: 1, make: true, hq: true, at: 1760000002000 }, [O + '.t2bbbbbbbbbb']: { item: 103, recipe: 0, qty: 7, at: 1760000003000 } };
+        const sample = { v: 1, lists: {}, targets: orphans, ways: {}, owners: {}, have: {}, prefs: {} };
+        const fresh = async () => {
+          const c = await listsCtx(); errs.push(c);
+          const old = await c.ctx.newPage(); await old.goto(ROOT5 + 'old-tracker/');
+          await old.waitForFunction(() => typeof window.CC === 'object' && window.CC && typeof CC.writeSection === 'function', null, { timeout: 30000 });
+          await old.evaluate(async (sec) => { await CC.writeSection('lists', sec, null); }, sample);
+          await old.close();
+          const page = await c.ctx.newPage(); await page.goto(ROOT5 + 'lists/'); await lReady(page);
+          await page.evaluate(async () => { await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.chars = [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }]; doc.updated = Date.now(); return doc; }); });
+          await page.reload(); await lReady(page);
+          return page;
+        };
+        const canon = (x) => JSON.stringify(x, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v));
+        const card = (page) => page.locator('.lists-restored');
+        // (A) the default is no character
+        let page = await fresh();
+        const sel = card(page).locator('[data-f=restorechar]');
+        ck.choices = (await sel.locator('option').evaluateAll((o) => o.map((x) => x.value + '=' + x.textContent))).join() === 'c1=Alba,c2=Brio,=No character' && (await sel.inputValue()) === '';
+        await card(page).locator('[data-act=restore-orphans]').click(); await lSettle(page);
+        let s = await lStored(page);
+        ck.defaultNone = s.lists[O].charId === null && canon(s.targets) === canon(orphans);
+        // (B) a character: the list is that character's, every target field is kept
+        page = await fresh();
+        await card(page).locator('[data-f=restorechar]').selectOption('c2');
+        await card(page).locator('[data-act=restore-orphans]').click(); await lSettle(page);
+        s = await lStored(page);
+        ck.chosen = s.lists[O].charId === 'c2' && canon(s.targets) === canon(orphans) && (await page.locator('.lists-group[aria-label=Brio] .list-card').count()) === 1;
+        // (C) afterwards, from the list bar: to the other character, then to none; targets and stock untouched
+        await lOpenList(page, 'Restored list'); await lSet(page);
+        const lc = page.locator('[data-f=listchar]');
+        ck.barShows = (await lc.inputValue()) === 'c2';
+        await lc.selectOption('c1'); await lSettle(page);
+        s = await lStored(page); ck.toOther = s.lists[O].charId === 'c1' && canon(s.targets) === canon(orphans);
+        await page.locator('[data-f=listchar]').selectOption(''); await lSettle(page);
+        s = await lStored(page); ck.toNone = s.lists[O].charId === null && canon(s.targets) === canon(orphans);
+        ck.noErrors = errs.every((c) => real(c.errors).length === 0 && c.external.length === 0);
+      } finally { MOUNTS.splice(MOUNTS.indexOf(mounts[0]), 1); fs.rmSync(tmp, { recursive: true, force: true }); }
+      record('C173', 'Lists page, character of a restored list: "Put these in a new list" asks which character (default no character), the wanted items keep every field, and the list bar changes the list\'s character to a character or to none',
+        Object.values(ck).every(Boolean), { ck, dbg, errors: errs.map((c) => real(c.errors)), external: errs.map((c) => c.external) });
+      server.close();
+    });
+
+    // ── C174 (Lists, W15) The price wait of C166 waits for the fetched text: the stand-in's reply is held back for 700 ms, and the wait returns only with the price shown. ──
+    await guard('C174', async () => {
+      const server = await start(PORT5);
+      const ck = {};
+      const c = await listsCtx(); const page = await c.ctx.newPage();
+      await c.ctx.route('https://universalis.app/**', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.fallback(); });
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await lSeedMarket(page, [103, 104]); await lMarketOpen(page); await lWaitPrices(page);
+      const tx = await lPriceTexts(page);
+      ck.fetchedAtWaitEnd = /^100 gil before tax, North America \(cheapest on Test\), fetched \d\d:\d\d$/.test(tx[103]) && /fetched \d\d:\d\d$/.test(tx[104]) && c.stand.asked.length === 1;
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0;
+      record('C174', 'Lists page, prices: with the stand-in\'s reply held back, the wait that C166 uses returns only when every price row shows its fetched price (not at the first text, "Price not fetched")',
+        Object.values(ck).every(Boolean), { ck, tx, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── Lists, W16 (fixes from the fifth review): C175 a header edit from a stale tab is refused, C176 a must-craft item without a usable recipe shows its actual need. ──
+    // ── C175 (Lists, W16) Two tabs on one list: tab B adds a step, tab A (stale) changes the character: refused with "Not saved on this device", the step is kept and the character is unchanged; with a fresh copy it works. ──
+    await guard('C175', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const a = await ctx.newPage(), b = await ctx.newPage();
+      for (const p of [a, b]) { await p.goto(ROOT5 + 'lists/'); await lReady(p); }
+      const ck = {};
+      await a.evaluate(async () => { await CC.transact((raw) => { const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc(); doc.chars = [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }]; doc.updated = Date.now(); return doc; }); });
+      await lSeedLists(a, [{ name: 'Shared', charId: 'c1', items: [[100, 2]] }]);
+      for (const p of [a, b]) { await p.reload(); await lReady(p); await lOpenList(p, 'Shared'); await lSet(p); }
+      await a.evaluate(() => window.__lists.hold(true));
+      await b.fill('[data-f=stepname]', 'stepbbbb'); await b.click('[data-act=addstep]'); await lSettle(b);
+      const stepsOf = (sec) => Object.values(Object.values(sec.lists)[0].steps || {}).map((x) => x.name);
+      let sec = await lStored(b);
+      ck.bAdded = stepsOf(sec).join() === 'stepbbbb';
+      await a.locator('[data-f=listchar]').selectOption('c2'); await lSettle(a);
+      const note = await lNote(a); sec = await lStored(a);
+      ck.refused = note.includes('Not saved on this device: ') && note.includes('another device or in another tab');
+      ck.stepKept = stepsOf(sec).join() === 'stepbbbb';
+      ck.charUnchanged = Object.values(sec.lists)[0].charId === 'c1';
+      await a.evaluate(() => window.__lists.hold(false));
+      await a.locator('[data-f=listchar]').selectOption('c2'); await lSettle(a);
+      sec = await lStored(a);
+      ck.freshWorks = Object.values(sec.lists)[0].charId === 'c2' && stepsOf(sec).join() === 'stepbbbb';
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C175', 'Lists page, two tabs: a character change from a tab that missed another tab\'s new step is refused with "Not saved on this device", the step is kept and the character stays; from a fresh copy it works',
+        Object.values(ck).every(Boolean), { ck, note, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C176 (Lists, W16) A saved wanted item "must be crafted" with recipe 0 and no usable recipe shows its actual plan need, not "crafted 0 of 2", and keeps its stored setting. ──
+    await guard('C176', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec) {
+        let t = 9500; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'NoRecipe', charId: null }, c()); sec = r.section;
+        r = S.addTarget(sec, r.id, { item: 103, recipe: 0, qty: 2, make: true }, c()); sec = r.section;
+        return sec;
+      });
+      await lOpenList(page, 'NoRecipe', 'wanted');
+      const row = await lRow(page, 103).textContent();
+      ck.needShown = /need 2,/.test(row) && !/crafted 0 of 2,/.test(row);
+      ck.flagKept = await page.evaluate(() => Object.values(window.__lists.section().targets).some((t) => t.item === 103 && t.make === true && t.recipe === 0 && t.qty === 2));
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C176', 'Lists page, a must-craft wanted item with no usable recipe (recipe 0) shows its actual need from the plan, not "crafted 0 of 2", and keeps its stored setting',
+        Object.values(ck).every(Boolean), { ck, row, errors: real(errors), external });
+      void server;
+    });
+
+    // ── Lists, W10: the crafting log and the Atelier hand-over. The Tracker's section of the save is seeded in the page (ticks, a not-applicable mark, two characters). ──
+    const lSeedTracker = (pg, tracker) => pg.evaluate(async (tr) => {
+      await CC.transact((raw) => {
+        const doc = raw ? CC.checkDoc(raw) : CC.emptyDoc();
+        doc.chars = [{ id: 'c1', name: 'Alba' }, { id: 'c2', name: 'Brio' }]; doc.modules.tracker = tr; doc.updated = Date.now();
+        return doc;
+      });
+    }, tracker);
+    const lLogText = (pg) => pg.evaluate(() => (document.querySelector('.log-screen') || {}).textContent || '');
+    const lLogState = (pg) => pg.evaluate(() => { const v = (n) => { const e = document.querySelector('[data-f=' + n + ']'); return e ? e.value : null; }; return { screen: !!document.querySelector('.log-screen'), job: v('logjob'), page: v('logpage'), char: v('logchar'), hash: location.hash }; });
+
+    // ── C158 (Lists, W10) From the crafting log, with the real data and seeded ticks: the new list holds exactly the unticked, applicable recipes of that page, each a wanted item with "Must be crafted by me" and no stored way, each planned as a craft although a gil merchant sells it, an entry that is another entry's material is crafted once for itself and bought as a material; opened with the Tracker's link (with and without a character) the job, page and character are chosen and the hash is removed; nothing is saved before Create; an unknown recipe opens the screen unfilled. ──
+    await guard('C158', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, data = await page.evaluate(() => { const d = window.__lists.data(); return { log: d.log[0][0], recipes: Object.fromEntries(d.log[0][0][1].map((i) => [i, d.recipes[i]])), trades: d.trades, stamp: d.stamp }; });
+      const ids = data.log[1], key = (i) => 'craft-carpenter:' + i;
+      // Alba has ticked the sixth and seventh and marked the eighth as not applying (the first is a material of the next four); Brio has ticked nothing
+      await lSeedTracker(page, { ticks: { c1: { [key(ids[5])]: 1, [key(ids[6])]: 1 }, c2: {} }, excl: { c1: { [key(ids[7])]: 1 }, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+      const want = ids.slice(0, 5), docBefore = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      const first = ids[0], base = ROOT5 + 'lists/';
+      const open = async (hash) => { await page.goto('about:blank'); await page.goto(base + hash); await lReady(page); await page.waitForSelector('.log-screen, .list-card, .lists-empty'); await page.waitForTimeout(300); };
+      // the link with a character
+      await open('#from=0.' + first + '&char=c1');
+      let st = await lLogState(page), tx = await lLogText(page);
+      ck.chosen = st.screen && st.job === '0' && st.page === '0' && st.char === 'c1' && st.hash === '';
+      ck.count = tx.includes(want.length + ' of ' + (ids.length - 1) + ' not ticked in the Tracker');
+      ck.notSaved = (await page.evaluate(async () => JSON.stringify((await CC.read()).raw))) === docBefore;
+      // the link without a character: both characters' counts, one tap each
+      await open('#from=0.' + first);
+      st = await lLogState(page); tx = await lLogText(page);
+      ck.asks = st.screen && st.job === '0' && st.page === '0' && st.char === null && st.hash === '' && /For which character\?/.test(tx) && tx.includes('Alba: ' + want.length + ' not ticked') && tx.includes('Brio: ' + (ids.length) + ' not ticked');
+      await page.click('[data-act=log-char][data-char=c2]');
+      ck.tapChooses = (await lLogState(page)).char === 'c2' && (await lLogText(page)).includes(ids.length + ' of ' + ids.length + ' not ticked');
+      ck.stillNotSaved = (await page.evaluate(async () => JSON.stringify((await CC.read()).raw))) === docBefore;
+      // an unknown recipe, and an unknown job, open the screen unfilled
+      await open('#from=0.999999999&char=c1'); st = await lLogState(page);
+      ck.unknownRecipe = st.screen && st.job === '' && st.page === '' && st.hash === '';
+      await open('#from=9.' + first); st = await lLogState(page);
+      ck.unknownJob = st.screen && st.job === '' && st.page === '' && st.hash === '';
+      // the button on Your lists opens the same screen; Create makes the list
+      await open('#from=0.' + first + '&char=c1');
+      await page.click('[data-act=log-create]'); await lSettle(page); await lSet(page); await page.waitForSelector('[data-f=listname]'); await lSetDone(page);
+      const sec = await lStored(page), lists = Object.entries(sec.lists), ts = lTargets(sec);
+      ck.oneList = lists.length === 1 && lists[0][1].charId === 'c1' && /Level 1-5/.test(lists[0][1].name);
+      ck.exact = ts.length === want.length && want.every((r) => ts.some((t) => t.recipe === r && t.item === data.recipes[r][0] && t.qty === 1)) && ts.every((t) => t.make === true && !t.hq && !t.coll);
+      ck.noWay = Object.keys(sec.ways || {}).length === 0;
+      // the plan: every entry is a craft for itself although a gil merchant sells it; a material of another entry is bought
+      const gil = (it) => (data.trades[it] || []).some((o) => o[1].length === 1 && o[1][0][0] === 1);
+      const plan = await page.evaluate(() => { const p = window.__lists.plan('c1'); return Object.fromEntries(Object.entries(p.lines).map(([k, l]) => [k, { by: l.by, need: l.need, crafts: l.crafts, part: l.part }])); });
+      ck.allCraft = want.every((r) => { const l = plan[data.recipes[r][0] + '|make|' + r]; return l && l.part === 'make' && l.by === 'craft' && l.need === 1 && l.crafts === 1; });
+      ck.someSold = want.some((r) => gil(data.recipes[r][0]));
+      const mats = want.filter((r) => gil(data.recipes[r][0]) && want.some((o) => o !== r && data.recipes[o][5].some((x) => x[0] === data.recipes[r][0])));
+      ck.materialBought = mats.length > 0 && mats.every((r) => { const l = plan[data.recipes[r][0] + '|normal|0']; return l && l.by === 'vendor' && l.need > 0 && l.crafts === 0; });
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      // a page with nothing missing says so and offers no Create
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+      await lSeedTracker(page, { ticks: { c1: Object.fromEntries(ids.map((i) => [key(i), 1])), c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+      await open('#from=0.' + first + '&char=c1');
+      ck.allTicked = /Everything on this page is ticked\./.test(await lLogText(page)) && (await page.locator('[data-act=log-create]').count()) === 0;
+      record('C158', 'Lists page, from the crafting log (real data, seeded ticks): the new list holds exactly the unticked, applicable recipes of the page, each a wanted item with "Must be crafted by me" and no stored way and planned as a craft though a gil merchant sells it, an entry that is another entry\'s material is crafted once for itself and bought as a material; the Tracker\'s link (with and without a character) chooses job, page and character and removes the hash; nothing is saved before Create; an unknown recipe or job opens the screen unfilled; a fully ticked page says so',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C159 (Lists, W10) The "Solve in the Atelier" link opens the built Atelier on that recipe (real data); a recipe the Atelier lacks has no link. ──
+    await guard('C159', async () => {
+      const server = await start(PORT5);
+      const ck = {};
+      const c = await context({ serviceWorkers: 'block' }); const page = await c.ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const rec = await page.evaluate(() => { const d = window.__lists.data(), id = d.log[7][0][1][0]; return { id, job: d.recipes[id][2], item: d.recipes[id][0] }; });
+      await lSeedLists(page, [{ name: 'Atelier link', items: [[rec.item, 1, { make: true }]] }]);
+      await lOpenList(page, 'Atelier link', 'craft');
+      await lOpen(page.locator('.craft-row[data-item="' + rec.item + '"]'));
+      const link = page.locator('.craft-row a[href="../atelier/#recipe=' + rec.id + '"]');
+      ck.linkShown = (await link.count()) === 1 && /Solve in the Atelier/.test(await link.first().textContent());
+      const before = await page.evaluate(async () => JSON.stringify((await CC.read()).raw));
+      await link.first().click();
+      await page.waitForFunction(() => window.__atelier && !document.getElementById('boot'), null, { timeout: 90000 });
+      await page.waitForFunction((id) => window.__atelier.S.recipeId === id && !location.hash, rec.id, { timeout: 30000 });
+      const at = await page.evaluate(() => ({ url: location.pathname, job: window.__atelier.S.job, mode: window.__atelier.S.mode, id: window.__atelier.S.recipeId, hash: location.hash, spec: document.querySelector('#spec').textContent }));
+      ck.opensAtelier = /\/atelier\/$/.test(at.url) && at.job === rec.job && at.mode === 'recipes' && at.id === rec.id && at.hash === '' && /rlvl/.test(at.spec);
+      await page.waitForTimeout(900);
+      const after = await page.evaluate(async () => { const d = CC.checkDoc((await CC.read()).raw); return JSON.stringify(d.modules.lists); });
+      ck.listsUntouched = after === JSON.stringify(JSON.parse(before).modules.lists);
+      // a recipe the Atelier lacks (the build lists it in noHandOver) has no link
+      const f = JSON.parse(LISTS_FIXTURE); f.noHandOver = [1000];
+      const c2 = await context({ serviceWorkers: 'block' }); const p2 = await c2.ctx.newPage();
+      await c2.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + JSON.stringify(f) + ';' }));
+      await p2.goto(ROOT5 + 'lists/'); await lReady(p2);
+      await lSeedLists(p2, [{ name: 'No link', items: [[100, 1, { make: true }], [102, 1, { make: true }]] }]);
+      await lOpenList(p2, 'No link', 'craft');
+      const rows = []; for (const it of [100, 102]) { await lOpen(p2.locator('.craft-row[data-item="' + it + '"]').first()); rows.push(...(await p2.evaluate((i) => [...document.querySelectorAll('.craft-row[data-item="' + i + '"]')].map((r) => ({ item: +r.dataset.item, link: r.querySelector('a[href*="atelier"]') ? r.querySelector('a[href*="atelier"]').getAttribute('href') : null })), it))); }
+      ck.noLink = rows.some((r) => r.item === 100 && r.link === null) && rows.some((r) => r.item === 102 && /#recipe=\d+$/.test(r.link || ''));
+      ck.noErrors = real(c.errors).length === 0 && c.external.length === 0 && real(c2.errors).length === 0;
+      record('C159', 'Lists page: "Solve in the Atelier" opens the built Atelier on that recipe (job, recipes mode, recipe chosen, hash removed) and saves nothing to the Lists section; a recipe the build lists as having no hand-over has no link',
+        Object.values(ck).every(Boolean), { ck, rec, at, rows, errors: real(c.errors), external: c.external });
+      void server;
+    });
+
+    // ── C164 (Lists, W12) The Tracker's link, on the built site with seeded ticks: in an open crafting-log group "Make a list from what is missing" opens Lists on that job and page; with two characters "For which character?" shows both counts and Create makes the list of exactly the missing recipes; with one character the character is already chosen; a fully ticked group has no link. ──
+    await guard('C164', async () => {
+      const server = await start(PORT5);
+      const ck = {}, all = [];
+      const openGroup = async (n) => {
+        const c = await context({ serviceWorkers: 'block' }); all.push(c);
+        const page = await c.ctx.newPage();
+        await page.goto(ROOT5 + 'tracker/');
+        await page.waitForSelector('#dlg[open]', { timeout: 30000 });
+        await page.selectOption('#nchars', String(n));
+        await page.fill('[data-name="0"]', 'Alba'); if (n > 1) await page.fill('[data-name="1"]', 'Brio');
+        await page.click('#go'); await page.waitForSelector('.ov-table', { timeout: 30000 });
+        return { c, page };
+      };
+      const seed = (page) => page.evaluate(() => {
+        const g = window.__tracker.IDX.sections.find((s) => s.id === 'craft-carpenter').groups[0], ST = window.__tracker.ST;
+        globalThis.ET.setMany(ST, ['c1'], g.keys.slice(3), true); // Alba has ticked all but the first three
+        globalThis.ET.saveState(ST, true);
+        window.__tracker.setView('sec', 'craft-carpenter'); window.__tracker.openAll();
+        return g.keys.map((k) => +k.split(':')[1]);
+      }).then(async (ids) => { await page.waitForFunction(() => !globalThis.ET.hasPendingSave(), null, { timeout: 15000 }); await page.waitForTimeout(400); return ids; });
+      // two characters
+      const two = await openGroup(2), ids = await seed(two.page);
+      const link = two.page.locator('[data-mklist]').first();
+      ck.shown = (await link.count()) === 1 && /Make a list from what is missing/.test(await link.textContent()) && (await link.getAttribute('href')) === ROOT5 + 'lists/#from=0.' + ids[0];
+      await link.click(); await two.page.waitForURL(/\/lists\//, { timeout: 30000 }); await lReady(two.page); await two.page.waitForSelector('.log-screen');
+      let st = await lLogState(two.page), tx = await lLogText(two.page);
+      ck.chosen = st.screen && st.job === '0' && st.page === '0' && st.char === null && st.hash === '';
+      ck.asks = /For which character\?/.test(tx) && tx.includes('Alba: 3 not ticked') && tx.includes('Brio: ' + ids.length + ' not ticked');
+      await two.page.click('[data-act=log-char][data-char=c1]');
+      await two.page.click('[data-act=log-create]'); await lSettle(two.page); await lSet(two.page); await two.page.waitForSelector('[data-f=listname]'); await lSetDone(two.page);
+      const ts = lTargets(await lStored(two.page));
+      ck.exact = ts.length === 3 && ids.slice(0, 3).every((r) => ts.some((t) => t.recipe === r && t.make === true));
+      // a fully ticked group has no link
+      const t2 = await openGroup(2);
+      await t2.page.evaluate(() => { const g = window.__tracker.IDX.sections.find((s) => s.id === 'craft-carpenter').groups[0], ST = window.__tracker.ST; ST.chars.forEach((c) => globalThis.ET.setMany(ST, [c.id], g.keys, true)); globalThis.ET.saveState(ST, true); window.__tracker.setView('sec', 'craft-carpenter'); window.__tracker.openAll(); });
+      ck.fullNoLink = (await t2.page.locator('[data-mklist]').count()) === (await t2.page.locator('.lgroup').count()) - 1;
+      // one character: the character is already chosen
+      const one = await openGroup(1), ids1 = await seed(one.page);
+      const l1 = one.page.locator('[data-mklist]').first();
+      ck.oneHref = (await l1.getAttribute('href')) === ROOT5 + 'lists/#from=0.' + ids1[0] + '&char=c1';
+      await l1.click(); await one.page.waitForURL(/\/lists\//, { timeout: 30000 }); await lReady(one.page); await one.page.waitForSelector('.log-screen');
+      st = await lLogState(one.page); tx = await lLogText(one.page);
+      ck.oneChosen = st.job === '0' && st.page === '0' && st.char === 'c1' && st.hash === '' && tx.includes('3 of ' + ids1.length + ' not ticked in the Tracker');
+      ck.noErrors = all.every((c) => real(c.errors).length === 0 && c.external.length === 0);
+      record('C164', 'The Tracker\'s link (built site, seeded ticks): "Make a list from what is missing" in an open crafting-log group opens Lists on that job and page; with two characters "For which character?" shows both counts and Create makes the list of exactly the missing recipes; with one character the character is already chosen; a fully ticked group has no link',
+        Object.values(ck).every(Boolean), { ck, errors: all.map((c) => real(c.errors)), external: all.map((c) => c.external) });
+      void server;
+    });
+
+    // ── C161 (Lists, W8) The owner's case on the fixture, with a new list and the untouched order: the gil-merchant material is bought and its materials are left out, the other-currency material is crafted and not traded; the sheet shows the five sentences; "Craft it" first brings the craft and its materials back. ──
+    await guard('C161', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lMake(page, 'Owner case'); await lAdd(page, 'grand', 100, 1);
+      await lTab(page, 'get'); await lOpenAll(page);
+      let secs = await lSecs(page), crafts = await lBlocks(page);
+      const ingot = (secs.vendor || []).filter((r) => r.item === 101)[0];
+      ck.merchant = !!ingot && /Sold by Fenn in Test Town for 50 gil each/.test(ingot.text) && (await page.locator('.gsec[data-sec=vendor] h3').textContent()).includes('Buy from a merchant (gil)');
+      await lTab(page, 'craft');
+      crafts = await lBlocks(page);
+      const craftItems = crafts.flatMap((b) => b.rows.map((r) => r.item));
+      ck.notCrafted = !craftItems.includes(101) && craftItems.includes(100) && craftItems.includes(102);
+      await lTab(page, 'get'); await lOpenAll(page); secs = await lSecs(page);
+      const everyItem = Object.values(secs).flat().map((r) => r.item).concat(craftItems);
+      ck.noMaterialsOfIngot = !everyItem.includes(104) && !everyItem.includes(1001);
+      ck.notTraded = !lItemsIn(secs, 'trade').includes(102) && !(await page.locator('.gsec[data-sec=trade]').count());
+      await lSet(page); await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet');
+      const sheet = await page.locator('.order-sheet').textContent();
+      ck.sentences = ['1. Buy from a merchant for gil. If an ordinary merchant sells it for gil, you buy it, and the materials to craft it are left out.', '2. Craft it.', '3. Gather it.',
+        '4. Trade for it with another currency (scrips, tomestones, seals, tokens). These are not counted as easy, so they come after crafting and gathering unless you move them up.', '5. Buy on the market board.',
+        'When an item can be got in several ways, ', 'This order is used in all of ', ' lists. You can change it here, or choose a way for one item on its row, at any time. Items from the crafting log, and collectables, are always crafted.']
+        .every((x) => sheet.replace(/\s+/g, ' ').includes(x));
+      await page.click('[data-act=order-up][data-way=craft]'); await lSettle(page);
+      ck.sheetFollows = (await page.locator('.order-list li').first().getAttribute('data-way')) === 'craft' && (await page.locator('.order-list li').first().textContent()).includes('1. Craft it.');
+      await page.click('[data-act=sheet]');
+      await lTab(page, 'craft');
+      const crafts2 = (await lBlocks(page)).flatMap((b) => b.rows.map((r) => r.item));
+      await lTab(page, 'get'); await lOpenAll(page);
+      const secs2 = await lSecs(page);
+      ck.craftBack = crafts2.includes(101) && crafts2.includes(100) && lItemsIn(secs2, 'gather').includes(104) && !lItemsIn(secs2, 'vendor').includes(101);
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C161', 'Lists page, the owner\'s case: the gil-merchant material is under "Buy from a merchant (gil)" with its seller and price and is not crafted, none of its materials is on any tab, the other-currency material is crafted and not traded; the sheet shows the five sentences; moving "Craft it" first brings the craft and its materials back',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C162 (Lists, W8) "Made 1", then "Bought it" with the full amount: the row and everything below it leave at once, no stock count falls, the gathered materials show under "Left over"; "Buy the rest too" sets the way; with fewer units the row stays; "Undo" twice restores both steps exactly; a reload keeps what was not undone. ──
+    await guard('C162', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Bought', items: [[100, 2]], have: { 103: 6 } }]);
+      await lOpenList(page, 'Bought', 'craft');
+      const s0 = JSON.stringify(await lStored(page));
+      const row = () => page.locator('.craft-row[data-item="100"]');
+      ck.twoCrafts = /2 crafts/.test(await row().textContent());
+      await (await lOpen(row())).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      const h1 = await lHave(page);
+      ck.made = h1['u.100'].nq === 1 && h1['u.103'].nq === 3 && /1 craft,/.test(await row().textContent());
+      await (await lOpen(row())).locator('[data-act=ask-bought][data-mode=bought]').click();
+      ck.prefilled = (await (await lOpen(row())).locator('[data-f=boughtn]').inputValue()) === '1';
+      await (await lOpen(row())).locator('[data-act=bought]').click(); await lSettle(page);
+      const h2 = await lHave(page);
+      ck.rowGone = (await page.locator('.craft-row').count()) === 0 && /Nothing left to craft\./.test(await page.locator('.tab-craft').textContent());
+      await lTab(page, 'get');
+      ck.getEmpty = /Nothing left to get\./.test(await page.locator('.tab-get').textContent()) && (await page.locator('.line-row').count()) === 0;
+      ck.noCountFell = Object.keys(h1).every((k) => h2[k] && ['nq', 'hq', 'coll'].every((q) => h2[k][q] >= h1[k][q])) && h2['u.100'].nq === 2;
+      await lOpenAll(page);
+      ck.leftOver = (await lSecs(page)).left.some((r) => r.item === 103 && r.text === '3 Test Ore: no longer needed by this list. Still in your stock, and used by your other lists if they need it.Copy name'); // R7: the row has its Copy name
+      ck.leftCopy = (await page.locator('.left-row [data-act=copy]').count()) === 1; // R7: Copy name on a left-over row too
+      await page.locator('.left-row [data-act=copy]').click(); await page.waitForFunction(() => /Copied Test Ore\.|Could not copy: .*Test Ore/.test(document.getElementById('lstatus').textContent), null, { timeout: 5000 }).then(() => { ck.leftCopy = ck.leftCopy && true; }, () => { ck.leftCopy = false; });
+      ck.restOffered = (await page.locator('[data-act=rest]').count()) >= 1;
+      // Undo twice: the purchase, then the craft
+      await page.click('[data-act=undo][data-i="0"]'); await lSettle(page); await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undoTwice = JSON.stringify(await lStored(page)) === s0;
+      // fewer units: the row stays for the rest, and "Buy the rest too" sets the way
+      await lTab(page, 'craft');
+      await (await lOpen(row())).locator('[data-act=ask-bought][data-mode=bought]').click(); await (await lOpen(row())).locator('[data-f=boughtn]').fill('1'); await (await lOpen(row())).locator('[data-act=bought]').click(); await lSettle(page);
+      ck.fewerKeeps = /1 craft,/.test(await row().textContent()) && (await lHave(page))['u.100'].nq === 1;
+      const rest = page.locator('[data-act=rest][data-by=market]');
+      ck.restWay = (await rest.count()) === 1;
+      await rest.click(); await lSettle(page);
+      ck.wayStored = (await lStored(page)).ways['u.100'].by === 'market' && (await page.locator('.craft-row').count()) === 0;
+      const before = JSON.stringify(await lStored(page));
+      await page.reload(); await lReady(page);
+      ck.reloadKeeps = JSON.stringify(await lStored(page)) === before;
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C162', 'Lists page: Made 1 then Bought it with the full amount drops the row and everything under it from both tabs at once with no stock count lower and the gathered materials under Left over; Buy the rest too sets the way; fewer units keep the row; Undo twice restores both steps exactly; a reload keeps what was not undone',
+        Object.values(ck).every(Boolean), { ck, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C163 (Lists, W8) The "Get it by" select is on a To get row, a To craft row, a Wanted row and a combined-view row, lists only the ways the item has in the row's quality; a craft switched to bought and back shows the first plan again; "I have enough of this" moves the row to "Not in your typed stock"; a looped item shows under Other with its note. ──
+    await guard('C163', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await listsCtx();
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Select', items: [[100, 1], [150, 1], [130, 3]] }, { name: 'Select two', items: [[100, 1]] }]);
+      await lOpenList(page, 'Select'); await lAdd(page, 'mythril', 130, 1); await lTab(page, 'wanted');
+      await (await lOpen(lRow(page, 130).nth(1))).locator('[data-flag=hq]').check(); await lSettle(page);
+      ck.wantedSelect = (await (await lOpen(lRow(page, 100))).locator('[data-f=way]').count()) === 1 && /Crafted by Armorer/.test(await lRow(page, 100).textContent());
+      const nqOpts = await lWayOptions(page, lRow(page, 130).nth(0)), hqOpts = await lWayOptions(page, lRow(page, 130).nth(1));
+      ck.nqWays = JSON.stringify(nqOpts) === JSON.stringify(['', 'vendor', 'craft', 'trade', 'market', 'have']);
+      ck.hqWays = JSON.stringify(hqOpts) === JSON.stringify(['', 'vendor', 'craft', 'market', 'have']);
+      await lTab(page, 'craft');
+      const plan0 = async () => { await lTab(page, 'get'); await lOpenAll(page); const g = await lSecs(page); await lTab(page, 'craft'); return JSON.stringify([Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.map((r) => r.item + r.q)])), (await lBlocks(page)).map((b) => [b.job, b.rows.map((r) => r.item + r.q)]), await lTotals(page)]); }; // the rows and totals, not the reason text (it then says "You chose this")
+      const first = await plan0();
+      const crow = page.locator('.craft-row[data-item="100"]');
+      ck.craftSelect = (await (await lOpen(crow)).locator('[data-f=way]').count()) === 1 && JSON.stringify(await lWayOptions(page, crow)) === JSON.stringify(['', 'craft', 'market', 'have']);
+      await (await lOpen(crow)).locator('[data-f=way]').selectOption('market'); await lSettle(page);
+      ck.movedToBuy = (await page.locator('.craft-row[data-item="100"]').count()) === 0;
+      await lTab(page, 'get'); await lOpenAll(page);
+      ck.getSelect = lItemsIn(await lSecs(page), 'market').includes(100) && (await (await lOpen(page.locator('.get-row[data-item="100"]'))).locator('[data-f=way]').count()) === 1;
+      await (await lOpen(page.locator('.get-row[data-item="100"]'))).locator('[data-f=way]').selectOption('craft'); await lSettle(page);
+      await lTab(page, 'craft');
+      ck.backToFirst = (await plan0()) === first;
+      // I have enough of this
+      await (await lOpen(page.locator('.craft-row[data-item="100"]'))).locator('[data-f=way]').selectOption('have'); await lSettle(page);
+      await lTab(page, 'get'); await lOpenAll(page);
+      const secs = await lSecs(page), have = (secs.have || []).filter((r) => r.item === 100)[0];
+      ck.notTyped = !!have && /1 not in your typed stock: you said you already have these\./.test(have.text) && !lItemsIn(secs, 'market').includes(100);
+      ck.looped = (secs.other || []).some((r) => r.item === 150 && /Self Knot needs itself; Self Knot is listed under Other\./.test(r.text));
+      await (await lOpen(page.locator('.get-row[data-item="100"]'))).locator('[data-f=way]').selectOption('');  await lSettle(page);
+      // the combined view
+      await page.click('[data-act=back]'); await page.locator('.list-card', { hasText: 'Select two' }).locator('[data-f=tick]').check(); await lSettle(page);
+      await page.locator('.list-card', { hasText: 'Select' }).first().locator('[data-f=tick]').check(); await lSettle(page);
+      await page.locator('.lists-group').first().locator('[data-act=combined]').click(); await page.waitForSelector('.tab[data-tab=craft]');
+      await lTab(page, 'craft');
+      ck.combinedSelect = (await (await lOpen(page.locator('.craft-row[data-item="100"]'))).locator('[data-f=way]').count()) === 1;
+      await (await lOpen(page.locator('.craft-row[data-item="100"]'))).locator('[data-f=way]').selectOption('market'); await lSettle(page);
+      await lTab(page, 'get'); await lOpenAll(page);
+      ck.combinedMoved = lItemsIn(await lSecs(page), 'market').includes(100) && /need 2,/.test((await lSecs(page)).market.filter((r) => r.item === 100)[0].text);
+      ck.noErrors = real(errors).length === 0 && external.length === 0;
+      record('C163', 'Lists page, "Get it by": the select is on a To get row, a To craft row, a Wanted row and a combined-view row and lists only the ways the item has in that row\'s quality; a craft switched to bought and back shows the first plan again; "I have enough of this" moves the row to Not in your typed stock with its sentence; a looped item shows under Other with its note',
+        Object.values(ck).every(Boolean), { ck, nqOpts, hqOpts, errors: real(errors), external });
+      void server;
+    });
+
     // ── C132 (review fixes E4, E6) Phone Map: every sector's tap circle is 44 px across at 360 and 390 px, or as large as its neighbours allow (never under 28 px, and touching a neighbour's circle when under 44); the "Start" label clears every node,
     //    ring, mark and line, on a phone and on desktop. Phone Board: a company's four lanes end within 2.5 screens of 800 px and each lane's explanatory line is behind one "Details" button (closed, aria-expanded, keyboard and tap). Phone send window:
     //    the sticky footer is at most 96 px with every button 44 px, the long advice text is two lines with "Show more", and the route comparison is within one screen's scroll. ──
@@ -6226,6 +7702,1244 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         ok, { v2: v2Detail, part3: v3Detail, part3why: ok ? undefined : { marks: walks2.map((w) => w.v2l.marks), edges: d.v2l.edges, v3: [d.v3, p.v3], v4: [d.v4, dm.v4], v5: [p.v5, d.v5] }, gauge: d.gauge, sideways360: p.wide, errors: [d.errors, dd.errors, da.errors, dm.errors, p.errors, pl.errors], minHeights360: p.minHeights, chart360: p.chart, palette: [d.pal, da.pal, dm.pal], chart: { desktop: [d.chartMap, d.chartPlan], azureDark: [da.chartMap, da.chartPlan], magitekLight: [dm.chartMap, dm.chartPlan] }, logProbe: [d.logProbe, da.logProbe, dm.logProbe], families: Object.fromEntries([['desktop', d], ['desktop-dark', dd], ['desktop-azure-dark', da], ['desktop-magitek-light', dm], ['phone-390', p390], ['phone', p], ['phone-light', pl], ['empty-desktop', e0], ['empty-azure-dark', ea], ['empty-magitek-light', em], ['empty-phone', ep]].map(([k, w]) => [k, w.fam])), wizard: [d.wizard, da.wizard, dm.wizard, pl.wizard], routeColour: [d.chartPlan.routeColour, da.chartPlan.routeColour, dm.chartPlan.routeColour], routeShared: [d.chartPlan.routeShared, da.chartPlan.routeShared, dm.chartPlan.routeShared], lockedSea: [d.lockedSea, da.lockedSea, dm.lockedSea], headBand: [d.headBand, da.headBand, dm.headBand], emptyErrors: [e0.errors, ea.errors, em.errors, ep.errors], dense: [n0.m, na.m, nm.m], denseFamilies: [n0.fam, na.fam, nm.fam], w36: { auditOk, audits: audits.length, auditMiss: audits.filter((a) => a.miss || a.n <= 30).map((a) => [a.n, a.top]).slice(0, 6), axisOk, axisMin: Math.min(...axisAll.map((g) => g.minGap)), axisBad: axisAll.filter((g) => g.bad.length || g.minGap < 6).slice(0, 4), midOk, mid: [mid.m, mid14.m, mid18.m, midA.m, mid10.m], deepOk, deep: [e0.deep, ea.deep, em.deep, ep.deep], troughOk, trough: [d.trough, da.trough, dm.trough], controlsOk, controls: [d.controls, da.controls, dm.controls], rungsOk, rungs: [d.rungs, da.rungs, dm.rungs], phoneW36Ok, head: [p390.headTools, p.headTools, pl.headTools], mapChain: p390.mapChain, gilIdleOk, unlogged: [d.unlogged, da.unlogged, dm.unlogged] }, roleAudit: { desktop: d.audit, azureDark: da.audit, magitekLight: dm.audit }, v1Ok, v1l: { d: d.v1l, da: da.v1l, dm: dm.v1l, p: p.v1l, p390: p390.v1l, pl: pl.v1l } });
       server20.close();
     });
+
+
+    // ── Lists, W11: the look and the phone pass. One walk of every screen at 1,440 px light and 360 px dark (stand-in game data): the pictures lists-*.png (Chromium only), the colour audit
+    //    of C160, the evidence block L2. ──
+    const l2Walk = async (vp, scheme, tag) => {
+      const c = await context({ serviceWorkers: 'block', viewport: vp, colorScheme: scheme });
+      await c.ctx.route('**/lists/data.js', (r) => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LISTS_DATA = ' + LISTS_FIXTURE + ';' }));
+      await c.ctx.route('https://universalis.app/**', (r) => {
+        const ids = new URL(r.request().url()).pathname.split('/').pop().split(','), items = {};
+        ids.forEach((id) => { items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, worldName: 'Test' }], averagePrice: 100 }; });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+      });
+      const page = await c.ctx.newPage(), phone = vp.width < 600, out = { tag, shots: [], wide: [], miss: [], taps: [], clipped: [], screens: [], errors: c.errors, external: c.external };
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const audit = () => page.evaluate(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true }), memo = new Map();
+        const px = (col) => { if (memo.has(col)) return memo.get(col); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = col; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data, r = [d[0], d[1], d[2], d[3] / 255]; memo.set(col, r); return r; };
+        const probe = (t) => { const i = document.createElement('i'); i.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + t + ')'; document.body.appendChild(i); const v = px(getComputedStyle(i).backgroundColor); i.remove(); return v; };
+        // the allowed tones: the theme's page, panel, text and accent tokens and every tone of the six roles in docs/lists-colour-roles.md (fill, edge, ink, wash; look v2 draws the edge on sub-heads and the wash under rows that can be done now)
+        const toks = ['--paper', '--paper-2', '--paper-3', '--slip', '--ink', '--ink-2', '--ink-3', '--rule', '--seal', '--on-seal', '--ochre'], roles = ['craft', 'gather', 'merchant', 'market', 'ready', 'short'];
+        const allowed = toks.concat(roles.flatMap((r) => ['--lr-' + r + '-fill', '--lr-' + r + '-edge', '--lr-' + r + '-ink', '--lr-' + r + '-wash'])).map(probe);
+        const miss = new Map(); let n = 0;
+        const hex = (r) => '#' + r.slice(0, 3).map((x) => x.toString(16).padStart(2, '0')).join('');
+        const check = (col, what, el) => {
+          if (!col || col === 'none' || /^url\(/.test(col)) return; const p = px(col); if (p[3] < 0.99) return; n++;
+          if (allowed.some((t) => Math.max(Math.abs(t[0] - p[0]), Math.abs(t[1] - p[1]), Math.abs(t[2] - p[2])) <= 2)) return;
+          const k = hex(p), e = miss.get(k) || { n: 0, first: what + ' ' + el.tagName.toLowerCase() + '.' + String(el.getAttribute('class') || '').split(' ')[0] }; e.n++; miss.set(k, e);
+        };
+        const sides = ['Top', 'Right', 'Bottom', 'Left'];
+        document.querySelectorAll('.lists-mast, .lists-mast *, .lists-main, .lists-main *, .lists-foot, .lists-foot *').forEach((el) => {
+          const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+          const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
+          const text = [...el.childNodes].some((x) => x.nodeType === 3 && x.textContent.trim()) || /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(el.tagName);
+          if (text) check(cs.color, 'color', el);
+          check(cs.backgroundColor, 'background', el);
+          sides.forEach((s) => { if (parseFloat(cs['border' + s + 'Width']) > 0 && cs['border' + s + 'Style'] !== 'none') check(cs['border' + s + 'Color'], 'border', el); });
+          if (parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none') check(cs.outlineColor, 'outline', el);
+          if (cs.textDecorationLine !== 'none') check(cs.textDecorationColor, 'underline', el);
+        });
+        return { n, miss: [...miss].map(([k, e]) => k + ' x' + e.n + ' ' + e.first) };
+      });
+      const measure = () => page.evaluate(() => {
+        const vis = (e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
+        const taps = [...document.querySelectorAll('.lists-main .btn, .lists-main select, .lists-main input:not([type=checkbox]), .lists-main label.tick, .lists-main label.chk, .lists-main [role=tab]')].filter(vis).map((e) => ({ h: e.getBoundingClientRect().height, what: e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0] + ' ' + String(e.textContent || e.name || '').trim().slice(0, 24) }));
+        const clipped = [...document.querySelectorAll('.lists-main *')].filter((e) => vis(e) && !/^(INPUT|SELECT|TEXTAREA|OPTION)$/.test(e.tagName) && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== 'visible').map((e) => e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0]);
+        return { wide: document.documentElement.scrollWidth - window.innerWidth, taps, clipped };
+      });
+      const shot = async (name) => {
+        await page.waitForTimeout(150);
+        if (SHOT) { await page.screenshot({ path: path.join(ev, 'lists-' + name + '-' + tag + '.png'), fullPage: true }); out.shots.push('lists-' + name + '-' + tag + '.png'); }
+        const m = await measure(), a = await audit();
+        (out.roleWords = out.roleWords || []).push(...await page.evaluate(() => [...document.querySelectorAll('.role')].map((e) => e.className.replace('role role-', '') + ':' + e.textContent.trim().slice(0, 12))));
+        out.screens.push(name); out.wide.push(m.wide); out.clipped.push(...m.clipped.map((x) => name + ': ' + x)); out.miss.push(...a.miss.map((x) => name + ': ' + x)); out.audited = (out.audited || 0) + a.n;
+        if (phone) out.taps.push(...m.taps.filter((t) => t.h < 39.5).map((t) => name + ': ' + t.what + ' ' + t.h.toFixed(1)));
+      };
+      await shot('empty');
+      // a list with a Left over line comes first, while it is the only list (stock is one count for the whole character, so another list would use the gathered ore): Made 1, then Bought it with the full amount, as in C162
+      await lSeedLists(page, [{ name: 'Bought', items: [[100, 2]], have: { 103: 6 } }]);
+      await lOpenList(page, 'Bought', 'craft');
+      const row = page.locator('.craft-row[data-item="100"]');
+      await (await lOpen(row)).locator('[data-act=made][data-crafts="1"]').click(); await lSettle(page);
+      await (await lOpen(row)).locator('[data-act=ask-bought][data-mode=bought]').click(); await (await lOpen(row)).locator('[data-act=bought]').click(); await lSettle(page);
+      await lTab(page, 'get'); await lOpenAll(page);
+      out.left = await page.locator('.left-row').count(); await shot('left');
+      await lSeedLists(page, [{ name: 'Plan', items: [[130, 3], [120, 9], [140, 2], [170, 1], [100, 2]] }]);
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); await shot('lists');
+      await lOpenList(page, 'Plan', 'get'); await lOpenAll(page);
+      const sel = (await lOpen(page.locator('.get-row[data-item="130"]'))).locator('[data-f=way]');
+      if (await sel.count() && (await sel.first().locator('option[value=market]').count())) { await sel.first().selectOption('market'); await lSettle(page); await lOpenAll(page); await lCloseRows(page); }
+      out.sections = await page.evaluate(() => [...document.querySelectorAll('.gsec')].map((s) => s.dataset.sec));
+      await shot('get');
+      await lTab(page, 'craft'); await shot('craft');
+      await lTab(page, 'wanted'); await shot('wanted');
+      await lTab(page, 'get'); await lSet(page); await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet'); await shot('sheet'); await page.click('[data-act=sheet]');
+      // the combined view of the two lists
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+      const ticks = page.locator('[data-f=tick]'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check();
+      await page.click('[data-act=combined]'); await page.waitForSelector('.lists-tabs'); await lOpenAll(page); await shot('combined');
+      // from the crafting log
+      const ids = await page.evaluate(() => window.__lists.data().log[2][0][1]);
+      await page.goto('about:blank'); await page.goto(ROOT5 + 'lists/#from=2.' + ids[0]); await lReady(page); await page.waitForSelector('.log-screen, .list-card, .lists-empty'); await page.waitForTimeout(300);
+      out.logScreen = !!(await page.$('.log-screen')); await shot('log');
+      out.errs = real(c.errors); await c.ctx.close();
+      return out;
+    };
+    let l2Walks = null;
+    const l2All = async () => {
+      if (l2Walks) return l2Walks;
+      const server = await start(PORT5);
+      l2Walks = [await l2Walk({ width: 1440, height: 1000 }, 'light', 'desktop-light'), await l2Walk({ width: 360, height: 800 }, 'dark', 'phone-dark')];
+      void server; return l2Walks;
+    };
+    // ── C160 (Lists, W11) Every colour on a pictured screen is a role: on each of the nine screens at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the
+    //    theme's page, panel, text and accent tones or one of the four tones (fill, edge, ink, wash) of the six roles (craft, gather, merchant, market, ready, short) in docs/lists-colour-roles.md; each role is drawn with its word. ──
+    await guard('C160', async () => {
+      const w = await l2All();
+      const ck = {};
+      ck.screens = w.every((x) => x.screens.join() === 'empty,left,lists,get,craft,wanted,sheet,combined,log');
+      ck.audited = w.every((x) => x.audited > 400);
+      ck.noOutsideColour = w.every((x) => x.miss.length === 0);
+      const words = w[0].roleWords.concat(w[1].roleWords);
+      ck.words = ['craft:Craft', 'gather:Gather', 'merchant:Merchant', 'market:Market', 'short:to get', 'ready:'].every((p) => words.some((x) => x.startsWith(p)));
+      ck.sections = w.every((x) => ['vendor', 'gather', 'trade'].every((s) => x.sections.includes(s)));
+      ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.length === 0);
+      record('C160', 'Lists look: on the nine pictured screens (empty, lists, To get, To craft, Wanted, Order of ways, a list with Left over, combined view, from the crafting log) at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the theme\'s page, panel, text and accent tones or a tone of one of the six roles (craft, gather, merchant, market, ready, short), and each role is drawn with its word',
+        Object.values(ck).every(Boolean), { ck, audited: w.map((x) => x.audited), miss: w.map((x) => x.miss), sections: w.map((x) => x.sections), words: words.slice(0, 40), errors: w.map((x) => x.errs) });
+    });
+    // ── L2 Lists look evidence (not a behaviour check): the nine screens at 1,440 px light and 360 px dark, pictured as lists-<screen>-<desktop-light|phone-dark>.png (Chromium only). Asserts: no sideways page scroll on any
+    //    screen, every button, select, field and tab at least 40 px high at 360 px, no clipped text, a Left over line on its screen, no page errors. ──
+    await guard('L2', async () => {
+      const w = await l2All();
+      const ck = {};
+      ck.noSideways = w.every((x) => x.wide.length === 9 && x.wide.every((n) => n <= 0));
+      ck.taps40 = w[1].taps.length === 0;
+      ck.noClipped = w.every((x) => x.clipped.length === 0);
+      ck.leftOver = w.every((x) => x.left >= 1);
+      ck.log = w.every((x) => x.logScreen);
+      ck.pictures = !SHOT || w.every((x) => x.shots.length === 9 && x.shots.every((f) => fs.existsSync(path.join(ev, f))));
+      // B7: the final pictures of every screen (1,440 px light, 360 px dark; the real game data, made by docs/lists-redesign/build/shoot-built.js) are copied here as lists-<screen>-<size>.png; the check fails when one is missing
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), finals = fs.readdirSync(BUILD).filter((f) => /-(desktop-light|phone-dark)\.png$/.test(f));
+      if (SHOT) finals.forEach((f) => fs.copyFileSync(path.join(BUILD, f), path.join(ev, 'lists-' + f.replace(/^lists-empty-/, 'empty-'))));
+      ck.finalPictures = finals.length >= 42 && finals.every((f) => !SHOT || fs.existsSync(path.join(ev, 'lists-' + f.replace(/^lists-empty-/, 'empty-'))));
+      ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.length === 0);
+      record('L2', 'Lists look evidence: the nine screens (empty, lists, To get with every section open, To craft, Wanted, the Order of ways sheet, a list with a Left over line, the combined view, from the crafting log) at 1,440 px light and 360 px dark as evidence/lists-*.png (Chromium): no sideways page scroll, every button, select, field and tab at least 40 px high at 360 px, no clipped text, no page errors',
+        Object.values(ck).every(Boolean), { ck, wide: w.map((x) => x.wide), taps: w[1].taps.slice(0, 30), clipped: w.map((x) => x.clipped.slice(0, 20)), shots: w.map((x) => x.shots.length), left: w.map((x) => x.left), errors: w.map((x) => x.errs) });
+    });
+
+    // ── C177 (Lists, B3) Every crafter of an item, the real data: Bronze Ingot (Blacksmith and Armorer, materials differ) shows both crafters, the "differ" line and "Count materials for"; switching changes the materials and the job head and saves
+    //    ways.recipe, an undo restores it; item 36122 (identical ingredients) shows both crafters and no choice. ──
+    await guard('C177', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeed(page, function (S, sec, DATA) {
+        let t = 5000; const c = () => ({ now: t++ });
+        let r = S.newList(sec, { name: 'Crafters', stamp: DATA.stamp }, c()); sec = r.section; const id = r.id, owner = S.ownerOf(sec.lists[id]);
+        [5056, 36122].forEach((it) => { r = S.addTarget(sec, id, { item: it, recipe: 0, qty: 1 }, c()); sec = r.section; sec = S.setWay(sec, owner, it, { by: 'craft' }).section; });
+        return sec;
+      });
+      await lOpenList(page, 'Crafters', 'craft');
+      const row = (it) => page.locator('.craft-row[data-item="' + it + '"]');
+      const read = async (it) => ({ opened: await lOpen(row(it)), text: (await row(it).textContent()).replace(/\s+/g, ' '), opts: await row(it).locator('[data-f=countrecipe] option').allTextContents(), n: await row(it).locator('[data-f=countrecipe]').count(),
+        job: await page.evaluate((i) => document.querySelector('.craft-row[data-item="' + i + '"]').closest('.cblock').querySelector('h3').textContent, it) });
+      const a0 = await read(5056);
+      ck.bothCrafters = /Crafters: Blacksmith, level 1; Armorer, level 1\./.test(a0.text);
+      ck.differLine = a0.text.includes('Materials differ by crafter; counted for Blacksmith.');
+      ck.choice = a0.n === 1 && JSON.stringify(a0.opts) === JSON.stringify(['Blacksmith, level 1', 'Armorer, level 1']) && a0.job === 'Blacksmith';
+      const mats = async () => { await lTab(page, 'get'); await lOpenAll(page); const m = await page.evaluate(() => [...document.querySelectorAll('.gsec .line-row')].map((r) => +r.dataset.item)); await lTab(page, 'craft'); return m; };
+      const m0 = await mats();
+      ck.blacksmithShard = m0.includes(2) && !m0.includes(3);
+      await (await lOpen(row(5056))).locator('[data-f=countrecipe]').selectOption('170'); await lSettle(page);
+      const a1 = await read(5056), m1 = await mats();
+      ck.switched = a1.job === 'Armorer' && a1.text.includes('counted for Armorer.') && m1.includes(3) && !m1.includes(2);
+      ck.saved = (await lStored(page)).ways && Object.values((await lStored(page)).ways).some((w) => w.recipe === 170);
+      await page.click('[data-act=undo][data-i="0"]'); await lSettle(page);
+      const a2 = await read(5056);
+      ck.undone = a2.job === 'Blacksmith' && !Object.values((await lStored(page)).ways || {}).some((w) => w.recipe === 170);
+      const b0 = await read(36122);
+      ck.identical = /Crafters: Blacksmith, level 50; Armorer, level 50\./.test(b0.text) && b0.n === 0 && !b0.text.includes('Materials differ');
+      ck.noErrors = real(errors).length === 0 && external.every((u) => u.startsWith('https://universalis.app/')); // the real data has a market price for the items it shows; nothing else leaves the page
+      record('C177', 'Lists page, every crafter (real data): an item whose materials differ between Blacksmith and Armorer shows both crafters, "Materials differ by crafter; counted for Blacksmith" and "Count materials for"; switching changes the materials and the job head, is saved and can be undone; an item with identical ingredients shows both crafters and no choice',
+        Object.values(ck).every(Boolean), { ck, a0, a1, a2, b0, m0, m1, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C178 (Lists, R2) The chosen spot, the real data: a two-item route (Helmet Crab, lowest spot Lv. 15 Western La Noscea, and Highland Parsley, only in Lower La Noscea) shows the crab at its Lower La Noscea spot and says why, while the crab alone keeps its lowest spot and says nothing; Fire Cluster (Mor Dhona 13, 17 and 21, Mor Dhona 1, 5 and 9 and Middle La Noscea 19) alone shows the window of its own node (Eorzea 13, 17 and 21, not the merged "open now" all day), and with a Middle La Noscea item on the list it shows that zone's node (19). ──
+    await guard('C178', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external } = await context({ serviceWorkers: 'block' });
+      const page = await ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Route', charId: 'c1', items: [[4880, 1], [4784, 1]] }, { name: 'Crab', charId: 'c2', items: [[4880, 1]] }, { name: 'Clusters', charId: 'c3', items: [[14, 1]] }, { name: 'Clusters on route', charId: 'c4', items: [[14, 1], [7718, 1]] }]);
+      const rowText = async (it) => { const r = page.locator('.get-row[data-item="' + it + '"]'); await lOpen(r); return { text: (await r.textContent()).replace(/\s+/g, ' '), hours: await r.locator('.w-window').first().getAttribute('data-hours').catch(() => null), win: await r.locator('.w-window').first().textContent().catch(() => '') }; };
+      const show = async (name) => { await lOpenList(page, name, 'get'); await lOpenAll(page); };
+      await show('Route');
+      const crab = await rowText(4880), pars = await rowText(4784);
+      ck.routeSpot = /Lv\. 20 [^·]*· Lower La Noscea \(X/.test(crab.text) && /Chosen: on your route in Lower La Noscea/.test(crab.text) && !/Lv\. 15 [^·]*· Western La Noscea \(X[^)]*\) · [^·]*· Chosen/.test(crab.text);
+      ck.drawerSays = /haveHave allChosen: on your route in Lower La Noscea\.Lv\. 20 /.test(crab.text); // the opened row's first line, then the spot list with the shown spot first
+      ck.otherRowPlain = /Lower La Noscea/.test(pars.text) && !/Chosen:/.test(pars.text);
+      ck.everySpotListed = /Salt Strand[^]*Brewer's Beacon/.test(crab.text.slice(crab.text.indexOf('Chosen: on your route in Lower La Noscea.')));
+      await show('Crab');
+      const alone = await rowText(4880);
+      ck.aloneLowest = /Lv\. 15 [^·]*· Western La Noscea \(X/.test(alone.text) && !/Chosen:/.test(alone.text);
+      await show('Clusters');
+      const c1 = await rowText(14);
+      ck.ownWindow = c1.hours === '13,17,21' && /Eorzea time/.test(c1.win) && !/open now, closes [0-9:]+ Eorzea time, in 1[0-9]+ h/.test(c1.win);
+      ck.notMerged = c1.hours !== '1,5,9,13,17,19,21';
+      await show('Clusters on route');
+      const c2 = await rowText(14);
+      ck.routeWindow = c2.hours === '19' && /Chosen: on your route in Middle La Noscea/.test(c2.text);
+      ck.noErrors = real(errors).length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('C178', 'Lists page, the chosen spot (real data): a two-item route shows the item at its spot in the zone the other row uses and says why, alone it keeps its lowest spot; a clusters row shows the window of the chosen node (13, 17 and 21, or 19 on a route through Middle La Noscea), never the merged window',
+        Object.values(ck).every(Boolean), { ck, crab, pars, alone, c1, c2, errors: real(errors), external });
+      void server;
+    });
+
+    // ── R3 (docs/lists-redteam.md): the real data. Six pieces of the Courtly Lover's leatherworking set (every one a Master Leatherworker XII recipe) are the gear-set-like list: they need gathered crystals and
+    //    materials from six zones, a tomestone, scrips and a gemstone that nothing here gives, and nine intermediates that can be made in high quality. ──
+    const r3Gear = [49294, 49295, 49298, 49300, 49303, 49305];
+    const r3Page = async (opts) => { const c = await context(Object.assign({ serviceWorkers: 'block' }, opts || {})); const page = await c.ctx.newPage(); return Object.assign(c, { page }); };
+    const r3Names = (pg) => pg.evaluate(() => { const D = window.__lists.data(); return Object.fromEntries(Object.keys(D.items).map((i) => [i, D.items[i][0]])); });
+
+    // ── C179 (Lists, R3a) Currencies to earn, the real data: Skysteel Ingot (200 Skybuilders' Scrip) lands the scrip in "Currencies to earn" and not in Other or on the market; the list head counts it apart ("200 to earn", the totals to get and to craft unchanged); the
+    //    engine still plans the scrip as "other"; a market way stored for the scrip says "This is a currency: it is earned, not bought" and still does not buy it; in the gear list the tomestone is in the section and every item of the section is a currency. ──
+    await guard('C179', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Sky', charId: 'c1', items: [[28906, 1]] }, { name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      const head = () => page.evaluate(() => { const e = document.querySelector('.lists-totals'); return { get: +e.dataset.get, craft: +e.dataset.craft, earn: +e.dataset.earn, text: e.textContent.replace(/\s+/g, ' '), label: e.getAttribute('aria-label') }; });
+      await lOpenList(page, 'Sky', 'get'); await lOpenAll(page);
+      let secs = await lSecs(page), h = await head();
+      const plan = await page.evaluate(() => window.__lists.plan('c1', true)), sky = plan.lines['28063|normal|0'];
+      ck.engineUnchanged = !!sky && sky.by === 'other' && sky.got === 200 && plan.shop.other.includes('28063|normal|0');
+      ck.earnSection = lItemsIn(secs, 'earn').join() === '28063' && lItemsIn(secs, 'other').length === 0 && lItemsIn(secs, 'market').length === 0;
+      ck.sectionHead = (await page.locator('.gsec[data-sec=earn] .sec-title').textContent()) === 'Currencies to earn' && /to earn/.test(secs.earn[0].text) && secs.earn[0].text.includes('This is a currency: it is earned, not bought');
+      ck.headApart = h.get === 1 && h.craft === 0 && h.earn === 200 && /200to earn/.test(h.text) && /1 to get, 0 to craft, 200 to earn\./.test(h.label);
+      // a market way stored for the scrip
+      await lSeed(page, (S, sec) => S.setWay(sec, 'c1', 28063, { by: 'market' }).section);
+      await lOpenList(page, 'Sky', 'get'); await lOpenAll(page);
+      secs = await lSecs(page);
+      const row = page.locator('.get-row[data-item="28063"]'); await lOpen(row);
+      const drawer = (await row.locator('.drawer').textContent()).replace(/\s+/g, ' ');
+      ck.storedMarket = lItemsIn(secs, 'earn').join() === '28063' && lItemsIn(secs, 'market').length === 0 && drawer.includes('This is a currency: it is earned, not bought.') && !/no longer available/.test(drawer) && drawer.split('This is a currency').length === 2;
+      // the gear list: the tomestone is earned; every item of the section is a currency and none of Other is
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      secs = await lSecs(page); h = await head();
+      const g = await page.evaluate(() => { const p = window.__lists.plan('c2', true), cur = window.__lists.data().currencies; const ln = Object.values(p.lines); return { cur, earn: ln.filter((l) => l.by === 'other' && cur.includes(l.item)).reduce((n, l) => n + l.got, 0), get: ln.filter((l) => l.by !== 'craft' && l.by !== 'have' && !(l.by === 'other' && cur.includes(l.item))).reduce((n, l) => n + l.got, 0) }; });
+      ck.gearTomestone = lItemsIn(secs, 'earn').includes(48) && lItemsIn(secs, 'earn').every((i) => g.cur.includes(i)) && lItemsIn(secs, 'other').every((i) => !g.cur.includes(i)) && lItemsIn(secs, 'earn').length >= 2;
+      ck.gearFigures = h.earn === g.earn && h.earn > 0 && h.get === g.get;
+      ck.noErrors = real(errors).length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('C179', 'Lists page, currencies (real data): the Skybuilders\' Scrip of a Skysteel Ingot and the tomestone of the gear list are in "Currencies to earn", not in Other or on the market, counted apart in the head ("200 to earn") and not in the totals to get; the engine still plans them as "other"; a stored market way says "This is a currency: it is earned, not bought"',
+        Object.values(ck).every(Boolean), { ck, h, g: { earn: g.earn, get: g.get }, earn: secs.earn && secs.earn.map((r) => r.item), other: (secs.other || []).map((r) => r.item), errors: real(errors), external });
+      void server;
+    });
+
+    // ── C180 (Lists, R3b) High quality, the real data: the drawer of a craft row has "Need it in high quality" only for a material that can be made in high quality (not for a gear piece, not for a material that cannot); ticking it stores ways.hq with an Undo, the row stays open and becomes
+    //    a high-quality row planned as such; "High quality for every material" in List settings sets every such material in one change with one Undo entry and adds no field to the save; its Undo gives the saved ways back exactly. ──
+    await guard('C180', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      await lOpenList(page, 'Gear', 'craft');
+      const info = await page.evaluate(() => { const D = window.__lists.data(), p = window.__lists.plan('c2', true), mats = LISTS.materialsOf(D, p), hq = (i) => !!(D.items[i][1] & 2) && Object.keys(D.recipes).some((r) => D.recipes[r][0] === i && (D.recipes[r][6] & 1)); const crafts = Object.values(p.lines).filter((l) => l.by === 'craft' && l.crafts > 0).map((l) => l.item); return { crafts, ok: crafts.filter((i) => mats[i] && hq(i)), no: crafts.filter((i) => !(mats[i] && hq(i))), all: Object.keys(mats).map(Number).filter(hq).sort((a, b) => a - b) }; });
+      ck.haveBoth = info.ok.length >= 3 && info.no.length >= 3;
+      const box = (it) => page.locator('.craft-row[data-item="' + it + '"] [data-f=hqway]');
+      const shown = async (it) => { const r = page.locator('.craft-row[data-item="' + it + '"]').first(); await lOpen(r); const n = await box(it).count(); await lCloseRows(page); return n; };
+      const offered = []; for (const it of info.ok) offered.push(await shown(it));
+      const refused = []; for (const it of info.no) refused.push(await shown(it));
+      ck.onlyHqAble = offered.every((n) => n === 1) && refused.every((n) => n === 0);
+      let keys = [], u = []; if (ck.haveBoth && ck.onlyHqAble) { // R5: without the choice in the drawers the steps below are skipped and the false values above are the failure
+      // one material, ticked and undone
+      const it = info.ok[0], before = JSON.stringify(await lStored(page));
+      const r1 = page.locator('.craft-row[data-item="' + it + '"]').first(); await lOpen(r1);
+      await box(it).check(); await lSettle(page);
+      const st1 = await lStored(page), note1 = await lNote(page);
+      ck.stored = JSON.stringify(Object.keys(st1.ways)) === JSON.stringify(['c2.' + it]) && st1.ways['c2.' + it].hq === true && /Needed high quality for /.test(note1) && /Undo/.test(note1);
+      const rowAfter = page.locator('.craft-row[data-item="' + it + '"]').first();
+      ck.rowStaysOpen = (await rowAfter.locator('[data-act=row]').getAttribute('aria-expanded')) === 'true' && (await rowAfter.getAttribute('data-q')) === 'hq' && (await box(it).isChecked()) && /High quality/.test(await rowAfter.locator('.l1').textContent());
+      ck.plannedHq = await page.evaluate((i) => !!window.__lists.plan('c2', true).lines[i + '|hq|0'] && !window.__lists.plan('c2', true).lines[i + '|normal|0'], it);
+      await page.click('#lstatus [data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undo1 = JSON.stringify(await lStored(page)) === before;
+      // every material in one change
+      await lSet(page); await page.click('[data-act=hq-all]'); await lSettle(page);
+      await lSetDone(page);
+      const st2 = await lStored(page); keys = Object.keys(st2.ways).map((k) => +k.split('.')[1]).sort((a, b) => a - b); u = await page.evaluate(() => window.__lists.state.undo.map((e) => ({ label: e.label, units: e.units.length })));
+      ck.everyMaterial = JSON.stringify(keys) === JSON.stringify(info.all) && Object.values(st2.ways).every((w) => w.hq === true && Object.keys(w).length === 1);
+      ck.oneEntry = u.length === 1 && u[0].units === info.all.length && u[0].label === 'Needed high quality for ' + info.all.length + ' materials';
+      ck.noNewField = JSON.stringify(Object.keys(st2)) === JSON.stringify(Object.keys(JSON.parse(before)));
+      ck.bulkPlanned = await page.evaluate((all) => { const p = window.__lists.plan('c2', true); return all.every((i) => !!p.lines[i + '|hq|0']); }, info.all);
+      await page.click('#lstatus [data-act=undo][data-i="0"]'); await lSettle(page);
+      ck.undoAll = JSON.stringify(await lStored(page)) === before;
+      }
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C180', 'Lists page, high quality (real data): "Need it in high quality" is in the drawer only of a material that can be made in high quality, stores ways.hq and undoes; "High quality for every material" sets all of them in one change with one Undo entry, no new save field, and its Undo restores the saved ways',
+        Object.values(ck).every(Boolean), { ck, ok: info.ok.length, no: info.no.length, all: info.all, keys, u, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C181 (Lists, R3c) Master books, the real data: every craft row of the Courtly Lover's set shows the game's book name, Expert, Specialist and its stars from the recipe; for Alba, who has not ticked "Master Leatherworker XII" in the Tracker, each row says "Book not ticked" and its drawer
+    //    "Master Leatherworker XII is not ticked for Alba"; when the Tracker's tick is set the warning goes and the stamps stay; a list with no character shows the stamps and no warning; 110 of the 110 books map to a Tracker entry by their exact name, all to the entry the Tracker data holds. ──
+    await guard('C181', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, tracker = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8')), entries = [].concat(...tracker.sections.find((x) => x.id === 'masterbooks').g.map((g) => g.e));
+      const ent = entries.find((e) => e.n === 'Master Leatherworker XII').i, key = 'masterbooks:' + ent;
+      const maps = await page.evaluate(() => { const D = window.__lists.data(); return { n: Object.keys(D.bookNames).length, t: D.bookTicks, names: D.bookNames }; });
+      const exact = Object.keys(maps.names).filter((b) => entries.filter((e) => e.n === maps.names[b]).length === 1 && entries.find((e) => e.n === maps.names[b]).i === maps.t[b]);
+      ck.books110 = maps.n === 110 && Object.keys(maps.t).length === 110 && exact.length === 110;
+      await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }, { name: 'Nobody', items: r3Gear.map((i) => [i, 1]) }]);
+      const facts = () => page.evaluate(() => { const D = window.__lists.data(); return [...document.querySelectorAll('.craft-row')].map((r) => { const rid = window.__lists.plan(r.dataset.owner, true).lines[r.dataset.lk].recipe, rc = D.recipes[rid], bk = D.books[rid]; return { rid, want: { book: bk ? D.bookNames[bk] : null, expert: !!(rc[6] & 2), spec: !!(rc[6] & 4), stars: rc[4] }, got: { book: (r.querySelector('.rs-book') || {}).textContent || null, expert: !!r.querySelector('.rs-expert'), spec: !!r.querySelector('.rs-spec'), stars: r.querySelector('.rs-stars') ? parseInt(r.querySelector('.rs-stars').textContent, 10) : 0 }, warn: !!r.querySelector('.lstamp.warn'), text: r.textContent.replace(/\s+/g, ' ') }; }); });
+      await lOpenList(page, 'Gear', 'craft'); ck.warnShown = await page.waitForFunction(() => !!document.querySelector('.craft-row .lstamp.warn'), null, { timeout: 15000 }).then(() => true, () => false); // R5: no warning shown is a false value; the steps that need it are skipped
+      let f = []; if (ck.warnShown) {
+      f = await facts();
+      const same = (x) => x.want.book === x.got.book && x.want.expert === x.got.expert && x.want.spec === x.got.spec && x.want.stars === x.got.stars;
+      ck.stamps = f.length >= 6 && f.every(same) && f.filter((x) => x.want.book === 'Master Leatherworker XII').length >= 6 && f.some((x) => x.want.stars > 0);
+      const bookRows = f.filter((x) => x.want.book);
+      ck.warns = bookRows.length >= 6 && bookRows.every((x) => x.warn) && f.every((x) => x.warn === !!x.want.book);
+      ck.warnNamesBook = await page.evaluate(() => { const st = [...document.querySelectorAll('.craft-row .lstamp.warn')], l2 = [...document.querySelectorAll('.craft-row .bk-l2')]; return st.length >= 6 && l2.length === st.length && l2.every((e) => /^Master [A-Za-z]+ [IVXL]+ not ticked ·/.test(e.textContent.trim())) && st.every((e) => /^Book not ticked$/.test(e.textContent.trim()) && /^Master [A-Za-z]+ [IVXL]+$/.test(e.closest('.rst-dsk').querySelector('.rs-book').textContent.trim())); }); // R7: the warning says which book (a phone's facts line names it; a desktop's stamp stands beside the book's own stamp)
+      const first = page.locator('.craft-row', { hasText: 'Master Leatherworker XII' }).first(); await lOpen(first);
+      ck.drawerSays = (await first.locator('.drawer').textContent()).includes('Master Leatherworker XII is not ticked for Alba');
+      await lCloseRows(page);
+      // the Tracker ticks the book: the warning of its rows goes (the intermediates of other books keep theirs), the stamps stay; then every book is ticked
+      const tick = async (ks) => { await page.evaluate(async (keys) => { await CC.transact((raw) => { const d = CC.checkDoc(raw); keys.forEach((k) => { d.modules.tracker.ticks.c1[k] = 1; }); d.updated = Date.now(); return d; }); await window.__lists.reload(); }, ks); };
+      const others = [...new Set(bookRows.map((x) => x.want.book))].filter((n) => n !== 'Master Leatherworker XII');
+      await tick([key]);
+      await page.waitForFunction(() => ![...document.querySelectorAll('.craft-row')].some((r) => /Master Leatherworker XII/.test(r.textContent) && r.querySelector('.lstamp.warn')), null, { timeout: 15000 });
+      f = await facts();
+      ck.bookGone = f.filter((x) => x.want.book === 'Master Leatherworker XII').every((x) => !x.warn) && f.filter((x) => x.want.book && x.want.book !== 'Master Leatherworker XII').every((x) => x.warn) && f.every(same);
+      await tick(others.map((n) => 'masterbooks:' + entries.find((e) => e.n === n).i));
+      await page.waitForFunction(() => !document.querySelector('.craft-row .lstamp.warn'), null, { timeout: 15000 });
+      f = await facts();
+      ck.warningGone = f.length >= 6 && f.every((x) => !x.warn) && f.every(same) && !/is not ticked/.test(f.map((x) => x.text).join(' '));
+      // no character: the stamps, no warning, and the Tracker's tick of another character is not read for it
+      await lOpenList(page, 'Nobody', 'craft'); f = await facts();
+      ck.noCharacter = f.length >= 6 && f.every(same) && f.every((x) => !x.warn);
+      }
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C181', 'Lists page, master books (real data): craft rows show the book name, Expert, Specialist and stars from the recipe; "Book not ticked" and "Master Leatherworker XII is not ticked for Alba" until the Tracker\'s tick is set; no character, no warning; 110 of 110 books map to their Tracker entry by exact name',
+        Object.values(ck).every(Boolean), { ck, mapped: exact.length, sample: f.slice(0, 2), errors: real(errors), external });
+      void server;
+    });
+
+    // ── C182 (Lists, R3d) Crystals, the real data: the gear list's gathered shards, crystals and clusters are their own section before Gather, every item of it flagged as a crystal and none of Gather; together they are exactly the plan's gathered rows; the totals to get do not change. ──
+    await guard('C182', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      const secs = await lSecs(page), order = await page.evaluate(() => [...document.querySelectorAll('.gsec')].map((s) => s.dataset.sec));
+      const p = await page.evaluate(() => { const D = window.__lists.data(), pl = window.__lists.plan('c2', true); return { gather: pl.shop.gather.map((k) => pl.lines[k].item), crystal: Object.keys(D.items).filter((i) => D.items[i][1] & 8).map(Number), get: Object.values(pl.lines).filter((l) => l.by !== 'craft' && l.by !== 'have' && !(l.by === 'other' && D.currencies.includes(l.item))).reduce((n, l) => n + l.got, 0) }; });
+      const cr = lItemsIn(secs, 'crystal'), ga = lItemsIn(secs, 'gather');
+      ck.separate = cr.length >= 5 && cr.every((i) => p.crystal.includes(i)) && ga.length >= 5 && ga.every((i) => !p.crystal.includes(i));
+      ck.exact = JSON.stringify(cr.concat(ga).sort((a, b) => a - b)) === JSON.stringify(p.gather.slice().sort((a, b) => a - b));
+      ck.before = order.indexOf('crystal') >= 0 && order.indexOf('crystal') < order.indexOf('gather') && order.indexOf('crystal') === order.indexOf('gather') - 1;
+      ck.title = (await page.locator('.gsec[data-sec=crystal] .sec-title').count()) === 1 && (await page.locator('.gsec[data-sec=crystal] .sec-title').textContent()) === 'Crystals' && (await page.locator('.gsec[data-sec=crystal] .count').textContent()) === String(cr.length); // R5: a missing section is a false value, not a wait
+      ck.totals = (await lTotals(page)).get === p.get;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C182', 'Lists page, crystals (real data): shards, crystals and clusters are their own section directly before Gather, none of them in Gather, together exactly the gathered rows of the plan, the totals to get unchanged',
+        Object.values(ck).every(Boolean), { ck, crystals: cr.length, gather: ga.length, order, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C183 (Lists, R3e) Gather by zone, the real data: the gear list's Gather rows sit under zone heads (each with its row count, the zone with most rows first), then aetheryte heads, every row under the zone and aetheryte of its chosen spot; the zone changes of the plan fall from the item order's
+    //    to one per zone; timed nodes come first in each group by next window and the order is made when the page is drawn: the 15-second tick rewrites the window texts and moves no row, the next redraw puts the rows in the order of the new time. ──
+    await guard('C183', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external, page } = await r3Page();
+      const HOUR = 175000, base = 400000 * 24 * HOUR;
+      await page.clock.install({ time: base });
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: r3Gear.map((i) => [i, 1]) }]);
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      const walk = () => page.evaluate(() => { const D = window.__lists.data(), pl = window.__lists.plan('c2', true), out = [], now = Date.now(); let zone = null, sub = '', heads = [];
+        document.querySelectorAll('.gsec[data-sec=gather] ul.lines > li').forEach((li) => {
+          if (li.classList.contains('zone-head')) { zone = li.querySelector('.zn').textContent; sub = li.querySelector('.zs') ? li.querySelector('.zs').textContent : ''; heads.push({ zone, n: +li.querySelector('.zc').textContent, subs: sub ? [{ sub, n: +li.querySelector('.zc').textContent }] : [] }); }
+          else if (li.classList.contains('ae-head')) { sub = li.querySelector('.sn').textContent; heads[heads.length - 1].subs.push({ sub, n: +li.querySelector('.zc').textContent }); }
+          else if (li.classList.contains('line-row')) {
+            const it = +li.dataset.item, cs = LISTS.chosenSpot(it, { spots: D.spots, plan: pl }), s = cs.spot, w = li.querySelector('.w-window'), hours = w ? w.dataset.hours.split(',').map(Number) : null, nw = hours ? LISTS.nextWindow(hours, +w.dataset.mins, now) : null;
+            out.push({ item: it, zone, sub, spotZone: s[3], spotSub: (s[4] > 0 || s[5] > 0) && s[6] ? D.aetherytes[s[6]] : '', rank: nw ? (nw.open ? 0 : 1) * 1e15 + (nw.open ? nw.closesAt : nw.opensAt) : null, text: w ? w.textContent : '' });
+          }
+        });
+        return { rows: out, heads }; });
+      let w0 = await walk();
+      const rows = w0.rows;
+      ck.rows = rows.length >= 8 && w0.heads.length >= 4;
+      ck.underOwnZone = rows.every((r) => r.zone === r.spotZone && (r.sub === '' ? r.spotSub === '' : r.sub === 'Near ' + r.spotSub));
+      ck.headCounts = w0.heads.every((h) => h.n === rows.filter((r) => r.zone === h.zone).length) && w0.heads.reduce((n, h) => n + h.n, 0) === rows.length && new Set(w0.heads.map((h) => h.zone)).size === w0.heads.length;
+      ck.mostFirst = w0.heads.every((h, i) => !i || w0.heads[i - 1].n > h.n || (w0.heads[i - 1].n === h.n && w0.heads[i - 1].zone < h.zone));
+      const changes = (a) => a.reduce((n, r, i) => n + (i && a[i - 1] !== r ? 1 : 0), 0);
+      const byItem = rows.slice().sort((a, b) => a.item - b.item), before = changes(byItem.map((r) => r.spotZone)), after = changes(rows.map((r) => r.zone));
+      const all = await page.evaluate(() => { const D = window.__lists.data(), pl = window.__lists.plan('c2', true); return pl.shop.gather.map((k) => LISTS.chosenSpot(pl.lines[k].item, { spots: D.spots, plan: pl }).spot[3]); });
+      ck.fewerChanges = after < before && after === w0.heads.length - 1;
+      // inside a group: timed rows first by next window (the page's own engine at this time), then the others
+      const groups = {}; rows.forEach((r) => { (groups[r.zone + '|' + r.sub] = groups[r.zone + '|' + r.sub] || []).push(r); });
+      const ordered = (g) => g.every((r, i) => r.rank !== null || g.slice(i).every((q) => q.rank === null)) && g.filter((r) => r.rank !== null).every((r, i, t) => !i || t[i - 1].rank <= r.rank);
+      ck.timedFirst = Object.values(groups).every(ordered);
+      const timed = Object.values(groups).filter((g) => g.filter((r) => r.rank !== null).length >= 2);
+      ck.twoTimed = timed.length >= 1;
+      const order0 = rows.map((r) => r.item).join(), text0 = rows.map((r) => r.text).join('|');
+      // the tick: six Eorzean hours later the window texts have moved, no row has
+      await page.clock.fastForward(6 * HOUR);
+      const w1 = await walk();
+      ck.tickMovesNoRow = w1.rows.map((r) => r.item).join() === order0 && w1.rows.map((r) => r.text).join('|') !== text0;
+      // the redraw (leave the tab and come back) orders by the new time, which is not the old order
+      await lTab(page, 'craft'); await lTab(page, 'get'); await lOpenAll(page);
+      const w2 = await walk(), g2 = {}; w2.rows.forEach((r) => { (g2[r.zone + '|' + r.sub] = g2[r.zone + '|' + r.sub] || []).push(r); });
+      ck.redrawReorders = w2.rows.map((r) => r.item).join() !== order0 && Object.values(g2).every(ordered);
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C183', 'Lists page, Gather by zone (real data): zone heads with their counts, the zone with most rows first, aetheryte heads, every row under its chosen spot\'s zone, the zone changes fall from ' + before + ' (item order, crystals apart) to ' + after + ', timed nodes first by next window; the 15-second tick moves no row and a redraw orders by the new time',
+        Object.values(ck).every(Boolean), { ck, zoneChangesBefore: before, zoneChangesAfter: after, allGatherRows: all.length, allChangesItemOrder: changes(all), heads: w0.heads, errors: real(errors), external });
+      void server; void ctx;
+    });
+
+    // ── C184 (Lists, R3f) Vendors by city then seller, the real data: Carnage Sword (sold in Old Gridania and South Shroud at one price, planned from Old Gridania) and Mustard Eggs (South Shroud only): together the sword is shown at the South Shroud seller, both under one
+    //    "South Shroud" head; alone it is shown in Old Gridania; the plan's offer and gil are the same either way; every vendor row of a larger list sits under the city of its shown seller, the cities with most rows first. ──
+    await guard('C184', async () => {
+      const server = await start(PORT5);
+      const { errors, external, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {};
+      const many = [1602, 1603, 1604, 1606, 1613, 1616, 2338, 2364, 2375, 2377, 2389, 2895, 2996, 2997];
+      await lSeedLists(page, [{ name: 'Together', charId: 'c1', items: [[1611, 1], [4652, 1]] }, { name: 'Alone', charId: 'c2', items: [[1611, 1]] }, { name: 'Many', charId: 'c3', items: many.map((i) => [i, 1]) }]);
+      const offer = (owner) => page.evaluate((o) => { const p = window.__lists.plan(o, true), l = p.lines['1611|normal|0']; return { npc: l.offer.npc, cost: l.cost, price: l.offer.cur[0][1], gil: p.gil.vendor }; }, owner);
+      const sellerOf = async (it) => { const r = page.locator('.get-row[data-item="' + it + '"]'); return (await r.locator('.l2').textContent()).replace(/\s+/g, ' '); };
+      await lOpenList(page, 'Together', 'get'); await lOpenAll(page);
+      const heads = await page.locator('.gsec[data-sec=vendor] .zone-head .zn').allTextContents(), subs = await page.locator('.gsec[data-sec=vendor] .ae-head .sn').allTextContents();
+      const together = await sellerOf(1611), t = await offer('c1');
+      ck.together = /Sold by [^·]*? in South Shroud/.test(together) && heads.join() === 'South Shroud';
+      ck.sellerHeads = subs.length >= 1 && new Set(subs).size === subs.length;
+      await lOpenList(page, 'Alone', 'get'); await lOpenAll(page);
+      const alone = await sellerOf(1611), a = await offer('c2');
+      ck.alone = /in Old Gridania/.test(alone) && (await page.locator('.gsec[data-sec=vendor] .zone-head .zn').allTextContents()).join() === 'Old Gridania';
+      ck.planUnchanged = t.npc === a.npc && t.npc === 1000217 && t.cost === a.cost && t.price === a.price;
+      // a larger list: rows under the city of their shown seller, the cities with most rows first
+      await lOpenList(page, 'Many', 'get'); await lOpenAll(page);
+      const m = await page.evaluate(() => { const out = [], hs = []; let city = null;
+        document.querySelectorAll('.gsec[data-sec=vendor] ul.lines > li').forEach((li) => {
+          if (li.classList.contains('zone-head')) { city = li.querySelector('.zn').textContent; hs.push({ city, n: +li.querySelector('.zc').textContent }); }
+          else if (li.classList.contains('line-row')) { const mm = /Sold by (.*?) in (.*?) (?:for|:)/.exec(li.querySelector('.l2').textContent.replace(/\s+/g, ' ')); out.push({ item: +li.dataset.item, city, said: mm ? mm[2] : null }); }
+        });
+        return { out, hs }; });
+      ck.manyRows = m.out.length >= 6 && m.out.every((r) => r.said === r.city);
+      ck.manyHeads = m.hs.every((h) => h.n === m.out.filter((r) => r.city === h.city).length) && m.hs.every((h, i) => !i || m.hs[i - 1].n > h.n || (m.hs[i - 1].n === h.n && m.hs[i - 1].city < h.city)) && m.hs.length < m.out.length;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C184', 'Lists page, vendors (real data): the vendor section is grouped by city then seller; an item sold at one price in two places is shown in the place the plan already goes to (Carnage Sword in South Shroud with Mustard Eggs, in Old Gridania alone) while the planned offer and gil do not change',
+        Object.values(ck).every(Boolean), { ck, heads, subs, together, alone, t, a, hs: m.hs, rows: m.out.length, errors: real(errors), external });
+      void server;
+    });
+
+    // ── C185 (Lists, R3g) Copy name: the drawer of a To get row, a To craft row and a Wanted row has "Copy name"; it puts the item's name on the clipboard and the status line says "Copied <name>."; with no clipboard interface the page falls back to selecting and copying a hidden text box. ──
+    await guard('C185', async () => {
+      const server = await start(PORT5);
+      const { ctx, errors, external, page } = await r3Page();
+      await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://127.0.0.1:' + PORT5 });
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const ck = {}, names = await r3Names(page);
+      await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: [[49294, 1]] }]);
+      await lOpenList(page, 'Gear', 'get'); await lOpenAll(page);
+      const getItem = (await lSecs(page)).gather[0].item, craftItem = 49294;
+      const copy = async (loc, name) => { await lOpen(loc); if ((await loc.locator('[data-act=copy]').count()) !== 1) return { clip: null, note: '' }; /* R5: no Copy name in the drawer reads as a false value, not a wait */ await loc.locator('[data-act=copy]').click(); await page.waitForFunction((n) => (document.getElementById('lstatus').textContent || '').includes('Copied ' + n), name, { timeout: 5000 }).catch(() => null); return { clip: await page.evaluate(() => navigator.clipboard.readText()), note: await lNote(page) }; };
+      const g = await copy(page.locator('.get-row[data-item="' + getItem + '"]'), names[getItem]);
+      ck.get = g.clip === names[getItem] && g.note.includes('Copied ' + names[getItem] + '.');
+      await lTab(page, 'craft');
+      const c = await copy(page.locator('.craft-row[data-item="' + craftItem + '"]'), names[craftItem]);
+      ck.craft = c.clip === names[craftItem] && c.note.includes('Copied ' + names[craftItem] + '.');
+      await lTab(page, 'wanted');
+      const w = await copy(page.locator('.wanted-row[data-item="' + craftItem + '"]'), names[craftItem]);
+      ck.wanted = w.clip === names[craftItem];
+      // no clipboard interface: the hidden text box is selected and copied
+      const p2 = await ctx.newPage();
+      await p2.addInitScript(() => { Object.defineProperty(Navigator.prototype, 'clipboard', { get: () => undefined }); window.__copied = []; document.addEventListener('copy', () => { const a = document.activeElement; window.__copied.push((a && a.value !== undefined && a.value) || String(getSelection())); }, true); });
+      await p2.goto(ROOT5 + 'lists/'); await lReady(p2);
+      await lOpenList(p2, 'Gear', 'wanted');
+      const loc = p2.locator('.wanted-row[data-item="' + craftItem + '"]'); await lOpen(loc);
+      if ((await loc.locator('[data-act=copy]').count()) === 1) { await loc.locator('[data-act=copy]').click();
+        await p2.waitForFunction(() => (document.getElementById('lstatus').textContent || '').includes('Copied') || (document.getElementById('lstatus').textContent || '').includes('Could not copy'), null, { timeout: 5000 }).catch(() => null); }
+      const fb = { copied: await p2.evaluate(() => window.__copied), note: await lNote(p2), area: await p2.evaluate(() => document.querySelectorAll('textarea').length) };
+      ck.fallback = fb.copied.length === 1 && fb.copied[0] === names[craftItem] && fb.note.includes('Copied ' + names[craftItem] + '.') && fb.area === 0;
+      ck.noErrors = real(errors).length === 0 && external.every((x) => x.startsWith('https://universalis.app/'));
+      record('C185', 'Lists page, Copy name: every kind of row has it in its drawer, the item\'s name reaches the clipboard and the status line says "Copied <name>."; without a clipboard interface the fallback copies the same name',
+        Object.values(ck).every(Boolean), { ck, g, c, w, fb, errors: real(errors), external });
+      void server;
+    });
+
+    // ── DR1 (Lists, B6) The design rules of docs/design-rules.md, measured on every list screen at 1,440 px light and 360 px dark with the real game data. `designRules(page, opts)` is the reusable helper (rows, opener,
+    //    status, purpose fields): it measures the screen in front of it and returns the problems it found by rule. The walk asserts there are none; the self-test breaks each rule on purpose and asserts the helper sees it. ──
+    const designRules = (page, opts) => page.evaluate((o) => {
+      const problems = {}, add = (rule, msg) => { (problems[rule] = problems[rule] || []).push(String(msg).slice(0, 140)); };
+      const vis = (e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none'; };
+      const all = (sel, root) => [...(root || document).querySelectorAll(sel)].filter(vis);
+      const nm = (e) => e.tagName.toLowerCase() + '.' + String(e.getAttribute('class') || '').split(' ')[0] + ' "' + String(e.textContent || '').trim().slice(0, 24) + '"';
+      const phone = !!o.phone, fig = { rows: 0, icons: 0, stamps: 0 };
+      const mast = document.querySelector('header.mast').getBoundingClientRect(), D = window.__lists.data();
+      // P1: no sideways scroll
+      if (document.documentElement.scrollWidth - window.innerWidth > 0) add('p1Sideways', 'scrolls sideways by ' + (document.documentElement.scrollWidth - window.innerWidth));
+      // rows: A2 (controls at rest), P2 (height at rest and opened), A1 (one primary)
+      const rows = all('.lr'); fig.rows = rows.length;
+      rows.forEach((r) => {
+        const open = r.classList.contains('open'), h = r.getBoundingClientRect().height;
+        if (!open) {
+          const ctl = all('button, a[href], select, input, textarea', r).filter((c) => !c.closest('.stepper')).length + (all('.stepper', r).length ? 1 : 0);
+          if (ctl > (phone ? 2 : 3)) add('a2Controls', ctl + ' controls at rest in ' + nm(r));
+          const many = all('.jset img.jicon', r).length >= 5; // R5 (owner ruling 2026-11-23): a phone row with 5 or more crafters may be 140 px at rest and 430 px opened; every other row keeps 96 and 360
+          if (h > (phone ? (many ? 140.5 : 96.5) : 64.5)) add('p2Rest', Math.round(h) + ' px at rest: ' + nm(r));
+        } else {
+          const li = r.closest('li'), t = li ? li.getBoundingClientRect().height : h;
+          if (phone && t > (all('.jset img.jicon', r).length >= 5 ? 430.5 : 360.5)) add('p2Open', Math.round(t) + ' px opened: ' + nm(r));
+        }
+      });
+      ['.lr', '.lcard', '.rcard', '.lsheet', '.patch-notice', '.empty-state', '.answer'].forEach((s) => all(s).forEach((c) => { const n = all('.lbtn-r, .lbtn-p', c).length; if (n > 1) add('a1Primary', n + ' primaries in ' + nm(c)); }));
+      // F1: at most one filled primary on a screen outside sheets and notices
+      const filled = all('.lbtn-p').filter((b) => !b.closest('.lsheet, .patch-notice')); if (filled.length > 1) add('f1Filled', filled.length + ' filled primaries: ' + filled.map((b) => b.textContent.trim()).join(', '));
+      // A2: never more than two bordered buttons side by side outside a sheet's footer or a segmented control
+      const bordered = all('.lbtn-o, .lbtn-r, .lbtn-p, .stepper').filter((b) => !b.closest('.sfoot, .lists-steps')), lines = new Map();
+      bordered.forEach((b) => { const p = b.parentElement, k = Math.round(b.getBoundingClientRect().top / 4), m = lines.get(p) || new Map(); m.set(k, (m.get(k) || 0) + 1); lines.set(p, m); });
+      lines.forEach((m, p) => m.forEach((n) => { if (n > 2) add('a2Bordered', n + ' bordered buttons side by side in ' + nm(p)); }));
+      // P3: the first row on a phone (only the screens asked for)
+      if (phone && o.first && rows.length) {
+        const strip = all('.lists-steps').length > 0, top = rows[0].getBoundingClientRect().top - mast.bottom, need = Math.min(strip ? 3 : 4, rows.length);
+        const inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= window.innerHeight - 64; }).length;
+        fig.first = Math.round(top); fig.inView = inView;
+        if (top > (strip ? 256 : 200)) add('p3First', 'the first row starts ' + Math.round(top) + ' px under the masthead');
+        if (inView < need) add('p3Rows', inView + ' rows in view, need ' + need);
+      }
+      if (!phone && o.first && rows.length) { const need = Math.min(8, rows.length), inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= window.innerHeight; }).length; fig.inView = inView; if (inView < need) add('p3Rows', inView + ' rows in view, need ' + need); }
+      // T2: the data face holds a digit, and no label, button, select or heading uses it
+      all('.lists-mast *, .lists-main *, .lists-tabs *, #lstatus, #lstatus *').forEach((e) => {
+        if (!/Plex Mono/i.test(getComputedStyle(e).fontFamily)) return;
+        const own = [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim(), txt = /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) ? String(e.value) : own;
+        if (!/^(SVG|PATH|IMG)$/i.test(e.tagName) && (own || /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName)) && !/\d/.test(txt)) add('t2Digit', 'no digit in the data face: ' + nm(e));
+        if (/^(LABEL|BUTTON|SELECT|H1|H2|H3|H4|LEGEND)$/.test(e.tagName)) add('t2Label', 'the data face on ' + nm(e));
+      });
+      // S1: the status line
+      const st = document.getElementById('lstatus');
+      if (st && vis(st)) {
+        const cs = getComputedStyle(st), h = st.getBoundingClientRect().height, lh = parseFloat(cs.lineHeight) || 19, inner = h - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        if (st.tagName === 'BUTTON') add('s1Status', 'the status line is a button');
+        if (st.getAttribute('role') !== 'status') add('s1Status', 'the status line has no role=status');
+        if (Math.round(inner / lh) <= 1 && h > 44.5) add('s1Status', 'one line is ' + Math.round(h) + ' px high');
+        if (['Top', 'Right', 'Bottom', 'Left'].every((s) => parseFloat(cs['border' + s + 'Width']) > 0)) add('s1Status', 'the status line has a four-sided border');
+        all('button, a', st).filter((b) => !b.classList.contains('lk')).forEach((b) => add('s1Status', 'an action that is not a link: ' + nm(b)));
+        if (cs.position !== 'fixed') add('s1Status', 'the status line is not fixed');
+      }
+      // F1: with no drawer or sheet in the way, the only text boxes and selects are the add fields, the desktop steppers and the crafting-log fields (and the character of a Restored list, a field of the step it is for)
+      all('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea').filter((f) => !f.closest('.lsheet, .drawer, .sr')).forEach((f) => {
+        const ok = f.closest('.add-bar, .fields') || f.getAttribute('data-f') === 'restorechar' || (f.closest('.stepper') && !phone);
+        if (!ok) add('f1Fields', 'a field at rest: ' + nm(f));
+      });
+      // A6: every tap target at least 40 px high at 360 px (a card's whole face is its link)
+      if (phone) all('.lists-main button, .lists-main select, .lists-main input:not([type=checkbox]):not([type=radio]), .lists-main summary, .lists-main [role=tab], .lists-main a[href], .lists-main label.chk, .lists-tabs button, #lstatus button, #lstatus summary').forEach((e) => {
+        if (e.closest('.sr')) return; const h = (e.matches('.lcard .open') ? e.closest('.lcard') : e).getBoundingClientRect().height; if (h < 39.5) add('a6Taps', Math.round(h) + ' px: ' + nm(e));
+      });
+      // D-C1, D-C2: every crafter and gatherer on a list screen has its icon, all of them (no "+N"), and no name stands without one
+      const JN = ['Carpenter', 'Blacksmith', 'Armorer', 'Goldsmith', 'Leatherworker', 'Weaver', 'Alchemist', 'Culinarian'], GN = ['Miner', 'Botanist', 'Fisher'];
+      const crafters = (it) => [...new Set(Object.keys(D.recipes).filter((r) => D.recipes[r][0] === it).map((r) => JN[D.recipes[r][2]]))].sort();
+      const gatherers = (it) => [...new Set(((D.spots && D.spots[it]) || []).map((s) => GN[s[0]]))].sort();
+      all('.craft-row, .wanted-row, .get-row').forEach((li) => {
+        const it = +li.getAttribute('data-item'), want = li.classList.contains('get-row') ? (li.closest('.gsec') && ['gather', 'crystal'].includes(li.closest('.gsec').getAttribute('data-sec')) ? gatherers(it) : []) : crafters(it);
+        const have = all('.jset img.jicon', li.querySelector('.lr')).map((i) => i.getAttribute('alt')).sort();
+        fig.icons += have.length;
+        if (JSON.stringify(have) !== JSON.stringify(want)) add('icons', 'icons ' + have.join('/') + ' but the jobs are ' + want.join('/') + ' for item ' + it);
+        if (all('.jmore, .jset .more', li).length || /\+\d/.test(all('.jset', li).map((j) => j.textContent).join(''))) add('noMore', 'a "+N" in the strip of item ' + it);
+        const names = JN.concat(GN).filter((j) => new RegExp('\\b' + j + '\\b').test(li.textContent.replace(/\s+/g, ' ')));
+        names.forEach((j) => { if (!all('img.jicon', li).some((i) => i.getAttribute('alt') === j || (i.getAttribute('alt') === '' && (i.nextSibling && String(i.nextSibling.textContent).indexOf(j) === 0 || i.parentElement.textContent.indexOf(j) >= 0)))) add('iconName', j + ' is named without its icon in item ' + it); });
+      });
+      all('.hit').forEach((li) => { JN.concat(GN).filter((j) => new RegExp('\\b' + j + '\\b').test(li.textContent)).forEach((j) => { if (!all('img.jicon', li).some((i) => i.getAttribute('alt') === j || (i.nextSibling && String(i.nextSibling.textContent).indexOf(j) === 0))) add('iconName', j + ' is named without its icon in a search result'); }); });
+      all('.job-head h3').forEach((h) => { if (!all('img.jicon', h).length) add('iconName', 'a job head without its icon: ' + nm(h)); });
+      // F2: no way stamp inside the section of the same way (To get), none of "Craft" inside To craft
+      // the combined view draws the stamps (F2: its sections are by way, but its rows come from several lists)
+      const WORD = { vendor: 'Merchant', trade: 'Trade', gather: 'Gather', market: 'Market' };
+      if (!document.querySelector('.lhead.combined')) all('.gsec').forEach((s) => { const w = WORD[s.getAttribute('data-sec')]; all('.l1 .role', s).forEach((r) => { if (w && r.textContent.trim() === w) add('f2Stamps', w + ' stamp inside the ' + w + ' section'); }); });
+      if (!document.querySelector('.lhead.combined')) all('.cblock .l1 .role-craft').forEach((r) => add('f2Stamps', 'a Craft stamp inside To craft'));
+      fig.stamps = all('.l1 .role, .wp2 .role').length;
+      // B7: no clipped text (an ellipsis or a line clamp is a chosen cut and is the one allowed), and a keyboard focus that is drawn and not cut off by a box that clips
+      all('.lists-main *, .lists-tabs *, #lstatus *').forEach((e) => {
+        if (/^(INPUT|SELECT|TEXTAREA|OPTION|SVG|PATH|IMG)$/i.test(e.tagName)) return;
+        const cs = getComputedStyle(e); if (cs.overflowX === 'visible' && cs.overflowY === 'visible') return;
+        if (cs.textOverflow === 'ellipsis' || /clamp|box/.test(cs.webkitLineClamp + cs.display) && cs.webkitLineClamp !== 'none') return;
+        if (e.scrollWidth > e.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') add('clipped', 'text cut at the side: ' + nm(e));
+        if (e.scrollHeight > e.clientHeight + 1 && cs.overflowY !== 'auto' && cs.overflowY !== 'scroll' && cs.overflowY !== 'visible' && e.textContent.trim()) add('clipped', 'text cut at the bottom: ' + nm(e));
+      });
+      // R7 (sixth round): zone and city sub-heads have room: at least 24 px high, so a face taller than the local one never cuts them (the hosted run failed at 14 px)
+      all('.zone-head, .ae-head').forEach((h) => { const r = h.getBoundingClientRect(); if (r.height < 23.5) add('subHeads', Math.round(r.height) + ' px high: ' + nm(h)); });
+      const y0 = window.scrollY, ae = document.activeElement;
+      all('.lists-main button, .lists-main a[href], .lists-main select, .lists-main input, .lists-main summary, .lists-tabs button, #lstatus button, #lstatus summary').filter((e) => !e.closest('.sr') && !e.disabled && (e.tagName === 'SUMMARY' || !e.closest('details:not([open])'))).forEach((e) => {
+        e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); e.focus({ focusVisible: true, preventScroll: true });
+        const cs = getComputedStyle(e), w = parseFloat(cs.outlineWidth) || 0, off = parseFloat(cs.outlineOffset) || 0, r = e.getBoundingClientRect();
+        if (cs.outlineStyle === 'none' || w <= 0) { if (!/checkbox|radio/.test(e.type || '') || cs.boxShadow === 'none') add('focus', 'no focus ring on ' + nm(e)); return; }
+        const grow = e.matches('input[type=checkbox], input[type=radio]') ? 0 : Math.max(0, off + w), box = { l: r.left - grow, t: r.top - grow, r: r.right + grow, b: r.bottom + grow };
+        for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) {
+          const ac = getComputedStyle(a); if (ac.overflowX === 'visible' && ac.overflowY === 'visible') continue;
+          const ar = a.getBoundingClientRect(); if (box.l < ar.left - 0.5 || box.r > ar.right + 0.5 || box.t < ar.top - 0.5 || box.b > ar.bottom + 0.5) { add('focus', 'the focus ring of ' + nm(e) + ' is cut by ' + nm(a)); break; }
+        }
+      });
+      if (ae && ae.focus) ae.focus({ preventScroll: true }); else if (document.activeElement) document.activeElement.blur();
+      window.scrollTo(0, y0);
+      return { screen: o.screen, problems, fig };
+    }, opts);
+    const DR1_PLAN = [['Crawler Silk', 2], ['Rubber', 2], ['Heartfelt Gift Component', 3], ['Earth Cluster', 4], ['Wind Cluster', 4], ['Lightning Cluster', 4], ['Stalk of Ramie', 6], ['Mythril Bolt', 3], ['Titanium Ingot', 2], ['Cloud Cloth', 2], ['High House Boots', 2]];
+    const dr1Page = async (vp, scheme, theme, fixedTime) => {
+      const c = await context({ serviceWorkers: 'block', viewport: vp, colorScheme: scheme });
+      if (fixedTime) await c.ctx.clock.setFixedTime(fixedTime); // R6: a screen whose text holds a window reads a fixed clock, so its length never depends on the real time
+      if (theme) await c.ctx.addInitScript((a) => { try { localStorage.setItem('eveniunt-tracker-ui', JSON.stringify({ theme: a[0], look: { shared: { theme: a[1] } } })); } catch (e) { /* none */ } }, [scheme, theme]); // a theme other than the default, in one mode
+      await c.ctx.route('https://universalis.app/**', (r) => {
+        const ids = new URL(r.request().url()).pathname.split('/').pop().split(','), items = {};
+        ids.forEach((id) => { items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, worldName: 'Test' }], averagePrice: 100 }; });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+      });
+      const page = await c.ctx.newPage();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      await page.evaluate(async () => { await CC.transact((raw) => { const d = raw ? CC.checkDoc(raw) : CC.emptyDoc(); d.chars = [{ id: 'c1', name: 'Tamsin Reed', lodestone: null, cls: null, gc: 1 }, { id: 'c2', name: 'Joss Marlowe', lodestone: null, cls: null, gc: 1 }]; d.updated = Date.now(); return d; }); await window.__lists.reload(); });
+      return { c, page };
+    };
+    // two characters, three lists (one with two steps), typed stock and amounts as examples; real item names of the game data
+    const dr1Seed = (page) => page.evaluate(async (plan) => {
+      const S = LISTS.store, D = window.__lists.data(), r = await CC.read();
+      let sec = S.emptySection(), t = 5000; const ctx = () => ({ now: t++ }), nm = {};
+      Object.keys(D.items).forEach((id) => { if (!(D.items[id][0] in nm)) nm[D.items[id][0]] = +id; });
+      const mk = (name, charId, want, extra) => {
+        let x = S.newList(sec, { name, charId, stamp: D.stamp }, ctx()); sec = x.section; const id = x.id;
+        want.forEach((w) => { const it = nm[w[0]]; if (!it) return; const rec = Object.keys(D.recipes).filter((k) => D.recipes[k][0] === it).sort((a, b) => D.recipes[a][3] - D.recipes[b][3] || a - b)[0] || 0; x = S.addTarget(sec, id, Object.assign({ item: it, recipe: rec, qty: w[1] }, w[2] || {}), ctx()); if (x.section) sec = x.section; });
+        if (extra) extra(id);
+      };
+      mk('Plan', 'c1', plan.concat([['Heartfelt Gift', 1, { make: true }]]), (id) => { sec = S.addStep(sec, id, 'Gear', ctx()).section; sec = S.addStep(sec, id, 'Gifts', ctx()).section; });
+      mk('Bought', 'c1', [['Rubber', 1]]); mk('Weaving', 'c2', [['Bronze Ingot', 2], ['Rubber', 1]]);
+      await CC.writeSection('lists', sec, { rev: r.rev, base: null }); await window.__lists.reload();
+    }, DR1_PLAN);
+    const dr1Get = async (page) => { await lOpenList(page, 'Plan', 'get'); await lOpenAll(page); };
+    const dr1Walk = async (vp, scheme, tag, theme) => {
+      const { c, page } = await dr1Page(vp, scheme, theme), phone = vp.width < 600, out = { tag, screens: [], problems: {}, fig: {}, errors: c.errors, external: c.external };
+      const top = () => page.evaluate(() => window.scrollTo(0, 0));
+      const look = async (name, o) => { await page.waitForTimeout(200); await top(); const r = await designRules(page, Object.assign({ screen: name, phone }, o || {})); out.screens.push(name); out.fig[name] = r.fig; Object.keys(r.problems).forEach((k) => { (out.problems[k] = out.problems[k] || []).push(...r.problems[k].map((m) => name + ': ' + m)); }); };
+      await look('empty');
+      await page.click('[data-act=from-log]'); await page.waitForSelector('.log-screen'); await page.selectOption('[data-f=logjob]', '3'); await page.selectOption('[data-f=logpage]', '0'); await look('log-which');
+      await page.click('[data-act=log-char][data-char=c1]'); await page.waitForSelector('.log-count'); await look('log');
+      await page.click('[data-act=log-cancel]'); await page.waitForSelector('.empty-state');
+      await dr1Seed(page); await page.waitForSelector('.list-card'); await look('lists');
+      await page.evaluate(async () => { // a Restored list: wanted items whose list is missing
+        const r = await CC.read(), d = CC.checkDoc(r.raw), sec = JSON.parse(JSON.stringify(d.modules.lists)), D = window.__lists.data(), nm = {};
+        Object.keys(D.items).forEach((id) => { if (!(D.items[id][0] in nm)) nm[D.items[id][0]] = +id; });
+        sec.targets['l9zzzzzzzzzz.t1aaaaaaaaaa'] = { item: nm['Cloud Cloth'], recipe: 0, qty: 2, at: 1 }; sec.targets['l9zzzzzzzzzz.t2bbbbbbbbbb'] = { item: nm['Rubber'], recipe: 0, qty: 1, at: 2 };
+        await CC.transact((raw) => { const doc = CC.checkDoc(raw); doc.modules.lists = sec; doc.updated = Date.now(); return doc; }); await window.__lists.reload();
+      });
+      await page.waitForSelector('.lists-restored'); await look('restored');
+      await page.evaluate(async () => { await CC.transact((raw) => { const doc = CC.checkDoc(raw); Object.keys(doc.modules.lists.targets).forEach((k) => { if (k.indexOf('l9zzzzzzzzzz.') === 0) delete doc.modules.lists.targets[k]; }); doc.updated = Date.now(); return doc; }); await window.__lists.reload(); });
+      await dr1Get(page); await look('get', { first: true });
+      await page.locator('.get-row .opener').first().click(); await look('get-open');
+      await page.locator('.gsec[data-sec=gather] .get-row .opener').first().click(); await look('get-gather-open');
+      await page.locator('.get-row.open .opener').click();
+      await lTab(page, 'craft'); await look('craft', { first: true });
+      const many = await page.evaluate(() => { const rs = [...document.querySelectorAll('.craft-row')]; let b = 0; rs.forEach((r, i) => { if (r.querySelectorAll('.jset img').length > rs[b].querySelectorAll('.jset img').length) b = i; }); return b; });
+      await page.locator('.craft-row .opener').nth(many).click(); await look('craft-open');
+      await page.locator('.craft-row.open .opener').click();
+      await lTab(page, 'wanted'); await page.fill('[data-f=search]', 'cloud c'); await look('wanted-search'); await page.fill('[data-f=search]', ''); await look('wanted', { first: true });
+      await page.locator('.wanted-row .opener').nth(1).click(); await look('wanted-open');
+      await page.locator('.wanted-row.open .opener').click();
+      await page.evaluate(async () => { // the patch notice: the list was last checked at an older version; one recipe changed (an example)
+        const D = window.__lists.data(), r = await CC.read(), d = CC.checkDoc(r.raw), sec = d.modules.lists, id = Object.keys(sec.lists).filter((k) => sec.lists[k].name === 'Plan')[0];
+        const it = Object.keys(D.items).filter((i) => D.items[i][0] === 'Titanium Ingot').map(Number)[0], rid = Object.keys(D.recipes).filter((k) => D.recipes[k][0] === it)[0], row = JSON.parse(JSON.stringify(D.recipes[rid]));
+        row[5][0][1] = row[5][0][1] + 1; D.changes = [{ from: '7.0', to: D.stamp, recipes: { [rid]: [row] } }]; sec.lists[id].data = '7.0';
+        await CC.transact((raw) => { const doc = CC.checkDoc(raw); doc.modules.lists = sec; doc.updated = Date.now(); return doc; }); await window.__lists.reload();
+      });
+      await lTab(page, 'get'); await page.waitForSelector('.patch-notice'); await look('patch-closed', { first: true });
+      await page.click('.patch-notice [data-act=notice]'); await look('patch');
+      await page.click('.patch-notice [data-act=noted]'); await lSettle(page);
+      for (let i = 0; i < 2; i++) { const hv = page.locator('.get-row [data-act=haveall]').nth(i); if (await hv.count()) { await hv.click(); await lSettle(page); } }
+      await look('status'); await page.click('.lists-earlier summary'); await look('status-earlier');
+      await page.click('[data-act=settings]'); await page.waitForSelector('.lsheet'); await look('settings');
+      await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet'); await look('order');
+      await page.click('[data-act=sheet]'); await page.waitForSelector('.lsheet', { state: 'detached' });
+      await page.click('[data-act=back]'); await page.waitForSelector('.list-card'); const ticks = page.locator('[data-f=tick]:not([disabled])'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check(); await lSettle(page);
+      await page.click('[data-act=combined]'); await page.waitForSelector('.lhead.combined'); await lOpenAll(page); await look('combined', { first: true });
+      await lTab(page, 'craft'); await look('combined-craft', { first: true });
+      out.errs = real(c.errors); await c.ctx.close();
+      return out;
+    };
+    // deliberate breaks: each rule is broken on purpose in the page and the helper must see it (a rule that cannot fail proves nothing)
+    const DR1_BREAKS = [
+      ['a2Controls', "const p = document.querySelectorAll('.get-row .lr:not(.open) .pc')[1]; ['One', 'Two'].forEach((t) => { const b = document.createElement('button'); b.className = 'lk'; b.textContent = t; p.appendChild(b); });"],
+      ['a2Bordered', "const a = document.createElement('div'); a.style.display = 'flex'; for (let i = 0; i < 3; i++) { const b = document.createElement('button'); b.className = 'lbtn-o'; b.style.minWidth = '60px'; b.textContent = 'B' + i; a.appendChild(b); } document.querySelector('.drawer').appendChild(a);"],
+      ['a1Primary', "const p = document.querySelectorAll('.get-row .lr:not(.open) .pc')[2]; const b = document.createElement('button'); b.className = 'lbtn-r'; b.textContent = 'Second'; p.appendChild(b);"],
+      ['f1Filled', "['One', 'Two'].forEach((t) => { const b = document.createElement('button'); b.className = 'lbtn-p'; b.textContent = t; document.querySelector('.tab-get').prepend(b); });"],
+      ['p2Rest', "document.querySelectorAll('.get-row .lr:not(.open)')[3].style.minHeight = '140px';"],
+      ['p2Open', "document.querySelector('.get-row.open .drawer').style.minHeight = '420px';"],
+      ['p3First', "const d = document.createElement('div'); d.style.height = '320px'; document.querySelector('.lists-steps').before(d);"],
+      ['p3Rows', "document.querySelector('.tab-get').style.paddingTop = '330px';"],
+      ['t2Digit', "const e = document.querySelector('.cnt i'); e.style.fontFamily = '\"IBM Plex Mono\", monospace';"],
+      ['t2Label', "const e = document.querySelector('.sec-toggle'); e.style.fontFamily = '\"IBM Plex Mono\", monospace';"],
+      ['s1Status', "document.getElementById('lstatus').style.border = '2px solid red';"],
+      ['s1Status', "const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Undo'; document.getElementById('lstatus').appendChild(b);"],
+      ['f1Fields', "const i = document.createElement('input'); i.type = 'text'; i.style.minHeight = '44px'; document.querySelector('.lhead').appendChild(i);"],
+      ['a6Taps', "const b = document.querySelector('.get-row .pc .lbtn-r'); b.style.minHeight = '0'; b.style.height = '20px';"],
+      ['icons', "const g = document.querySelector('.gsec[data-sec=gather] .get-row .l1 .jset img'); g.remove();"],
+      ['noMore', "const j = document.querySelector('.gsec[data-sec=gather] .get-row .l1 .jset'); const m = document.createElement('span'); m.className = 'jmore'; m.textContent = '+3'; j.appendChild(m);"],
+      ['iconName', "const p = document.createElement('p'); p.className = 'why'; p.textContent = 'Crafted by Weaver, level 5.'; document.querySelector('.get-row.open .drawer').prepend(p);"],
+      ['f2Stamps', "const l = document.querySelector('.gsec[data-sec=gather] .get-row .l1'); const s = document.createElement('span'); s.className = 'role role-gather'; s.textContent = 'Gather'; l.appendChild(s);"],
+      ['clipped', "const e = document.querySelector('.get-row .lr .opener'); e.style.overflow = 'hidden'; e.style.whiteSpace = 'nowrap'; e.style.width = '60px'; e.style.display = 'block';"],
+      ['focus', "const b = document.querySelector('.get-row .pc .lbtn-r'); b.style.outline = '0';"],
+      ['subHeads', "const h = document.querySelector('.zone-head'); h.style.minHeight = '0'; h.style.height = '14px'; h.style.padding = '0 16px';"],
+      ['p1Sideways', "document.documentElement.style.minWidth = '700px';"]
+    ];
+    await guard('DR1', async () => {
+      const server = await start(PORT5);
+      const w = [await dr1Walk({ width: 1440, height: 1000 }, 'light', 'desktop-light'), await dr1Walk({ width: 360, height: 800 }, 'dark', 'phone-dark')];
+      // B7: the phone again in light, and in three themes besides the default (one dark, one light, one dark)
+      for (const [scheme, theme] of [['light', null], ['dark', 'abyssal-oath'], ['light', 'uldah-sultanate-gilt'], ['dark', 'electrope-skyline']]) w.push(await dr1Walk({ width: 360, height: 800 }, scheme, 'phone-' + scheme + '-' + (theme || 'default'), theme));
+      const RULES = ['p1Sideways', 'a2Controls', 'a2Bordered', 'a1Primary', 'f1Filled', 'p2Rest', 'p2Open', 'p3First', 'p3Rows', 't2Digit', 't2Label', 's1Status', 'f1Fields', 'a6Taps', 'icons', 'noMore', 'iconName', 'f2Stamps', 'clipped', 'focus', 'subHeads'];
+      const ck = {};
+      RULES.forEach((r) => { ck[r] = w.every((x) => !(x.problems[r] || []).length); });
+      ck.screens = w.every((x) => x.screens.length === 21 && x.screens.includes('combined-craft'));
+      ck.notVacuous = w.every((x) => x.screens.reduce((n, s) => n + (x.fig[s].icons || 0), 0) >= 40 && x.screens.reduce((n, s) => n + (x.fig[s].rows || 0), 0) >= 150);
+      ck.stampsWhereSectionsAreNotByWay = w.every((x) => x.fig.combined.stamps > 0 && x.fig['wanted'].stamps > 0);
+      ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.every((u) => u.startsWith('https://universalis.app/')));
+      // the self-test, at 360 px on To get: break each rule on purpose, the helper must see exactly that rule
+      const seen = {};
+      {
+        const { c, page } = await dr1Page({ width: 360, height: 800 }, 'dark');
+        await dr1Seed(page); await dr1Get(page);
+        await page.locator('.get-row [data-act=haveall]').first().click(); await lSettle(page);
+        await page.locator('.get-row .opener').first().click(); await page.waitForTimeout(200);
+        for (const [rule, js] of DR1_BREAKS) {
+          await page.evaluate(() => window.__lists.reload()); await page.waitForTimeout(150); await page.evaluate(() => window.scrollTo(0, 0));
+          await page.evaluate(js);
+          const r = await designRules(page, { screen: 'break ' + rule, phone: true, first: true });
+          (seen[rule] = seen[rule] || []).push((r.problems[rule] || []).length > 0);
+        }
+        await c.ctx.close();
+      }
+      ck.eachRuleSeenFailing = RULES.every((r) => (seen[r] || []).length > 0 && seen[r].every(Boolean));
+      record('DR1', 'Lists design rules (docs/design-rules.md) measured on every list screen at 1,440 px light and 360 px dark with the real game data: at most 3 controls per row at rest on desktop and 2 on a phone, never more than two bordered buttons side by side outside a sheet footer, at most one primary per row, card, sheet and notice and one filled primary per screen outside sheets and notices, rows at most 64 px (96 px on a phone, 360 px opened), the first row within 200 px of the masthead (256 with the steps) and 4 rows in view on a phone (3 with the steps, 8 on desktop), the data face only on digits and never on a label, button, select or heading, the status line is a role=status line with links and no button border, no text box or select at rest but the purpose fields, 40 px tap targets on a phone, every crafter and gatherer has its icon with no "+N", no way stamp inside its own section, no sideways scroll; and each rule was broken on purpose once and seen',
+        Object.values(ck).every(Boolean), { ck, problems: w.map((x) => Object.fromEntries(Object.entries(x.problems).map(([k, v]) => [k, v.slice(0, 6)]))), seen, figures: w.map((x) => x.fig), errors: w.map((x) => x.errs), external: w.map((x) => x.external) });
+      void server;
+    });
+
+    // ── C186 (Lists, R3 look) The design rules on the screens R3 changed, the real data, at 1,440 px light and 360 px dark: the gear list's To get with crystals, Gather by zone and Currencies to earn (and one opened row with "Copy name"), To craft with the master-book stamps and the
+    //    warning (and one opened row with the high-quality choice), the vendor list grouped by city, and the List settings sheet with the bulk action: no rule of DR1's helper is broken on any of them, and the pictures are made (docs/lists-redesign/build/r3-*). ──
+    await guard('C186', async () => {
+      const server = await start(PORT5);
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), problems = {}, figs = {}, errs = [], external = [], clocks = [];
+      const C186_CLOCK = 400000 * 4200000 + 12 * 175000; // R6: 12:00 Eorzea time on a fixed day, so the opened timed row's window text is always the same
+      for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
+        const { c, page } = await dr1Page(vp, scheme, undefined, C186_CLOCK), phone = vp.width < 600;
+        clocks.push(await page.evaluate(() => Date.now()));
+        await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+        await lSeedLists(page, [{ name: 'Courtly set', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }, { name: 'Vendors', charId: 'c2', items: [1602, 1603, 1604, 1606, 1613, 1616, 2338, 2364, 2375, 2377, 2389, 2895, 2996, 2997, 1611, 4652].map((i) => [i, 1]) }]);
+        const look = async (name, o) => {
+          await page.waitForTimeout(250); await page.evaluate(() => window.scrollTo(0, 0));
+          const r = await designRules(page, Object.assign({ screen: name, phone }, o || {}));
+          figs[tag + ' ' + name] = r.fig; Object.keys(r.problems).forEach((k) => { (problems[k] = problems[k] || []).push(...r.problems[k].map((m) => tag + ' ' + name + ': ' + m)); });
+          if (SHOT) await page.screenshot({ path: path.join(BUILD, 'r3-' + name + '-' + tag + '.png'), fullPage: name === 'get' || name === 'vendors' });
+        };
+        await lOpenList(page, 'Courtly set', 'get'); await lOpenAll(page); await page.waitForSelector('.gsec[data-sec=crystal] .line-row'); await look('get', { first: true });
+        await lOpen(page.locator('.gsec[data-sec=gather] .get-row').first()); await look('get-open');
+        await lCloseRows(page); await lTab(page, 'craft'); await page.waitForSelector('.craft-row .lstamp.warn', { state: 'attached' }); await look('craft', { first: true });
+        await lOpen(page.locator('.craft-row', { hasText: 'Mastodon Leather' }).first()); await look('craft-open');
+        await lCloseRows(page); await lSet(page); await look('settings'); await lSetDone(page);
+        await lOpenList(page, 'Vendors', 'get'); await lOpenAll(page); await page.waitForSelector('.gsec[data-sec=vendor] .zone-head'); await look('vendors', { first: true });
+        errs.push(...real(c.errors)); external.push(...c.external);
+        await c.ctx.close();
+      }
+      const ck = { clockFixed: clocks.length === 2 && clocks.every((t) => t >= C186_CLOCK && t < C186_CLOCK + 60000), noProblems: Object.keys(problems).length === 0, pictures: !SHOT || ['get', 'get-open', 'craft', 'craft-open', 'settings', 'vendors'].every((n) => ['1440-light', '360-dark'].every((t) => fs.existsSync(path.join(BUILD, 'r3-' + n + '-' + t + '.png')))), noErrors: errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/')) };
+      record('C186', 'Lists design rules on the R3 screens (real data, 1,440 px light and 360 px dark): crystals, Gather by zone, Currencies to earn, book stamps and warning, the high-quality choice, Copy name, vendors by city and the settings sheet break no rule of DR1\'s helper',
+        Object.values(ck).every(Boolean), { ck, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
+      void server;
+    });
+
+    // ── C187 (Lists, R4) Free Company projects: in a list's Wanted add field, "Shark-class Bow" is found as a Submarine part (and an airship part as an Airship part); adding it makes a new list for the same character, named after the part, with one step per phase (Phase 1 to 3) and each phase's supply items as wanted items, amount = per set x sets (the sheet's rows, real data); the plan has totals; Your lists stamps it "Submarine part"; one Undo removes the list, its steps and its wanted items. Pictures: docs/lists-redesign/build/r4-*. ──
+    await guard('C187', async () => {
+      const server = await start(PORT5);
+      const BUILD = path.join(T, '..', 'docs', 'lists-redesign', 'build'), problems = {}, figs = {}, errs = [], external = [], ck = {}, seen = {};
+      // CompanyCraftProcess rows 800, 801, 802 of Shark-class Bow (item 21792): supply item, SetQuantity x SetsRequired
+      const SHEET = [[[5058, 30], [5093, 30], [7023, 30], [5059, 18]], [[5093, 30], [7022, 30], [5060, 12]], [[7606, 9], [5099, 30], [5064, 30]]];
+      const cmp = (a) => JSON.stringify(a.map((ph) => ph.slice().sort((x, y) => x[0] - y[0])));
+      for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
+        const { c, page } = await dr1Page(vp, scheme), phone = vp.width < 600, first = tag === '1440-light';
+        await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+        await lSeedLists(page, [{ name: 'Gear', charId: 'c2', items: [[49294, 1]] }]);
+        const look = async (name, o) => {
+          await page.waitForTimeout(250); await page.evaluate(() => window.scrollTo(0, 0));
+          const r = await designRules(page, Object.assign({ screen: name, phone }, o || {}));
+          figs[tag + ' ' + name] = r.fig; Object.keys(r.problems).forEach((k) => { (problems[k] = problems[k] || []).push(...r.problems[k].map((m) => tag + ' ' + name + ': ' + m)); });
+          if (SHOT) await page.screenshot({ path: path.join(BUILD, 'r4-' + name + '-' + tag + '.png'), fullPage: name === 'list' });
+        };
+        await lOpenList(page, 'Gear', 'wanted');
+        const find = async (q) => { await page.fill('[data-f=search]', q); await page.waitForTimeout(150); return page.evaluate(() => [...document.querySelectorAll('.hits .hit')].map((h) => ({ act: h.dataset.act, item: +h.dataset.item, text: h.textContent.replace(/\s+/g, ' ').trim() }))); };
+        const bow = await find('Shark-class Bow');
+        seen.bow = bow;
+        const b0 = bow.find((h) => h.item === 21792) || {}; ck['search finds the submarine part ' + tag] = b0.act === 'add-project' && /^\+listShark-class Bow Submarine part/.test(b0.text || '');
+        const whale = await find('Whale-class Pressure Hull'), air = await find('Bronco-type Hull');
+        const w0 = whale.find((h) => /^\+listWhale-class Pressure Hull /.test(h.text)) || {}; ck['search finds a Whale-class part ' + tag] = w0.act === 'add-project' && w0.text.includes('Submarine part');
+        ck['search finds an airship part ' + tag] = air.some((h) => h.act === 'add-project' && h.text.includes('Airship part') && h.text.includes('Bronco-type Hull'));
+        await find('Shark-class Bow'); await look('search');
+        const before = await lStored(page);
+        await page.click('.hits .hit[data-act=add-project]'); await lSettle(page); await page.waitForTimeout(400);
+        const st = await lStored(page), ids = Object.keys(st.lists), mine = ids.filter((i) => st.lists[i].name === 'Shark-class Bow');
+        ck['one new list for the same character ' + tag] = ids.length === Object.keys(before.lists).length + 1 && mine.length === 1 && st.lists[mine[0]].charId === 'c2';
+        const h = mine.length ? st.lists[mine[0]] : { steps: {} }, sids = Object.keys(h.steps).sort((a, b) => h.steps[a].n - h.steps[b].n);
+        ck['steps are Phase 1 to 3 in order ' + tag] = JSON.stringify(sids.map((k) => h.steps[k].name)) === JSON.stringify(['Phase 1', 'Phase 2', 'Phase 3']);
+        const keys = Object.keys(st.targets).filter((k) => mine.length && k.startsWith(mine[0] + '.'));
+        ck['wanted items equal the sheet ' + tag] = keys.length === 10 && cmp(sids.map((sid) => keys.filter((k) => st.targets[k].step === sid).map((k) => [st.targets[k].item, st.targets[k].qty]))) === cmp(SHEET);
+        const tabs = await lSteps(page), tot = await lTotals(page);
+        seen['steps ' + tag] = tabs; ck['the page shows the three phase steps ' + tag] = tabs.length >= 3 && ['Phase 1', 'Phase 2', 'Phase 3'].every((n) => tabs.some((t) => t.name === n));
+        ck['the plan has totals ' + tag] = !!tot && tot.get + tot.craft > 0;
+        seen['totals ' + tag] = tot;
+        await look('list', { first });
+        if (await page.locator('[data-act=undo][data-i="0"]').count()) { await page.click('[data-act=undo][data-i="0"]'); await lSettle(page); }
+        const after = await lStored(page);
+        ck['one undo removes list, steps and wanted items ' + tag] = JSON.stringify(after) === JSON.stringify(before) && !(await page.locator('.lists-totals').count());
+        if (await page.locator('[data-act=back]:visible').count()) await page.click('[data-act=back]');
+        await lSeed(page, (S, sec, D) => S.fromProject(sec, { name: D.items[21792][0], charId: 'c2', stamp: D.stamp, project: D.projects[21792] }, { now: 9000 }).section);
+        await page.waitForSelector('.list-card'); await page.waitForTimeout(200);
+        ck['Your lists stamps the part ' + tag] = (await page.locator('.list-card', { hasText: 'Shark-class Bow' }).locator('.lstamp.proj').allTextContents()).join('') === 'Submarine part' && (await page.locator('.list-card', { hasText: 'Gear' }).locator('.lstamp.proj').count()) === 0;
+        await look('lists');
+        errs.push(...real(c.errors)); external.push(...c.external);
+        await c.ctx.close();
+      }
+      ck.noProblems = Object.keys(problems).length === 0;
+      ck.pictures = !SHOT || ['search', 'list', 'lists'].every((n) => ['1440-light', '360-dark'].every((t) => fs.existsSync(path.join(BUILD, 'r4-' + n + '-' + t + '.png'))));
+      ck.noErrors = errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('C187', 'Lists page, Free Company projects (real data): "Shark-class Bow" is found as a Submarine part and an airship part as an Airship part; adding it makes a list for the same character named after the part with Phase 1 to 3 as steps and the sheet\'s supply items (amount = per set x sets) as wanted items, the plan has totals, Your lists stamps it, one Undo removes it; the screens break no rule of DR1\'s helper',
+        Object.values(ck).every(Boolean), { ck, seen, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
+      void server;
+    });
+
+    // ── C188 (Lists, R5) A long list name and the one-entry rail: the head's name is one line with an ellipsis at 1,440 px and at most two lines at 360 px, its full name is the title; with only Your lists there is neither a rail nor a bottom bar, with a list open there are both. ──
+    await guard('C188', async () => {
+      const server = await start(PORT5);
+      const NAME = 'The Courtly Lover set for the whole guild and a good deal more'.slice(0, 60); // the store keeps 60 characters
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: NAME, charId: 'c2', items: [[49294, 1]] }]);
+        await page.waitForSelector('.list-card');
+        const tabs = () => page.evaluate(() => { const t = document.getElementById('tabs'), b = t.getBoundingClientRect(); return { shown: b.width > 0 && b.height > 0, n: t.querySelectorAll('.ltab').length }; });
+        const home = await tabs();
+        ck['one entry has no rail or bar ' + tag] = home.n === 1 && !home.shown;
+        await lOpenList(page, NAME.slice(0, 20), 'get');
+        const list = await tabs();
+        ck['a list has its rail or bar ' + tag] = list.n >= 3 && list.shown;
+        const h = await page.evaluate(() => { const e = document.querySelector('.lhead h1'), cs = getComputedStyle(e), lh = parseFloat(cs.lineHeight); return { lines: Math.round(e.getBoundingClientRect().height / lh), clipped: e.scrollWidth > e.clientWidth || e.scrollHeight > e.clientHeight + 1, title: e.getAttribute('title') }; });
+        seen[tag] = { home, list, h };
+        ck['the name has its limit of lines ' + tag] = tag === '1440' ? h.lines === 1 : h.lines >= 1 && h.lines <= 2;
+        ck['the long name is cut, not wrapped past the limit ' + tag] = h.clipped;
+        ck['the full name is the title ' + tag] = h.title === NAME;
+        await lSet(page); ck['the full name is in the settings sheet ' + tag] = (await page.inputValue('[data-f=listname]')) === NAME; await lSetDone(page);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      record('C188', 'Lists page, long list name and the one-entry rail: one line with an ellipsis at 1,440 px, at most two lines at 360 px, the full name as the title and in the settings sheet; no rail or bottom bar for one entry, both with a list open',
+        Object.values(ck).every(Boolean) && errs.length === 0, { ck, seen, errors: errs });
+      void server;
+    });
+
+
+    // ── C189 (Lists, R6) The data version and the spots without a map position: the list head's state line ends with "game data 7.57h1" (the first word of the data's stamp), small, in the body face with the figure in the data face; an item with
+    //    placed and unplaced nodes (Adamantite Ore) lists the placed spot first and, after it, spots that say "No map position in the game data" with their windows. ──
+    await guard('C189', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Ore', charId: 'c2', items: [[12538, 1]] }]);
+        await lOpenList(page, 'Ore', 'get'); await lOpenAll(page);
+        const stamp = await page.evaluate(() => String(window.__lists.data().stamp));
+        const head = await page.evaluate(() => { const st = document.querySelector('.lhead .state'), g = st && st.querySelector('.gdv'), f = g && g.querySelector('.fig'), cs = (e) => getComputedStyle(e);
+          return { text: st ? st.textContent : '', last: !!g && st.lastElementChild === g, gText: g ? g.textContent : '', figText: f ? f.textContent : '', gFace: g ? cs(g).fontFamily : '', fFace: f ? cs(f).fontFamily : '', size: g ? parseFloat(cs(g).fontSize) : 99 }; });
+        seen[tag] = { stamp, head };
+        ck['the state line ends with the data version ' + tag] = head.last && /game data 7\.57h1$/.test(head.text) && head.text.endsWith('game data ' + stamp.split(' ')[0]);
+        ck['the words are small and in the body face, the figure in the data face ' + tag] = head.gText === 'game data 7.57h1' && head.figText === '7.57h1' && head.size <= 13 && /Atkinson/.test(head.gFace) && /Plex Mono/.test(head.fFace);
+        await lOpen(page.locator('.gsec[data-sec=gather] .get-row').first());
+        const more = page.locator('.get-row [data-act=spots]'); if (await more.count()) await more.first().click(); // every spot, not the first three
+        const spots = await page.evaluate(() => [...document.querySelectorAll('.get-row .spots li')].map((e) => e.textContent));
+        seen[tag].spots = spots;
+        const loose = spots.map((t, i) => (/No map position in the game data/.test(t) ? i : -1)).filter((i) => i >= 0);
+        ck['the placed spot comes first, the unplaced ones after it ' + tag] = spots.length >= 2 && /\(X [\d.]+, Y [\d.]+\)/.test(spots[0]) && loose.length >= 1 && loose[0] >= 1 && loose.every((v, k) => v === loose[0] + k) && loose[loose.length - 1] === spots.length - 1;
+        ck['an unplaced spot keeps its window ' + tag] = spots.some((t) => /No map position in the game data/.test(t) && /Eorzea time/.test(t));
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      record('C189', 'Lists page, data version and spots without a map position: the state line of the list head ends with "game data 7.57h1" (small, body face, the figure in the data face); Adamantite Ore lists its placed spot first and then the spots with no map position in the game data, each with its window',
+        Object.values(ck).every(Boolean) && errs.length === 0, { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C190 (Lists, R7) A covering panel, the real data at 360 x 800 and 1,440 x 1,000: with a long history (25 earlier changes) the expanded "Earlier changes" leaves the plan and its own toggle reachable: the panel is
+    //    bounded and scrolls inside, its toggle is in view above the bottom bar, a plan row can be scrolled into view and taps through to itself, the toggle closes it again. The bound is broken on purpose once and the same measure fails on it. ──
+    await guard('C190', async () => {
+      const server = await start(PORT5);
+      const ck = {}, seen = {}, errs = [];
+      const measure = (page, phone) => page.evaluate((ph) => {
+        const st = document.getElementById('lstatus'), det = st.querySelector('.lists-earlier'), sum = det.querySelector('summary'), ul = det.querySelector('ul'), vh = window.innerHeight;
+        const bar = ph ? document.querySelector('.lists-tabs').getBoundingClientRect().top : vh, sr = st.getBoundingClientRect(), sm = sum.getBoundingClientRect();
+        const row = document.querySelector('.get-row .lr'); row.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80);
+        const rr = row.getBoundingClientRect(), hit = document.elementFromPoint(rr.left + rr.width / 2, rr.top + Math.min(rr.height / 2, 20));
+        return { open: det.open, statusH: Math.round(sr.height), vh, bounded: sr.height <= vh * 0.45 && (ul.scrollHeight <= ul.clientHeight + 1 || getComputedStyle(ul).overflowY === 'auto'), scrolls: ul.scrollHeight > ul.clientHeight + 1,
+          toggleInView: sm.top >= 0 && sm.bottom <= bar + 0.5 && sm.height >= (ph ? 39.5 : 16) && document.elementFromPoint(sm.left + sm.width / 2, sm.top + sm.height / 2) === sum, planReachable: !!hit && !!hit.closest('.lr') && rr.top >= 0 && rr.bottom < sr.top, entries: ul.querySelectorAll('li').length };
+      }, phone);
+      for (const [tag, vp] of [['360', { width: 360, height: 800 }], ['1440', { width: 1440, height: 1000 }]]) {
+        const phone = vp.width < 600, { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Hist', charId: 'c1', items: [[4880, 1], [4784, 1], [14, 1], [7718, 1]] }]);
+        await lOpenList(page, 'Hist', 'get'); await lOpenAll(page);
+        await page.evaluate(async () => { const u = window.__lists.state.undo; for (let i = 1; i <= 25; i++) u.push({ label: 'Changed what you have of Test item number ' + i, units: [] }); await window.__lists.reload(); });
+        await page.waitForSelector('.lists-earlier summary');
+        const closed = await page.evaluate(() => document.getElementById('lstatus').getBoundingClientRect().height);
+        await page.click('.lists-earlier summary');
+        const m = await measure(page, phone); seen[tag] = { closed, m };
+        ck['the history opens ' + tag] = m.open && m.entries >= 20;
+        ck['the panel is bounded and scrolls inside ' + tag] = m.bounded && m.scrolls;
+        ck['its own toggle is in view ' + tag] = m.toggleInView;
+        ck['a plan row stays reachable ' + tag] = m.planReachable;
+        await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector('.lists-earlier summary').click(); });
+        ck['the toggle closes it ' + tag] = await page.evaluate(() => !document.querySelector('.lists-earlier').open && document.getElementById('lstatus').getBoundingClientRect().height < 130);
+        if (phone) { // broken on purpose: an unbounded panel is seen by the same measure
+          await page.evaluate(() => document.querySelector('.lists-earlier summary').click()); await page.addStyleTag({ content: '.lists-earlier ul { max-height: none !important; overflow: visible !important; }' });
+          const b = await measure(page, phone); seen.broken = b;
+          ck['the measure fails on an unbounded panel'] = !b.bounded && !b.planReachable;
+        }
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C190', 'Lists page, covering panel (real data, 360 x 800 and 1,440 x 1,000): with 25 earlier changes the expanded history is bounded and scrolls inside, its toggle stays in view above the bottom bar, a plan row stays reachable and the toggle closes it; the same measure fails on an unbounded panel',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C195 (Lists, R7) A sheet never clips a focus ring, the real data: the settings sheet and the Order of ways sheet at 1,440 and 360 px wide and at heights that make them scroll (500 px) and heights that do not (800 px): every control's
+    //    keyboard focus ring, once the control is scrolled into view, lies inside the sheet and above its sticky footer. The hosted run cut the ring of an arrow button at the sheet's edge; the scroll margin is removed on purpose once and the same measure fails. ──
+    await guard('C195', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      const measure = (page) => page.evaluate(() => {
+        const sh = document.querySelector('.lsheet'), sr = sh.getBoundingClientRect(), ft = sh.querySelector('.sfoot'), ftop = ft ? ft.getBoundingClientRect().top : sr.bottom, bad = [], ae = document.activeElement; let n = 0;
+        [...sh.querySelectorAll('button, select, input, summary, a[href]')].filter((e) => !e.disabled && !e.closest('.sfoot')).forEach((e) => {
+          e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); e.focus({ focusVisible: true, preventScroll: true });
+          const cs = getComputedStyle(e), w = parseFloat(cs.outlineWidth) || 0, off = parseFloat(cs.outlineOffset) || 0, r = e.getBoundingClientRect(), g = e.matches('input[type=checkbox], input[type=radio]') ? 0 : Math.max(0, off + w); n++;
+          if (cs.outlineStyle === 'none' || w <= 0) return;
+          if (r.top - g < sr.top - 0.5 || r.bottom + g > sr.bottom + 0.5 || r.left - g < sr.left - 0.5 || r.right + g > sr.right + 0.5 || r.bottom + g > ftop + 0.5 && r.top < sr.bottom) bad.push((e.className || e.tagName) + ' ' + Math.round(r.top) + '-' + Math.round(r.bottom));
+        });
+        if (ae && ae.focus) ae.focus({ preventScroll: true });
+        return { n, bad, scrolls: sh.scrollHeight > sh.clientHeight + 1 };
+      });
+      for (const [tag, vp] of [['1440x500', { width: 1440, height: 500 }], ['360x500', { width: 360, height: 500 }], ['360x800', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Sheet', charId: 'c1', items: [[4880, 1], [4784, 1]] }]);
+        await lOpenList(page, 'Sheet', 'get'); await lSet(page);
+        const a = await measure(page);
+        await page.click('[data-act=sheet]'); await page.waitForSelector('.order-sheet');
+        const b = await measure(page); seen[tag] = { settings: a, order: b };
+        ck['settings sheet clips no ring ' + tag] = a.n >= 4 && a.bad.length === 0;
+        ck['order sheet clips no ring ' + tag] = b.n >= 8 && b.bad.length === 0;
+        if (tag === '360x500') {
+          ck['the order sheet scrolls at 500 px high'] = b.scrolls;
+          await page.addStyleTag({ content: '.lsheet { scroll-padding: 0 !important; }' });
+          const c = await measure(page); seen.broken = c;
+          ck['the same measure fails without the scroll margin'] = c.bad.length > 0;
+        }
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C195', 'Lists page, sheets and focus (real data, 1,440 and 360 px wide, 500 and 800 px high): the keyboard focus ring of every control in the settings sheet and the Order of ways sheet lies inside the sheet and above its footer; without the scroll margin the same measure fails',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── LV2 (Lists, look v2, docs/lists-look-v2.md V5) A row says its own state: typing 1 of a row's need gives it data-have="some" and a progress line whose fill is that part of its track; a timed gather row's third line says "open now" on a
+    //    row that can be done now and "opens" on one that cannot yet; a window that opens while the page is up turns its row without a reload; the section and job heads sit on the slab colour; one filled primary at most; and DR1's helper
+    //    reports no problem on the screens, at 1,440 px light and 360 px dark with the real data. Each assertion is broken once on purpose and seen failing (at 1,440 px). ──
+    await guard('LV2', async () => {
+      const server = await start(PORT5);
+      const DAY = 4200000, HOUR = 175000, CLOCK = 400000 * DAY + 12 * HOUR, ETMIN = HOUR / 60; // 12:00 Eorzea time on a fixed day, as C186
+      const ck = {}, seen = {}, errs = [], external = [], problems = {}, figs = {};
+      const probe = (page, pre) => page.evaluate((pre) => {
+        if (pre === 'red') { const e = document.querySelector('.sec-toggle'); e.style.transition = 'none'; e.style.background = 'rgb(255, 0, 0)'; } // a transition would still report the old colour
+        if (pre === 'filled') ['One', 'Two'].forEach((t) => { const b = document.createElement('button'); b.className = 'lbtn-p'; b.textContent = t; document.querySelector('.tab-get').prepend(b); });
+        const slab = (() => { const d = document.createElement('div'); d.style.background = 'var(--slab)'; document.body.appendChild(d); const v = getComputedStyle(d).backgroundColor; d.remove(); return v; })();
+        const lbs = (e) => getComputedStyle(e).backgroundColor, heads = [...document.querySelectorAll('.sec-toggle, .job-head')];
+        return { slab, heads: heads.length, headsOnSlab: heads.length > 0 && heads.every((e) => lbs(e) === slab), filled: [...document.querySelectorAll('.lbtn-p')].filter((b) => !b.closest('.lsheet, .patch-notice')).length };
+      }, pre || null);
+      const gatherState = (page) => page.evaluate(() => {
+        const rows = [...document.querySelectorAll('.gsec[data-sec=gather] .lr[data-st], .gsec[data-sec=crystal] .lr[data-st]')];
+        return { n: rows.length, bad: rows.filter((r) => { const l3 = (r.querySelector('.l3') || {}).textContent || ''; return r.dataset.st === 'act' ? !/open now/.test(l3) : !/opens/.test(l3); }).length, act: rows.filter((r) => r.dataset.st === 'act').length, wait: rows.filter((r) => r.dataset.st === 'wait').length };
+      });
+      const progress = (page, key, need) => page.evaluate(([k, n]) => {
+        const lr = document.querySelector('.get-row[data-lk="' + k + '"] .lr'); if (!lr) return { ok: false };
+        const cs = getComputedStyle(lr, '::after'), track = parseFloat(cs.width), pct = parseFloat((cs.backgroundSize || '').split(',')[0]) / 100, p = parseFloat(lr.style.getPropertyValue('--p'));
+        const fill = track * pct;
+        return { ok: lr.dataset.have === 'some' && track > 50 && Math.abs(fill - track * (1 / n)) <= 2 && Math.abs(fill - track * p) <= 2, have: lr.dataset.have, track, pct, p };
+      }, [key, need]);
+      for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
+        const desk = vp.width > 600, phone = !desk;
+        const { c, page } = await dr1Page(vp, scheme, undefined, CLOCK);
+        await dr1Seed(page); await dr1Get(page);
+        const look = async (name, o) => {
+          await page.waitForTimeout(200); await page.evaluate(() => window.scrollTo(0, 0));
+          const r = await designRules(page, Object.assign({ screen: name, phone }, o || {}));
+          figs[tag + ' ' + name] = r.fig; Object.keys(r.problems).forEach((k) => { (problems[k] = problems[k] || []).push(...r.problems[k].map((m) => tag + ' ' + name + ': ' + m)); });
+        };
+        // a To get row that needs more than 1
+        const pick = await page.evaluate(() => { const r = [...document.querySelectorAll('.get-row')].find((li) => { const m = /need (\d+),/.exec(li.querySelector('.w-need').textContent); return m && +m[1] > 1 && !li.querySelector('.lr[data-have]') && li.querySelector('.lbtn-r'); }); return r ? { key: r.dataset.lk, need: +/need (\d+),/.exec(r.querySelector('.w-need').textContent)[1] } : null; });
+        ck['row ' + tag] = !!pick;
+        const li = page.locator('.get-row[data-lk="' + (pick ? pick.key : 'none') + '"]');
+        if (phone) await lOpen(li);
+        await li.locator('[data-act=plus]:visible').first().click(); await lSettle(page);
+        await page.waitForSelector('.get-row[data-lk="' + pick.key + '"] .lr[data-have=some]');
+        const pr = await progress(page, pick.key, pick.need);
+        ck['progress ' + tag] = pr.ok;
+        const gs = await gatherState(page); ck['line3 ' + tag] = gs.n > 0 && gs.bad === 0;
+        await lCloseRows(page);
+        await look('get', { first: true });
+        const pg = await probe(page); ck['headsOnSlab get ' + tag] = pg.headsOnSlab && pg.heads > 3; ck['oneFilled get ' + tag] = pg.filled <= 1;
+        // the window that opens while the page is up
+        const wk = await page.evaluate(() => { const r = [...document.querySelectorAll('.gsec[data-sec=gather] .get-row, .gsec[data-sec=crystal] .get-row')].find((li) => li.querySelector('.lr[data-st=wait] .w-window') && /^opens \d\d:\d\d/.test(li.querySelector('.w-window').textContent)); return r ? { key: r.dataset.lk, m: /^opens (\d\d):(\d\d)/.exec(r.querySelector('.w-window').textContent).slice(1).map(Number) } : null; });
+        ck['waitRow ' + tag] = !!wk;
+        const flip = async (advance) => {
+          const opens = CLOCK + (((wk.m[0] * 60 + wk.m[1]) - 720 + 1440) % 1440) * ETMIN, st = () => page.evaluate((k) => (document.querySelector('.get-row[data-lk="' + k + '"] .lr') || {}).dataset ? document.querySelector('.get-row[data-lk="' + k + '"] .lr').dataset.st : null, wk.key);
+          await page.evaluate(() => { window.__noReload = 1; });
+          await c.ctx.clock.setFixedTime(opens - 30000); await page.waitForTimeout(500);
+          const before = await st(); await c.ctx.clock.setFixedTime(advance ? opens + 1000 : opens - 30000);
+          let after = before; for (let i = 0; i < 34 && after !== 'act'; i++) { await page.waitForTimeout(500); after = await st(); }
+          return { before, after, same: await page.evaluate(() => window.__noReload === 1) };
+        };
+        const fl = await flip(true); ck['flip ' + tag] = fl.before === 'wait' && fl.after === 'act' && fl.same;
+        await c.ctx.clock.setFixedTime(CLOCK);
+        // To craft
+        await lTab(page, 'craft'); await page.waitForSelector('.craft-row'); await look('craft', { first: true });
+        const pc = await probe(page); ck['headsOnSlab craft ' + tag] = pc.headsOnSlab && pc.heads > 0; ck['oneFilled craft ' + tag] = pc.filled <= 1;
+        ck['craftWait ' + tag] = await page.evaluate(() => { const r = [...document.querySelectorAll('.craft-row .lr')]; return r.length > 0 && r.every((x) => x.dataset.st === 'wait'); }); // nothing typed for any craft: every one waits
+        // each assertion broken once and seen failing (1,440 px)
+        if (desk) {
+          await lTab(page, 'get'); await page.waitForSelector('.get-row');
+          seen.haveSome = await page.evaluate((k) => { const lr = document.querySelector('.get-row[data-lk="' + k + '"] .lr'); lr.removeAttribute('data-have'); return lr.dataset.have !== 'some'; }, pick.key);
+          await page.evaluate(() => window.__lists.reload()); await page.waitForSelector('.get-row .lr'); await lOpenAll(page);
+          await page.evaluate((k) => { document.querySelector('.get-row[data-lk="' + k + '"] .lr').style.setProperty('--p', '0.9'); }, pick.key);
+          seen.fill = !(await page.evaluate(([k, n]) => { const lr = document.querySelector('.get-row[data-lk="' + k + '"] .lr'); lr.style.setProperty('background-size', '90% 4px'); const cs = getComputedStyle(lr, '::after'); return Math.abs(parseFloat(cs.width) * 0.9 - parseFloat(cs.width) / n) <= 2; }, [pick.key, pick.need]));
+          await page.evaluate(() => { const r = document.querySelector('.gsec[data-sec=gather] .lr[data-st], .gsec[data-sec=crystal] .lr[data-st]'); r.dataset.st = r.dataset.st === 'act' ? 'wait' : 'act'; });
+          const gb = await gatherState(page); seen.line3 = gb.bad > 0;
+          { const pp = await probe(page, 'red'); seen.slab = !pp.headsOnSlab; }
+          seen.filled = (await probe(page, 'filled')).filled > 1;
+          await page.evaluate(DR1_BREAKS.find((b) => b[0] === 'a2Controls')[1]);
+          const rb = await designRules(page, { screen: 'break', phone: false }); seen.dr1 = Object.keys(rb.problems).length > 0;
+          await page.evaluate(() => window.__lists.reload()); await page.waitForSelector('.get-row .lr'); await lOpenAll(page); await page.waitForTimeout(300);
+          const fb = await page.evaluate(() => window.__noReload = 0).then(() => flip(false)); seen.flip = !(fb.before === 'wait' && fb.after === 'act');
+        }
+        errs.push(...real(c.errors)); external.push(...c.external);
+        await c.ctx.close();
+      }
+      ck.noProblems = Object.keys(problems).length === 0;
+      ck.eachSeenFailing = ['haveSome', 'fill', 'line3', 'slab', 'filled', 'dr1', 'flip'].every((k) => seen[k] === true);
+      ck.noErrors = errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('LV2', 'Lists look v2 (real data, 1,440 px light and 360 px dark): one typed item gives its row a progress line of that part, timed gather rows say "open now" or "opens" with their state, a window that opens while the page is up turns its row without a reload, the section and job heads are the slab colour, at most one filled primary, no rule of DR1\'s helper broken; each assertion was broken on purpose once and seen',
+        Object.values(ck).every(Boolean), { ck, seen, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
+      void server;
+    });
+
+    // ── C191 (Lists, R7) Market prices by quality, the real data: the price service answers per item with listings of both qualities (ordinary 100 gil, high quality 10,000 gil); a high-quality Bronze Ingot routed to the market never shows or adds the ordinary price
+    //    (the row says "High-quality price unknown", the subtotal counts the ordinary row only and names the high-quality one as without a price), while the ordinary row keeps its price; the saved data has no price. ──
+    await guard('C191', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { ctx, errors, page } = await r3Page({ viewport: vp });
+        const asked = [];
+        await ctx.route('https://universalis.app/**', (r) => {
+          const u = new URL(r.request().url()), ids = u.pathname.split('/').pop().split(','), items = {}; asked.push(ids.join(','));
+          ids.forEach((id) => { items[id] = { itemID: +id, listings: [{ pricePerUnit: 100, hq: false, worldName: 'Test' }, { pricePerUnit: 10000, hq: true, worldName: 'Test' }], averagePrice: 100 }; });
+          r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ids.length === 1 ? items[ids[0]] : { items }) });
+        });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Quality', charId: 'c1', items: [[5056, 1], [5056, 2, { hq: true }]] }]);
+        await lSeed(page, (S, sec) => S.setWay(sec, 'c1', 5056, { by: 'market' }).section);
+        await lOpenList(page, 'Quality', 'get'); await lOpenAll(page);
+        await page.waitForFunction(() => document.querySelector('.price-total') && document.querySelector('.price-total').dataset.priced === '1', null, { timeout: 15000 }).catch(() => null);
+        const got = await page.evaluate(() => ({ rows: [...document.querySelectorAll('.gsec[data-sec=market] .get-row')].map((r) => ({ q: r.dataset.q, text: r.textContent.replace(/\s+/g, ' '), price: r.querySelector('.price-line').dataset.price })), total: (() => { const t = document.querySelector('.price-total'); return { gil: +t.dataset.gil, priced: +t.dataset.priced, unpriced: +t.dataset.unpriced, text: t.textContent }; })() }));
+        seen[tag] = got;
+        const hq = got.rows.find((r) => r.q === 'hq'), nq = got.rows.find((r) => r.q === 'nq');
+        ck['the high-quality row says its price is unknown ' + tag] = !!hq && /High-quality price unknown/.test(hq.text) && hq.price === '' && !/100 gil/.test(hq.text) && !/10,000 gil/.test(hq.text);
+        ck['the ordinary row keeps its price ' + tag] = !!nq && /100 gil before tax/.test(nq.text) && nq.price === '100';
+        ck['the subtotal counts the ordinary row only ' + tag] = got.total.gil === 100 && got.total.priced === 1 && got.total.unpriced === 1 && /Bronze Ingot \(high quality\)/.test(got.total.text);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C191', 'Lists page, market prices by quality (real data): a high-quality row routed to the market says "High-quality price unknown" and is left out of the subtotal, an ordinary row of the same item keeps its price (a controlled reply with ordinary 100 and high quality 10,000)',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C192 (Lists, R7) The chosen spot counts the zones of the plan on screen only, the real data: Helmet Crab (lowest spot Lv. 15 Western La Noscea) and Highland Parsley (only Lower La Noscea) in two lists of one character: the crab list alone keeps the crab at its lowest spot and says
+    //    nothing; the combined view of both shows it in Lower La Noscea with the reason; one list holding both does the same. ──
+    await guard('C192', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      for (const [tag, vp] of [['1440', { width: 1440, height: 1000 }], ['360', { width: 360, height: 800 }]]) {
+        const { errors, page } = await r3Page({ viewport: vp });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Crab', charId: 'c1', items: [[4880, 1]] }, { name: 'Parsley', charId: 'c1', items: [[4784, 1]] }, { name: 'Both', charId: 'c2', items: [[4880, 1], [4784, 1]] }]);
+        const crabRow = async () => { const r = page.locator('.get-row[data-item="4880"]'); await lOpen(r); return (await r.textContent()).replace(/\s+/g, ' '); };
+        await lOpenList(page, 'Crab', 'get'); await lOpenAll(page);
+        const alone = await crabRow();
+        ck['alone the crab keeps its lowest spot ' + tag] = /Lv\. 15 [^·]*· Western La Noscea \(X/.test(alone) && !/Chosen:/.test(alone) && !/Lower La Noscea/.test(alone.slice(0, alone.indexOf('Western La Noscea'))); // the other list of the character does not pull it
+        await lOpenList(page, 'Both', 'get'); await lOpenAll(page);
+        const both = await crabRow();
+        ck['one list holding both routes it through Lower La Noscea ' + tag] = /Lv\. 20 [^·]*· Lower La Noscea \(X/.test(both) && /Chosen: on your route in Lower La Noscea/.test(both);
+        await page.click('[data-act=back]'); await page.waitForSelector('.list-card');
+        const ticks = page.locator('.lists-group[aria-label="Character c1"] [data-f=tick]:not([disabled])'); for (let i = 0; i < await ticks.count(); i++) await ticks.nth(i).check(); await lSettle(page);
+        await page.locator('.lists-group[aria-label="Character c1"] [data-act=combined]').click(); await page.waitForSelector('.lhead.combined'); await lOpenAll(page);
+        const comb = await crabRow();
+        ck['the combined view of both routes it through Lower La Noscea ' + tag] = /Lv\. 20 [^·]*· Lower La Noscea \(X/.test(comb) && /Chosen: on your route in Lower La Noscea/.test(comb);
+        seen[tag] = { alone: alone.slice(0, 300), both: both.slice(0, 300), comb: comb.slice(0, 300) };
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C192', 'Lists page, the chosen spot counts the plan on screen only (real data): a list holding the crab alone keeps its lowest spot although another list of the character has the parsley; the combined view or one list holding both routes it through Lower La Noscea',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
+    // ── C193 (Lists, R7) Spearfishing names, the real data: a fish of teeming waters is shown at "Teeming Waters", one of swimming shadows at "Swimming Shadows" (the node's own name row 21 and 22), a rod fish at its fishing spot, never at "Fishing spot" for a spearfishing node. ──
+    await guard('C193', async () => {
+      const server = await start(PORT5);
+      const { errors, page } = await r3Page();
+      await page.goto(ROOT5 + 'lists/'); await lReady(page);
+      const pick = await page.evaluate(() => { const D = window.__lists.data(), out = {}; Object.keys(D.spots || {}).forEach((it) => { const sp = D.spots[it], k = sp.every((s) => s[0] === 2 && s[1] === 21) ? 'teeming' : sp.every((s) => s[0] === 2 && s[1] === 22) ? 'shadows' : sp.every((s) => s[0] === 2 && s[1] === 0 && s[11]) ? 'rod' : null; if (k && !out[k] && D.items[it]) out[k] = +it; }); return out; });
+      const ck = { found: !!pick.teeming && !!pick.shadows && !!pick.rod };
+      const seen = { pick };
+      if (ck.found) {
+        await lSeedLists(page, [{ name: 'Fish', charId: 'c1', items: [[pick.teeming, 1], [pick.shadows, 1], [pick.rod, 1]] }]);
+        await lOpenList(page, 'Fish', 'get'); await lOpenAll(page);
+        const txt = async (it) => { const r = page.locator('.get-row[data-item="' + it + '"]'); await lOpen(r); return (await r.textContent()).replace(/\s+/g, ' '); };
+        const t = await txt(pick.teeming), w = await txt(pick.shadows), r = await txt(pick.rod);
+        seen.t = t.slice(0, 260); seen.w = w.slice(0, 260); seen.r = r.slice(0, 260);
+        ck.teeming = /Lv\. \d+ Teeming Waters ·/.test(t) && !/Fishing spot/.test(t);
+        ck.shadows = /Lv\. \d+ Swimming Shadows ·/.test(w) && !/Fishing spot/.test(w);
+        ck.rod = !/Teeming Waters|Swimming Shadows/.test(r) && /Lv\. \d+ [^·]+ ·/.test(r);
+      }
+      ck.noErrors = real(errors).length === 0;
+      record('C193', 'Lists page, spearfishing (real data): a fish of teeming waters is at "Teeming Waters", one of swimming shadows at "Swimming Shadows", a rod fish at its fishing spot name',
+        Object.values(ck).every(Boolean), { ck, seen, errors: real(errors) });
+      void server;
+    });
+
+    // ── C194 (Lists, R7) The wording and layout of the sixth round, the real data: the high-quality choice sits under "Get it by"; the bulk action says it is for all of the character's lists; a currency in Wanted says "Earned it" (and asks "How many did you earn?", Undo "Earned 5 ...");
+    //    phase tabs add "to earn"; no "(ordinary)" on rows; the price place reads "North America" while the saved key keeps its hyphen; a trade sentence ends with the item; the phone has "Character totals"; the Restored card has a filled recovery and a separated Remove; a draft in the
+    //    settings sheet survives another save and goes when sent; and a list's ready tally counts the stock its own share got. ──
+    await guard('C194', async () => {
+      const server = await start(PORT5);
+      const ck = {}, errs = [], seen = {};
+      {
+        const { errors, page } = await r3Page({ viewport: { width: 1440, height: 1000 } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        const names = await r3Names(page);
+        // the high-quality choice under "Get it by", the bulk action's wording
+        await lSeedTracker(page, { ticks: { c1: {}, c2: {} }, excl: { c1: {}, c2: {} }, vals: { c1: {}, c2: {} }, avail: {}, settings: {} });
+        await lSeedLists(page, [{ name: 'Gear', charId: 'c1', items: r3Gear.map((i) => [i, 1]) }]);
+        await lOpenList(page, 'Gear', 'craft');
+        const hqRow = page.locator('.craft-row').filter({ has: page.locator('[data-act=row]') });
+        let place = null;
+        for (let i = 0; i < await hqRow.count() && !place; i++) {
+          const r = hqRow.nth(i); await lOpen(r);
+          if (await r.locator('.w-hq').count()) place = await r.evaluate((e) => { const s = e.querySelector('[data-f=way]').getBoundingClientRect(), h = e.querySelector('.w-hq').getBoundingClientRect(); return { selBottom: s.bottom, hqTop: h.top, selLeft: s.left, hqLeft: h.left }; });
+          else await lCloseRows(page);
+        }
+        seen.hq = place;
+        ck.hqUnderGetItBy = !!place && place.hqTop >= place.selBottom - 1 && Math.abs(place.hqLeft - place.selLeft) < 2;
+        await lCloseRows(page); await lSet(page);
+        const bulk = await page.locator('[data-act=hq-all]').textContent();
+        ck.bulkSaysAll = /^High quality for every material of all of .+’s lists$/.test(bulk.trim());
+        ck.northAmerica = await page.evaluate(() => { const sel = document.querySelector('[data-f=priceWorld]'), o = [...sel.options].map((x) => [x.value, x.textContent]); return o[0][1].startsWith('North America') && o.some((x) => x[0] === 'North-America' && x[1] === 'North America') && /prices: North America/.test(document.querySelector('.lhead .state').textContent) && !/North-America/.test(document.querySelector('.lhead .state').textContent); });
+        ck.hideSwitch = (await page.locator('.swb[data-act=hide]').textContent()).replace(/\s+/g, '') === 'HidecompletedOff';
+        // a draft survives another save, and goes when sent
+        await page.fill('[data-f=stepname]', 'Phase draft');
+        await lSeed(page, (S, sec) => S.setHave(sec, 'c1', 5056, 'nq', 3).section);
+        ck.draftKept = (await page.inputValue('[data-f=stepname]')) === 'Phase draft' && (await page.locator('.lsheet').count()) === 1;
+        await page.click('[data-act=addstep]'); await lSettle(page);
+        ck.draftSent = (await page.locator('.lsheet .stepname div').allTextContents()).includes('Phase draft') && (await page.inputValue('[data-f=stepname]')) === '';
+        await page.fill('[data-f=stepname]', 'Unsent'); await page.keyboard.press('Escape'); await page.waitForSelector('.lsheet', { state: 'detached' }); await lSet(page);
+        ck.draftGoesWithSheet = (await page.inputValue('[data-f=stepname]')) === '';
+        await lSetDone(page);
+        // phase tabs: to earn; Wanted: no "(ordinary)", "Earned it" for a currency
+        await lSeedLists(page, [{ name: 'Scrip', charId: 'c2', items: [[28063, 7], [5056, 1], [5056, 1, { hq: true }]] }]);
+        await lSeed(page, (S, sec) => { const id = Object.keys(sec.lists).filter((k) => sec.lists[k].name === 'Scrip')[0]; let t = 90000; sec = S.addStep(sec, id, 'First', { now: t++ }).section; sec = S.addStep(sec, id, 'Second', { now: t++ }).section; return sec; });
+        await lOpenList(page, 'Scrip', 'get');
+        ck.phaseEarn = await page.evaluate(() => { const tabs = [...document.querySelectorAll('.step-tab .st-fig')]; return tabs.length >= 2 && tabs.some((t) => +t.dataset.earn === 7 && /7 to earn/.test(t.textContent)); });
+        await lTab(page, 'wanted');
+        const rowTxt = async (it, q) => (await page.locator('.wanted-row[data-item="' + it + '"][data-q="' + q + '"]').first().textContent()).replace(/\s+/g, ' ');
+        const nqTxt = await rowTxt(5056, 'nq'), hqTxt = await rowTxt(5056, 'hq');
+        ck.noOrdinary = !/\(ordinary\)/.test(nqTxt) && /\(high quality\)/.test(hqTxt);
+        const cur = page.locator('.wanted-row[data-item="28063"]'); await lOpen(cur);
+        ck.earnedIt = (await cur.locator('[data-act=ask-bought][data-mode=earned]').count()) === 1 && (await cur.locator('[data-act=ask-bought]').first().textContent()) === 'Earned it' && (await cur.locator('[data-act=ask-bought]').count()) === 1 && !/Bought it/.test(await cur.textContent());
+        await cur.locator('[data-act=ask-bought]').click(); await cur.locator('[data-f=boughtn]').fill('5');
+        ck.earnPrompt = /How many did you earn\?/.test(await cur.locator('.w-bought').textContent()) && (await page.locator('[data-act=rest]').count()) === 0;
+        await cur.locator('[data-act=bought]').click(); await lSettle(page);
+        ck.earnUndo = /Earned 5 /.test(await lNote(page)) && (await lHave(page))['c2.28063'].nq === 5 && (await page.locator('[data-act=rest]').count()) === 0;
+        seen.note = await lNote(page); seen.nq = nqTxt.slice(0, 200); seen.hqTxt = hqTxt.slice(0, 200);
+        // a trade sentence ends with the item ("... for 2 Coke.") in the row's drawer and in the list of other offers
+        const coke = +Object.keys(names).find((i) => names[i] === 'Coke');
+        await lSeedLists(page, [{ name: 'Trade', charId: 'c2', items: [[coke, 2]] }]);
+        await lSeed(page, new Function('S', 'sec', 'DATA', 'return S.setWay(sec, "c2", ' + coke + ', { by: "trade" }).section;'));
+        await lOpenList(page, 'Trade', 'get'); await lOpenAll(page);
+        const tr = page.locator('.get-row[data-item="' + coke + '"]'); await lOpen(tr);
+        const trText = (await tr.locator('.drawer').textContent()).replace(/\s+/g, ' ');
+        seen.trade = trText.slice(0, 300);
+        ck.tradeEndsWithItem = /Traded by [^:]+: .+ for \d+ Coke\./.test(trText);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      { // the ready tally: two lists of one character each want one Bronze Ingot and one is typed; the first list's own share has it
+        const { errors, page } = await r3Page({ viewport: { width: 1440, height: 1000 } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'First', charId: 'c1', items: [[5056, 1]], have: { 5056: 1 } }, { name: 'Second', charId: 'c1', items: [[5056, 1]] }]);
+        const tally = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.list-card')].map((c) => [c.querySelector('.open').textContent, c.querySelector('.ready').textContent.replace(/\s+/g, ' ').trim()])));
+        seen.tally = tally;
+        ck.readyOwnShare = /^1\s*of 1 ready/.test(tally.First) && /^0\s*of 1 ready/.test(tally.Second);
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      { // the Restored card, a phone: a filled recovery and a Remove of its own; the character cue on the head
+        const { errors, page } = await r3Page({ viewport: { width: 360, height: 800 } });
+        await page.goto(ROOT5 + 'lists/'); await lReady(page);
+        await lSeedLists(page, [{ name: 'Totals', charId: 'c1', items: [[4880, 1]] }]);
+        await page.evaluate(async () => { await CC.transact((raw) => { const d = CC.checkDoc(raw), sec = d.modules.lists; sec.targets['l9zzzzzzzzzz.t1aaaaaaaaaa'] = { item: 5056, recipe: 0, qty: 2, at: 1 }; d.updated = Date.now(); return d; }); await window.__lists.reload(); });
+        await page.waitForSelector('.lists-restored');
+        const rc = await page.evaluate(() => { const c = document.querySelector('.lists-restored'), p = c.querySelector('[data-act=restore-orphans]'), rm = c.querySelector('[data-act=ask-remove-orphans]'), a = p.getBoundingClientRect(), b = rm.getBoundingClientRect(); return { filled: p.classList.contains('lbtn-p'), filledCount: document.querySelectorAll('.lbtn-p').length, gap: b.top - a.bottom, remove: rm.classList.contains('bad') }; });
+        seen.rc = rc;
+        ck.restoredCard = rc.filled && rc.filledCount === 1 && rc.gap >= 8 && rc.remove;
+        await page.evaluate(async () => { await CC.transact((raw) => { const d = CC.checkDoc(raw); delete d.modules.lists.targets['l9zzzzzzzzzz.t1aaaaaaaaaa']; d.updated = Date.now(); return d; }); await window.__lists.reload(); });
+        await lOpenList(page, 'Totals', 'get');
+        const cue = await page.evaluate(() => { const c = document.querySelector('.lhead .cap'), r = c.getBoundingClientRect(); return { text: c.innerText.trim(), w: Math.round(r.width), h: Math.round(r.height), vis: r.width > 0 && r.height > 0 && getComputedStyle(c).display !== 'none' }; });
+        seen.cue = cue;
+        ck.characterTotalsCue = cue.vis && cue.text === 'Character totals';
+        errs.push(...real(errors));
+        await page.context().close();
+      }
+      ck.noErrors = errs.length === 0;
+      record('C194', 'Lists page, the sixth round\'s wording and layout (real data): the high-quality choice under "Get it by", the bulk action for all of the character\'s lists, "Earned it" for a currency, "to earn" on a phase tab, no "(ordinary)", "North America" as text with its saved key, a draft kept across a save, the ready tally from a list\'s own share, the Restored card and the phone\'s "Character totals"',
+        Object.values(ck).every(Boolean), { ck, seen, errors: errs });
+      void server;
+    });
+
 
   } finally {
     await browser.close(); server.close();

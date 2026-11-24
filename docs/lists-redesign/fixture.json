@@ -1,0 +1,931 @@
+{
+ "about": "Fixture for the Lists look mock-up (docs/lists-look-spec.md, item M0). Every row below is copied unchanged from tracker/data/lists.json at commit cfae181 (the merge of pull request 4); the log page is copied from tracker/data/tracker-data.json at the same commit. Nothing is invented: typed stock, wanted amounts, list names and market prices are examples and are not in this file.",
+ "stamp": "7.57h1 44948e4c 70429e21",
+ "recipeCount": 13892,
+ "chosen": {
+  "crafted": {
+   "recipe": 31287,
+   "item": 13268,
+   "name": "High House Boots",
+   "job": "Leatherworker",
+   "why": "5 materials: Crawler Silk and Rubber are sold for gil (Idyllshire, Old Gridania), Earth Cluster and Wind Cluster are timed gathering nodes (North Silvertear, hours listed), Dinosaur Leather is traded for other currencies only (two offers)"
+  },
+  "second": {
+   "recipe": 31339,
+   "item": 13748,
+   "name": "Cloud Cloth",
+   "job": "Weaver",
+   "why": "a second crafted item: Ramie Thread (gil), Lightning Cluster and Wind Cluster (timed), Cloud Cotton Boll (gathered, and traded for scrips)"
+  },
+  "makesMoreThanOne": {
+   "recipe": 2757,
+   "item": 12595,
+   "yield": 2
+  },
+  "collectable": {
+   "recipe": 32239,
+   "item": 17552,
+   "flags": 9
+  },
+  "logPage": {
+   "job": 4,
+   "jobName": "Leatherworker",
+   "title": "Zhloe Aliapoh",
+   "recipes": [
+    32232,
+    32233,
+    32234,
+    32235,
+    32236,
+    32237,
+    32238,
+    32239,
+    32240,
+    32241
+   ]
+  }
+ },
+ "items": {
+  "1": [
+   "Gil",
+   1,
+   0
+  ],
+  "10": [
+   "Wind Crystal",
+   9,
+   229
+  ],
+  "11": [
+   "Earth Crystal",
+   9,
+   229
+  ],
+  "12": [
+   "Lightning Crystal",
+   9,
+   229
+  ],
+  "16": [
+   "Wind Cluster",
+   9,
+   990
+  ],
+  "17": [
+   "Earth Cluster",
+   9,
+   990
+  ],
+  "18": [
+   "Lightning Cluster",
+   9,
+   990
+  ],
+  "5346": [
+   "Flax",
+   1,
+   83
+  ],
+  "5510": [
+   "Rubber",
+   3,
+   13
+  ],
+  "12595": [
+   "Ramie Thread",
+   3,
+   1998
+  ],
+  "12596": [
+   "Crawler Silk",
+   3,
+   2109
+  ],
+  "12598": [
+   "Stalk of Ramie",
+   1,
+   484
+  ],
+  "13268": [
+   "High House Boots",
+   3,
+   60
+  ],
+  "13631": [
+   "Steel Sky Pirate Spoil",
+   0,
+   19
+  ],
+  "13745": [
+   "Dinosaur Leather",
+   1,
+   2851
+  ],
+  "13748": [
+   "Cloud Cloth",
+   3,
+   2661
+  ],
+  "13753": [
+   "Cloud Cotton Boll",
+   1,
+   641
+  ],
+  "14944": [
+   "Chipped Fortune Egg",
+   0,
+   2
+  ],
+  "17549": [
+   "Near Eastern Antique",
+   5,
+   450
+  ],
+  "17550": [
+   "Coerthan Souvenir",
+   5,
+   550
+  ],
+  "17551": [
+   "Maelstrom Materiel",
+   5,
+   950
+  ],
+  "17552": [
+   "Heartfelt Gift",
+   5,
+   1100
+  ],
+  "17553": [
+   "Orphanage Donation",
+   5,
+   1650
+  ],
+  "17554": [
+   "Near Eastern Antique Component",
+   2,
+   200
+  ],
+  "17555": [
+   "Coerthan Souvenir Component",
+   2,
+   250
+  ],
+  "17556": [
+   "Maelstrom Materiel Component",
+   2,
+   300
+  ],
+  "17723": [
+   "Near Eastern Antique Component Materials",
+   1,
+   100
+  ],
+  "17724": [
+   "Coerthan Souvenir Component Materials",
+   1,
+   125
+  ],
+  "17725": [
+   "Maelstrom Materiel Component Materials",
+   1,
+   150
+  ],
+  "17727": [
+   "Heartfelt Gift Component",
+   2,
+   350
+  ],
+  "17728": [
+   "Orphanage Donation Component",
+   2,
+   400
+  ],
+  "17729": [
+   "Heartfelt Gift Component Materials",
+   1,
+   175
+  ],
+  "17730": [
+   "Orphanage Donation Component Materials",
+   1,
+   200
+  ],
+  "33914": [
+   "Purple Gatherers' Scrip",
+   1,
+   2
+  ]
+ },
+ "recipes": {
+  "2757": [
+   12595,
+   2,
+   5,
+   54,
+   0,
+   [
+    [
+     12598,
+     3
+    ],
+    [
+     5346,
+     2
+    ],
+    [
+     12,
+     2
+    ]
+   ],
+   17
+  ],
+  "31287": [
+   13268,
+   1,
+   4,
+   60,
+   1,
+   [
+    [
+     13745,
+     1
+    ],
+    [
+     12596,
+     1
+    ],
+    [
+     5510,
+     1
+    ],
+    [
+     17,
+     2
+    ],
+    [
+     16,
+     1
+    ]
+   ],
+   49
+  ],
+  "31339": [
+   13748,
+   1,
+   5,
+   60,
+   1,
+   [
+    [
+     13753,
+     2
+    ],
+    [
+     12595,
+     1
+    ],
+    [
+     18,
+     2
+    ],
+    [
+     16,
+     1
+    ]
+   ],
+   49
+  ],
+  "32232": [
+   17554,
+   1,
+   4,
+   57,
+   0,
+   [
+    [
+     17723,
+     1
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   1
+  ],
+  "32233": [
+   17549,
+   1,
+   4,
+   57,
+   0,
+   [
+    [
+     17554,
+     2
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     2
+    ]
+   ],
+   9
+  ],
+  "32234": [
+   17555,
+   1,
+   4,
+   58,
+   0,
+   [
+    [
+     17724,
+     1
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   1
+  ],
+  "32235": [
+   17550,
+   1,
+   4,
+   58,
+   0,
+   [
+    [
+     17555,
+     2
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     2
+    ]
+   ],
+   9
+  ],
+  "32236": [
+   17556,
+   1,
+   4,
+   59,
+   0,
+   [
+    [
+     17725,
+     1
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   1
+  ],
+  "32237": [
+   17551,
+   1,
+   4,
+   59,
+   0,
+   [
+    [
+     17556,
+     3
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     2
+    ]
+   ],
+   9
+  ],
+  "32238": [
+   17727,
+   1,
+   4,
+   60,
+   0,
+   [
+    [
+     17729,
+     1
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   1
+  ],
+  "32239": [
+   17552,
+   1,
+   4,
+   60,
+   0,
+   [
+    [
+     17727,
+     3
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     2
+    ]
+   ],
+   9
+  ],
+  "32240": [
+   17728,
+   1,
+   4,
+   60,
+   1,
+   [
+    [
+     17730,
+     1
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   1
+  ],
+  "32241": [
+   17553,
+   1,
+   4,
+   60,
+   1,
+   [
+    [
+     17728,
+     4
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     2
+    ]
+   ],
+   9
+  ]
+ },
+ "gather": {
+  "10": [
+   1,
+   26,
+   "Bentbranch",
+   0,
+   0
+  ],
+  "11": [
+   1,
+   26,
+   "Peacegarden",
+   0,
+   0
+  ],
+  "12": [
+   1,
+   26,
+   "Spineless Basin",
+   0,
+   0
+  ],
+  "16": [
+   1,
+   50,
+   "North Silvertear",
+   [
+    0,
+    1,
+    4,
+    5,
+    8,
+    9,
+    12,
+    13,
+    16,
+    17,
+    20,
+    21
+   ],
+   180
+  ],
+  "17": [
+   1,
+   50,
+   "North Silvertear",
+   [
+    0,
+    1,
+    4,
+    5,
+    8,
+    9,
+    12,
+    13,
+    16,
+    17,
+    20,
+    21
+   ],
+   180
+  ],
+  "18": [
+   1,
+   50,
+   "North Silvertear",
+   [
+    1,
+    2,
+    5,
+    6,
+    9,
+    10,
+    13,
+    14,
+    17,
+    18,
+    21,
+    22
+   ],
+   180
+  ],
+  "5346": [
+   1,
+   31,
+   "Lower Paths",
+   0,
+   0
+  ],
+  "12598": [
+   1,
+   54,
+   "Chocobo Forest",
+   0,
+   0
+  ],
+  "13753": [
+   1,
+   60,
+   "",
+   0,
+   0
+  ]
+ },
+ "trades": {
+  "10": [
+   [
+    10,
+    [
+     [
+      14944,
+      2
+     ]
+    ],
+    0,
+    0,
+    1016902
+   ]
+  ],
+  "11": [
+   [
+    10,
+    [
+     [
+      14944,
+      2
+     ]
+    ],
+    0,
+    0,
+    1016902
+   ]
+  ],
+  "12": [
+   [
+    10,
+    [
+     [
+      14944,
+      2
+     ]
+    ],
+    0,
+    0,
+    1016902
+   ]
+  ],
+  "5510": [
+   [
+    1,
+    [
+     [
+      1,
+      13
+     ]
+    ],
+    0,
+    0,
+    1000236
+   ]
+  ],
+  "12595": [
+   [
+    1,
+    [
+     [
+      1,
+      1998
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "12596": [
+   [
+    1,
+    [
+     [
+      1,
+      2109
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "13745": [
+   [
+    1,
+    [
+     [
+      13631,
+      3
+     ]
+    ],
+    0,
+    0,
+    1016261
+   ],
+   [
+    1,
+    [
+     [
+      33914,
+      75
+     ]
+    ],
+    0,
+    0,
+    1001617
+   ]
+  ],
+  "13753": [
+   [
+    1,
+    [
+     [
+      33914,
+      10
+     ]
+    ],
+    0,
+    0,
+    1001617
+   ]
+  ],
+  "17554": [
+   [
+    1,
+    [
+     [
+      1,
+      200
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17555": [
+   [
+    1,
+    [
+     [
+      1,
+      250
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17556": [
+   [
+    1,
+    [
+     [
+      1,
+      300
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17723": [
+   [
+    1,
+    [
+     [
+      1,
+      100
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17724": [
+   [
+    1,
+    [
+     [
+      1,
+      125
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17725": [
+   [
+    1,
+    [
+     [
+      1,
+      150
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17727": [
+   [
+    1,
+    [
+     [
+      1,
+      350
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17728": [
+   [
+    1,
+    [
+     [
+      1,
+      400
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17729": [
+   [
+    1,
+    [
+     [
+      1,
+      175
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ],
+  "17730": [
+   [
+    1,
+    [
+     [
+      1,
+      200
+     ]
+    ],
+    0,
+    0,
+    1017188
+   ]
+  ]
+ },
+ "npcs": {
+  "1000236": [
+   "O'rhoyod",
+   "Old Gridania"
+  ],
+  "1001617": [
+   "scrip exchange",
+   "Ul'dah - Steps of Thal"
+  ],
+  "1016261": [
+   "spoils collector",
+   "The Pillars"
+  ],
+  "1016902": [
+   "Dreamer",
+   ""
+  ],
+  "1017188": [
+   "scrap salvager",
+   "Idyllshire"
+  ]
+ },
+ "log": {
+  "4": [
+   [
+    "Zhloe Aliapoh",
+    [
+     32232,
+     32233,
+     32234,
+     32235,
+     32236,
+     32237,
+     32238,
+     32239,
+     32240,
+     32241
+    ]
+   ]
+  ]
+ }
+}

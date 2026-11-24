@@ -1,0 +1,202 @@
+{
+ "desktop-light": {
+  "get": {
+   "rows": 35,
+   "maxH": 64,
+   "maxCtl": 3,
+   "maxBordered": 2,
+   "maxPrim": 1,
+   "firstTop": 199,
+   "inView": 10,
+   "mono": [
+    "7.57h1",
+    "2",
+    "1",
+    "1",
+    "3",
+    "2"
+   ],
+   "scrollX": 0,
+   "h2": 3024
+  },
+  "getOpen": {
+   "rest": 56,
+   "opened": 230
+  },
+  "getGatherOpen": 221,
+  "craft": {
+   "rows": 16,
+   "maxH": 56,
+   "maxCtl": 2,
+   "maxBordered": 1,
+   "maxPrim": 1,
+   "firstTop": 159,
+   "inView": 9,
+   "mono": [
+    "7.57h1"
+   ],
+   "scrollX": 0,
+   "h2": 1626
+  },
+  "craftOpen": 304,
+  "hqShown": true,
+  "wanted": {
+   "rows": 10,
+   "maxH": 56,
+   "maxCtl": 3,
+   "maxBordered": 2,
+   "maxPrim": 1,
+   "firstTop": 206,
+   "inView": 10,
+   "mono": [
+    "7.57h1"
+   ],
+   "scrollX": 0,
+   "h2": 1087
+  },
+  "wantedOpen": 312,
+  "patch": {
+   "h": 172,
+   "top": 111
+  },
+  "head": {
+   "mast": {
+    "top": 0,
+    "h": 97,
+    "w": 1440
+   },
+   "head": {
+    "top": 103,
+    "h": 105,
+    "w": 1240
+   },
+   "status": {
+    "top": 921,
+    "h": 63,
+    "w": 720
+   },
+   "scrollX": 0,
+   "firstRowBelowMast": 175,
+   "statusIsButton": false
+  },
+  "combined": {
+   "rows": 49,
+   "maxH": 64,
+   "maxCtl": 3,
+   "maxBordered": 2,
+   "maxPrim": 1,
+   "firstTop": 175,
+   "inView": 10,
+   "mono": [
+    "7.57h1",
+    "3",
+    "2",
+    "1",
+    "1",
+    "1"
+   ],
+   "scrollX": 0,
+   "h2": 4008
+  }
+ },
+ "phone-dark": {
+  "get": {
+   "rows": 35,
+   "maxH": 93,
+   "maxCtl": 2,
+   "maxBordered": 1,
+   "maxPrim": 1,
+   "firstTop": 211,
+   "inView": 5,
+   "mono": [
+    "7.57h1",
+    "2",
+    "1",
+    "1",
+    "3",
+    "2"
+   ],
+   "scrollX": 0,
+   "h2": 3943
+  },
+  "getOpen": {
+   "rest": 72,
+   "opened": 323
+  },
+  "getGatherOpen": 348,
+  "craft": {
+   "rows": 16,
+   "maxH": 95,
+   "maxCtl": 2,
+   "maxBordered": 1,
+   "maxPrim": 1,
+   "firstTop": 171,
+   "inView": 5,
+   "mono": [
+    "7.57h1"
+   ],
+   "scrollX": 0,
+   "h2": 2272
+  },
+  "craftOpen": 385,
+  "hqShown": true,
+  "wanted": {
+   "rows": 10,
+   "maxH": 96,
+   "maxCtl": 2,
+   "maxBordered": 1,
+   "maxPrim": 1,
+   "firstTop": 206,
+   "inView": 5,
+   "mono": [
+    "7.57h1"
+   ],
+   "scrollX": 0,
+   "h2": 1598
+  },
+  "wantedOpen": 349,
+  "patch": {
+   "h": 213,
+   "top": 123
+  },
+  "head": {
+   "mast": {
+    "top": 0,
+    "h": 77,
+    "w": 360
+   },
+   "head": {
+    "top": 77,
+    "h": 123,
+    "w": 340
+   },
+   "status": {
+    "top": 644,
+    "h": 92,
+    "w": 360
+   },
+   "scrollX": 0,
+   "firstRowBelowMast": 187,
+   "statusIsButton": false
+  },
+  "combined": {
+   "rows": 49,
+   "maxH": 93,
+   "maxCtl": 2,
+   "maxBordered": 1,
+   "maxPrim": 1,
+   "firstTop": 197,
+   "inView": 5,
+   "mono": [
+    "7.57h1",
+    "3",
+    "2",
+    "1",
+    "1",
+    "1"
+   ],
+   "scrollX": 0,
+   "h2": 5210
+  }
+ }
+}

@@ -54,6 +54,7 @@ cp(path.join(T, 'src', 'app', 'shared.css'), 'shared.css');
 for (const f of ['index.html', 'shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);
 // the main Settings (2026-11-12) runs the Tracker's own core code for characters, cloud sync and backups
 for (const f of ['model', 'codec', 'merge', 'cloud', 'storage']) cp(path.join(T, 'src', 'core', f + '.js'), 'core/' + f + '.js');
+cp(path.join(SRC, 'prices.js'), 'prices.js'); // the shared price service (Submersibles, Lists)
 cp(path.join(T, 'src', 'core', 'save.js'), 'save.js'); // the one save, shared with the Tracker and the Atelier (gate 1C)
 for (const f of fs.readdirSync(path.join(SRC, 'icons'))) cp(path.join(SRC, 'icons', f), 'icons/' + f);
 // The Submersibles module page (step S2): its page, script and styles, the shared alerts script, and data.js with a copy
@@ -70,6 +71,65 @@ for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'recs.js', 'dr
   const usePacked = Buffer.byteLength(packedJs) < Buffer.byteLength(plainJs);
   fs.writeFileSync(path.join(OUT, 'submersibles', 'data.js'), usePacked ? packedJs : plainJs);
   console.log('submersibles/data.js: plain', (Buffer.byteLength(plainJs) / 1024).toFixed(1), 'KB, compressed', (Buffer.byteLength(packedJs) / 1024).toFixed(1), 'KB; kept', usePacked ? 'compressed' : 'plain');
+}
+// The Lists module page (work item W6): its page, script and styles, the planning engine, and data.js with data/lists.json
+// plus `log` (the crafting-log pages of the Tracker's craft-* lists, as recipe ids) and `noHandOver` (recipes the Atelier lacks, no link).
+// The build stops when a log recipe id is not in `recipes`, when the Atelier disagrees with the sheets (tools/lists-crosscheck.js) or when
+// data.js is over the 1.5 MB budget. Both sizes are printed.
+for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js', 'store.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
+// The 11 job icons (the game's, fetched by tools/lists-data.py at the pinned Teamcraft commit): copied into the built site, so the
+// page never hot-links them and the service worker caches them with the other files. The build stops when one is missing, is not a
+// PNG or is over 16 kB.
+for (const j of ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherworker', 'weaver', 'alchemist', 'culinarian', 'miner', 'botanist', 'fisher']) {
+  const file = path.join(T, 'data', 'classjob', j + '.png');
+  if (!fs.existsSync(file)) throw new Error('lists icons: data/classjob/' + j + '.png is missing');
+  const png = fs.readFileSync(file);
+  if (png.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') throw new Error('lists icons: ' + j + '.png is not a PNG');
+  if (png.length > 16 * 1024) throw new Error('lists icons: ' + j + '.png is ' + png.length + ' bytes, over 16 kB');
+  cp(file, 'lists/classjob/' + j + '.png');
+}
+{
+  const data = JSON.parse(fs.readFileSync(path.join(T, 'data', 'lists.json'), 'utf8'));
+  const tracker = JSON.parse(fs.readFileSync(path.join(T, 'data', 'tracker-data.json'), 'utf8'));
+  const JOBS = ['carpenter', 'blacksmith', 'armorer', 'goldsmith', 'leatherworker', 'weaver', 'alchemist', 'culinarian'];
+  const log = {};
+  JOBS.forEach((name, job) => {
+    const sec = tracker.sections.find((x) => x.id === 'craft-' + name);
+    if (!sec) throw new Error('lists log: no craft-' + name + ' list in tracker-data.json');
+    log[job] = sec.g.map((g) => [g.t, g.e.map((e) => {
+      if (!data.recipes[e.i]) throw new Error('lists log: recipe ' + e.i + ' (' + e.n + ', ' + sec.id + ', ' + g.t + ') is not in the recipes of data/lists.json');
+      return e.i;
+    })]);
+  });
+  const cross = require('./../tools/lists-crosscheck.js').check(data);
+  console.log('lists cross-check with the Atelier: compared ' + cross.compared + ', agreed ' + cross.agreed + ', no hand-over ' + cross.noHandOver.length);
+  // R2 (docs/lists-redteam.md): the engine's `gather` table ({item: [job, level, zone, hours or 0, minutes or 0]}, "this item has a
+  // gather source") is built here from the spot table, which the page's data carries as `spots` (every spot, best first). The
+  // single values are those of the item's lowest-level spot (the plan-free choice); the page's chosen spot (LISTS.chosenSpot)
+  // supplies the row's own spot and window, so a window is always that of one shown spot, never merged across nodes.
+  const gatherOf = {};
+  for (const [item, list] of Object.entries(data.gather)) {
+    const s = list[0];
+    gatherOf[item] = [s[0], s[2], s[3], s[7] && s[7].length ? s[7] : 0, s[7] && s[7].length ? s[8] : 0];
+  }
+  // R3 (docs/lists-redteam.md): the Tracker's "Master Crafting Books" entry of each master book of the game data, matched by the book's exact
+  // game name (the Tracker stores each entry's id and name, not the game's item id), so a row can say the book is not ticked. The build stops
+  // when a book has no entry or two, so a book is never matched by guess.
+  require('./src/lists/engine.js');
+  const mbSec = tracker.sections.find((x) => x.id === 'masterbooks');
+  if (!mbSec) throw new Error('lists books: no masterbooks list in tracker-data.json');
+  const books = globalThis.LISTS.bookEntries(data.bookNames, [].concat(...mbSec.g.map((g) => g.e)));
+  if (books.missing.length) throw new Error('lists books: no single Tracker entry of the same name for the book item(s) ' + books.missing.join(', '));
+  console.log('lists books: ' + Object.keys(books.map).length + ' of ' + Object.keys(data.bookNames).length + ' master books map to a Tracker entry');
+  const full = Object.assign({}, data, { gather: gatherOf, spots: data.gather, log, noHandOver: cross.noHandOver, bookTicks: books.map });
+  const json = JSON.stringify(full);
+  const head = '// Built by command-center/build.js from data/lists.json (sources in data/SOURCES.md) and the craft-* lists of data/tracker-data.json.\n';
+  const plainJs = head + 'window.LISTS_DATA=' + json + ';\n';
+  const packedJs = head + 'window.LISTS_DATA_PACKED="' + zlib.deflateRawSync(Buffer.from(json), { level: 9 }).toString('base64') + '";\n';
+  const usePacked = Buffer.byteLength(packedJs) < Buffer.byteLength(plainJs), out = usePacked ? packedJs : plainJs;
+  if (Buffer.byteLength(out) > 1.5 * 1024 * 1024) throw new Error('lists/data.js is over the 1.5 MB budget: ' + Buffer.byteLength(out) + ' bytes');
+  fs.writeFileSync(path.join(OUT, 'lists', 'data.js'), out);
+  console.log('lists/data.js: plain', Buffer.byteLength(plainJs), 'bytes, packed', Buffer.byteLength(packedJs), 'bytes; kept', usePacked ? 'packed' : 'plain');
 }
 fs.writeFileSync(path.join(OUT, 'manifest.webmanifest'), JSON.stringify({
   name: 'Eveniunt Command Center', short_name: 'Command Center', id: './', start_url: './', scope: './', display: 'standalone',
