@@ -13,6 +13,7 @@
   var WASM_MODULE = null; // compiled module, shared with the solver worker
   var STORE = 'eveniunt-atelier-v1';          // everything, before gate 1C: read once, copied, then left untouched
   var DEVICE = 'eveniunt-atelier-device-v2';  // this device only: language, look, layout, the recipe on screen, history
+  var UI_KEY = 'eveniunt-tracker-ui';         // the app-wide appearance choice (Settings, every page): its theme and look win over this page's own record
   var CC = window.CC || null;                 // the Command Center's one save (shared characters and module sections)
   var LOCALES = [['en', 'English'], ['de', 'Deutsch'], ['fr', 'Français'], ['jp', '日本語'], ['cn', '简体中文'], ['kr', '한국어'], ['tw', '繁體中文']];
   var ABBR = { BasicSynthesis: 'BS', CarefulSynthesis: 'CS', Groundwork: 'GW', PrudentSynthesis: 'PS', IntensiveSynthesis: 'IS', RapidSynthesis: 'RS',
@@ -42,13 +43,33 @@
   var canStore = (function () { try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return true; } catch (e) { return false; } })();
   function lsGet(k) { try { if (canStore) return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { /* ignore */ } return mem[k] || null; }
   // first opening of this version on a device: the per-device fields come from the old key (which is not written again)
-  function load() { return lsGet(DEVICE) || lsGet(STORE); }
+  // The app-wide choice (UI_KEY) wins for the theme and the look; this page's own record is kept and used when there is none.
+  function load() {
+    var d = lsGet(DEVICE) || lsGet(STORE), u = lsGet(UI_KEY);
+    if (!u || typeof u !== 'object' || (u.theme === undefined && !u.look)) return d;
+    var r = Object.assign({}, d || {});
+    if (u.theme !== undefined) r.theme = u.theme;
+    if (u.look) r.look = u.look;
+    return r;
+  }
+  var lookSeen = null; // JSON of [S.theme, S.look] as last read from or written to storage: a difference is a change made here
   // Crafter stats, food, medicine, the cosmic tool, saved macros and the macro, solver and guide settings are shared
   // (the one save, written shortly after a change); everything else stays on this device.
   function persist() {
+    var u = lsGet(UI_KEY), owned = !!(u && typeof u === 'object' && u.look);
     var d = { locale: S.locale, theme: S.theme, layout: S.layout, job: S.job, mode: S.mode, activeJobOnly: S.activeJobOnly, zone: S.zone, recipeId: S.recipeId,
       custom: S.custom, history: S.history, look: S.look, char: S.char };
+    var now = JSON.stringify([S.theme, S.look]);
+    if (owned) { // the app-wide choice owns the look: this page's own record keeps the theme and look it already had (read back, never overwritten or deleted)
+      var prev = lsGet(DEVICE) || {};
+      ['theme', 'look'].forEach(function (k) { if (prev[k] !== undefined) d[k] = prev[k]; else delete d[k]; });
+    }
     try { if (canStore) localStorage.setItem(DEVICE, JSON.stringify(d)); else mem[DEVICE] = d; } catch (e) { canStore = false; mem[DEVICE] = d; }
+    if (now !== lookSeen) { // a change made in this page's Appearance: it goes to the app-wide choice, every other field there kept
+      var n = Object.assign({}, u && typeof u === 'object' ? u : {}); n.theme = S.theme; n.look = S.look;
+      try { if (canStore) localStorage.setItem(UI_KEY, JSON.stringify(n)); else mem[UI_KEY] = n; } catch (e) { /* private window */ }
+      lookSeen = now;
+    }
     scheduleShared();
   }
 
@@ -1539,6 +1560,19 @@
   // ── boot ─────────────────────────────────────────────────────────────────
   var WASM_BYTES = null;
   function b64(s) { var bin = atob(s), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u; }
+  lookSeen = JSON.stringify([S.theme, S.look]);
+  // a change of the app-wide choice in another tab (Settings) shows here, as on the other pages
+  window.addEventListener('storage', function (e) {
+    if (e.key !== UI_KEY) return;
+    var u = lsGet(UI_KEY) || {};
+    if (u.theme !== undefined) S.theme = u.theme;
+    if (u.look) {
+      Object.assign(S.look, u.look);
+      ['shared', 'light', 'dark'].forEach(function (k) { S.look[k] = Object.assign(blankSide(), (u.look || {})[k] || {}); if (!THEMES.some(function (x) { return x[0] === S.look[k].theme; })) S.look[k].theme = 'crystarium-dawnglass'; });
+    }
+    lookSeen = JSON.stringify([S.theme, S.look]);
+    applyTheme();
+  });
   var sharedReady = loadShared();
   (function boot() {
     applyTheme();
