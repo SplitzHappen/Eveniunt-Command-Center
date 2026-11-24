@@ -43,6 +43,7 @@ try {
     else await page.waitForSelector('.ol-hdr');
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(600);
+    await page.evaluate(() => window.scrollTo(0, 0)); // a page opened on #settings is scrolled to its anchor: show the top, with the header
     const tag = theme + '-' + mode;
     measures[name + '-' + w + '-' + tag] = await page.evaluate(() => { const cs = getComputedStyle(document.documentElement), hd = document.querySelector('.ol-hdr'), mk = hd && hd.querySelector('.ol-mk-word'); return { paper: cs.getPropertyValue('--paper').trim(), seal: cs.getPropertyValue('--seal').trim(), header: hd ? Math.round(hd.getBoundingClientRect().height) : null, wordFont: mk ? getComputedStyle(mk).fontSize : null }; });
     if (errors.length) measures[name + '-' + w + '-' + tag].errors = errors;
