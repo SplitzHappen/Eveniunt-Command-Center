@@ -178,7 +178,12 @@
   }
   function tickWindows() {
     var now = Date.now();
-    [].forEach.call(main.querySelectorAll('.w-window'), function (el) { var t = windowText(el.getAttribute('data-hours').split(',').map(Number), +el.getAttribute('data-mins'), now); if (t && el.textContent !== t) el.innerHTML = windowHtml(t); });
+    [].forEach.call(main.querySelectorAll('.w-window'), function (el) {
+      var hrs = el.getAttribute('data-hours').split(',').map(Number), mins = +el.getAttribute('data-mins'), t = windowText(hrs, mins, now);
+      if (t && el.textContent !== t) el.innerHTML = windowHtml(t);
+      var lr = el.closest('.get-row .lr'), w = lr && E.nextWindow(hrs, mins, now); // look v2: a node that opens while the page is up changes its row's state
+      if (w) { var st = w.open ? 'act' : 'wait'; if (lr.getAttribute('data-st') !== st) lr.setAttribute('data-st', st); }
+    });
   }
 
   // ------------------------------------------------------------------------------------------------ the patch notice (W9, spec section 6)
@@ -672,10 +677,10 @@
   }
   // R3: on a phone "Copy name" sits beside the stepper (the drawer's links line is full there); elsewhere it is in the links line (wayActs)
   function stepperBlock(name, typed, q) { return MIDLESS.matches ? '<div class="inl"><span class="lab">I have</span>' + stepperHtml(name, typed, q, true) + lk('Copy name', 'copy') + '</div>' : ''; }
-  // o: cls, attrs, role, rk, fig, word, wcls, name, stamps, icons, l2, mid, prim, done, drawer() (drawn only for the one open row, so closed rows stay cheap)
+  // o: cls, attrs, role, st ('act', 'wait', 'done' or empty), p (0 to 1 or null: the part typed), rk, fig, word, wcls, name, stamps, icons, l2, mid, prim, done, drawer() (drawn only for the one open row, so closed rows stay cheap)
   function rowHtml(o) {
     var open = SH.view.row === o.rk;
-    return '<li class="' + o.cls + (open ? ' open' : '') + '"' + o.attrs + '><div class="lr ' + o.role + (open ? ' open' : '') + (o.done ? ' done' : '') + '"><span class="cnt w1"><i' + (o.wcls ? ' class="' + o.wcls + '"' : '') + '>' + o.word + '</i> <b>' + o.fig + '</b></span>' +
+    return '<li class="' + o.cls + (open ? ' open' : '') + '"' + o.attrs + '><div class="lr ' + o.role + (open ? ' open' : '') + (o.done ? ' done' : '') + '"' + (o.st ? ' data-st="' + o.st + '"' : '') + (o.p > 0 ? ' data-have="some" style="--p:' + Math.min(1, o.p).toFixed(2) + '"' : '') + '><span class="cnt w1"><i' + (o.wcls ? ' class="' + o.wcls + '"' : '') + '>' + o.word + '</i> <b>' + o.fig + '</b></span>' +
       '<button type="button" class="opener' + (o.icons ? (o.icons.split('class="jt').length > 5 ? ' jn-many' : ' jn' + (o.icons.split('class="jt').length - 1)) : '') + (o.l3 ? ' has3' : '') + (o.win ? ' win' : '') + '" data-act="row" data-rk="' + esc(o.rk) + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span class="l1"><span class="nm w-name">' + nameHtml(o.name) + '</span>' + (o.stamps || '') + (o.icons || '') + '</span><span class="l2">' + o.l2 + '</span>' + (o.l3 ? '<span class="l3">' + o.l3 + '</span>' : '') + '</button>' +
       '<span class="st-col">' + (o.mid || '') + '</span><span class="pc">' + (o.prim || '') + '</span></div>' + (open ? '<div class="drawer ' + o.role + '">' + o.drawer() + '</div>' : '') + '</li>';
   }
@@ -724,8 +729,8 @@
       '';
     var l3 = (ln.by === 'gather' ? (cs ? windowRow(ln, now, chosenTimed(cs)) : windowRow(ln, now)) : '') + (ln.by === 'market' ? priceRow(ln, now) : '');
     var jobs = []; sp.forEach(function (s) { var n = GATHER_JOBS[s[0]]; if (n && jobs.indexOf(n) < 0) jobs.push(n); });
-    var earn = isEarn(ln);
-    return rowHtml({ cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: earn ? 'r-slab' : ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : earn ? 'to earn' : 'to get', wcls: outside || earn ? '' : 'role role-short',
+    var earn = isEarn(ln), tm = ln.by === 'gather' ? (cs ? chosenTimed(cs) : ln.timed) : null, nw = tm ? E.nextWindow(tm.hours, tm.minutes, now) : null;
+    return rowHtml({ st: nw ? (nw.open ? 'act' : 'wait') : '', p: x.given > 0 && x.need > 0 ? x.given / x.need : null, cls: 'line-row get-row', attrs: rowAttrs(V, key, ln, q), role: earn ? 'r-slab' : ROLE_OF[ln.by] || 'r-short', rk: 'g|' + key, fig: outside ? x.outside : x.got || x.short, word: outside ? 'not typed' : earn ? 'to earn' : 'to get', wcls: outside || earn ? '' : 'role role-short',
       name: name, stamps: (V.combined ? '<span class="wp1">' + wayPill(ln, false) + '</span>' : '') + stamp(ln), icons: iconSet(jobs), l2: l2, l3: l3, win: ln.by === 'gather' && !!l3,
       mid: MIDLESS.matches ? '' : stepperHtml(name, typed, q, false), prim: outside ? '' : rb('Have all', 'haveall', ' data-n="' + x.short + '"', 'lbtn-r'),
       drawer: function () { return (sp.length ? reasonRest(V, ln, x) : reasonOf(V, ln, x)) + (ln.by === 'market' ? '<p class="why">' + esc(priceInfo(ln.item, now, ln.quality).text) + (ln.quality === 'hq' ? '. The market service gives the price of the ordinary item only, so none is shown or added to the subtotal.' : '') + '</p>' : '') + (ln.by === 'gather' ? spotsBlock(ln, cs) : '') + stepperBlock(name, typed, q) + wayBlock(V, ln, hqBlock(V, ln)) + wayActs(V, ln, '', ln.by === 'gather' ? spotsLink(ln) : '', MIDLESS.matches); } });
@@ -761,6 +766,14 @@
     }
     return h + '</div>';
   }
+  // look v2: a craft can be made now when its book is ticked and every material is in what the player typed (or said they have), whatever the way
+  function matsInHand(V, ln) {
+    if (bookWarn(V, ln)) return false;
+    return DATA.recipes[ln.recipe][5].every(function (g) {
+      var lines = (V.plan.items[g[0]] || []).map(function (k) { return V.plan.lines[k]; }).filter(function (l) { return l.part !== 'make' && l.part !== 'coll'; });
+      return lines.length > 0 && lines.every(function (l) { return l.short === 0 || l.by === 'have'; });
+    });
+  }
   function craftRow(V, key, x) {
     var ln = V.plan.lines[key], name = itemName(ln.item), q = madeQuality(V.sc, V.owner, ln, key), spare = V.plan.spare[key] || 0, rowKey = 'L|' + key, mp = ln.part === 'make' ? makeProgress(V, ln.item, ln.recipe) : null;
     var mqs = ln.part === 'make' ? madeQualities(V.sc, V.owner, ln.item, ln.recipe) : [], jobs = crafterJobs(ln.item).map(function (j) { return JOBS[j]; });
@@ -769,7 +782,7 @@
     // the opened row says it all in one sentence
     var l2 = (warn ? '<span class="bk-l2">' + esc(warn.name) + ' not ticked · </span>' : '') + '<span class="w-count"><span class="w-need">' + x.crafts + ' craft' + (x.crafts === 1 ? '' : 's') + ', </span>makes ' + x.makes + '</span>' + (spare ? ' · spare: ' + spare : '') + (mp ? '<span class="cr"> · ' + mp.crafted + ' of ' + mp.qty + ' crafted</span>' : '') + ' · level ' + DATA.recipes[ln.recipe][3];
     var bar = mp ? '<span class="prog"><span class="bar" aria-hidden="true"><i style="width:' + Math.round(100 * Math.min(1, mp.crafted / Math.max(1, mp.qty))) + '%"></i></span><span class="fig">' + mp.crafted + ' of ' + mp.qty + ' crafted</span></span>' : '';
-    return rowHtml({ cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln) + (rst || warn ? '<span class="rst-dsk">' + rst + (warn ? ' <span class="lstamp warn">Book not ticked</span>' : '') + '</span>' : ''), icons: iconSet(jobs), l2: l2,
+    return rowHtml({ st: matsInHand(V, ln) ? 'act' : 'wait', cls: 'line-row craft-row', attrs: rowAttrs(V, key, ln, q), role: 'r-craft', rk: 'c|' + key, fig: x.crafts, word: 'crafts', name: name, stamps: (V.combined ? wayPill(ln, true) : '') + stamp(ln) + (rst || warn ? '<span class="rst-dsk">' + rst + (warn ? ' <span class="lstamp warn">Book not ticked</span>' : '') + '</span>' : ''), icons: iconSet(jobs), l2: l2,
       mid: bar, prim: x.crafts > 0 ? rb(x.crafts > 1 ? 'Made all' : 'Made 1', 'made', ' data-crafts="' + x.crafts + '"', 'lbtn-r') : '',
       drawer: function () {
         var atelier = !(DATA.noHandOver || []).some(function (r) { return r === ln.recipe; });
@@ -865,7 +878,7 @@
         g.keys.map(function (k) { return craftRow(V, k, sums[k]); }).join('') + '</ul></section>';
     });
     var done = SH.view.hide ? [] : crafted(V);
-    if (done.length) { any = true; h += '<section class="cblock cdone"><div class="job-head"><span class="no"></span><h3>Already crafted</h3><span class="sum">' + done.length + '</span></div><ul class="lines">' + done.map(function (d) { return '<li class="line-row done" data-item="' + d.item + '"><div class="lr r-ready done"><span class="cnt"><b>' + d.qty + '</b><i class="role role-ready">finished</i></span><div class="opener"><span class="l1"><span class="nm w-name">' + esc(itemName(d.item)) + '</span></span><span class="l2">' + d.crafted + ' of ' + d.qty + ' crafted</span></div><span class="st-col"></span><span class="pc">' + lk('Copy name', 'copy') + '</span></div></li>'; }).join('') + '</ul></section>'; }
+    if (done.length) { any = true; h += '<section class="cblock cdone"><div class="job-head"><span class="no"></span><h3>Already crafted</h3><span class="sum">' + done.length + '</span></div><ul class="lines">' + done.map(function (d) { return '<li class="line-row done" data-item="' + d.item + '"><div class="lr r-ready done" data-st="done"><span class="cnt"><b>' + d.qty + '</b><i class="role role-ready">finished</i></span><div class="opener"><span class="l1"><span class="nm w-name">' + esc(itemName(d.item)) + '</span></span><span class="l2">' + d.crafted + ' of ' + d.qty + ' crafted</span></div><span class="st-col"></span><span class="pc">' + lk('Copy name', 'copy') + '</span></div></li>'; }).join('') + '</ul></section>'; }
     return (any ? '' : '<p class="muted empty-line"><span class="ring" aria-hidden="true"></span>Nothing left to craft.</p>') + h;
   }
   // must-craft items already crafted in full (not yet marked finished): the "completed" rows of To craft
@@ -1180,7 +1193,7 @@
     var stamps = (ln ? wayPill(ln, ln.by === 'craft') : '') + (t.coll ? ' <span class="lstamp plain">Collectable</span>' : t.hq ? ' <span class="lstamp plain">High quality</span>' : '') + (t.make ? ' <span class="lstamp plain">Must craft</span>' : '') +
       (!DATA.items[t.item] || (t.make && !recs.length) ? ' <span class="lstamp plain gone">no longer in the game data</span>' : '');
     return rowHtml({ cls: 'wanted-row' + (t.done ? ' done' : ''), attrs: ' data-key="' + esc(key) + '" data-item="' + t.item + '" data-q="' + q + '" data-owner="' + esc(owner) + '"', role: t.done ? 'r-ready' : 'r-slab', rk: rk, fig: t.qty, word: t.done ? 'finished' : 'wanted', wcls: t.done ? 'role role-ready' : '',
-      name: name, stamps: stamps, icons: iconSet(crafterJobs(t.item).map(function (j) { return JOBS[j]; })), l2: l2, done: t.done,
+      name: name, stamps: stamps, icons: iconSet(crafterJobs(t.item).map(function (j) { return JOBS[j]; })), l2: l2, done: t.done, st: t.done ? 'done' : '', p: !t.done && t.make && t.crafted > 0 && t.qty > 0 ? t.crafted / t.qty : null,
       mid: t.done || MIDLESS.matches ? '' : stepperHtml(name, typed, q, false), prim: t.done ? '' : rb('Finished', 'done', '', 'lbtn-r'),
       drawer: function () {
         var d = '';

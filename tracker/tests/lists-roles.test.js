@@ -54,7 +54,7 @@ test('the token block holds the six roles in both modes: a field, a graphic, a t
 const used = new Set();
 for (const r of rules) { if (T.TOKEN_RULES.includes(r.sel)) continue; for (const t of T.usedTokens(r.body)) used.add(t); }
 const theme = new Set(['--paper', '--paper-2', '--paper-3', '--slip', '--ink', '--ink-2', '--ink-3', '--rule', '--grid', '--slab', '--on-slab', '--on-slab-2', '--seal', '--on-seal', '--hi', '--molten', '--shadow', '--scrim', '--on-mid', '--ochre', '--lb-a', '--lb-b', '--lb-c']);
-const NOT_COLOUR = new Set(['--jm', '--edge', '--f-disp', '--f-kick', '--f-body', '--f-data', '--f-serif', '--r']);
+const NOT_COLOUR = new Set(['--jm', '--p', '--edge', '--f-disp', '--f-kick', '--f-body', '--f-data', '--f-serif', '--r']); // --p is the part of a row typed (0 to 1), a number for the progress line (look v2), not a colour
 
 test('every colour token the rules use is in a role, a pointer, a theme token or a size/face', () => {
   const unknown = [...used].filter((t) => !T.roleOf[t] && !T.POINTERS[t] && !theme.has(t) && !NOT_COLOUR.has(t));
