@@ -8664,6 +8664,96 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server;
     });
 
+    // ── LV2 (Lists, look v2, docs/lists-look-v2.md V5) A row says its own state: typing 1 of a row's need gives it data-have="some" and a progress line whose fill is that part of its track; a timed gather row's third line says "open now" on a
+    //    row that can be done now and "opens" on one that cannot yet; a window that opens while the page is up turns its row without a reload; the section and job heads sit on the slab colour; one filled primary at most; and DR1's helper
+    //    reports no problem on the screens, at 1,440 px light and 360 px dark with the real data. Each assertion is broken once on purpose and seen failing (at 1,440 px). ──
+    await guard('LV2', async () => {
+      const server = await start(PORT5);
+      const DAY = 4200000, HOUR = 175000, CLOCK = 400000 * DAY + 12 * HOUR, ETMIN = HOUR / 60; // 12:00 Eorzea time on a fixed day, as C186
+      const ck = {}, seen = {}, errs = [], external = [], problems = {}, figs = {};
+      const probe = (page, pre) => page.evaluate((pre) => {
+        if (pre === 'red') { const e = document.querySelector('.sec-toggle'); e.style.transition = 'none'; e.style.background = 'rgb(255, 0, 0)'; } // a transition would still report the old colour
+        if (pre === 'filled') ['One', 'Two'].forEach((t) => { const b = document.createElement('button'); b.className = 'lbtn-p'; b.textContent = t; document.querySelector('.tab-get').prepend(b); });
+        const slab = (() => { const d = document.createElement('div'); d.style.background = 'var(--slab)'; document.body.appendChild(d); const v = getComputedStyle(d).backgroundColor; d.remove(); return v; })();
+        const lbs = (e) => getComputedStyle(e).backgroundColor, heads = [...document.querySelectorAll('.sec-toggle, .job-head')];
+        return { slab, heads: heads.length, headsOnSlab: heads.length > 0 && heads.every((e) => lbs(e) === slab), filled: [...document.querySelectorAll('.lbtn-p')].filter((b) => !b.closest('.lsheet, .patch-notice')).length };
+      }, pre || null);
+      const gatherState = (page) => page.evaluate(() => {
+        const rows = [...document.querySelectorAll('.gsec[data-sec=gather] .lr[data-st], .gsec[data-sec=crystal] .lr[data-st]')];
+        return { n: rows.length, bad: rows.filter((r) => { const l3 = (r.querySelector('.l3') || {}).textContent || ''; return r.dataset.st === 'act' ? !/open now/.test(l3) : !/opens/.test(l3); }).length, act: rows.filter((r) => r.dataset.st === 'act').length, wait: rows.filter((r) => r.dataset.st === 'wait').length };
+      });
+      const progress = (page, key, need) => page.evaluate(([k, n]) => {
+        const lr = document.querySelector('.get-row[data-lk="' + k + '"] .lr'); if (!lr) return { ok: false };
+        const cs = getComputedStyle(lr, '::after'), track = parseFloat(cs.width), pct = parseFloat((cs.backgroundSize || '').split(',')[0]) / 100, p = parseFloat(lr.style.getPropertyValue('--p'));
+        const fill = track * pct;
+        return { ok: lr.dataset.have === 'some' && track > 50 && Math.abs(fill - track * (1 / n)) <= 2 && Math.abs(fill - track * p) <= 2, have: lr.dataset.have, track, pct, p };
+      }, [key, need]);
+      for (const [vp, scheme, tag] of [[{ width: 1440, height: 1000 }, 'light', '1440-light'], [{ width: 360, height: 800 }, 'dark', '360-dark']]) {
+        const desk = vp.width > 600, phone = !desk;
+        const { c, page } = await dr1Page(vp, scheme, undefined, CLOCK);
+        await dr1Seed(page); await dr1Get(page);
+        const look = async (name, o) => {
+          await page.waitForTimeout(200); await page.evaluate(() => window.scrollTo(0, 0));
+          const r = await designRules(page, Object.assign({ screen: name, phone }, o || {}));
+          figs[tag + ' ' + name] = r.fig; Object.keys(r.problems).forEach((k) => { (problems[k] = problems[k] || []).push(...r.problems[k].map((m) => tag + ' ' + name + ': ' + m)); });
+        };
+        // a To get row that needs more than 1
+        const pick = await page.evaluate(() => { const r = [...document.querySelectorAll('.get-row')].find((li) => { const m = /need (\d+),/.exec(li.querySelector('.w-need').textContent); return m && +m[1] > 1 && !li.querySelector('.lr[data-have]') && li.querySelector('.lbtn-r'); }); return r ? { key: r.dataset.lk, need: +/need (\d+),/.exec(r.querySelector('.w-need').textContent)[1] } : null; });
+        ck['row ' + tag] = !!pick;
+        const li = page.locator('.get-row[data-lk="' + (pick ? pick.key : 'none') + '"]');
+        if (phone) await lOpen(li);
+        await li.locator('[data-act=plus]:visible').first().click(); await lSettle(page);
+        await page.waitForSelector('.get-row[data-lk="' + pick.key + '"] .lr[data-have=some]');
+        const pr = await progress(page, pick.key, pick.need);
+        ck['progress ' + tag] = pr.ok;
+        const gs = await gatherState(page); ck['line3 ' + tag] = gs.n > 0 && gs.bad === 0;
+        await lCloseRows(page);
+        await look('get', { first: true });
+        const pg = await probe(page); ck['headsOnSlab get ' + tag] = pg.headsOnSlab && pg.heads > 3; ck['oneFilled get ' + tag] = pg.filled <= 1;
+        // the window that opens while the page is up
+        const wk = await page.evaluate(() => { const r = [...document.querySelectorAll('.gsec[data-sec=gather] .get-row, .gsec[data-sec=crystal] .get-row')].find((li) => li.querySelector('.lr[data-st=wait] .w-window') && /^opens \d\d:\d\d/.test(li.querySelector('.w-window').textContent)); return r ? { key: r.dataset.lk, m: /^opens (\d\d):(\d\d)/.exec(r.querySelector('.w-window').textContent).slice(1).map(Number) } : null; });
+        ck['waitRow ' + tag] = !!wk;
+        const flip = async (advance) => {
+          const opens = CLOCK + (((wk.m[0] * 60 + wk.m[1]) - 720 + 1440) % 1440) * ETMIN, st = () => page.evaluate((k) => (document.querySelector('.get-row[data-lk="' + k + '"] .lr') || {}).dataset ? document.querySelector('.get-row[data-lk="' + k + '"] .lr').dataset.st : null, wk.key);
+          await page.evaluate(() => { window.__noReload = 1; });
+          await c.ctx.clock.setFixedTime(opens - 30000); await page.waitForTimeout(500);
+          const before = await st(); await c.ctx.clock.setFixedTime(advance ? opens + 1000 : opens - 30000);
+          let after = before; for (let i = 0; i < 34 && after !== 'act'; i++) { await page.waitForTimeout(500); after = await st(); }
+          return { before, after, same: await page.evaluate(() => window.__noReload === 1) };
+        };
+        const fl = await flip(true); ck['flip ' + tag] = fl.before === 'wait' && fl.after === 'act' && fl.same;
+        await c.ctx.clock.setFixedTime(CLOCK);
+        // To craft
+        await lTab(page, 'craft'); await page.waitForSelector('.craft-row'); await look('craft', { first: true });
+        const pc = await probe(page); ck['headsOnSlab craft ' + tag] = pc.headsOnSlab && pc.heads > 0; ck['oneFilled craft ' + tag] = pc.filled <= 1;
+        ck['craftWait ' + tag] = await page.evaluate(() => { const r = [...document.querySelectorAll('.craft-row .lr')]; return r.length > 0 && r.every((x) => x.dataset.st === 'wait'); }); // nothing typed for any craft: every one waits
+        // each assertion broken once and seen failing (1,440 px)
+        if (desk) {
+          await lTab(page, 'get'); await page.waitForSelector('.get-row');
+          seen.haveSome = await page.evaluate((k) => { const lr = document.querySelector('.get-row[data-lk="' + k + '"] .lr'); lr.removeAttribute('data-have'); return lr.dataset.have !== 'some'; }, pick.key);
+          await page.evaluate(() => window.__lists.reload()); await page.waitForSelector('.get-row .lr'); await lOpenAll(page);
+          await page.evaluate((k) => { document.querySelector('.get-row[data-lk="' + k + '"] .lr').style.setProperty('--p', '0.9'); }, pick.key);
+          seen.fill = !(await page.evaluate(([k, n]) => { const lr = document.querySelector('.get-row[data-lk="' + k + '"] .lr'); lr.style.setProperty('background-size', '90% 4px'); const cs = getComputedStyle(lr, '::after'); return Math.abs(parseFloat(cs.width) * 0.9 - parseFloat(cs.width) / n) <= 2; }, [pick.key, pick.need]));
+          await page.evaluate(() => { const r = document.querySelector('.gsec[data-sec=gather] .lr[data-st], .gsec[data-sec=crystal] .lr[data-st]'); r.dataset.st = r.dataset.st === 'act' ? 'wait' : 'act'; });
+          const gb = await gatherState(page); seen.line3 = gb.bad > 0;
+          { const pp = await probe(page, 'red'); seen.slab = !pp.headsOnSlab; }
+          seen.filled = (await probe(page, 'filled')).filled > 1;
+          await page.evaluate(DR1_BREAKS.find((b) => b[0] === 'a2Controls')[1]);
+          const rb = await designRules(page, { screen: 'break', phone: false }); seen.dr1 = Object.keys(rb.problems).length > 0;
+          await page.evaluate(() => window.__lists.reload()); await page.waitForSelector('.get-row .lr'); await lOpenAll(page); await page.waitForTimeout(300);
+          const fb = await page.evaluate(() => window.__noReload = 0).then(() => flip(false)); seen.flip = !(fb.before === 'wait' && fb.after === 'act');
+        }
+        errs.push(...real(c.errors)); external.push(...c.external);
+        await c.ctx.close();
+      }
+      ck.noProblems = Object.keys(problems).length === 0;
+      ck.eachSeenFailing = ['haveSome', 'fill', 'line3', 'slab', 'filled', 'dr1', 'flip'].every((k) => seen[k] === true);
+      ck.noErrors = errs.length === 0 && external.every((u) => u.startsWith('https://universalis.app/'));
+      record('LV2', 'Lists look v2 (real data, 1,440 px light and 360 px dark): one typed item gives its row a progress line of that part, timed gather rows say "open now" or "opens" with their state, a window that opens while the page is up turns its row without a reload, the section and job heads are the slab colour, at most one filled primary, no rule of DR1\'s helper broken; each assertion was broken on purpose once and seen',
+        Object.values(ck).every(Boolean), { ck, seen, problems: Object.fromEntries(Object.entries(problems).map(([k, v]) => [k, v.slice(0, 8)])), figs, errors: errs, external });
+      void server;
+    });
+
     // ── C191 (Lists, R7) Market prices by quality, the real data: the price service answers per item with listings of both qualities (ordinary 100 gil, high quality 10,000 gil); a high-quality Bronze Ingot routed to the market never shows or adds the ordinary price
     //    (the row says "High-quality price unknown", the subtotal counts the ordinary row only and names the high-quality one as without a price), while the ordinary row keeps its price; the saved data has no price. ──
     await guard('C191', async () => {
