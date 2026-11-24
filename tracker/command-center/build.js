@@ -51,6 +51,7 @@ fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive:
     "  window.EVENIUNT_LOOK = { apply: function () { var d = load() || {}; S.theme = d.theme || 'system'; applyLook(); }, html: function () { return appearanceHtml(); }, bind: function (root) { bindAppearance(root); } };\n})();\n");
 }
 cp(path.join(T, 'src', 'app', 'shared.css'), 'shared.css');
+cp(path.join(T, 'src', 'app', 'one-look.css'), 'one-look.css'); // one look: the shared stylesheet, loaded after shared.css
 for (const f of ['index.html', 'shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);
 // the main Settings (2026-11-12) runs the Tracker's own core code for characters, cloud sync and backups
 for (const f of ['model', 'codec', 'merge', 'cloud', 'storage']) cp(path.join(T, 'src', 'core', f + '.js'), 'core/' + f + '.js');

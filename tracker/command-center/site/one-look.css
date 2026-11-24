@@ -1,0 +1,195 @@
+/* One look: the shared stylesheet of the Command Center, the Tracker and the Atelier (docs/one-look-foundation-spec.md).
+   Ported from docs/one-look/mock/one-look.css. Rules: every class is prefixed ol-; no global rules; no theme tokens (applyLook sets
+   those); only layout, derived, font and state tokens, in :root and :root[data-theme="dark"]. Square corners, no shadows.
+   Load order: shared.css, one-look.css, then the module's own sheet. */
+:root {
+  --slant: 25deg; --line-2: 2px solid var(--ink); --line-dbl: 4px double var(--ink); --line-row: 1px dashed var(--rule);
+  --leader: radial-gradient(circle, var(--ink-3) 1px, transparent 1.4px) 0 72% / 6px 4px repeat-x;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --content: 1440px; --gut: 24px;
+  --f-disp: "Big Shoulders Display", "Arial Narrow", sans-serif; --f-kick: "Cinzel", var(--f-serif);
+  --f-serif: "Fraunces", "Iowan Old Style", Palatino, Georgia, serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, sans-serif; --f-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --slab: var(--ink); --on-slab: var(--paper); --on-slab-2: color-mix(in srgb, var(--paper) 72%, var(--ink));
+  --molten: linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal)) 48%, var(--lb-c, var(--ochre)));
+  --hazard: repeating-linear-gradient(-65deg, var(--hz, var(--ink-2)) 0 8px, transparent 8px 16px);
+  --locked: var(--ink-2);
+  --back-bg: color-mix(in srgb, var(--back) 16%, var(--slip)); --out-bg: color-mix(in srgb, var(--out) 10%, var(--slip)); --idle-bg: color-mix(in srgb, var(--idle) 10%, var(--slip));
+  --back-s: color-mix(in srgb, var(--back) 70%, var(--ink)); --out-s: color-mix(in srgb, var(--out) 70%, var(--ink));
+  --idle-s: color-mix(in srgb, var(--idle) 70%, var(--ink)); --bad-s: color-mix(in srgb, var(--bad) 70%, var(--ink));
+  --bad-bg: color-mix(in srgb, var(--bad) 10%, var(--slip));
+  --rank-s: color-mix(in srgb, var(--rank-m) 46%, var(--ink)); --rank-w: color-mix(in srgb, var(--rank-m) 14%, var(--slip));
+  --lr-craft-edge: color-mix(in srgb, var(--lr-craft-fill) 66%, var(--ink)); --lr-craft-ink: color-mix(in srgb, var(--lr-craft-fill) 46%, var(--ink)); --lr-craft-wash: color-mix(in srgb, var(--lr-craft-fill) 14%, var(--slip));
+  --lr-gather-edge: color-mix(in srgb, var(--lr-gather-fill) 56%, var(--ink)); --lr-gather-ink: color-mix(in srgb, var(--lr-gather-fill) 42%, var(--ink)); --lr-gather-wash: color-mix(in srgb, var(--lr-gather-fill) 14%, var(--slip));
+  --lr-merchant-edge: color-mix(in srgb, var(--lr-merchant-fill) 56%, var(--ink)); --lr-merchant-ink: color-mix(in srgb, var(--lr-merchant-fill) 38%, var(--ink)); --lr-merchant-wash: color-mix(in srgb, var(--lr-merchant-fill) 14%, var(--slip));
+  --lr-market-edge: color-mix(in srgb, var(--lr-market-fill) 66%, var(--ink)); --lr-market-ink: color-mix(in srgb, var(--lr-market-fill) 46%, var(--ink)); --lr-market-wash: color-mix(in srgb, var(--lr-market-fill) 14%, var(--slip));
+  --lr-ready-edge: color-mix(in srgb, var(--lr-ready-fill) 50%, var(--ink)); --lr-ready-ink: color-mix(in srgb, var(--lr-ready-fill) 40%, var(--ink)); --lr-ready-wash: color-mix(in srgb, var(--lr-ready-fill) 14%, var(--slip));
+  --lr-short-edge: color-mix(in srgb, var(--lr-short-fill) 66%, var(--ink)); --lr-short-ink: color-mix(in srgb, var(--lr-short-fill) 46%, var(--ink)); --lr-short-wash: color-mix(in srgb, var(--lr-short-fill) 14%, var(--slip));
+  --back: #0f7a42; --on-back: #ffffff; --out: #2343d6; --on-out: #ffffff; --idle: #8f5600; --on-idle: #ffffff; --bad: #b3261e; --on-bad: #ffffff; --on-mid: var(--ink);
+  --lr-craft-fill: oklch(0.72 0.13 250); --lr-gather-fill: oklch(0.74 0.15 140); --lr-merchant-fill: oklch(0.80 0.15 80);
+  --lr-market-fill: oklch(0.72 0.14 315); --lr-ready-fill: oklch(0.78 0.11 195); --lr-short-fill: oklch(0.72 0.15 25);
+  --rank-m: oklch(0.7 0.1 232); --gil-m: oklch(0.8 0.15 92); --loot-m: oklch(0.7 0.1 188); --route-m: oklch(0.7 0.1 340);
+}
+:root[data-theme="dark"] {
+  --back: #4fd18b; --on-back: #06210f; --out: #7d93ff; --on-out: #0b0d1a; --idle: #f0b347; --on-idle: #2a1800; --bad: #ff8a80; --on-bad: #3a0905; --on-mid: var(--paper);
+}
+/* ---- type helpers and the opt-in graph-paper page ---- */
+.ol-fig { font-family: var(--f-data); font-weight: 600; }
+.ol-lbl { font: 700 11px/1.3 var(--f-body); text-transform: uppercase; letter-spacing: .12em; }
+.ol-kick { font: 700 11px/1.3 var(--f-kick); text-transform: uppercase; letter-spacing: .32em; }
+.ol-page { background-color: var(--paper); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; color: var(--ink); font: 15px/1.5 var(--f-body); font-variant-numeric: tabular-nums; }
+
+/* ---- roles ---- */
+.ol-r-back { --f: var(--back); --on-f: var(--on-back); --g: var(--back); --s: var(--back-s); --w: var(--back-bg); }
+.ol-r-out { --f: var(--out); --on-f: var(--on-out); --g: var(--out); --s: var(--out-s); --w: var(--out-bg); }
+.ol-r-idle { --f: var(--idle); --on-f: var(--on-idle); --g: var(--idle); --s: var(--idle-s); --w: var(--idle-bg); }
+.ol-r-bad { --f: var(--bad); --on-f: var(--on-bad); --g: var(--bad); --s: var(--bad-s); --w: var(--bad-bg); }
+.ol-r-locked { --f: var(--ink-2); --on-f: var(--paper); --g: var(--ink-2); --s: var(--ink-2); --w: var(--slip); --hz: var(--ink-2); }
+.ol-r-craft { --f: var(--lr-craft-fill); --g: var(--lr-craft-edge); --s: var(--lr-craft-ink); --w: var(--lr-craft-wash); --on-f: var(--on-mid); }
+.ol-r-gather { --f: var(--lr-gather-fill); --g: var(--lr-gather-edge); --s: var(--lr-gather-ink); --w: var(--lr-gather-wash); --on-f: var(--on-mid); }
+.ol-r-merchant { --f: var(--lr-merchant-fill); --g: var(--lr-merchant-edge); --s: var(--lr-merchant-ink); --w: var(--lr-merchant-wash); --on-f: var(--on-mid); }
+.ol-r-market { --f: var(--lr-market-fill); --g: var(--lr-market-edge); --s: var(--lr-market-ink); --w: var(--lr-market-wash); --on-f: var(--on-mid); }
+.ol-r-ready { --f: var(--lr-ready-fill); --g: var(--lr-ready-edge); --s: var(--lr-ready-ink); --w: var(--lr-ready-wash); --on-f: var(--on-mid); }
+.ol-r-short { --f: var(--lr-short-fill); --g: var(--lr-short-edge); --s: var(--lr-short-ink); --w: var(--lr-short-wash); --on-f: var(--on-mid); }
+.ol-r-seal { --f: var(--seal); --g: var(--seal); --s: var(--seal); --w: var(--hi); --on-f: var(--on-seal); }
+.ol-r-ochre { --f: var(--ochre); --g: var(--ochre); --s: var(--ink); --w: var(--slip); --on-f: var(--on-mid); }
+.ol-r-slab { --f: var(--slab); --g: var(--ink); --s: var(--ink); --w: var(--slip); --on-f: var(--on-slab); }
+
+/* ---- the answer band ---- */
+.ol-slab { display: flex; align-items: center; justify-content: space-between; gap: var(--s5); padding: var(--s4) var(--s5); background: var(--slab); color: var(--on-slab); border-bottom: 3px solid transparent; border-image: var(--molten) 1; min-height: 120px; overflow: hidden; }
+.ol-slab .ol-sl-id { min-width: 0; display: grid; gap: 4px; }
+.ol-slab .ol-kick { color: var(--on-slab-2); }
+.ol-slab h1 { margin: 0; font: 600 34px/1.1 var(--f-serif); }
+.ol-slab .ol-sl-sub { font: italic 400 15px/1.35 var(--f-serif); color: var(--on-slab-2); max-width: 46ch; }
+.ol-slab .ol-sl-links { display: flex; gap: var(--s4); flex-wrap: wrap; margin-top: 4px; }
+.ol-slab .ol-sl-links a { font: 700 14px/1.2 var(--f-body); color: var(--on-slab); text-decoration: underline 2px var(--seal); text-underline-offset: 3px; }
+.ol-slab .ol-sl-ans { display: flex; align-items: center; gap: var(--s4); flex: none; }
+.ol-slab .ol-sl-ans.ol-blocks { gap: 0; align-self: stretch; margin: calc(-1 * var(--s4)) calc(-1 * var(--s5)) calc(-1 * var(--s4)) 0; }
+.ol-slab .ol-sl-ans.ol-blocks .ol-sb { height: auto; align-self: stretch; padding-top: var(--s3); padding-bottom: var(--s3); }
+.ol-slab .ol-sl-ans.ol-blocks .ol-sb:first-child { margin-left: -6px; }
+.ol-slab .ol-btn-2 { color: var(--on-slab); border-color: var(--on-slab); }
+.ol-numeral { font: 900 96px/.85 var(--f-disp); text-transform: uppercase; letter-spacing: .02em; color: var(--on-slab); display: inline-flex; flex-direction: column; }
+.ol-numeral small { font: 700 11px/1.3 var(--f-body); letter-spacing: .12em; color: var(--on-slab-2); margin-top: 8px; }
+.ol-numeral.ol-sm { font-size: 72px; }
+.ol-numeral.ol-ink { color: var(--ink); }
+.ol-numeral.ol-ink small { color: var(--ink-2); }
+
+/* ---- state blocks ---- */
+.ol-sb { position: relative; isolation: isolate; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 112px; height: 64px; padding: 2px 24px 3px 20px; color: var(--on-f); text-align: center; }
+.ol-sb::before { content: ""; position: absolute; inset: 0 -2px; background: var(--f); transform: skewX(calc(-1 * var(--slant))); z-index: -1; }
+.ol-sb b { font: 900 40px/1 var(--f-disp); text-transform: uppercase; }
+.ol-sb b.ol-w { font-size: 26px; letter-spacing: .02em; }
+.ol-sb i { font: 700 11px/1.1 var(--f-body); font-style: normal; text-transform: uppercase; letter-spacing: .12em; }
+.ol-sb.ol-sm { height: 44px; min-width: 72px; padding: 0 16px 0 14px; }
+.ol-sb.ol-sm b { font-size: 28px; }
+.ol-sb.ol-sm i { font-size: 11px; }
+.ol-sb.ol-solid { color: var(--on-f); }
+.ol-sb.ol-outline { color: var(--s); }
+.ol-sb.ol-outline::before { background: var(--slip); border: 2px solid var(--g); inset: 0 -2px; }
+.ol-sb.ol-hatch b { background: var(--slip); padding: 0 6px; border: 0; }
+.ol-sb.ol-hatch b.ol-w { border: 2px solid var(--ink); }
+.ol-sb.ol-hatch { color: var(--ink); }
+.ol-sb.ol-hatch::before { background: var(--hazard), var(--slip); border: 2px solid var(--ink); }
+.ol-sb.ol-hatch b, .ol-sb.ol-hatch i { color: var(--ink); }
+.ol-sb.ol-hatch i { background: var(--slip); padding: 0 6px; }
+.ol-sb.ol-done { --f: var(--back); --on-f: var(--on-back); }
+.ol-slab .ol-sb.ol-outline { color: var(--on-slab); }
+.ol-slab .ol-sb.ol-outline::before { background: var(--slab); border-color: color-mix(in srgb, var(--f) 60%, var(--on-slab)); }
+
+/* ---- section titles, book style ---- */
+.ol-chap { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0 var(--s4); min-height: 64px; padding: 4px 0 8px; border-bottom: var(--line-2); }
+.ol-chap .ol-num { font: italic 400 48px/1 var(--f-serif); color: var(--seal); min-width: 40px; }
+.ol-chap h2 { margin: 0; font: 600 28px/1.15 var(--f-serif); }
+.ol-chap .ol-sub { margin: 0; font: italic 400 15px/1.3 var(--f-serif); color: var(--ink-2); }
+.ol-chap .ol-sum { display: flex; align-items: center; gap: var(--s3); }
+.ol-chap .ol-sum .ol-fig { font-size: 15px; color: var(--ink-2); }
+.ol-chap.ol-closed { min-height: 48px; }
+.ol-chap.ol-closed .ol-num { font-size: 32px; }
+.ol-chap .ol-chev { width: 20px; height: 20px; margin-right: -8px; fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.ol-chap.ol-closed .ol-chev { transform: rotate(-90deg); }
+.ol-chap-wrap { display: grid; gap: var(--s3); }
+.ol-subgroup { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 2px 3px; border-bottom: 1px solid var(--rule); font: italic 400 17px/1.3 var(--f-serif); }
+.ol-subgroup .ol-fig { font-size: 13px; color: var(--ink-3); }
+
+/* ---- index lines ---- */
+.ol-ix { display: flex; align-items: baseline; gap: 10px; min-height: 32px; padding: 4px 8px 4px 11px; border-left: 3px solid transparent; text-decoration: none; color: var(--ink); }
+.ol-ix .ol-tag { font: 700 11px/1 var(--f-body); letter-spacing: .12em; color: var(--ink-3); text-transform: uppercase; width: 34px; flex: none; }
+.ol-ix .ol-name { font: 600 16px/1.3 var(--f-serif); white-space: nowrap; }
+.ol-ix .ol-lead { flex: 1; min-width: 12px; height: 14px; background: var(--leader); align-self: flex-end; margin-bottom: 4px; }
+.ol-ix .ol-val { font: 600 15px/1 var(--f-data); }
+.ol-ix .ol-val.ol-lv { font: italic 600 16px/1 var(--f-serif); }
+.ol-ix .ol-val.ol-txt { font: 400 13px/1 var(--f-body); color: var(--ink-2); }
+.ol-ix.ol-on { background: var(--hi); border-left-color: var(--seal); }
+.ol-ix.ol-on .ol-name { font-style: italic; }
+.ol-ix-list { display: grid; }
+
+/* ---- fields, checkbox, stepper ---- */
+.ol-fld { display: grid; gap: 2px; min-width: 0; }
+.ol-fld > .ol-lbl { color: var(--ink-2); }
+.ol-fld input, .ol-fld select, .ol-fld .ol-val { appearance: none; width: 100%; height: 40px; padding: 0 2px; border: 0; border-bottom: 2px solid var(--ink); background: transparent; color: var(--ink); font: 400 15px/1 var(--f-body); border-radius: 0; }
+.ol-fld input.ol-fig, .ol-fld .ol-val.ol-fig { font: 600 20px/1 var(--f-data); }
+.ol-fld input:focus, .ol-fld select:focus { outline: 2px solid var(--seal); outline-offset: 2px; border-bottom: 3px solid var(--seal); }
+.ol-fld .ol-sel { position: relative; }
+.ol-fld .ol-sel select { padding-right: 24px; }
+.ol-fld .ol-sel::after { content: ""; position: absolute; right: 6px; top: 12px; width: 8px; height: 8px; border: solid var(--ink); border-width: 0 2px 2px 0; transform: rotate(45deg); pointer-events: none; }
+.ol-fld.ol-w320 { width: 320px; max-width: 100%; }
+.ol-chk { display: flex; align-items: center; gap: 10px; min-height: 36px; font: 400 15px/1.2 var(--f-body); }
+.ol-chk input { appearance: none; width: 18px; height: 18px; margin: 0; border: 2px solid var(--ink); background: transparent; position: relative; flex: none; }
+.ol-chk input:checked { background: var(--seal); }
+.ol-chk input:checked::after { content: ""; position: absolute; left: 4px; top: 0; width: 5px; height: 10px; border: solid var(--on-seal); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ol-step { display: inline-flex; border: 2px solid var(--ink); background: var(--slip); }
+.ol-step button { width: 40px; height: 40px; border: 0; background: transparent; font: 700 20px/1 var(--f-body); cursor: pointer; }
+.ol-step .ol-fig { display: grid; place-items: center; min-width: 48px; font-size: 20px; border-inline: 2px solid var(--ink); }
+.ol-step.ol-sm button, .ol-step.ol-sm .ol-fig { height: 36px; }
+
+/* ---- buttons ---- */
+.ol-seal { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 64px; padding: 0 var(--s6); border: 0; background: var(--seal); color: var(--on-seal); font: italic 900 32px/1 var(--f-serif); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.ol-seal::after { content: ""; position: absolute; inset: 4px; border: 2px solid var(--on-seal); pointer-events: none; }
+.ol-seal .ol-key { font: 700 11px/1 var(--f-body); font-style: normal; border: 1px solid var(--on-seal); padding: 4px 6px; letter-spacing: .04em; }
+.ol-btn-p { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 var(--s4); border: 0; background: var(--seal); color: var(--on-seal); font: 700 15px/1 var(--f-body); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.ol-btn-p::after { content: ""; position: absolute; inset: 3px; border: 2px solid var(--on-seal); pointer-events: none; }
+.ol-btn-2 { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 36px; padding: 0 var(--s3); border: 2px solid var(--ink); background: transparent; color: var(--ink); font: 700 14px/1 var(--f-body); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.ol-btn-q { display: inline-flex; align-items: center; min-height: 36px; padding: 0; border: 0; background: none; color: var(--ink); font: 700 14px/1.4 var(--f-body); text-decoration: underline 2px var(--seal); text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+.ol-seg, .ol-step { justify-self: start; }
+.ol-seg { display: inline-flex; border: 2px solid var(--ink); background: var(--slip); }
+.ol-seg a, .ol-seg button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 var(--s3); border: 0; background: transparent; font: 700 14px/1 var(--f-body); color: var(--ink); text-decoration: none; cursor: pointer; }
+.ol-seg [aria-pressed="true"], .ol-seg [aria-current] { background: var(--slab); color: var(--on-slab); }
+.ol-seg.ol-jobs a { min-width: 52px; padding: 0 8px; }
+.ol-seg.ol-jobs [aria-pressed="true"] { font-style: italic; }
+
+/* ---- phone (up to 700 px) ---- */
+@media (max-width: 700px) {
+  :root { --gut: 12px; }
+  .ol-slab { flex-direction: column; align-items: stretch; gap: var(--s2); padding: var(--s3); min-height: 0; }
+  .ol-slab h1 { font-size: 22px; }
+  .ol-slab .ol-sl-sub, .ol-slab .ol-sl-links { display: none; }
+  .ol-slab .ol-sl-ans { justify-content: space-between; }
+  .ol-slab .ol-sl-ans.ol-blocks { margin: 0 calc(-1 * var(--s3)) calc(-1 * var(--s3)); align-self: auto; }
+  .ol-slab .ol-sl-ans.ol-blocks .ol-sb { flex: 1; min-width: 0; padding: 6px 6px; }
+  .ol-slab .ol-sl-ans.ol-blocks .ol-sb i, .ol-sb i { letter-spacing: .04em; }
+  .ol-slab .ol-sl-ans.ol-blocks .ol-sb b { font-size: 30px; }
+  .ol-slab .ol-sl-ans.ol-blocks .ol-sb:first-child { margin-left: 0; }
+  .ol-numeral { font-size: 56px; }
+  .ol-numeral.ol-sm { font-size: 44px; }
+  .ol-sb { min-width: 80px; height: 52px; padding: 2px 14px 3px 10px; }
+  .ol-sb b { font-size: 32px; }
+  .ol-sb b.ol-w { font-size: 18px; }
+  .ol-chap { min-height: 44px; gap: 0 var(--s2); padding: 0 0 4px; }
+  .ol-chap .ol-num { font-size: 32px; min-width: 28px; }
+  .ol-chap h2 { font-size: 22px; }
+  .ol-chap .ol-sub { font-size: 13px; }
+  .ol-chap .ol-sum .ol-sb { min-width: 52px; padding: 0 10px; }
+  .ol-seal { min-height: 48px; font-size: 24px; width: 100%; }
+  .ol-seal .ol-key { display: none; }
+  .ol-btn-p, .ol-btn-q { min-height: 40px; }
+  .ol-seg a, .ol-seg button { min-height: 40px; }
+  .ol-seg { max-width: 100%; }
+  .ol-seg > * { flex: 1 1 auto; padding: 0 6px; }
+  .ol-chap .ol-sub { display: none; }
+  .ol-chap h2 { font-size: 20px; }
+  .ol-slab { padding: 8px 12px; }
+  .ol-btn-2 { min-height: 40px; white-space: normal; text-align: center; line-height: 1.15; padding-block: 4px; }
+  .ol-chap .ol-sum:has(> :nth-child(3)) { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; padding: 4px 0; }
+  .ol-chap:has(.ol-sum > :nth-child(3)) { grid-template-columns: auto minmax(0, 1fr); }
+  .ol-seg.ol-jobs { width: 100%; }
+  .ol-seg.ol-jobs > * { flex: 1 1 0; min-width: 0; padding: 0 1px; font-size: 13px; }
+}

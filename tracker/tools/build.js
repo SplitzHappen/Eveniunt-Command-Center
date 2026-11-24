@@ -43,7 +43,7 @@ if (lookPlus === look || (lookPlus.match(/^\s+\['[a-z-]+', "/gm) || []).length !
 
 const core = ['save', 'model', 'storage', 'codec', 'merge', 'ffxivcollect', 'cloud', 'importer', 'links'].map((f) => read(path.join(T, 'src', 'core', f + '.js'))).join('\n');
 const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => lookPlus).replace('/*{{LIVE}}*/', () => read(path.join(T, 'src', 'app', 'live.js')));
-const css = read(path.join(T, 'src', 'app', 'shared.css')) + '\n' + read(path.join(T, 'src', 'app', 'tracker.css'));
+const css = read(path.join(T, 'src', 'app', 'shared.css')) + '\n' + read(path.join(T, 'src', 'app', 'one-look.css')) + '\n' + read(path.join(T, 'src', 'app', 'tracker.css'));
 const data = read(path.join(T, 'data', 'tracker-data.json')).replace(/</g, '\\u003c');
 const map = read(path.join(T, 'data', 'desktop-map.json')).replace(/</g, '\\u003c');
 const links = read(path.join(T, 'data', 'links.json')).replace(/</g, '\\u003c');
