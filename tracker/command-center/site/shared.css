@@ -47,14 +47,6 @@ select option:checked { background-color: var(--paper-3); color: var(--ink); }
 .hidden { display: none !important; }
 .grow { flex: 1; }
 
-/* ── masthead: a book's title page, double rule beneath ── */
-.mast {
-  display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;
-  max-width: 1760px; margin: 0 auto;
-  padding-top: 22px; padding-bottom: 14px;
-  padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
-  border-bottom: 4px double var(--ink);
-}
 /* Limit Break wordmark (owner choice): molten capitals over a three-bar gauge, coloured by the active theme */
 .lb-mark { display: inline-grid; justify-items: start; gap: 4px; text-decoration: none; color: inherit; min-width: 0; }
 .lb-top { font: 700 15px/1 "Cinzel", var(--f-serif); letter-spacing: .62em; text-transform: uppercase; color: var(--lb-b, var(--seal)); padding-left: 4px; }
@@ -64,15 +56,10 @@ select option:checked { background-color: var(--paper-3); color: var(--ink); }
 .lb-gauge { display: flex; gap: 8px; width: 100%; padding: 2px 6px 0 6px; box-sizing: border-box; }
 .lb-gauge i { flex: 1; height: 11px; border: 2px solid var(--lb-b, var(--seal)); transform: skewX(-25deg); background: linear-gradient(90deg, var(--lb-a, var(--seal)), var(--lb-b, var(--seal))); }
 .lb-gauge i:last-child { background: linear-gradient(90deg, var(--lb-a), var(--lb-b) 62%, transparent 62%); }
-.lb-charging .mast .lb-gauge i:last-child, .lb-gauge.charging i:last-child { background: linear-gradient(90deg, var(--lb-a), var(--lb-b)) no-repeat left / 0% 100%; animation: lbcharge 1.3s ease-in-out infinite; }
+.lb-gauge.charging i:last-child { background: linear-gradient(90deg, var(--lb-a), var(--lb-b)) no-repeat left / 0% 100%; animation: lbcharge 1.3s ease-in-out infinite; }
 @keyframes lbcharge { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 .lb-mark:hover .lb-word { filter: drop-shadow(0 0 26px var(--lb-glow, transparent)) brightness(1.08); }
-.lb-tag { font: 600 11px/1.5 var(--f-data); letter-spacing: .28em; text-transform: uppercase; color: var(--ink-2); padding-bottom: 14px; border-left: 2px solid var(--lb-b, var(--seal)); padding-left: 12px; align-self: flex-end; }
-@media (max-width: 860px) { .lb-word { font-size: 58px; } .lb-top { font-size: 11px; } .lb-gauge i { height: 8px; } .lb-tag { display: none; } }
-.mast .grow { flex: 1; }
-.mast-tools { display: flex; gap: 6px; align-items: center; padding-bottom: 4px; }
-.mast select { background-color: var(--paper); border: 0; border-bottom: 1px solid var(--ink); border-radius: 0; padding: 4px 2px; font: 600 14px var(--f-serif); cursor: pointer; }
-
+@media (max-width: 860px) { .lb-word { font-size: 58px; } .lb-top { font-size: 11px; } .lb-gauge i { height: 8px; } }
 /* ── the bench: Recipe | Crafter across the top, the Work across the full width ── */
 .label { font: 600 14px/1.1 var(--f-serif); font-variant-caps: all-small-caps; letter-spacing: .06em; color: var(--ink-2); }
 .field { display: grid; gap: 4px; min-width: 0; }

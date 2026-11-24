@@ -1338,7 +1338,7 @@
       el.remove();
       try { var n = ccDevice(); n.handoverSeen = Date.now(); localStorage.setItem(CC_DEVICE, JSON.stringify(n)); } catch (e) { /* private window: shown again next time */ }
     });
-    var mast = document.querySelector('.mast'); if (mast) mast.insertAdjacentElement('afterend', el);
+    var mast = document.querySelector('.ol-hdr'); if (mast) mast.insertAdjacentElement('afterend', el);
   }
   // ── installable app (hosted only) ──
   (function pwa() {
@@ -1353,11 +1353,12 @@
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Tracker installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
     // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. A plain link, first
-    // among the header tools, labelled "Main menu" at every width (owner request 2026-11-12).
+    // first in the shared header (the Main menu, with the app's pages beside it), labelled "Main menu" at every width.
     var home = new URL('../', location.href).href;
-    var back = document.createElement('a'); back.className = 'cc-menu-link cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Back to the Command Center main menu');
-    back.innerHTML = '<svg class="mm-ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 10l4 6"/><rect x="10" y="4" width="3.5" height="3.5" rx=".6"/><rect x="15" y="4" width="3.5" height="3.5" rx=".6"/><rect x="10" y="10" width="3.5" height="3.5" rx=".6"/><rect x="15" y="10" width="3.5" height="3.5" rx=".6"/></svg><span class="cc-txt">Main menu</span>';
-    if (tools) tools.insertBefore(back, tools.firstChild);
+    var back = document.createElement('a'); back.className = 'ol-menu cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Back to the Command Center main menu');
+    back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6"/><rect x="12" y="5" width="4" height="4"/><rect x="17" y="5" width="4" height="4"/><rect x="12" y="11" width="4" height="4"/><rect x="17" y="11" width="4" height="4"/></svg><span class="cc-txt">Main menu</span>';
+    var hin = document.querySelector('.ol-hdr-in'); if (hin) hin.insertBefore(back, hin.firstChild);
+    var nav = document.querySelector('.ol-nav'); if (nav) nav.hidden = false; // the app's pages, hosted only
     handover(home, 'Tracker');
   })();
 /*{{LIVE}}*/

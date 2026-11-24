@@ -1,0 +1,1382 @@
+{
+ "pictures": 58,
+ "measuredPictures": 54,
+ "failures": [
+  "tracker-360-crystarium-dawnglass-light.png: P3 first row starts 496 px below the header (limit 200)",
+  "submersibles-360-crystarium-dawnglass-light.png: P3 first row starts 517 px below the header (limit 256)",
+  "tracker-360-crystarium-dawnglass-dark.png: P3 first row starts 496 px below the header (limit 200)",
+  "submersibles-360-crystarium-dawnglass-dark.png: P3 first row starts 517 px below the header (limit 256)",
+  "tracker-360-azure-dragoon-dark.png: P3 first row starts 496 px below the header (limit 200)",
+  "submersibles-360-azure-dragoon-dark.png: P3 first row starts 517 px below the header (limit 256)",
+  "tracker-360-uldah-sultanate-gilt-light.png: P3 first row starts 496 px below the header (limit 200)",
+  "submersibles-360-uldah-sultanate-gilt-light.png: P3 first row starts 517 px below the header (limit 256)"
+ ],
+ "measures": {
+  "home-1440-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 5,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 288,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-360-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-1440-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 38,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 5,
+   "firstRowFromHeader": 577,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-360-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 496,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 496 px below the header (limit 200)"
+   ]
+  },
+  "atelier-1440-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 7,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 56,
+    "max": 56
+   },
+   "rowsInView": 1,
+   "firstRowFromHeader": 825,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "atelier-360-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": 1861,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-1440-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 331,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-360-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 85
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 517,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 517 px below the header (limit 256)"
+   ]
+  },
+  "lists-1440-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 26,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 300,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "lists-360-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 7,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-1440-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 4,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-360-crystarium-dawnglass-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-1440-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 5,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 288,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-360-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-1440-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 38,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 5,
+   "firstRowFromHeader": 577,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-360-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 496,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 496 px below the header (limit 200)"
+   ]
+  },
+  "atelier-1440-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 7,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 56,
+    "max": 56
+   },
+   "rowsInView": 1,
+   "firstRowFromHeader": 825,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "atelier-360-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": 1861,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-1440-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 331,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-360-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 85
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 517,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 517 px below the header (limit 256)"
+   ]
+  },
+  "lists-1440-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 26,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 300,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "lists-360-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 7,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-1440-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 4,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-360-crystarium-dawnglass-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-1440-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 5,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 288,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-360-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-1440-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 38,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 5,
+   "firstRowFromHeader": 577,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-360-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 496,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 496 px below the header (limit 200)"
+   ]
+  },
+  "atelier-1440-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 7,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 56,
+    "max": 56
+   },
+   "rowsInView": 1,
+   "firstRowFromHeader": 825,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "atelier-360-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": 1861,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-1440-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 331,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-360-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 85
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 517,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 517 px below the header (limit 256)"
+   ]
+  },
+  "lists-1440-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 26,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 300,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "lists-360-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 7,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-1440-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 4,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-360-azure-dragoon-dark.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-1440-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 5,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 288,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-360-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-1440-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 38,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 5,
+   "firstRowFromHeader": 577,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-360-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 496,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 496 px below the header (limit 200)"
+   ]
+  },
+  "atelier-1440-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 7,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 56,
+    "max": 56
+   },
+   "rowsInView": 1,
+   "firstRowFromHeader": 825,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "atelier-360-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": 1861,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-1440-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 331,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-360-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 56,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 85
+   },
+   "rowsInView": 2,
+   "firstRowFromHeader": 517,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": [
+    "P3 first row starts 517 px below the header (limit 256)"
+   ]
+  },
+  "lists-1440-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 26,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 300,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "lists-360-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 16,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 64,
+    "max": 64
+   },
+   "rowsInView": 7,
+   "firstRowFromHeader": 192,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-1440-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 4,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-360-uldah-sultanate-gilt-light.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 360,
+   "largestText": {
+    "px": 30,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 2,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "home-1440-crystarium-dawnglass-light-caps.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 5,
+   "ledgerRowHeights": {
+    "count": 4,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 4,
+   "firstRowFromHeader": 281,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "tracker-1440-crystarium-dawnglass-light-caps.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "45",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 38,
+   "ledgerRowHeights": {
+    "count": 5,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 5,
+   "firstRowFromHeader": 564,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "atelier-1440-crystarium-dawnglass-light-caps.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "100%",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 7,
+   "ledgerRowHeights": {
+    "count": 1,
+    "min": 56,
+    "max": 56
+   },
+   "rowsInView": 1,
+   "firstRowFromHeader": 821,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "submersibles-1440-crystarium-dawnglass-light-caps.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 96,
+    "text": "1D 3H",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 0,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 329,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "lists-1440-crystarium-dawnglass-light-caps.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "1673",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 26,
+   "ledgerRowHeights": {
+    "count": 8,
+    "min": 56,
+    "max": 57
+   },
+   "rowsInView": 8,
+   "firstRowFromHeader": 292,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  },
+  "settings-1440-crystarium-dawnglass-light-caps.png": {
+   "sidewaysScroll": false,
+   "scrollWidth": 1440,
+   "largestText": {
+    "px": 40,
+    "text": "Not signed in",
+    "figure": true
+   },
+   "slabInView": true,
+   "heaviestLinePx": 4,
+   "heaviestLineOn": "hdr",
+   "plexWithoutDigit": [],
+   "plexCount": 4,
+   "ledgerRowHeights": {
+    "count": 0,
+    "min": null,
+    "max": null
+   },
+   "rowsInView": 0,
+   "firstRowFromHeader": null,
+   "tapTargetsTooSmall": [],
+   "fontsLoaded": true,
+   "consoleErrors": [],
+   "failures": []
+  }
+ }
+}

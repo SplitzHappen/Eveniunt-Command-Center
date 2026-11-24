@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#0f2234">
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="one-look.css">
 <link rel="stylesheet" href="shell.css">
 <script>
   // Follow the Tracker's light / dark choice (read only; gate 1C brings one shared appearance setting).
@@ -19,18 +20,7 @@
 </head>
 <body>
 <script src="look.js"></script>
-<header class="mast cc-mast">
-  <a class="wordmark lb-mark" href="./" aria-label="Eveniunt Command Center, home"><span class="lb-top">Eveniunt</span><span class="lb-word">Command Center</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
-  <nav class="switcher" aria-label="Main menu">
-    <a href="./" data-module="home" aria-current="page">Home</a>
-    <a href="tracker/" data-module="tracker">Tracker</a>
-    <a href="atelier/" data-module="atelier">Atelier</a>
-    <a href="submersibles/" data-module="submersibles">Submersibles</a>
-    <a href="lists/" data-module="lists">Lists</a>
-    <a href="#settings" data-module="settings">⚙ Settings</a>
-  </nav>
-  <span class="status" id="status" role="status" aria-live="polite"></span>
-</header>
+<header class="ol-hdr" data-ol-hdr><div class="ol-hdr-in"><a class="ol-menu" href="./" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6"/><rect x="12" y="5" width="4" height="4"/><rect x="17" y="5" width="4" height="4"/><rect x="12" y="11" width="4" height="4"/><rect x="17" y="11" width="4" height="4"/></svg><span class="cc-txt">Main menu</span></a><a class="ol-mark" href="./" aria-label="Eveniunt Command Center, home"><span class="ol-mk-top">Eveniunt</span><span class="ol-mk-word">Command Center</span><span class="ol-mk-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a><div class="ol-tools mast-tools">  <span class="status" id="status" role="status" aria-live="polite"></span></div><nav class="ol-nav switcher" aria-label="Command Center"><a href="./" data-module="home" aria-current="page">Home</a><a href="tracker/" data-module="tracker">Tracker</a><a href="atelier/" data-module="atelier">Atelier</a><a href="submersibles/" data-module="submersibles">Submersibles</a><a href="lists/" data-module="lists">Lists</a><a href="#settings" data-module="settings">Settings</a></nav></div></header>
 
 <main id="home" class="cc-home">
   <section class="cc-hero">

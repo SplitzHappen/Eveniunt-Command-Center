@@ -17,6 +17,7 @@ test.after(async () => { await browser.close(); });
 
 async function open(opts = {}) {
   const ctx = await browser.newContext(Object.assign({ viewport: { width: 1440, height: 1000 } }, opts.context || {}));
+  if (opts.stored) await ctx.addInitScript(([k, v]) => { for (let i = 0; i < k.length; i++) if (v[i] !== null) localStorage.setItem(k[i], JSON.stringify(v[i])); }, [Object.keys(opts.stored), Object.values(opts.stored)]);
   if (opts.blockStorage) await ctx.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); });
   const page = await ctx.newPage();
   const errors = [], external = [];
@@ -286,7 +287,9 @@ test('UI: guide opens inside the workbook; accent and custom hex/RGB colours app
   await page.click('[data-act=settings]');
   assert.equal(await page.locator('.mode-tile').count(), 3, 'Mode: System, Light, Dark');
   await page.click('[data-look=toggle][data-v="shared:theme"]');
-  assert.equal(await page.locator('[data-look=theme]').count(), 20, 'only the 20 FFXIV themes');
+  // 21 since Electrope Skyline joined the Atelier's list (the app offers the same 21 everywhere); stronger than before: it is also checked by id
+  assert.equal(await page.locator('[data-look=theme]').count(), 21, 'the 21 themes');
+  assert.equal(await page.locator('[data-look=theme][data-v=electrope-skyline]').count(), 1, 'Electrope Skyline is offered once');
   // every theme must visibly tint the page: no background within 24 levels of pure white (light) or pure black (dark)
   const bgs = await page.evaluate(() => [...document.querySelectorAll('[data-look=theme]')].map(b => b.dataset.v));
   for (const id of bgs) {
@@ -553,5 +556,61 @@ test('W10: the hand-over link atelier/#recipe=<id> selects the recipe, removes t
   await page.waitForTimeout(900);
   assert.equal(await readDoc(), seeded, 'the save is still byte-identical');
   assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+// One look, step 2 (F1): the Atelier follows the app-wide appearance choice (eveniunt-tracker-ui), and keeps its own record as the fallback.
+const UI_KEY = 'eveniunt-tracker-ui', DEV_KEY = 'eveniunt-atelier-device-v2';
+const paperOf = page => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
+const sideOf = id => ({ shared: { theme: id } });
+
+test('theme: the app-wide choice (dark, Azure Dragoon) paints the Atelier in Azure Dragoon dark', async () => {
+  const { ctx, page, errors } = await open({ stored: { [UI_KEY]: { theme: 'dark', look: { shared: { theme: 'azure-dragoon' } } } } });
+  assert.equal(await paperOf(page), '#0e2257');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('theme: the app-wide light mode wins over a dark device, with the Ul\'dah look', async () => {
+  const { ctx, page } = await open({ context: { colorScheme: 'dark' }, stored: { [UI_KEY]: { theme: 'light', look: sideOf('uldah-sultanate-gilt') } } });
+  assert.equal(await paperOf(page), '#efe0b0');
+  await ctx.close();
+});
+
+test('theme: with no app-wide choice the Atelier\'s own record is used', async () => {
+  const { ctx, page } = await open({ context: { colorScheme: 'dark' }, stored: { [DEV_KEY]: { theme: 'light', look: sideOf('uldah-sultanate-gilt') } } });
+  assert.equal(await paperOf(page), '#efe0b0');
+  assert.equal(await page.evaluate(k => localStorage.getItem(k), UI_KEY), null, 'nothing is written to the app-wide key without a change');
+  await ctx.close();
+});
+
+test('theme: when the app-wide choice owns the look, a language change leaves the Atelier\'s own look as it was', async () => {
+  const own = { theme: 'light', look: sideOf('uldah-sultanate-gilt') };
+  const { ctx, page } = await open({ stored: { [UI_KEY]: { theme: 'dark', look: sideOf('azure-dragoon') }, [DEV_KEY]: own } });
+  await page.selectOption('#locale', 'de');
+  await page.waitForFunction(k => JSON.parse(localStorage.getItem(k)).locale === 'de', DEV_KEY);
+  const rec = await page.evaluate(k => JSON.parse(localStorage.getItem(k)), DEV_KEY);
+  assert.equal(JSON.stringify(rec.look), JSON.stringify(own.look), 'the look is byte for byte the same');
+  assert.equal(rec.theme, 'light');
+  assert.equal(await paperOf(page), '#0e2257', 'the page still follows the app-wide choice');
+  await ctx.close();
+});
+
+test('theme: choosing a theme in the Atelier\'s Appearance writes the app-wide choice and keeps its other fields', async () => {
+  const ui = { view: 'sec', sec: 'quests' };
+  const { ctx, page } = await open({ stored: { [UI_KEY]: { theme: 'light', look: sideOf('doman-sakura'), ui } } });
+  await page.click('[data-act=settings]');
+  await page.click('[data-look=toggle][data-v="shared:theme"]');
+  await page.click('[data-look=theme][data-v=azure-dragoon]');
+  const rec = await page.evaluate(k => JSON.parse(localStorage.getItem(k)), UI_KEY);
+  assert.equal(rec.look.shared.theme, 'azure-dragoon');
+  assert.deepEqual(rec.ui, ui, 'the Tracker\'s own field is kept');
+  assert.equal(rec.theme, 'light');
+  await ctx.close();
+});
+
+test('theme: Electrope Skyline dark paints the Atelier #070a20', async () => {
+  const { ctx, page } = await open({ stored: { [UI_KEY]: { theme: 'dark', look: sideOf('electrope-skyline') } } });
+  assert.equal(await paperOf(page), '#070a20');
   await ctx.close();
 });

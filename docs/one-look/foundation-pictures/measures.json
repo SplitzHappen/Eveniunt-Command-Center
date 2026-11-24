@@ -1,0 +1,290 @@
+{
+ "home-1440-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "settings-1440-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "submersibles-1440-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "lists-1440-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "tracker-1440-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "atelier-1440-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "home-360-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "settings-360-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "submersibles-360-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "lists-360-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "tracker-360-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "atelier-360-crystarium-dawnglass-light": {
+  "paper": "#d9e8f5",
+  "seal": "#b5476b",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "home-1440-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "settings-1440-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "submersibles-1440-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "lists-1440-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "tracker-1440-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "atelier-1440-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "home-360-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "settings-360-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "submersibles-360-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "lists-360-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "tracker-360-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "atelier-360-crystarium-dawnglass-dark": {
+  "paper": "#0f2234",
+  "seal": "#ffadc4",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "home-1440-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "settings-1440-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "submersibles-1440-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "lists-1440-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "tracker-1440-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "atelier-1440-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "home-360-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "settings-360-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "submersibles-360-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "lists-360-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "tracker-360-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "atelier-360-azure-dragoon-dark": {
+  "paper": "#0e2257",
+  "seal": "#6ea2ff",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "home-1440-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "settings-1440-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "submersibles-1440-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "lists-1440-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "tracker-1440-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "atelier-1440-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 92,
+  "wordFont": "56px"
+ },
+ "home-360-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "settings-360-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 121,
+  "wordFont": "28px"
+ },
+ "submersibles-360-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "lists-360-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 65,
+  "wordFont": "28px"
+ },
+ "tracker-360-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 113,
+  "wordFont": "28px"
+ },
+ "atelier-360-uldah-sultanate-gilt-light": {
+  "paper": "#efe0b0",
+  "seal": "#8f2236",
+  "header": 113,
+  "wordFont": "28px"
+ }
+}

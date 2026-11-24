@@ -7,6 +7,8 @@
 // Run: node command-center/build.js
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), zlib = require('zlib');
 const CC = __dirname, T = path.join(CC, '..'), SRC = path.join(CC, 'src'), OUT = path.join(CC, 'site');
+const { fill } = require('../tools/one-look-header.js'); // the one header, filled into each page of the shell
+const cpHtml = (from, to) => { fs.mkdirSync(path.dirname(path.join(OUT, to)), { recursive: true }); fs.writeFileSync(path.join(OUT, to), fill(fs.readFileSync(from, 'utf8'))); };
 const cp = (from, to) => { fs.mkdirSync(path.dirname(path.join(OUT, to)), { recursive: true }); fs.copyFileSync(from, path.join(OUT, to)); };
 // The Tracker's look (owner request 2026-11-12: "the main menu, the tracker and all of the other modules should have
 // the exact same theme"): the fonts and the Atelier's appearance module, the same ones tools/build.js puts in the Tracker.
@@ -34,8 +36,8 @@ fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive:
   const atelier = fs.readFileSync(path.join(T, '..', 'crafting', 'atelier', 'src', 'atelier.js'), 'utf8');
   const a0 = atelier.indexOf('  // ── appearance (laid out like ChatGPT'), a1 = atelier.indexOf('  function renderHeader()');
   if (a0 < 0 || a1 < a0) throw new Error('Atelier appearance module not found');
-  const SOLUTION_NINE = "    ['electrope-skyline', \"Electrope Skyline\", ['#e3ebf7', '#0a1230', '#0a6c94', '#c2187a'], ['#070a20', '#e6f4ff', '#38dcff', '#ff4fb8']]";
-  const look = atelier.slice(a0, a1).replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION_NINE + '\n  ];\n  var ACCENTS');
+  const look = atelier.slice(a0, a1); // the Atelier's theme list is the one source, Electrope Skyline included
+  if ((look.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('expected 21 themes in the Atelier appearance module');
   fs.writeFileSync(path.join(OUT, 'look.js'), "// Built by command-center/build.js: the Tracker's appearance (the Atelier's module, as tools/build.js uses it), read\n" +
     "// from the Tracker's saved choice ('eveniunt-tracker-ui') so every page of the Command Center has the same theme.\n" +
     "(function () {\n  'use strict';\n  var PREF_KEY = 'eveniunt-tracker-ui';\n  function load() { try { return JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { return null; } }\n" +
@@ -51,7 +53,9 @@ fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive:
     "  window.EVENIUNT_LOOK = { apply: function () { var d = load() || {}; S.theme = d.theme || 'system'; applyLook(); }, html: function () { return appearanceHtml(); }, bind: function (root) { bindAppearance(root); } };\n})();\n");
 }
 cp(path.join(T, 'src', 'app', 'shared.css'), 'shared.css');
-for (const f of ['index.html', 'shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);
+cp(path.join(T, 'src', 'app', 'one-look.css'), 'one-look.css'); // one look: the shared stylesheet, loaded after shared.css
+cpHtml(path.join(SRC, 'index.html'), 'index.html');
+for (const f of ['shell.css', 'shell.js', 'settings.js']) cp(path.join(SRC, f), f);
 // the main Settings (2026-11-12) runs the Tracker's own core code for characters, cloud sync and backups
 for (const f of ['model', 'codec', 'merge', 'cloud', 'storage']) cp(path.join(T, 'src', 'core', f + '.js'), 'core/' + f + '.js');
 cp(path.join(SRC, 'prices.js'), 'prices.js'); // the shared price service (Submersibles, Lists)
@@ -60,7 +64,8 @@ for (const f of fs.readdirSync(path.join(SRC, 'icons'))) cp(path.join(SRC, 'icon
 // The Submersibles module page (step S2): its page, script and styles, the shared alerts script, and data.js with a copy
 // of data/submarines.json (compressed inside the page when that is smaller; both sizes are printed) and the worlds list
 // of the shared place setting (data/live.json). It loads the one save from ../save.js.
-for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'recs.js', 'drops.js', 'advisor.js', 'push.js', 'earn.js', 'chart.js', 'ledger.js', 'palette.js', 'timeline.js']) cp(path.join(SRC, 'submersibles', f), 'submersibles/' + f);
+cpHtml(path.join(SRC, 'submersibles', 'index.html'), 'submersibles/index.html');
+for (const f of ['subs.css', 'subs.js', 'fleet.js', 'recs.js', 'drops.js', 'advisor.js', 'push.js', 'earn.js', 'chart.js', 'ledger.js', 'palette.js', 'timeline.js']) cp(path.join(SRC, 'submersibles', f), 'submersibles/' + f);
 {
   const json = JSON.stringify(JSON.parse(fs.readFileSync(path.join(T, 'data', 'submarines.json'), 'utf8')));
   const live = JSON.parse(fs.readFileSync(path.join(T, 'data', 'live.json'), 'utf8'));
@@ -76,7 +81,8 @@ for (const f of ['index.html', 'subs.css', 'subs.js', 'fleet.js', 'recs.js', 'dr
 // plus `log` (the crafting-log pages of the Tracker's craft-* lists, as recipe ids) and `noHandOver` (recipes the Atelier lacks, no link).
 // The build stops when a log recipe id is not in `recipes`, when the Atelier disagrees with the sheets (tools/lists-crosscheck.js) or when
 // data.js is over the 1.5 MB budget. Both sizes are printed.
-for (const f of ['index.html', 'lists.css', 'lists.js', 'engine.js', 'store.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
+cpHtml(path.join(SRC, 'lists', 'index.html'), 'lists/index.html');
+for (const f of ['lists.css', 'lists.js', 'engine.js', 'store.js']) cp(path.join(SRC, 'lists', f), 'lists/' + f);
 // The 11 job icons (the game's, fetched by tools/lists-data.py at the pinned Teamcraft commit): copied into the built site, so the
 // page never hot-links them and the service worker caches them with the other files. The build stops when one is missing, is not a
 // PNG or is over 16 kB.

@@ -13,6 +13,7 @@
   var WASM_MODULE = null; // compiled module, shared with the solver worker
   var STORE = 'eveniunt-atelier-v1';          // everything, before gate 1C: read once, copied, then left untouched
   var DEVICE = 'eveniunt-atelier-device-v2';  // this device only: language, look, layout, the recipe on screen, history
+  var UI_KEY = 'eveniunt-tracker-ui';         // the app-wide appearance choice (Settings, every page): its theme and look win over this page's own record
   var CC = window.CC || null;                 // the Command Center's one save (shared characters and module sections)
   var LOCALES = [['en', 'English'], ['de', 'Deutsch'], ['fr', 'Français'], ['jp', '日本語'], ['cn', '简体中文'], ['kr', '한국어'], ['tw', '繁體中文']];
   var ABBR = { BasicSynthesis: 'BS', CarefulSynthesis: 'CS', Groundwork: 'GW', PrudentSynthesis: 'PS', IntensiveSynthesis: 'IS', RapidSynthesis: 'RS',
@@ -42,13 +43,33 @@
   var canStore = (function () { try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return true; } catch (e) { return false; } })();
   function lsGet(k) { try { if (canStore) return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { /* ignore */ } return mem[k] || null; }
   // first opening of this version on a device: the per-device fields come from the old key (which is not written again)
-  function load() { return lsGet(DEVICE) || lsGet(STORE); }
+  // The app-wide choice (UI_KEY) wins for the theme and the look; this page's own record is kept and used when there is none.
+  function load() {
+    var d = lsGet(DEVICE) || lsGet(STORE), u = lsGet(UI_KEY);
+    if (!u || typeof u !== 'object' || (u.theme === undefined && !u.look)) return d;
+    var r = Object.assign({}, d || {});
+    if (u.theme !== undefined) r.theme = u.theme;
+    if (u.look) r.look = u.look;
+    return r;
+  }
+  var lookSeen = null; // JSON of [S.theme, S.look] as last read from or written to storage: a difference is a change made here
   // Crafter stats, food, medicine, the cosmic tool, saved macros and the macro, solver and guide settings are shared
   // (the one save, written shortly after a change); everything else stays on this device.
   function persist() {
+    var u = lsGet(UI_KEY), owned = !!(u && typeof u === 'object' && u.look);
     var d = { locale: S.locale, theme: S.theme, layout: S.layout, job: S.job, mode: S.mode, activeJobOnly: S.activeJobOnly, zone: S.zone, recipeId: S.recipeId,
       custom: S.custom, history: S.history, look: S.look, char: S.char };
+    var now = JSON.stringify([S.theme, S.look]);
+    if (owned) { // the app-wide choice owns the look: this page's own record keeps the theme and look it already had (read back, never overwritten or deleted)
+      var prev = lsGet(DEVICE) || {};
+      ['theme', 'look'].forEach(function (k) { if (prev[k] !== undefined) d[k] = prev[k]; else delete d[k]; });
+    }
     try { if (canStore) localStorage.setItem(DEVICE, JSON.stringify(d)); else mem[DEVICE] = d; } catch (e) { canStore = false; mem[DEVICE] = d; }
+    if (now !== lookSeen) { // a change made in this page's Appearance: it goes to the app-wide choice, every other field there kept
+      var n = Object.assign({}, u && typeof u === 'object' ? u : {}); n.theme = S.theme; n.look = S.look;
+      try { if (canStore) localStorage.setItem(UI_KEY, JSON.stringify(n)); else mem[UI_KEY] = n; } catch (e) { /* private window */ }
+      lookSeen = now;
+    }
     scheduleShared();
   }
 
@@ -1342,9 +1363,9 @@
     document.body.classList.toggle('compact', S.layout === 'compact');
   }
   // ── appearance (laid out like ChatGPT's Appearance settings) ──
-  // Mode: System / Light / Dark. Theme: the 20 FFXIV themes. Accent, Background and Foreground can be overridden (HEX or RGB).
+  // Mode: System / Light / Dark. Theme: the 21 themes. Accent, Background and Foreground can be overridden (HEX or RGB).
   // Advanced: UI and code font size, reduce motion, separate light and dark modes, contrast.
-  // The 20 FFXIV-inspired themes (owner choice, 2026-11-06). Each: light and dark [background, foreground, accent, progress].
+  // The 21 themes: 20 FFXIV-inspired (owner choice, 2026-11-06) and Electrope Skyline (owner request, 2026-11-08). Each: light and dark [background, foreground, accent, progress].
   var THEMES = [
     ['crystarium-dawnglass', "Crystarium Dawnglass", ['#d9e8f5', '#0d2133', '#b5476b', '#2f6fae'], ['#0f2234', '#e0eefb', '#ffadc4', '#9ad4ff']],
     ['ishgard-hoarfrost', "Ishgard Hoarfrost", ['#dbe2e9', '#1b2128', '#3d6c96', '#8a6a1f'], ['#1e2836', '#e6edf3', '#a9d3f5', '#e4c27a']],
@@ -1365,7 +1386,8 @@
     ['sharlayan-lore', "Sharlayan Lore", ['#dfe1ea', '#181a26', '#7f5d0a', '#2d4f9e'], ['#181a26', '#e6e8f2', '#e2bd52', '#86b8ea']],
     ['radz-at-han-jewel', "Radz-at-Han Jewel", ['#f6dcd6', '#2d0f1f', '#0a7a76', '#8f5600'], ['#3a1624', '#fbe7f0', '#3fe0d6', '#ffc23d']],
     ['doman-sakura', "Doman Sakura", ['#f8dbe8', '#2b1424', '#c02d6c', '#3a4aa8'], ['#2b1626', '#f8e6ef', '#ff9cc6', '#8ea2ff']],
-    ['ultima-thule', "Ultima Thule", ['#dcdcef', '#0b0a1f', '#5a35d6', '#007f99'], ['#100c26', '#e9e8ff', '#b07cff', '#4fe3ff']]
+    ['ultima-thule', "Ultima Thule", ['#dcdcef', '#0b0a1f', '#5a35d6', '#007f99'], ['#100c26', '#e9e8ff', '#b07cff', '#4fe3ff']],
+    ['electrope-skyline', "Electrope Skyline", ['#e3ebf7', '#0a1230', '#0a6c94', '#c2187a'], ['#070a20', '#e6f4ff', '#38dcff', '#ff4fb8']]
   ];
   var ACCENTS = [['default', 'Default'], ['blue', 'Blue', '#0a6cff', '#4aa3ff'], ['green', 'Green', '#13864d', '#43c97f'], ['yellow', 'Yellow', '#a77b00', '#f2c94c'],
     ['pink', 'Pink', '#c8286f', '#ff6fae'], ['orange', 'Orange', '#c9531a', '#ff8a4c'], ['purple', 'Purple', '#7b4bd6', '#b18cff'], ['neutral', 'Black / White', '#111417', '#f0f0f0'], ['custom', 'Custom']];
@@ -1539,6 +1561,19 @@
   // ── boot ─────────────────────────────────────────────────────────────────
   var WASM_BYTES = null;
   function b64(s) { var bin = atob(s), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u; }
+  lookSeen = JSON.stringify([S.theme, S.look]);
+  // a change of the app-wide choice in another tab (Settings) shows here, as on the other pages
+  window.addEventListener('storage', function (e) {
+    if (e.key !== UI_KEY) return;
+    var u = lsGet(UI_KEY) || {};
+    if (u.theme !== undefined) S.theme = u.theme;
+    if (u.look) {
+      Object.assign(S.look, u.look);
+      ['shared', 'light', 'dark'].forEach(function (k) { S.look[k] = Object.assign(blankSide(), (u.look || {})[k] || {}); if (!THEMES.some(function (x) { return x[0] === S.look[k].theme; })) S.look[k].theme = 'crystarium-dawnglass'; });
+    }
+    lookSeen = JSON.stringify([S.theme, S.look]);
+    applyTheme();
+  });
   var sharedReady = loadShared();
   (function boot() {
     applyTheme();
@@ -1582,7 +1617,7 @@
       el.remove();
       try { var n = ccDevice(); n.handoverSeen = Date.now(); localStorage.setItem(CC_DEVICE, JSON.stringify(n)); } catch (e) { /* private window: shown again next time */ }
     });
-    var mast = document.querySelector('.mast'); if (mast) mast.insertAdjacentElement('afterend', el);
+    var mast = document.querySelector('.ol-hdr'); if (mast) mast.insertAdjacentElement('afterend', el);
   }
   // ── installable app (hosted only; the single offline file is unchanged) ──
   (function pwa() {
@@ -1613,12 +1648,13 @@
     window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; btn.classList.remove('hidden'); });
     window.addEventListener('appinstalled', function () { btn.classList.add('hidden'); toast('Eveniunt Atelier installed'); });
     btn.addEventListener('click', function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { deferred = null; btn.classList.add('hidden'); }); });
-    // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. A plain link, first
-    // among the header tools; on narrow screens only the house sign shows.
+    // The way back to the Command Center (gate 1D): the shell lives at the site root, one level up. The Main menu, first in
+    // the shared header, with the app's pages beside it (hosted only).
     var home = new URL('../', location.href).href;
-    var back = document.createElement('a'); back.className = 'btn sm ghost cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Eveniunt Command Center: home');
-    back.innerHTML = '<span aria-hidden="true">\u2302</span><span class="cc-txt">Command Center</span>';
-    if (tools) tools.insertBefore(back, tools.firstChild);
+    var back = document.createElement('a'); back.className = 'ol-menu cc-back'; back.href = home; back.setAttribute('data-cc-back', '1'); back.setAttribute('aria-label', 'Back to the Command Center main menu');
+    back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6"/><rect x="12" y="5" width="4" height="4"/><rect x="17" y="5" width="4" height="4"/><rect x="12" y="11" width="4" height="4"/><rect x="17" y="11" width="4" height="4"/></svg><span class="cc-txt">Main menu</span>';
+    var hin = document.querySelector('.ol-hdr-in'); if (hin) hin.insertBefore(back, hin.firstChild);
+    var nav = document.querySelector('.ol-nav'); if (nav) nav.hidden = false;
     handover(home, 'Atelier');
   })();
   window.__atelier = { SH: SH, switchChar: switchChar, flush: writeShared, S: S, threads: function () { return CORES; }, iconUrl: iconUrl, enName: function (k) { return EN_NAME[k]; }, solveNow: solveNow, openGuide: openGuide, guideReport: guideReport, call: function () { return call.apply(null, arguments); } };

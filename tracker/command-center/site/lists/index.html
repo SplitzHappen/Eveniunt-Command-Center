@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#0f2234">
 <link rel="stylesheet" href="../fonts.css">
 <link rel="stylesheet" href="../shared.css">
+<link rel="stylesheet" href="../one-look.css">
 <link rel="stylesheet" href="../shell.css">
 <link rel="stylesheet" href="lists.css">
 <script>
@@ -20,22 +21,10 @@
 </head>
 <body class="lists-page">
 <script src="../look.js"></script>
-<header class="mast cc-mast lists-mast">
-  <a class="cc-menu-link cc-back" href="../" aria-label="Back to the Command Center main menu"><svg class="mm-ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4L3 10l4 6"/><rect x="10" y="4" width="3.5" height="3.5" rx=".6"/><rect x="15" y="4" width="3.5" height="3.5" rx=".6"/><rect x="10" y="10" width="3.5" height="3.5" rx=".6"/><rect x="15" y="10" width="3.5" height="3.5" rx=".6"/></svg><span>Main menu</span></a>
-  <a class="wordmark lb-mark" href="./" aria-label="Lists"><span class="lb-top">Eveniunt</span><span class="lb-word">Lists</span><span class="lb-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>
-  <nav class="switcher" aria-label="Main menu">
-    <a href="../" data-module="home">Home</a>
-    <a href="../tracker/" data-module="tracker">Tracker</a>
-    <a href="../atelier/" data-module="atelier">Atelier</a>
-    <a href="../submersibles/" data-module="submersibles">Submersibles</a>
-    <a href="./" data-module="lists" aria-current="page">Lists</a>
-    <a href="../#settings" data-module="settings">⚙ Settings</a>
-  </nav>
-  <span class="status" id="status" role="status" aria-live="polite"></span>
-</header>
+<header class="ol-hdr lists-mast" data-ol-hdr><div class="ol-hdr-in"><a class="ol-menu cc-back" href="../" data-cc-back="1" aria-label="Back to the Command Center main menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6"/><rect x="12" y="5" width="4" height="4"/><rect x="17" y="5" width="4" height="4"/><rect x="12" y="11" width="4" height="4"/><rect x="17" y="11" width="4" height="4"/></svg><span class="cc-txt">Main menu</span></a><a class="ol-mark" href="./" aria-label="Eveniunt Lists"><span class="ol-mk-top">Eveniunt</span><span class="ol-mk-word">Lists</span><span class="ol-mk-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a><div class="ol-tools mast-tools">  <span class="status" id="status" role="status" aria-live="polite"></span></div><nav class="ol-nav switcher" aria-label="Command Center"><a href="../" data-module="home">Home</a><a href="../tracker/" data-module="tracker">Tracker</a><a href="../atelier/" data-module="atelier">Atelier</a><a href="../submersibles/" data-module="submersibles">Submersibles</a><a href="../lists/" data-module="lists" aria-current="page">Lists</a><a href="../#settings" data-module="settings">Settings</a></nav></div></header>
 
 <div class="lists-layout">
-<div class="lists-tabs" id="tabs" role="tablist" aria-label="Lists" aria-orientation="vertical"></div>
+<div class="lists-tabs" id="tabs" role="tablist" aria-label="Eveniunt Lists" aria-orientation="vertical"></div>
 <main class="lists-main" id="view" aria-live="polite"><p class="muted empty-line">Opening your lists…</p></main>
 </div>
 <div class="lists-status empty" id="lstatus" role="status" aria-live="polite"></div>

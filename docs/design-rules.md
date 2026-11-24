@@ -18,11 +18,14 @@ bold test of section 12.
 
 | # | Rule | Why | From |
 | --- | --- | --- | --- |
-| M1 | A module lives in the shell: the wordmark masthead over a double rule, the "Main menu" button (labelled at every width, 40 px high), and the module's own views in a tab bar that is a left rail from 701 px and a bar fixed to the bottom on a phone. | The way back was "not properly labeled and … small"; the app is one place. | Main menu round, 2026-11-12; Submersibles design, 2026-11-10 |
+| M1 | One header on every page, made by one shared helper: the "Main menu" button (icon and word, 40 px), the wordmark, a tool slot for the page's own tools, the app's pages from 701 px with the current one underlined, and a double rule beneath. A module never draws its own masthead. Its own views stay in a tab bar: a left rail from 701 px, a bar fixed to the bottom on a phone. Check: the drift check. | The way back was "not properly labeled and … small"; the app is one place. | Main menu round, 2026-11-12; one look, 2026-11-24 |
 | M2 | Square corners and the family's motifs only: the molten rule, the 25° slash, the double rule, the dashed ledger line, the inverted slab, graph paper. No pills, no rounded cards, no glass, no neon, no look taken from a component library. | These are what already reads as "the app". | Submersibles look, 2026-11-18 (first spec and revision 2) |
 | M3 | One theme everywhere: the 21 themes, light and dark, and the Appearance settings (contrast, text size, motion) apply to every screen of every module. A module never sets a shared token. | "The main menu, the tracker and all of the other modules should have the exact same theme." | Main menu round, 2026-11-12 |
 | M4 | The same thing is drawn the same way on every screen (a route, a status, a way of getting an item, a count). One helper draws it. | A thing that changes shape between screens reads as a different thing. | Submersibles look, revision 4, 2026-11-19 |
 | M5 | Icons are drawn for the app: stroked SVG, no fill, round caps. Never a Unicode symbol or an emoji. An icon that navigates always has its word beside it. | Symbols are drawn by whatever font the device has. | Submersibles look, 2026-11-18; main menu round, 2026-11-12 |
+| M6 | Shared parts come from the shared stylesheet: section title, main-action seal, fields, secondary and quiet buttons, state block, index line, answer band. A module adds layout only; it never restyles a shared part or defines a shared token. Check: the drift check. | A part restyled in one module is the drift the one look removes. | one look, 2026-11-24 |
+
+**Who it binds (one look, 2026-11-24):** M1 and M3 bind every page now. C6, M6 and the T1 and T5 changes bind every new module now and each existing screen from its move (its own pull request or the final pass); until then its body keeps its look.
 
 ## 2. Composition
 
@@ -33,12 +36,13 @@ bold test of section 12.
 | C3 | A row shows the name and the answer until it is opened. Explanations, reasons and less-used controls appear when the row is opened. | "This looks very visual diarrhea like. I need something a lot cleaner." | Tracker layout round, 2026-11-08 |
 | C4 | Every head says its state: a count or a short summary at the right of the head, so a closed section still answers. | A head that only names its section makes the player open it to learn anything. | Submersibles look, revision 4, 2026-11-19 |
 | C5 | A card earns its frame: a name, a live figure from the save and its state. Like things in a column are one bordered ledger with dashed separators, never a box per row; a few small boxes in an empty page are not a layout. Check: at 1440 px the cards or rows of a screen's main group span the content width. | Sparse cards and boxed rows were named in the Lists rejection; the main menu's first version was "generic AI slop" until its tiles carried live lines. | Main menu round, 2026-11-12; Submersibles look, 2026-11-18; Lists, 2026-11-23 (**new** as a check) |
+| C6 | A section head is book style: a Roman numeral in Fraunces italic in the accent, the title in Fraunces 600 with an italic line under it, the state summary at the right (C4), and a 2 px rule under the whole head. | The owner chose the Atelier's book style for every section title. | owner Q1, 2026-11-24 |
 
 ## 3. Actions
 
 | # | Rule | Why | From |
 | --- | --- | --- | --- |
-| A1 | One primary action per row, card, sheet and notice: the accent fill. It is the thing most often done next. Check: at most one primary inside each. | The Board's send action is the one loud control on a lane; everything else is quiet. | Submersibles look, revision 2, 2026-11-18 |
+| A1 | One primary action per row, card, sheet and notice: the accent fill. It is the thing most often done next. Check: at most one primary inside each. The screen's one main action is the seal (T5); at most one seal per screen. | The Board's send action is the one loud control on a lane; everything else is quiet. | Submersibles look, revision 2, 2026-11-18; one look, 2026-11-24 |
 | A2 | Every other action of a row lives in its "More": one control (a "⋯" button, or the row itself with a chevron) that opens a small menu or a drawer under the row. At rest a row shows at most the primary, the opener and, from 701 px, one stepper. Never more than two bordered buttons side by side, except a sheet's footer and a segmented control. Check: counted per row at 1440 px and 360 px. | Rows of bordered buttons were the first thing named in the Lists rejection. | Lists, 2026-11-23 (**new**) |
 | A3 | A destructive action is never at rest beside the primary. It sits in More, in the error role, and asks before it acts. | A slip must not delete. | Lists, 2026-11-23 (**new**); the save rule "nothing is deleted without the player's choice" |
 | A4 | Moving between views is the tab bar's job; going back is the masthead's and the rail's. A view is never reached by a loose button above the content. | The Lists pictures had "Your lists" and the three views as bordered buttons in the page. | Submersibles design, 2026-11-10; Lists, 2026-11-23 |
@@ -74,11 +78,11 @@ Hyperlegible 400, 700; IBM Plex Mono 400, 600.
 
 | # | Rule | Why | From |
 | --- | --- | --- | --- |
-| T1 | Each face has one job. Display (Big Shoulders, uppercase): fixed app words, heads and large numerals. Kicker (Cinzel, uppercase, spaced): the small line over a head. Fraunces: names the player or the game supplies, and window titles. Body (Atkinson): everything read, labels, buttons. Data (IBM Plex Mono): figures. | A face used for everything says nothing. | Submersibles look, 2026-11-18 |
+| T1 | Each face has one job. Display (Big Shoulders, uppercase): fixed app words, answer numerals and state words. Kicker (Cinzel, uppercase, spaced): the small line over a head. Fraunces: section and page titles, names the player or the game supplies, window titles, the main-action seal. Body (Atkinson): everything read, labels, buttons. Data (IBM Plex Mono): figures. | A face used for everything says nothing. | Submersibles look, 2026-11-18; one look, 2026-11-24 |
 | T2 | Monospace is for figures only: counts, times, countdowns, prices, codes and routes. Never a label, a sentence, a button, a name or a section title. In a sentence with a number, the sentence is in the body face. Check: every visible piece of text in the data face holds a digit, and no label, button, select or heading uses it. | Monospace labels were named in the Lists rejection. | Submersibles look, 2026-11-18; Lists, 2026-11-23 (**new** as a check) |
 | T3 | Sizes: reading text 15 px, small text 13 px, nothing under 12 px except uppercase bold labels at 11 px. | Legibility on a phone. | Submersibles look, 2026-11-18 |
 | T4 | Instructions use the second ink; the faintest ink is for decoration and disabled things only. | The faintest ink fails contrast as reading text. | Submersibles look, 2026-11-18 |
-| T5 | Buttons are sentence case in the body face, bold. A primary may use the display face. | Shouting buttons crowd the answer. | Submersibles look, 2026-11-18 (as built in revision 2) |
+| T5 | Buttons are sentence case in the body face, bold. The screen's one main action is the seal: the accent fill with an inner frame and its word in Fraunces 900 italic, 64 px high (48 px on a phone). | Shouting buttons crowd the answer. | Submersibles look, 2026-11-18 (as built in revision 2); owner Q2, 2026-11-24 |
 | T6 | Ask only for shipped weights. The display face has one weight, 900. | A missing weight is faked by the browser and looks wrong. | Submersibles look, revision 4, 2026-11-19 (finding) |
 
 ## 7. Colour
@@ -128,7 +132,7 @@ Budgets P2 to P4 are **new** (2026-11-23). They answer "phone rows a screen tall
 | W4 | No generic or filler text; every sentence tells the player something they can use. | "I do not want generic or shallow text anywhere." | Tracker content round, November 2026 |
 | W5 | The app says what it does not do where it matters, once: "You type what you have. This app never reads the game." | The app never automates or reads the game, and says so. | Lists spec, 2026-11-22 |
 
-**58 rules:** family 5, composition 5, actions 7, forms 6, status 5, type 6, colour 8, density 8, empty states 3,
+**60 rules:** family 6, composition 6, actions 7, forms 6, status 5, type 6, colour 8, density 8, empty states 3,
 wording 5.
 
 ## 11. Anti-patterns, with the Lists screens as the worked example
@@ -183,7 +187,8 @@ Behaviour and look are planned, reviewed and checked separately. A module is not
    at rest (A2) and primaries per row (A1); row height at rest and opened (P2, P4); where the first row starts and how
    many rows are in view (P3); no monospace outside figures (T2, F4); the status line's form (S1); no configuring field
    at rest (F1); every colour a role (K1); contrast (K5); no sideways scroll (P1); tap sizes (A6). The module's evidence
-   block regenerates its screenshots on every run.
+   block regenerates its screenshots on every run. The drift check (M1, M6) injects one of every shared part into each
+   live page and measures the header and the parts at 1440 px and 360 px: they must compute the same on every page.
 6. **The bold test, by eye, on every regenerated picture** (from the Submersibles rounds): the largest thing is a
    number or a state word of 28 px or more; an inverted slab is in view; the heaviest line is 2 px or more and no
    hairline carries the layout; it does not read as a plain list, table or form. The builder writes one plain
