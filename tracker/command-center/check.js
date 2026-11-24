@@ -7720,9 +7720,9 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true }), memo = new Map();
         const px = (col) => { if (memo.has(col)) return memo.get(col); cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = col; cx.fillRect(0, 0, 1, 1); const d = cx.getImageData(0, 0, 1, 1).data, r = [d[0], d[1], d[2], d[3] / 255]; memo.set(col, r); return r; };
         const probe = (t) => { const i = document.createElement('i'); i.style.cssText = 'position:absolute;width:1px;height:1px;background:var(' + t + ')'; document.body.appendChild(i); const v = px(getComputedStyle(i).backgroundColor); i.remove(); return v; };
-        // the allowed tones: the theme's page, panel, text and accent tokens and the six roles' fills and texts
+        // the allowed tones: the theme's page, panel, text and accent tokens and every tone of the six roles in docs/lists-colour-roles.md (fill, edge, ink, wash; look v2 draws the edge on sub-heads and the wash under rows that can be done now)
         const toks = ['--paper', '--paper-2', '--paper-3', '--slip', '--ink', '--ink-2', '--ink-3', '--rule', '--seal', '--on-seal', '--ochre'], roles = ['craft', 'gather', 'merchant', 'market', 'ready', 'short'];
-        const allowed = toks.concat(roles.flatMap((r) => ['--lr-' + r + '-fill', '--lr-' + r + '-ink'])).map(probe);
+        const allowed = toks.concat(roles.flatMap((r) => ['--lr-' + r + '-fill', '--lr-' + r + '-edge', '--lr-' + r + '-ink', '--lr-' + r + '-wash'])).map(probe);
         const miss = new Map(); let n = 0;
         const hex = (r) => '#' + r.slice(0, 3).map((x) => x.toString(16).padStart(2, '0')).join('');
         const check = (col, what, el) => {
@@ -7795,7 +7795,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       void server; return l2Walks;
     };
     // ── C160 (Lists, W11) Every colour on a pictured screen is a role: on each of the nine screens at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the
-    //    theme's page, panel, text and accent tones or one of the six roles' fills and texts (craft, gather, merchant, market, ready, short); each role is drawn with its word. ──
+    //    theme's page, panel, text and accent tones or one of the four tones (fill, edge, ink, wash) of the six roles (craft, gather, merchant, market, ready, short) in docs/lists-colour-roles.md; each role is drawn with its word. ──
     await guard('C160', async () => {
       const w = await l2All();
       const ck = {};
@@ -7806,7 +7806,7 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
       ck.words = ['craft:Craft', 'gather:Gather', 'merchant:Merchant', 'market:Market', 'short:to get', 'ready:'].every((p) => words.some((x) => x.startsWith(p)));
       ck.sections = w.every((x) => ['vendor', 'gather', 'trade'].every((s) => x.sections.includes(s)));
       ck.noErrors = w.every((x) => x.errs.length === 0 && x.external.length === 0);
-      record('C160', 'Lists look: on the nine pictured screens (empty, lists, To get, To craft, Wanted, Order of ways, a list with Left over, combined view, from the crafting log) at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the theme\'s page, panel, text and accent tones or one of the six roles (craft, gather, merchant, market, ready, short), and each role is drawn with its word',
+      record('C160', 'Lists look: on the nine pictured screens (empty, lists, To get, To craft, Wanted, Order of ways, a list with Left over, combined view, from the crafting log) at 1,440 px light and 360 px dark, every opaque colour of text, fill, edge, outline and underline is one of the theme\'s page, panel, text and accent tones or a tone of one of the six roles (craft, gather, merchant, market, ready, short), and each role is drawn with its word',
         Object.values(ck).every(Boolean), { ck, audited: w.map((x) => x.audited), miss: w.map((x) => x.miss), sections: w.map((x) => x.sections), words: words.slice(0, 40), errors: w.map((x) => x.errs) });
     });
     // ── L2 Lists look evidence (not a behaviour check): the nine screens at 1,440 px light and 360 px dark, pictured as lists-<screen>-<desktop-light|phone-dark>.png (Chromium only). Asserts: no sideways page scroll on any

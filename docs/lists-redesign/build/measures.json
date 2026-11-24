@@ -23,7 +23,7 @@
    "rest": 56,
    "opened": 230
   },
-  "getGatherOpen": 236,
+  "getGatherOpen": 221,
   "craft": {
    "rows": 16,
    "maxH": 56,
@@ -123,7 +123,7 @@
    "rest": 72,
    "opened": 323
   },
-  "getGatherOpen": 365,
+  "getGatherOpen": 348,
   "craft": {
    "rows": 16,
    "maxH": 95,
