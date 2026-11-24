@@ -36,8 +36,8 @@ fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive:
   const atelier = fs.readFileSync(path.join(T, '..', 'crafting', 'atelier', 'src', 'atelier.js'), 'utf8');
   const a0 = atelier.indexOf('  // ── appearance (laid out like ChatGPT'), a1 = atelier.indexOf('  function renderHeader()');
   if (a0 < 0 || a1 < a0) throw new Error('Atelier appearance module not found');
-  const SOLUTION_NINE = "    ['electrope-skyline', \"Electrope Skyline\", ['#e3ebf7', '#0a1230', '#0a6c94', '#c2187a'], ['#070a20', '#e6f4ff', '#38dcff', '#ff4fb8']]";
-  const look = atelier.slice(a0, a1).replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION_NINE + '\n  ];\n  var ACCENTS');
+  const look = atelier.slice(a0, a1); // the Atelier's theme list is the one source, Electrope Skyline included
+  if ((look.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('expected 21 themes in the Atelier appearance module');
   fs.writeFileSync(path.join(OUT, 'look.js'), "// Built by command-center/build.js: the Tracker's appearance (the Atelier's module, as tools/build.js uses it), read\n" +
     "// from the Tracker's saved choice ('eveniunt-tracker-ui') so every page of the Command Center has the same theme.\n" +
     "(function () {\n  'use strict';\n  var PREF_KEY = 'eveniunt-tracker-ui';\n  function load() { try { return JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { return null; } }\n" +

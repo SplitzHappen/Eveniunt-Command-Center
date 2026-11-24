@@ -287,7 +287,9 @@ test('UI: guide opens inside the workbook; accent and custom hex/RGB colours app
   await page.click('[data-act=settings]');
   assert.equal(await page.locator('.mode-tile').count(), 3, 'Mode: System, Light, Dark');
   await page.click('[data-look=toggle][data-v="shared:theme"]');
-  assert.equal(await page.locator('[data-look=theme]').count(), 20, 'only the 20 FFXIV themes');
+  // 21 since Electrope Skyline joined the Atelier's list (the app offers the same 21 everywhere); stronger than before: it is also checked by id
+  assert.equal(await page.locator('[data-look=theme]').count(), 21, 'the 21 themes');
+  assert.equal(await page.locator('[data-look=theme][data-v=electrope-skyline]').count(), 1, 'Electrope Skyline is offered once');
   // every theme must visibly tint the page: no background within 24 levels of pure white (light) or pure black (dark)
   const bgs = await page.evaluate(() => [...document.querySelectorAll('[data-look=theme]')].map(b => b.dataset.v));
   for (const id of bgs) {
@@ -604,5 +606,11 @@ test('theme: choosing a theme in the Atelier\'s Appearance writes the app-wide c
   assert.equal(rec.look.shared.theme, 'azure-dragoon');
   assert.deepEqual(rec.ui, ui, 'the Tracker\'s own field is kept');
   assert.equal(rec.theme, 'light');
+  await ctx.close();
+});
+
+test('theme: Electrope Skyline dark paints the Atelier #070a20', async () => {
+  const { ctx, page } = await open({ stored: { [UI_KEY]: { theme: 'dark', look: sideOf('electrope-skyline') } } });
+  assert.equal(await paperOf(page), '#070a20');
   await ctx.close();
 });

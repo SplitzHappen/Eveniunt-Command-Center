@@ -159,3 +159,25 @@ test('the drift fixture holds one of each shared part and is not shipped', () =>
   assert.ok(!fs.existsSync(path.join(T, 'command-center', 'site', 'one-look-fixture.html')), 'the fixture is not copied into site/');
   assert.ok(!/[‘-”]|Tamsin|Joss|\/home\//.test(fx), 'plain words, no names or paths');
 });
+
+test('the theme list is defined once: look.js, the Atelier and the Tracker hold the same 21 ids, Electrope Skyline once', () => {
+  const ids = (t) => [...t.matchAll(/^\s+\['([a-z-]+)', "/gm)].map((m) => m[1]);
+  const a0 = (s) => s.indexOf('var THEMES = ['), cut = (s) => s.slice(a0(s), s.indexOf('];', a0(s)));
+  const atelier = ids(cut(read('crafting', 'atelier', 'src', 'atelier.js'))), look = ids(cut(read('tracker', 'command-center', 'site', 'look.js')));
+  assert.equal(atelier.length, 21);
+  assert.deepEqual(look, atelier, 'look.js has the Atelier\'s ids in the same order');
+  assert.equal(atelier.filter((x) => x === 'electrope-skyline').length, 1);
+  assert.deepEqual(ids(cut(read('tracker', 'dist', 'eveniunt-tracker.html'))), atelier, 'the Tracker too');
+  assert.equal((read('tracker', 'command-center', 'site', 'look.js').match(/electrope-skyline/g) || []).length, 1);
+  for (const f of ['tracker/tools/build.js', 'tracker/command-center/build.js']) assert.ok(!/SOLUTION_NINE/.test(read(...f.split('/'))), f + ' no longer inserts a theme');
+});
+
+test('no header holds two controls with the same visible name or accessible name', () => {
+  for (const [name, f] of Object.entries(PAGES)) {
+    const h = read(...f), hdr = h.slice(h.indexOf('<header class="ol-hdr'), h.indexOf('</header>'));
+    const labels = [...hdr.matchAll(/<(a|button)\b[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => { const al = /aria-label="([^"]*)"/.exec(m[0]); return (al ? al[1] : m[2].replace(/<[^>]+>/g, '')).trim().toLowerCase(); }).filter(Boolean);
+    const texts = [...hdr.matchAll(/<(a|button)\b[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => m[2].replace(/<[^>]+>/g, '').trim().toLowerCase()).filter(Boolean);
+    assert.equal(new Set(labels).size, labels.length, name + ': duplicate accessible name in ' + labels.join(' | '));
+    assert.equal(new Set(texts).size, texts.length, name + ': duplicate visible name in ' + texts.join(' | '));
+  }
+});

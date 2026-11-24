@@ -535,11 +535,11 @@ test('red team: a crafted backup loaded through the page runs no script and adds
   const file = path.join(T, 'dist', 'evil-backup.json');
   fs.writeFileSync(file, evil);
   try {
-    await page.click('text=Settings'); await page.click('[data-tab="data"]');
+    await page.click('text=Tracker settings'); await page.click('[data-tab="data"]');
     await page.setInputFiles('#load-file', file);
     await page.waitForFunction(() => window.__tracker.ST.chars[1].name === 'B');
     for (const v of ['levels', 'mounts']) { await go(page, v); await page.waitForSelector('.er'); }
-    await page.click('text=Settings'); await page.click('[data-tab="chars"]');
+    await page.click('text=Tracker settings'); await page.click('[data-tab="chars"]');
     await page.waitForTimeout(300);
     assert.equal(await page.evaluate(() => window.__pwned), undefined);
     assert.equal(await page.locator('img[src="x"]').count(), 0);
@@ -706,7 +706,7 @@ test('links: Settings fills in what existing ticks prove, with a preview and Und
     const k = [...t.IDX.byKey].find(([x, h]) => h.e.n === 'The Ultimate Weapon' && x.startsWith('quests-msq-'))[0];
     t.ST.ticks.c1[k] = 1; t.render(); return k;
   });
-  await page.click('text=Settings'); await page.click('[data-tab="count"]');
+  await page.click('text=Tracker settings'); await page.click('[data-tab="count"]');
   await page.click('#fill-links');
   await page.waitForSelector('#do-fill');
   assert.match(await page.textContent('#dlg'), /entries would be ticked/);

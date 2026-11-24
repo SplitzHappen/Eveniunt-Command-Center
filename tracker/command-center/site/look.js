@@ -13,9 +13,9 @@
   function clampInt(v, lo, hi, d) { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); }
   function copyText(text, msg) { try { navigator.clipboard.writeText(text).then(function () { toast(msg || 'Copied'); }); } catch (e) { toast('Copy failed'); } }
   // ── appearance (laid out like ChatGPT's Appearance settings) ──
-  // Mode: System / Light / Dark. Theme: the 20 FFXIV themes. Accent, Background and Foreground can be overridden (HEX or RGB).
+  // Mode: System / Light / Dark. Theme: the 21 themes. Accent, Background and Foreground can be overridden (HEX or RGB).
   // Advanced: UI and code font size, reduce motion, separate light and dark modes, contrast.
-  // The 20 FFXIV-inspired themes (owner choice, 2026-11-06). Each: light and dark [background, foreground, accent, progress].
+  // The 21 themes: 20 FFXIV-inspired (owner choice, 2026-11-06) and Electrope Skyline (owner request, 2026-11-08). Each: light and dark [background, foreground, accent, progress].
   var THEMES = [
     ['crystarium-dawnglass', "Crystarium Dawnglass", ['#d9e8f5', '#0d2133', '#b5476b', '#2f6fae'], ['#0f2234', '#e0eefb', '#ffadc4', '#9ad4ff']],
     ['ishgard-hoarfrost', "Ishgard Hoarfrost", ['#dbe2e9', '#1b2128', '#3d6c96', '#8a6a1f'], ['#1e2836', '#e6edf3', '#a9d3f5', '#e4c27a']],

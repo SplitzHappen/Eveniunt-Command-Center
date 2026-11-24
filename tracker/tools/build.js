@@ -33,13 +33,9 @@ const a0 = atelier.indexOf('  // ── appearance (laid out like ChatGPT');
 const a1 = atelier.indexOf('  function renderHeader()');
 if (a0 < 0 || a1 < a0) throw new Error('Atelier appearance module not found');
 const look = atelier.slice(a0, a1);
-if ((look.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 20) throw new Error('expected 20 themes in the Atelier appearance module');
-// The tracker's own extra theme (owner request, 2026-11-08): Electrope Skyline, after Solution Nine, Dawntrail's
-// electrope-lit city: neon blue leads (accent), neon pink follows (progress). Light and dark,
-// each [background, foreground, accent, progress]; contrast against the background: text 15.4 / 16.3, accent 5.1 / 6.4.
-const SOLUTION_NINE = "    ['electrope-skyline', \"Electrope Skyline\", ['#e3ebf7', '#0a1230', '#0a6c94', '#c2187a'], ['#070a20', '#e6f4ff', '#38dcff', '#ff4fb8']]";
-const lookPlus = look.replace(/\]\n  \];\n  var ACCENTS/, ']' + ',\n' + SOLUTION_NINE + '\n  ];\n  var ACCENTS');
-if (lookPlus === look || (lookPlus.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('could not add the Solution Nine theme');
+// 21 themes, Electrope Skyline included: the Atelier's theme list is the one source (the build no longer adds a theme)
+if ((look.match(/^\s+\['[a-z-]+', "/gm) || []).length !== 21) throw new Error('expected 21 themes in the Atelier appearance module');
+const lookPlus = look;
 
 const core = ['save', 'model', 'storage', 'codec', 'merge', 'ffxivcollect', 'cloud', 'importer', 'links'].map((f) => read(path.join(T, 'src', 'core', f + '.js'))).join('\n');
 const app = read(path.join(T, 'src', 'app', 'ui.js')).replace('/*{{LOOK}}*/', () => lookPlus).replace('/*{{LIVE}}*/', () => read(path.join(T, 'src', 'app', 'live.js')));

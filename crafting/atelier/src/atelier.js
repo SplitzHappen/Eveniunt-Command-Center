@@ -1363,9 +1363,9 @@
     document.body.classList.toggle('compact', S.layout === 'compact');
   }
   // ── appearance (laid out like ChatGPT's Appearance settings) ──
-  // Mode: System / Light / Dark. Theme: the 20 FFXIV themes. Accent, Background and Foreground can be overridden (HEX or RGB).
+  // Mode: System / Light / Dark. Theme: the 21 themes. Accent, Background and Foreground can be overridden (HEX or RGB).
   // Advanced: UI and code font size, reduce motion, separate light and dark modes, contrast.
-  // The 20 FFXIV-inspired themes (owner choice, 2026-11-06). Each: light and dark [background, foreground, accent, progress].
+  // The 21 themes: 20 FFXIV-inspired (owner choice, 2026-11-06) and Electrope Skyline (owner request, 2026-11-08). Each: light and dark [background, foreground, accent, progress].
   var THEMES = [
     ['crystarium-dawnglass', "Crystarium Dawnglass", ['#d9e8f5', '#0d2133', '#b5476b', '#2f6fae'], ['#0f2234', '#e0eefb', '#ffadc4', '#9ad4ff']],
     ['ishgard-hoarfrost', "Ishgard Hoarfrost", ['#dbe2e9', '#1b2128', '#3d6c96', '#8a6a1f'], ['#1e2836', '#e6edf3', '#a9d3f5', '#e4c27a']],
@@ -1386,7 +1386,8 @@
     ['sharlayan-lore', "Sharlayan Lore", ['#dfe1ea', '#181a26', '#7f5d0a', '#2d4f9e'], ['#181a26', '#e6e8f2', '#e2bd52', '#86b8ea']],
     ['radz-at-han-jewel', "Radz-at-Han Jewel", ['#f6dcd6', '#2d0f1f', '#0a7a76', '#8f5600'], ['#3a1624', '#fbe7f0', '#3fe0d6', '#ffc23d']],
     ['doman-sakura', "Doman Sakura", ['#f8dbe8', '#2b1424', '#c02d6c', '#3a4aa8'], ['#2b1626', '#f8e6ef', '#ff9cc6', '#8ea2ff']],
-    ['ultima-thule', "Ultima Thule", ['#dcdcef', '#0b0a1f', '#5a35d6', '#007f99'], ['#100c26', '#e9e8ff', '#b07cff', '#4fe3ff']]
+    ['ultima-thule', "Ultima Thule", ['#dcdcef', '#0b0a1f', '#5a35d6', '#007f99'], ['#100c26', '#e9e8ff', '#b07cff', '#4fe3ff']],
+    ['electrope-skyline', "Electrope Skyline", ['#e3ebf7', '#0a1230', '#0a6c94', '#c2187a'], ['#070a20', '#e6f4ff', '#38dcff', '#ff4fb8']]
   ];
   var ACCENTS = [['default', 'Default'], ['blue', 'Blue', '#0a6cff', '#4aa3ff'], ['green', 'Green', '#13864d', '#43c97f'], ['yellow', 'Yellow', '#a77b00', '#f2c94c'],
     ['pink', 'Pink', '#c8286f', '#ff6fae'], ['orange', 'Orange', '#c9531a', '#ff8a4c'], ['purple', 'Purple', '#7b4bd6', '#b18cff'], ['neutral', 'Black / White', '#111417', '#f0f0f0'], ['custom', 'Custom']];
