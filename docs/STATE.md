@@ -109,14 +109,20 @@ Last updated: 2026-11-23.
   master books (the book name, stars and a "book not ticked" warning on a craft row), crystals in their own section,
   gathering grouped by zone with the spot chosen along the route, vendors grouped by city, "Copy name", submarine and
   airship parts as project lists with one step per phase, and patch safety (a written refresh checklist, a unit test
-  that the game-data pins of Tracker, Atelier and Lists match, the data version on the list head, and item names in
-  sync questions). Measured at this commit: unit tests 616 of 616, browser tests 61 of 61, full check 195 of 195 (the real push delivery, C26b, cannot run from a session and was not run).
+  that the game-data pins of Tracker, Atelier and Lists match, and the data version on the list head). An outside
+  look and code review (ChatGPT and Mistral, sixth round, rulings in `docs/lists-code-review-adjudication.md`) was
+  fixed in F1: prices by quality, phone rows with the node kind and area, spearfishing node names, sub-heads with room
+  and unclipped focus rings (the hosted failure at `ec24562`), and the smaller wording and look items listed there,
+  each pinned by a check seen failing without its fix (new checks C190 to C195). Measured at `0913a3a`: unit tests 618
+  of 618, browser tests 9 of 9 groups, full check 201 of 201 (the real push delivery, C26b, cannot run from a session
+  and was not run).
   **Not tested:** Firefox, Safari, a real phone, a real two-device sync, the live price service (Universalis).
   **Known limits:** vendors that need reputation still say "buy"; the master-book warning reads the Tracker's ticks and
   not its "does not apply" mark; a project list's stamp ("Submarine part") is matched by the list's name; the phases
   of a project are numbered because the game gives them no names; sync questions shown in the Tracker name Lists items
   by number, because the Tracker does not load the Lists data (to be fixed after shipping); the window length of a
-  timed node keeps Teamcraft's minutes.
+  timed node keeps Teamcraft's minutes (labelled "Teamcraft" on the row); offers that differ only in a later currency
+  share one saved choice; job icons are single-colour game shapes.
 
 ## Next
 
