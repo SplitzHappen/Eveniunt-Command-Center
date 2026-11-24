@@ -1,9 +1,21 @@
 # Where the Command Center stands
 
-Last updated: 2026-11-23.
+Last updated: 2026-11-24.
 
 ## Recently shipped
 
+- **One look, step 2: the shared foundation** (shipped 2026-11-24, merged into `main` as `3f6c3fe`; this entry still read "waiting" until the Bourse plan noticed; pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
+  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
+  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
+  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
+  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
+  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
+  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
+  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
+  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
+  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
+  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
+  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone.
 - **Lists, the crafting planner (blueprint phase 3; shipped 2026-11-24, owner's `ship`; pull request 7, merge `df139ee`).** The crafting planner that was taken back on
   2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
   `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
@@ -129,20 +141,18 @@ Last updated: 2026-11-23.
 
 ## Built, waiting for the owner's `ship`
 
-- **One look, step 2: the shared foundation** (pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
-  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
-  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
-  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
-  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
-  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
-  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
-  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
-  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
-  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
-  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
-  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone.
+Nothing.
 
 ## Next
+
+0a. **The Bourse, the market module (blueprint phase 4; plan on pull request 10, branch `claude/loving-lamport-iy3cg1`).**
+   The owner was interviewed in five short rounds and named the module Bourse (`docs/bourse-questions.md`); research
+   `docs/bourse-research.md`; look spec `docs/bourse-look-spec.md` with mock-ups `docs/bourse/mock/` and 50 pictures in
+   four themes, comparison sheets beside the real app (`docs/bourse/pictures/sheet-*.png`); build spec
+   `docs/bourse-spec.md` (15 work items B0 to B14, checks C197 to C206), red-teamed (same-family) and fixed. No module
+   code. Next: the owner approves the look and answers the open questions in the spec's section 11, an outside review if
+   the owner wants one, then a builder starts with B0 and B1 (real Universalis replies saved as fixtures, which this
+   session could not reach).
 
 0. **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
