@@ -316,6 +316,18 @@ test('phone width: no sideways scroll on the overview, a long list or settings',
   await ctx.close();
 });
 
+test('phone width: the shared job switcher made of eight links fits 360 px with no sideways scroll', async () => {
+  const css = fs.readFileSync(path.join(T, 'src', 'app', 'one-look.css'), 'utf8');
+  const links = ['CRP', 'BSM', 'ARM', 'GSM', 'LTW', 'WVR', 'ALC', 'CUL'].map((j, i) => '<a href="#"' + (i === 0 ? ' aria-current="page"' : '') + '>' + j + '</a>').join('');
+  const ctx = await browser.newContext({ viewport: { width: 360, height: 800 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  await page.setContent('<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head><body><nav class="ol-seg ol-jobs">' + links + '</nav></body></html>');
+  const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, right: document.querySelector('.ol-jobs').getBoundingClientRect().right }));
+  assert.ok(m.sw <= 360, 'scrollWidth ' + m.sw);
+  assert.ok(m.right <= 360, 'nav right edge ' + m.right);
+  await ctx.close();
+});
+
 test('all 21 themes (the Atelier\'s 20 and Solution Nine), light and dark: readable text, readable dropdowns, distinct accent', async () => {
   const { ctx, page, errors } = await open({ n: 2 });
   await go(page, 'mounts');

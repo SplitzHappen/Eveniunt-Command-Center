@@ -217,5 +217,5 @@
   .ol-chap .ol-sum:has(> :nth-child(3)) { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; padding: 4px 0; }
   .ol-chap:has(.ol-sum > :nth-child(3)) { grid-template-columns: auto minmax(0, 1fr); }
   .ol-seg.ol-jobs { width: 100%; }
-  .ol-seg.ol-jobs > * { flex: 1 1 0; min-width: 0; padding: 0 1px; font-size: 13px; }
+  .ol-seg.ol-jobs > a, .ol-seg.ol-jobs > button { flex: 1 1 0; min-width: 0; padding: 0 1px; font-size: 13px; }
 }

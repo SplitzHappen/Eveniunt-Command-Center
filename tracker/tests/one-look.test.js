@@ -72,6 +72,28 @@ test('the shared parts are there', () => {
   assert.ok(!/data-heads|data-seal/.test(SRC), 'no caps variants');
 });
 
+test("at phone width the job switcher's items shrink whether they are links or buttons (the phone rule outranks the computer min-width)", () => {
+  const spec = (sel) => {
+    const ids = (sel.match(/#[\w-]+/g) || []).length;
+    const cls = (sel.match(/\.[\w-]+|\[[^\]]*\]|(?<!:):[\w-]+(?:\([^)]*\))?/g) || []).length;
+    const els = (sel.replace(/\[[^\]]*\]|[.#:][\w-]+(\([^)]*\))?/g, ' ').match(/[A-Za-z][\w-]*/g) || []).length;
+    return [ids, cls, els];
+  };
+  const cmp = (a, b) => { for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; };
+  const sels = (r) => r.sel.split(',').map((x) => x.trim()).filter((x) => /\.ol-seg\.ol-jobs/.test(x));
+  const sets = (r, re) => re.test(r.body);
+  for (const el of ['a', 'button']) {
+    const hits = (s) => new RegExp('(^|[\\s>])(' + el + '|\\*)$').test(s);
+    const computer = [];
+    for (const r of RULES) if (!r.media && sets(r, /min-width\s*:/)) for (const s of sels(r)) if (hits(s)) computer.push(spec(s));
+    const phone = [];
+    for (const r of RULES) if (/max-width:\s*700px/.test(r.media) && sets(r, /min-width\s*:\s*0\s*[;}]|min-width\s*:\s*0\s*$/)) for (const s of sels(r)) if (hits(s)) phone.push(spec(s));
+    assert.ok(phone.length, 'a phone min-width: 0 rule for ' + el);
+    const best = phone.sort(cmp).pop();
+    for (const c of computer) assert.ok(cmp(best, c) >= 0, el + ': phone rule [' + best + '] is outranked by computer rule [' + c + ']');
+  }
+});
+
 test('the built Tracker and Atelier hold the stylesheet; the Command Center ships it and its three pages link it', () => {
   for (const f of [['tracker', 'dist', 'eveniunt-tracker.html'], ['crafting', 'atelier', 'dist', 'eveniunt-atelier.html']]) assert.ok(read(...f).includes(SRC), f.join('/') + ' lacks the stylesheet text');
   assert.equal(read('tracker', 'command-center', 'site', 'one-look.css'), SRC, 'site/one-look.css equals the source');
