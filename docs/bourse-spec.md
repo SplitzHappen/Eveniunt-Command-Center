@@ -994,3 +994,9 @@ requester's and are not made here.
 **New defaults this round set, for the reviewers and the owner to see:** fewer than 3 sales in 7 days is not ranked;
 300 Bourse requests per rolling hour per device; 2,000 purchases per trip; a reply over 2 MB is refused; an alert
 round ends after 60 seconds; the removal-marks clean-up of option B at 90 days.
+
+**Round six (owner, 2026-11-25).** Questions 5 (a), 10 (a), 11 (b), 12 (a) and 13 (b) are answered and closed: D32's
+default (save version 2, older pages stop saving) is decided; B0 and B1 run before the second outside review; Lists
+gains the line "before the 5% buyer's tax"; one home world. The owner keeps the answer band's state blocks on the phone,
+accepting 3 resting rows on Item, Profit and Watch (rule P3's count), to be written into `docs/design-rules.md` with the
+first-row exception by the one-look rules pull request.

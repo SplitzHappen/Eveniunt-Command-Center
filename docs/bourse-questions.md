@@ -230,3 +230,12 @@ marked "default (not asked)"; the owner can change any of them.
 | Next step for the one look | **Rules, then module moves:** a pull request that writes look B into `docs/design-rules.md` (with the phone exception) and its checks; then one pull request per module (Lists, Atelier, Tracker, Home and Settings, Submersibles); the Bourse built last, straight into it. |
 | Outside review before building | **Yes:** ChatGPT and Mistral through the assignment bus; prompt in `docs/bourse-review-prompt.md`. |
 | Tax-rate fallback and ranking pace | The owner asked why tax rates would ever be unreadable (answered in the conversation: offline, the price site down or slowing the app, or a world nobody has reported lately). The 5% labelled fallback stays as a safety net; the ranking pace takes the recommended default (about 30 presses over a day). |
+
+## Sixth round (owner, 2026-11-25), after the round-one outside reviews
+
+| Question (`docs/bourse-spec.md` section 11) | Answer |
+| --- | --- |
+| 10. Old copies of the app | **(a) Old pages stop saving until reloaded** (the save becomes version 2; an older page refuses it with "Reload the page to update"). |
+| 13. Fact-finding before the second review | **(b) Run work items B0 and B1 first** (a read-only report and real price-site replies saved as test files); the second review then judges facts. The session's network was given the price site for this (a personal environment, "Eveniunt Command Center"). |
+| Phone rows with the answer band's blocks | **Keep the blocks, 3 resting rows** on Item, Profit and Watch on a phone; the house rule gets this exception written in with the one-look rules. |
+| 5, 11, 12 | **All three recommendations:** the standing sentences as written; Lists says "before the 5% buyer's tax" beside its prices; one home world for the whole Bourse, switched in settings. |
