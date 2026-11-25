@@ -1,4 +1,4 @@
-// Writes the Bourse mock-up pages (docs/bourse-look-spec.md) into docs/bourse/mock/: node docs/bourse/tools/make-mock.mjs
+// Writes the Bourse mock-up pages, look v2 (docs/bourse-look-spec.md) into docs/bourse/mock/: node docs/bourse/tools/make-mock.mjs
 // Static pages, no behaviour. They load the built site's own fonts.css, shared.css, one-look.css and look.js, so every theme
 // of the app applies; the layout is docs/bourse/mock/bourse-mock.css. Names are from the pinned game data (7.57h1); every
 // price, age and sales figure is an example, computed here once so the screens agree with each other.
@@ -48,193 +48,207 @@ const sb = (cls, b, i, w) => '<span class="ol-sb ' + cls + '"><b' + (w ? ' class
 const chap = (num, h, sub, sum, closed) => '<div class="ol-chap' + (closed ? ' ol-closed' : '') + '"><span class="ol-num">' + (closed ? '<svg class="ol-chev" viewBox="0 0 24 24" aria-hidden="true">' + ICONS.chev + '</svg> ' : '') + num + '</span><div><h2>' + h + '</h2><p class="ol-sub">' + sub + '</p></div><div class="ol-sum">' + sum + '</div></div>';
 const more = '<button class="ol-btn-2 bm-more" type="button" aria-label="More">' + icon('dots') + '</button>';
 
+// ------------------------------------------------------------------------------------------------- shared pieces of look v2
+const STATE = { buy: ['ol-r-back', 'Buy'], later: ['ol-r-out', 'Later'], old: ['ol-r-idle', 'Old'], done: ['ol-r-slab', 'Done'], none: ['ol-r-locked ol-hatch', 'None'] };
+const huge = (n, label) => '<div class="bm-huge"><b>' + n + '</b><small>' + label + '</small></div>';
+const slab = (kick, h1, sub, n, label, blocks) => '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">' + kick + '</span><h1>' + h1 + '</h1><span class="ol-sl-sub">' + sub + '</span></div>' + huge(n, label) + '<div class="ol-sl-ans ol-blocks">' + blocks + '</div></div>';
+function lane(o) { // o: { st: role classes, word, solid, thin, muted, name, hq, facts, mid, ans, ansSmall, act }
+  return '<div class="bm-lane ' + o.st + (o.solid ? ' bm-solid' : '') + (o.thin ? ' bm-thin' : '') + (o.muted ? ' bm-muted' : '') + '">' + sb(o.st + (o.outline ? ' ol-outline' : ''), o.word, o.wordSmall || '', o.isWord) +
+    '<div class="bm-who"><span class="bm-nm">' + esc(o.name) + (o.hq ? '<em>HQ</em>' : '') + '</span>' + (o.facts ? '<span class="bm-facts">' + o.facts + '</span>' : '') + '</div>' +
+    '<div class="bm-mid">' + (o.mid || '') + '</div><span class="bm-ans' + (o.ansWord ? ' bm-word' : '') + '">' + o.ans + (o.ansSmall ? '<small>' + o.ansSmall + '</small>' : '') + '</span>' +
+    (o.thin && !o.act && !o.more ? '' : '<div class="bm-acts">' + (o.act ? '<button class="ol-btn-p" type="button">' + o.act + '</button>' : '') + more + '</div>') + '</div>';
+}
+const lots = (parts) => '<span class="bm-lots" aria-hidden="true">' + parts.map((n) => '<i style="--n:' + n + '"></i>').join('') + '</span>';
+const figs = (t) => String(t).replace(/(\d[\d,.:]*)/g, (m) => fig(m));
+function bhead(title, sub, sum, strip) {
+  return '<div class="bm-bhead"><span class="bm-bhead-strip" aria-hidden="true">' + strip.map(([r, n]) => '<i class="' + r + '" style="--n:' + n + '"></i>').join('') + '</span>' +
+    '<div class="bm-bhead-bar"><div><h2>' + title + '</h2><p>' + sub + '</p></div><div class="bm-sum">' + sum + '</div></div></div>';
+}
+
 // ------------------------------------------------------------------------------------------------- the trip (example figures)
+// Travel area: seven data centers in three regions. Order: fewest region hops, then data centers, biggest savings first.
 const HOME = 'Gilgamesh';
-const TRIP = [
-  { dc: 'Primal', note: 'Data center 1 of 2 · the biggest savings', stops: [
-    { world: 'Exodus', items: [
-      { n: 'Sanctified Water', q: 6, p: 18900, home: 20400, facts: '4 at ' + gil(18900) + ' · 2 more at ' + gil(19000), seen: '14 min ago', st: 'buy', p2: 19000, q1: 4 },
-      { n: 'Glossy Dried Ether', q: 6, p: 9450, home: 11800, facts: '6 at ' + gil(9450), seen: '31 min ago', st: 'buy' },
-      { n: 'Windsbalm Bay Leaf', q: 3, p: 3850, home: 4900, facts: '3 at ' + gil(3850), seen: '1 h ago', st: 'buy' },
-      { n: 'Splendid Mate Leaves', q: 3, p: 3400, home: 4100, facts: '3 at ' + gil(3400), seen: '25 min ago', st: 'buy' },
-      { n: 'Dark Rye Flour', q: 3, p: 610, home: 840, facts: '3 at 610', seen: '25 min ago', st: 'buy' },
-      { n: 'Sungilt Aethersand', q: 6, p: 2180, home: 2650, facts: '6 at ' + gil(2180), seen: '31 min ago', st: 'done' }] },
-    { world: 'Famfrit', items: [
-      { n: 'Wind Parsley', q: 3, p: 3200, home: 4500, facts: '3 at ' + gil(3200), seen: '2 h ago', st: 'buy' },
-      { n: 'Pearl Grass', q: 3, p: 2950, home: 3600, facts: '3 at ' + gil(2950), seen: '2 days ago', st: 'old' }] }] },
-  { dc: 'Aether', note: 'Data center 2 of 2 · your home', stops: [
-    { world: 'Gilgamesh', home: true, items: [
-      { n: 'Water Cluster', q: 36, p: 410, home: 410, facts: '36 at ' + gil(410), seen: '9 min ago', st: 'buy' },
-      { n: 'Lightning Cluster', q: 36, p: 388, home: 388, facts: '20 at 380 · 16 more at 398', seen: '9 min ago', st: 'buy' }] },
-    { world: 'Siren', items: [
-      { n: 'Eucalyptus', q: 3, p: 4100, home: 5200, facts: '3 at ' + gil(4100), seen: '48 min ago', st: 'buy' }] }] },
+const STOPS = [
+  { world: 'Exodus', dc: 'Primal', region: 'North America', here: 1, items: [
+    { n: 'Sanctified Water', parts: [[4, 18900], [2, 19000]], seen: '14 min', st: 'buy' },
+    { n: 'Glossy Dried Ether', parts: [[6, 9450]], seen: '31 min', st: 'buy' },
+    { n: 'Windsbalm Bay Leaf', parts: [[3, 3850]], seen: '1 h', st: 'buy' },
+    { n: 'Splendid Mate Leaves', parts: [[1, 3400], [2, 3420]], seen: '25 min', st: 'buy' },
+    { n: 'Dark Rye Flour', parts: [[3, 610]], seen: '25 min', st: 'buy' },
+    { n: 'Sungilt Aethersand', parts: [[6, 2180]], seen: '31 min', st: 'done' }] },
+  { world: 'Famfrit', dc: 'Primal', region: 'North America', items: [
+    { n: 'Wind Parsley', parts: [[3, 3200]], seen: '2 h', st: 'later' },
+    { n: 'Pearl Grass', parts: [[3, 2950]], seen: '2 days', st: 'old' }] },
+  { world: 'Gilgamesh', dc: 'Aether', region: 'North America', home: 1, items: [
+    { n: 'Water Cluster', parts: [[36, 410]], seen: '9 min', st: 'later' },
+    { n: 'Lightning Cluster', parts: [[20, 380], [16, 398]], seen: '9 min', st: 'later' }] },
+  { world: 'Siren', dc: 'Aether', region: 'North America', items: [
+    { n: 'Eucalyptus', parts: [[3, 4100]], seen: '48 min', st: 'later' }] },
+  { world: 'Odin', dc: 'Light', region: 'Europe', opt: 1, save: 9300, items: [
+    { n: "Kozama'uka Chamomile", parts: [[3, 2900]], seen: '3 h', st: 'later' }] },
 ];
-let total = 0, saved = 0, toBuy = 0, done = 0, stops = 0;
-TRIP.forEach((d) => d.stops.forEach((s) => { stops++; s.items.forEach((x) => { const v = x.q1 ? x.q1 * x.p + (x.q - x.q1) * x.p2 : x.q * x.p; x.sum = v; total += v; saved += x.q * x.home - v; if (x.st === 'done') done++; else toBuy++; }); }));
-const NONE = [{ n: "Kozama'uka Chamomile", q: 3 }];
-
-function tripRow(x, here) { // the stop you are at: solid (buy now); later stops: outlined (waiting)
-  const b = x.st === 'done' ? sb('ol-done', 'Done', '', 1) : x.st === 'old' ? sb('ol-r-idle ol-outline', x.q, 'Old') : here ? sb('ol-r-market', x.q, 'To buy') : sb('ol-r-market ol-outline', x.q, 'Later');
-  const cls = x.st === 'buy' ? (here ? ' bm-solid ol-r-market' : ' ol-r-market') : x.st === 'old' ? ' ol-r-idle' : ' ol-r-back';
-  return '<div class="bm-row' + cls + '">' + b + '<div class="bm-who"><span class="bm-nm">' + esc(x.n) + '</span><span class="bm-facts">seen ' + x.seen + (x.st === 'old' ? ', older than your 1-day limit' : '') + ' · ' + x.facts.replace(/(\d[\d,]*)/g, (m) => fig(m)) + '</span></div>' +
-    '<div class="bm-mid"><span class="bm-lead" aria-hidden="true"></span></div><span class="bm-ans">' + gil(x.sum) + '<small>gil</small></span><div class="bm-acts">' + (x.st === 'done' ? '<a class="ol-btn-q" href="#">Undo</a>' : '<button class="ol-btn-2" type="button">Bought</button>') + more + '</div></div>';
+let total = 0, count = { buy: 0, later: 0, old: 0, done: 0 };
+STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + p[0] * p[1], 0); s.sum += x.sum; if (!s.opt) total += x.sum; count[x.st]++; }); });
+const nowStop = STOPS[0], toBuyHere = nowStop.items.filter((x) => x.st === 'buy');
+function tripLane(x, s) {
+  const [r, w] = STATE[x.st], partsTxt = x.parts.map((p) => fig(p[0]) + ' at ' + fig(gil(p[1]))).join(' + ');
+  return lane({ st: r, word: w, isWord: 1, solid: x.st === 'buy', muted: x.st === 'done', name: x.n, facts: 'seen ' + x.seen + ' ago' + (x.st === 'old' ? ', past your 1-day limit' : '') + ' · ' + partsTxt,
+    mid: lots(x.parts.map((p) => p[0])), ans: gil(x.sum), ansSmall: 'gil for ' + x.q, act: x.st === 'buy' ? 'Bought' : '' });
 }
-function tripBody(version) {
-  const ansA = '<div class="ol-sl-ans ol-blocks"><span class="ol-numeral bm-numgap">' + gil(total) + '<small>GIL TO SPEND</small></span>' + sb('ol-r-market', stops, 'Stops') + sb('ol-r-slab ol-outline', 2, 'Data-center hops') + '</div>';
-  const ansB = '<div class="ol-sl-ans ol-blocks"><span class="ol-numeral bm-numgap">' + gil(saved) + '<small>GIL SAVED AGAINST ' + HOME.toUpperCase() + '</small></span>' + sb('ol-r-slab ol-outline', gil(Math.round(total / 1000)) + 'k', 'To spend') + sb('ol-r-market', stops, 'Stops') + '</div>';
-  let out = '<div class="bm-layout">' + rail('trip', { trip: toBuy, watch: 3 }) + '<main class="bm-main">' +
-    '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">Shopping trip · Tamsin Reed</span><h1>Gemdraught batch</h1><span class="ol-sl-sub">From 2 lists · fewest stops, at most 10% more · all of North America</span><div class="ol-sl-links"><a href="#">Choose lists</a></div></div>' + (version === 'B' ? ansB : ansA) + '</div>' +
-    '<div class="bm-here">' + sb('ol-r-market', 'Stop 1', 'You are here', 1) + '<div><h2>Exodus <span style="font:italic 400 17px var(--f-serif);color:var(--ink-2)">Primal</span></h2><p>' + fig(TRIP[0].stops[0].items.filter((x) => x.st !== 'done').length) + ' to buy here for ' + fig(gil(TRIP[0].stops[0].items.filter((x) => x.st !== 'done').reduce((a, x) => a + x.sum, 0))) + ' gil · then Famfrit, then home to Aether</p></div><div class="bm-here-acts"><a class="ol-btn-q" href="#">Copy route</a><button class="ol-seal bm-desk" type="button">Bought all here</button></div></div>';
-  TRIP.forEach((d, di) => {
-    const dSum = d.stops.reduce((a, s) => a + s.items.reduce((b, x) => b + x.sum, 0), 0);
-    out += '<section class="ol-chap-wrap">' + chap(['I', 'II'][di], d.dc, d.note, sb('ol-r-market ol-sm', d.stops.length, 'Stops') + '<span class="ol-fig">' + gil(dSum) + ' gil</span>') + '<div class="bm-ledger">';
-    d.stops.forEach((s) => {
-      const sSum = s.items.reduce((b, x) => b + x.sum, 0);
-      out += '<div class="ol-subgroup' + (s.world === 'Exodus' ? ' bm-now' : '') + '"><span><b>' + s.world + '</b>' + (s.home ? ' · home world' : '') + (s.world === 'Exodus' ? ' <span class="ol-lbl bm-here-tag">You are here</span>' : '') + '</span><span class="ol-fig">' + s.items.length + ' items · ' + gil(sSum) + ' gil</span></div>' + s.items.map((x) => tripRow(x, s.world === 'Exodus')).join('');
-    });
-    out += '</div></section>';
+function route() {
+  let out = '<div class="bm-track"><div class="bm-track-line">';
+  STOPS.forEach((s, i) => {
+    if (s.opt) out += '<div class="bm-hop"><em>Europe</em></div>';
+    out += '<div class="bm-stop' + (s.here ? ' ol-r-back' : s.opt ? ' bm-opt' : ' ol-r-out') + '"><i>' + (i + 1) + '</i><b>' + s.world + (s.here ? ' · here' : s.home ? ' · home' : s.opt ? ' · if you go' : '') + '</b></div>';
   });
-  out += '<section class="ol-chap-wrap">' + chap('III', 'Not on the market now', 'No listing of the quality you need in North America', sb('ol-r-locked ol-hatch ol-sm', NONE.length, 'None'), true) +
-    chap('IV', 'Bought', 'Ticked on this trip', sb('ol-done ol-sm', done, 'Done'), true) + '</section>' +
-    '<p class="bm-hint">You can buy on another data center but not sell there. Travel stops 30 minutes before maintenance.</p></main></div>';
-  return out;
+  return out + '</div></div>';
 }
-page('trip.html', 'Shopping trip', tripBody('A'), { seal: 'Bought all here' });
-page('trip-saved.html', 'Shopping trip, savings first', tripBody('B'), { seal: 'Bought all here' });
+function stopHead(s, i, heads) {
+  const items = s.items.length, buyN = s.items.filter((x) => x.st === 'buy').length;
+  const title = s.opt ? 'Only if you go to Europe' : s.world;
+  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · ' + s.world + ', saves ' + gil(s.save) + ' gil, 1 region hop' : '');
+  const strip = s.items.map((x) => [STATE[x.st][0], 1]);
+  if (heads === 'bars') return bhead(s.opt ? 'If you go: ' + s.world : 'Stop ' + (i + 1) + ' · ' + s.world, s.dc + ' · ' + s.region + (s.home ? ' · home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · saves ' + gil(s.save) + ' gil' : ''), fig(gil(s.sum)) + '<small>GIL · ' + items + ' ITEMS</small>', strip);
+  const num = ['I', 'II', 'III', 'IV', 'V'][i];
+  return chap(num, title, sub, s.here ? sb('ol-r-back ol-sm', buyN, 'Buy here') : sb((s.opt ? 'ol-r-out ol-outline' : 'ol-r-out') + ' ol-sm', items, s.opt ? 'If you go' : 'Later'));
+}
+function tripBody(heads) {
+  let out = '<div class="bm-layout">' + rail('trip', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
+    slab('Total to spend:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here for ' + fig(gil(toBuyHere.reduce((a, x) => a + x.sum, 0))) + ' gil · ' + (STOPS.length - 1) + ' stops, 2 data-center hops · fewest stops within 10%', gil(total), 'gil · Tamsin Reed',
+      sb('ol-r-back', count.buy, 'Buy here') + sb('ol-r-out', count.later, 'Later') + sb('ol-r-idle', count.old, 'Old') + sb('ol-r-slab ol-outline', count.done, 'Done')) +
+    '<div class="bm-routebar">' + route() + '<button class="ol-seal bm-desk" type="button">Bought all here</button></div>';
+  STOPS.forEach((s, i) => { out += '<section class="ol-chap-wrap">' + stopHead(s, i, heads) + '<div class="bm-lanes">' + s.items.map((x) => tripLane(x, s)).join('') + '</div></section>'; });
+  return out + '<p class="bm-hint">You can buy on another data center or region, but not sell there. Travel stops 30 minutes before maintenance.</p></main></div>';
+}
+page('trip.html', 'Shopping trip', tripBody('book'), { seal: 'Bought all here' });
+page('trip-bars.html', 'Shopping trip, dark bars', tripBody('bars'), { seal: 'Bought all here' });
 
-// ------------------------------------------------------------------------------------------------- the item: a price ladder
-function rnd(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
+// ------------------------------------------------------------------------------------------------- the item: cheapest anywhere
+function rnd(seed) { let x = seed; return () => { x = (x * 16807) % 2147483647; return x / 2147483647; }; }
 const R = rnd(42);
-const DCS = [['Aether', ['Adamantoise', 'Cactuar', 'Faerie', 'Gilgamesh', 'Jenova', 'Midgardsormr', 'Sargatanas', 'Siren']], ['Primal', ['Behemoth', 'Excalibur', 'Exodus', 'Famfrit', 'Hyperion', 'Lamia', 'Leviathan', 'Ultros']],
-  ['Crystal', ['Balmung', 'Brynhildr', 'Coeurl', 'Diabolos', 'Goblin', 'Malboro', 'Mateus', 'Zalera']], ['Dynamis', ['Cuchulainn', 'Golem', 'Halicarnassus', 'Kraken', 'Maduin', 'Marilith', 'Rafflesia', 'Seraph']]];
-const AGES = ['9m', '14m', '22m', '40m', '1h', '2h', '3h', '5h', '9h', '20h', '2d'];
-const ladder = DCS.map(([dc, ws]) => [dc, ws.map((w) => {
-  if (w === 'Exodus') return { w, p: 18900, age: '14m' };
-  if (w === 'Gilgamesh') return { w, p: 20400, age: '9m', home: 1 };
-  if (w === 'Lamia' || w === 'Golem' || w === 'Zalera') return { w, p: null, age: '' };
-  return { w, p: 19100 + Math.round(R() * 60) * 50, age: AGES[Math.floor(R() * AGES.length)] };
-}).sort((a, b) => (a.p == null) - (b.p == null) || a.p - b.p)]);
-const listed = ladder.reduce((a, [, ws]) => a + ws.filter((x) => x.p != null).length, 0);
-function ixLine(x) {
-  const old = /d$/.test(x.age) || /^2\dh$/.test(x.age);
-  return '<a class="ol-ix' + (x.w === 'Exodus' ? ' ol-on' : '') + '" href="#"><span class="ol-tag">' + (x.home ? 'Home' : '') + '</span><span class="ol-name">' + x.w + '</span><span class="ol-lead"></span>' +
-    (x.p == null ? '<span class="ol-val ol-txt">none</span>' : '<span class="ol-val">' + gil(x.p) + '</span><span class="ol-val ol-txt">' + (old ? 'old · ' : '') + x.age + '</span>') + '</a>';
-}
+const AREA = [['North America', [['Aether', ['Adamantoise', 'Cactuar', 'Faerie', 'Gilgamesh', 'Jenova', 'Midgardsormr', 'Sargatanas', 'Siren']], ['Primal', ['Behemoth', 'Excalibur', 'Exodus', 'Famfrit', 'Hyperion', 'Lamia', 'Leviathan', 'Ultros']],
+  ['Crystal', ['Balmung', 'Brynhildr', 'Coeurl', 'Diabolos', 'Goblin', 'Malboro', 'Mateus', 'Zalera']], ['Dynamis', ['Cuchulainn', 'Golem', 'Halicarnassus', 'Kraken', 'Maduin', 'Marilith', 'Rafflesia', 'Seraph']]]],
+  ['Europe', [['Chaos', ['Cerberus', 'Louisoix', 'Moogle', 'Omega', 'Phantom', 'Ragnarok', 'Sagittarius', 'Spriggan']], ['Light', ['Alpha', 'Lich', 'Odin', 'Phoenix', 'Raiden', 'Shiva', 'Twintania', 'Zodiark']]]],
+  ['Oceania', [['Materia', ['Bismarck', 'Ravana', 'Sephirot', 'Sophia', 'Zurvan']]]]];
+const AGES = ['9 min', '14 min', '22 min', '40 min', '1 h', '2 h', '3 h', '5 h', '9 h', '20 h', '2 days'];
+const worlds = [];
+AREA.forEach(([region, dcs]) => dcs.forEach(([dc, ws]) => ws.forEach((w) => {
+  let p = 19100 + Math.round(R() * 60) * 50, age = AGES[Math.floor(R() * AGES.length)];
+  if (w === 'Exodus') { p = 18900; age = '14 min'; } if (w === 'Gilgamesh') { p = 20400; age = '9 min'; }
+  if (['Lamia', 'Golem', 'Zalera', 'Phantom', 'Ravana', 'Zurvan'].includes(w)) p = null;
+  if (region !== 'North America' && p) p += 150;
+  worlds.push({ w, dc, region, p, age, home: w === HOME });
+})));
+const listed = worlds.filter((x) => x.p != null), old = listed.filter((x) => /day|20 h/.test(x.age)), cheap = listed.slice().sort((a, b) => a.p - b.p).slice(0, 8);
+const lo = cheap[0].p, hi = Math.max(...listed.map((x) => x.p));
+const scaleAt = (p) => Math.round(((p - lo) / (hi - lo)) * 92 + 4);
 const sales = []; for (let d = 0; d < 7; d++) { const n = 4 + Math.floor(R() * 5); for (let k = 0; k < n; k++) sales.push({ d: d + R(), p: 18200 + Math.round(R() * 46) * 50 }); }
-const sp = sales.map((s) => s.p).sort((a, b) => a - b), median = sp[Math.floor(sp.length / 2)], low = sp[0], high = sp[sp.length - 1], perDay = (sales.length / 7).toFixed(1);
+const sp = sales.map((x) => x.p).sort((a, b) => a - b), median = sp[Math.floor(sp.length / 2)], perDay = (sales.length / 7).toFixed(1);
 function strip() {
-  const W = 720, H = 150, x0 = 56, x1 = W - 8, y0 = 12, y1 = H - 28, lo = 18000, hi = 20600;
-  const X = (d) => x0 + (d / 7) * (x1 - x0), Y = (p) => y1 - ((p - lo) / (hi - lo)) * (y1 - y0);
-  let s = '<svg class="bm-strip" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + sales.length + ' sales over 7 days, middle price ' + gil(median) + ' gil (example)">';
-  [18000, 19000, 20000].forEach((p) => { s += '<line class="ax" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(p) + '" y2="' + Y(p) + '"/><text x="0" y="' + (Y(p) + 4) + '">' + gil(p) + '</text>'; });
-  s += '<line class="mid" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(median) + '" y2="' + Y(median) + '"/><text class="lb" x="' + (x1 - 64) + '" y="' + (Y(median) - 6) + '">MIDDLE</text>';
-  sales.forEach((v) => { s += '<circle class="dot" cx="' + X(v.d).toFixed(1) + '" cy="' + Y(v.p).toFixed(1) + '" r="4.5"/>'; });
-  ['7 days ago', '', '', '', '', '', 'today'].forEach((t, i) => { if (t) s += '<text class="lb" x="' + (i ? x1 - 40 : x0) + '" y="' + (H - 6) + '">' + t.toUpperCase() + '</text>'; });
-  return s + '</svg>';
+  const W = 640, H = 150, x0 = 56, x1 = W - 8, y0 = 12, y1 = H - 28, l = 18000, h = 20600, X = (d) => x0 + (d / 7) * (x1 - x0), Y = (p) => y1 - ((p - l) / (h - l)) * (y1 - y0);
+  let o = '<svg class="bm-strip ol-r-out" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + sales.length + ' sales over 7 days, middle ' + gil(median) + ' gil (example)">';
+  [18000, 19000, 20000].forEach((p) => { o += '<line class="ax" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(p) + '" y2="' + Y(p) + '"/><text x="0" y="' + (Y(p) + 4) + '">' + gil(p) + '</text>'; });
+  o += '<line class="mid" x1="' + x0 + '" x2="' + x1 + '" y1="' + Y(median) + '" y2="' + Y(median) + '"/><text class="lb" x="' + (x1 - 64) + '" y="' + (Y(median) - 7) + '">MIDDLE</text>';
+  sales.forEach((v) => { o += '<circle class="dot" cx="' + X(v.d).toFixed(1) + '" cy="' + Y(v.p).toFixed(1) + '" r="5"/>'; });
+  o += '<text class="lb" x="' + x0 + '" y="' + (H - 6) + '">7 DAYS AGO</text><text class="lb" x="' + (x1 - 44) + '" y="' + (H - 6) + '">TODAY</text>';
+  return o + '</svg>';
 }
-const half = (i) => '<div class="' + (i ? 'bm-col2' : '') + '">' + ladder.slice(i * 2, i * 2 + 2).map(([dc, ws]) => '<div class="ol-subgroup"><span>' + dc + '</span><span class="ol-fig">' + ws.filter((x) => x.p != null).length + ' of 8</span></div><div class="ol-ix-list">' + ws.map(ixLine).join('') + '</div>').join('') + '</div>';
+const regionHead = (num, region) => { const ws = worlds.filter((x) => x.region === region), n = ws.filter((x) => x.p != null).length; return chap(num, region, ws.length + ' worlds on ' + AREA.find((a) => a[0] === region)[1].map((d) => d[0]).join(', '), sb((n === ws.length ? 'ol-r-back' : 'ol-r-idle') + ' ol-sm', n + '/' + ws.length, 'Listed'), true); };
 page('item.html', 'Item prices',
-  '<div class="bm-layout">' + rail('item', { trip: toBuy, watch: 3 }) + '<main class="bm-main">' +
-  '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">Item · for 6 units</span><h1>Sanctified Water</h1><span class="ol-sl-sub">Listings and sales on every world of North America, normal quality</span><div class="ol-sl-links"><a href="#">Copy name</a><a href="#">Add to a list</a></div></div>' +
-  '<div class="ol-sl-ans ol-blocks"><span class="ol-numeral bm-numgap">' + gil(18900) + '<small>GIL EACH FOR 6 · CHEAPEST ON EXODUS, PRIMAL</small></span>' + sb('ol-r-back', '14 min', 'Seen', 1) + sb('ol-r-slab ol-outline', perDay, 'Sold a day') + '</div></div>' +
+  '<div class="bm-layout">' + rail('item', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
+  slab('Cheapest, each for 6:', 'Sanctified Water', 'on Exodus · Primal · North America · seen 14 min ago', gil(18900), 'gil each · normal quality',
+    sb('ol-r-back', listed.length, 'Worlds listed') + sb('ol-r-idle', old.length, 'Old') + sb('ol-r-locked ol-hatch', worlds.length - listed.length, 'None')) +
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal quality</button><button type="button" aria-pressed="false">High quality</button></div><button class="ol-seal bm-desk" type="button">Watch this item</button></div>' +
-  '<div class="bm-two"><section class="ol-chap-wrap">' + chap('I', 'Cheapest on each world', 'Listings now, cheapest first', sb('ol-r-back ol-sm', listed, 'of 32 listed')) + '<div class="bm-ladder">' + half(0) + half(1) + '</div></section>' +
-  '<section class="ol-chap-wrap">' + chap('II', 'Recent sales', 'What actually sold, last 7 days', '<span class="ol-fig">' + sales.length + ' sales</span>') +
-  '<div class="bm-figs">' + sb('ol-r-slab ol-outline', gil(low), 'Low') + sb('ol-r-back', gil(median), 'Middle') + sb('ol-r-slab ol-outline', gil(high), 'High') + '</div>' + strip() +
-  '<p class="bm-hint">Each dot is one sale on any world of the region. The line is the middle price. Older than 7 days: open "30 days".</p>' +
-  chap('III', 'Made from, used in', 'Lists and the Atelier', '<span class="ol-fig">4 recipes</span>', true) + '</section></div></main></div>',
+  '<div class="bm-two"><div class="ol-chap-wrap">' + chap('I', 'Cheapest anywhere', 'Seven data centers, cheapest first', sb('ol-r-back ol-sm', 8, 'Shown')) + '<div class="bm-lanes">' +
+  cheap.map((x, i) => lane({ st: i === 0 ? 'ol-r-back' : 'ol-r-slab', outline: i > 0, word: i + 1, thin: 1, solid: i === 0, name: x.w + (x.home ? ' · home' : ''), facts: x.dc + ' · ' + x.region + ' · seen ' + x.age + ' ago',
+    mid: '<span class="bm-scale ' + (i === 0 ? 'ol-r-back' : 'ol-r-out') + '" aria-hidden="true"><span class="bm-dot" style="left:' + scaleAt(x.p) + '%"></span></span>', ans: gil(x.p) })).join('') + '</div>' +
+  regionHead('II', 'North America') + regionHead('III', 'Europe') + regionHead('IV', 'Oceania') + '</div>' +
+  '<div class="ol-chap-wrap">' + chap('V', 'Recent sales', 'What actually sold, 7 days, all seven data centers', sb('ol-r-out ol-sm', perDay, 'A day')) +
+  '<div class="bm-figs">' + sb('ol-r-slab ol-outline', gil(sp[0]), 'Low') + sb('ol-r-out', gil(median), 'Middle') + sb('ol-r-slab ol-outline', gil(sp[sp.length - 1]), 'High') + '</div>' + strip() +
+  '<p class="bm-hint">Each dot is one sale. The thick line is the middle price.</p></div></div></main></div>',
   { seal: 'Watch this item', tools: '<label class="ol-fld ol-w320"><span class="ol-lbl">Find an item</span><input type="search" value="Sanctified Water"></label>' });
 
 // ------------------------------------------------------------------------------------------------- profit: a leaderboard
 const PROFIT = [
-  ['Mate Cookie', 'CUL', 100, 1, 38240, 41, 12060, 2], ['Ceviche', 'CUL', 100, 1, 31580, 28, 14900, 1], ['Grade 2 Gemdraught of Strength', 'ALC', 100, 1, 27920, 64, 34110, 0],
-  ['Grade 2 Gemdraught of Dexterity', 'ALC', 100, 1, 26300, 52, 34390, 0], ['Grade 2 Gemdraught of Mind', 'ALC', 100, 1, 24750, 47, 33640, 0], ['Grade 2 Gemdraught of Intelligence', 'ALC', 100, 1, 23900, 39, 33980, 0, 'old'],
-  ['Rroneek Steak', 'CUL', 99, 1, 18640, 22, 7310, 1], ["Ra'Kaznar Ingot", 'BSM', 98, 0, 9120, 85, 11480, 5], ['Claro Walnut Lumber', 'CRP', 98, 0, 6230, 70, 9050, 5, 'cant'],
+  ['Mate Cookie', 'CUL', 100, 1, 38240, 41, 12060], ['Ceviche', 'CUL', 100, 1, 31580, 28, 14900], ['Grade 2 Gemdraught of Strength', 'ALC', 100, 1, 27920, 64, 34110],
+  ['Grade 2 Gemdraught of Dexterity', 'ALC', 100, 1, 26300, 52, 34390], ['Grade 2 Gemdraught of Mind', 'ALC', 100, 1, 24750, 47, 33640], ['Grade 2 Gemdraught of Intelligence', 'ALC', 100, 1, 23900, 39, 33980, 'old'],
+  ['Rroneek Steak', 'CUL', 99, 1, 18640, 22, 7310], ["Ra'Kaznar Ingot", 'BSM', 98, 0, 9120, 85, 11480], ['Claro Walnut Lumber', 'CRP', 98, 0, 6230, 70, 9050, 'cant'],
 ];
-const SLOW = [['Grade 2 Gemdraught of Vitality', 'ALC', 100, 1, 21400, 0.6, 33700, 0]];
 const top = PROFIT[0][4];
-function profitRow(r, i, slow) {
-  const [n, job, lv, hq, g, per, cost, gath, flag] = r;
-  const b = flag === 'old' ? sb('ol-r-idle ol-outline', 'Old', '', 1) : flag === 'cant' ? sb('ol-r-locked ol-hatch', i + 1, '') : sb('bm-r-gil', i + 1, '');
-  const facts = job + ' · Lv. ' + fig(lv) + ' · sells ' + fig(per) + ' a day · materials ' + fig(gil(cost)) + (gath ? ' (' + fig(gath) + ' gathered, at market value)' : '') + (flag === 'cant' ? ' · you can\'t make this yet' : flag === 'old' ? ' · sale price 2 days old' : '');
-  return '<div class="bm-row bm-barrow' + (i === 0 && !slow ? ' bm-solid bm-r-gil' : '') + '">' + b + '<div class="bm-who"><span class="bm-nm">' + esc(n) + (hq ? '<em>HQ</em>' : '') + '</span><span class="bm-facts">' + facts + '</span></div>' +
-    '<div class="bm-mid"><span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span></div><span class="bm-ans bm-big">' + gil(g) + '</span><div class="bm-acts"><button class="ol-btn-2" type="button">Solve</button>' + more + '</div></div>';
-}
 const TAX = [['Ishgard', 3], ['Old Sharlayan', 3], ['Kugane', 5], ['The Crystarium', 5], ['Tuliyollal', 5], ['Limsa Lominsa', 5], ['Gridania', 5], ["Ul'dah", 5]];
 page('profit.html', 'Profit per craft',
-  '<div class="bm-layout">' + rail('profit', { trip: toBuy, watch: 3 }) + '<main class="bm-main">' +
-  '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">Profit per craft · an estimate</span><h1>Best crafts to sell</h1><span class="ol-sl-sub">All recipes · sold on Gilgamesh, tax 3% (Ishgard, lowest this week) · materials at the cheapest of merchant and market</span><div class="ol-sl-links"><a href="#">Filter: all jobs, all levels</a></div></div>' +
-  '<div class="ol-sl-ans ol-blocks"><span class="ol-numeral bm-numgap">' + gil(top) + '<small>GIL PER CRAFT · MATE COOKIE HQ</small></span>' + sb('ol-r-locked ol-hatch', gil(8644), 'To price') + '</div></div>' +
-  '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">Ranked by recent sales</button><button type="button" aria-pressed="false">By cheapest listing</button></div><button class="ol-seal bm-desk" type="button">Rank these crafts</button></div>' +
-  '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after tax, on one scale', '<span class="ol-fig">' + gil(1212) + ' of ' + gil(9856) + '</span>') + '<div class="bm-ledger">' + PROFIT.map((r, i) => profitRow(r, i)).join('') +
-  '<div class="ol-subgroup"><span>Sells less than once a day</span><span class="ol-fig">' + SLOW.length + '</span></div>' + SLOW.map((r, i) => profitRow(r, PROFIT.length + i, 1)).join('') + '</div></section>' +
-  '<section class="ol-chap-wrap">' + chap('II', 'Where to sell this week', 'Tax on Gilgamesh by city, read 3 hours ago', sb('ol-r-back ol-sm', '3%', 'Lowest')) +
-  '<div class="ol-ix-list" style="max-width:640px">' + TAX.map(([c, t], i) => '<a class="ol-ix' + (i === 0 ? ' ol-on' : '') + '" href="#"><span class="ol-tag">' + (i === 0 ? 'Used' : '') + '</span><span class="ol-name">' + c + '</span><span class="ol-lead"></span><span class="ol-val">' + t + '%</span></a>').join('') + '</div>' +
-  '<p class="bm-hint">Profit uses the lowest rate. Your retainers sell where you placed them; moving them is done in the game.</p></section></main></div>', { seal: 'Rank these crafts' });
+  '<div class="bm-layout">' + rail('profit', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
+  slab('Best gil per craft:', 'Mate Cookie <span style="font-style:italic">HQ</span>', 'An estimate after tax · sale prices from all seven data centers · materials at the cheapest of merchant and market', gil(top), 'gil each · by recent sales', sb('ol-r-back', gil(1212), 'Ranked') + sb('ol-r-locked ol-hatch', gil(8644), 'To price')) +
+  '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">By recent sales</button><button type="button" aria-pressed="false">By cheapest listing</button></div><button class="ol-seal bm-desk" type="button">Rank these crafts</button></div>' +
+  '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after tax, on one scale', sb('ol-r-back ol-sm', gil(1212), 'of ' + gil(9856))) + '<div class="bm-lanes">' +
+  PROFIT.map((r, i) => { const [n, job, lv, hq, g, per, cost, flag] = r; return lane({ st: flag === 'old' ? 'ol-r-idle' : flag === 'cant' ? 'ol-r-locked ol-hatch' : i === 0 ? 'ol-r-seal' : 'ol-r-slab', word: flag === 'old' ? 'Old' : i + 1, isWord: flag === 'old', solid: i === 0,
+    name: n, hq, facts: job + ' · Lv. ' + fig(lv) + ' · sells ' + fig(per) + ' a day · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · you can\'t make this yet' : flag === 'old' ? ' · sale price 2 days old' : ''),
+    mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'gil each' }); }).join('') + '</div>' +
+  chap('II', 'Sells less than once a day', 'Ranked the same way, kept apart', sb('ol-r-idle ol-sm', 1, 'Slow'), true) + '</section>' +
+  '<section class="ol-chap-wrap">' + chap('III', 'Where to sell this week', 'Seller\'s tax by city on Gilgamesh, read 3 hours ago; buyers pay their own 5%', sb('ol-r-back ol-sm', '3%', 'Lowest')) + '<div class="bm-lanes">' +
+  TAX.map(([c, t], i) => lane({ st: t === 3 ? 'ol-r-back' : 'ol-r-slab', outline: t !== 3, solid: i === 0, thin: 1, word: t + '%', name: c, facts: i === 0 ? 'Used for profit' : t === 3 ? 'Also reduced this week' : 'Full rate', mid: '', ans: '' })).join('') + '</div></section></main></div>',
+  { seal: 'Rank these crafts' });
 
 // ------------------------------------------------------------------------------------------------- watch list
 const BELOW = [['Sanctified Water', 15000, 12400, 'Famfrit', '22 min'], ['Glossy Dried Ether', 10000, 9450, 'Exodus', '31 min'], ['Water Cluster', 450, 410, 'Gilgamesh', '9 min']];
-const ABOVE = [["Ra'Kaznar Ore", 600, 2500, 'Balmung', '1 h'], ['Claro Walnut Log', 900, 1260, 'Siren', '40 min'], ['Turali Corn Oil', 1500, 1980, 'Cactuar', '3 h'], ['Dark Rye Flour', 700, 840, 'Kraken', '5 h'], ['Splendid Mate Leaves', 3000, 4100, 'Ultros', '9 h']];
-const wRow = (r, below) => '<div class="bm-row' + (below ? ' bm-solid ol-r-back' : ' ol-r-idle') + '">' + (below ? sb('ol-r-back', 'Under', '', 1) : sb('ol-r-idle ol-outline', 'Above', '', 1)) +
-  '<div class="bm-who"><span class="bm-nm">' + esc(r[0]) + '</span><span class="bm-facts">seen ' + r[4] + ' ago · target ' + fig(gil(r[1])) + ' · cheapest ' + fig(gil(r[2])) + ' on ' + r[3] + '</span></div><div class="bm-mid"><span class="bm-lead" aria-hidden="true"></span></div>' +
-  '<span class="bm-ans">' + gil(Math.abs(r[1] - r[2])) + '<small>gil ' + (below ? 'under' : 'over') + '</small></span><div class="bm-acts">' + (below ? '<button class="ol-btn-2" type="button">Add to trip</button>' : '') + more + '</div></div>';
+const ABOVE = [["Ra'Kaznar Ore", 600, 2500, 'Balmung', '1 h'], ['Claro Walnut Log', 900, 1260, 'Siren', '40 min'], ['Turali Corn Oil', 1500, 1980, 'Cactuar', '3 h'], ['Dark Rye Flour', 700, 840, 'Odin', '5 h'], ['Splendid Mate Leaves', 3000, 4100, 'Ultros', '9 h']];
+const wLane = (r, under) => { const max = Math.max(r[1], r[2]) * 1.25, at = (v) => Math.round((v / max) * 100);
+  return lane({ st: under ? 'ol-r-back' : 'ol-r-idle', word: under ? 'Under' : 'Above', isWord: 1, solid: under, name: r[0], facts: 'seen ' + r[4] + ' ago · target ' + fig(gil(r[1])) + ' · cheapest ' + fig(gil(r[2])) + ' on ' + r[3],
+    mid: '<span class="bm-scale ' + (under ? 'ol-r-back' : 'ol-r-idle') + '" aria-hidden="true"><span class="bm-tick" style="left:' + at(r[1]) + '%"></span><span class="bm-dot" style="left:' + at(r[2]) + '%"></span></span>',
+    ans: gil(Math.abs(r[1] - r[2])), ansSmall: 'gil ' + (under ? 'under' : 'over'), act: under ? 'Add to trip' : '' }); };
 page('watch.html', 'Watch list',
-  '<div class="bm-layout">' + rail('watch', { trip: toBuy, watch: 3 }) + '<main class="bm-main">' +
-  '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">Watch list · 9 items</span><h1>Watched prices</h1><span class="ol-sl-sub">Alerts ring only while this app is open in a tab · checked every 15 minutes</span><div class="ol-sl-links"><a href="#">Alert settings</a></div></div>' +
-  '<div class="ol-sl-ans ol-blocks"><span class="ol-numeral bm-numgap">' + BELOW.length + '<small>UNDER TARGET NOW</small></span>' + sb('ol-r-idle ol-outline', ABOVE.length, 'Above') + sb('ol-r-locked ol-hatch', 1, 'No data') + '</div></div>' +
-  '<div class="bm-bar"><span class="bm-hint">Targets are per unit, normal quality unless marked.</span><button class="ol-seal bm-desk" type="button">Add an item</button></div>' +
-  '<section class="ol-chap-wrap">' + chap('I', 'Under target', 'Cheapest listing in North America', sb('ol-r-back ol-sm', BELOW.length, 'Under')) + '<div class="bm-ledger">' + BELOW.map((r) => wRow(r, 1)).join('') + '</div></section>' +
-  '<section class="ol-chap-wrap">' + chap('II', 'Above target', 'Waiting for the price to fall', sb('ol-r-idle ol-outline ol-sm', ABOVE.length, 'Above')) + '<div class="bm-ledger">' + ABOVE.map((r) => wRow(r, 0)).join('') + '</div></section>' +
+  '<div class="bm-layout">' + rail('watch', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
+  slab('Under target now:', 'Watched prices', '9 items · alerts ring on every page while the app is open in a tab', BELOW.length, 'of 9 items', sb('ol-r-back', BELOW.length, 'Under') + sb('ol-r-idle', ABOVE.length, 'Above') + sb('ol-r-locked ol-hatch', 1, 'No data')) +
+  '<div class="bm-bar"><span class="bm-hint">The tick is your target, the diamond the cheapest listing in the seven data centers.</span><button class="ol-seal bm-desk" type="button">Add an item</button></div>' +
+  '<section class="ol-chap-wrap">' + chap('I', 'Under target', 'Cheapest listing at or below your price', sb('ol-r-back ol-sm', BELOW.length, 'Under')) + '<div class="bm-lanes">' + BELOW.map((r) => wLane(r, 1)).join('') + '</div></section>' +
+  '<section class="ol-chap-wrap">' + chap('II', 'Above target', 'Waiting for the price to fall', sb('ol-r-idle ol-sm', ABOVE.length, 'Above')) + '<div class="bm-lanes">' + ABOVE.map((r) => wLane(r, 0)).join('') + '</div></section>' +
   '<section class="ol-chap-wrap">' + chap('III', 'No price', 'No listing or sale reported', sb('ol-r-locked ol-hatch ol-sm', 1, 'None'), true) + '</section></main></div>',
   { seal: 'Add an item', after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil. <a href="#">Open</a></div>' });
 
 // ------------------------------------------------------------------------------------------------- settings sheet over the trip
 const stepper = (v) => '<span class="ol-step ol-sm"><button type="button" aria-label="Less">−</button><span class="ol-fig">' + v + '</span><button type="button" aria-label="More">+</button></span>';
-page('settings.html', 'Bourse settings', tripBody('A') + '<div class="bm-scrim" aria-hidden="true"></div><aside class="bm-sheet" role="dialog" aria-label="Bourse settings">' +
+const chk = (t, on) => '<label class="ol-chk"><input type="checkbox"' + (on ? ' checked' : '') + '> ' + t + '</label>';
+page('settings.html', 'Bourse settings', tripBody('book') + '<div class="bm-scrim" aria-hidden="true"></div><aside class="bm-sheet" role="dialog" aria-label="Bourse settings">' +
   '<div class="bm-sheet-hd"><h2>Bourse settings</h2><button class="ol-btn-2" type="button">Close</button></div>' +
-  chap('I', 'Prices', 'Where and how fresh', '') + '<div class="bm-fields"><label class="ol-fld"><span class="ol-lbl">Prices from</span><span class="ol-sel"><select><option>Follow the Tracker: all of North America</option></select></span></label>' +
-  '<div class="bm-pair"><div class="bm-lbl"><span class="ol-lbl">Old after (days)</span>' + stepper(1) + '</div><div class="bm-lbl"><span class="ol-lbl">Left out of profit after (days)</span>' + stepper(7) + '</div></div></div>' +
-  chap('II', 'Shopping trip', 'How it splits and what a tick does', '') + '<div class="bm-fields"><div class="bm-lbl"><span class="ol-lbl">Comes first</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Fewest stops</button><button aria-pressed="false" type="button">Cheapest</button><button aria-pressed="false" type="button">Trade-off</button></div></div>' +
+  chap('I', 'Travel area', 'Where prices are read and the trip may go', '') + '<div class="bm-fields">' +
+  chk('North America: Aether, Primal, Crystal, Dynamis', 1) + chk('Europe: Chaos, Light', 1) + chk('Oceania: Materia', 1) +
+  '<div class="bm-lbl"><span class="ol-lbl">Go to another region only when it saves more than (%)</span>' + stepper(10) + '</div></div>' +
+  chap('II', 'Prices', 'How fresh', '') + '<div class="bm-fields"><div class="bm-pair"><div class="bm-lbl"><span class="ol-lbl">Old after (days)</span>' + stepper(1) + '</div><div class="bm-lbl"><span class="ol-lbl">Left out of profit after (days)</span>' + stepper(7) + '</div></div></div>' +
+  chap('III', 'Shopping trip', 'How it splits and what a tick does', '') + '<div class="bm-fields"><div class="bm-lbl"><span class="ol-lbl">Comes first</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Fewest stops</button><button aria-pressed="false" type="button">Cheapest</button><button aria-pressed="false" type="button">Trade-off</button></div></div>' +
   '<div class="bm-lbl"><span class="ol-lbl">Pay at most this much more to save a stop (%)</span>' + stepper(10) + '</div>' +
-  '<label class="ol-fld"><span class="ol-lbl">Route</span><span class="ol-sel"><select><option>Fewest data-center hops, biggest savings first</option></select></span></label>' +
   '<div class="bm-lbl"><span class="ol-lbl">When I tick an item bought</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Tick only</button><button aria-pressed="false" type="button">Also add to “I have” in Lists</button></div></div></div>' +
-  chap('III', 'Profit', 'What a craft costs and earns', '') + '<div class="bm-fields"><label class="ol-chk"><input type="checkbox" checked> Count gathered materials at market value</label>' +
-  '<label class="ol-fld"><span class="ol-lbl">Tax</span><span class="ol-sel"><select><option>The lowest city rate this week</option></select></span></label></div>' +
-  chap('IV', 'Alerts', 'Only while the app is open', '') + '<div class="bm-fields"><label class="ol-chk"><input type="checkbox" checked> Tell me when a watched item is under its target</label><p class="bm-hint">Checked every 15 minutes while a tab is open. A closed app cannot alert.</p></div></aside>');
+  chap('IV', 'Profit and alerts', '', '') + '<div class="bm-fields">' + chk('Count gathered materials at market value', 1) + chk('Alert me on every page when a watched item is under its target', 1) + '<p class="bm-hint">Checked every 15 minutes while a tab is open. A closed app cannot alert.</p></div></aside>');
 
 // ------------------------------------------------------------------------------------------------- the empty trip
 page('empty.html', 'No trip yet',
   '<div class="bm-layout">' + rail('trip', { watch: 3 }) + '<main class="bm-main"><section class="bm-empty"><div class="bm-empty-copy"><span class="ol-kick bm-plate">Nothing to buy</span><h1>No trip yet</h1>' +
-  '<p>Pick the lists you are buying for, and the Bourse plans where to buy each item across North America, stop by stop.</p><div class="bm-steps">' +
-  [['ol-r-market', 'Choose lists', 'Their market items become the shopping list.'], ['bm-r-gil', 'Set the split', 'Fewest stops, cheapest, or your own trade-off.'], ['ol-r-back', 'Buy world by world', 'Tick each item as you buy it.']]
-    .map(([r, b, s], i) => '<div class="bm-step">' + sb(r, i + 1, '') + '<div><b>' + b + '</b><span>' + s + '</span></div></div>').join('') +
+  '<p>Pick the lists you are buying for, and the Bourse plans where to buy each item across your seven data centers, stop by stop.</p><div class="bm-steps">' +
+  [['ol-r-back', 'Choose lists', 'Their market items become the shopping list.'], ['ol-r-out', 'Set the split', 'Fewest stops, cheapest, or your own trade-off.'], ['ol-r-idle', 'Buy stop by stop', 'Tick each item as you buy it.']]
+    .map(([r, b, t], i) => '<div class="bm-step">' + sb(r, i + 1, '') + '<div><b>' + b + '</b><span>' + t + '</span></div></div>').join('') +
   '</div><div><button class="ol-seal" type="button">Choose lists</button></div></div><div class="bm-deco" aria-hidden="true"><svg viewBox="0 0 400 640" preserveAspectRatio="xMidYMid slice">' +
   '<path class="rt" d="M120 600 C 160 480, 320 470, 300 360 S 120 240, 220 120 S 340 40, 360 20"/>' +
-  '<g transform="translate(120 600) skewX(-25)"><rect class="stp ol-r-market" x="-26" y="-18" width="52" height="36"/></g>' +
-  '<g transform="translate(300 360) skewX(-25)"><rect class="stp bm-r-gil" x="-26" y="-18" width="52" height="36"/></g>' +
-  '<g transform="translate(220 120) skewX(-25)"><rect class="stp ol-r-back" x="-26" y="-18" width="52" height="36"/></g>' +
+  '<circle class="stp ol-r-back" cx="120" cy="600" r="26"/><circle class="stp ol-r-out" cx="300" cy="360" r="26"/><circle class="stp ol-r-idle" cx="220" cy="120" r="26"/>' +
   '<text class="lb" x="40" y="60">YOUR ROUTE</text></svg></div></section></main></div>');
 
 // ------------------------------------------------------------------------------------------------- states the main pictures do not show
 const note = (role, lbl, text, act) => '<div class="bm-note ' + role + '"><div><span class="ol-lbl">' + lbl + '</span><br>' + text + '</div>' + (act ? '<a class="ol-btn-q" href="#">' + act + '</a>' : '') + '</div>';
 const eline = (text, act) => '<div class="bm-eline"><span>' + text + '</span>' + (act ? '<a class="ol-btn-q" href="#">' + act + '</a>' : '') + '</div>';
 page('states.html', 'States',
-  '<div class="bm-layout">' + rail('profit', { trip: toBuy, watch: 0 }) + '<main class="bm-main">' +
-  '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">States sheet · not a screen</span><h1>When prices are missing</h1><span class="ol-sl-sub">Each part below appears on the screen it belongs to, in place of its normal content</span></div>' +
-  '<div class="ol-sl-ans ol-blocks">' + sb('ol-r-bad ol-outline', 'Failed', '', 1) + sb('ol-r-idle ol-outline', 'Paused', '', 1) + sb('ol-r-locked ol-hatch', 'Unknown', '', 1) + '</div></div>' +
-  '<section class="ol-chap-wrap">' + chap('I', 'Notices', 'One at a time, above the first chapter', '<span class="ol-fig">4 kinds</span>') +
-  note('ol-r-bad', 'Prices not fetched', 'The price site could not be reached. Showing the prices seen at ' + fig('14:02') + ' on this device; anything older than your limit is marked old.', 'Try again') +
+  '<div class="bm-layout">' + rail('profit', { trip: count.buy + count.later, watch: 0 }) + '<main class="bm-main">' +
+  slab('States sheet, not a screen:', 'When prices are missing', 'Each part appears on its own screen in place of its normal content', '4', 'kinds of notice', sb('ol-r-bad', 'Failed', '', 1) + sb('ol-r-idle', 'Paused', '', 1) + sb('ol-r-locked ol-hatch', 'Unknown', '', 1)) +
+  '<section class="ol-chap-wrap">' + chap('I', 'Notices', 'One at a time, above the first section', '') +
+  note('ol-r-bad', 'Prices not fetched', 'The price site could not be reached. Showing the prices seen at ' + fig('14:02') + ' on this device; anything past your limit is marked old.', 'Try again') +
   note('ol-r-idle', 'Slowed down', 'The price site asked this app to wait. The next try is in ' + fig(4) + ' minutes; Refresh does not skip this pause.', '') +
   note('ol-r-idle', 'Ranking budget spent', 'This session has asked for ' + fig(gil(3000)) + ' prices, the most it asks for at once. ' + fig(gil(1212)) + ' crafts are ranked; the rest wait for the next session.', '') +
-  note('ol-r-bad', 'Maintenance soon', 'All worlds go down at ' + fig('15:00') + '. Data-center travel stops at ' + fig('14:30') + ': buy on other data centers first.', '') + '</section>' +
-  '<section class="ol-chap-wrap">' + chap('II', 'Empty parts', 'What a part says when it has nothing yet', '<span class="ol-fig">3 kinds</span>') +
-  eline('<b>Choose your home world</b> to rank profit and see where to sell. Prices to buy work without it.', 'Choose a home world') +
+  note('ol-r-bad', 'Maintenance soon', 'All worlds go down at ' + fig('15:00') + '. Data-center travel stops at ' + fig('14:30') + ': buy away from home first.', '') + '</section>' +
+  '<section class="ol-chap-wrap">' + chap('II', 'Empty parts', 'What a part says when it has nothing yet', '') +
+  eline('<b>Choose your home world</b> to see where to sell and the seller\'s tax. Prices to buy work without it.', 'Choose a home world') +
   eline('<b>Nothing watched yet.</b> Add an item here, or press "Watch this item" on any item.', 'Add an item') +
-  eline('<b>Find an item</b> in the search above to see its price on every world of North America.', '') + '</section>' +
-  '<section class="ol-chap-wrap">' + chap('III', 'Rows in edge states', 'Drawn the same way on every screen', '<span class="ol-fig">3 kinds</span>') + '<div class="bm-ledger">' +
-  '<div class="bm-row bm-barrow ol-r-bad">' + sb('ol-r-bad ol-outline', 'Loss', '', 1) + '<div class="bm-who"><span class="bm-nm">Grade 2 Gemdraught of Intelligence<em>HQ</em></span><span class="bm-facts">sells ' + fig(39) + ' a day · materials ' + fig(gil(36120)) + ' · sale middle ' + fig(gil(34800)) + ' after tax</span></div><div class="bm-mid"><span class="bm-gbar bm-r-gil" aria-hidden="true"><i class="bm-neg"></i></span></div><span class="bm-ans bm-big">−' + gil(1320) + '</span><div class="bm-acts"><button class="ol-btn-2" type="button">Solve</button>' + more + '</div></div>' +
-  '<div class="bm-row ol-r-locked">' + sb('ol-r-locked ol-hatch', 'HQ only', '', 1) + '<div class="bm-who"><span class="bm-nm">Kozama\'uka Chamomile</span><span class="bm-facts">no normal-quality listing in North America · ' + fig(2) + ' high quality at ' + fig(gil(24800)) + ' on Seraph</span></div><div class="bm-mid"><span class="bm-lead" aria-hidden="true"></span></div><span class="bm-ans bm-word">unknown<small>normal quality</small></span><div class="bm-acts">' + more + '</div></div>' +
-  '<div class="bm-row ol-r-idle">' + sb('ol-r-idle ol-outline', 'Bait?', '', 1) + '<div class="bm-who"><span class="bm-nm">Sanctified Water</span><span class="bm-facts">seen 3 min ago · 1 at ' + fig(2000) + ' on Hyperion, far below recent sales (' + fig(gil(19300)) + ') · the rest priced from ' + fig(gil(18900)) + '</span></div><div class="bm-mid"><span class="bm-lead" aria-hidden="true"></span></div><span class="bm-ans">' + gil(2000 + 5 * 18900) + '<small>gil for 6</small></span><div class="bm-acts"><button class="ol-btn-2" type="button">Bought</button>' + more + '</div></div>' +
+  eline('<b>Find an item</b> in the search above to see its price on all seven data centers.', '') + '</section>' +
+  '<section class="ol-chap-wrap">' + chap('III', 'Lanes in edge states', 'Drawn the same way on every screen', '') + '<div class="bm-lanes">' +
+  lane({ st: 'ol-r-bad', word: 'Loss', isWord: 1, name: 'Grade 2 Gemdraught of Intelligence', hq: 1, facts: 'sells ' + fig(39) + ' a day · materials ' + fig(gil(36120)) + ' · sale middle ' + fig(gil(34800)) + ' after tax', mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i class="bm-neg"></i></span>', ans: '−' + gil(1320), ansSmall: 'gil each' }) +
+  lane({ st: 'ol-r-locked ol-hatch', word: 'HQ only', isWord: 1, name: "Kozama'uka Chamomile", facts: 'no normal-quality listing in the travel area · ' + fig(2) + ' high quality at ' + fig(gil(24800)) + ' on Seraph', mid: '', ans: 'unknown', ansWord: 1, ansSmall: 'normal quality' }) +
+  lane({ st: 'ol-r-idle', word: 'Bait?', isWord: 1, name: 'Sanctified Water', facts: 'seen 3 min ago · 1 at ' + fig(2000) + ' on Hyperion, far below recent sales (' + fig(gil(19300)) + ') · the rest from ' + fig(gil(18900)), mid: lots([1, 5]), ans: gil(2000 + 5 * 18900), ansSmall: 'gil for 6', act: 'Bought' }) +
   '</div></section></main></div>');
 
-console.log('mock pages in ' + OUT + ': total ' + total + ', saved ' + saved + ', stops ' + stops + ', to buy ' + toBuy);
+console.log('mock pages in ' + OUT + ': total ' + total + ', counts ' + JSON.stringify(count));

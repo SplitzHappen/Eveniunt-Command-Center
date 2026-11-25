@@ -197,6 +197,50 @@ None. The gil role class is an addition to the shared stylesheet, not a departur
   recent sales). Not drawn: 30 stops and 200 watched items (the same rows repeated; the browser checks measure them on
   real data).
 
+## Look v2 (2026-11-25): toward Submersibles
+
+**Why.** The owner saw the first mock-ups and found every screen too busy, not bold enough, the colours off and not
+reading as one app, with Submersibles the closest existing screen (`docs/bourse-questions.md`, second round). Look v2
+supersedes sections 1, 2 and 7 above where they differ; the parts list of section 1 still holds.
+
+**What changed, screen by screen**
+- **Answer band, every screen:** the kick line ends in a colon (as Submersibles' "NEXT BACK:"), the name in the serif,
+  then one huge figure (104 px on a computer, 52 px on a phone) and full-height state blocks counting the screen's
+  states: Trip 5 buy here, 5 later, 1 old, 1 done; Item 47 worlds listed, 4 old, 6 none; Profit 1,212 ranked, 8,644 to
+  price; Watch 3 under, 5 above, 1 no data. On a phone the blocks fold away (each section head carries its count) so the
+  first lane stays on the first screen.
+- **Lanes instead of rows:** a state wedge in capitals at the left, the name and one short facts line (age first), a
+  track, one big answer in the state's colour, and the accent button only where you can act now ("Bought" at the stop
+  you are at, "Add to trip" under target). Every other action is in More. Tracks: Trip, the listings bought whole as
+  segments; Item, the price on one scale; Profit, the gil bar on one scale (gold, as on Earnings); Watch, your target as
+  a tick and the cheapest listing as a diamond.
+- **Colours: Submersibles' state roles only.** Green, act now (buy here, cheapest, under target); blue, next (later
+  stops); amber, waiting (old price, above target); hatched, unknown (none, HQ only); ink, done or a rank; red, loss or
+  failure; the theme's accent for the one main action and for rank 1. Lists' market purple is gone; gold is for gil bars
+  only.
+- **Trip:** a route track of the stops under the answer band (like the Board's time track): the stop you are at in
+  green, later stops in blue, a stop in another region dashed after a "Europe" plate. "Bought all here" sits at the end
+  of the track. Sections are stops, in travel order (fewest region hops, then data centers, biggest savings first).
+  Drawn twice for the owner: book-style titles (`trip.html`) and Submersibles' dark capital bars with a state strip
+  (`trip-bars.html`).
+- **Item:** "Cheapest anywhere" over the seven data centers (eight thin lanes on one price scale), then one closed
+  section per region with its listed count, and recent sales as three big blocks and a dot strip.
+- **Profit:** a leaderboard of lanes (rank 1 in the accent, the rest in ink), gold bars on one scale, the slow sellers
+  in a closed section, "Where to sell this week" as thin lanes (the seller's tax by city; buyers pay their own 5%).
+- **Watch:** lanes Under (green, filled) and Above (amber), the target tick and the cheapest diamond.
+- **Settings:** a new first section, Travel area (North America, Europe, Oceania; another region only above a saving
+  threshold); alerts on every page.
+
+**Measured** (all 46 screen pictures): rows in view at 1,440 x 1,000 at least 8 on Trip (both variants), Item, Profit
+and Watch; lanes 52 to 56 px at rest on a computer and at most 96 px on a phone; first lane on the phone 196 px under the
+header (224 px with dark bars, where the stop head is the strip); no sideways scroll; no monospace without a digit.
+
+**Honest notes.** Bold on every screen; reads as Submersibles' sibling in all four themes. The dark-bars Trip variant
+costs a little height (tightened to keep eight lanes). On a phone the state blocks of the answer band are not shown;
+that is a fold the owner may want back, at the cost of the first lane starting lower than the house limit. The phone
+loses the quality and ranking switches at rest (the setting shows in the answer band's label; the switch is in Bourse
+settings).
+
 ## 8. Picture notes and the bold test
 
 `docs/bourse/pictures/notes.md`: what was measured, what was not, and one line per screen ("bold" or "still tame").

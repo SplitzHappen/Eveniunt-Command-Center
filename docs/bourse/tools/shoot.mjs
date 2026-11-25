@@ -14,7 +14,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 let chromium;
 try { ({ chromium } = require(path.join(ROOT, 'node_modules', 'playwright'))); } catch (e) { ({ chromium } = require('playwright')); }
 const OUT = path.join(ROOT, 'docs', 'bourse', 'pictures');
-const MAIN = ['trip', 'trip-saved', 'item', 'profit', 'watch'];
+const MAIN = ['trip', 'trip-bars', 'item', 'profit', 'watch'];
 const EXTRA = ['settings', 'empty', 'states'];
 const SIZES = [[1440, 1000], [360, 800]];
 const CHOICES = [['crystarium-dawnglass', 'light'], ['crystarium-dawnglass', 'dark'], ['azure-dragoon', 'dark'], ['uldah-sultanate-gilt', 'light']];
@@ -41,7 +41,7 @@ async function shot(name, w, h, theme, mode) {
   await page.waitForTimeout(300);
   const m = await page.evaluate(() => {
     const vw = document.documentElement.clientWidth, hd = document.querySelector('.ol-hdr').getBoundingClientRect();
-    const rows = [...document.querySelectorAll('.bm-row')].filter((r) => !r.closest('.bm-sheet') && r.offsetParent);
+    const rows = [...document.querySelectorAll('.bm-lane')].filter((r) => !r.closest('.bm-sheet') && r.offsetParent);
     const hs = rows.map((r) => Math.round(r.getBoundingClientRect().height));
     const inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }).length;
     let big = { size: 0, text: '' };
@@ -69,7 +69,7 @@ try {
     const row = (title, items) => '<h2 style="font:700 18px system-ui;margin:16px 0 6px">' + title + '</h2><div style="display:flex;gap:12px;align-items:flex-start">' + items.join('') + '</div>';
     const html = '<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff;color:#000;width:2600px"><h1 style="font:800 26px system-ui;margin:0">Bourse mock-ups beside the real app · ' + theme + ' ' + mode + '</h1>' +
       row('The real app now (from docs/one-look/foundation-pictures)', [['home', 'Home'], ['lists', 'Lists'], ['submersibles', 'Submersibles'], ['atelier', 'Atelier']].map(([n, l]) => cell(fp(n, 1440), l, 1)).concat([['lists', 'Lists phone'], ['submersibles', 'Submersibles phone']].map(([n, l]) => cell(fp(n, 360), l)))) +
-      row('Bourse mock-ups (examples)', [['trip', 'Trip (answer A)'], ['trip-saved', 'Trip (answer B, savings first)'], ['item', 'Item'], ['profit', 'Profit'], ['watch', 'Watch']].map(([n, l]) => cell(bp(n, 1440), l, 1))) +
+      row('Bourse mock-ups (examples)', [['trip', 'Trip, book-style titles'], ['trip-bars', 'Trip, dark capital bars'], ['item', 'Item'], ['profit', 'Profit'], ['watch', 'Watch']].map(([n, l]) => cell(bp(n, 1440), l, 1))) +
       row('Bourse on the phone', MAIN.map((n) => cell(bp(n, 360), n))) + '</body>';
     const f = path.join(OUT, '_sheet.html'); fs.writeFileSync(f, html);
     const ctx = await browser.newContext({ viewport: { width: 2632, height: 1200 }, deviceScaleFactor: 1 }), page = await ctx.newPage();

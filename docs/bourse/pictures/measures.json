@@ -1,38 +1,38 @@
 {
  "trip-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 336,
   "largest": {
-   "size": 96,
-   "text": "266,438"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
- "trip-saved-1440-crystarium-dawnglass-light": {
+ "trip-bars-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 338,
   "largest": {
-   "size": 96,
-   "text": "40,810"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
  "item-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 52,
+  "rowMin": 52,
+  "rowsInView": 8,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -40,25 +40,25 @@
  },
  "profit-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 56,
+  "rowMax": 56,
+  "rowMin": 52,
   "rowsInView": 9,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "38,240"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "watch-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 57,
+  "rowMax": 56,
   "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "3"
   },
   "actsMax": 2,
@@ -66,38 +66,38 @@
  },
  "trip-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 246,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
-   "text": "266,438"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
- "trip-saved-360-crystarium-dawnglass-light": {
+ "trip-bars-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 238,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 224,
   "largest": {
-   "size": 56,
-   "text": "40,810"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 67,
+  "rowMin": 67,
+  "rowsInView": 6,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -106,11 +106,11 @@
  "profit-360-crystarium-dawnglass-light": {
   "sideways": false,
   "rowMax": 96,
-  "rowMin": 64,
+  "rowMin": 51,
   "rowsInView": 5,
-  "firstRowFromHeader": 243,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "38,240"
   },
   "actsMax": 1,
@@ -118,12 +118,12 @@
  },
  "watch-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 64,
-  "rowsInView": 6,
-  "firstRowFromHeader": 199,
+  "rowMax": 83,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "3"
   },
   "actsMax": 1,
@@ -131,38 +131,38 @@
  },
  "trip-1440-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 336,
   "largest": {
-   "size": 96,
-   "text": "266,438"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
- "trip-saved-1440-crystarium-dawnglass-dark": {
+ "trip-bars-1440-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 338,
   "largest": {
-   "size": 96,
-   "text": "40,810"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
  "item-1440-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 52,
+  "rowMin": 52,
+  "rowsInView": 8,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -170,25 +170,25 @@
  },
  "profit-1440-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 56,
+  "rowMax": 56,
+  "rowMin": 52,
   "rowsInView": 9,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "38,240"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "watch-1440-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 57,
+  "rowMax": 56,
   "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "3"
   },
   "actsMax": 2,
@@ -196,38 +196,38 @@
  },
  "trip-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 246,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
-   "text": "266,438"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
- "trip-saved-360-crystarium-dawnglass-dark": {
+ "trip-bars-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 238,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 224,
   "largest": {
-   "size": 56,
-   "text": "40,810"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 67,
+  "rowMin": 67,
+  "rowsInView": 6,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -236,11 +236,11 @@
  "profit-360-crystarium-dawnglass-dark": {
   "sideways": false,
   "rowMax": 96,
-  "rowMin": 64,
+  "rowMin": 51,
   "rowsInView": 5,
-  "firstRowFromHeader": 243,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "38,240"
   },
   "actsMax": 1,
@@ -248,12 +248,12 @@
  },
  "watch-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 64,
-  "rowsInView": 6,
-  "firstRowFromHeader": 199,
+  "rowMax": 83,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "3"
   },
   "actsMax": 1,
@@ -261,38 +261,38 @@
  },
  "trip-1440-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 336,
   "largest": {
-   "size": 96,
-   "text": "266,438"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
- "trip-saved-1440-azure-dragoon-dark": {
+ "trip-bars-1440-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 338,
   "largest": {
-   "size": 96,
-   "text": "40,810"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
  "item-1440-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 52,
+  "rowMin": 52,
+  "rowsInView": 8,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -300,25 +300,25 @@
  },
  "profit-1440-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 56,
+  "rowMax": 56,
+  "rowMin": 52,
   "rowsInView": 9,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "38,240"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "watch-1440-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 57,
+  "rowMax": 56,
   "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "3"
   },
   "actsMax": 2,
@@ -326,38 +326,38 @@
  },
  "trip-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 246,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
-   "text": "266,438"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
- "trip-saved-360-azure-dragoon-dark": {
+ "trip-bars-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 238,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 224,
   "largest": {
-   "size": 56,
-   "text": "40,810"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 67,
+  "rowMin": 67,
+  "rowsInView": 6,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -366,11 +366,11 @@
  "profit-360-azure-dragoon-dark": {
   "sideways": false,
   "rowMax": 96,
-  "rowMin": 64,
+  "rowMin": 51,
   "rowsInView": 5,
-  "firstRowFromHeader": 243,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "38,240"
   },
   "actsMax": 1,
@@ -378,12 +378,12 @@
  },
  "watch-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 64,
-  "rowsInView": 6,
-  "firstRowFromHeader": 199,
+  "rowMax": 83,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "3"
   },
   "actsMax": 1,
@@ -391,38 +391,38 @@
  },
  "trip-1440-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 336,
   "largest": {
-   "size": 96,
-   "text": "266,438"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
- "trip-saved-1440-uldah-sultanate-gilt-light": {
+ "trip-bars-1440-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 338,
   "largest": {
-   "size": 96,
-   "text": "40,810"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
  "item-1440-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 52,
+  "rowMin": 52,
+  "rowsInView": 8,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -430,25 +430,25 @@
  },
  "profit-1440-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 56,
+  "rowMax": 56,
+  "rowMin": 52,
   "rowsInView": 9,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "38,240"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "watch-1440-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 57,
+  "rowMax": 56,
   "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 352,
+  "firstRowFromHeader": 325,
   "largest": {
-   "size": 96,
+   "size": 104,
    "text": "3"
   },
   "actsMax": 2,
@@ -456,38 +456,38 @@
  },
  "trip-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 246,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
-   "text": "266,438"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
- "trip-saved-360-uldah-sultanate-gilt-light": {
+ "trip-bars-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 238,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 224,
   "largest": {
-   "size": 56,
-   "text": "40,810"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": null,
-  "rowMin": null,
-  "rowsInView": 0,
-  "firstRowFromHeader": null,
+  "rowMax": 67,
+  "rowMin": 67,
+  "rowsInView": 6,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "18,900"
   },
   "actsMax": 0,
@@ -496,11 +496,11 @@
  "profit-360-uldah-sultanate-gilt-light": {
   "sideways": false,
   "rowMax": 96,
-  "rowMin": 64,
+  "rowMin": 51,
   "rowsInView": 5,
-  "firstRowFromHeader": 243,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "38,240"
   },
   "actsMax": 1,
@@ -508,12 +508,12 @@
  },
  "watch-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 64,
-  "rowsInView": 6,
-  "firstRowFromHeader": 199,
+  "rowMax": 83,
+  "rowMin": 65,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
+   "size": 52,
    "text": "3"
   },
   "actsMax": 1,
@@ -521,28 +521,28 @@
  },
  "settings-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 57,
-  "rowMin": 57,
+  "rowMax": 56,
+  "rowMin": 56,
   "rowsInView": 8,
-  "firstRowFromHeader": 372,
+  "firstRowFromHeader": 336,
   "largest": {
-   "size": 96,
-   "text": "266,438"
+   "size": 104,
+   "text": "266,478"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
  "settings-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 82,
-  "rowMin": 65,
-  "rowsInView": 6,
-  "firstRowFromHeader": 246,
+  "rowMax": 84,
+  "rowMin": 64,
+  "rowsInView": 5,
+  "firstRowFromHeader": 196,
   "largest": {
-   "size": 56,
-   "text": "266,438"
+   "size": 52,
+   "text": "266,478"
   },
-  "actsMax": 2,
+  "actsMax": 1,
   "monoWithoutDigit": []
  },
  "empty-1440-crystarium-dawnglass-light": {
@@ -573,13 +573,13 @@
  },
  "states-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 57,
+  "rowMax": 56,
   "rowMin": 56,
   "rowsInView": 0,
-  "firstRowFromHeader": 968,
+  "firstRowFromHeader": 967,
   "largest": {
-   "size": 48,
-   "text": "I"
+   "size": 104,
+   "text": "4"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -587,12 +587,12 @@
  "states-360-crystarium-dawnglass-dark": {
   "sideways": false,
   "rowMax": 96,
-  "rowMin": 65,
+  "rowMin": 82,
   "rowsInView": 0,
-  "firstRowFromHeader": 1224,
+  "firstRowFromHeader": 1267,
   "largest": {
-   "size": 32,
-   "text": "I"
+   "size": 52,
+   "text": "4"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
