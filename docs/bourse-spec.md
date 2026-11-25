@@ -1000,3 +1000,32 @@ default (save version 2, older pages stop saving) is decided; B0 and B1 run befo
 gains the line "before the 5% buyer's tax"; one home world. The owner keeps the answer band's state blocks on the phone,
 accepting 3 resting rows on Item, Profit and Watch (rule P3's count), to be written into `docs/design-rules.md` with the
 first-row exception by the one-look rules pull request.
+
+## 15. Facts found by B0 and B1 (2026-11-25), before the second outside review
+
+**B1, the price site** (`tracker/tests/fixtures/universalis/README.md`, test `tracker/tests/bourse-replies.test.js`,
+11 of 11 passing): every field section 3 marked [verify] was found, so no fallback of section 3 is needed. The region
+paths are `North-America`, `Europe`, `Oceania`; Gilgamesh is world 63. A city tax rate is a **whole percent** (5, 3, 0);
+a listing's `total` is **price times quantity, without the tax**; `tax` is that total times the rate, **rounded down**
+(floor matched every fractional case). So the buyer pays `total + tax` and the model of section 5 holds with the rate in
+percent; the city a `retainerCity` number names is an assumption until confirmed. `lastUploadTime` and
+`worldUploadTimes` are in milliseconds, a sale's `timestamp` in seconds. `worldUploadTimes` appears only on region
+replies; a world reply carries `lastUploadTime` instead. `minPriceNQ` and `minPriceHQ` are present, also with
+`listings=0`. `listings=60` caps per item; `listings=300` is accepted. A one-item request returns the item without the
+`items` wrapper. An unknown item and an unknown place both answer 404 with the same body, so a 404 can never be read as
+"no market price" (D3 as corrected). Sizes before trimming: a two-item region reply 9.6 kB (Oceania) to 53 kB (North
+America); a four-item North America batch 110 kB, so the 2 MB reply cap of D44 is far above normal replies. Two gateway
+errors (504, 502) cleared on one retry each; no reply carried a rate-limit or wait header.
+
+**B0, the app** (`docs/bourse/b0-report.md`): at `d7322c7` the build is clean, unit tests 634 of 634 (645 of 645 with B1),
+browser tests 67 of 67, drift check C196 passes; the highest check id is C196; `checks.yml` uses `fetch-depth: 0`; the
+one-look rules and the module moves are not yet in the base (expected). For D32 (save version 2), read from the code, not
+run in a browser: **no older page overwrites or uploads over a version 2 save** (every write path refuses with the
+"newer" error; the Tracker's sync refuses before uploading). What each older page shows differs, and the owner was told:
+the Tracker shows "Saved data could not be read" with the reason (written by a newer version, reload to update), keeps a
+copy and offers to download it or start fresh (its saves are refused, so nothing is overwritten); **the Atelier shows
+nothing and silently stops saving** (stats typed in an old Atelier tab are not kept); Home shows its "Getting started"
+block as if the save were empty; Lists, Submersibles and Settings say "The save cannot be used here ... Nothing has been
+written over it" or "Not saved on this device: ... Reload the page to update." These are older builds and cannot be
+changed; the known limits of D32 add them, and the release note asks the player to reload every open tab once.
+`lists/store.js` loads on its own (no Lists page needed), as D33 assumes.
