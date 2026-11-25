@@ -146,15 +146,18 @@ Nothing.
 ## Next
 
 0a. **The Bourse, the market module (blueprint phase 4; plan on pull request 10, branch `claude/loving-lamport-iy3cg1`).**
-   The owner was interviewed in five short rounds and named the module Bourse (`docs/bourse-questions.md`); research
-   `docs/bourse-research.md`; look spec `docs/bourse-look-spec.md` with mock-ups `docs/bourse/mock/` and 50 pictures in
-   four themes, comparison sheets beside the real app (`docs/bourse/pictures/sheet-*.png`); build spec
-   `docs/bourse-spec.md` (15 work items B0 to B14, checks C197 to C206), red-teamed (same-family) and fixed. No module
-   code. Next: the owner approves the look and answers the open questions in the spec's section 11, an outside review if
-   the owner wants one, then a builder starts with B0 and B1 (real Universalis replies saved as fixtures, which this
-   session could not reach).
+   Interviewed (three rounds, `docs/bourse-questions.md`), researched (`docs/bourse-research.md`), drawn twice (look v1,
+   then look v2 toward Submersibles, `docs/bourse-look-spec.md`, `docs/bourse/`), build spec with 16 work items and a
+   same-family red team (`docs/bourse-spec.md`). **Paused by the owner (2026-11-25) until one look for the whole app is
+   settled** (item 0): the Bourse is then built straight into that look. No module code.
 
-0. **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
+0. **One look for the whole app: step 3, settle the one look (owner, 2026-11-25).** The owner sees every module still
+   looking like a different app (the bodies never moved after the shared foundation). Decided: pause the Bourse; draw two
+   or three screens both ways (Submersibles-led and Atelier-led) for the owner to pick from; then redraw every screen in
+   the chosen look, change the house rules to match (the owner has since chosen dark capital section bars and the
+   answer band's blocks on the phone, which change the 2026-11-24 choices), and move each module in its own pull request.
+   Earlier history of this item follows.
+   **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
    Submersibles, Lists and Settings, and the Atelier ignoring the chosen game theme. Step 1, mock-ups of the six
    screens in one shared style (`docs/one-look-spec.md`, `docs/one-look/`), is done and the owner chose, 2026-11-24:

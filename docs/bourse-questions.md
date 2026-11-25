@@ -203,3 +203,14 @@ marked "default (not asked)"; the owner can change any of them.
 | Another region on the trip | **Fewest region hops first**: grouped by region, then data center, biggest savings first in each; another region only when the saving beats the threshold. |
 | A market listing is bought whole | **Yes, the whole stack.** |
 | Where watch alerts run | **On every page of the app** (not the recommendation; a small price script and paced lookups on every page). |
+
+## Third round (owner, 2026-11-25), after look v2
+
+| Question | Answer |
+| --- | --- |
+| Approve look v2? | Not yet. The owner asked when the app will stop looking like several apps: "each module looks like a different app instead of one cohesive look because this also looks different from subs and from the atelier". |
+| One cohesive look | **Settle one look first**: pause the Bourse build, redraw the existing screens and the Bourse in one look, approve it, change the house rules, then move each module (one pull request each) and build the Bourse straight into it. |
+| Which look every module moves to | **A mix, drawn both ways**: two or three screens drawn Submersibles-led and Atelier-led; the owner picks from the pictures before everything is redrawn. |
+| Trip section heads (look v2) | Dark capital bars (to be confirmed by the one-look choice above, since it changes the book-style rule of 2026-11-24 for every module). |
+| Answer-band blocks on the phone | Show them (an exception to the phone's first-row limit, or a rule change, decided with the one look). |
+| The downloaded single-file Tracker | Its Market Board points to the Command Center and shows no prices. |
