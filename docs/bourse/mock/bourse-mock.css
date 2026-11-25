@@ -25,7 +25,7 @@ body.bm { min-height: 100vh; }
 /* the answer band: one huge figure, then full-height state blocks */
 .bm-huge { display: grid; gap: 2px; flex: 0 1 auto; min-width: 0; margin-right: 56px; }
 .bm-huge > b { font: 900 104px/.82 var(--f-disp); letter-spacing: .03em; color: var(--on-slab); white-space: nowrap; }
-.bm-huge > small { font: 700 11px/1.2 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--on-slab-2); }
+.bm-huge > small { margin-top: 8px; font: 700 11px/1.2 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--on-slab-2); }
 
 /* route track (Trip): the stops in travel order, like the Board's time track */
 .bm-routebar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--s5); }
