@@ -1,35 +1,40 @@
-# Bourse mock-up pictures: notes (look v3, Atelier-led, 2026-11-25)
+# Bourse mock-up pictures: notes (look v3, after the round-one outside reviews, 2026-11-25)
 
 Made with `node docs/bourse/tools/make-mock.mjs` then `node docs/bourse/tools/shoot.mjs` (Chromium, deviceScaleFactor 1,
 viewport only). The pages load the built site's own `fonts.css`, `shared.css`, `one-look.css` and `look.js`; the theme is
-set the way the app stores it. Every price, age, sale and tax figure is an example; item and world names are from the
-pinned game data (7.57h1). Look v1 and v2 pictures are in the history of this branch.
+set the way the app stores it. Every price, age, sale and tax figure is an example (the header says so on every screen);
+item and world names are from the pinned game data (7.57h1). Earlier looks are in the history of this branch.
 
-**Pictures (42).** Trip, Item, Profit and Watch at 1,440 x 1,000 and 360 x 800
-in Crystarium Dawnglass light and dark, Azure Dragoon dark and Ul'dah Sultanate Gilt light (32); the settings sheet, the
-empty trip and the states page at 1,440 light and 360 dark (6); one comparison sheet per theme (4).
+**Pictures (42).** Trip, Item, Profit and Watch at 1,440 x 1,000 and 360 x 800 in Crystarium Dawnglass light and dark,
+Azure Dragoon dark and Ul'dah Sultanate Gilt light (32); the settings sheet, the empty trip and the states page at 1,440
+light and 360 dark (6); one comparison sheet per theme (4).
 
-**Measured** (`measures.json`, all 38 screen pictures): no sideways scroll at 360 px; the largest text is the huge figure
-(104 px, 52 px on a phone); lanes 52 to 56 px at rest at 1,440 and at most 96 px at 360; at least 8 lanes in view at
-1,440 x 1,000 on Trip (both), Item, Profit and Watch; first lane on the phone at most 200 px under the header (Trip with
-dark bars 224 px, its stop head being the strip, limit 256); at most the action and More per lane; no monospace without a
-digit; no page errors.
+**How rows are counted (changed after the review).** A row counts as in view only when it sits wholly below the header and
+above every fixed bar at the bottom (the phone's tab bar, the main-button bar, a status line). The first count, before the
+review, used the whole window and overstated the phone (outside review, finding 15). Names cut short are reported.
 
-**Not measured:** contrast beyond the shared tokens (the state roles are the Submersibles ones, already tested there);
-tap sizes inside the sheet; keyboard focus (no behaviour).
+**Measured** (`measures.json`, 38 screen pictures, the same in all four themes):
+
+| Screen | Computer: row height at rest, rows in view (rule: at most 64 px, at least 8) | Phone: row height at rest, rows in view (rule: at most 96 px; at least 4, or 3 with a strip) | First row on the phone |
+| --- | --- | --- | --- |
+| Trip | 52 px, 9 | 70 to 89 px, 4 (stop head counts as the strip: needs 3) | 257 px |
+| Item | 48 to 49 px, 8 | 70 to 71 px, **3** (needs 4) | 259 px |
+| Profit | 48 to 52 px, 9 | 50 to 90 px, **3** (needs 4) | 257 px |
+| Watch | 52 px, 8 | 70 to 71 px, **3** (needs 4) | 257 px |
+
+No sideways scroll at 360 px; no name cut short; no monospace text without a digit; at most the action and More visible
+per row; no page errors. **On the phone, Item, Profit and Watch show 3 resting rows where the rule asks for 4, and the first
+row starts at 257 px where the rule allows 200 (256 with a strip).** Both follow from keeping the answer band's state
+blocks on the phone, the owner's choice of round three; the owner is asked whether to keep that.
+
+**Not measured:** contrast beyond the shared tokens; tap sizes and focus inside the sheet (no behaviour); large text.
 
 | Screen | Bold? | Same app? | Note |
 | --- | --- | --- | --- |
-| Trip, book titles | Bold | Yes | Huge total, four state blocks, the route track, green lanes at the stop you are at, blue later lanes, amber old. |
-| Trip, dark bars | Bold | Yes, closest to the Board today | Submersibles' company bar with a state strip per stop; slightly taller. |
-| Item | Bold | Yes | Eight thin lanes on one price scale; regions as closed sections; big sales blocks and a dot strip. |
-| Profit | Bold | Yes | The Earnings leaderboard: accent rank 1, ink ranks, gold bars, big figures. |
-| Watch | Bold | Yes | Filled green Under lanes against amber Above lanes; target tick and cheapest diamond. |
-| Settings sheet | Calm, by intent | Yes | A form; travel area first. |
-| States page | Bold | Yes | Notices in the failure and waiting roles, dashed empty lines, loss, HQ-only and bait lanes. |
-| Empty trip | Bold | Yes | Plate, headline, three slanted steps in green, blue and amber, the seal, a route decoration. |
-
-Fixed before showing: the wedges spilled past the lane's left edge and, on the phone, over the first letter of the name;
-a label under the huge figure ran under the first block; the item lanes cut their facts line; Trip and Watch had fewer
-than eight lanes in view; on the phone the first lane started up to 61 px too low (the answer band's blocks fold away
-there now).
+| Trip | Bold | Yes | Starts at the home world (Gilgamesh, Aether): 3 stops, 1 data-center hop; the total counts only what is still to buy and names the Europe stop's extra cost separately. |
+| Item | Bold | Yes | Cheapest anywhere over the seven data centers; the quality switch is in the section head on the phone. |
+| Profit | Bold | Yes | Ranked ledger; the ranking switch is in the section head on the phone; on the phone the price sits under the name so long names stay whole. |
+| Watch | Bold | Yes | The legend for marks look B does not draw was removed; the alert line moved to the states page. |
+| Settings sheet | Calm, by intent | Yes | The seven data centers as boxes by region, the home world named, one threshold control, alerts every 30 minutes. |
+| States page | Bold | Yes | Notices, empty parts, edge rows, and the alert line with its age and Close. |
+| Empty trip | Bold | Yes | Unchanged. |

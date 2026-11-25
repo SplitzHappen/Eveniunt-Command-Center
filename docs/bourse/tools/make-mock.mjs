@@ -29,7 +29,7 @@ function header(tools) {
     .map(([n, on]) => '<a href="#"' + (on ? ' aria-current="page"' : '') + '>' + n + '</a>').join('');
   return '<header class="ol-hdr" data-ol-hdr><div class="ol-hdr-in"><a class="ol-menu" href="#"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICONS.menu + '</svg><span>Main menu</span></a>' +
     '<a class="ol-mark" href="trip.html" aria-label="Eveniunt Bourse"><span class="ol-mk-top">Eveniunt</span><span class="ol-mk-word">Bourse</span><span class="ol-mk-gauge" aria-hidden="true"><i></i><i></i><i></i></span></a>' +
-    '<div class="ol-tools">' + (tools || '') + '<a class="bm-tool" href="settings.html">Bourse settings</a></div><nav class="ol-nav" aria-label="Command Center">' + nav + '</nav></div></header>';
+    '<div class="ol-tools">' + (tools || '') + '<a class="bm-tool" href="settings.html">Bourse settings</a><span class="ol-lbl bm-mock">Mock-up · example figures</span></div><nav class="ol-nav" aria-label="Command Center">' + nav + '</nav></div></header>';
 }
 function rail(here, counts) {
   return '<nav class="bm-rail" aria-label="Bourse views">' + [['trip', 'Trip'], ['item', 'Item'], ['profit', 'Profit'], ['watch', 'Watch']].map(([k, n]) =>
@@ -69,26 +69,26 @@ function bhead(title, sub, sum, strip) {
 // Travel area: seven data centers in three regions. Order: fewest region hops, then data centers, biggest savings first.
 const HOME = 'Gilgamesh';
 const STOPS = [
-  { world: 'Exodus', dc: 'Primal', region: 'North America', here: 1, items: [
-    { n: 'Sanctified Water', parts: [[4, 18900], [2, 19000]], seen: '14 min', st: 'buy' },
-    { n: 'Glossy Dried Ether', parts: [[6, 9450]], seen: '31 min', st: 'buy' },
+  { world: 'Gilgamesh', dc: 'Aether', region: 'North America', home: 1, here: 1, items: [
+    { n: 'Water Cluster', parts: [[36, 410]], seen: '9 min', st: 'buy' },
+    { n: 'Lightning Cluster', parts: [[20, 380], [16, 398]], seen: '9 min', st: 'buy' },
     { n: 'Windsbalm Bay Leaf', parts: [[3, 3850]], seen: '1 h', st: 'buy' },
     { n: 'Splendid Mate Leaves', parts: [[1, 3400], [2, 3420]], seen: '25 min', st: 'buy' },
     { n: 'Dark Rye Flour', parts: [[3, 610]], seen: '25 min', st: 'buy' },
+    { n: 'Eucalyptus', parts: [[3, 4100]], seen: '48 min', st: 'buy' },
     { n: 'Sungilt Aethersand', parts: [[6, 2180]], seen: '31 min', st: 'done' }] },
+  { world: 'Exodus', dc: 'Primal', region: 'North America', items: [
+    { n: 'Sanctified Water', parts: [[4, 18900], [2, 19000]], seen: '14 min', st: 'later' },
+    { n: 'Glossy Dried Ether', parts: [[6, 9450]], seen: '31 min', st: 'later' }] },
   { world: 'Famfrit', dc: 'Primal', region: 'North America', items: [
     { n: 'Wind Parsley', parts: [[3, 3200]], seen: '2 h', st: 'later' },
     { n: 'Pearl Grass', parts: [[3, 2950]], seen: '2 days', st: 'old' }] },
-  { world: 'Gilgamesh', dc: 'Aether', region: 'North America', home: 1, items: [
-    { n: 'Water Cluster', parts: [[36, 410]], seen: '9 min', st: 'later' },
-    { n: 'Lightning Cluster', parts: [[20, 380], [16, 398]], seen: '9 min', st: 'later' }] },
-  { world: 'Siren', dc: 'Aether', region: 'North America', items: [
-    { n: 'Eucalyptus', parts: [[3, 4100]], seen: '48 min', st: 'later' }] },
   { world: 'Odin', dc: 'Light', region: 'Europe', opt: 1, save: 9300, items: [
     { n: "Kozama'uka Chamomile", parts: [[3, 2900]], seen: '3 h', st: 'later' }] },
 ];
 let total = 0, count = { buy: 0, later: 0, old: 0, done: 0 };
-STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + p[0] * p[1], 0); s.sum += x.sum; if (!s.opt) total += x.sum; count[x.st]++; }); });
+let spent = 0, optional = 0;
+STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + p[0] * p[1], 0); s.sum += x.sum; if (x.st === 'done') spent += x.sum; else if (s.opt) optional += x.sum; else total += x.sum; count[x.st]++; }); });
 const nowStop = STOPS[0], toBuyHere = nowStop.items.filter((x) => x.st === 'buy');
 function tripLane(x, s) {
   const [r, w] = STATE[x.st], partsTxt = x.parts.map((p) => fig(p[0]) + ' at ' + fig(gil(p[1]))).join(' + ');
@@ -106,7 +106,7 @@ function route() {
 function stopHead(s, i, heads) {
   const items = s.items.length, buyN = s.items.filter((x) => x.st === 'buy').length;
   const title = s.opt ? 'Only if you go to Europe' : s.world;
-  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · ' + s.world + ', saves ' + gil(s.save) + ' gil, 1 region hop' : '');
+  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · ' + s.world + ', saves ' + gil(s.save) + ' gil, 1 region hop, not in the total' : '');
   const strip = s.items.map((x) => [STATE[x.st][0], 1]);
   if (heads === 'bars') return bhead(s.opt ? 'If you go: ' + s.world : 'Stop ' + (i + 1) + ' · ' + s.world, s.dc + ' · ' + s.region + (s.home ? ' · home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · saves ' + gil(s.save) + ' gil' : ''), fig(gil(s.sum)) + '<small>GIL · ' + items + ' ITEMS</small>', strip);
   const num = ['I', 'II', 'III', 'IV', 'V'][i];
@@ -114,7 +114,7 @@ function stopHead(s, i, heads) {
 }
 function tripBody(heads) {
   let out = '<div class="bm-layout">' + rail('trip', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
-    slab('Total to spend:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here for ' + fig(gil(toBuyHere.reduce((a, x) => a + x.sum, 0))) + ' gil · ' + (STOPS.length - 1) + ' stops, 2 data-center hops · fewest stops within 10%', gil(total), 'gil · Tamsin Reed',
+    slab('Total still to spend:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here · ' + (STOPS.length - 1) + ' stops from your home world, 1 data-center hop', gil(total), 'gil left · +' + gil(optional) + ' if you go to Europe',
       sb('ol-r-back', count.buy, 'Buy here') + sb('ol-r-out', count.later, 'Later') + sb('ol-r-idle', count.old, 'Old') + sb('ol-r-slab ol-outline', count.done, 'Done')) +
     '<div class="bm-routebar">' + route() + '<button class="ol-seal bm-desk" type="button">Bought all here</button></div>';
   STOPS.forEach((s, i) => { out += '<section class="ol-chap-wrap">' + stopHead(s, i, heads) + '<div class="bm-lanes">' + s.items.map((x) => tripLane(x, s)).join('') + '</div></section>'; });
@@ -156,9 +156,9 @@ const regionHead = (num, region) => { const ws = worlds.filter((x) => x.region =
 page('item.html', 'Item prices',
   '<div class="bm-layout">' + rail('item', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
   slab('Cheapest, each for 6:', 'Sanctified Water', 'on Exodus · Primal · North America · seen 14 min ago', gil(18900), 'gil each · normal quality',
-    sb('ol-r-back', listed.length, 'Worlds listed') + sb('ol-r-idle', old.length, 'Old') + sb('ol-r-locked ol-hatch', worlds.length - listed.length, 'None')) +
+    sb('ol-r-back', listed.length, 'Worlds listed') + sb('ol-r-idle', old.length, 'Old') + sb('ol-r-locked ol-hatch', worlds.length - listed.length, 'No listing')) +
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal quality</button><button type="button" aria-pressed="false">High quality</button></div><button class="ol-seal bm-desk" type="button">Watch this item</button></div>' +
-  '<div class="bm-two"><div class="ol-chap-wrap">' + chap('I', 'Cheapest anywhere', 'Seven data centers, cheapest first', sb('ol-r-back ol-sm', 8, 'Shown')) + '<div class="bm-lanes">' +
+  '<div class="bm-two"><div class="ol-chap-wrap">' + chap('I', 'Cheapest anywhere', 'Seven data centers, cheapest first', sb('ol-r-back ol-sm bm-desk-sum', 8, 'Shown') + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal</button><button type="button" aria-pressed="false">HQ</button></span>') + '<div class="bm-lanes">' +
   cheap.map((x, i) => lane({ st: i === 0 ? 'ol-r-back' : 'ol-r-slab', outline: i > 0, word: i + 1, thin: 1, solid: i === 0, name: x.w + (x.home ? ' · home' : ''), facts: x.dc + ' · ' + x.region + ' · seen ' + x.age + ' ago',
     mid: '<span class="bm-scale ' + (i === 0 ? 'ol-r-back' : 'ol-r-out') + '" aria-hidden="true"><span class="bm-dot" style="left:' + scaleAt(x.p) + '%"></span></span>', ans: gil(x.p) })).join('') + '</div>' +
   regionHead('II', 'North America') + regionHead('III', 'Europe') + regionHead('IV', 'Oceania') + '</div>' +
@@ -179,7 +179,7 @@ page('profit.html', 'Profit per craft',
   '<div class="bm-layout">' + rail('profit', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
   slab('Best gil per craft:', 'Mate Cookie <span style="font-style:italic">HQ</span>', 'An estimate after tax · sale prices from all seven data centers · materials at the cheapest of merchant and market', gil(top), 'gil each · by recent sales', sb('ol-r-back', gil(1212), 'Ranked') + sb('ol-r-locked ol-hatch', gil(8644), 'To price')) +
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">By recent sales</button><button type="button" aria-pressed="false">By cheapest listing</button></div><button class="ol-seal bm-desk" type="button">Rank these crafts</button></div>' +
-  '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after tax, on one scale', sb('ol-r-back ol-sm', gil(1212), 'of ' + gil(9856))) + '<div class="bm-lanes">' +
+  '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after tax, on one scale', sb('ol-r-back ol-sm bm-desk-sum', gil(1212), 'of ' + gil(9856)) + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">Sales</button><button type="button" aria-pressed="false">Listing</button></span>') + '<div class="bm-lanes">' +
   PROFIT.map((r, i) => { const [n, job, lv, hq, g, per, cost, flag] = r; return lane({ st: flag === 'old' ? 'ol-r-idle' : flag === 'cant' ? 'ol-r-locked ol-hatch' : i === 0 ? 'ol-r-seal' : 'ol-r-slab', word: flag === 'old' ? 'Old' : i + 1, isWord: flag === 'old', solid: i === 0,
     name: n, hq, facts: job + ' · Lv. ' + fig(lv) + ' · sells ' + fig(per) + ' a day · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · you can\'t make this yet' : flag === 'old' ? ' · sale price 2 days old' : ''),
     mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'gil each' }); }).join('') + '</div>' +
@@ -198,11 +198,11 @@ const wLane = (r, under) => { const max = Math.max(r[1], r[2]) * 1.25, at = (v) 
 page('watch.html', 'Watch list',
   '<div class="bm-layout">' + rail('watch', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
   slab('Under target now:', 'Watched prices', '9 items · alerts ring on every page while the app is open in a tab', BELOW.length, 'of 9 items', sb('ol-r-back', BELOW.length, 'Under') + sb('ol-r-idle', ABOVE.length, 'Above') + sb('ol-r-locked ol-hatch', 1, 'No data')) +
-  '<div class="bm-bar"><span class="bm-hint">The tick is your target, the diamond the cheapest listing in the seven data centers.</span><button class="ol-seal bm-desk" type="button">Add an item</button></div>' +
+  '<div class="bm-bar"><span class="bm-hint">Targets are per unit; the cheapest listing is read over your travel area.</span><button class="ol-seal bm-desk" type="button">Add an item</button></div>' +
   '<section class="ol-chap-wrap">' + chap('I', 'Under target', 'Cheapest listing at or below your price', sb('ol-r-back ol-sm', BELOW.length, 'Under')) + '<div class="bm-lanes">' + BELOW.map((r) => wLane(r, 1)).join('') + '</div></section>' +
   '<section class="ol-chap-wrap">' + chap('II', 'Above target', 'Waiting for the price to fall', sb('ol-r-idle ol-sm', ABOVE.length, 'Above')) + '<div class="bm-lanes">' + ABOVE.map((r) => wLane(r, 0)).join('') + '</div></section>' +
   '<section class="ol-chap-wrap">' + chap('III', 'No price', 'No listing or sale reported', sb('ol-r-locked ol-hatch ol-sm', 1, 'None'), true) + '</section></main></div>',
-  { seal: 'Add an item', after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil. <a href="#">Open</a></div>' });
+  { seal: 'Add an item', unusedAfter: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
 
 // ------------------------------------------------------------------------------------------------- settings sheet over the trip
 const stepper = (v) => '<span class="ol-step ol-sm"><button type="button" aria-label="Less">−</button><span class="ol-fig">' + v + '</span><button type="button" aria-label="More">+</button></span>';
@@ -210,13 +210,13 @@ const chk = (t, on) => '<label class="ol-chk"><input type="checkbox"' + (on ? ' 
 page('settings.html', 'Bourse settings', tripBody('book') + '<div class="bm-scrim" aria-hidden="true"></div><aside class="bm-sheet" role="dialog" aria-label="Bourse settings">' +
   '<div class="bm-sheet-hd"><h2>Bourse settings</h2><button class="ol-btn-2" type="button">Close</button></div>' +
   chap('I', 'Travel area', 'Where prices are read and the trip may go', '') + '<div class="bm-fields">' +
-  chk('North America: Aether, Primal, Crystal, Dynamis', 1) + chk('Europe: Chaos, Light', 1) + chk('Oceania: Materia', 1) +
-  '<div class="bm-lbl"><span class="ol-lbl">Go to another region only when it saves more than (%)</span>' + stepper(10) + '</div></div>' +
+  '<p class="bm-hint">North America</p><div class="bm-dcs">' + ['Aether', 'Primal', 'Crystal', 'Dynamis'].map((d) => chk(d, 1)).join('') + '</div><p class="bm-hint">Europe</p><div class="bm-dcs">' + ['Chaos', 'Light'].map((d) => chk(d, 1)).join('') + '</div><p class="bm-hint">Oceania</p><div class="bm-dcs">' + chk('Materia', 1) + '</div>' +
+  '<p class="bm-hint">Your home world: Gilgamesh (Aether), from Tamsin Reed in the Tracker.</p></div>' +
   chap('II', 'Prices', 'How fresh', '') + '<div class="bm-fields"><div class="bm-pair"><div class="bm-lbl"><span class="ol-lbl">Old after (days)</span>' + stepper(1) + '</div><div class="bm-lbl"><span class="ol-lbl">Left out of profit after (days)</span>' + stepper(7) + '</div></div></div>' +
   chap('III', 'Shopping trip', 'How it splits and what a tick does', '') + '<div class="bm-fields"><div class="bm-lbl"><span class="ol-lbl">Comes first</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Fewest stops</button><button aria-pressed="false" type="button">Cheapest</button><button aria-pressed="false" type="button">Trade-off</button></div></div>' +
-  '<div class="bm-lbl"><span class="ol-lbl">Pay at most this much more to save a stop (%)</span>' + stepper(10) + '</div>' +
+  '<div class="bm-lbl"><span class="ol-lbl">Pay at most this much more to save a stop or a region (%)</span>' + stepper(10) + '</div>' +
   '<div class="bm-lbl"><span class="ol-lbl">When I tick an item bought</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Tick only</button><button aria-pressed="false" type="button">Also add to “I have” in Lists</button></div></div></div>' +
-  chap('IV', 'Profit and alerts', '', '') + '<div class="bm-fields">' + chk('Count gathered materials at market value', 1) + chk('Alert me on every page when a watched item is under its target', 1) + '<p class="bm-hint">Checked every 15 minutes while a tab is open. A closed app cannot alert.</p></div></aside>');
+  chap('IV', 'Profit and alerts', '', '') + '<div class="bm-fields">' + chk('Count gathered materials at market value', 1) + chk('Alert me on every page when a watched item is under its target', 1) + '<div class="bm-lbl"><span class="ol-lbl">Check every (minutes)</span>' + stepper(30) + '</div><p class="bm-hint">Only while a tab of the app is open. A closed app cannot alert.</p></div></aside>');
 
 // ------------------------------------------------------------------------------------------------- the empty trip
 page('empty.html', 'No trip yet',
@@ -248,6 +248,6 @@ page('states.html', 'States',
   lane({ st: 'ol-r-bad', word: 'Loss', isWord: 1, name: 'Grade 2 Gemdraught of Intelligence', hq: 1, facts: 'sells ' + fig(39) + ' a day · materials ' + fig(gil(36120)) + ' · sale middle ' + fig(gil(34800)) + ' after tax', mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i class="bm-neg"></i></span>', ans: '−' + gil(1320), ansSmall: 'gil each' }) +
   lane({ st: 'ol-r-locked ol-hatch', word: 'HQ only', isWord: 1, name: "Kozama'uka Chamomile", facts: 'no normal-quality listing in the travel area · ' + fig(2) + ' high quality at ' + fig(gil(24800)) + ' on Seraph', mid: '', ans: 'unknown', ansWord: 1, ansSmall: 'normal quality' }) +
   lane({ st: 'ol-r-idle', word: 'Bait?', isWord: 1, name: 'Sanctified Water', facts: 'seen 3 min ago · 1 at ' + fig(2000) + ' on Hyperion, far below recent sales (' + fig(gil(19300)) + ') · the rest from ' + fig(gil(18900)), mid: lots([1, 5]), ans: gil(2000 + 5 * 18900), ansSmall: 'gil for 6', act: 'Bought' }) +
-  '</div></section></main></div>');
+  '</div></section></main></div>', { after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
 
 console.log('mock pages in ' + OUT + ': total ' + total + ', counts ' + JSON.stringify(count));

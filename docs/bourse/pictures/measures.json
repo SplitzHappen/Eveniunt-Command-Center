@@ -3,11 +3,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 8,
+  "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 340,
   "largest": {
    "size": 96,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -17,6 +19,8 @@
   "rowMax": 49,
   "rowMin": 48,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -30,6 +34,8 @@
   "rowMax": 52,
   "rowMin": 48,
   "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -43,6 +49,8 @@
   "rowMax": 52,
   "rowMin": 52,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -53,23 +61,27 @@
  },
  "trip-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 85,
-  "rowMin": 65,
-  "rowsInView": 5,
-  "firstRowFromHeader": 256,
+  "rowMax": 89,
+  "rowMin": 70,
+  "rowsInView": 4,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 64,
-  "rowMin": 63,
-  "rowsInView": 6,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 259,
   "largest": {
    "size": 52,
    "text": "18,900"
@@ -79,10 +91,12 @@
  },
  "profit-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 96,
-  "rowMin": 47,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 90,
+  "rowMin": 50,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "38,240"
@@ -92,10 +106,12 @@
  },
  "watch-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 84,
-  "rowMin": 64,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "3"
@@ -107,11 +123,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 8,
+  "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 340,
   "largest": {
    "size": 96,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -121,6 +139,8 @@
   "rowMax": 49,
   "rowMin": 48,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -134,6 +154,8 @@
   "rowMax": 52,
   "rowMin": 48,
   "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -147,6 +169,8 @@
   "rowMax": 52,
   "rowMin": 52,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -157,23 +181,27 @@
  },
  "trip-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 85,
-  "rowMin": 65,
-  "rowsInView": 5,
-  "firstRowFromHeader": 256,
+  "rowMax": 89,
+  "rowMin": 70,
+  "rowsInView": 4,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 64,
-  "rowMin": 63,
-  "rowsInView": 6,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 259,
   "largest": {
    "size": 52,
    "text": "18,900"
@@ -183,10 +211,12 @@
  },
  "profit-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 96,
-  "rowMin": 47,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 90,
+  "rowMin": 50,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "38,240"
@@ -196,10 +226,12 @@
  },
  "watch-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 84,
-  "rowMin": 64,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "3"
@@ -211,11 +243,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 8,
+  "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 340,
   "largest": {
    "size": 96,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -225,6 +259,8 @@
   "rowMax": 49,
   "rowMin": 48,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -238,6 +274,8 @@
   "rowMax": 52,
   "rowMin": 48,
   "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -251,6 +289,8 @@
   "rowMax": 52,
   "rowMin": 52,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -261,23 +301,27 @@
  },
  "trip-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 85,
-  "rowMin": 65,
-  "rowsInView": 5,
-  "firstRowFromHeader": 256,
+  "rowMax": 89,
+  "rowMin": 70,
+  "rowsInView": 4,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 64,
-  "rowMin": 63,
-  "rowsInView": 6,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 259,
   "largest": {
    "size": 52,
    "text": "18,900"
@@ -287,10 +331,12 @@
  },
  "profit-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 96,
-  "rowMin": 47,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 90,
+  "rowMin": 50,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "38,240"
@@ -300,10 +346,12 @@
  },
  "watch-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 84,
-  "rowMin": 64,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "3"
@@ -315,11 +363,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 8,
+  "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 340,
   "largest": {
    "size": 96,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -329,6 +379,8 @@
   "rowMax": 49,
   "rowMin": 48,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -342,6 +394,8 @@
   "rowMax": 52,
   "rowMin": 48,
   "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -355,6 +409,8 @@
   "rowMax": 52,
   "rowMin": 52,
   "rowsInView": 8,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
@@ -365,23 +421,27 @@
  },
  "trip-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 85,
-  "rowMin": 65,
-  "rowsInView": 5,
-  "firstRowFromHeader": 256,
+  "rowMax": 89,
+  "rowMin": 70,
+  "rowsInView": 4,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 64,
-  "rowMin": 63,
-  "rowsInView": 6,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 259,
   "largest": {
    "size": 52,
    "text": "18,900"
@@ -391,10 +451,12 @@
  },
  "profit-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 96,
-  "rowMin": 47,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 90,
+  "rowMin": 50,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "38,240"
@@ -404,10 +466,12 @@
  },
  "watch-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 84,
-  "rowMin": 64,
-  "rowsInView": 4,
-  "firstRowFromHeader": 256,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 678,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
    "text": "3"
@@ -419,24 +483,28 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 8,
+  "rowsInView": 9,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": 340,
   "largest": {
    "size": 96,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
  },
  "settings-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 85,
-  "rowMin": 65,
+  "rowMax": 89,
+  "rowMin": 70,
   "rowsInView": 5,
-  "firstRowFromHeader": 256,
+  "visibleBottom": 744,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
   "largest": {
    "size": 52,
-   "text": "266,478"
+   "text": "253,398"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
@@ -446,6 +514,8 @@
   "rowMax": null,
   "rowMin": null,
   "rowsInView": 0,
+  "visibleBottom": 1000,
+  "namesClipped": [],
   "firstRowFromHeader": null,
   "largest": {
    "size": 104,
@@ -459,6 +529,8 @@
   "rowMax": null,
   "rowMin": null,
   "rowsInView": 0,
+  "visibleBottom": 744,
+  "namesClipped": [],
   "firstRowFromHeader": null,
   "largest": {
    "size": 60,
@@ -472,6 +544,8 @@
   "rowMax": 52,
   "rowMin": 52,
   "rowsInView": 0,
+  "visibleBottom": 941,
+  "namesClipped": [],
   "firstRowFromHeader": 970,
   "largest": {
    "size": 96,
@@ -482,10 +556,12 @@
  },
  "states-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 96,
-  "rowMin": 83,
+  "rowMax": 89,
+  "rowMin": 71,
   "rowsInView": 0,
-  "firstRowFromHeader": 1319,
+  "visibleBottom": 618,
+  "namesClipped": [],
+  "firstRowFromHeader": 1320,
   "largest": {
    "size": 52,
    "text": "4"

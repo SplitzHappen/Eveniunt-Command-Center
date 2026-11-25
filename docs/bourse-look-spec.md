@@ -134,7 +134,7 @@ in a gold block.
   Shopping trip (what comes first: fewest stops, cheapest, or a set trade-off, with the threshold stepper, default 10%,
   answer 26; route order; "When I tick an item bought": tick only (default) or also add to "I have" in Lists, answer
   28); III Profit (gathered materials at market value, switch; tax: lowest this week or a city); IV Alerts (on or off;
-  how often while open, default every 15 minutes).
+  how often while open, default every 30 minutes).
 - **Empty trip** (E1): kicker plate "Nothing to buy", headline "No trip yet", one sentence, three numbered steps
   (choose lists, set the split, buy world by world), the seal "Choose lists", and a decoration panel (a dashed route
   with three slanted stop marks) hidden from screen readers.
@@ -256,6 +256,17 @@ Measured (38 screen pictures): at least 8 rows in view at 1,440 x 1,000 on Trip,
 at rest at 1,440 and at most 96 px at 360; no sideways scroll; no monospace without a digit. On the phone the first row
 starts at 256 px under the header on every screen, because the answer band's blocks are shown: within the 256 px limit for
 a screen with a strip, 56 px over the 200 px limit for the others, an exception the owner chose.
+
+## Look v3 after the round-one outside reviews (2026-11-25)
+
+Changes from `docs/bourse-review-adjudication.md` (findings 15 to 17, Mistral F4 and F5): rows are counted only above the
+fixed bars and the status line; the Trip example starts at the home world (3 stops, 1 data-center hop), its total counts
+only what is still to buy and names the optional Europe stop's cost apart; the quality and ranking switches stay reachable
+on the phone in the section head; on the phone the row's price sits under the name, so long names stay whole; the
+settings sheet shows the seven data centers as boxes by region, the home world, one threshold control and alerts every 30
+minutes; the Watch legend for undrawn marks is gone; the alert line (on the states page) shows the price's age and Close;
+no reading text under the house sizes; every screen says "Mock-up · example figures" in its header. Measured figures and
+the phone shortfall: `docs/bourse/pictures/notes.md`.
 
 ## 8. Picture notes and the bold test
 

@@ -43,13 +43,17 @@ async function shot(name, w, h, theme, mode) {
     const vw = document.documentElement.clientWidth, hd = document.querySelector('.ol-hdr').getBoundingClientRect();
     const rows = [...document.querySelectorAll('.bm-lane')].filter((r) => !r.closest('.bm-sheet') && r.offsetParent);
     const hs = rows.map((r) => Math.round(r.getBoundingClientRect().height));
-    const inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; }).length;
+    // the area left visible: above every fixed bar or line at the bottom (phone tab bar, the seal bar, the status line)
+    let bottom = innerHeight;
+    document.querySelectorAll('.bm-rail, .bm-act, .bm-status').forEach((el) => { const cs = getComputedStyle(el); if (cs.position !== 'fixed' || cs.display === 'none') return; const b = el.getBoundingClientRect(); if (b.top > innerHeight / 2 && b.top < bottom) bottom = b.top; });
+    const inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= hd.bottom && b.bottom <= bottom; }).length;
+    const clipped = [...document.querySelectorAll('.bm-nm, .bm-facts')].filter((el) => el.offsetParent && !el.closest('.bm-sheet') && (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) && el.classList.contains('bm-nm')).map((el) => el.textContent.trim().slice(0, 40));
     let big = { size: 0, text: '' };
     document.querySelectorAll('body *').forEach((el) => { if (!el.childNodes.length || !el.offsetParent || el.closest('.ol-hdr')) return; const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join(''); if (!own) return; const b = el.getBoundingClientRect(); if (b.top > innerHeight || b.bottom < 0) return; const s = parseFloat(getComputedStyle(el).fontSize); if (s > big.size) big = { size: s, text: own.slice(0, 40) }; });
     const monoBad = [...document.querySelectorAll('body *')].filter((el) => el.offsetParent && /Plex Mono/.test(getComputedStyle(el).fontFamily) && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim() && !/\d/.test(n.textContent))).map((el) => el.textContent.trim().slice(0, 30));
     const first = rows[0] ? Math.round(rows[0].getBoundingClientRect().top - hd.bottom) : null;
     const acts = rows.map((r) => [...r.querySelectorAll('.bm-acts > *')].filter((x) => getComputedStyle(x).display !== 'none').length);
-    return { sideways: document.documentElement.scrollWidth > vw, rowMax: hs.length ? Math.max(...hs) : null, rowMin: hs.length ? Math.min(...hs) : null, rowsInView: inView, firstRowFromHeader: first, largest: big, actsMax: acts.length ? Math.max(...acts) : 0, monoWithoutDigit: monoBad.slice(0, 5) };
+    return { sideways: document.documentElement.scrollWidth > vw, rowMax: hs.length ? Math.max(...hs) : null, rowMin: hs.length ? Math.min(...hs) : null, rowsInView: inView, visibleBottom: Math.round(bottom), namesClipped: clipped.slice(0, 5), firstRowFromHeader: first, largest: big, actsMax: acts.length ? Math.max(...acts) : 0, monoWithoutDigit: monoBad.slice(0, 5) };
   });
   if (errors.length) m.errors = errors;
   measures[name + '-' + w + '-' + theme + '-' + mode] = m;
