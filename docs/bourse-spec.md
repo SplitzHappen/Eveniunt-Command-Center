@@ -4,7 +4,7 @@ Written 2026-11-24 for a Sonnet builder (one pull request) and a Haiku clerk (me
 after a same-family red team (section 12) and on 2026-11-25 after the owner's second round (section 13). Plan only:
 nothing was built or run. Binding inputs: the owner's two answer tables in `docs/bourse-questions.md` ("answer N" is
 the first table; "round two" is the second, which wins where they differ), the look spec `docs/bourse-look-spec.md`,
-**look v2** (being redrawn; screens are not designed here), `docs/design-rules.md`, `docs/bourse-research.md`.
+**look v3 (Atelier-led, chosen 2026-11-25)** (screens are not designed here), `docs/design-rules.md`, `docs/bourse-research.md`.
 Blueprint rules restated: **CC-12** prices are labelled as community reports with when and where they were seen;
 listings and past sales are shown separately; the market tax is counted; "profit" is an estimate, never a promise;
 lookups are batched and cached; stale or missing data is marked. **CC-08** a website alerts only while open in a tab.
@@ -147,7 +147,7 @@ tested from a session, so B1 also asserts the [shipped] fields.
   look removes.]
 - **D22 One addition to the look spec:** the Profit view's filter (job, level band, "can make now") sits in the Ranking
   group's More as "Filter crafts", its value readable in the head's state line (F6); no field at rest (F1). It is
-  listed beside the mock-ups as a difference unless look v2 draws it.
+  listed beside the mock-ups as a difference unless look v3 draws it.
 - **D23 Who owns a trip row.** Needs are worked out per character (each character's own plan and stock), then rows of
   the same item and quality are shown as **one row to buy** with the amounts added; the opened row lists each
   character's share. Bought marks are kept per character (`bought` key owner `c1` to `c8` or `u`; `x` for the trip's
@@ -197,10 +197,10 @@ tested from a session, so B1 also asserts the [shipped] fields.
   files never reference it and `prices.js` is still not embedded in them. [A copy of the checker inside each module:
   six copies to keep in step. A service worker checking in the background: it would run with no page open, against
   CC-08.]
-- **D31 The look is look v2 of `docs/bourse-look-spec.md`**, drawn toward Submersibles. This spec names no drawing.
+- **D31 The look is look v3 of `docs/bourse-look-spec.md`** (the owner chose the Atelier-led look B for the whole app on 2026-11-25: book-style chapters, one ledger per section, leaders, figures at reading size, Submersibles' state colours, the answer band with its huge figure and state blocks, also on the phone). This spec names no drawing.
   States use the shared state roles (act now, next, waiting, unknown, done) and never the market purple (`ol-r-market`
   is not used by the Bourse); gold is for gil bars only. Wherever a section above says "chapter", "closed group" or
-  "sub line", read it as the matching part of look v2. C206 measures the limits of whichever look the owner approves.
+  "sub line", read it as the matching part of look v3. C206 measures the limits of whichever look the owner approves.
 
 ## 3. What is fetched (host `https://universalis.app/api/v2/`)
 
@@ -356,7 +356,7 @@ hosted Tracker and Atelier:
 - **A round** asks the `deep` service once per region for the watched items (at most 6 requests: 200 watched items
   over three regions; the page limit is 200), through the queue and the 15-minute gate. Results go into the shared
   price cache, so the Bourse shows them without asking again.
-- **An alert** is one slim status line on the page that ran the round (form per look v2; rule S1): "<item> is under
+- **An alert** is one slim status line on the page that ran the round (form per look v3; rule S1): "<item> is under
   your target on <world>: N gil. Open" (the link goes to `bourse/#item=<id>`), with "Close". An item rings once per
   crossing, across tabs and pages (`alerted` in the device record), and again only after going back over. **It rings
   only when that world's report of the listing is no older than `oldDays`**; an older one shows on its Watch row as
@@ -409,9 +409,9 @@ hosted Tracker and Atelier:
 
 ## 9. Screens
 
-As **look v2 of `docs/bourse-look-spec.md`** and its mock-ups, once the owner has approved them (design rules section
+As **look v3 of `docs/bourse-look-spec.md`** and its mock-ups, once the owner has approved them (design rules section
 12: nothing of B6 to B9, B14 or B11 is drawn from an unapproved look), including the states page
-`docs/bourse/mock/states.html`, with look v2's measured limits, plus D22 and D31. Fixed here, whatever the drawing:
+`docs/bourse/mock/states.html`, with look v3's measured limits, plus D22 and D31. Fixed here, whatever the drawing:
 the header word is "Bourse", between Lists and Settings in the page list (`tracker/tools/one-look-header.js` `MODS`),
 tool slot "Bourse settings" and, on Item, "Find an item"; Home gains a card (live line "N watched" or "Nothing watched
 yet"); an age is written "14 min", "3 h", "2 days", never "14M"; **the Item screen's answer is the price of one unit
@@ -425,7 +425,7 @@ the travel sentence of section 6; the alert sentence of section 7. "Solve" appea
 ## 10. Work items
 
 **Order of running:** B0, B1, B2, B3, B4, B5, B13, B6, B7, B14, B8, B9, B15, B10, B11, B12 (B13 and B14 were added by
-the red team, B15 by round two; all keep their numbers). **B6 and later wait for the owner's approval of look v2.**
+the red team, B15 by round two; all keep their numbers). **B6 and later wait for the owner's approval of look v3.**
 
 Every builder item: branch `bourse`; only the named files and rebuilt copies; `npm run build` twice, the second exits 0
 and `git status --porcelain` is empty after the commit; `npm run test:unit`; each new test or check is seen failing
@@ -486,7 +486,7 @@ commit B0 pins. New check ids start at C197; the builder may renumber in order.
   `tracker/tests/one-look.test.js` (the role exists; ink on `--gil-m` reaches 4.5:1 in light and dark; `bourse.css`
   joins the module sheets the drift test reads, and must not contain `--gil-m` or `ol-r-market`), rebuilt copies.
   Accept: the test fails before, passes after; `CHECK_ONLY=C196 npm run check`. Escalate if: the contrast fails,
-  another role's computed value changes, or look v2 needs a shared part `one-look.css` does not have.
+  another role's computed value changes, or look v3 needs a shared part `one-look.css` does not have.
 - **B5 Math (Sonnet builder; after B1, B2).** Files: `tracker/command-center/src/bourse/market.js`, `src/lists/engine.js`
   (`LISTS.sumShares` moved in, `LISTS.marketNeeds`), `src/lists/lists.js` (calls the engine's `sumShares`; nothing
   else), `tracker/tests/fixtures/bourse-fixture.json`, `tracker/tests/bourse-market.test.js`
@@ -519,7 +519,7 @@ commit B0 pins. New check ids start at C197; the builder may renumber in order.
   listed (like for like, named in the pull request), rebuilt copies. Steps: the header, the views' tab bar, settings
   sheet (the travel area among them), empty states, the status line, reading the Lists data (packed or plain), the one
   write at a time of `lists.js`. Accept: unit suite; `npm run test:browser`; the page opens offline with an empty save
-  and shows the empty trip. Escalate if: a check reads a count B0 missed, or look v2 is not approved.
+  and shows the empty trip. Escalate if: a check reads a count B0 missed, or look v3 is not approved.
 - **B7 Trip (Sonnet builder; after B6).** Files: `bourse.js`, `bourse.css`, `check.js` C202 (on stand-in replies for
   three regions: the three modes give the hand-worked stops and totals; a region dropped under the threshold and kept
   over it; a data center dropped whole; route order and the three counts (stops, region hops, data-center hops); the
@@ -551,7 +551,7 @@ commit B0 pins. New check ids start at C197; the builder may renumber in order.
   subtotal; an old four-part record still reads), rebuilt copies. Accept: `npm run test:browser`;
   `CHECK_ONLY=C155,C204,C205 npm run check`. Escalate if: C155 changes.
 - **B11 Look checks and pictures (Sonnet builder; after B7 to B9, B14, B15).** Files: `check.js` C206 (**the limits of
-  the approved look v2 and of the design rules**, on Trip, Item, Profit, Watch, the sheet, the empty trip and every
+  the approved look v3 and of the design rules**, on Trip, Item, Profit, Watch, the sheet, the empty trip and every
   state of `docs/bourse/mock/states.html`: fetch failed, a region not fetched, paused, budget spent, choose home world,
   empty watch list, Item before a search, a negative profit; at 1,440 x 1,000 and 360 x 800, real data with stand-in
   prices, seeded with the three longest item names of the data and five-digit counts and gil in the millions. Whatever
@@ -562,9 +562,9 @@ commit B0 pins. New check ids start at C197; the builder may renumber in order.
   and no figure cut off (P1); every computed colour a tone of a role, none of them the market role, gold on gil bars
   only (K1, the helper of C160)), C196 (the Bourse page joins its six pages), evidence block `bourse-*.png` copied to
   `docs/bourse/build/` with `notes.md`: one "bold" or "still tame: <what>" line per picture and every difference from
-  the approved look v2 pictures listed. Accept: `CHECK_ONLY=C196,C206 npm run check`; a temporary third bordered
+  the approved look v3 pictures listed. Accept: `CHECK_ONLY=C196,C206 npm run check`; a temporary third bordered
   button in a row fails C206 (reverted, reported). Escalate if: a limit cannot be met without changing the look, or
-  look v2 or the states page is not approved and in the repository when this item starts.
+  look v3 or the states page is not approved and in the repository when this item starts.
 - **B12 Full run and records (Haiku clerk; last).** `npm run build` twice, the three suites, `npm run check`; add the
   entry to `docs/STATE.md` under "Built, waiting for the owner's `ship`" with what was and was not tested (the live
   price site, Firefox, Safari, a real phone, a real two-device sync) and with **what now runs while the app is open
@@ -663,7 +663,7 @@ home world shows on the opened row). **Open:**
    Fairly sure. **Recommended: (a).**
 
 **What was read, and what was not verified.** Read: the files the brief lists, and round two's table. Not verified:
-any Universalis reply (the host was unreachable; every [verify] mark); whether the foundation is merged (B0); look v2
+any Universalis reply (the host was unreachable; every [verify] mark); whether the foundation is merged (B0); look v3
 and the states page (not read; not approved yet); `lists.js` beyond lines 1 to 160 and the `sumShares` call (its line
 number and the packed-data reading are the red team's); `ui.test.js`; the Tracker's and the Atelier's hosted-only code
 and policies (B0); the size of anything built. Checked for round two: `live.json` `dc` lists Japan, North America,
@@ -690,7 +690,7 @@ of the fixes; the last column of section 13 says which.
 | 11 | Alerts on stale listings | Section 7: rings only within `oldDays`; phone wrapping; C203, BA-4 | None |
 | 15 | Tests that pass at the base; `sumShares`; packed data | Section 10: the named guards; `sumShares` moves into the engine (D14, B5); packed data read through `CC.unpack` (D1, B0, B6) | None |
 | 16 | No `timers.json`; items too large; trip owner | D17: built copy only; B6 split (B13 the store), B7 split (B14 Item); D23 the owner rule, BM-13 | Maintenance announced after the last build |
-| Look | Long names, "14M", only-HQ wording, the Item answer, `--gil-m`, the states page | Sections 6, 9; D21 and B4; C206, C199, C203 | C206 waits for look v2 and the states page |
+| Look | Long names, "14M", only-HQ wording, the Item answer, `--gil-m`, the states page | Sections 6, 9; D21 and B4; C206, C199, C203 | C206 waits for look v3 and the states page |
 
 **Pre-mortem: how this could still fail after shipping.** (1) B1 cannot reach the host and the fixtures are delayed:
 five items wait, by design. (2) A [verify] field is absent and its fallback makes replies heavy (the scan of 20
@@ -707,7 +707,7 @@ The owner's second table in `docs/bourse-questions.md` wins over the first where
 
 | Round two | In this spec | Changes an earlier fix or decision |
 | --- | --- | --- |
-| The look: change every screen, closest to Submersibles; state colours instead of the market purple; gold for gil bars only | D31, D21; section 9 refers to look v2 and names no drawing; B4 forbids `ol-r-market` in the module's sheet; C206 measures the approved look; B6 and later wait for approval | The look spec's first version is no longer the reference |
+| The look: change every screen, closest to Submersibles; state colours instead of the market purple; gold for gil bars only | D31, D21; section 9 refers to look v3 and names no drawing; B4 forbids `ol-r-market` in the module's sheet; C206 measures the approved look; B6 and later wait for approval | The look spec's first version is no longer the reference |
 | Section heads: draw both, the owner chooses | Owner question 8 (open) | A choice of bars would change design rule C6 |
 | The Trip's big number: the total to spend | Section 6 (route); owner question 1 closed | None |
 | Prices over the whole travel area, seven data centers in three regions, a setting to narrow it | D25, D26; section 3 (per region); `prefs.area` replaces `prefs.place`; B1 saves replies of all three regions; BM-14, BT-6 | Answers 5 and 15; D24's wording ("its region's cheapest 60") |
@@ -728,3 +728,9 @@ the recent-sales middle" stands; it never overstates profit, which was the findi
 per `docs/bourse-research.md` section 4 (guides and an official forum thread); B1 still checks how a reply records it.
 "A listing is bought whole": confirmed by the owner. The world list in `live.json` also holds Japan's Elemental; the
 travel area takes only the owner's seven data centers.
+
+**Round four (owner, 2026-11-25).** The owner chose one look for the whole app, B (Atelier-led), after seeing four
+candidates (`docs/one-look/v3/`). The Bourse is drawn in it (`docs/bourse/mock/`, look v3); the dark-bars Trip variant is
+withdrawn. The answer band's state blocks stay on the phone (owner's choice): on screens without a strip the first row then
+starts at 256 px, over the 200 px limit of design rule P3, an exception the owner chose, to be written into
+`docs/design-rules.md` with the one-look move. The Bourse stays paused until the one look's module moves begin.

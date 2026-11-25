@@ -152,8 +152,9 @@ Nothing.
    settled** (item 0): the Bourse is then built straight into that look. No module code.
 
 0. **One look for the whole app: step 3, settle the one look (owner, 2026-11-25).** The owner sees every module still
-   looking like a different app (the bodies never moved after the shared foundation). Decided: pause the Bourse; draw two
-   or three screens both ways (Submersibles-led and Atelier-led) for the owner to pick from; then redraw every screen in
+   looking like a different app (the bodies never moved after the shared foundation). Decided: pause the Bourse; draw screens both ways for the owner to pick from (done: `docs/one-look/v3/`, four
+   candidates); **the owner chose B, Atelier-led** (book chapters, one ledger per section, leaders, figures at reading size,
+   Submersibles' state colours, the answer band's blocks shown on the phone); then redraw every screen in
    the chosen look, change the house rules to match (the owner has since chosen dark capital section bars and the
    answer band's blocks on the phone, which change the 2026-11-24 choices), and move each module in its own pull request.
    Earlier history of this item follows.

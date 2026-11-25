@@ -214,3 +214,10 @@ marked "default (not asked)"; the owner can change any of them.
 | Trip section heads (look v2) | Dark capital bars (to be confirmed by the one-look choice above, since it changes the book-style rule of 2026-11-24 for every module). |
 | Answer-band blocks on the phone | Show them (an exception to the phone's first-row limit, or a rule change, decided with the one look). |
 | The downloaded single-file Tracker | Its Market Board points to the Command Center and shows no prices. |
+
+## Fourth round (owner, 2026-11-25): the one look for the whole app
+
+| Question | Answer |
+| --- | --- |
+| Which look every module moves to (A Submersibles-led, B Atelier-led, C lanes under book titles, D dark bars over ledgers; `docs/one-look/v3/`) | **B, Atelier-led** (the recommendation was D). |
+| Consequences | The dark-bars Trip variant is withdrawn; the Bourse is redrawn in B (look v3). The answer band's blocks stay on the phone, as answered in round three. |

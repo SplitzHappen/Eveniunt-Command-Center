@@ -241,6 +241,22 @@ that is a fold the owner may want back, at the cost of the first lane starting l
 loses the quality and ranking switches at rest (the setting shows in the answer band's label; the switch is in Bourse
 settings).
 
+## Look v3 (2026-11-25): the one look, Atelier-led
+
+The owner chose look B for the whole app (`docs/one-look/v3/`), so the Bourse follows it. Supersedes look v2 where they
+differ: sections are book-style chapters (Roman numeral, serif title, italic line, count block); each section's items are
+one ledger with dashed separators (no separate lane boxes); the state block is small (88 px) with its count or word; a
+dotted leader runs from the name to the figure; figures are at reading size (IBM Plex Mono 17 px), words in the body face;
+the answer band keeps the huge figure (96 px; 52 px on a phone) and its state blocks, which stay on the phone too (owner);
+Submersibles' state colours stay; the route track's stops are outlined circles, the stop you are at ringed in the accent;
+the current view on the rail is the dark slab with the molten edge (as Lists). Only rows you can act on now carry the
+accent button; More holds the rest. The dark-bars Trip variant is withdrawn.
+
+Measured (38 screen pictures): at least 8 rows in view at 1,440 x 1,000 on Trip, Item, Profit and Watch; rows 48 to 52 px
+at rest at 1,440 and at most 96 px at 360; no sideways scroll; no monospace without a digit. On the phone the first row
+starts at 256 px under the header on every screen, because the answer band's blocks are shown: within the 256 px limit for
+a screen with a strip, 56 px over the 200 px limit for the others, an exception the owner chose.
+
 ## 8. Picture notes and the bold test
 
 `docs/bourse/pictures/notes.md`: what was measured, what was not, and one line per screen ("bold" or "still tame").

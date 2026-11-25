@@ -1,4 +1,4 @@
-// Writes the Bourse mock-up pages, look v2 (docs/bourse-look-spec.md) into docs/bourse/mock/: node docs/bourse/tools/make-mock.mjs
+// Writes the Bourse mock-up pages, look v3 (Atelier-led) (docs/bourse-look-spec.md) into docs/bourse/mock/: node docs/bourse/tools/make-mock.mjs
 // Static pages, no behaviour. They load the built site's own fonts.css, shared.css, one-look.css and look.js, so every theme
 // of the app applies; the layout is docs/bourse/mock/bourse-mock.css. Names are from the pinned game data (7.57h1); every
 // price, age and sales figure is an example, computed here once so the screens agree with each other.
@@ -41,7 +41,7 @@ function page(file, title, body, opts = {}) {
   const html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + esc(title) + ' · Bourse mock-up</title>\n' +
     '<link rel="stylesheet" href="' + SITE + 'fonts.css">\n<link rel="stylesheet" href="' + SITE + 'shared.css">\n<link rel="stylesheet" href="' + SITE + 'one-look.css">\n<link rel="stylesheet" href="bourse-mock.css">\n' +
     '<script>try { var t = (JSON.parse(localStorage.getItem(\'eveniunt-tracker-ui\') || \'{}\') || {}).theme; if (t === \'light\' || t === \'dark\') document.documentElement.setAttribute(\'data-theme\', t); } catch (e) { /* none */ }</script>\n' +
-    '</head>\n<body class="bm ol-page">\n<script src="' + SITE + 'look.js"></script>\n' + header(opts.tools) + '\n' + body + '\n' + FOOT + (opts.after || '') + '\n</body>\n</html>\n';
+    '</head>\n<body class="bm bm-book ol-page">\n<script src="' + SITE + 'look.js"></script>\n' + header(opts.tools) + '\n' + body + '\n' + FOOT + (opts.after || '') + '\n</body>\n</html>\n';
   fs.writeFileSync(path.join(OUT, file), html);
 }
 const sb = (cls, b, i, w) => '<span class="ol-sb ' + cls + '"><b' + (w ? ' class="ol-w"' : '') + '>' + b + '</b>' + (i ? '<i>' + i + '</i>' : '') + '</span>';
@@ -121,7 +121,6 @@ function tripBody(heads) {
   return out + '<p class="bm-hint">You can buy on another data center or region, but not sell there. Travel stops 30 minutes before maintenance.</p></main></div>';
 }
 page('trip.html', 'Shopping trip', tripBody('book'), { seal: 'Bought all here' });
-page('trip-bars.html', 'Shopping trip, dark bars', tripBody('bars'), { seal: 'Bought all here' });
 
 // ------------------------------------------------------------------------------------------------- the item: cheapest anywhere
 function rnd(seed) { let x = seed; return () => { x = (x * 16807) % 2147483647; return x / 2147483647; }; }

@@ -1,15 +1,15 @@
-# Bourse mock-up pictures: notes (look v2, 2026-11-25)
+# Bourse mock-up pictures: notes (look v3, Atelier-led, 2026-11-25)
 
 Made with `node docs/bourse/tools/make-mock.mjs` then `node docs/bourse/tools/shoot.mjs` (Chromium, deviceScaleFactor 1,
 viewport only). The pages load the built site's own `fonts.css`, `shared.css`, `one-look.css` and `look.js`; the theme is
 set the way the app stores it. Every price, age, sale and tax figure is an example; item and world names are from the
-pinned game data (7.57h1). Look v1 pictures are in the history of this branch.
+pinned game data (7.57h1). Look v1 and v2 pictures are in the history of this branch.
 
-**Pictures (50).** Trip (book-style titles), Trip (dark capital bars), Item, Profit and Watch at 1,440 x 1,000 and 360 x 800
-in Crystarium Dawnglass light and dark, Azure Dragoon dark and Ul'dah Sultanate Gilt light (40); the settings sheet, the
+**Pictures (42).** Trip, Item, Profit and Watch at 1,440 x 1,000 and 360 x 800
+in Crystarium Dawnglass light and dark, Azure Dragoon dark and Ul'dah Sultanate Gilt light (32); the settings sheet, the
 empty trip and the states page at 1,440 light and 360 dark (6); one comparison sheet per theme (4).
 
-**Measured** (`measures.json`, all 46 screen pictures): no sideways scroll at 360 px; the largest text is the huge figure
+**Measured** (`measures.json`, all 38 screen pictures): no sideways scroll at 360 px; the largest text is the huge figure
 (104 px, 52 px on a phone); lanes 52 to 56 px at rest at 1,440 and at most 96 px at 360; at least 8 lanes in view at
 1,440 x 1,000 on Trip (both), Item, Profit and Watch; first lane on the phone at most 200 px under the header (Trip with
 dark bars 224 px, its stop head being the strip, limit 256); at most the action and More per lane; no monospace without a
