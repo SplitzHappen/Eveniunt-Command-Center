@@ -160,7 +160,9 @@ Nothing.
    **2026-11-25, owner: the Bourse in look B is approved; next is a pull request that writes look B into the house
    rules with its checks, then one pull request per module (Lists, Atelier, Tracker, Home and Settings, Submersibles),
    the Bourse last; an outside review (ChatGPT and Mistral) of the Bourse plan and look comes before any build, prompt
-   `docs/bourse-review-prompt.md`, to be filed in the Continuity assignment bus.**
+   `docs/bourse-review-prompt.md`, filed 2026-11-25 in the private Continuity repository as
+   `ASG-20261125-bourse-plan-review-chatgpt-001` and `ASG-20261125-bourse-plan-review-mistral-001` (candidate: pull
+   request 10 at `0df8781`); waiting for the owner to hand each its pointer.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
