@@ -189,3 +189,17 @@ marked "default (not asked)"; the owner can change any of them.
 | 38 | **Show both in the mock-ups** (the proposed answers and a savings-led version); the owner chooses from the pictures. |
 | 39 | Default (not asked): watch list, trip ticks, profit and Bourse settings, price place in the save; prices never. |
 | 40 | Yes, in the same pull request: Lists shows high-quality prices. |
+
+## Second round (owner, 2026-11-25), after the first mock-ups, the research and the spec
+
+| Question | Answer |
+| --- | --- |
+| Approve the look? | **Change something**, on every screen: too busy, not bold enough, colours off, does not feel like one app. Closest existing screen: **Submersibles**. |
+| Colours | **Submersibles' state colours** (green act now, blue next, amber waiting, hatched unknown, the accent for the main action) instead of Lists' market purple; gil gold only for gil bars, as on Earnings. |
+| Section heads | **Draw both** (Submersibles' dark capital bars, and the book-style titles of the one-look rule) on the Trip screen; the owner chooses from the pictures. |
+| Trip's big number | **A: the total to spend.** |
+| Where prices are read (replaces answers 5 and 15) | **The whole travel area: North America (Aether, Primal, Crystal, Dynamis), Europe (Chaos, Light) and Oceania (Materia)**, because travel between North America and Europe is opening and Oceania is reachable; every figure the app can use should cover these seven data centers. The sale price for profit is read over the same area. |
+| Travel area | **Exactly these seven data centers** (the owner: "there are only 7"; they match the app's own world list, `tracker/data/live.json`). |
+| Another region on the trip | **Fewest region hops first**: grouped by region, then data center, biggest savings first in each; another region only when the saving beats the threshold. |
+| A market listing is bought whole | **Yes, the whole stack.** |
+| Where watch alerts run | **On every page of the app** (not the recommendation; a small price script and paced lookups on every page). |
