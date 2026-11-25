@@ -251,3 +251,5 @@ Regenerate (needs raw.githubusercontent.com):
 python3 -I tools/lists-data.py --cache /tmp/lists-data-cache
 node tests/lists-data.test.js
 ```
+
+- Market replies (Universalis public API v2, `universalis.app/api/v2`, 2026-11-25): saved once each, names of retainers, buyers and creators removed and trimmed, in `tests/fixtures/universalis/` (see its `README.md`); read only by `tests/bourse-replies.test.js`, never by the app.
