@@ -157,6 +157,10 @@ Nothing.
    Submersibles' state colours, the answer band's blocks shown on the phone); then redraw every screen in
    the chosen look, change the house rules to match (the owner has since chosen dark capital section bars and the
    answer band's blocks on the phone, which change the 2026-11-24 choices), and move each module in its own pull request.
+   **2026-11-25, owner: the Bourse in look B is approved; next is a pull request that writes look B into the house
+   rules with its checks, then one pull request per module (Lists, Atelier, Tracker, Home and Settings, Submersibles),
+   the Bourse last; an outside review (ChatGPT and Mistral) of the Bourse plan and look comes before any build, prompt
+   `docs/bourse-review-prompt.md`, to be filed in the Continuity assignment bus.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,

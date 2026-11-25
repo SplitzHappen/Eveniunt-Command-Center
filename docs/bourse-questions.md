@@ -221,3 +221,12 @@ marked "default (not asked)"; the owner can change any of them.
 | --- | --- |
 | Which look every module moves to (A Submersibles-led, B Atelier-led, C lanes under book titles, D dark bars over ledgers; `docs/one-look/v3/`) | **B, Atelier-led** (the recommendation was D). |
 | Consequences | The dark-bars Trip variant is withdrawn; the Bourse is redrawn in B (look v3). The answer band's blocks stay on the phone, as answered in round three. |
+
+## Fifth round (owner, 2026-11-25)
+
+| Question | Answer |
+| --- | --- |
+| Approve the Bourse in look B (look v3)? | **Approved.** The builder copies `docs/bourse/pictures/` and `docs/bourse-look-spec.md`, look v3. |
+| Next step for the one look | **Rules, then module moves:** a pull request that writes look B into `docs/design-rules.md` (with the phone exception) and its checks; then one pull request per module (Lists, Atelier, Tracker, Home and Settings, Submersibles); the Bourse built last, straight into it. |
+| Outside review before building | **Yes:** ChatGPT and Mistral through the assignment bus; prompt in `docs/bourse-review-prompt.md`. |
+| Tax-rate fallback and ranking pace | The owner asked why tax rates would ever be unreadable (answered in the conversation: offline, the price site down or slowing the app, or a world nobody has reported lately). The 5% labelled fallback stays as a safety net; the ranking pace takes the recommended default (about 30 presses over a day). |

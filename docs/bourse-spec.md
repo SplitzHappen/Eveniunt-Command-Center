@@ -734,3 +734,7 @@ candidates (`docs/one-look/v3/`). The Bourse is drawn in it (`docs/bourse/mock/`
 withdrawn. The answer band's state blocks stay on the phone (owner's choice): on screens without a strip the first row then
 starts at 256 px, over the 200 px limit of design rule P3, an exception the owner chose, to be written into
 `docs/design-rules.md` with the one-look move. The Bourse stays paused until the one look's module moves begin.
+
+**Round five (owner, 2026-11-25).** Look v3 approved; B6 and later no longer wait on the look, only on the outside review
+and on the one-look rules pull request. Question 7 (tax fallback) closed: the labelled 5% stays as a safety net. Question 9
+(ranking pace) closed: the recommended pace.
