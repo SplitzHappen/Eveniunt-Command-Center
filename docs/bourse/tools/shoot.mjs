@@ -57,7 +57,7 @@ async function shot(name, w, h, theme, mode) {
   });
   if (errors.length) m.errors = errors;
   measures[name + '-' + w + '-' + theme + '-' + mode] = m;
-  await page.screenshot({ path: path.join(OUT, name + '-' + w + '-' + theme + '-' + mode + '.png') });
+  await page.screenshot({ path: path.join(OUT, name + '-' + w + '-' + theme + '-' + mode + '.png'), fullPage: name === 'states' });
   await ctx.close();
 }
 

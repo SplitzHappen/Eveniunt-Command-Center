@@ -36,5 +36,5 @@ blocks on the phone, the owner's choice of round three; the owner is asked wheth
 | Profit | Bold | Yes | Ranked ledger; the ranking switch is in the section head on the phone; on the phone the price sits under the name so long names stay whole. |
 | Watch | Bold | Yes | The legend for marks look B does not draw was removed; the alert line moved to the states page. |
 | Settings sheet | Calm, by intent | Yes | The seven data centers as boxes by region, the home world named, one threshold control, alerts every 30 minutes. |
-| States page | Bold | Yes | Notices, empty parts, edge rows, and the alert line with its age and Close. |
+| States page | Bold | Yes | A full-page reference sheet (nothing pinned): notices, empty parts, the trip lines the corrected spec adds (made without a region, a quick split, items without a home price, no shared alert checker, the copied shopping list, a row to check, the only listings, an approximate amount), edge rows, and the alert line with its age and Close. |
 | Empty trip | Bold | Yes | Unchanged. |

@@ -41,7 +41,7 @@ function page(file, title, body, opts = {}) {
   const html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + esc(title) + ' · Bourse mock-up</title>\n' +
     '<link rel="stylesheet" href="' + SITE + 'fonts.css">\n<link rel="stylesheet" href="' + SITE + 'shared.css">\n<link rel="stylesheet" href="' + SITE + 'one-look.css">\n<link rel="stylesheet" href="bourse-mock.css">\n' +
     '<script>try { var t = (JSON.parse(localStorage.getItem(\'eveniunt-tracker-ui\') || \'{}\') || {}).theme; if (t === \'light\' || t === \'dark\') document.documentElement.setAttribute(\'data-theme\', t); } catch (e) { /* none */ }</script>\n' +
-    '</head>\n<body class="bm bm-book ol-page">\n<script src="' + SITE + 'look.js"></script>\n' + header(opts.tools) + '\n' + body + '\n' + FOOT + (opts.after || '') + '\n</body>\n</html>\n';
+    '</head>\n<body class="bm bm-book ol-page' + (opts.bodyClass ? ' ' + opts.bodyClass : '') + '">\n<script src="' + SITE + 'look.js"></script>\n' + header(opts.tools) + '\n' + body + '\n' + FOOT + (opts.after || '') + '\n</body>\n</html>\n';
   fs.writeFileSync(path.join(OUT, file), html);
 }
 const sb = (cls, b, i, w) => '<span class="ol-sb ' + cls + '"><b' + (w ? ' class="ol-w"' : '') + '>' + b + '</b>' + (i ? '<i>' + i + '</i>' : '') + '</span>';
@@ -244,10 +244,21 @@ page('states.html', 'States',
   eline('<b>Choose your home world</b> to see where to sell and the seller\'s tax. Prices to buy work without it.', 'Choose a home world') +
   eline('<b>Nothing watched yet.</b> Add an item here, or press "Watch this item" on any item.', 'Add an item') +
   eline('<b>Find an item</b> in the search above to see its price on all seven data centers.', '') + '</section>' +
-  '<section class="ol-chap-wrap">' + chap('III', 'Lanes in edge states', 'Drawn the same way on every screen', '') + '<div class="bm-lanes">' +
+  '<section class="ol-chap-wrap">' + chap('III', 'Trip lines added after the review', 'Each in place of, or under, the answer it qualifies', '') +
+  note('ol-r-idle', 'Made without Europe', 'Europe could not be fetched, so this trip uses North America and Oceania only. Its prices may be higher than they need be.', 'Try again') +
+  note('ol-r-idle', 'A quick split', 'This trip is long, so the app made a quick split instead of the best one. Its total may be a little higher; the best possible total is at least ' + fig(gil(241200)) + ' gil.', '') +
+  note('ol-r-idle', 'Items without a home price', fig(3) + ' items have no listing on Gilgamesh, so their saving against home is unknown.', '') +
+  note('ol-r-locked', 'Your browser cannot share one alert checker between tabs', 'Automatic alerts are off in this browser; the watch list still shows what is under target when you open it.', '') +
+  note('ol-r-back', 'Copied from the Tracker', fig(4) + ' items copied from the Tracker\'s old shopping list into this trip; ' + fig(1) + ' skipped (no longer sold on the market). The old list is kept.', '') +
+  '<div class="bm-lanes">' +
+  lane({ st: 'ol-r-locked ol-hatch', word: 'Check', isWord: 1, name: 'Glossy Dried Ether', facts: 'your lists changed since you ticked it: how many of the ' + fig(6) + ' bought still count?', mid: '', ans: 'unknown', ansWord: 1, ansSmall: 'still to buy', act: 'Check', }) +
+  lane({ st: 'ol-r-out', word: 'Only here', isWord: 1, name: 'Eucalyptus', facts: 'seen 48 min ago · the only listings in your travel area are on Siren · ' + fig(3) + ' at ' + fig(gil(4100)), mid: '', ans: gil(12300), ansSmall: 'gil for 3' }) +
+  lane({ st: 'ol-r-idle', word: 'About', isWord: 1, name: 'Water Cluster', facts: 'seen 9 min ago · ' + fig(gil(2001)) + ' needed: approximate split over many listings, at most ' + fig(gil(6003)) + ' gil', mid: '', ans: '≈ ' + gil(5410), ansSmall: 'gil for 2,001' }) +
+  '</div></section>' +
+  '<section class="ol-chap-wrap">' + chap('IV', 'Lanes in edge states', 'Drawn the same way on every screen', '') + '<div class="bm-lanes">' +
   lane({ st: 'ol-r-bad', word: 'Loss', isWord: 1, name: 'Grade 2 Gemdraught of Intelligence', hq: 1, facts: 'sells ' + fig(39) + ' a day · materials ' + fig(gil(36120)) + ' · sale middle ' + fig(gil(34800)) + ' after tax', mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i class="bm-neg"></i></span>', ans: '−' + gil(1320), ansSmall: 'gil each' }) +
   lane({ st: 'ol-r-locked ol-hatch', word: 'HQ only', isWord: 1, name: "Kozama'uka Chamomile", facts: 'no normal-quality listing in the travel area · ' + fig(2) + ' high quality at ' + fig(gil(24800)) + ' on Seraph', mid: '', ans: 'unknown', ansWord: 1, ansSmall: 'normal quality' }) +
   lane({ st: 'ol-r-idle', word: 'Bait?', isWord: 1, name: 'Sanctified Water', facts: 'seen 3 min ago · 1 at ' + fig(2000) + ' on Hyperion, far below recent sales (' + fig(gil(19300)) + ') · the rest from ' + fig(gil(18900)), mid: lots([1, 5]), ans: gil(2000 + 5 * 18900), ansSmall: 'gil for 6', act: 'Bought' }) +
-  '</div></section></main></div>', { after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
+  '</div></section></main></div>', { bodyClass: 'bm-gallery', after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
 
 console.log('mock pages in ' + OUT + ': total ' + total + ', counts ' + JSON.stringify(count));

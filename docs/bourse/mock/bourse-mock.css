@@ -109,6 +109,9 @@ body.bm { min-height: 100vh; }
 
 /* status line (S1) */
 .bm-status { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); display: block; width: max-content; max-width: min(720px, calc(100% - 24px)); padding: 12px var(--s4); background: var(--slab); color: var(--on-slab); border-left: 4px solid var(--seal); font: 400 14px/1.3 var(--f-body); }
+/* the states page is a reference sheet: nothing is pinned, so a full-page picture shows every part in place */
+.bm-gallery .bm-status, .bm-gallery .bm-rail, .bm-gallery .bm-act { position: static !important; transform: none; }
+.bm-gallery .bm-status { margin: 0 auto var(--s5); }
 .bm-status a { margin-left: 12px; color: var(--on-slab); font-weight: 700; text-decoration: underline 2px var(--seal); text-underline-offset: 3px; }
 
 /* notices and empty parts */

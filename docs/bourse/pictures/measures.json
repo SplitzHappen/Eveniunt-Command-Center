@@ -544,9 +544,9 @@
   "rowMax": 52,
   "rowMin": 52,
   "rowsInView": 0,
-  "visibleBottom": 941,
+  "visibleBottom": 1000,
   "namesClipped": [],
-  "firstRowFromHeader": 970,
+  "firstRowFromHeader": 1390,
   "largest": {
    "size": 96,
    "text": "4"
@@ -557,11 +557,11 @@
  "states-360-crystarium-dawnglass-dark": {
   "sideways": false,
   "rowMax": 89,
-  "rowMin": 71,
+  "rowMin": 68,
   "rowsInView": 0,
-  "visibleBottom": 618,
+  "visibleBottom": 800,
   "namesClipped": [],
-  "firstRowFromHeader": 1320,
+  "firstRowFromHeader": 2122,
   "largest": {
    "size": 52,
    "text": "4"
