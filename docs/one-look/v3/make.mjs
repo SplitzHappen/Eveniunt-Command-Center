@@ -24,6 +24,7 @@ const icon = (k) => '<svg class="bm-ic" viewBox="0 0 24 24" aria-hidden="true">'
 const sb = (cls, b, i, w) => '<span class="ol-sb ' + cls + '"><b' + (w ? ' class="ol-w"' : '') + '>' + b + '</b>' + (i ? '<i>' + i + '</i>' : '') + '</span>';
 const more = '<button class="ol-btn-2 bm-more" type="button" aria-label="More">' + icon('dots') + '</button>';
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+const LOOKS = { A: ['bars', 'lanes', 'Submersibles-led'], B: ['book', 'ledger', 'Atelier-led'], C: ['book', 'lanes', 'mix: lanes under book titles'], D: ['bars', 'ledger', 'mix: dark bars over ledgers'] };
 
 function header(word, here, tools) {
   const nav = ['Home', 'Tracker', 'Atelier', 'Submersibles', 'Lists', 'Bourse', 'Settings'].map((n) => '<a href="#"' + (n === here ? ' aria-current="page"' : '') + '>' + n + '</a>').join('');
@@ -36,13 +37,13 @@ function page(file, title, v, word, here, body, tools) {
   const html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + esc(title) + ' · one look ' + v + '</title>\n' +
     '<link rel="stylesheet" href="' + SITE + 'fonts.css">\n<link rel="stylesheet" href="' + SITE + 'shared.css">\n<link rel="stylesheet" href="' + SITE + 'one-look.css">\n<link rel="stylesheet" href="../../../bourse/mock/bourse-mock.css">\n<link rel="stylesheet" href="v3.css">\n' +
     '<script>try { var t = (JSON.parse(localStorage.getItem(\'eveniunt-tracker-ui\') || \'{}\') || {}).theme; if (t === \'light\' || t === \'dark\') document.documentElement.setAttribute(\'data-theme\', t); } catch (e) { /* none */ }</script>\n' +
-    '</head>\n<body class="bm ol-page' + (v === 'B' ? ' v3-book' : '') + '">\n<script src="' + SITE + 'look.js"></script>\n' + header(word, here, tools) + '\n' + body +
-    '\n<p class="bm-foot"><b>Mock-up, look ' + v + ' (' + (v === 'A' ? 'Submersibles-led' : 'Atelier-led') + ').</b> Figures are examples. This app reads nothing from the game.</p>\n</body>\n</html>\n';
+    '</head>\n<body class="bm ol-page' + (LOOKS[v][1] === 'ledger' ? ' v3-ledger' : '') + (v === 'B' ? ' v3-book' : '') + '">\n<script src="' + SITE + 'look.js"></script>\n' + header(word, here, tools) + '\n' + body +
+    '\n<p class="bm-foot"><b>Mock-up, look ' + v + ' (' + LOOKS[v][2] + ').</b> Figures are examples. This app reads nothing from the game.</p>\n</body>\n</html>\n';
   fs.writeFileSync(path.join(OUT, file), html);
 }
 // a section head: A = dark capital bar with a state strip; B = book chapter
 function head(v, n, title, sub, sumA, sumB, strip, closed) {
-  if (v === 'A') return '<div class="bm-bhead"><span class="bm-bhead-strip" aria-hidden="true">' + (strip || []).map(([r, k]) => '<i class="' + r + '" style="--n:' + k + '"></i>').join('') + '</span><div class="bm-bhead-bar"><div><h2>' + title + '</h2><p>' + sub + '</p></div><div class="bm-sum">' + sumA + '</div></div></div>';
+  if (LOOKS[v][0] === 'bars') return '<div class="bm-bhead"><span class="bm-bhead-strip" aria-hidden="true">' + (strip || []).map(([r, k]) => '<i class="' + r + '" style="--n:' + k + '"></i>').join('') + '</span><div class="bm-bhead-bar"><div><h2>' + title + '</h2><p>' + sub + '</p></div><div class="bm-sum">' + sumA + '</div></div></div>';
   return '<div class="ol-chap' + (closed ? ' ol-closed' : '') + '"><span class="ol-num">' + ROMAN[n] + '</span><div><h2>' + title + '</h2><p class="ol-sub">' + sub + '</p></div><div class="ol-sum">' + sumB + '</div></div>';
 }
 function lane(o) {
@@ -53,10 +54,11 @@ function lane(o) {
 const slab = (kick, h1, sub, n, label, blocks) => '<div class="ol-slab"><div class="ol-sl-id"><span class="ol-kick">' + kick + '</span><h1>' + h1 + '</h1><span class="ol-sl-sub">' + sub + '</span></div><div class="bm-huge"><b>' + n + '</b><small>' + label + '</small></div><div class="ol-sl-ans ol-blocks">' + blocks + '</div></div>';
 const bar = (w, role) => '<span class="bm-gbar ' + role + '" aria-hidden="true"><i style="width:' + w + '%"></i></span>';
 
-for (const v of ['A', 'B']) {
+for (const v of Object.keys(LOOKS)) {
+  const HEADS = LOOKS[v][0], ROWS = LOOKS[v][1];
   // ----------------------------------------------------------------------------------------------- Atelier: a solved recipe
   const recipes = [['Maple Lumber', 1], ['Maple Clogs', 1], ['Maple Shortbow', 2], ['Bone Harpoon', 3], ['Maple Pattens', 4], ["Amateur's Grinding Wheel", 4], ['Square Maple Shield', 5]];
-  const recipeList = v === 'A'
+  const recipeList = ROWS === 'lanes'
     ? '<div class="bm-lanes">' + recipes.map(([n, lv], i) => lane({ st: i === 0 ? 'ol-r-seal' : 'ol-r-slab', outline: i > 0, solid: i === 0, thin: 1, word: lv, small: 'Lv', name: n, facts: 'Carpenter', ans: '', noActs: 1 })).join('') + '</div>'
     : '<div class="ol-ix-list">' + recipes.map(([n, lv], i) => '<a class="ol-ix' + (i === 0 ? ' ol-on' : '') + '" href="#"><span class="ol-tag">CRP</span><span class="ol-name">' + n + '</span><span class="ol-lead"></span><span class="ol-val ol-lv">' + lv + '</span></a>').join('') + '</div>';
   const fld = (l, val) => '<label class="ol-fld"><span class="ol-lbl">' + l + '</span><input class="ol-fig" value="' + val + '"></label>';
@@ -107,8 +109,8 @@ for (const v of ['A', 'B']) {
   page('bourse-' + v + '.html', 'Bourse trip', v, 'Bourse', 'Bourse',
     '<div class="bm-layout">' + rail([['trip', 'Trip', 10], ['item', 'Item'], ['profit', 'Profit'], ['watch', 'Watch', 3]], 'trip') + '<main class="bm-main">' +
     slab('Total to spend:', 'Gemdraught batch', fig(5) + ' to buy here for ' + fig(gil(here)) + ' gil · 4 stops, 2 data-center hops', gil(266478), 'gil · Tamsin Reed', sb('ol-r-back', 5, 'Buy here') + sb('ol-r-out', 5, 'Later') + sb('ol-r-idle', 1, 'Old') + sb('ol-r-slab ol-outline', 1, 'Done')) + route +
-    '<section class="ol-chap-wrap">' + head(v, 0, v === 'A' ? 'Stop 1 · Exodus' : 'Exodus', 'Stop 1 · Primal · North America · you are here', fig(gil(here)) + '<small>GIL · 5 TO BUY</small>', sb('ol-r-back ol-sm', 5, 'Buy here'), T1.map(() => ['ol-r-back', 1])) + '<div class="bm-lanes">' + T1.map((x) => tl(x)).join('') + '</div></section>' +
-    '<section class="ol-chap-wrap">' + head(v, 1, v === 'A' ? 'Stop 2 · Famfrit' : 'Famfrit', 'Stop 2 · Primal · North America', fig(gil(T2.reduce((a, x) => a + sum(x[1]), 0))) + '<small>GIL · 2 ITEMS</small>', sb('ol-r-out ol-sm', 2, 'Later'), [['ol-r-out', 1], ['ol-r-idle', 1]]) + '<div class="bm-lanes">' + T2.map((x) => tl(x)).join('') + '</div></section>' +
+    '<section class="ol-chap-wrap">' + head(v, 0, HEADS === 'bars' ? 'Stop 1 · Exodus' : 'Exodus', 'Stop 1 · Primal · North America · you are here', fig(gil(here)) + '<small>GIL · 5 TO BUY</small>', sb('ol-r-back ol-sm', 5, 'Buy here'), T1.map(() => ['ol-r-back', 1])) + '<div class="bm-lanes">' + T1.map((x) => tl(x)).join('') + '</div></section>' +
+    '<section class="ol-chap-wrap">' + head(v, 1, HEADS === 'bars' ? 'Stop 2 · Famfrit' : 'Famfrit', 'Stop 2 · Primal · North America', fig(gil(T2.reduce((a, x) => a + sum(x[1]), 0))) + '<small>GIL · 2 ITEMS</small>', sb('ol-r-out ol-sm', 2, 'Later'), [['ol-r-out', 1], ['ol-r-idle', 1]]) + '<div class="bm-lanes">' + T2.map((x) => tl(x)).join('') + '</div></section>' +
     '</main></div>');
 }
 console.log('one look v3 mock pages in ' + OUT);
