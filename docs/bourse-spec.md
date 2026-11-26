@@ -4,7 +4,7 @@ Written 2026-11-24 for a Sonnet builder and a Haiku clerk; revised after a same-
 owner's rounds two to six (sections 13, 14), round one of the outside review (section 14), the facts of B0 and B1
 (section 15) and, on 2026-11-26, **round two of the outside review (section 16)**. Plan only: apart from B0 (a report)
 and B1 (saved replies and their test) nothing was built. **Building is paused** (order below).
-Binding inputs: the owner's answers in `docs/bourse-questions.md` (six rounds; a later round replaces an earlier one),
+Binding inputs: the owner's answers in `docs/bourse-questions.md` (seven rounds; a later round replaces an earlier one),
 `docs/bourse-review-adjudication.md` and `docs/bourse-review-adjudication-2.md`, the look spec
 `docs/bourse-look-spec.md`, look v3 (screens are not designed here), `docs/design-rules.md`, `docs/bourse-research.md`.
 Blueprint rules restated: **CC-12** prices are labelled as community reports with when and where they were seen;
@@ -49,7 +49,7 @@ Trust marks: **found (B1)** = seen in the saved real replies (`tracker/tests/fix
 | Order of work and the outside review | round five; adjudication 2 | below |
 
 **Order.** Round two of the outside review failed the plan (section 16); the Bourse stays paused. (1) The plan passes:
-the owner decides whether a third outside round is run on these corrections (owner question 15). (2) The one-look
+a third outside round reviews these corrections (owner, round seven: question 15 (a)). (2) The one-look
 rules pull request. (3) The module moves, one pull request each (Lists, Atelier, Tracker, Home and Settings,
 Submersibles). (4) The Bourse, last, straight into the one look, starting with B28 (the baseline taken again at the
 real starting commit). B0 and B1 are done (section 15).
@@ -266,7 +266,7 @@ real starting commit). B0 and B1 are done (section 15).
   "Also add to I have in Lists". Section 8 gives the rule, where it runs and its tests. In one line: **a count =
   the player's own part + the credits of the purchase records that exist**; the own part merges as counts always
   have; the credits follow the records. The setting is built only if item B26 passes; otherwise it stays off and
-  hidden (owner question 14). [Leaving counts to the generic rule: two devices that each add 40 to 10 both store 50,
+  hidden (owner question 14: the owner chose (a), build the rule, round seven). [Leaving counts to the generic rule: two devices that each add 40 to 10 both store 50,
   which merges to 50 while both marks stay. Summing each device's change: two devices typing the same new count would
   double it.]
 - **D47 Purchase records are never edited, and a credited one leaves only by Undo.** That is what makes D46 exact.
@@ -1076,7 +1076,10 @@ sync.
 
 **Owner questions.** **Closed:** 1, 2, 4, 6 (round two); 3 (round three); 8 (round four); 7, 9 (round five); **5 (a)
 the standing sentences as written; 10 (a) older pages stop saving until reloaded; 11 (b) Lists says "before the 5%
-buyer's tax"; 12 (a) one home world; 13 (b) B0 and B1 ran before the second review (all round six).** **Open:**
+buyer's tax"; 12 (a) one home world; 13 (b) B0 and B1 ran before the second review (all round six); 14 (a) build the rule that keeps count and
+purchases together, with the setting left out by itself if the rule fails its tests; 15 (a) a third outside round on
+the corrections before any Bourse code (both round seven, 2026-11-26).** No question is open. The two questions as
+asked:
 
 14. **"Also add to I have in Lists" when you use two devices.** This is the optional setting (off unless you turn it
     on) that makes a tick in the Bourse also raise the item's count in Lists. The second review found that the count
@@ -1239,7 +1242,7 @@ Not done by B0: the price-site stand-ins of `check.js` by check and page; the de
 Both reviewers read the plan at `f6610c6`: ChatGPT (FAIL: 1 blocker, 16 major, 2 minor, 1 note) and Mistral (PASS: 2
 minor, 3 notes). `docs/bourse-review-adjudication-2.md` accepted every finding but one part of R10. **The corrections
 below were planned by a Claude model on a Claude-written spec (same family) and are unreviewed; the Bourse stays
-paused, and whether a third round is run is the owner's choice (question 15).** R17 to R19 and Mistral R2-2 belong to
+paused; the owner chose a third round on these corrections (question 15 (a), round seven).** R17 to R19 and Mistral R2-2 belong to
 the look, R20 to the saved replies and their test: the requester's, not made here.
 
 | Finding | What changed | Where | Left as a known limit |

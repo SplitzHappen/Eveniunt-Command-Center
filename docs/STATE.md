@@ -171,8 +171,10 @@ Nothing.
    devices sync; 16 major), Mistral PASS (minor only); every finding accepted except one part of the tax finding,
    rejected on the 139 saved listings (`docs/bourse-review-adjudication-2.md`); look, examples and saved replies
    corrected (`25bd63f`); spec corrected by the planning agent (29 work items, new section 16, same-family and
-   unreviewed). Open for the owner: question 14 (the Lists setting with two devices) and question 15 (a third outside
-   review round) in `docs/bourse-spec.md` section 11. The Bourse stays paused until the plan passes.**
+   unreviewed). Owner, round seven (2026-11-26): build the rule that keeps the Lists count and the purchases together
+   (question 14 (a)); run a third outside review round on the corrections (question 15 (a)), filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-003` and `ASG-20261126-bourse-plan-review-mistral-003`. The Bourse stays
+   paused until the plan passes; the one-look rules pull request can go on meanwhile.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,

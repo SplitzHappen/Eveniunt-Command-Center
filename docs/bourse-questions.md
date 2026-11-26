@@ -239,3 +239,10 @@ marked "default (not asked)"; the owner can change any of them.
 | 13. Fact-finding before the second review | **(b) Run work items B0 and B1 first** (a read-only report and real price-site replies saved as test files); the second review then judges facts. The session's network was given the price site for this (a personal environment, "Eveniunt Command Center"). |
 | Phone rows with the answer band's blocks | **Keep the blocks, 3 resting rows** on Item, Profit and Watch on a phone; the house rule gets this exception written in with the one-look rules. |
 | 5, 11, 12 | **All three recommendations:** the standing sentences as written; Lists says "before the 5% buyer's tax" beside its prices; one home world for the whole Bourse, switched in settings. |
+
+## Seventh round (owner, 2026-11-26), after the round-two outside reviews
+
+| Question (`docs/bourse-spec.md` section 11) | Answer |
+| --- | --- |
+| 14. "Also add to I have in Lists" when you use two devices | **(a) Build a rule that keeps count and purchases together** (after a sync the count is the player's own part plus every purchase that added to it; if the rule fails its tests, the setting is left out). |
+| 15. A third outside review | **(a) Run a third round on the corrections only**, before any Bourse code; the one-look work can go on meanwhile. |
