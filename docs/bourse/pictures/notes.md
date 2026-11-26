@@ -1,4 +1,4 @@
-# Bourse mock-up pictures: notes (look v3, after the round-three outside reviews, 2026-11-26)
+# Bourse mock-up pictures: notes (look v3, after the round-four outside reviews, 2026-11-26)
 
 Made with `node docs/bourse/tools/make-mock.mjs` then `node docs/bourse/tools/shoot.mjs` (Chromium, deviceScaleFactor 1,
 viewport only). The pages load the built site's own `fonts.css`, `shared.css`, `one-look.css` and `look.js`; the theme is
@@ -59,3 +59,12 @@ alert is pictured over the normal Watch screen. Reading text is at least 12 px.
 - **States page:** the bait row (101,325 gil for 6) and the only-listings row (12,915 gil for 3) include the buyer's 5%.
 - **On the phone:** the facts lines wrap instead of being cut short.
 - **Not measured** (needs the real app, not a static picture): tap sizes, focus and the last reachable control inside the sheet. The build checks them (B11).
+
+**After the round-four outside review (2026-11-26).**
+- **Trip:** the hop counts are worked out from the route, home included: Aether to Primal to Light is "2 data-center hops · 1 region hop". The line stays on one row on the phone.
+- **Profit:** the figures follow the spec's rules.
+  - Sales a day are counted over 7 days. When the last 40 sales are all more recent, the figure reads "at least 5.7 a day" (40 / 7).
+  - Both profit figures are worked out from inputs shown on the row: the price sold at, the price listed (with its world and age), the seller's 3% rounded up, and the materials.
+  - Example: sold 51,856 less 1,556 less 12,060 gives 38,240; listed 49,263 less 1,478 less 12,060 gives 35,725.
+- **Settings:** the home-world source is a line of text under the picker, so it is not cut off on the phone.
+- **States page:** the hourly limit says it counts the Bourse's requests, and that Lists and Submersibles keep their own limit.

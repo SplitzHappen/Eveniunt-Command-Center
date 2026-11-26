@@ -251,4 +251,4 @@ body.bm { min-height: 100vh; }
 }
 /* the trip's stop and hop counts: after "gil left" on a computer, on a line of their own on the phone */
 .bm-cnt::before { content: " · "; }
-@media (max-width: 700px) { .bm-cnt { display: block; } .bm-cnt::before { content: none; } }
+@media (max-width: 700px) { .bm-cnt { display: block; letter-spacing: .02em; white-space: nowrap; } .bm-cnt::before { content: none; } }
