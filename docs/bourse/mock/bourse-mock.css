@@ -230,7 +230,7 @@ body.bm { min-height: 100vh; }
   .bm-lane > .ol-sb i { font-size: 11px; letter-spacing: .02em; }
   .bm-mid { display: none; }
   .bm-nm { font-size: 15px; line-height: 1.15; white-space: normal; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
-  .bm-facts { white-space: nowrap; display: block; font-size: 12px; }
+  .bm-facts { white-space: normal; display: block; font-size: 12px; } /* the facts wrap on the phone: nothing is cut short */
   .bm-ans { font-size: 20px; }
   .bm-lane.bm-thin .bm-ans { font-size: 20px; }
   .bm-ans small { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 400; }
@@ -249,3 +249,6 @@ body.bm { min-height: 100vh; }
   .bm-bar .ol-seg { width: 100%; }
   .bm-eline { flex-direction: column; align-items: flex-start; gap: var(--s2); }
 }
+/* the trip's stop and hop counts: after "gil left" on a computer, on a line of their own on the phone */
+.bm-cnt::before { content: " · "; }
+@media (max-width: 700px) { .bm-cnt { display: block; } .bm-cnt::before { content: none; } }

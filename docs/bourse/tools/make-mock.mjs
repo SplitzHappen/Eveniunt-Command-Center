@@ -83,13 +83,13 @@ const STOPS = [
   { world: 'Famfrit', dc: 'Primal', region: 'North America', items: [
     { n: 'Wind Parsley', parts: [[3, 3200]], seen: '2 h', st: 'later' },
     { n: 'Pearl Grass', parts: [[3, 2950]], seen: '2 days', st: 'old' }] },
-  { world: 'Odin', dc: 'Light', region: 'Europe', opt: 1, items: [
+  { world: 'Odin', dc: 'Light', region: 'Europe', sole: 1, items: [
     { n: "Kozama'uka Chamomile", parts: [[3, 2900]], seen: '3 h', st: 'later' }] },
 ];
 let total = 0, count = { buy: 0, later: 0, old: 0, done: 0 };
-let spent = 0, optional = 0;
+let spent = 0;
 const taxed = (q, p) => q * p + Math.floor(q * p * 0.05); // the buyer's 5% of each whole stack, rounded down
-STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + taxed(p[0], p[1]), 0); s.sum += x.sum; if (x.st === 'done') spent += x.sum; else if (s.opt) optional += x.sum; else total += x.sum; count[x.st]++; }); });
+STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + taxed(p[0], p[1]), 0); s.sum += x.sum; if (x.st === 'done') spent += x.sum; else total += x.sum; count[x.st]++; }); });
 const nowStop = STOPS[0], toBuyHere = nowStop.items.filter((x) => x.st === 'buy');
 function tripLane(x, s) {
   const [r, w] = STATE[x.st], partsTxt = x.parts.map((p) => fig(p[0]) + ' at ' + fig(gil(p[1]))).join(' + ');
@@ -99,23 +99,23 @@ function tripLane(x, s) {
 function route() {
   let out = '<div class="bm-track"><div class="bm-track-line">';
   STOPS.forEach((s, i) => {
-    if (s.opt) out += '<div class="bm-hop"><em>Europe</em></div>';
-    out += '<div class="bm-stop' + (s.here ? ' ol-r-back' : s.opt ? ' bm-opt' : ' ol-r-out') + '"><i>' + (i + 1) + '</i><b>' + s.world + (s.here ? ' · here' : s.home ? ' · home' : s.opt ? ' · if you go' : '') + '</b></div>';
+    if (s.sole) out += '<div class="bm-hop"><em>Europe</em></div>';
+    out += '<div class="bm-stop' + (s.here ? ' ol-r-back' : ' ol-r-out') + '"><i>' + (i + 1) + '</i><b>' + s.world + (s.here ? ' · here' : s.home ? ' · home' : '') + '</b></div>';
   });
   return out + '</div></div>';
 }
 function stopHead(s, i, heads) {
   const items = s.items.length, buyN = s.items.filter((x) => x.st === 'buy').length;
-  const title = s.opt ? 'Only if you go to Europe' : s.world;
-  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · ' + s.world + ': the only reported listings of 1 item, which North America does not sell; 1 region hop; not in the total' : '');
+  const title = s.world;
+  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.sole ? ' · the only reported listings of 1 item you still need, so the trip goes here: 1 region hop' : '');
   const strip = s.items.map((x) => [STATE[x.st][0], 1]);
-  if (heads === 'bars') return bhead(s.opt ? 'If you go: ' + s.world : 'Stop ' + (i + 1) + ' · ' + s.world, s.dc + ' · ' + s.region + (s.home ? ' · home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · saves ' + gil(s.save) + ' gil' : ''), fig(gil(s.sum)) + '<small>GIL · ' + items + ' ITEMS</small>', strip);
+  if (heads === 'bars') return bhead('Stop ' + (i + 1) + ' · ' + s.world, s.dc + ' · ' + s.region + (s.home ? ' · home world' : '') + (s.here ? ' · you are here' : ''), fig(gil(s.sum)) + '<small>GIL · ' + items + ' ITEMS</small>', strip);
   const num = ['I', 'II', 'III', 'IV', 'V'][i];
-  return chap(num, title, sub, s.here ? sb('ol-r-back ol-sm', buyN, 'Buy here') : sb((s.opt ? 'ol-r-out ol-outline' : 'ol-r-out') + ' ol-sm', items, s.opt ? 'If you go' : 'Later'));
+  return chap(num, title, sub, s.here ? sb('ol-r-back ol-sm', buyN, 'Buy here') : sb('ol-r-out ol-sm', items, 'Later'));
 }
 function tripBody(heads) {
   let out = '<div class="bm-layout">' + rail('trip', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
-    slab('Total still to spend, tax in:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here · already bought: ' + fig(gil(spent)) + ' gil', gil(total), 'gil left · ' + (STOPS.length - 1) + ' stops, 1 data-center hop · +' + gil(optional) + ' if you go to Europe',
+    slab('Total still to spend, tax in:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here · already bought: ' + fig(gil(spent)) + ' gil', gil(total), 'gil left<span class="bm-cnt">' + STOPS.length + ' stops · 1 data-center hop · 1 region hop</span>',
       sb('ol-r-back', count.buy, 'Buy here') + sb('ol-r-out', count.later, 'Later') + sb('ol-r-idle', count.old, 'Old') + sb('ol-r-slab ol-outline', count.done, 'Done')) +
     '<div class="bm-routebar">' + route() + '<button class="ol-seal bm-desk" type="button">Bought all here</button></div>';
   STOPS.forEach((s, i) => { out += '<section class="ol-chap-wrap">' + stopHead(s, i, heads) + '<div class="bm-lanes">' + s.items.map((x) => tripLane(x, s)).join('') + '</div></section>'; });
@@ -161,7 +161,7 @@ page('item.html', 'Item prices',
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal quality</button><button type="button" aria-pressed="false">High quality</button></div><button class="ol-seal bm-desk" type="button">Watch this item</button></div>' +
   '<div class="bm-two"><div class="ol-chap-wrap">' + chap('I', 'Cheapest anywhere', 'Seven data centers, cheapest first', sb('ol-r-back ol-sm bm-desk-sum', 8, 'Shown') + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal</button><button type="button" aria-pressed="false">HQ</button></span>') + '<div class="bm-lanes">' +
   cheap.map((x, i) => lane({ st: i === 0 ? 'ol-r-back' : 'ol-r-slab', outline: i > 0, word: i + 1, thin: 1, solid: i === 0, name: x.w + (x.home ? ' · home' : ''), facts: x.dc + ' · ' + x.region + ' · seen ' + x.age + ' ago',
-    mid: '<span class="bm-scale ' + (i === 0 ? 'ol-r-back' : 'ol-r-out') + '" aria-hidden="true"><span class="bm-dot" style="left:' + scaleAt(x.p) + '%"></span></span>', ans: gil(taxed(1, x.p)), ansSmall: 'each, tax in' })).join('') + '</div>' +
+    mid: '<span class="bm-scale ' + (i === 0 ? 'ol-r-back' : 'ol-r-out') + '" aria-hidden="true"><span class="bm-dot" style="left:' + scaleAt(x.p) + '%"></span></span>', ans: gil(taxed(1, x.p)), ansSmall: 'cheapest one, tax in' })).join('') + '</div>' +
   regionHead('II', 'North America') + regionHead('III', 'Europe') + regionHead('IV', 'Oceania') + '</div>' +
   '<div class="ol-chap-wrap">' + chap('V', 'Recent sales', 'What actually sold, 7 days, all seven data centers', sb('ol-r-out ol-sm', perDay, 'A day')) +
   '<div class="bm-figs">' + sb('ol-r-slab ol-outline', gil(sp[0]), 'Low') + sb('ol-r-out', gil(median), 'Middle') + sb('ol-r-slab ol-outline', gil(sp[sp.length - 1]), 'High') + '</div>' + strip() +
@@ -175,6 +175,8 @@ const PROFIT = [
   ['Rroneek Steak', 'CUL', 99, 1, 18640, 22, 7310], ["Ra'Kaznar Ingot", 'BSM', 98, 0, 9120, 85, 11480], ['Claro Walnut Lumber', 'CRP', 98, 0, 6230, 70, 9050, 'cant'],
 ];
 const top = PROFIT[0][4];
+const LWORLD = ['Exodus', 'Siren', 'Gilgamesh', 'Famfrit', 'Cactuar', 'Ultros', 'Balmung', 'Exodus', 'Siren'], LAGE = [20, 35, 12, 50, 18, 41, 26, 9, 33];
+const byListing = (g) => Math.round(g * 0.92); // example: the cheapest listing usually sits a little under recent sales
 const TAX = [['Ishgard', 3], ['Old Sharlayan', 3], ['Kugane', 5], ['The Crystarium', 5], ['Tuliyollal', 5], ['Limsa Lominsa', 5], ['Gridania', 5], ["Ul'dah", 5]];
 page('profit.html', 'Profit per craft',
   '<div class="bm-layout">' + rail('profit', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
@@ -182,8 +184,8 @@ page('profit.html', 'Profit per craft',
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">By recent sales</button><button type="button" aria-pressed="false">By cheapest listing</button></div><button class="ol-seal bm-desk" type="button">Rank these crafts</button></div>' +
   '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after tax, on one scale', sb('ol-r-back ol-sm bm-desk-sum', gil(1212), 'of ' + gil(9856)) + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">Sales</button><button type="button" aria-pressed="false">Listing</button></span>') + '<div class="bm-lanes">' +
   PROFIT.map((r, i) => { const [n, job, lv, hq, g, per, cost, flag] = r; return lane({ st: flag === 'old' ? 'ol-r-idle' : flag === 'cant' ? 'ol-r-locked ol-hatch' : i === 0 ? 'ol-r-seal' : 'ol-r-slab', word: flag === 'old' ? 'Old' : i + 1, isWord: flag === 'old', solid: i === 0,
-    name: n, hq, facts: job + ' · Lv. ' + fig(lv) + ' · sale middle of ' + fig(Math.max(3, per * 2)) + ' sales; cheapest listing ' + fig(gil(Math.round((g + cost) * 0.97))) + ' · sells ' + fig(per) + ' a day · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · you can\'t make this yet' : flag === 'old' ? ' · sale price 2 days old' : ''),
-    mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'gil each' }); }).join('') + '</div>' +
+    name: n, hq, facts: job + ' · ' + fig(40) + ' sales in ' + fig((40 / per).toFixed(1)) + ' days, at least ' + fig(per) + ' a day · listing ' + LWORLD[i] + ' ' + fig(LAGE[i]) + ' min ago · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · can\'t make yet' : flag === 'old' ? ' · 2 days old' : ''),
+    mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'by sales · by listing ' + gil(byListing(g)) }); }).join('') + '</div>' +
   chap('II', 'Sells less than once a day', 'Ranked the same way, kept apart', sb('ol-r-idle ol-sm', 1, 'Slow'), true) + '</section>' +
   '<section class="ol-chap-wrap">' + chap('III', 'Where to sell this week', 'Seller\'s tax by city on Gilgamesh, read 3 hours ago; buyers pay their own 5%', sb('ol-r-back ol-sm', '3%', 'Lowest')) + '<div class="bm-lanes">' +
   TAX.map(([c, t], i) => lane({ st: t === 3 ? 'ol-r-back' : 'ol-r-slab', outline: t !== 3, solid: i === 0, thin: 1, word: t + '%', name: c, facts: i === 0 ? 'Used for profit' : t === 3 ? 'Also reduced this week' : 'Full rate', mid: '', ans: '' })).join('') + '</div></section></main></div>',
@@ -193,9 +195,9 @@ page('profit.html', 'Profit per craft',
 const BELOW = [['Sanctified Water', 15000, 12400, 'Famfrit', '22 min'], ['Glossy Dried Ether', 10000, 9450, 'Exodus', '31 min'], ['Water Cluster', 450, 410, 'Gilgamesh', '9 min']];
 const ABOVE = [["Ra'Kaznar Ore", 600, 2500, 'Balmung', '1 h'], ['Claro Walnut Log', 900, 1260, 'Siren', '40 min'], ['Turali Corn Oil', 1500, 1980, 'Cactuar', '3 h'], ['Dark Rye Flour', 700, 840, 'Odin', '5 h'], ['Splendid Mate Leaves', 3000, 4100, 'Ultros', '9 h']];
 const wLane = (r, under) => { const max = Math.max(r[1], r[2]) * 1.25, at = (v) => Math.round((v / max) * 100);
-  return lane({ st: under ? 'ol-r-back' : 'ol-r-idle', word: under ? 'Under' : 'Above', isWord: 1, solid: under, name: r[0], facts: 'seen ' + r[4] + ' ago · target ' + fig(gil(r[1])) + ' · cheapest ' + fig(gil(r[2])) + ' on ' + r[3],
+  return lane({ st: under ? 'ol-r-back' : 'ol-r-idle', word: under ? 'Under' : 'Above', isWord: 1, solid: under, name: r[0], facts: r[3] + ', ' + r[4] + ' ago · target ' + fig(gil(r[1])),
     mid: '<span class="bm-scale ' + (under ? 'ol-r-back' : 'ol-r-idle') + '" aria-hidden="true"><span class="bm-tick" style="left:' + at(r[1]) + '%"></span><span class="bm-dot" style="left:' + at(r[2]) + '%"></span></span>',
-    ans: gil(Math.abs(r[1] - r[2])), ansSmall: 'gil ' + (under ? 'under' : 'over'), act: under ? 'Add to trip' : '' }); };
+    ans: gil(r[2]), ansSmall: 'cheapest, ' + fig(gil(Math.abs(r[1] - r[2]))) + (under ? ' under' : ' over'), act: under ? 'Add to trip' : '' }); };
 const WATCH_BODY =
   '<div class="bm-layout">' + rail('watch', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
   slab('Under target now:', 'Watched prices', '9 items · alerts ring on every page while the app is open in a tab', BELOW.length, 'of 9 items', sb('ol-r-back', BELOW.length, 'Under') + sb('ol-r-idle', ABOVE.length, 'Above') + sb('ol-r-locked ol-hatch', 1, 'No data')) +
@@ -213,7 +215,7 @@ page('settings.html', 'Bourse settings', tripBody('book') + '<div class="bm-scri
   '<div class="bm-sheet-hd"><h2>Bourse settings</h2><button class="ol-btn-2" type="button">Close</button></div>' +
   chap('I', 'Travel area', 'Where prices are read and the trip may go', '') + '<div class="bm-fields">' +
   '<p class="bm-hint">North America</p><div class="bm-dcs">' + ['Aether', 'Primal', 'Crystal', 'Dynamis'].map((d) => chk(d, 1)).join('') + '</div><p class="bm-hint">Europe</p><div class="bm-dcs">' + ['Chaos', 'Light'].map((d) => chk(d, 1)).join('') + '</div><p class="bm-hint">Oceania</p><div class="bm-dcs">' + chk('Materia', 1) + '</div>' +
-  '<label class="ol-fld"><span class="ol-lbl">Home world (where you sell and where the trip starts)</span><span class="ol-sel"><select><option>Gilgamesh (Aether), from Tamsin Reed</option><option>Siren (Aether), from Joss Marlowe</option></select></span></label></div>' +
+  '<label class="ol-fld"><span class="ol-lbl">Home world (where you sell and where the trip starts)</span><span class="ol-sel"><select><option>Gilgamesh (Aether), from the Tracker’s place setting</option><option>Siren (Aether)</option></select></span></label></div>' +
   chap('II', 'Prices', 'How fresh', '') + '<div class="bm-fields"><div class="bm-pair"><div class="bm-lbl"><span class="ol-lbl">Old after (days)</span>' + stepper(1) + '</div><div class="bm-lbl"><span class="ol-lbl">Left out of profit after (days)</span>' + stepper(7) + '</div></div></div>' +
   chap('III', 'Shopping trip', 'How it splits and what a tick does', '') + '<div class="bm-fields"><div class="bm-lbl"><span class="ol-lbl">Comes first</span><div class="ol-seg" role="group"><button aria-pressed="false" type="button">Fewest stops</button><button aria-pressed="false" type="button">Cheapest</button><button aria-pressed="true" type="button">Trade-off</button></div></div>' +
   '<div class="bm-lbl"><span class="ol-lbl">Pay at most this much more to save a stop or a region (%)</span>' + stepper(10) + '</div>' +
@@ -254,13 +256,13 @@ page('states.html', 'States',
   note('ol-r-back', 'Copied from the Tracker', fig(4) + ' items copied from the Tracker\'s old shopping list into this trip; ' + fig(1) + ' skipped (no longer sold on the market). The old list is kept.', '') +
   '<div class="bm-lanes">' +
   lane({ st: 'ol-r-locked ol-hatch', word: 'Check', isWord: 1, name: 'Glossy Dried Ether', facts: 'your lists changed since you ticked it: how many of the ' + fig(6) + ' bought still count?', mid: '', ans: 'unknown', ansWord: 1, ansSmall: 'still to buy', act: 'Check', }) +
-  lane({ st: 'ol-r-out', word: 'Only here', isWord: 1, name: 'Eucalyptus', facts: 'seen 48 min ago · the only listings in your travel area are on Siren · ' + fig(3) + ' at ' + fig(gil(4100)), mid: '', ans: gil(12300), ansSmall: 'gil for 3' }) +
+  lane({ st: 'ol-r-out', word: 'Only here', isWord: 1, name: 'Eucalyptus', facts: 'seen 48 min ago · the only listings in your travel area are on Siren · ' + fig(3) + ' at ' + fig(gil(4100)), mid: '', ans: gil(taxed(3, 4100)), ansSmall: 'gil for 3, tax in' }) +
   lane({ st: 'ol-r-idle', word: 'About', isWord: 1, name: 'Water Cluster', facts: 'seen 9 min ago · ' + fig(gil(2001)) + ' needed: approximate split over many listings, at most ' + fig(gil(6003)) + ' gil', mid: '', ans: '≈ ' + gil(5410), ansSmall: 'gil for 2,001' }) +
   '</div></section>' +
   '<section class="ol-chap-wrap">' + chap('IV', 'Lanes in edge states', 'Drawn the same way on every screen', '') + '<div class="bm-lanes">' +
   lane({ st: 'ol-r-bad', word: 'Loss', isWord: 1, name: 'Grade 2 Gemdraught of Intelligence', hq: 1, facts: 'sells ' + fig(39) + ' a day · materials ' + fig(gil(36120)) + ' · sale middle ' + fig(gil(34800)) + ' after tax', mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i class="bm-neg"></i></span>', ans: '−' + gil(1320), ansSmall: 'gil each' }) +
   lane({ st: 'ol-r-locked ol-hatch', word: 'HQ only', isWord: 1, name: "Kozama'uka Chamomile", facts: 'no normal-quality listing in the travel area · ' + fig(2) + ' high quality at ' + fig(gil(24800)) + ' on Seraph', mid: '', ans: 'unknown', ansWord: 1, ansSmall: 'normal quality' }) +
-  lane({ st: 'ol-r-idle', word: 'Bait?', isWord: 1, name: 'Sanctified Water', facts: 'seen 3 min ago · 1 at ' + fig(2000) + ' on Hyperion, far below recent sales (' + fig(gil(19300)) + ') · the rest from ' + fig(gil(18900)), mid: lots([1, 5]), ans: gil(2000 + 5 * 18900), ansSmall: 'gil for 6', act: 'Bought' }) +
+  lane({ st: 'ol-r-idle', word: 'Bait?', isWord: 1, name: 'Sanctified Water', facts: 'seen 3 min ago · 1 at ' + fig(2000) + ' on Hyperion, far below recent sales (' + fig(gil(19300)) + ') · the rest from ' + fig(gil(18900)), mid: lots([1, 5]), ans: gil(taxed(1, 2000) + taxed(5, 18900)), ansSmall: 'gil for 6, tax in', act: 'Bought' }) +
   '</div></section></main></div>', { bodyClass: 'bm-gallery', after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
 
 console.log('mock pages in ' + OUT + ': total ' + total + ', counts ' + JSON.stringify(count));

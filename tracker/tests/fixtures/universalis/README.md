@@ -59,8 +59,12 @@ Nothing is missing, so no fallback of the spec was used.
 - Unit of a city rate: percent as a whole number (`Limsa Lominsa: 5`, `Ishgard: 3`, `Crystarium: 0`), not 0.05.
 - `total` does not include `tax`: `total` = `pricePerUnit` x `quantity` in all 734 listings and 200 sales checked.
 - `tax` is rounded down: of 338 listings near 5% where the exact tax had a fraction, `floor` matched all 338, `round` 112,
-  `ceil` none. The tax is an integer. One listing from `retainerCity` 4 had about 2.8%, consistent with a 3% city (the
-  city-number to name mapping is an assumption, not read from the reply).
+  `ceil` none. The tax is an integer. (The 734 listings and 200 sales were checked at capture time; the saved files keep
+  139 listings.)
+- Corrected 2026-11-26 (third outside review): every one of the 139 saved listings pays exactly 5% of its total, rounded
+  down, from retainers in eight city numbers. The lower-looking one is in `region-batch.json`, item 44001: 3 at 12, total
+  36, tax 1 (2.8%) by rounding down, not a 3% city. An earlier note here read it as a 3% city; that was wrong. A 35-gil
+  total (tax 1) is only a made-up example in the tests, not a saved listing.
 
 ## Redaction boundary (2026-11-26, after the round-two outside review)
 
