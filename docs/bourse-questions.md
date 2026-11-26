@@ -268,3 +268,9 @@ marked "default (not asked)"; the owner can change any of them.
 | --- | --- |
 | The optional "Also add to I have in Lists" setting | **Keep it in this plan** (its five findings are fixed; it is still left out by itself if its tests fail). |
 | How the corrections are checked | **A sixth outside round, both reviewers** (ChatGPT and Mistral). |
+
+## Eleventh round (owner, 2026-11-26), after the third in-house red team
+
+| Question (`docs/bourse-review-adjudication-5.md`, last section) | Answer |
+| --- | --- |
+| How to go on when in-house red teams keep finding new serious faults | **Keep red-teaming in-house:** fix, then a fresh check, repeated until one finds no serious fault; then the sixth outside round (both reviewers). Not chosen: sending round six now; a separate project for sync deletions first; pausing. |
