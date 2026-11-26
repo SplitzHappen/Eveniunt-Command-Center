@@ -433,13 +433,13 @@ released by itself**; the rest is built into the one look and released **no soon
   (1) **A new file name.** New code keeps its cloud copy under a new name beside the old one (the old name with
   `-v2` before its ending; B28 reports the old name from `cloud.js`). Older apps go on reading and writing the old
   file and cannot reach the new one, so their two unconditional uploads (`cloud.js` lines 193, 228) can no longer
-  replace a version 2 copy. **New code never writes the old file.** It reads it only to bring its content over: at
-  a device's first version 2 sync, and again whenever the old file's `eTag` is not the one that device recorded (an
-  older device wrote meanwhile); **each time only what the old file changed since the shared checkpoint is taken
-  (D76); "merged with no base" is withdrawn for the old file, because it brought back entries a newer device had
-  removed.** Where the old file and the newer copy both changed one entry, the differences are
-  asked. Known limit: a device that stays on the older app keeps syncing the old file and is not told; what it
-  changes reaches the others when any updated device next syncs.
+  replace a version 2 copy. **New code never writes the old file, and reads it once at most: the first device to
+  update reads it to make the version 2 copy (D76). Once the version 2 copy exists, no new code reads the old file
+  again**, on any device, for any reason. (Owner, twelfth round. The earlier design, taking in what the old file
+  changed again and again by a shared checkpoint, is removed whole.) Known limit, accepted by the owner: a device
+  that stays on the older app keeps syncing the old file and is not told; **what it changes after another device
+  has updated reaches the others only when that device itself updates** and brings its own save along. Nothing of
+  its data is deleted meanwhile.
   (2) **Create only through a verified create-only route; otherwise no create.** The constant
   `ET.CLOUD_CREATE_VERIFIED` is false until both are written into `docs/STATE.md`: Microsoft's documentation for the
   route used, quoted with its address, saying a create of an existing name is refused; and a run on the real personal
@@ -607,32 +607,32 @@ released by itself**; the rest is built into the one look and released **no soon
   epoch nothing is uploaded) and again inside the local write that follows** (with a changed epoch nothing is
   applied and the base is not moved). A save that never had an epoch gets one at the first of those four replacements, so "none on
   both sides" cannot follow a replacement.
-- **D76 The old cloud file is consumed once: a shared checkpoint.** The version 2 cloud copy carries `old: { tag,
-  marks }`: the `eTag` of the old file as last taken in, and for each of its entries a short fixed hash of its value at
-  that time (for a Lists count, the count itself). **A count that has a credited record or an undo mark in the newer
-  copy is never "taken or asked" entry by entry: it goes through BY2 with the checkpoint's count as the base, the old
-  file as one side and the newer copy as the other, so 10 at the checkpoint, 50 with a 40 credit here and 12 typed on
-  an older device give 52.** It is written **in the same confirmed upload** as the merge it records, and travels in the copy, so
-  every updated device sees it. Reading the old file: its tag equals `old.tag`: nothing is taken (it was consumed).
-  Otherwise, entry by entry: its hash equals the checkpoint's: nothing is taken, **whatever the newer copy holds now,
-  a removal included**; it is new or changed against the checkpoint: it is an old-device change and is taken when
-  the newer copy's entry still has the checkpoint's hash (or is absent as it was), asked when both changed; it is in
-  the checkpoint and gone from the old file: an old-device removal, taken under the same condition. No checkpoint
-  yet (the first device to move): the old file is merged as that device's ordinary sync, with its own recorded base
-  for the old file, and the checkpoint is written with the first version 2 copy. **A device that moves later does
-  two things, in this order.** First, if the old file's tag is not `old.tag`, it folds the old file into the
-  version 2 copy by the steps above (as any updated device would) and uploads that with the new checkpoint. Then it
-  merges its own save with the version 2 copy, **using the base it recorded for the old file when the copy carries
-  a checkpoint (D88 (1)) and that base, entry by entry, gives exactly the checkpoint's marks (the same short
-  hashes, the same counts; no entry more, none less), the keys in the checkpoint's `ask` list left aside**. Whether
-  the copy is "known" (D63) plays no part here: a device that moves later has only ever recorded the old file, never
-  this one, so "known" could never be true for it. A device's record of the old file holds no `eTag` today (`cloud.js` lines 194, 222 and 229 store
-  `{ fileId, at, base }`), so a comparison of tags could never succeed for a real device; the contents can be
-  compared. When they agree (the copy has taken in exactly the old file that base describes, so the
-  copy descends from it, and an entry another device removed after the move stays removed). In every other case
-  (no recorded base; a base whose entries do not match the checkpoint's marks; a copy that carries no checkpoint) it uses the careful merge of D80 for its own save; the old file is read by the checkpoint whenever one is present (D88 (1)). [Using the old-file
-  base whatever its tag: what this device itself added to the old file after the first move would read as removed
-  elsewhere, and what it removed there would come back.]
+- **D76 The move to the version 2 cloud copy (owner, twelfth round; rewritten).** There is no shared record of the
+  old file in the version 2 copy, nothing is taken from the old file a second time, and no device's record of the
+  old file is used against the version 2 copy. Three cases, and no other:
+  (1) **The first device to update** is a device running new code that has no record of the version 2 file and
+  finds no version 2 file in the cloud. It reads the old file **once**. If the old file holds the same as its own
+  save, there is nothing to merge. If they differ, it merges them as it would have synced with that file: **with
+  the base it recorded for the old file when it has one** (the ordinary merge, exactly today's sync, today's
+  prompts included), **and by the careful merge of D80 when it has none**. Then it creates the version 2 copy from
+  the result, through the verified create-only route (D67 (2)), with a new root. If that create is answered
+  "already exists", another device was first: this device is a later device (2), and what it read from the old file
+  is not used further.
+  (2) **Every later device** brings its own save, which already holds everything it had. It **never reads the old
+  file**. Its first sync with the version 2 copy merges its own save with the copy **by the careful merge** (it has
+  no record of that file, so there is no base): what only one side holds is asked, nothing is taken or dropped
+  unasked (D80). From its second sync on it has a recorded base for the version 2 file and syncs by the ordinary
+  merge, like any device with a known copy (D63). The base it once recorded for the old file is not used for the
+  version 2 copy, ever.
+  (3) **A device that has a record of the version 2 file and finds that file gone** creates it again from its own
+  save, through the create-only route; it does not read the old file.
+  **Accepted cost (known limit):** what an older-app device changes after another device has updated stays on that
+  device and in the old file until that device itself updates; then it arrives by (2), asked where it is on one side
+  only. Nothing is deleted on the older device meanwhile. A later device is asked once, at its first sync, about
+  what it and the copy do not share; "keep them" on an entry another device removed after the move brings it back,
+  which the question says ("or removed on another device"). [The shared checkpoint with its marks, its list of
+  undecided entries and the later mover's old-file base: five in-house reviews in a row found a way for it to bring
+  back a removal or to drop an entry.]
 - **D77 "Cheapest listing" needs one of two proofs; else "cheapest seen".** (a) **The slice is complete:** the
   reply's own count of the item's listings (`listingsCount`, found (B1)) is not above the number returned, in every
   region; then nothing was cut and the cheapest of the area is exact. (b) **A selection contract:** the price
@@ -687,10 +687,24 @@ and fewer such cases** (reasons at its end).
   is left exactly as this device's stored save has it: an entry only here stays here, an entry only in the cloud is
   not taken, and neither leaves `open` because the two copies compared happen to agree or to lack it. (c) **The
   base never holds an undecided key, and the sync record is never rebuilt without `open`.** **A page's ordinary
-  save is one of the writers:** `ET.saveMerge` ends with `out.sync = snap.sync` (`storage.js` line 112), which
-  writes the page's own, possibly older, sync record over the stored one; in new code that line keeps, of the two
-  records, the one whose sync is the later (`at`), whole, with its `open` and its base, so a Tracker page loaded
-  before another page's sync cannot bring an old record back. `cloud.js` lines 194,
+  save is one of the writers, on every path, and the choice is made in one place.** Today a page writes its own
+  sync record whenever it saves: `ET.docFromState` puts the page's `sync` into the save (`storage.js` line 35);
+  `ET.saveMerge` cannot compare, because it is given the stored save without its sync record (line 273 passes the
+  portable form, and `codec.js` line 26 leaves `sync` out), so its `out.sync = snap.sync` (line 112) and its
+  no-merge branch (line 107) both keep the page's; and after a merged save the page takes back only the portable
+  data (`ui.js` line 1255), so its own record stays old and the next save writes it again. **New code chooses in
+  `ET.docFromState`, on every save, merged or not, against the record in the stored save
+  (`stored.device.tracker.sync`), which that function is given:**
+  - **`sync.drive`** (the cloud record: identity, base, `open`) carries a counter `seq`, raised by one in every
+    write that changes it (`cloud.js` lines 194, 222 and 229; Settings' last step). **The record with the higher
+    `seq` is written, whole; on a tie the stored one.** No clock is compared, so a clock set back changes nothing.
+  - **`sync.fc`** (the Lodestone refresh records) and **`sync.backupAt`** are taken field by field, the later of
+    the two for each, so a page's newer refresh or backup time is not lost when the stored `drive` wins.
+  - **After every save the page takes the record that was written:** `ET.onSaveMerged` hands over the merged
+    record with the merged data (`ui.js` line 1255 sets `ST.sync` from it), and a save that did not merge sets it
+    from what `docFromState` wrote.
+  So a Tracker page loaded before another page's sync cannot bring an old record back, at its first save or at any
+  later one. `cloud.js` lines 194,
   222 and 229 each write `sync.drive` whole today (`{ fileId, at, base }`); each carries `open` over unchanged
   (with the copy's identity of D63) and writes a base from which every key in `open` is left out, whatever the
   uploaded copy holds for it; Settings' rebuilt base (`settings.js` lines 324 to 332) does the same.** The same
@@ -715,7 +729,7 @@ and fewer such cases** (reasons at its end).
   save); a call without them is refused there. **The shipped fill stays for every other copy** (`merge.js` lines 36
   to 40): a cloud copy, an old file or the save from before the move that carries no module sections is read as
   unchanged for the modules, exactly as today, so `ET.catchUpMerge` and a copy uploaded by a Tracker older than the
-  module sections keep working; D76 reads such an old file as unchanged for every module entry. **There is no
+  module sections keep working; the first device's one reading of such an old file (D76 (1)) is covered by the same fill. **There is no
   "untouched device" exception** (the earlier wording called it "as today"; today's cloud sync has none:
   `ET.untouched` is used only by `ET.catchUpMerge`, `storage.js` line 164). **A device that holds nothing** (the
   shipped `ET.untouched` is true for its Tracker state, which also counts exclusions, typed values, availability
@@ -743,7 +757,8 @@ and fewer such cases** (reasons at its end).
   base, and an overwrite never passes for a descendant.
   (4) **Where the careful merge is used:** for the keys kept undecided in `sync.drive.open` (D88), base or not, and otherwise only a cloud copy that is not known (a foreign root or item
   id; a missing or partial record on this device); the first sync after a loaded backup or code and after a guard
-  Restore (the base was dropped, D67 (3)); a device that moves to the version 2 copy without a usable old-file base
+  Restore (the base was dropped, D67 (3)); every later device's first sync with the version 2 copy, and the first
+  device's reading of the old file when it has no recorded base for it
   (D76); the read-back after a create that found another device's copy; two used devices linked for the first
   time. **Everywhere this file says "merged with no base", "no base" or "with none", it means this merge.** The
   one-time catch-up from the save of before the move to the shared save (`ET.catchUpMerge`) is not touched: it is
@@ -774,7 +789,8 @@ and fewer such cases** (reasons at its end).
   under a save.** (1) Where new code stays on version 1 (D64 (a) and (b): no IndexedDB, or no room for the guard
   even after D86's clearing), **that browser behaves towards the cloud as an older device does: it goes on syncing
   the old file exactly as today, every module, and never reads or writes the version 2 copy.** To the other devices
-  it is an older device, and what it writes to the old file is taken in by D76. **That is one way only: updated
+  it is an older device, and what it writes to the old file is read by nobody else (D76): it reaches the other
+  devices when this browser can hold the newer save and moves, bringing its own save. **Meanwhile nothing reaches it either: updated
   devices never write the old file, so nothing they change reaches this browser. The choice for the third red
   team's finding 3 is to say so, always, and not to build a read-only view of the newer copy** (a second reader of
   the version 2 copy for version 1 saves would be one more path to keep right). On such a browser the sync line
@@ -811,34 +827,11 @@ and fewer such cases** (reasons at its end).
   both pairs, whole. A `held` entry is never put to the general clash dialog (D71 (2)), in this case either. **A device that loads a backup made before a later answer**
   has, after the load, the backup's pair and, by D70 (8), no answer entry that does not fit it; its next sync is a
   careful merge, the pairs differ, and **the pair is asked as a question** (it is not settled silently either way).
-- **D88 Two smaller rules.** (1) **A checkpoint is trusted because it is there; a copy without one is folded with
-  care; what the fold left undecided is listed.** (The fourth red team's wording, "trusted only in a known copy",
-  is withdrawn: a device that moves later, a new device and a device after a loaded backup never "know" the copy, so
-  they would have ignored a sound checkpoint and been asked again about everything removed since the move.)
-  (a) **Who writes one.** Only an upload made from a merge of the copy read **together with** a fold of the old
-  file writes or renews the checkpoint. **The owner's overwrite and any create after the first write none**, and no
-  device keeps a checkpoint of its own to write later: the overwriting device cannot know the newest checkpoint
-  (the copy that held it is the damaged one), and an older one would make an entry that was folded in and later
-  removed look new again. So a checkpoint found in a copy was always made from that copy's own line, and the stale
-  case of the fourth red team's first finding cannot come back.
-  (b) **A copy that carries a checkpoint:** every reader uses it for the old file, by D76's steps: a known copy or
-  not, a later mover, a new device, a device after a loaded backup or a guard Restore. What was taken in and later
-  removed is in the marks and is not offered again.
-  (c) **A copy that carries none** (after an overwrite or a later create): the reader folds the old file in by the
-  careful merge: what the old file alone holds is asked, never taken.
-  (d) **Undecided old-file entries are named in the checkpoint.** The checkpoint written after any fold is `old:
-  { tag, marks, ask }`. An entry of the old file that the fold decided (taken, or "remove from every device") is in
-  `marks`. **An entry the fold left undecided ("not now", or a question Settings' automatic sync did not open) is
-  left out of `marks` and its key is put in `ask: { <key>: 1 }`.** For a key in `ask`, every reader, on any device:
-  the old file's entry is never taken and never dropped by D76's steps; it is asked, by the careful question; once
-  answered it goes into `marks` and leaves `ask`; it also leaves `ask` when the old file and the copy come to hold
-  the same for it. D76's comparison of a device's old-file base with `marks` leaves the keys in `ask` aside. (Left
-  out of `marks` without being listed, such an entry would read as "new in the old file" and be taken unasked;
-  marked, it would read as taken in and be dropped from a later mover's save.)
-  Only the first device ever to move (no version 2 file exists) merges the old file with its own old-file base, as
-  D76 says. A device
-  that finds a copy without a checkpoint folds the old file in by the careful merge, never with an old-file
-  base. (2) **`coll` with no base** follows the pair: when it differs the pair is held (D80 (2)), not "this device's
+- **D88 Two smaller rules.** (1) **Withdrawn (owner, twelfth round).** This point held, in three successive forms,
+  the rules for a record of the old file inside the version 2 copy. That record is removed from the plan together
+  with every re-reading of the old file (D76). The owner's overwrite of a damaged version 2 copy writes this
+  device's data under a new root (D80 (3)) and reads no other file; the other devices then meet a copy that is not
+  known and use the careful merge. (2) **`coll` with no base** follows the pair: when it differs the pair is held (D80 (2)), not "this device's
   until answered"; D87's wording applies with a base only.
 - **D85 "Made" and a handed-in step are refused when they would change a frozen count, with the reason. (The
   choice for the red team's finding 13.)** Freezing only the frozen ingredient's change inside one write was
@@ -1289,7 +1282,7 @@ Tracker and Atelier:
      merged by the careful merge of D80 (one-sided entries asked, nothing taken or dropped unasked). **This rule is about the version 2 file only.** An older app cannot reach that file
      (D67), so "an older app replaced the cloud copy" can no longer happen to it, and the earlier sentence that the
      older device is then refused until it updates is withdrawn: an older device keeps its own file, is refused
-     nothing by the cloud, and what it writes there is taken in by D76.
+     nothing by the cloud, and what it writes there stays there until that device itself updates (D76).
   **Round four (D67) changes these rules.** The version 2 copy is a file of its own, under a new name; the old file
   is only read. Rule 2's create is sent only while `ET.CLOUD_CREATE_VERIFIED` is true; the read-back stays as a
   second check and is no longer what the plan relies on. Rule 4's "known" includes the exact, unchanged copy, and
@@ -1302,15 +1295,15 @@ Tracker and Atelier:
   yet.
   Tests in item B27 ("older" names its commit): **"missing-file race", rewritten for two files (BV-8)** (`<old>`
   finds no old file; the newer device creates the version 2 file; the older then uploads its copy: it lands in the
-  old file; the version 2 file is byte for byte untouched; the newer device's next sync takes the old file's entries
-  in by D76, removes nothing, and never writes the old file; the older device's next sync works on its own file and
+  old file; the version 2 file is byte for byte untouched; the newer device's next sync sends no request for the
+  old file, removes nothing, and never writes it; the older device's next sync works on its own file and
   is refused nothing; control, kept only as a witness of the old fault: at `<base>`, with one file name, the same
   upload replaces the newer copy); **"a late second create"** (BV-22, which replaces the earlier "create condition ignored": a later rescue no longer
   passes; with the route refusing, the second device gets "already exists" and merges; with the create route
   unverified, no device creates and both say why); **"same-version replacement"** (a version 2 copy with a foreign line: no base, nothing removed; control: a
-  true descendant merges with its base and takes a removal); **"missing checkpoint"** (the device's record lacks the
+  true descendant merges with its base and takes a removal); **"missing record"** (the device's record lacks the
   copy id, or names another item id: the careful merge, and the test asserts what that means: an entry this device
-  alone holds is neither uploaded nor dropped before the answer); **"restored checkpoint"** (a device restored from
+  alone holds is neither uploaded nor dropped before the answer); **"restored record"** (a device restored from
   a backup: the base is forgotten, so the careful merge; **and a device whose record is intact but 201 uploads
   behind: the copy is known by root and count, the recorded base is used, and a removal made elsewhere is taken**,
   D80 (3)); **"repaired while
@@ -1319,8 +1312,7 @@ Tracker and Atelier:
   overwrite goes through with the shown copy's `eTag`); **"no tag, no replace"**.
 - **On the device only:** every price, sale and tax rate (`eveniunt-bourse-prices`, which may be deleted to make
   room, D86), the attempt times (`eveniunt-bourse-tried`, in device storage, never deleted with the prices), the
-  undecided entries of a careful merge (`sync.drive.open`, D80 (2); the old file's undecided entries are not here
-  but in the cloud copy's checkpoint, `old.ask`, D88 (1)), the ledger
+  undecided entries of a careful merge (`sync.drive.open`, D80 (2)) with the record's counter `seq`, the ledger
   (`eveniunt-bourse-ledger`), `eveniunt-bourse-device` (last view, which alerts rang), `eveniunt-bourse-alert`, the
   guard, and in the save's device-only part `device.bourse` (`mcopy`; `done`, the purchase receipts of the last 24
   hours; `device.epoch`, D70 (8); never in backups, codes or the cloud). The open pair questions are **not** kept
@@ -1732,11 +1724,11 @@ check ids start at C197.
   for a copy that is not a known descendant; `ET.cloudOverwrite` with the shown copy's item id and `eTag`),
   `tracker/src/app/ui.js` and `tracker/command-center/src/settings.js` (both callers: the overwrite question carries
   the copy's identity; the older-app line; a refused overwrite reads again), the cloud test file B28 names (BV-8,
-  rewritten against the two files as section 8 now words it: the older upload lands in the old file and is taken
-  in by D76; its earlier expected result, "the older device's next sync is refused", is void;
+  rewritten against the two files as section 8 now words it: the older upload lands in the old file and is read by
+  no new code; its earlier expected result, "the older device's next sync is refused", is void;
   "missing-file race"; BV-9 replaced by BV-22 "a late second create" (see the round-four additions); BV-10 "changed since read"; BV-11
   "repaired while the question is open", with its control; BV-12 a first sync after updating behaves as today;
-  BV-13 "same-version replacement" with its control; BV-14 "missing checkpoint"; BV-15 "restored checkpoint" and "201
+  BV-13 "same-version replacement" with its control; BV-14 "missing record"; BV-15 "restored record" and "201
   uploads behind"; BV-16 "no tag, no replace": every path that would send a replace without an `eTag` sends nothing;
   control: with a tag it sends; the stand-in answers "already exists" and "changed" as OneDrive documents them), the
   report (what Microsoft's documentation says of `conflictBehavior=fail` for this upload, quoted with its address),
@@ -1828,8 +1820,8 @@ control).**
   sentence of D70 (4), in the Bourse and in Lists; control: another item on the same pages is written.
 - **B24.** BV-21 the older app's two unconditional uploads, as two separate cases, each made **after** the newer
   device wrote its copy: the older Tracker's "no file seen" upload and its "replace the cloud copy" both land in the
-  old file; the version 2 file is byte for byte untouched; the newer device's next sync reads the old file, merges it
-  by the checkpoint of D76 (not by a merge without a base), removes nothing; control: at `<base>`, with one file name, the same upload replaces the newer copy.
+  old file; the version 2 file is byte for byte untouched; the newer device's next sync sends no request for the old
+  file and changes nothing because of it; control: at `<base>`, with one file name, the same upload replaces the newer copy.
 - **B26.** Files add `tracker/src/core/storage.js` only if B28's inventory shows a caller that drops the holds a
   merge returns; D70 needs no other storage change. Cases, each through the real cloud path and the real local path,
   each checking the bytes of **both devices' saves and of the cloud copy**: BK-16 "declined": the sync dialog is
@@ -1858,8 +1850,10 @@ control).**
   copy with the same content brings it back as a question. BV-24 "the target is gone" and "no confirmation": a
   replace answered "no such item", and one answered without item id and `eTag`: base, identity and the synced line
   are as before and the next sync reads again; control: a confirmed replace advances all three. BV-25 "after a
-  guard Restore": the base is dropped and the next sync merges with no base. BV-26 the old file is never written by
-  new code (every request the stand-in receives is checked) and is read again when its `eTag` changed.
+  guard Restore": the base is dropped and the next sync merges with no base. BV-26 (rewritten, twelfth round) the old
+  file is never written by new code, and **never read once the version 2 file exists** (every request the stand-in
+  receives is checked, over ten syncs on three devices, with the old file's `eTag` changing in between); control:
+  the first device's single read before the version 2 file exists is seen.
 - **B28.** Reports also the cloud file's present name and how `cloud.js` builds its address.
 - **B29.** BE-5: the version check and the erase are one transaction (a save that becomes newer between the click
   and the write is not erased); BE-6: when the erase is refused or fails the page does not say it erased and does
@@ -1949,14 +1943,8 @@ control).**
   rebuilding are passed with a question open; the base keeps the old value for the held pair.
   BK-16 is amended: after a declined dialog the question is on this device **and**, by D72, in the cloud; "nothing
   was uploaded" holds only in its failing control. BK-21 is replaced by BK-27 and BK-28.
-- **B27.** BV-8 as rewritten in section 8. BV-27 "the old file is consumed once" (D76): device A moves first and
-  takes in the old file with entry X; A removes X; **B moves second, the old file unchanged**: X is not taken from
-  the old file, and B's own copy of X is removed by its recorded base: X stays removed everywhere. The other order
-  (B first) gives the same. "An unrelated later edit": an older device changes entry Y in the old file: Y is taken,
-  X is not brought back. "A real old-file edit of X": the older device changes X itself after the checkpoint: X is
-  a real old-device change against a removal here and is asked. The checkpoint is absent from the cloud when the
-  upload that would carry it is not confirmed. Control: with no checkpoint in the copy (the fault), B's move brings
-  X back. BV-26 is read with BV-27.
+- **B27.** BV-8 as rewritten in section 8. **BV-27 is retired** (owner, twelfth round: there is no checkpoint and no
+  second reading of the old file); BV-37 to BV-39 in the sixth red-team additions replace it.
 - **B30.** BG-14 "a stale edit after keep" (D75): two tabs; one answers "keep"; the other, opened before, saves a
   Lists count, a Tracker tick and a Settings character name, and finishes a sync it had started: each is refused
   with the epoch sentence and the stored save is unchanged; the same after Restore; control: a tab opened after the
@@ -1994,12 +1982,9 @@ control).**
   entry: the stored save still holds 50, R and the question, byte for byte, and the tick is saved; the same with
   the setting off (D74's opaque pair) and with a plain credited pair and no question; control: a Tracker page loaded
   after the Bourse write saves the same bytes.
-- **B27 (D76, RT-4, RT-5).** BV-27 adds: "a later mover that wrote to the old file": A moves at old-file tag e1; B,
-  still on the older app, adds Y and removes Z and syncs (tag e2); B updates: Y is in the version 2 copy and on
-  every device, Z is removed on every device; control (the fault): B's old-file base used directly deletes Y and
-  brings Z back. "A count on the old file": the checkpoint holds a count of 10; A adds 40 with a credit; an older
-  device types 12: merged 52, no question; control: a count with no credit and no undo mark is taken or asked entry
-  by entry as before.
+- **B27 (D76, RT-4, RT-5).** Retired with BV-27. The two cases are now BV-39 ("an older device's change after the
+  move") and, for a count with a credit, BK-38's rule: a later device's pair that differs from the copy's with no
+  base is held as a question (D80 (2)); no checkpoint supplies a base.
 - **B26 (D82, RT-6).** BK-35 "used up": a count of 40 from one credited purchase; "Made" uses all 40, so Lists
   deletes the entry: every reading of the save shows an ordinary pair, no question, and the item is not frozen;
   meanwhile another device adds 10 with a credit: merged 10 with two records, not 50; control: the same merge with
@@ -2061,12 +2046,8 @@ control).**
   confirmation for ticks still shows); "not now" leaves the cloud copy byte for byte unchanged for those entries,
   syncs an unrelated entry, keeps them out of this device's base and asks again at the next sync; control: no
   button exists that drops them from the upload without the second question.
-- **B27 (D76, finding 6).** BV-27's later-mover cases are run **from a sync record written by the real `cloud.js` at
-  `<base>`** (`{ fileId, at, base }`, no tag), not from a hand-made one: B's base equals the checkpoint's marks, so
-  it is used, its automatic sync does not stop, and a removal made after the move stays; B's base differs (B wrote
-  to the old file after the first move): the old file is folded in first, then the base equals the new marks and is
-  used; a base that matches neither: the careful merge; control: a rule that compares tags never uses a real
-  device's base.
+- **B27 (D76, finding 6).** Retired with BV-27. What stays from it: BV-37 and BV-38 start from a sync record written
+  by the real `cloud.js` at `<base>` (`{ fileId, at, base }`), not from a hand-made one.
 - **B3, B30 (D86, D83, findings 7 and 8).** BS-8, BG-9 and BS-14 are amended: with the price database filling the
   allowance, the first migration and a later version 2 write each succeed after the price database is deleted
   (prices then read "not fetched"); control: with storage still short after that, D64 (b)'s sentences. BS-14 is
@@ -2099,10 +2080,11 @@ control).**
   the second sync uploads E and takes E′ with no question.
 - **B24 (D80 (2), finding 4).** BV-32 "copies without sections": `ET.catchUpMerge` with a save from before the move
   works exactly as at `<base>`; a cloud copy and an old file uploaded by a Tracker older than the module sections
-  sync without an error and leave every module's entries on this device untouched; D76's fold of such an old file
-  removes no module entry; **control for the fill itself: with `merge.js` lines 36 to 40 taken out (the fault of the
-  second red team's wording), the two runs that have a base fail: the sync of a cloud copy without sections removes
-  this device's module entries, and D76's fold removes every module entry** (the `ET.catchUpMerge` run is a guard
+  sync without an error and leave every module's entries on this device untouched; the first device's one reading
+  of such an old file (D76 (1)) removes no module entry; **control for the fill itself: with `merge.js` lines 36 to
+  40 taken out (the fault of the second red team's wording), the two runs that have a base fail: the sync of a cloud
+  copy without sections, and the first device's reading of such an old file with its recorded base, each remove
+  this device's module entries** (the `ET.catchUpMerge` run is a guard
   only: it merges with no base, `storage.js` line 165, so it passes with or without the fill and proves nothing
   about it); control for the new rule: Settings' sync called without this device's
   stored sections is refused. BV-32's first three assertions are guards (they pass at `<base>` by design).
@@ -2122,14 +2104,13 @@ control).**
   never retries fails here)**; with a second Bourse tab
   holding the price database, the retry runs only after the deletion is confirmed, and not at all when it is not
   confirmed within 5 seconds.
-- **B27 (D88 (1), finding 9 of the third and finding 1 of the fourth red team).** BV-30 adds **"the overwriting
-  device knew less"**: phone A last synced when the copy's checkpoint did not list wanted item Y; an older device
-  adds Y to the old file; PC B folds it in and later removes Y; the copy is damaged; the owner overwrites from A:
-  the new copy has a new root and **no checkpoint**; B syncs: the copy is not known, the old file is folded in by
-  the careful merge, **Y is asked, not taken, and is uploaded nowhere before the answer**; after the answer the
-  upload carries a fresh checkpoint. Controls (the two faults): with A's older checkpoint written into the
-  overwritten copy and trusted, Y comes back with no question; with no checkpoint and B's own old-file base used,
-  it comes back as well.
+- **B27 (D88 (1), finding 9 of the third and finding 1 of the fourth red team).** BV-30's case "the overwriting
+  device knew less" is rewritten for the simplified move: an older device adds wanted item Y to the old file after
+  the move; the version 2 copy is damaged; the owner overwrites from phone A: the new copy has a new root; PC B
+  syncs: the copy is not known, B's save and the copy go through the careful merge, **and no device sends a request
+  for the old file**, so Y, which only the old file and the older device hold, is neither taken nor asked: it
+  arrives when the older device updates (BV-39). Control: a build that reads the old file after an overwrite (the
+  earlier designs) takes or asks Y from it.
 - **B26 (D88 (2), finding 6).** BK-39 adds: with no base, `coll` 2 here and 5 there holds the pair as a question;
   control: with a base it is asked with the own part, this device's until answered.
 
@@ -2159,38 +2140,55 @@ control).**
 
 **Fifth red-team additions to the items (before round six; binding; each belongs to the item named and names its
 control).**
-- **B27 (D76, D88 (1), findings 1 and 2).** BV-27's later-mover cases stand as the second red team wrote them and
-  now agree with D88 (1): a base written by the real `cloud.js` at `<base>` that equals the checkpoint's marks **is
-  used although that device has no record of the version 2 file**. Added, "after the first mover removed and
-  added": phone A moves, then removes 20 wanted items and adds 30 ticks; PC B updates with a matching base: no
-  question, the 20 stay removed everywhere, the 30 ticks arrive on B; control (the fault of the fourth red team's
-  wording): with "known" required, B is asked about all 50 and "keep them" brings the 20 back. BV-35 "a new device
-  after removals": after the move 50 wanted items are removed; a new phone links (no base, no record), and, as a
-  second run, a device loads an older backup and syncs: the copy's checkpoint is used for the old file, the 50 are
-  **not** offered from the old file and come back nowhere; the phone's own save against the copy is the careful
-  merge as before; control: with the checkpoint ignored for a copy that is not known, the 50 are offered as entries
-  to take.
-- **B27 (D88 (1) (a), the fourth red team's finding 1 again).** BV-30's "the overwriting device knew less" stands and
-  must still pass: the overwritten copy carries **no** checkpoint, B folds with care and Y is asked. Added
-  assertion: no code path writes a checkpoint in an overwrite or in a create after the first (the stand-in cloud
-  checks every such upload); control: an overwrite that writes any checkpoint lets Y come back unasked.
-- **B27 (D88 (1) (d), finding 3).** BV-36 "undecided old-file entries": after an overwrite (no checkpoint) an older
-  device has added Y to the old file; B folds with care and answers "not now" (and, as a second run, B's fold runs
-  in Settings' automatic sync, which opens no question); B's upload carries a checkpoint whose `marks` lack Y and
-  whose `ask` holds Y's key; another updated device reads it: Y is asked there too, taken nowhere unasked; the
-  older device C then updates: its base is compared with the marks without Y, is used, and **Y is still in C's
-  save and is not dropped**; when Y is answered "take" it goes into `marks`, leaves `ask` and is on every device.
-  Controls (the two faults): Y marked as taken in: C drops Y and it is gone everywhere; Y left out of `marks` and
-  not listed: the next reader takes Y unasked.
-- **B27, B26 (D80 (2) (c), finding 4).** BV-31 adds "a page loaded before the sync": a Tracker tab is open; a sync
-  from Settings stores `open` with two keys and a base without them; a tick is made in the Tracker tab: the stored
-  sync record still holds `open`, the same base and the copy's identity; control (the fault): `out.sync =
-  snap.sync` as at `<base>` writes the tab's old record back and the next sync uploads the undecided entry.
+- **B27 (findings 1 to 3 of the fifth red team).** **BV-35 and BV-36 are retired with the checkpoint** (owner,
+  twelfth round); the later-mover cases of BV-27 likewise. Their replacements are BV-37 to BV-39 below. No copy
+  carries a field `old`; the stand-in cloud fails any upload that does.
+- **B27, B26 (D80 (2) (c), finding 4; rewritten for the sixth red team's finding 3).** BV-31 "a page loaded before
+  the sync", run to **two ticks and a sync after them**: a Tracker tab is open; a sync from Settings stores a new
+  record (higher `seq`, `open` with two keys, a base that holds entry K and lacks the two); **the first tick** in the
+  Tracker tab, made within the save's delay, is a merged save: the stored record is the new one, and the tab's own
+  `ST.sync` is now the new one too; **the second tick** is a save without a merge: the stored record is still the
+  new one; another device then unticks K and syncs; this device syncs: K is removed here and comes back nowhere, and
+  the two undecided entries are still undecided. The tab's newer Lodestone refresh record and backup time are in
+  the stored save after both ticks. With the device's clock set back an hour between the sync and the ticks the
+  result is the same. Controls (the faults, each must fail): the choice made only in `ET.saveMerge` line 112 passes
+  the first tick and loses the record at the second; without `ui.js` line 1255 taking the merged record the same;
+  "the later `at` wins" loses it with the clock set back; "the stored record whole" loses the tab's refresh record.
 - **B27 (D80 (2), findings 6 and 7).** BV-34 adds: the sync Settings runs right after a sign-in opens the question
   at once; **a fault run in which the automatic sync at opening is made to open the dialog must fail the test**
   (five openings, no dialog). BV-33 adds: a device with no ticks and no module entries but with one exclusion, one
   typed value or a character's details is **not** "a device that holds nothing" and gets the full question;
   control: with all of those empty it gets the short one.
+
+**Sixth red-team additions to the items, and the simplified move (owner, twelfth round; binding; each belongs to
+the item named, fails without its change and names its control).**
+- **B27 (D76 (1)).** BV-37 **"the first device"**, from a sync record written by the real `cloud.js` at `<base>`:
+  no version 2 file exists; the device reads the old file once, merges it with its save by its recorded base (an
+  entry another older device added arrives, an entry it removed leaves, with no careful question), and creates the
+  version 2 file through the create-only route with a new root; the old file is byte for byte unchanged and is not
+  read at the next sync. Second run, no recorded base (the device had loaded a backup): the careful merge, and
+  nothing one-sided is in the created copy before the answer. Third run: the old file equals the save: the copy is
+  created with no question. Controls: with `ET.CLOUD_CREATE_VERIFIED` false no create is sent and the old file is
+  not read; a build that reads the old file at a later sync fails BV-26.
+- **B27 (D76 (2), (3)).** BV-38 **"a later device"**: device A has moved, then removed 20 wanted items and added 30
+  ticks; device B updates, bringing its own save and its old-file record written by `<base>`: B sends no request
+  for the old file; B's first sync is the careful merge: the 20 are listed as "on this device only … or removed on
+  another device", the 30 as "the other copy holds …"; nothing is uploaded or taken before the answers; "remove
+  them" and "take them" leave both devices equal; B's **second** sync, after A changed one entry, is the ordinary
+  merge with B's recorded base for the version 2 file and asks nothing. Run without any record on B (a new device
+  with data): the same. Run with the version 2 file gone and a device that had a record of it: it creates the file
+  again from its own save and does not read the old file. Controls: a build that uses B's old-file base for the
+  version 2 copy (the earlier designs) takes or drops entries without a question; a build that reads the old file on
+  B fails the request check.
+- **B27, B24 (D76, the accepted cost).** BV-39 **"an older device's change after the move"**: A has moved; C, still
+  on the files of `<old>`, adds wanted item Y and unticks Z and syncs: both land in the old file; A and B sync ten
+  times: neither Y nor Z's removal reaches them, the version 2 file is untouched by C, and **nothing on C is deleted
+  or refused**; C then updates: its first sync is the careful merge, Y is offered ("on this device only") and, kept,
+  is on every device; Z, which C lacks and the copy holds, is asked and, removed, is gone everywhere. Control: on C
+  before it updates, its own sync with the old file works exactly as at `<old>`.
+- **B24 (D80 (2) (c)).** BV-31 as rewritten above; `tracker/src/core/storage.js` (`ET.docFromState`, the `seq`
+  rule), `tracker/src/core/cloud.js` and `tracker/command-center/src/settings.js` (raising `seq`) and
+  `tracker/src/app/ui.js` (line 1255) are among B24's files.
 
 ## 11. Risks, limits, owner questions
 
@@ -2227,7 +2225,9 @@ shows cached prices only. On fallback storage it cannot mark purchases or copy t
 Submersibles keep their own pace and do not know the Bourse's pause. The price site's own waiting time cannot be read
 by a page; the plan's backoff stands in for it. Older pages: section 8, the Atelier's silence above all. A device
 that never updates keeps reading and writing the old cloud file; it cannot reach the newer copy and is not told
-that one exists; what it changes is taken in by the next sync of an updated device (D67, D76). A cloud copy more than 200 uploads ahead is
+that one exists; **what it changes after another device has updated reaches the others only when it updates itself
+(owner, twelfth round; D76); nothing of its own data is deleted meanwhile.** A device that updates after the first is
+asked once, at its first sync, about every entry it and the cloud copy do not share. A cloud copy more than 200 uploads ahead is
 no longer a special case (it is known by its root and count, D80). **Where a sync has no base to work from (after a
 loaded backup, a restore, a lost record, a foreign copy, two used devices linked for the first time) it stops and
 asks about every entry only one side holds, and a sync that runs by itself waits for that answer.** A browser that
@@ -2248,11 +2248,9 @@ stays in this plan; all twelve findings are fixed; a sixth outside round, with b
 round five to the limits: a question about a count and its purchases can list more than two choices; a count with an
 open question cannot be changed by anything until answered, and a craft or hand-in that would touch it is refused
 whole; an entry that fails the check is kept unreadable until the player discards it; the build without the setting
-leaves such pairs as they are on each device; a declined sync still uploads what needed no answer; the newer cloud
-copy carries a short mark for every entry of the old file; "cheapest listing" appears only for a complete slice
+leaves such pairs as they are on each device; a declined sync still uploads what needed no answer; "cheapest listing" appears only for a complete slice
 until the price site's selection order is documented. Added to what is unverified: the price site's selection order
-before its limit (D77; nobody has found it documented); the size of the old file's checkpoint in a large save (B27
-measures it against the 4 MB upload limit and escalates above a tenth of it); that every save path of the Tracker
+before its limit (D77; nobody has found it documented); that every save path of the Tracker
 and of Settings can carry the epoch (B28 lists them, B30 tests them). The planner read
 `docs/bourse-review-adjudication-5.md`, ChatGPT's round-five review, the tenth owner round and `lists/store.js`
 lines 380 to 417, and did not read Mistral's round-five notes. No question is open. The questions as they were asked are in `docs/bourse-questions.md`
@@ -2672,4 +2670,34 @@ confirmed `storage.js` line 112 and Settings' two syncs. The corrections are sam
 | 7 "a device with nothing" ignored exclusions and typed values | It is the shipped `ET.untouched` plus empty module sections; BV-34 has a fault run | D80 (2); B27 (BV-33, BV-34) |
 
 Checked against the fourth red team's first finding: an overwrite and a later create still write no checkpoint, and
-no device keeps one to write later, so a stale checkpoint cannot reach a copy (BV-30 still has to pass).
+no device keeps one to write later, so a stale checkpoint cannot reach a copy (BV-30 still has to pass). (Overtaken
+by the sixth round: there is no checkpoint at all.)
+
+**Sixth in-house red team, and the owner's twelfth round (2026-11-26).** A sixth fresh reviewer (same family, not
+independent) read the changes from `f819271` to `9cc9c52` and again found 3 major faults (8, 7, 4, 3, 3, 3 over the
+six in-house rounds), two of them inside the old file's checkpoint. **The owner decided to simplify the move**: the
+old cloud file is read once, by the first device to update; every other device brings its own save; new code never
+reads the old file again. The corrections are same-family and unreviewed.
+
+| Finding | What changed | Where |
+| --- | --- | --- |
+| 1 the `ask` keys stayed in the base that was then used | **Removed with the checkpoint.** No device's old-file base is used against the version 2 copy | D76 (rewritten), D88 (1) (withdrawn); B27 (BV-38) |
+| 2 a key leaving `ask` got no mark | **Removed with the checkpoint** | D76, D88 (1) |
+| 3 the sync record lost at a stale tab's second save | The choice is made in `ET.docFromState` on every save, against the stored record; the page takes the written record after every save | D80 (2) (c); B24, B27 (BV-31) |
+| 4 "the later `at`" compared clocks | A rising counter `seq` in the record; on a tie the stored record | D80 (2) (c); BV-31 |
+| 5 "whole" dropped the tab's newer refresh records | `sync.drive` by the counter; `fc` and `backupAt` field by field | D80 (2) (c); BV-31 |
+| 6 an ordinary upload would drop the checkpoint | Moot: there is none | — |
+
+**Removed from the plan by the simplified move:** the record of the old file in the version 2 copy (`old: { tag,
+marks, ask }`); the fold of the old file into the copy; reading the old file again when its tag changed; a later
+device's old-file base used against the version 2 copy; counts on the old file going through BY2 with the
+checkpoint as base; the checkpoint written, kept or withheld by an overwrite; the limit on the checkpoint's size;
+tests BV-27, BV-35 and BV-36 and the checkpoint parts of BV-8, BV-21, BV-26, BV-30 and BV-32. **Kept:** the new file
+name and the rule that new code never writes the old file (D67); the create-only route; the careful merge (D80);
+the honest line on a browser held at the older save (D83). **Added:** D76's three cases; BV-37 to BV-39; BV-31's
+second tick.
+
+Known limits left: what an older-app device changes after another device has updated reaches the others only when
+that device updates; every device after the first is asked once at its first sync about what it and the copy do not
+share, and "keep" on an entry another device removed since brings it back; the tables of earlier rounds above
+describe the checkpoint as it then was and are history.
