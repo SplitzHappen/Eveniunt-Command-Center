@@ -187,7 +187,7 @@ const SELLER = 3;
 const afterSeller = (p) => p - Math.ceil(p * SELLER / 100);
 const middleOf = (g, cost) => Math.ceil((g + cost) / (1 - SELLER / 100));
 const LPRICE = [0.95, 0.97, 0.94, 0.96, 0.95, 0.98, 0.93, 0.96, 0.97];
-const perDayText = (per) => per * 7 > 40 ? 'at least ' + fig((40 / 7).toFixed(1)) + ' a day' : fig(per.toFixed(1)) + ' a day';
+const perDayText = (per) => per * 7 > 40 ? fig(40) + ' sales: at least ' + fig((40 / 7).toFixed(1)) + ' a day' : fig(per * 7) + ' sales in 7 days: ' + fig(per.toFixed(1)) + ' a day';
 PROFIT.forEach((r, i) => { const g = r[4], cost = r[6]; r.mid = middleOf(g, cost); r.list = Math.round(r.mid * LPRICE[i]); r.byList = afterSeller(r.list) - cost; });
 const TAX = [['Ishgard', 3], ['Old Sharlayan', 3], ['Kugane', 5], ['The Crystarium', 5], ['Tuliyollal', 5], ['Limsa Lominsa', 5], ['Gridania', 5], ["Ul'dah", 5]];
 page('profit.html', 'Profit per craft',
@@ -197,7 +197,7 @@ page('profit.html', 'Profit per craft',
   '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after the seller\'s 3%; sales a day over 7 days, a lower bound when the last 40 sales are more recent', sb('ol-r-back ol-sm bm-desk-sum', gil(1212), 'of ' + gil(9856)) + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">Sales</button><button type="button" aria-pressed="false">Listing</button></span>') + '<div class="bm-lanes">' +
   PROFIT.map((r, i) => { const [n, job, lv, hq, g, per, cost, flag] = r; return lane({ st: flag === 'old' ? 'ol-r-idle' : flag === 'cant' ? 'ol-r-locked ol-hatch' : i === 0 ? 'ol-r-seal' : 'ol-r-slab', word: flag === 'old' ? 'Old' : i + 1, isWord: flag === 'old', solid: i === 0,
     name: n, hq, facts: perDayText(per) + ' · sold ' + fig(gil(r.mid)) + ' · listed ' + fig(gil(r.list)) + ' ' + LWORLD[i] + ' ' + fig(LAGE[i]) + ' min · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · can\'t make yet' : flag === 'old' ? ' · 2 days old' : ''),
-    mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'by sales · by listing ' + gil(r.byList) }); }).join('') + '</div>' +
+    mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'after 3% · by listing ' + gil(r.byList) }); }).join('') + '</div>' +
   chap('II', 'Sells less than once a day', 'Ranked the same way, kept apart', sb('ol-r-idle ol-sm', 1, 'Slow'), true) + '</section>' +
   '<section class="ol-chap-wrap">' + chap('III', 'Where to sell this week', 'Seller\'s tax by city on Gilgamesh, read 3 hours ago; buyers pay their own 5%', sb('ol-r-back ol-sm', '3%', 'Lowest')) + '<div class="bm-lanes">' +
   TAX.map(([c, t], i) => lane({ st: t === 3 ? 'ol-r-back' : 'ol-r-slab', outline: t !== 3, solid: i === 0, thin: 1, word: t + '%', name: c, facts: i === 0 ? 'Used for profit' : t === 3 ? 'Also reduced this week' : 'Full rate', mid: '', ans: '' })).join('') + '</div></section></main></div>',

@@ -1,4 +1,4 @@
-# Bourse mock-up pictures: notes (look v3, after the round-four outside reviews, 2026-11-26)
+# Bourse mock-up pictures: notes (look v3, after the round-five outside reviews, 2026-11-26)
 
 Made with `node docs/bourse/tools/make-mock.mjs` then `node docs/bourse/tools/shoot.mjs` (Chromium, deviceScaleFactor 1,
 viewport only). The pages load the built site's own `fonts.css`, `shared.css`, `one-look.css` and `look.js`; the theme is
@@ -68,3 +68,5 @@ alert is pictured over the normal Watch screen. Reading text is at least 12 px.
   - Example: sold 51,856 less 1,556 less 12,060 gives 38,240; listed 49,263 less 1,478 less 12,060 gives 35,725.
 - **Settings:** the home-world source is a line of text under the picker, so it is not cut off on the phone.
 - **States page:** the hourly limit says it counts the Bourse's requests, and that Lists and Submersibles keep their own limit.
+
+**After the round-five outside review (2026-11-26).** Each Profit row now carries its sample beside the rate ("40 sales: at least 5.7 a day", or "28 sales in 7 days: 4.0 a day"), and the figure's own line says "after 3%" beside the second profit figure, on both widths. No other screen changed.
