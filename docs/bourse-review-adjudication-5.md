@@ -59,3 +59,25 @@ Every finding is accepted, at the reviewer's severity.
 ## What happens next
 
 The owner decided (`docs/bourse-questions.md`, tenth round): keep the Lists setting in this plan; fix all twelve findings; a sixth outside round with both reviewers. Building stays paused until the plan passes.
+
+## In-house red team before round six (2026-11-26)
+
+At the owner's prompt, a fresh reviewer agent with no context (Opus, read-only, same family, so not independent) read
+the round-five head `ecf457e` and the code before the sixth round was filed. It found 1 blocker, 7 major and 7 minor
+faults that neither outside reviewer had raised. The requester checked the code facts.
+
+| # | Severity | Finding | Checked |
+| --- | --- | --- | --- |
+| RT-1 | BLOCKER | "Merged with no base" is not safe: `merge.js` lines 87 and 88 take an entry held on one side only without a question, so removals made elsewhere come back. Every sync uploads, so 200 uploads (D63's line) is ordinary use, and the next sync after that silently revives removals. | Confirmed in `merge.js` and `cloud.js` |
+| RT-2 | MAJOR | D72: after a decline, the settled entries are published and taken as base but not applied locally (`ui.js` 1214, `settings.js` 308 return early), so another device's removal comes back at the next sync. | Follows from the code read |
+| RT-3 | MAJOR | Same-device merge: "leave this device's pair alone" keeps a stale Tracker tab's pair, because the Tracker listens on `eveniunt-tracker` while shared writes announce on `eveniunt-command-center`. | Channels confirmed (`storage.js` 235, `save.js` 677) |
+| RT-4 | MAJOR | D76: a device that moves later uses an old-file base that is not the version-2 copy's base, so its additions read as removals elsewhere. | Follows from D76 as written |
+| RT-5 | MAJOR | D76 takes Lists counts entry by entry, outside BY2: 10 plus a 40 credit against a typed 12 should give 52, not a choice of 12 or 50. | Follows from D76 as written |
+| RT-6 | MAJOR | A Lists count of 0 has no stored entry (`lists/store.js` 301), so BY2 and the checker must read a missing entry as 0, and BY2 must decide before LY0. | Confirmed in `store.js` |
+| RT-7 | MAJOR | D71: an answer removes the rejected records without a mark, so a device or backup that still holds one brings it back. | Follows from D71 and BY2 step 1 |
+| RT-8 | MAJOR | D64(b): a browser limited to version 1 is not told what to do with the version-2 cloud copy, and D78's check then refuses its saves. | Follows from D64 and D78 |
+| RT-9 to RT-15 | MINOR | D73's raw entry is altered by `clean()` (store it as a JSON string); stale section 8 text against D71 and D73; `why` inside the held entry breaks equal discoveries; the transfer code's only version is its prefix (`codec.js` 7: needs `EVT3-`); IndexedDB falls back per call, not per browser; D75's epoch must be checked before `cloudFinish` uploads; D8's "due again" waits an hour. | `codec.js` prefix confirmed |
+
+**Ruling:** all accepted. They go to the planning agent with the round-five corrections, and a second fresh red team
+runs on the result before the sixth round is filed. From now on a fresh in-house red team runs before every outside
+round.
