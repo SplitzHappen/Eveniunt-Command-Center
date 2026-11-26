@@ -81,3 +81,21 @@ faults that neither outside reviewer had raised. The requester checked the code 
 **Ruling:** all accepted. They go to the planning agent with the round-five corrections, and a second fresh red team
 runs on the result before the sixth round is filed. From now on a fresh in-house red team runs before every outside
 round.
+
+## Second in-house red team (2026-11-26)
+
+A second fresh reviewer agent (same family) read `ea81d9d`. It found no blocker, 7 major and 7 minor faults. The
+requester checked the code facts.
+
+| # | Severity | Finding | Checked |
+| --- | --- | --- | --- |
+| RT2-1 | MAJOR | With no characters, Settings syncs a placeholder with no `modules` (`settings.js` 294); `ET.threeWay`'s `fill` (`merge.js` 38 to 40) then reads the cloud's sections as this device's, and the placeholder counts as untouched. Unsynced Lists, Atelier and Bourse changes can be replaced. This is probably a fault in today's app too: proposed to the owner as a separate task. The plan's careful merge must see the stored sections. | Mechanism confirmed in the code; the final write not run |
+| RT2-2 | MAJOR | An answer's rejection marks survive a later, different answer, and a backup or another device can then remove the record the later answer kept. A rejection mark must name its question and be superseded. | Follows from D70 (6), D71 (3) and (4) |
+| RT2-3 | MAJOR | The careful merge takes one-sided purchase records unasked (BY2 with no base), so a loaded older backup's dropped record comes back. | Follows from D80 (2) |
+| RT2-4 | MAJOR | "Same root, higher count: descends" is false after the owner's overwrite. An overwrite must start a new root. | Follows from D80 (3) |
+| RT2-5 | MAJOR | "Leave them out" would delete the entries on every device. Say so, or keep them in the cloud and out of the base. | Follows from D80 (2) |
+| RT2-6 | MAJOR | Today's `sync.drive` stores `{ fileId, at, base }` with no `eTag` (`cloud.js` 194, 222, 229), so D76's "recorded tag equals `old.tag`" is never true for a real device. Use the entry hashes instead. | Confirmed |
+| RT2-7 | MAJOR | Low storage: the guard doubles writes and the price cache has no limit, so migration fails, and D83 turns off cloud sync for every module. Clear the price cache on a space failure and cap it; a browser held at version 1 keeps syncing the old file. | Follows from D5, D64, D83 |
+| RT2-8 to RT2-14 | MINOR | The IndexedDB home marker is written too late; schema and BS-11 contradict D71 and D73; D72 against D80 order; "as today" is wrong about today's prompts (`ui.js` 1208, 1213); `raw` is cut at 20,000 characters; LI7 refuses all of "Made"; BY2 omits `coll`. | `ui.js` prompts confirmed |
+
+**Ruling:** all accepted. The planning agent fixes them; a third red team, limited to the new edits, runs before the sixth round is filed.
