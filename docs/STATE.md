@@ -174,7 +174,13 @@ Nothing.
    unreviewed). Owner, round seven (2026-11-26): build the rule that keeps the Lists count and the purchases together
    (question 14 (a)); run a third outside review round on the corrections (question 15 (a)), filed as
    `ASG-20261126-bourse-plan-review-chatgpt-003` and `ASG-20261126-bourse-plan-review-mistral-003`. The Bourse stays
-   paused until the plan passes; the one-look rules pull request can go on meanwhile.**
+   paused until the plan passes; the one-look rules pull request can go on meanwhile. Returned 2026-11-26: ChatGPT FAIL
+   (3 blockers: an older Tracker's "Erase everything" wipes every module of a version-2 save, confirmed in
+   `storage.js`; the credit rule's limits; the cloud overwrite's approval), Mistral PASS on two claims found wrong in
+   the code (`docs/bourse-review-adjudication-3.md`). Owner, round eight: keep building the credit rule; the erase fix
+   is the Bourse work's first step (B29, 30 days before the version rises); a fourth round with both reviewers. Look
+   corrected (`27d2897`); spec corrected (31 work items, section 17, same-family and unreviewed); fourth round filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-004` and `ASG-20261126-bourse-plan-review-mistral-004`.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
