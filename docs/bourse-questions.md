@@ -246,3 +246,11 @@ marked "default (not asked)"; the owner can change any of them.
 | --- | --- |
 | 14. "Also add to I have in Lists" when you use two devices | **(a) Build a rule that keeps count and purchases together** (after a sync the count is the player's own part plus every purchase that added to it; if the rule fails its tests, the setting is left out). |
 | 15. A third outside review | **(a) Run a third round on the corrections only**, before any Bourse code; the one-look work can go on meanwhile. |
+
+## Eighth round (owner, 2026-11-26), after the round-three outside reviews
+
+| Question (`docs/bourse-review-adjudication-3.md`) | Answer |
+| --- | --- |
+| The optional "Also add to I have in Lists" setting, after the round-three findings | **Keep building it now** (the rule is corrected for the count limit, backups and codes, Undo on another device and fallback storage; if its tests fail, it is left out, as in round seven). |
+| The old Tracker's "Erase everything" over a newer save | **Fold the fix into the Bourse work:** its first step, shipped well before the save version rises; no separate pull request now. |
+| A fourth outside review after the corrections | **Yes, both reviewers** (ChatGPT and Mistral), before any Bourse code. |

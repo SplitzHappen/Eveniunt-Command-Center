@@ -89,9 +89,8 @@ The reviewers' severities are kept. Every BLOCKER and MAJOR finding must be fixe
 
 ## What happens next
 
-1. The owner answers two questions:
-   - whether the optional "Also add to I have in Lists" setting stays in the first Bourse release, given the new findings;
-   - whether a fourth outside round runs after the corrections.
+1. The owner answered (`docs/bourse-questions.md`, eighth round): keep building the Lists setting's rule; fold the
+   "Erase everything" fix into the Bourse work as its first step; a fourth outside round with both reviewers.
 2. The spec is corrected by the planning agent. The look and the examples are corrected by the requester.
-3. The small fix to "Erase everything" is a live-app change. It needs its own pull request and the owner's `ship`, and it must ship before the save version rises.
+3. The fix to "Erase everything" is the Bourse work's first step, shipped well before the save version rises.
 4. Building stays paused until the plan passes. Then it follows the owner's order: the one-look rules, the module moves, and the Bourse last.
