@@ -274,3 +274,9 @@ marked "default (not asked)"; the owner can change any of them.
 | Question (`docs/bourse-review-adjudication-5.md`, last section) | Answer |
 | --- | --- |
 | How to go on when in-house red teams keep finding new serious faults | **Keep red-teaming in-house:** fix, then a fresh check, repeated until one finds no serious fault; then the sixth outside round (both reviewers). Not chosen: sending round six now; a separate project for sync deletions first; pausing. |
+
+## Twelfth round (owner, 2026-11-26), after the sixth in-house red team
+
+| Question (`docs/bourse-review-adjudication-5.md`, last section) | Answer |
+| --- | --- |
+| The in-house checks stalled at 3 serious faults; two sat in the old-file checkpoint | **Simplify the move:** the old cloud file is read once, by the first device to update; every other device brings its own save when it updates; the checkpoint mechanism goes. Accepted cost: changes an older-app device makes after another device has updated reach the others only when that device itself updates. Then fix the remaining fault (an old open tab's sync record) and run another in-house check. |
