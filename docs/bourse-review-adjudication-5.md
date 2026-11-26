@@ -99,3 +99,15 @@ requester checked the code facts.
 | RT2-8 to RT2-14 | MINOR | The IndexedDB home marker is written too late; schema and BS-11 contradict D71 and D73; D72 against D80 order; "as today" is wrong about today's prompts (`ui.js` 1208, 1213); `raw` is cut at 20,000 characters; LI7 refuses all of "Made"; BY2 omits `coll`. | `ui.js` prompts confirmed |
 
 **Ruling:** all accepted. The planning agent fixes them; a third red team, limited to the new edits, runs before the sixth round is filed.
+
+## Third in-house red team (2026-11-26), on the changes since the second
+
+A third fresh reviewer agent (same family) read only the changes from `ea81d9d` to `101afc0`. It found 4 major and 5 minor faults, all in the newest edits:
+- **"Not now" revives entries at the next sync:** a base is recorded without the undecided entries.
+- **D84's chain of superseded answers can break:** an old rejection mark becomes live again.
+- **A browser held at version 1 syncs one way:** it shows "Synced" while getting nothing from updated devices.
+- **"A side without sections is an error" removes a shipped safeguard:** the one in `merge.js` 36 to 40, which `ET.catchUpMerge` relies on.
+
+The minor faults are BK-37 undefined; `coll` with no base; deleting the price database also resets the request gates; two "as today" claims that are wrong (today's cloud sync has no untouched path: `ET.untouched` is used only by the catch-up, `storage.js` 164); and the overwrite does not say it keeps D76's checkpoint. The requester confirmed the `ET.untouched` fact in the code.
+
+**Pattern:** three in-house red teams in a row found new major faults, each mostly in the edits made for the one before. The owner is asked how to go on before more edits are made.
