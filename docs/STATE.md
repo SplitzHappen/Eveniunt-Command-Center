@@ -166,7 +166,13 @@ Nothing.
    (`docs/bourse-review-adjudication.md`); spec and look corrected; owner's sixth round recorded; work items B0 and B1
    (facts only) ran and are committed (B0 report `docs/bourse/b0-report.md`; B1 saved replies and test); the second
    outside review was filed 2026-11-25 as `ASG-20261125-bourse-plan-review-chatgpt-002` and
-   `ASG-20261125-bourse-plan-review-mistral-002` (candidate: pull request 10 at `f6610c6`).**
+   `ASG-20261125-bourse-plan-review-mistral-002` (candidate: pull request 10 at `f6610c6`); returned 2026-11-26:
+   ChatGPT FAIL again (1 blocker: the optional "also add to I have in Lists" setting can lose a purchase when two
+   devices sync; 16 major), Mistral PASS (minor only); every finding accepted except one part of the tax finding,
+   rejected on the 139 saved listings (`docs/bourse-review-adjudication-2.md`); look, examples and saved replies
+   corrected (`25bd63f`); spec corrected by the planning agent (29 work items, new section 16, same-family and
+   unreviewed). Open for the owner: question 14 (the Lists setting with two devices) and question 15 (a third outside
+   review round) in `docs/bourse-spec.md` section 11. The Bourse stays paused until the plan passes.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
