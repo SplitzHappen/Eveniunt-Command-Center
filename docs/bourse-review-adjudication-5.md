@@ -58,4 +58,4 @@ Every finding is accepted, at the reviewer's severity.
 
 ## What happens next
 
-The owner decides the scope and whether a sixth round runs (asked with every option). Building stays paused until the plan passes.
+The owner decided (`docs/bourse-questions.md`, tenth round): keep the Lists setting in this plan; fix all twelve findings; a sixth outside round with both reviewers. Building stays paused until the plan passes.

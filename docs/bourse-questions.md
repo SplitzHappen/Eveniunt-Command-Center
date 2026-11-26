@@ -261,3 +261,10 @@ marked "default (not asked)"; the owner can change any of them.
 | --- | --- |
 | How to go on after round four | **Fix everything and review again:** the plan keeps its scope (the Lists setting's rule included); all 15 findings are fixed; then a fifth outside round. |
 | Who reviews | **Both reviewers** (ChatGPT and Mistral). |
+
+## Tenth round (owner, 2026-11-26), after the round-five outside reviews
+
+| Question (`docs/bourse-review-adjudication-5.md`) | Answer |
+| --- | --- |
+| The optional "Also add to I have in Lists" setting | **Keep it in this plan** (its five findings are fixed; it is still left out by itself if its tests fail). |
+| How the corrections are checked | **A sixth outside round, both reviewers** (ChatGPT and Mistral). |
