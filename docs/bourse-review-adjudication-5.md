@@ -153,3 +153,14 @@ The reviewer confirmed the changed text's code claims.
 
 **Pattern:** two of the three major faults are inside the old-file checkpoint mechanism that the last two rounds built
 (D76, D88). The owner is asked how to go on.
+
+## Seventh in-house red team (2026-11-26), on the simplified move (`9cc9c52` to `078c30b`)
+
+A seventh fresh reviewer agent (same family) found 1 blocker, 1 major and 4 minor faults. The count fell to 2 serious
+faults (from 3), and both are narrow.
+
+| # | Severity | Finding | Checked |
+| --- | --- | --- | --- |
+| RT7-1 | BLOCKER | The new `seq` rule undoes "forget the base". `adoptLoaded` (`ui.js` 1017) and `ET.goBack` (`storage.js` 336) write `base: null` without raising `seq`, so on a tie the stored record, base included, wins. Loading last month's backup (250 ticks against a base of 300) then uploads the 50 as removals at the next ordinary sync, and `ET.mergeLoss` asks nothing because the removals come from this side. Fix: every writer that drops or replaces `drive` writes the stored `seq` + 1, read inside the transaction. | Confirmed (`ui.js` 1017, `storage.js` 336) |
+| RT7-2 | MAJOR | An older device's changes after the move are stranded if its save is cleared before it updates: new code with an empty save never reads the old file, and no button reaches it. Today, signing in again restores them. Fix: a manual "bring in the older cloud file" action in Settings, by the careful merge. | Follows from D76 (2) |
+| RT7-3 to RT7-6 | MINOR | D76 (1) reads the old file again when the newer file is gone (state the exception, and label those questions); a stale tab's own cloud sync takes base and `open` from memory (`cloud.js` 198), so read them from the stored save at sync start; two writers from the same `seq` tie; BV-39's control passes at `<base>`, BV-37 lacks an "already exists" run, and BV-31 lacks a base-drop writer. | — |
