@@ -111,3 +111,16 @@ A third fresh reviewer agent (same family) read only the changes from `ea81d9d` 
 The minor faults are BK-37 undefined; `coll` with no base; deleting the price database also resets the request gates; two "as today" claims that are wrong (today's cloud sync has no untouched path: `ET.untouched` is used only by the catch-up, `storage.js` 164); and the overwrite does not say it keeps D76's checkpoint. The requester confirmed the `ET.untouched` fact in the code.
 
 **Pattern:** three in-house red teams in a row found new major faults, each mostly in the edits made for the one before. The owner is asked how to go on before more edits are made.
+
+## Fourth in-house red team (2026-11-26), on the changes `101afc0` to `feefdbf`
+
+A fourth fresh reviewer agent (same family) found 3 major and 6 minor faults, down from 4 major.
+
+| # | Severity | Finding | Checked |
+| --- | --- | --- | --- |
+| RT4-1 | MAJOR | An overwrite carries the overwriting device's possibly older checkpoint, so an entry removed after the old file was folded in comes back. A reader whose checkpoint differs from the copy's must fold the old file by the careful merge. | Follows from D88 (1) and D76 |
+| RT4-2 | MAJOR | The re-chosen purchase id is the 24-character hash; the checker accepts 8 to 16. Use the first 12 characters, as `merge.js`'s LY6 `newId` does. | Confirmed (spec line 520; `merge.js` 52) |
+| RT4-3 | MAJOR | The undecided keys are lost inside the same sync: `cloud.js` 221 merges this device's own copies again, and 194, 222 and 229 rebuild `sync.drive` whole without `open`; Settings' `done()` (321) does the same. | Confirmed in `cloud.js` |
+| RT4-4 to RT4-9 | MINOR | A stale "untouched device" sentence in BY2 step 1; the old undo mark must be written with the rename; two answers to different questions meeting have no rule; a new device is offered "remove from every device"; Settings' automatic sync has no rule for showing the question; BG-9 and BV-32 lack positive controls. | — |
+
+**Ruling:** all accepted. The planning agent fixes them; a fifth check follows (owner, eleventh round).
