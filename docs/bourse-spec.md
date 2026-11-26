@@ -532,8 +532,10 @@ released by itself**; the rest is built into the one look and released **no soon
   the purchase of 9 on 3 May; (b) …; (c) …". **No answer can remove a pair the question did not show**, because an
   answer only applies to the question it names (4).
   (3) **The answer** is `held["<owner>.<item>"] = { q, ans: <h>, alt: <the chosen alternative, whole> }`, written in
-  the same guarded write that installs `alt` as the live pair. **That write also stores an undo mark
-  (`undone[<id>] = { o, i, q, at }`) for every purchase record that is in another alternative and not in `alt`**: a
+  the same guarded write that installs `alt` as the live pair. **That write also stores a rejection mark
+  (`undone[<id>] = { o, i, q, at, rq: <the question's q> }`: an undo mark that names the question whose answer
+  wrote it) for every purchase record that is in another alternative and not in `alt`**; D84 says when a later
+  answer takes such a mark back. A
   record the answer rejects is marked exactly as an undone one, so a device or a backup that still holds it cannot
   bring its credit back (BY2 step 1 removes it wherever it is met, with a base or without). The answer is refused,
   and the question shown again, when the stored entry is no longer the question `q`.
@@ -571,7 +573,8 @@ released by itself**; the rest is built into the one look and released **no soon
   mark or a held alternative that the checker would drop or cut (a missing or impossible field, a credit above its
   units, a name that does not match its text) is moved into `bad: { "<hash>": { from, key, o, i, raw } }`, a group
   of the Bourse section. **`raw` is the entry written out as one JSON text, at most 20,000 characters (a longer one
-  is cut and marked `cut: 1`); `key` is the hash of the original key when that key is not a safe one.** It has to
+  is not cut: `raw` is then `{ p0, p1, … }`, pieces of at most 20,000 characters each, joined in order when it is
+  read or downloaded); `key` is the hash of the original key when that key is not a safe one.** It has to
   be text: every reading of a save first passes the general cleaner (`save.js` lines 30 to 38 and 197), which drops
   unsafe and over-long keys, cuts deep nesting and shortens long strings, so an entry kept "as it arrived" as an
   object would be altered; one short text passes it unchanged, through a save, a backup, a code and a cloud copy
@@ -613,10 +616,13 @@ released by itself**; the rest is built into the one look and released **no soon
   for the old file, and the checkpoint is written with the first version 2 copy. **A device that moves later does
   two things, in this order.** First, if the old file's tag is not `old.tag`, it folds the old file into the
   version 2 copy by the steps above (as any updated device would) and uploads that with the new checkpoint. Then it
-  merges its own save with the version 2 copy, **using the base it recorded for the old file only when the tag it
-  recorded with that base is now `old.tag`** (the copy has taken in exactly the old file that base describes, so the
+  merges its own save with the version 2 copy, **using the base it recorded for the old file only when that base,
+  entry by entry, gives exactly the checkpoint's marks** (the same short hashes, the same counts; no entry more,
+  none less). A device's record of the old file holds no `eTag` today (`cloud.js` lines 194, 222 and 229 store
+  `{ fileId, at, base }`), so a comparison of tags could never succeed for a real device; the contents can be
+  compared. When they agree (the copy has taken in exactly the old file that base describes, so the
   copy descends from it, and an entry another device removed after the move stays removed). In every other case
-  (no recorded base; a recorded tag the copy never consumed) it uses the careful merge of D80. [Using the old-file
+  (no recorded base; a base whose entries do not match the checkpoint's marks) it uses the careful merge of D80. [Using the old-file
   base whatever its tag: what this device itself added to the old file after the first move would read as removed
   elsewhere, and what it removed there would come back.]
 - **D77 "Cheapest listing" needs one of two proofs; else "cheapest seen".** (a) **The slice is complete:** the
@@ -653,22 +659,41 @@ and fewer such cases** (reasons at its end).
   (2) **The careful merge (new code in `merge.js`).** `ET.threeWay(null, local, remote, { careful: true })`: equal
   entries are kept; entries on both sides that differ are asked as today; **entries on one side only are neither
   taken nor dropped**: they are listed in the result (`oneSided.here`, `oneSided.there`). While either list is not
-  empty the caller applies nothing here, uploads nothing, and asks, per module, at most two questions: "This device
-  holds N entries the other copy does not have (Tracker: 30 ticks; Lists: 1 wanted item; …). They may be new here,
-  or removed on another device. **Keep them** or **remove them here**?" and "The other copy holds M entries this
-  device does not have (…). They may be new there, or removed here. **Take them** or **leave them out**?" Each can be
-  opened to its entries and answered entry by entry. A sync that runs by itself does not ask: it stops, "Cloud sync
-  waits for your answer (Settings → Cloud sync → Sync now)", as it does today for removals coming from another
-  device. No answer: nothing changes, on this device or in the cloud. One exception keeps a new device simple: when
+  empty the caller applies none of them here and uploads none of them, and asks, per module, at most two questions.
+  "This device holds N entries the other copy does not have (Tracker: 30 ticks; Lists: 1 wanted item; …). They may
+  be new here, or removed on another device. **Keep them** (they go to the cloud and to your other devices),
+  **remove them** (they exist only here, so they are gone), or **not now**?" "The other copy holds M entries this
+  device does not have (…). They may be new there, or removed here. **Take them**, **remove them from every device**
+  (asked once more, with the count: this deletes them in the cloud, and your other devices will remove them too),
+  or **not now**?" Each can be opened to its entries and answered entry by entry. **"Not now" decides nothing:** the
+  cloud keeps its own value for those entries, this device keeps its own, they stay out of this device's base, and
+  the next sync asks again; every other entry syncs. **There is no answer that only "leaves out" an entry without
+  saying it is removed everywhere.** What may be uploaded meanwhile: only what decides no one-sided entry, which
+  includes D72's publication of a hold (it leaves the cloud's own value for every open entry, one-sided ones
+  included; D72 and this rule do not conflict). **A purchase record that holds a credit and is found on one side
+  only is not taken by BY2 either: with no base its pair is held (BY2 step 1, D71), on every device but an untouched
+  one.** A sync that runs by itself shows this question in the way today's automatic sync shows its own two (the
+  tick-removal confirmation, `ui.js` line 1208, and the clash dialog, lines 1213 and 1214): it asks when the page is
+  in front, and once declined it does not ask again by itself for the same cloud copy: "Cloud sync waits for your
+  answer (Settings → Cloud sync → Sync now)". **Both existing prompts stay exactly as they are; none is removed or
+  bypassed by this rule.** No answer: nothing changes, on this device or in the cloud. **Both sides are read from
+  what is stored:** the merge is always given this device's stored sections of every module (Settings' sync, which
+  today builds a placeholder with no sections, `settings.js` line 294, passes `CC.others` of the stored save), and
+  a side that arrives without its sections is an error, never filled from the other side (`merge.js` lines 38 to
+  40 do that today). One exception keeps a new device simple: when
   this device's save is untouched (`ET.untouched`, which today looks only at the Tracker's names and ticks, `storage.js` 158 to 161, extended here so that it also requires no other module's entries),
   the other copy is taken whole, as today. Credited pairs are not part of these questions: they follow BY2's rules
-  for no base (step 1, D70 (6)).
+  for no base (step 1, D70 (6)), under which a credited record found on one side only, with no base and no matching
+  undo mark, holds its pair (D84).
   (3) **Fewer cases.** A version 2 cloud copy is known (D63) when the file's item id and its `root` are the recorded
   ones and its count `n` is not below the recorded one; when it is at most 200 uploads ahead its line must also
   hold the recorded copy id. Beyond 200 the root and the count are enough: the version 2 file is replaced only by
   writes that carry the `eTag` of the copy they read (D48, D67), so every copy with the same item id and root
-  descends from every earlier one; a new root can only come from a create. The 200-upload limit therefore no longer
-  ends in a merge without a base.
+  descends from every earlier one. **That holds only for writes made from a merge of the copy read.** The owner's
+  overwrite of a damaged copy (cloud rule 3) replaces the copy with this device's data, which does not descend from
+  it: **an overwrite, like a create, starts a new `root` with `n` 1 and an empty line**, so every other device finds
+  the copy not known and uses the careful merge. The 200-upload limit therefore no longer ends in a merge without a
+  base, and an overwrite never passes for a descendant.
   (4) **Where the careful merge is used, and only there:** a cloud copy that is not known (a foreign root or item
   id; a missing or partial record on this device); the first sync after a loaded backup or code and after a guard
   Restore (the base was dropped, D67 (3)); a device that moves to the version 2 copy without a usable old-file base
@@ -699,17 +724,54 @@ and fewer such cases** (reasons at its end).
   count that went to 0 on one device while another device added to it with a credit merges as 0-side own plus the
   credits, and is not "kept as changed".
 - **D83 A browser that cannot hold version 2 does not touch the version 2 cloud copy, and storage does not change
-  under a save.** (1) Where new code stays on version 1 (D64 (a) and (b): no IndexedDB, or no room for the guard),
-  **cloud sync is off in that browser: the version 2 copy is neither read into the save nor written, and the old
-  file is neither read nor written** ("Cloud sync is off here until this browser can hold the newer save. Free some
-  space, or use a browser with full storage. Backup files still work."). Nothing of the Bourse section can
-  therefore arrive in a version 1 save, so D78's check "holds no Bourse section" never meets one; if it ever does
-  (a save damaged or hand-made), the page says so and writes nothing, and **no code removes the section to make a
-  save pass**. (2) **Where the save lives is decided once.** `CC.transact` and `CC.read` today fall back to device
-  storage whenever one IndexedDB open fails (`save.js` lines 368 to 400 and 412 to 448). New code records, in device
-  storage, that this browser's save is in IndexedDB as soon as a version 2 save is written there; from then on a
-  call whose IndexedDB open fails or is blocked **fails** ("The browser's storage is busy or blocked. Nothing was
-  saved. Reload the page.") and never reads or writes the old device-storage copy.
+  under a save.** (1) Where new code stays on version 1 (D64 (a) and (b): no IndexedDB, or no room for the guard
+  even after D86's clearing), **that browser behaves towards the cloud as an older device does: it goes on syncing
+  the old file exactly as today, every module, and never reads or writes the version 2 copy.** To the other devices
+  it is an older device, and what it writes to the old file is taken in by D76. It says once: "This browser cannot
+  hold the newer save, so it keeps the older one and syncs with your older cloud copy. The Bourse cannot save
+  here." Nothing of the Bourse section can therefore arrive in a version 1 save, so D78's check "holds no Bourse
+  section" never meets one; if it ever does (a save damaged or hand-made), the page says so and writes nothing, and
+  **no code removes the section to make a save pass**. (The earlier wording, cloud sync off for both files, is
+  withdrawn: it took sync away from every module on a phone that only lacked space.) (2) **Where the save lives is
+  decided once, and the note comes first.** `CC.transact` and `CC.read` today fall back to device storage whenever
+  one IndexedDB open fails (`save.js` lines 368 to 400 and 412 to 448). **Before** the first version 2 write, new
+  code records in device storage that this browser's save is in IndexedDB; **if that note cannot be written, the
+  save is not migrated** (it stays version 1, with D64's sentence). The version 2 write follows; a note with no
+  version 2 save behind it (the page closed in between) is harmless: the version 1 save in IndexedDB is read as
+  today and migrated at the next write. From the note on, a call whose IndexedDB open fails or is blocked **fails**
+  ("The browser's storage is busy or blocked. Nothing was saved. Reload the page.") and never reads or writes the
+  old device-storage copy.
+
+**Second in-house red team (2026-11-26).** Where a sentence elsewhere in this file says otherwise, D84 to D87 rule.
+- **D84 A rejection can be taken back by a later answer; an Undo cannot.** An open question records the questions it
+  grew out of: `prev: { <q>: 1, … }` holds the `q` of every answer it met when it was raised (D71 (4): the same
+  question answered differently, or an answer overtaken by a wider question) and the `prev` of those; widening a
+  question keeps its `prev`. The answer copies `prev` into its entry. **An answer whose `prev` holds the `q` of
+  another answer for the same pair replaces that answer wherever the two meet, in a sync or in a loaded backup.**
+  **A rejection mark whose `rq` is in the `prev` of the stored answer, for a record that is in that answer's `alt`,
+  is void: it is deleted and removes nothing.** So a record that an earlier answer rejected and a later answer chose
+  stays, also when an old backup or a device that only saw the earlier answer comes back. An undo mark without `rq`
+  (a real Undo) is never void. Two answers neither of which is in the other's `prev`: D71 (4), a new question.
+- **D85 "Made" and a handed-in step are refused when they would change a frozen count, with the reason. (The
+  choice for the red team's finding 13.)** Freezing only the frozen ingredient's change inside one write was
+  rejected: the craft would be counted and the ingredient not taken, and the answer to the open question would then
+  install a count that never saw the craft; recording the missing change for later would be a second kind of pending
+  entry. So the whole action is refused, which Lists never did for "Made" before (`lists/store.js` lines 403 to
+  410), and it says exactly why and what to do: "Not recorded: there is an open question about <item>, which this
+  craft would use. Answer it first." with a button that opens the question. Nothing of the action is written. A
+  craft or hand-in that touches no frozen count is written as today.
+- **D86 Storage that is short: the price cache gives way first, and it has a limit.** The Bourse's price database
+  (`eveniunt-bourse-prices`) shares the browser's allowance with the save and its guard. (1) It holds at most
+  60,000 item records in all; the oldest fetched go first when a write would pass that. (2) **When a save's
+  transaction fails for space (the first migration or any later write), new code deletes the whole price database
+  and tries the write once more**; only if that also fails do D64 (b)'s sentences apply. Prices are a cache: the
+  screens then read "not fetched" until the next lookup. (3) The pages show how much the save, the guard and the
+  price cache take (Settings, Import and backup), with "Clear saved prices".
+- **D87 The collectable count merges inside its pair.** Lists' unit for one owner and item is `{ nq, hq, coll }`.
+  BY2 takes the whole unit out of LY0 and the generic rule, so it must merge all three: `nq` and `hq` by steps 1 to
+  4; **`coll`, which no purchase credits, as an own part with no credits** (changed on one side, that side's; the
+  same on both, that; differently on both, asked together with the pair's own-part question, this device's until
+  answered). An alternative of a held question carries all three, and installing it installs all three.
 
 ## 3. What is fetched (host `https://universalis.app/api/v2/`)
 
@@ -985,8 +1047,8 @@ Tracker and Atelier:
 ```
 { v: 1,
   watch:  { "<item id>.<nq|hq>": { target, at } },
-  held:   { "<owner>.<item id>": { q, why, alts: { <h>: <pair> } } | { q, ans, alt } },    an open or answered pair question (D71)
-  bad:    { "<hash>": { from, key, raw } },                            entries that failed the check, kept whole (D73)
+  held:   { "<owner>.<item id>": { q, prev, alts: { <h>: <pair> } } | { q, prev, ans, alt } },    an open or answered pair question (D71, D84; no reason is stored)
+  bad:    { "<hash>": { from, key, o, i, raw } },                      entries that failed the check, kept whole (D73; raw is text, in pieces when long)
   extra:  { "<trip id>.<item id>.<nq|hq>": { qty, at, t } },                     the trip's own items
   bought: { "<purchase id>":     { o, i, q, n, of, cr, ls, t, at } },  o: c1..c8, u, or x (own item); q: nq|hq
   undone: { "<purchase id>":     { o, i, q, at } },                    a credited purchase that was undone
@@ -1023,7 +1085,8 @@ Tracker and Atelier:
      is removed on both, with a base or with none** (D70 (6)), and its credit leaves the count with it by step 3. A
      record the base held that one side lacks **with no undo mark on either side** is unexplained (a partial
      restore, a dropped entry): **it is never taken as an Undo; the pair is held (step 4).** With no base, own parts
-     that differ are held as well. A missing count is 0 (D82), and this rule decides a pair before LY0 can.
+     that differ are held as well, and so is a pair whose credited record is found on one side only with no matching
+     undo mark (D84; an untouched device takes the other copy whole). A missing count is 0 (D82), and this rule decides a pair before LY0 can.
   2. **Own part.** Changed on one side, that side's; changed the same on both, that; changed differently on both,
      asked, this device's until answered, the question showing each side's own part plus the merged credits, which
      are the two counts as the player would see them. This keeps the rule: count = own + credits.
@@ -1666,7 +1729,7 @@ control).**
 - **B24.** BV-21 the older app's two unconditional uploads, as two separate cases, each made **after** the newer
   device wrote its copy: the older Tracker's "no file seen" upload and its "replace the cloud copy" both land in the
   old file; the version 2 file is byte for byte untouched; the newer device's next sync reads the old file, merges it
-  with no base, removes nothing; control: at `<base>`, with one file name, the same upload replaces the newer copy.
+  by the checkpoint of D76 (not by a merge without a base), removes nothing; control: at `<base>`, with one file name, the same upload replaces the newer copy.
 - **B26.** Files add `tracker/src/core/storage.js` only if B28's inventory shows a caller that drops the holds a
   merge returns; D70 needs no other storage change. Cases, each through the real cloud path and the real local path,
   each checking the bytes of **both devices' saves and of the cloud copy**: BK-16 "declined": the sync dialog is
@@ -1720,7 +1783,8 @@ control).**
   alternative goes to `bad` whole and is never among the choices; run through the real readers of a backup, a code
   and a cloud copy (`codec.js`, `save.js` `checkModules`), with the bytes of the `bad` entry compared before and
   after; control: a well-formed entry is stored unchanged. BS-11 a malformed purchase record and a malformed undo
-  mark go to `bad` the same way, and their pair becomes a question with `why: 'bad'`; control: well-formed ones stay
+  mark go to `bad` the same way, and their pair becomes an open question (no `why` is stored, D71 (1); the screen
+  says "an entry could not be read" because a `bad` entry names that owner and item); control: well-formed ones stay
   in place. BS-12 (D78) "a newer backup on a browser limited to version 1": on fallback storage, and on IndexedDB
   with no room, a version 2 backup and a version 2 code are not taken in: the stored save is byte for byte as
   before, the page still shows the old data, the sentence shows; on the same browser a version 1 backup loads and a
@@ -1815,7 +1879,8 @@ control).**
   question and upload them.** A fresh device (untouched save) takes the cloud copy whole with no question.
   BV-29 **"two hundred and one uploads"**: the PC makes 250 uploads while the phone is away, removals among them;
   the phone's next sync finds the copy known (same item id and root, a higher count), uses its recorded base and
-  takes the removals with no question; control: the same copy with another root is not known and goes to the
+  takes the removals **with no careful-merge question; today's confirmation for ticks another device removed
+  (`ui.js` line 1208) still shows, exactly as at `<base>`, and the test asserts that it does**; control: the same copy with another root is not known and goes to the
   careful merge. BV-15's "201 uploads behind: no base" is replaced by this. Every test of this file that says "no
   base" (BV-9, BV-13, BV-14, BV-21, BV-25, BK-22, BK-13) asserts the careful merge's behaviour for one-sided entries,
   not only that no base was used.
@@ -1861,6 +1926,63 @@ control).**
   (the stand-in cloud receives none); control: with no replacement in between the upload is sent.
 - **B22 (RT-15).** C205 adds: an old four-part record fetched ten minutes ago is asked again at the next permitted
   fetch, not after the hour; control: a six-part record of the same age is not asked again.
+
+**Second red-team additions to the items (before round six; binding; each belongs to the item named and names its
+control).**
+- **B24, B27 (D80 (2), finding 1).** Files add `tracker/command-center/src/settings.js` (the sync's state carries the
+  stored sections) and the stricter `ET.untouched` in `tracker/src/core/storage.js`. BV-28 adds **"Lists entries and
+  no characters"**: a phone holds Lists counts, an Atelier macro and a Bourse undo mark that were never synced, and
+  no characters (after "Erase everything", and as a second run on a device that only ever used Lists); Home is
+  opened and Settings' automatic sync runs: this device's Lists, Atelier and Bourse sections are byte for byte as
+  before, the save is not "untouched", and the careful merge asks about what each side alone holds; the undo mark is
+  still there and no count rose; control (the fault, which the plan must not rely on): the code at `<base>` replaces
+  the three sections with the cloud's. A device with placeholder names, no ticks and no entry in any module takes
+  the cloud copy whole, as before.
+- **B26 (D84, finding 2).** BK-37 "a rejection taken back": A answers Q1 and rejects B's record R; A saves a backup;
+  B answered Q1 differently, the new question is answered with B's pair, which holds R; then A's backup is loaded
+  on a device, and a device that only installed A's answer syncs: R and its credit stay everywhere, the old
+  rejection mark is deleted, no question; control: a real Undo of R (no `rq`) removes it in the same two runs; and
+  without `prev` (the fault) the old mark removes R silently.
+- **B26, B27 (D80 (2), finding 3).** BK-38 "a purchase one side alone holds, no base": a count of 10 with a 40 credit
+  (50), synced; an older backup is loaded, which drops the record (10): the next sync does not put the count back to
+  50: the pair is an open question with both pairs; on an untouched device the same record is taken with the copy;
+  control (the fault): BY2's step for equal own parts takes the record unasked.
+- **B27 (D80 (3), finding 4).** BV-30 "an overwrite is not a descendant": A last synced at upload 40, C at 50; the
+  copy is damaged at 299; A overwrites: the new copy has a new root and count 1; C finds it not known and is asked
+  about what it alone holds; nothing added between 40 and 50 is removed unasked; control (the fault): the same root
+  with count 300 lets C use base 50 and remove them.
+- **B27 (D80 (2), finding 5).** BV-31 "three answers": "take them" brings the entries here; "remove them from every
+  device" asks once more with the count and then a third device, whose base held them, removes them (its own
+  confirmation for ticks still shows); "not now" leaves the cloud copy byte for byte unchanged for those entries,
+  syncs an unrelated entry, keeps them out of this device's base and asks again at the next sync; control: no
+  button exists that drops them from the upload without the second question.
+- **B27 (D76, finding 6).** BV-27's later-mover cases are run **from a sync record written by the real `cloud.js` at
+  `<base>`** (`{ fileId, at, base }`, no tag), not from a hand-made one: B's base equals the checkpoint's marks, so
+  it is used, its automatic sync does not stop, and a removal made after the move stays; B's base differs (B wrote
+  to the old file after the first move): the old file is folded in first, then the base equals the new marks and is
+  used; a base that matches neither: the careful merge; control: a rule that compares tags never uses a real
+  device's base.
+- **B3, B30 (D86, D83, findings 7 and 8).** BS-8, BG-9 and BS-14 are amended: with the price database filling the
+  allowance, the first migration and a later version 2 write each succeed after the price database is deleted
+  (prices then read "not fetched"); control: with storage still short after that, D64 (b)'s sentences. BS-14 is
+  replaced: a browser held at version 1 **syncs the old file as at `<base>`**, every module, and sends no request
+  for the version 2 file; an offline tick is saved and survives a reload. BL-17 (B18): the price database never
+  holds more than 60,000 item records; the oldest go first; control: under the limit nothing is dropped. BS-15 adds:
+  the note is written before the version 2 write; with device storage refusing the note nothing is migrated; a page
+  closed between note and write opens the version 1 save unchanged and migrates at its next write; control: note
+  and write both made, a later blocked open fails the call.
+- **B3 (D73, finding 12).** BS-11's long entry (30,000 characters, and a held alternative with 300 records) comes
+  back whole from its pieces after a save, a backup, a code and a cloud copy; control: cut at 20,000 it loses data.
+- **B13, B21 (D85, finding 13).** C208's "Made" and hand-in cases read: refused whole with D85's sentence and the
+  button to the question, nothing written (stock, crafted counts and wanted items byte for byte as before);
+  control: the same craft with no frozen ingredient is recorded as at `<base>`, never refused.
+- **B26 (D87, finding 14).** BK-39 "collectables": a pair with a credit on `nq`; one device changes `coll` from 2 to
+  5: merged 5; both change it differently: asked with the pair, this device's until answered, `nq` and `hq` still by
+  BY2; a held question's alternatives each carry their `coll`, and the answer installs it; control (the fault): a
+  rule for `nq` and `hq` only drops the change.
+- **B26 (finding 10).** BK-40 "a hold and one-sided entries in one merge": the hold is published by D72 while the
+  one-sided entries stay undecided: the cloud copy gains the question and nothing else of them; control: with no
+  hold, nothing is uploaded until the answer.
 
 ## 11. Risks, limits, owner questions
 
@@ -2254,5 +2376,31 @@ red team runs on them before round six is filed.
 | RT-15 an old Lists price record waits an hour | Lists' service counts a record without quality as no record | D8; B22 (C205) |
 
 Left as known limits by these corrections: a sync without a base stops for an answer, also the unattended one; a
-browser that cannot hold the newer save has no cloud sync; undo marks are also written for purchases an answer
-rejects.
+browser that cannot hold the newer save has no cloud sync (withdrawn by the second red team: it syncs the old file
+as an older device); undo marks are also written for purchases an answer rejects.
+
+**Second in-house red team (2026-11-26).** A second fresh reviewer (same family, not independent) read the text at
+`ea81d9d`; the requester confirmed its code facts. All fourteen findings were accepted. The corrections are
+same-family and unreviewed.
+
+| Finding | What changed | Where |
+| --- | --- | --- |
+| 1 a placeholder state takes the cloud's sections as its own | Every merge is given this device's stored sections; a side without sections is an error; "untouched" is judged from what is stored, every module included | D80 (2); B24, B27 (BV-28 "Lists entries and no characters") |
+| 2 a rejection mark cannot be taken back | The mark names its question; a later answer that grew out of it and chose the record makes the mark void; a real Undo stays final | D71 (3), D84; schema; B26 (BK-37) |
+| 3 one-sided purchase records taken unasked | With no base a credited record found on one side only holds its pair as a question, except on an untouched device | D80 (2); B26, B27 (BK-38) |
+| 4 an overwrite passing for a descendant | An overwrite, like a create, starts a new root | D80 (3); B27 (BV-30) |
+| 5 "leave them out" removed entries everywhere | Three answers: take, remove from every device (asked once more), not now (the cloud's value stays, out of the base, asked again) | D80 (2); B27 (BV-31) |
+| 6 later movers never used their base | The base is used when its entries equal the checkpoint's marks; tested from a record the shipped code wrote | D76; B27 (BV-27) |
+| 7 low storage hurt every module | The price cache is deleted and the write tried again; the cache has a limit; a browser held at version 1 syncs the old file as today | D86, D83 (1); B3, B30, B18 (BS-8, BS-14, BG-9, BL-17) |
+| 8 the storage note written after the save | The note is written first; no migration without it | D83 (2); B3 (BS-15) |
+| 9 contradictions | Schema lines, BS-11 and BV-21 brought into line with D71, D73 and D76 | Section 8 schema; section 10 |
+| 10 D72 against D80 | A hold is published while one-sided entries stay open: the publication decides none of them | D80 (2); B26 (BK-40) |
+| 11 "as it does today" | Today's two prompts are named and kept; the careful question is shown the same way | D80 (2); B27 (BV-29) |
+| 12 the unreadable entry cut at 20,000 characters | Stored in pieces, never cut | D73; B3 (BS-11) |
+| 13 "Made" with a frozen ingredient | Chosen: the action is refused whole, with the reason and a way to the question; a partial write was rejected | D85; B13, B21 (C208) |
+| 14 the collectable count | Merged inside the pair as an own part with no credits | D87; B26 (BK-39) |
+
+Left as known limits by these corrections: "Made" and a handed-in step can now be refused, which Lists never did;
+after an owner's overwrite of a damaged cloud copy every other device is asked about what it alone holds; a sync
+with undecided one-sided entries asks again each time until they are answered; deleting the price cache to make
+room empties every price screen until the next lookup.
