@@ -138,3 +138,18 @@ fourth round's fix (a copy that is not known ignores its checkpoint), which was 
 | RT5-4 to RT5-7 | MINOR | `storage.js` 112 copies the tab's own `sync` over the stored one, so `open` is lost (add it to rule (c)); BV-32's `catchUpMerge` run passes anyway; Settings syncs at 351 and 352 (not 347), and 351 is the likely first careful merge; "a device with nothing" ignores what `ET.untouched` counts, and BV-34 has no fault run. | `storage.js` 112 and `settings.js` 351 to 352 confirmed |
 
 **Ruling:** all accepted. A sixth check follows the fix (owner, eleventh round).
+
+## Sixth in-house red team (2026-11-26), on the changes `f819271` to `9cc9c52`
+
+A sixth fresh reviewer agent (same family) found 3 major and 3 minor faults. The count did not fall: 8, 7, 4, 3, 3, 3.
+The reviewer confirmed the changed text's code claims.
+
+| # | Severity | Finding |
+| --- | --- | --- |
+| RT6-1 | MAJOR | The `ask` keys are left out of the comparison but stay in the old-file base that is then used, so an older device's removal is revived (or its addition dropped) without a question. |
+| RT6-2 | MAJOR | A key that leaves `ask` because both sides agree gets no mark, so after a later removal it is taken again from the old file. |
+| RT6-3 | MAJOR | The `storage.js` 112 fix covers one path only: `ET.saveMerge` never receives the stored sync record (`codec.js` 26 drops it), the tab's own record is not refreshed after a merged save (`ui.js` 1255), and the next unmerged save writes the stale record (`storage.js` 35, 107). |
+| RT6-4 to RT6-6 | MINOR | "The later `at`" depends on the wall clock; "kept whole" drops `fc` and `backupAt`; ordinary uploads must carry the checkpoint. |
+
+**Pattern:** two of the three major faults are inside the old-file checkpoint mechanism that the last two rounds built
+(D76, D88). The owner is asked how to go on.
