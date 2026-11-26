@@ -20,6 +20,9 @@ body.bm { min-height: 100vh; }
 .bm-tool { font: 700 14px/1.4 var(--f-body); color: var(--ink); text-decoration: underline 2px var(--seal); text-underline-offset: 3px; align-self: center; white-space: nowrap; }
 .bm-act { display: none; }
 .bm-phone-seg { display: none; }
+/* the settings picture shows the sheet alone, whole, so it is measured on its own */
+.bm-sheetfull .bm-layout, .bm-sheetfull .bm-foot, .bm-sheetfull .bm-scrim, .bm-sheetfull .bm-act { display: none !important; }
+.bm-sheetfull .bm-sheet { position: static; width: min(560px, 100%); margin: 0 auto; border-right: var(--line-dbl); }
 .bm-mock { align-self: center; color: var(--ink-2); white-space: nowrap; }
 .bm-dcs { display: flex; flex-wrap: wrap; gap: 0 var(--s5); }
 .bm-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; }
@@ -203,6 +206,8 @@ body.bm { min-height: 100vh; }
   .bm-phone-seg button { min-height: 40px; padding: 0 10px; font-size: 13px; }
   .bm-desk-sum { display: none !important; }
   .bm-mock { font-size: 11px; }
+  .bm .ol-tools { flex-wrap: wrap; row-gap: 4px; justify-content: space-between; }
+  .bm .ol-tools > .ol-fld { flex: 1 1 100%; width: auto; max-width: none; }
   .bm-huge > small { font-size: 11px; }
   .bm-track-line::before { top: 15px; left: 16px; right: 16px; height: 3px; }
   .bm-stop i { width: 34px; height: 34px; font-size: 17px; border-width: 2px; }
@@ -228,7 +233,7 @@ body.bm { min-height: 100vh; }
   .bm-facts { white-space: nowrap; display: block; font-size: 12px; }
   .bm-ans { font-size: 20px; }
   .bm-lane.bm-thin .bm-ans { font-size: 20px; }
-  .bm-ans small { font-size: 11px; }
+  .bm-ans small { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 400; }
   .bm-acts .ol-btn-p, .bm-acts .ol-btn-2:not(.bm-more) { display: none; }
   .bm-two { grid-template-columns: 1fr; gap: var(--s4); }
   .bm-figs .ol-sb { min-width: 0; flex: 1 1 40%; }

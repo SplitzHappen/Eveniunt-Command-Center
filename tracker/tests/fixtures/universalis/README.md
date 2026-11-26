@@ -28,7 +28,7 @@ the saved files are the second, 200, answers.
 | hq-filter | `North-America/44162?listings=60&entries=20&hq=true` | 200 | none | 26,716 |
 
 Real request names for the three regions: `North-America`, `Europe`, `Oceania` (each answered 200 and echoes its name in
-`regionName`). An unknown item and an unknown place both give 404 with the same body shape (`status`, `title`, `traceId`),
+`regionName`). An unknown item and an unknown place both give 404 with the same body shape (`status`, `title`, `type`; the request trace number removed),
 so the two cannot be told apart by the reply. World id 63 is Gilgamesh (from `/api/v2/worlds`).
 
 ## Fields of spec section 3 marked [verify]
@@ -61,3 +61,12 @@ Nothing is missing, so no fallback of the spec was used.
 - `tax` is rounded down: of 338 listings near 5% where the exact tax had a fraction, `floor` matched all 338, `round` 112,
   `ceil` none. The tax is an integer. One listing from `retainerCity` 4 had about 2.8%, consistent with a 3% city (the
   city-number to name mapping is an assumption, not read from the reply).
+
+## Redaction boundary (2026-11-26, after the round-two outside review)
+
+Removed from every saved reply when it was saved: retainer, seller, buyer and creator names and ids. Removed afterwards
+(finding R20 of the second outside review): every listing number (`listingID`) and the request trace number (`traceId`)
+of the error replies; no test needs them. What remains is market data only: prices, quantities, quality, times, the world
+and the retainer's city number. `bourse-replies.test.js` checks every key of every saved file, at any depth, against an
+allowed list (numeric keys such as item and world numbers are allowed), with a control proving the check refuses an
+unexpected key.

@@ -254,7 +254,7 @@ accent button; More holds the rest. The dark-bars Trip variant is withdrawn.
 
 Measured (38 screen pictures): at least 8 rows in view at 1,440 x 1,000 on Trip, Item, Profit and Watch; rows 48 to 52 px
 at rest at 1,440 and at most 96 px at 360; no sideways scroll; no monospace without a digit. On the phone the first row
-starts at 256 px under the header on every screen, because the answer band's blocks are shown: within the 256 px limit for
+starts at 257 px under the header on every screen, because the answer band's blocks are shown: within the 256 px limit for
 a screen with a strip, 56 px over the 200 px limit for the others, an exception the owner chose.
 
 ## Look v3 after the round-one outside reviews (2026-11-25)
@@ -267,6 +267,15 @@ settings sheet shows the seven data centers as boxes by region, the home world, 
 minutes; the Watch legend for undrawn marks is gone; the alert line (on the states page) shows the price's age and Close;
 no reading text under the house sizes; every screen says "Mock-up · example figures" in its header. Measured figures and
 the phone shortfall: `docs/bourse/pictures/notes.md`.
+
+## Look v3 after the round-two outside reviews (2026-11-26)
+
+From `docs/bourse-review-adjudication-2.md` (findings R17 to R19, Mistral R2-2): figures include the buyer's 5% per whole
+stack, labelled "tax in"; examples are generated from one set of whole-stack purchases; the optional stop says what it
+supplies instead of a saving; the phone keeps the Item answer's world and age and the Trip's stop and hop counts in the
+answer band's label; the phone search has its own row; Profit rows show both sale bases and the sample size; the settings
+sheet shows the plan's default (trade-off) and a home-world picker; wording matches the spec (hourly limit, dated
+maintenance); a live alert over the normal Watch screen is pictured. Figures: `docs/bourse/pictures/notes.md`.
 
 ## 8. Picture notes and the bold test
 

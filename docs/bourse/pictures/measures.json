@@ -3,13 +3,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 9,
+  "rowsInView": 8,
   "visibleBottom": 1000,
   "namesClipped": [],
-  "firstRowFromHeader": 340,
+  "firstRowFromHeader": 355,
   "largest": {
    "size": 96,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -24,7 +24,7 @@
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -66,25 +66,25 @@
   "rowsInView": 4,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 257,
+  "firstRowFromHeader": 271,
   "largest": {
    "size": 52,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 71,
-  "rowMin": 70,
+  "rowMax": 73,
+  "rowMin": 72,
   "rowsInView": 3,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 259,
+  "firstRowFromHeader": 273,
   "largest": {
    "size": 52,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -123,13 +123,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 9,
+  "rowsInView": 8,
   "visibleBottom": 1000,
   "namesClipped": [],
-  "firstRowFromHeader": 340,
+  "firstRowFromHeader": 355,
   "largest": {
    "size": 96,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -144,7 +144,7 @@
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -186,25 +186,25 @@
   "rowsInView": 4,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 257,
+  "firstRowFromHeader": 271,
   "largest": {
    "size": 52,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 71,
-  "rowMin": 70,
+  "rowMax": 73,
+  "rowMin": 72,
   "rowsInView": 3,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 259,
+  "firstRowFromHeader": 273,
   "largest": {
    "size": 52,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -243,13 +243,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 9,
+  "rowsInView": 8,
   "visibleBottom": 1000,
   "namesClipped": [],
-  "firstRowFromHeader": 340,
+  "firstRowFromHeader": 355,
   "largest": {
    "size": 96,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -264,7 +264,7 @@
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -306,25 +306,25 @@
   "rowsInView": 4,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 257,
+  "firstRowFromHeader": 271,
   "largest": {
    "size": 52,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-azure-dragoon-dark": {
   "sideways": false,
-  "rowMax": 71,
-  "rowMin": 70,
+  "rowMax": 73,
+  "rowMin": 72,
   "rowsInView": 3,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 259,
+  "firstRowFromHeader": 273,
   "largest": {
    "size": 52,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -363,13 +363,13 @@
   "sideways": false,
   "rowMax": 52,
   "rowMin": 52,
-  "rowsInView": 9,
+  "rowsInView": 8,
   "visibleBottom": 1000,
   "namesClipped": [],
-  "firstRowFromHeader": 340,
+  "firstRowFromHeader": 355,
   "largest": {
    "size": 96,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 2,
   "monoWithoutDigit": []
@@ -384,7 +384,7 @@
   "firstRowFromHeader": 329,
   "largest": {
    "size": 96,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -426,25 +426,25 @@
   "rowsInView": 4,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 257,
+  "firstRowFromHeader": 271,
   "largest": {
    "size": 52,
-   "text": "253,398"
+   "text": "266,066"
   },
   "actsMax": 1,
   "monoWithoutDigit": []
  },
  "item-360-uldah-sultanate-gilt-light": {
   "sideways": false,
-  "rowMax": 71,
-  "rowMin": 70,
+  "rowMax": 73,
+  "rowMin": 72,
   "rowsInView": 3,
   "visibleBottom": 678,
   "namesClipped": [],
-  "firstRowFromHeader": 259,
+  "firstRowFromHeader": 273,
   "largest": {
    "size": 52,
-   "text": "18,900"
+   "text": "19,880"
   },
   "actsMax": 0,
   "monoWithoutDigit": []
@@ -481,32 +481,32 @@
  },
  "settings-1440-crystarium-dawnglass-light": {
   "sideways": false,
-  "rowMax": 52,
-  "rowMin": 52,
-  "rowsInView": 9,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
   "visibleBottom": 1000,
   "namesClipped": [],
-  "firstRowFromHeader": 340,
+  "firstRowFromHeader": null,
   "largest": {
-   "size": 96,
-   "text": "253,398"
+   "size": 36,
+   "text": "I"
   },
-  "actsMax": 2,
+  "actsMax": 0,
   "monoWithoutDigit": []
  },
  "settings-360-crystarium-dawnglass-dark": {
   "sideways": false,
-  "rowMax": 89,
-  "rowMin": 70,
-  "rowsInView": 5,
-  "visibleBottom": 744,
+  "rowMax": null,
+  "rowMin": null,
+  "rowsInView": 0,
+  "visibleBottom": 800,
   "namesClipped": [],
-  "firstRowFromHeader": 257,
+  "firstRowFromHeader": null,
   "largest": {
-   "size": 52,
-   "text": "253,398"
+   "size": 36,
+   "text": "I"
   },
-  "actsMax": 1,
+  "actsMax": 0,
   "monoWithoutDigit": []
  },
  "empty-1440-crystarium-dawnglass-light": {
@@ -561,10 +561,40 @@
   "rowsInView": 0,
   "visibleBottom": 800,
   "namesClipped": [],
-  "firstRowFromHeader": 2122,
+  "firstRowFromHeader": 2124,
   "largest": {
    "size": 52,
    "text": "4"
+  },
+  "actsMax": 1,
+  "monoWithoutDigit": []
+ },
+ "watch-alert-1440-crystarium-dawnglass-light": {
+  "sideways": false,
+  "rowMax": 52,
+  "rowMin": 52,
+  "rowsInView": 8,
+  "visibleBottom": 941,
+  "namesClipped": [],
+  "firstRowFromHeader": 329,
+  "largest": {
+   "size": 96,
+   "text": "3"
+  },
+  "actsMax": 2,
+  "monoWithoutDigit": []
+ },
+ "watch-alert-360-crystarium-dawnglass-dark": {
+  "sideways": false,
+  "rowMax": 71,
+  "rowMin": 70,
+  "rowsInView": 3,
+  "visibleBottom": 618,
+  "namesClipped": [],
+  "firstRowFromHeader": 257,
+  "largest": {
+   "size": 52,
+   "text": "3"
   },
   "actsMax": 1,
   "monoWithoutDigit": []

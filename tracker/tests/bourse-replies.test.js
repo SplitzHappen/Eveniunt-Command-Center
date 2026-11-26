@@ -164,9 +164,28 @@ test('BR-10: listings=60 caps per item; listings=300 is accepted', () => {
   for (const l of listingsOf(load('hq-filter'))) assert.equal(l.hq, true);
 });
 
-test('no player names or player ids in the saved files', () => {
+// The redaction boundary (see the README): only these keys may appear anywhere in a saved reply. Player names and ids
+// (retainer, seller, buyer, creator), listing numbers and request trace numbers were removed when the replies were saved.
+const ALLOWED = new Set(['averagePrice', 'averagePriceHQ', 'averagePriceNQ', 'currentAveragePrice', 'currentAveragePriceHQ', 'currentAveragePriceNQ',
+  'entries', 'hasData', 'hq', 'hqSaleVelocity', 'isCrafted', 'itemID', 'itemIDs', 'items', 'lastReviewTime', 'lastUploadTime', 'listings', 'listingsCount',
+  'materia', 'maxPrice', 'maxPriceHQ', 'maxPriceNQ', 'minPrice', 'minPriceHQ', 'minPriceNQ', 'nqSaleVelocity', 'onMannequin', 'pricePerUnit', 'quantity',
+  'recentHistory', 'recentHistoryCount', 'regionName', 'regularSaleVelocity', 'retainerCity', 'stackSizeHistogram', 'stackSizeHistogramHQ',
+  'stackSizeHistogramNQ', 'stainID', 'status', 'tax', 'timestamp', 'title', 'total', 'type', 'unitsForSale', 'unitsSold', 'unresolvedItems', 'worldID',
+  'worldName', 'worldUploadTimes',
+  // the tax-rates reply is keyed by city
+  'Crystarium', 'Gridania', 'Ishgard', 'Kugane', 'Limsa Lominsa', 'Old Sharlayan', 'Tuliyollal', "Ul'dah"]);
+function unexpectedKeys(o, out = []) {
+  if (Array.isArray(o)) o.forEach((v) => unexpectedKeys(v, out));
+  else if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (!/^\d+$/.test(k) && !ALLOWED.has(k)) out.push(k); unexpectedKeys(v, out); }
+  return out;
+}
+
+test('the key check refuses a key outside the allowed list (control)', () => {
+  assert.deepEqual(unexpectedKeys({ listings: [{ pricePerUnit: 1, retainerName: 'x' }], items: { 5: { listingID: 'y' } } }), ['retainerName', 'listingID']);
+});
+
+test('no player names, player ids, listing numbers or trace numbers in the saved files: every key is on the allowed list', () => {
   for (const f of fs.readdirSync(DIR).filter((x) => x.endsWith('.json'))) {
-    const text = fs.readFileSync(path.join(DIR, f), 'utf8');
-    assert.ok(!/retainerName|retainerID|sellerID|creatorName|creatorID|buyerName/.test(text), f);
+    assert.deepEqual(unexpectedKeys(JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8'))), [], f);
   }
 });

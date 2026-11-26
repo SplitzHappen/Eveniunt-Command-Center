@@ -83,17 +83,18 @@ const STOPS = [
   { world: 'Famfrit', dc: 'Primal', region: 'North America', items: [
     { n: 'Wind Parsley', parts: [[3, 3200]], seen: '2 h', st: 'later' },
     { n: 'Pearl Grass', parts: [[3, 2950]], seen: '2 days', st: 'old' }] },
-  { world: 'Odin', dc: 'Light', region: 'Europe', opt: 1, save: 9300, items: [
+  { world: 'Odin', dc: 'Light', region: 'Europe', opt: 1, items: [
     { n: "Kozama'uka Chamomile", parts: [[3, 2900]], seen: '3 h', st: 'later' }] },
 ];
 let total = 0, count = { buy: 0, later: 0, old: 0, done: 0 };
 let spent = 0, optional = 0;
-STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + p[0] * p[1], 0); s.sum += x.sum; if (x.st === 'done') spent += x.sum; else if (s.opt) optional += x.sum; else total += x.sum; count[x.st]++; }); });
+const taxed = (q, p) => q * p + Math.floor(q * p * 0.05); // the buyer's 5% of each whole stack, rounded down
+STOPS.forEach((s) => { s.sum = 0; s.items.forEach((x) => { x.q = x.parts.reduce((a, p) => a + p[0], 0); x.sum = x.parts.reduce((a, p) => a + taxed(p[0], p[1]), 0); s.sum += x.sum; if (x.st === 'done') spent += x.sum; else if (s.opt) optional += x.sum; else total += x.sum; count[x.st]++; }); });
 const nowStop = STOPS[0], toBuyHere = nowStop.items.filter((x) => x.st === 'buy');
 function tripLane(x, s) {
   const [r, w] = STATE[x.st], partsTxt = x.parts.map((p) => fig(p[0]) + ' at ' + fig(gil(p[1]))).join(' + ');
   return lane({ st: r, word: w, isWord: 1, solid: x.st === 'buy', muted: x.st === 'done', name: x.n, facts: 'seen ' + x.seen + ' ago' + (x.st === 'old' ? ', past your 1-day limit' : '') + ' · ' + partsTxt,
-    mid: lots(x.parts.map((p) => p[0])), ans: gil(x.sum), ansSmall: 'gil for ' + x.q, act: x.st === 'buy' ? 'Bought' : '' });
+    mid: lots(x.parts.map((p) => p[0])), ans: gil(x.sum), ansSmall: 'gil for ' + x.q + ', tax in', act: x.st === 'buy' ? 'Bought' : '' });
 }
 function route() {
   let out = '<div class="bm-track"><div class="bm-track-line">';
@@ -106,7 +107,7 @@ function route() {
 function stopHead(s, i, heads) {
   const items = s.items.length, buyN = s.items.filter((x) => x.st === 'buy').length;
   const title = s.opt ? 'Only if you go to Europe' : s.world;
-  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · ' + s.world + ', saves ' + gil(s.save) + ' gil, 1 region hop, not in the total' : '');
+  const sub = 'Stop ' + (i + 1) + ' · ' + s.dc + ' · ' + s.region + (s.home ? ' · your home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · ' + s.world + ': the only reported listings of 1 item, which North America does not sell; 1 region hop; not in the total' : '');
   const strip = s.items.map((x) => [STATE[x.st][0], 1]);
   if (heads === 'bars') return bhead(s.opt ? 'If you go: ' + s.world : 'Stop ' + (i + 1) + ' · ' + s.world, s.dc + ' · ' + s.region + (s.home ? ' · home world' : '') + (s.here ? ' · you are here' : '') + (s.opt ? ' · saves ' + gil(s.save) + ' gil' : ''), fig(gil(s.sum)) + '<small>GIL · ' + items + ' ITEMS</small>', strip);
   const num = ['I', 'II', 'III', 'IV', 'V'][i];
@@ -114,7 +115,7 @@ function stopHead(s, i, heads) {
 }
 function tripBody(heads) {
   let out = '<div class="bm-layout">' + rail('trip', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
-    slab('Total still to spend:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here · ' + (STOPS.length - 1) + ' stops from your home world, 1 data-center hop', gil(total), 'gil left · +' + gil(optional) + ' if you go to Europe',
+    slab('Total still to spend, tax in:', 'Gemdraught batch', fig(toBuyHere.length) + ' to buy here · already bought: ' + fig(gil(spent)) + ' gil', gil(total), 'gil left · ' + (STOPS.length - 1) + ' stops, 1 data-center hop · +' + gil(optional) + ' if you go to Europe',
       sb('ol-r-back', count.buy, 'Buy here') + sb('ol-r-out', count.later, 'Later') + sb('ol-r-idle', count.old, 'Old') + sb('ol-r-slab ol-outline', count.done, 'Done')) +
     '<div class="bm-routebar">' + route() + '<button class="ol-seal bm-desk" type="button">Bought all here</button></div>';
   STOPS.forEach((s, i) => { out += '<section class="ol-chap-wrap">' + stopHead(s, i, heads) + '<div class="bm-lanes">' + s.items.map((x) => tripLane(x, s)).join('') + '</div></section>'; });
@@ -155,12 +156,12 @@ function strip() {
 const regionHead = (num, region) => { const ws = worlds.filter((x) => x.region === region), n = ws.filter((x) => x.p != null).length; return chap(num, region, ws.length + ' worlds on ' + AREA.find((a) => a[0] === region)[1].map((d) => d[0]).join(', '), sb((n === ws.length ? 'ol-r-back' : 'ol-r-idle') + ' ol-sm', n + '/' + ws.length, 'Listed'), true); };
 page('item.html', 'Item prices',
   '<div class="bm-layout">' + rail('item', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
-  slab('Cheapest, each for 6:', 'Sanctified Water', 'on Exodus · Primal · North America · seen 14 min ago', gil(18900), 'gil each · normal quality',
+  slab('What 6 cost you, each, tax in:', 'Sanctified Water', '4 at 18,900 and 2 at 19,000 on Exodus · normal quality', gil(Math.round((taxed(4, 18900) + taxed(2, 19000)) / 6)), 'gil each · Exodus, Primal · seen 14 min ago',
     sb('ol-r-back', listed.length, 'Worlds listed') + sb('ol-r-idle', old.length, 'Old') + sb('ol-r-locked ol-hatch', worlds.length - listed.length, 'No listing')) +
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal quality</button><button type="button" aria-pressed="false">High quality</button></div><button class="ol-seal bm-desk" type="button">Watch this item</button></div>' +
   '<div class="bm-two"><div class="ol-chap-wrap">' + chap('I', 'Cheapest anywhere', 'Seven data centers, cheapest first', sb('ol-r-back ol-sm bm-desk-sum', 8, 'Shown') + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Quality"><button type="button" aria-pressed="true">Normal</button><button type="button" aria-pressed="false">HQ</button></span>') + '<div class="bm-lanes">' +
   cheap.map((x, i) => lane({ st: i === 0 ? 'ol-r-back' : 'ol-r-slab', outline: i > 0, word: i + 1, thin: 1, solid: i === 0, name: x.w + (x.home ? ' · home' : ''), facts: x.dc + ' · ' + x.region + ' · seen ' + x.age + ' ago',
-    mid: '<span class="bm-scale ' + (i === 0 ? 'ol-r-back' : 'ol-r-out') + '" aria-hidden="true"><span class="bm-dot" style="left:' + scaleAt(x.p) + '%"></span></span>', ans: gil(x.p) })).join('') + '</div>' +
+    mid: '<span class="bm-scale ' + (i === 0 ? 'ol-r-back' : 'ol-r-out') + '" aria-hidden="true"><span class="bm-dot" style="left:' + scaleAt(x.p) + '%"></span></span>', ans: gil(taxed(1, x.p)), ansSmall: 'each, tax in' })).join('') + '</div>' +
   regionHead('II', 'North America') + regionHead('III', 'Europe') + regionHead('IV', 'Oceania') + '</div>' +
   '<div class="ol-chap-wrap">' + chap('V', 'Recent sales', 'What actually sold, 7 days, all seven data centers', sb('ol-r-out ol-sm', perDay, 'A day')) +
   '<div class="bm-figs">' + sb('ol-r-slab ol-outline', gil(sp[0]), 'Low') + sb('ol-r-out', gil(median), 'Middle') + sb('ol-r-slab ol-outline', gil(sp[sp.length - 1]), 'High') + '</div>' + strip() +
@@ -181,7 +182,7 @@ page('profit.html', 'Profit per craft',
   '<div class="bm-bar"><div class="ol-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">By recent sales</button><button type="button" aria-pressed="false">By cheapest listing</button></div><button class="ol-seal bm-desk" type="button">Rank these crafts</button></div>' +
   '<section class="ol-chap-wrap">' + chap('I', 'Ranking', 'Gil per craft after tax, on one scale', sb('ol-r-back ol-sm bm-desk-sum', gil(1212), 'of ' + gil(9856)) + '<span class="ol-seg bm-phone-seg" role="group" aria-label="Ranked by"><button type="button" aria-pressed="true">Sales</button><button type="button" aria-pressed="false">Listing</button></span>') + '<div class="bm-lanes">' +
   PROFIT.map((r, i) => { const [n, job, lv, hq, g, per, cost, flag] = r; return lane({ st: flag === 'old' ? 'ol-r-idle' : flag === 'cant' ? 'ol-r-locked ol-hatch' : i === 0 ? 'ol-r-seal' : 'ol-r-slab', word: flag === 'old' ? 'Old' : i + 1, isWord: flag === 'old', solid: i === 0,
-    name: n, hq, facts: job + ' · Lv. ' + fig(lv) + ' · sells ' + fig(per) + ' a day · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · you can\'t make this yet' : flag === 'old' ? ' · sale price 2 days old' : ''),
+    name: n, hq, facts: job + ' · Lv. ' + fig(lv) + ' · sale middle of ' + fig(Math.max(3, per * 2)) + ' sales; cheapest listing ' + fig(gil(Math.round((g + cost) * 0.97))) + ' · sells ' + fig(per) + ' a day · materials ' + fig(gil(cost)) + (flag === 'cant' ? ' · you can\'t make this yet' : flag === 'old' ? ' · sale price 2 days old' : ''),
     mid: '<span class="bm-gbar bm-r-gil" aria-hidden="true"><i style="width:' + Math.round((g / top) * 100) + '%"></i></span>', ans: gil(g), ansSmall: 'gil each' }); }).join('') + '</div>' +
   chap('II', 'Sells less than once a day', 'Ranked the same way, kept apart', sb('ol-r-idle ol-sm', 1, 'Slow'), true) + '</section>' +
   '<section class="ol-chap-wrap">' + chap('III', 'Where to sell this week', 'Seller\'s tax by city on Gilgamesh, read 3 hours ago; buyers pay their own 5%', sb('ol-r-back ol-sm', '3%', 'Lowest')) + '<div class="bm-lanes">' +
@@ -195,14 +196,15 @@ const wLane = (r, under) => { const max = Math.max(r[1], r[2]) * 1.25, at = (v) 
   return lane({ st: under ? 'ol-r-back' : 'ol-r-idle', word: under ? 'Under' : 'Above', isWord: 1, solid: under, name: r[0], facts: 'seen ' + r[4] + ' ago · target ' + fig(gil(r[1])) + ' · cheapest ' + fig(gil(r[2])) + ' on ' + r[3],
     mid: '<span class="bm-scale ' + (under ? 'ol-r-back' : 'ol-r-idle') + '" aria-hidden="true"><span class="bm-tick" style="left:' + at(r[1]) + '%"></span><span class="bm-dot" style="left:' + at(r[2]) + '%"></span></span>',
     ans: gil(Math.abs(r[1] - r[2])), ansSmall: 'gil ' + (under ? 'under' : 'over'), act: under ? 'Add to trip' : '' }); };
-page('watch.html', 'Watch list',
+const WATCH_BODY =
   '<div class="bm-layout">' + rail('watch', { trip: count.buy + count.later, watch: 3 }) + '<main class="bm-main">' +
   slab('Under target now:', 'Watched prices', '9 items · alerts ring on every page while the app is open in a tab', BELOW.length, 'of 9 items', sb('ol-r-back', BELOW.length, 'Under') + sb('ol-r-idle', ABOVE.length, 'Above') + sb('ol-r-locked ol-hatch', 1, 'No data')) +
   '<div class="bm-bar"><span class="bm-hint">Targets are per unit; the cheapest listing is read over your travel area.</span><button class="ol-seal bm-desk" type="button">Add an item</button></div>' +
   '<section class="ol-chap-wrap">' + chap('I', 'Under target', 'Cheapest listing at or below your price', sb('ol-r-back ol-sm', BELOW.length, 'Under')) + '<div class="bm-lanes">' + BELOW.map((r) => wLane(r, 1)).join('') + '</div></section>' +
   '<section class="ol-chap-wrap">' + chap('II', 'Above target', 'Waiting for the price to fall', sb('ol-r-idle ol-sm', ABOVE.length, 'Above')) + '<div class="bm-lanes">' + ABOVE.map((r) => wLane(r, 0)).join('') + '</div></section>' +
-  '<section class="ol-chap-wrap">' + chap('III', 'No price', 'No listing or sale reported', sb('ol-r-locked ol-hatch ol-sm', 1, 'None'), true) + '</section></main></div>',
-  { seal: 'Add an item', unusedAfter: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
+  '<section class="ol-chap-wrap">' + chap('III', 'No price', 'No listing or sale reported', sb('ol-r-locked ol-hatch ol-sm', 1, 'None'), true) + '</section></main></div>';
+page('watch.html', 'Watch list', WATCH_BODY, { seal: 'Add an item' });
+page('watch-alert.html', 'Watch list with an alert', WATCH_BODY, { seal: 'Add an item', after: '<div class="bm-status" role="status">Sanctified Water is under your target on Famfrit: ' + fig(gil(12400)) + ' gil, seen ' + fig(22) + ' min ago. <a href="#">Open</a> <a href="#">Close</a></div>' });
 
 // ------------------------------------------------------------------------------------------------- settings sheet over the trip
 const stepper = (v) => '<span class="ol-step ol-sm"><button type="button" aria-label="Less">−</button><span class="ol-fig">' + v + '</span><button type="button" aria-label="More">+</button></span>';
@@ -211,12 +213,12 @@ page('settings.html', 'Bourse settings', tripBody('book') + '<div class="bm-scri
   '<div class="bm-sheet-hd"><h2>Bourse settings</h2><button class="ol-btn-2" type="button">Close</button></div>' +
   chap('I', 'Travel area', 'Where prices are read and the trip may go', '') + '<div class="bm-fields">' +
   '<p class="bm-hint">North America</p><div class="bm-dcs">' + ['Aether', 'Primal', 'Crystal', 'Dynamis'].map((d) => chk(d, 1)).join('') + '</div><p class="bm-hint">Europe</p><div class="bm-dcs">' + ['Chaos', 'Light'].map((d) => chk(d, 1)).join('') + '</div><p class="bm-hint">Oceania</p><div class="bm-dcs">' + chk('Materia', 1) + '</div>' +
-  '<p class="bm-hint">Your home world: Gilgamesh (Aether), from Tamsin Reed in the Tracker.</p></div>' +
+  '<label class="ol-fld"><span class="ol-lbl">Home world (where you sell and where the trip starts)</span><span class="ol-sel"><select><option>Gilgamesh (Aether), from Tamsin Reed</option><option>Siren (Aether), from Joss Marlowe</option></select></span></label></div>' +
   chap('II', 'Prices', 'How fresh', '') + '<div class="bm-fields"><div class="bm-pair"><div class="bm-lbl"><span class="ol-lbl">Old after (days)</span>' + stepper(1) + '</div><div class="bm-lbl"><span class="ol-lbl">Left out of profit after (days)</span>' + stepper(7) + '</div></div></div>' +
-  chap('III', 'Shopping trip', 'How it splits and what a tick does', '') + '<div class="bm-fields"><div class="bm-lbl"><span class="ol-lbl">Comes first</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Fewest stops</button><button aria-pressed="false" type="button">Cheapest</button><button aria-pressed="false" type="button">Trade-off</button></div></div>' +
+  chap('III', 'Shopping trip', 'How it splits and what a tick does', '') + '<div class="bm-fields"><div class="bm-lbl"><span class="ol-lbl">Comes first</span><div class="ol-seg" role="group"><button aria-pressed="false" type="button">Fewest stops</button><button aria-pressed="false" type="button">Cheapest</button><button aria-pressed="true" type="button">Trade-off</button></div></div>' +
   '<div class="bm-lbl"><span class="ol-lbl">Pay at most this much more to save a stop or a region (%)</span>' + stepper(10) + '</div>' +
   '<div class="bm-lbl"><span class="ol-lbl">When I tick an item bought</span><div class="ol-seg" role="group"><button aria-pressed="true" type="button">Tick only</button><button aria-pressed="false" type="button">Also add to “I have” in Lists</button></div></div></div>' +
-  chap('IV', 'Profit and alerts', '', '') + '<div class="bm-fields">' + chk('Count gathered materials at market value', 1) + chk('Alert me on every page when a watched item is under its target', 1) + '<div class="bm-lbl"><span class="ol-lbl">Check every (minutes)</span>' + stepper(30) + '</div><p class="bm-hint">Only while a tab of the app is open. A closed app cannot alert.</p></div></aside>');
+  chap('IV', 'Profit and alerts', '', '') + '<div class="bm-fields">' + chk('Count gathered materials at market value', 1) + chk('Alert me on every page when a watched item is under its target', 1) + '<div class="bm-lbl"><span class="ol-lbl">Check every (minutes)</span>' + stepper(30) + '</div><p class="bm-hint">Only while a tab of the app is open. A closed app cannot alert.</p></div></aside>', { bodyClass: 'bm-sheetfull' });
 
 // ------------------------------------------------------------------------------------------------- the empty trip
 page('empty.html', 'No trip yet',
@@ -234,12 +236,12 @@ const note = (role, lbl, text, act) => '<div class="bm-note ' + role + '"><div><
 const eline = (text, act) => '<div class="bm-eline"><span>' + text + '</span>' + (act ? '<a class="ol-btn-q" href="#">' + act + '</a>' : '') + '</div>';
 page('states.html', 'States',
   '<div class="bm-layout">' + rail('profit', { trip: count.buy + count.later, watch: 0 }) + '<main class="bm-main">' +
-  slab('States sheet, not a screen:', 'When prices are missing', 'Each part appears on its own screen in place of its normal content', '4', 'kinds of notice', sb('ol-r-bad', 'Failed', '', 1) + sb('ol-r-idle', 'Paused', '', 1) + sb('ol-r-locked ol-hatch', 'Unknown', '', 1)) +
+  slab('States sheet, not a screen:', 'When prices are missing', 'Each part appears on its own screen in place of its normal content', '4', 'kinds of notice', sb('ol-r-bad', 'Failed', '', 1) + sb('ol-r-locked ol-hatch', 'Unknown', '', 1)) +
   '<section class="ol-chap-wrap">' + chap('I', 'Notices', 'One at a time, above the first section', '') +
   note('ol-r-bad', 'Prices not fetched', 'The price site could not be reached. Showing the prices seen at ' + fig('14:02') + ' on this device; anything past your limit is marked old.', 'Try again') +
   note('ol-r-idle', 'Slowed down', 'The price site asked this app to wait. The next try is in ' + fig(4) + ' minutes; Refresh does not skip this pause.', '') +
-  note('ol-r-idle', 'Ranking budget spent', 'This session has asked for ' + fig(gil(3000)) + ' prices, the most it asks for at once. ' + fig(gil(1212)) + ' crafts are ranked; the rest wait for the next session.', '') +
-  note('ol-r-bad', 'Maintenance soon', 'All worlds go down at ' + fig('15:00') + '. Data-center travel stops at ' + fig('14:30') + ': buy away from home first.', '') + '</section>' +
+  note('ol-r-idle', 'Hourly limit reached', 'This device has sent ' + fig(300) + ' price requests in the last hour, the most it sends. ' + fig(gil(1212)) + ' crafts are ranked; ranking continues at ' + fig('15:40') + '.', '') +
+  note('ol-r-bad', 'Maintenance soon', 'All worlds go down at ' + fig('15:00') + ' (from the events list of ' + fig(24) + ' Nov). Data-center travel stops at ' + fig('14:30') + ': buy away from home first.', '') + '</section>' +
   '<section class="ol-chap-wrap">' + chap('II', 'Empty parts', 'What a part says when it has nothing yet', '') +
   eline('<b>Choose your home world</b> to see where to sell and the seller\'s tax. Prices to buy work without it.', 'Choose a home world') +
   eline('<b>Nothing watched yet.</b> Add an item here, or press "Watch this item" on any item.', 'Add an item') +

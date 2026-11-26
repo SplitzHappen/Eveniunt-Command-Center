@@ -15,7 +15,7 @@ let chromium;
 try { ({ chromium } = require(path.join(ROOT, 'node_modules', 'playwright'))); } catch (e) { ({ chromium } = require('playwright')); }
 const OUT = path.join(ROOT, 'docs', 'bourse', 'pictures');
 const MAIN = ['trip', 'item', 'profit', 'watch'];
-const EXTRA = ['settings', 'empty', 'states'];
+const EXTRA = ['settings', 'empty', 'states', 'watch-alert'];
 const SIZES = [[1440, 1000], [360, 800]];
 const CHOICES = [['crystarium-dawnglass', 'light'], ['crystarium-dawnglass', 'dark'], ['azure-dragoon', 'dark'], ['uldah-sultanate-gilt', 'light']];
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.woff2': 'font/woff2', '.json': 'application/json', '.svg': 'image/svg+xml' };
@@ -41,7 +41,7 @@ async function shot(name, w, h, theme, mode) {
   await page.waitForTimeout(300);
   const m = await page.evaluate(() => {
     const vw = document.documentElement.clientWidth, hd = document.querySelector('.ol-hdr').getBoundingClientRect();
-    const rows = [...document.querySelectorAll('.bm-lane')].filter((r) => !r.closest('.bm-sheet') && r.offsetParent);
+    const rows = document.querySelector('.bm-sheet') ? [] : [...document.querySelectorAll('.bm-lane')].filter((r) => r.offsetParent); // a sheet screen measures the sheet, not the page behind it
     const hs = rows.map((r) => Math.round(r.getBoundingClientRect().height));
     // the area left visible: above every fixed bar or line at the bottom (phone tab bar, the seal bar, the status line)
     let bottom = innerHeight;
@@ -57,7 +57,7 @@ async function shot(name, w, h, theme, mode) {
   });
   if (errors.length) m.errors = errors;
   measures[name + '-' + w + '-' + theme + '-' + mode] = m;
-  await page.screenshot({ path: path.join(OUT, name + '-' + w + '-' + theme + '-' + mode + '.png'), fullPage: name === 'states' });
+  await page.screenshot({ path: path.join(OUT, name + '-' + w + '-' + theme + '-' + mode + '.png'), fullPage: name === 'states' || name === 'settings' });
   await ctx.close();
 }
 
