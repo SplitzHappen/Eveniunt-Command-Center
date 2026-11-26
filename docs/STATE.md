@@ -184,7 +184,11 @@ Nothing.
    ChatGPT FAIL (4 blockers, 9 major), Mistral PASS (`docs/bourse-review-adjudication-4.md`). Owner, round nine: fix
    everything with the scope unchanged; a fifth round with both reviewers. Look corrected (`fb378e4`); spec corrected
    (D64 to D70, section 18, same-family and unreviewed); fifth round filed as
-   `ASG-20261126-bourse-plan-review-chatgpt-005` and `ASG-20261126-bourse-plan-review-mistral-005`.**
+   `ASG-20261126-bourse-plan-review-chatgpt-005` and `ASG-20261126-bourse-plan-review-mistral-005`; returned 2026-11-26:
+   ChatGPT FAIL (2 blockers, both in the Lists credit setting; 8 major), Mistral PASS
+   (`docs/bourse-review-adjudication-5.md`). Owner, round ten: keep the setting; a sixth round with both reviewers.
+   Look corrected (`80ac214`); spec corrected (D71 to D79, section 19, same-family and unreviewed); sixth round filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-006` and `ASG-20261126-bourse-plan-review-mistral-006`.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
