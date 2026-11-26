@@ -61,4 +61,4 @@ Each correction closed what was found and added new safeguards (the guard copy, 
 
 ## What happens next
 
-The owner decides how to proceed (asked separately, with every option). Building stays paused until the plan passes. Then it follows the owner's order: the one-look rules, the module moves, and the Bourse last, with the erase fix first.
+The owner decided (`docs/bourse-questions.md`, ninth round): fix all 15 findings with the plan's scope unchanged, then a fifth outside round with both reviewers. Building stays paused until the plan passes. Then it follows the owner's order: the one-look rules, the module moves, and the Bourse last, with the erase fix first.

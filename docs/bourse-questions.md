@@ -254,3 +254,10 @@ marked "default (not asked)"; the owner can change any of them.
 | The optional "Also add to I have in Lists" setting, after the round-three findings | **Keep building it now** (the rule is corrected for the count limit, backups and codes, Undo on another device and fallback storage; if its tests fail, it is left out, as in round seven). |
 | The old Tracker's "Erase everything" over a newer save | **Fold the fix into the Bourse work:** its first step, shipped well before the save version rises; no separate pull request now. |
 | A fourth outside review after the corrections | **Yes, both reviewers** (ChatGPT and Mistral), before any Bourse code. |
+
+## Ninth round (owner, 2026-11-26), after the round-four outside reviews
+
+| Question (`docs/bourse-review-adjudication-4.md`) | Answer |
+| --- | --- |
+| How to go on after round four | **Fix everything and review again:** the plan keeps its scope (the Lists setting's rule included); all 15 findings are fixed; then a fifth outside round. |
+| Who reviews | **Both reviewers** (ChatGPT and Mistral). |
