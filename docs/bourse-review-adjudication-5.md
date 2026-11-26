@@ -124,3 +124,17 @@ A fourth fresh reviewer agent (same family) found 3 major and 6 minor faults, do
 | RT4-4 to RT4-9 | MINOR | A stale "untouched device" sentence in BY2 step 1; the old undo mark must be written with the rename; two answers to different questions meeting have no rule; a new device is offered "remove from every device"; Settings' automatic sync has no rule for showing the question; BG-9 and BV-32 lack positive controls. | — |
 
 **Ruling:** all accepted. The planning agent fixes them; a fifth check follows (owner, eleventh round).
+
+## Fifth in-house red team (2026-11-26), on the changes `feefdbf` to `f819271`
+
+A fifth fresh reviewer agent (same family) found 3 major and 4 minor faults. Two of the major ones come from the
+fourth round's fix (a copy that is not known ignores its checkpoint), which was too strict.
+
+| # | Severity | Finding | Checked |
+| --- | --- | --- | --- |
+| RT5-1 | MAJOR | A device that moves later never has a record of the version-2 file, so "only when the copy is known" is never true: every later mover falls to the careful merge, and "keep them" can revive removals. BV-27 now contradicts D88 (1). Trust the checkpoint by its presence, not by "known". | Follows from D63, D67, D88 (1) |
+| RT5-2 | MAJOR | A new device, or one after a loaded backup, ignores a valid checkpoint and is offered every entry removed since the move, to "take". Same fix. | Follows from D88 (1) |
+| RT5-3 | MAJOR | The fresh checkpoint written after a careful fold marks undecided old-file entries as taken in, so they are later dropped everywhere. Leave undecided old-file entries out of a fresh checkpoint, and out of D76's comparison. | Follows from D76, D88 (1) |
+| RT5-4 to RT5-7 | MINOR | `storage.js` 112 copies the tab's own `sync` over the stored one, so `open` is lost (add it to rule (c)); BV-32's `catchUpMerge` run passes anyway; Settings syncs at 351 and 352 (not 347), and 351 is the likely first careful merge; "a device with nothing" ignores what `ET.untouched` counts, and BV-34 has no fault run. | `storage.js` 112 and `settings.js` 351 to 352 confirmed |
+
+**Ruling:** all accepted. A sixth check follows the fix (owner, eleventh round).
