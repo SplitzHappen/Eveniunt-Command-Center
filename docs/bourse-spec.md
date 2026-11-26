@@ -2,10 +2,12 @@
 
 Written 2026-11-24 for a Sonnet builder and a Haiku clerk; revised after a same-family red team (section 12), the
 owner's rounds two to eight (sections 11, 13, 14), three rounds of outside review (sections 14, 16, 17) and the facts
-of B0 and B1 (section 15). **Round three of the outside review failed the plan on 2026-11-26; this text holds its
-corrections (section 17), which are same-family and unreviewed.** Plan only: apart from B0 (a report) and B1 (saved
+of B0 and B1 (section 15). **Round four of the outside review failed the plan again on 2026-11-26; its corrections are
+decisions D64 to D70 and section 18, same-family and unreviewed, and a fifth outside round follows (owner, round
+nine). Round three's corrections are section 17, likewise same-family.** Plan only: apart from B0 (a report) and B1 (saved
 replies and their test) nothing was built. **Building is paused** (order below).
-Binding inputs: the owner's answers in `docs/bourse-questions.md` (eight rounds; a later round replaces an earlier
+Binding inputs: the owner's answers in `docs/bourse-questions.md` (nine rounds, with
+`docs/bourse-review-adjudication-4.md` beside the adjudications named below; a later round replaces an earlier
 one), `docs/bourse-review-adjudication.md`, `-2.md` and `-3.md`, the look spec `docs/bourse-look-spec.md`, look v3
 (screens are not designed here), `docs/design-rules.md`, `docs/bourse-research.md`.
 Blueprint rules restated: **CC-12** prices are labelled as community reports with when and where they were seen;
@@ -49,9 +51,12 @@ price site, the size of a 10-listing reply, and OneDrive's "create only if missi
 | The standing sentences as written in section 9 | round six (5a) | section 9 |
 | Older pages stop saving until reloaded: save version 2 | round six (10a) | D32, D60, D61 |
 | The old Tracker's "Erase everything" is fixed first, as the Bourse work's first step, released well before the save version rises | round eight | D60; B29 |
-| B0 and B1 ran before the second outside review; a third round ran; a fourth, with both reviewers, follows this correction | rounds six, seven, eight | sections 15 to 17 |
+| B0 and B1 ran before the second outside review; a third and a fourth round ran; a fifth, with both reviewers, follows this correction | rounds six to nine | sections 15 to 18 |
+| All 15 findings of round four are fixed with the plan's scope unchanged, the Lists setting's rule included | round nine | D64 to D70; section 18 |
+| No newer-format save without a safety copy stored with it; where that cannot be done the save stays in the older format and the Bourse cannot save there | adjudication 4 (R4-01) | D64 |
+| The newer cloud copy lives under a new file name, created only by a verified create-only route | adjudication 4 (R4-06) | D67 |
 
-**Order.** (1) The plan passes: a fourth outside round, both reviewers, on these corrections (round eight). (2) The
+**Order.** (1) The plan passes: a fifth outside round, both reviewers, on the corrections of section 18 (round nine). (2) The
 one-look rules pull request. (3) The module moves, one pull request each (Lists, Atelier, Tracker, Home and Settings,
 Submersibles). (4) The Bourse work, last: B28 (the baseline again), then **B29, the fix to "Erase everything",
 released by itself**; the rest is built into the one look and released **no sooner than 30 days after B29's release**
@@ -174,6 +179,9 @@ released by itself**; the rest is built into the one look and released **no soon
 - **D27 Budgets** (section 4, D39): one press of "Rank these crafts" is 12 requests; 72 ranking requests per page
   visit; 180 per rolling 6 hours per device; a ranked price is fresh for 24 hours. Watch rounds: at most 6 requests,
   default every 30 minutes, least 15, most 240. All Bourse requests together: at most 300 per rolling hour per device.
+  **This limit and the pause count the Bourse's requests only** (Lists and Submersibles are outside them, D4). Every
+  screen text says so: "Hourly limit reached: the Bourse has sent its 300 price requests for this hour from this
+  browser. More after <time>. Lists and Submersibles are not counted here." No text says "this device sends".
 - **D28 The trip is grouped by region, then data center, then world**: fewest region hops first, biggest savings first
   inside each level; another region stays only when its saving beats the threshold. Exact rules: D37, D54, section 6.
 - **D29 The sale price for profit is read over the whole travel area.** The Profit screen says once: "You can only
@@ -284,7 +292,8 @@ released by itself**; the rest is built into the one look and released **no soon
   slice holds a listing of the quality on a world of the area: the cheapest such one is that region's cheapest in the
   area), **proved none** (D52), or **not covered** (the slice is cut and holds none of the area, or the region
   failed). The area's figure is the cheapest seen; **it is called "cheapest listing" only when every region is seen
-  or proved none, and otherwise "cheapest seen (Europe not covered)"**, and a craft ranked by the listing basis then
+  or proved none and every region's slice is clean (D69); otherwise it is "cheapest seen", with "(Europe not
+  covered)" when a region is not covered**, and a craft ranked by the listing basis then
   wears "partial". No region seen: "unavailable". The sale basis uses the asking price (D36).
   [`minPriceNQ/HQ` with `listings=0`: no world, no age, and worlds outside the area can set it.]
 - **D50 Where a row's world and time come from.** A world reply (found (B1): its listings and sales carry no world)
@@ -319,7 +328,8 @@ released by itself**; the rest is built into the one look and released **no soon
   the last start; checks the budget; takes the next **order number**; writes all that; **and calls `fetch` before it
   gives the lock back**. There is no grant that can be used later. A request has a deadline (`deadlineMs`, 20
   seconds, covering the answer's body): then it is aborted, counts as failed and stays charged; an in-flight entry
-  expires after 25 seconds. A pause's end is only ever moved later. Every cached item carries the order number of the
+  is freed only by D68's rule, never by time alone. A pause's end is only ever moved later, **and an answer 429
+  always sets or lengthens the pause, whatever its order number (D68)**. Every cached item carries the order number of the
   request that filled it, and an answer with a lower number than the stored one is discarded (order numbers, not
   clocks, so a clock set back cannot reorder). **Without Web Locks or without the ledger's storage none of this can
   be kept, so no price request is sent** (D39). [A limited manual path without coordination: every tab and every
@@ -350,8 +360,9 @@ released by itself**; the rest is built into the one look and released **no soon
   page shows: "An older copy of the app replaced the saved data on this device (for example its 'Erase everything').
   Your data as the updated app last saved it, on <date>, is still here. **Restore it** (recommended) or **keep what
   is there now**." Restore puts the guard back (the replaced data is kept first under its own key). "Keep" asks once
-  more, then adopts what is there and renews the guard. On the fallback storage the guard is written when space
-  allows; when it cannot be, the page says nothing and there is no guard (known limit). [No guard: the first sign of
+  more, then adopts what is there and renews the guard. **Restore and "keep" are bound to the two copies the question
+  showed (D65). There is no version 2 save without its guard: where the two cannot be stored together the save stays
+  version 1 (D64); the earlier "no guard (known limit)" is withdrawn.** [No guard: the first sign of
   the erase would be an empty app. Restoring without asking: the player may have meant to erase.]
 - **D62 Lists' counts and the purchase records move as one unit, everywhere.** In every merge (BY2). In a backup or
   transfer code loaded on this device, which **replaces** sections and does not merge them (`adoptLoaded`, `ui.js`
@@ -362,11 +373,121 @@ released by itself**; the rest is built into the one look and released **no soon
   that owner and item back with it. Rule LI6 guards a count also after its last credit is gone. Section 8.
 - **D63 A cloud copy says where it comes from.** Each uploaded copy carries, beside its data, its own random id and
   the ids of the copies it descends from (the last 200). `sync.drive` records the file's item id, the `eTag` and the
-  copy id last synced, together. A copy read is a **known descendant** when the file's item id is the recorded one
-  and its line holds the recorded copy id; then the merge uses the recorded base as today. In every other case (an
+  copy id last synced, together. A copy read is **known** when the file's item id is the recorded one and either its
+  own copy id and `eTag` are exactly the recorded ones (the unchanged copy: there is nothing new to take from it) or
+  its line holds the recorded copy id (a descendant); then the merge uses the recorded base, which is kept only
+  together with that identity (D67). In every other case (an
   older app's copy, which has no line or a lower version; a same-version copy from a device that never saw ours; a
   missing, partial or foreign record on this device; more than 200 uploads apart) **the two copies are merged with
   no base: nothing is removed and every difference is asked**, as a loaded backup is already treated. Section 8.
+
+**Round-four outside review (2026-11-26).** Where a sentence elsewhere in this file says otherwise, D64 to D70 rule.
+- **D64 No version 2 save without a guard stored with it.** Version 2 is written only where the save, its stamp, the
+  guard and the guard's stamp land in **one** storage transaction, which is IndexedDB.
+  (a) **Fallback storage (device storage without IndexedDB) and memory:** new code never migrates and never writes
+  version 2 there. The save stays version 1 and every existing module works as today. The Bourse cannot save there,
+  and a version 2 cloud copy is not merged into such a browser. The pages say: "This browser's storage cannot keep
+  the safety copy the newer save needs, so your save stays in the older format here and the Bourse cannot save. Cloud
+  sync of the newer save is off in this browser. Backup files (Settings → Import and backup) still work."
+  (b) **IndexedDB:** a write whose transaction fails (no room for the second copy, or cut off part-way) changes
+  nothing: save, guard and both stamps stay exactly as they were, and the page says it was not saved. At the first
+  migration the version 1 save stays; new code then goes on writing version 1 (it may: the save holds no Bourse
+  entry yet), keeps the Bourse's saving off, shows "Not enough storage for the safety copy, so the save stays in the
+  older format. Free some space, or save a backup file.", and tries the migration again at the next opening.
+  So "new code always writes 2" now reads: version 2 with its guard, or version 1 where that is impossible, never
+  version 2 alone. [A guard written "when space allows": a save that fits once but not twice would migrate, and an
+  older page's erase would then be final.]
+- **D65 Restore and "keep" act only on the two copies the question showed.** The offer carries the stamps of the save
+  and of the guard it was drawn from. Either action is one transaction that first reads both stamps again: **if one
+  differs, nothing is written and the offer opens again with what is there now** (another tab already answered, or
+  something changed). Restore: the replaced data is stored under its own key, then the guard's data becomes the save,
+  with a new stamp. "Keep" is offered **only when what is there is a readable save**: it is checked, written as
+  version 2 with a new guard, and the old guard's data is stored under its own key first (nothing is discarded). When
+  what is there is missing, blank or unreadable, only Restore is offered, with "Download both copies". If a step
+  fails, both copies stay untouched and the offer opens again. **While the offer is open, cloud sync does not run on
+  that device**, from any page: no read is merged and nothing is uploaded; the sync line says "Cloud sync waits:
+  answer the question about your saved data first." After Restore the sync base is dropped unless D67 revalidates it.
+- **D66 An own item belongs to one trip, in its key.** `extra` is keyed `<trip id>.<item id>.<nq|hq>`, so the same
+  item added on two trips started on two devices is two units, each with its own amount; choosing which trip is
+  current (6.7) never mixes them. Upgrade, the same on every device: an entry found under the two-part key
+  `<item id>.<nq|hq>` is read as `<its t>.<item id>.<nq|hq>`, and with no `t` as `legacy00.<item id>.<nq|hq>`; when
+  both keys exist the three-part one is kept and the larger amount taken. (No shipped save holds the two-part form;
+  the rule exists for saves written by builds made during this work.)
+- **D67 The version 2 cloud copy has its own file, and a base only with its identity.**
+  (1) **A new file name.** New code keeps its cloud copy under a new name beside the old one (the old name with
+  `-v2` before its ending; B28 reports the old name from `cloud.js`). Older apps go on reading and writing the old
+  file and cannot reach the new one, so their two unconditional uploads (`cloud.js` lines 193, 228) can no longer
+  replace a version 2 copy. **New code never writes the old file.** It reads it only to bring its content over: at
+  a device's first version 2 sync, and again whenever the old file's `eTag` is not the one that device recorded (an
+  older device wrote meanwhile); each time it is merged with no base, so nothing is removed and differences are
+  asked. Known limit: a device that stays on the older app keeps syncing the old file and is not told; what it
+  changes reaches the others when any updated device next syncs.
+  (2) **Create only through a verified create-only route; otherwise no create.** The constant
+  `ET.CLOUD_CREATE_VERIFIED` is false until both are written into `docs/STATE.md`: Microsoft's documentation for the
+  route used, quoted with its address, saying a create of an existing name is refused; and a run on the real personal
+  OneDrive in which ten creates over an existing file are each refused and leave its bytes unchanged. While it is
+  false new code sends no create at all: "Cloud sync of the newer save is not switched on yet. Your data is safe on
+  this device; backup files work." **The version-rising release is not offered for `ship` while it is false** (B12).
+  The read-back after a create stays as a second check, never as the safeguard. Two browsers racing prove nothing by
+  themselves and are not the gate. [Read-back alone: a later blind create can replace the copy after the first
+  device read it back, and that device may never return.]
+  (3) **Known copy, bound base.** D63 as amended: an exact match of item id, copy id and `eTag` is known. The sync
+  base is stored as one record with the item id, copy id and `eTag` it belongs to and is used only with exactly that
+  copy or a descendant of it. After a guard Restore (D65), after a loaded backup or code, and whenever the record is
+  partial, the base is dropped; it comes back only from a sync that completes.
+  (4) **Writes that are not confirmed change nothing here.** A replace addresses the file by its item id with the
+  `eTag`, never by path. "No such item", a refusal, or an answer without an item id and `eTag` means the write did
+  not happen as far as this device knows: the base, the recorded identity and the "synced" line are not advanced, and
+  the sync reads again.
+- **D68 A refusal always pauses; a slot is freed only by an ended request.** (1) An answer 429 sets or lengthens the
+  shared pause under the ledger's lock **whatever its order number**, also when a later request already succeeded;
+  only its cache write follows D56's order. (2) Each request in flight holds a browser lock of its own
+  (`eveniunt-bourse-req-<order number>`) from the dispatch decision until its answer's body has been read to the
+  end, it failed, or its abort has taken effect. The ledger counts a request as in flight while that lock is held,
+  which other tabs can see; a closed tab frees its locks. A deadline that has passed aborts the request but does not
+  free the slot by itself. **If the browser cannot tell whether such a lock is held, the slot counts as taken** and
+  at most the other one is used. (3) A watch round's request is checked against that round's inputs (D57) inside the
+  dispatch decision, immediately before the send, as well as before its answer is used.
+- **D69 "Cheapest" needs a clean, ordered slice.** A region's slice is clean for an item and quality when no entry of
+  that item was dropped (D35) and the kept asking prices do not fall along the reply's order. Only then is the
+  cheapest listing of the area in that slice that region's cheapest; a dropped entry or a price out of order makes
+  the region "seen, not clean", and the area's figure is "cheapest seen". B20's real reply must show the order by
+  asking price for every one of its items; if it does not, every `slim` figure reads "cheapest seen" [verify].
+- **D70 A held pair keeps both alternatives, in the save's shared part.** (Replaces `device.bourse.held`.)
+  (1) **Where.** The Bourse section has a group `held`: `held["<owner>.<item>"] = { why, at, x, y }`. `x` and `y` are
+  the two whole pairs as they stood, each `{ have: { nq, hq, coll }, bought: { <id>: <record> }, undone: { <id>:
+  <mark> } }`, written in a fixed order (the one whose text sorts first is `x`), with no device name, so both devices
+  write the same entry and it merges as an equal unit. Being part of `modules.bourse`, it travels as every module
+  unit does: through `ET.stateFromDoc`, `ET.portable` and `ET.docFromState` (`storage.js` lines 27 to 44, `codec.js`
+  lines 10 to 22), through the same-device merge (`storage.js` lines 106 to 114 and 265 to 274), into backups, codes
+  and the cloud copy. No device-only plumbing is needed, and B26 adds none.
+  (2) **When it is written.** By the merge step itself, and saved on this device before any question is shown: the
+  callers (`ui.js` sync, `settings.js` sync, `ET.saveMerge`) store the holds a merge returns even when the dialog is
+  declined and nothing is uploaded.
+  (3) **In the cloud copy.** The entry, with both alternatives, is uploaded like any unit, so the cloud holds both
+  whatever happens to a device. While it exists, the live count and records of that pair in the cloud copy are
+  whichever device uploaded last and decide nothing: every merge leaves this device's live pair alone and reads the
+  alternatives from `held`.
+  (4) **Frozen until answered.** While an entry exists, a tick, an Undo or a typed count for that owner and item is
+  refused on every page ("Answer the open question about <item> first"; rule LI7 in the section write for Lists);
+  every other item stays editable. So each device's live pair stays one of the two alternatives.
+  (5) **The answer.** Choosing `x` or `y` installs that whole alternative as the live pair and replaces the entry by
+  `{ ans: 'x' | 'y', at }` in the same write. A device that still holds the question and meets the answer installs
+  the named alternative from its own entry, takes it as the base for that pair, then merges what the other device
+  did afterwards. Two different answers are one unit changed differently on both: asked once more. An answer whose
+  entry no longer matches the stored one is refused and the question shown again.
+  (6) **Undo wins, lineage or not (BY2 step 1).** A valid undo mark that matches a record (same id, owner, item,
+  quality) removes that record on every side, with a base or without one. With no base the pair then merges only if
+  both own parts are equal; otherwise it is held.
+  (7) **Malformed pairs are held before any arithmetic:** a record and its own undo mark on the same side; one id
+  with different owner, item or quality on the two sides; an undo mark that does not match its record; a credit above
+  its units; a count out of range. Nothing is computed from such a pair.
+  (8) **A loaded backup or code (D62)** brings `held` from the same place as the Lists section. After the load an
+  entry stays only if the live pair now equals one of its two alternatives; otherwise it is removed in the same
+  write (a later sync asks afresh if the pairs still cannot be combined). The load also writes a new random
+  `device.epoch`; **a section write from a page that read an earlier epoch is refused** ("The saved data was
+  replaced. Reload the page."), so a page left open cannot write its old count even when the load removed the last
+  undo mark. A guard Restore writes a new epoch too.
 
 ## 3. What is fetched (host `https://universalis.app/api/v2/`)
 
@@ -453,8 +574,9 @@ whose quantities reach the amount. Up to 2,000 units this is exact over the stac
 that keeps, per amount, the lowest total and, among equal totals, the fewest stacks. Remaining ties go to the stack
 that comes first in one fixed order (home world, home data center, home region, then world name, then price, then the
 reply's order). "Fewer worlds" is not promised among equal totals. **Which stacks are weighed:** the 300 cheapest by
-unit cost; **if those hold fewer units than the amount while all held stacks hold more, the largest remaining stacks
-are added until the amount is covered or none is left.** Whenever any held stack was left out the row says "priced
+unit cost; **whenever those hold fewer units than the amount, the largest remaining stacks are added, one by one,
+until the amount is covered or none is left** (also when all held stacks together hold exactly the amount, or less).
+Whenever any held stack was left out the row says "priced
 from a restricted set of listings: a cheaper mix may exist". **"N of M found" is always counted over every held
 stack, never over the weighed ones.** The row says "buys 99, you need 5" when it overshoots. Above 2,000 units the
 result is approximate and labelled "approximate: a cheaper mix may exist": the cheapest of (i) cheapest unit price
@@ -568,7 +690,8 @@ is never changed after it is written.
   "From another device's trip (N)", never counted in this trip and never deleted by the app.
 
 **6.8 The trip's own items and the one-time copy (D10, D58).** `extra` holds items added by "Add to trip" or the copy,
-each `{ qty, at, t }` with its trip's id; removed only by the player ("Remove from trip", asks first) or "New trip".
+each `{ qty, at, t }` under the key `<trip id>.<item id>.<nq|hq>` (D66; the copy below writes that key with the
+current trip's id); removed only by the player ("Remove from trip", asks first) or "New trip".
 The copy: the new Tracker, which alone can turn its entry keys into item numbers, writes on loading
 `ui.live.mcopy = { v: 1, at, items: { <item id>: <amount> }, skipped }` into its own device record
 (`eveniunt-tracker-ui`; `persist()` already stores `ui.live` whole), beside the untouched `mlist` and `mqty`. An
@@ -639,7 +762,8 @@ Tracker and Atelier:
 ```
 { v: 1,
   watch:  { "<item id>.<nq|hq>": { target, at } },
-  extra:  { "<item id>.<nq|hq>": { qty, at, t } },                     the trip's own items
+  held:   { "<owner>.<item id>": { why, at, x, y } | { ans, at } },    an open or answered pair question (D70)
+  extra:  { "<trip id>.<item id>.<nq|hq>": { qty, at, t } },                     the trip's own items
   bought: { "<purchase id>":     { o, i, q, n, of, cr, ls, t, at } },  o: c1..c8, u, or x (own item); q: nq|hq
   undone: { "<purchase id>":     { o, i, q, at } },                    a credited purchase that was undone
   prefs:  { area: { <data-center name>: 1 }, home, oldDays, dropDays, split, within, route, tick, gatherFree, taxCity,
@@ -668,16 +792,20 @@ Tracker and Atelier:
   purchase record and undo mark of that owner and item. Per quality: `credits(X)` = the sum of `cr` over the records
   side X holds; `own(X) = count(X) − credits(X)` (it may be negative: the player used bought stock). Ticks and Undo
   change the count and the records together, so they never change `own`; only a typed count does.
-  1. **Records.** A record on either side is kept. A record the base held that one side lacks is removed **only when
-     that side holds its undo mark**. A record one side lacks **without an undo mark** is unexplained (a partial
-     restore, a dropped entry): **it is never taken as an Undo; the pair is held (step 4).**
+  0. **A malformed or mismatched pair is held at once (step 4), before any arithmetic** (D70 (7)).
+  1. **Records.** A record on either side is kept, **unless either side holds its matching, valid undo mark: then it
+     is removed on both, with a base or with none** (D70 (6)), and its credit leaves the count with it by step 3. A
+     record the base held that one side lacks **with no undo mark on either side** is unexplained (a partial
+     restore, a dropped entry): **it is never taken as an Undo; the pair is held (step 4).** With no base, own parts
+     that differ are held as well.
   2. **Own part.** Changed on one side, that side's; changed the same on both, that; changed differently on both,
      asked, this device's until answered, the question showing each side's own part plus the merged credits, which
      are the two counts as the player would see them. This keeps the rule: count = own + credits.
   3. **Count** = own + credits of the records the merge ends with, **when that lies within 0 to 999,999**.
   4. **Otherwise the pair is held.** Nothing of the pair changes on this device: its count, its records and its undo
      marks stay exactly as they were, a state that kept the rule before and keeps it now. The save's device-only
-     part records `device.bourse.held["<owner>.<item>"] = { why, at }` (`why`: over the limit, under 0, a missing
+     part is not used for this any more (round four): **the Bourse section records `held["<owner>.<item>"] = { why,
+     at, x, y }`, with both whole alternatives, as D70 says** (`why`: over the limit, under 0, a malformed pair, a missing
      record). **While that entry exists, every later merge leaves this device's pair alone, whatever the other side
      holds, and raises the question again:** "Lists' count of <item> and the purchases that added to it differ
      between your devices and cannot be combined (<reason in words>). Use this device's count and purchases, or the
@@ -747,8 +875,10 @@ Tracker and Atelier:
   writes an empty save; the new page opens with the offer; Restore gives back the guard's data byte for byte and
   keeps the empty save under its own key; control: a version 2 save with its own guard opens with no offer);
   **"keep"** (asked twice, then the empty save is adopted and guarded); **"no page writes meanwhile"** (a Lists edit
-  and a Bourse tick are refused while the offer is open; control: both write once it is answered); **"no guard on
-  fallback when space is short"** (the save succeeds, nothing is offered later: the stated limit).
+  and a Bourse tick are refused while the offer is open; control: both write once it is answered); **"no version 2
+  without its guard"** (D64: on fallback storage and when the transaction fails for space the save stays version 1,
+  byte for byte, and the reason shows; control: with room on IndexedDB the same step migrates and guards);
+  **"a stale offer"** (D65: an offer answered after another tab restored changes nothing and opens again).
 - **Every write path the Bourse work adds or changes** (each named in an item): section writes of watch, own items
   and settings (`CC.writeSection`, B13); ticks, check records, Undo, "New trip" and the copy (`CC.writeSections`
   with `ifRev`, B21, B10); the guard and the restore (B30); the erase (B29); the cloud upload's conditions and
@@ -774,15 +904,21 @@ Tracker and Atelier:
      still on an older version of the app, replaced the cloud copy. Nothing was removed here; where the two differ
      you are asked." The merged copy is uploaded as version 2 with the `eTag`, after which the older device is
      refused until it updates.
-  **Who verifies the create condition, and when:** B27's builder records what Microsoft's documentation says for this
-  kind of upload; **the owner, or the orchestrator with the owner present, tries it on the real personal OneDrive
-  before the version-rising release ships** (two browsers that both set up sync in the same minute; the result is
-  written in `docs/STATE.md` by B12). Rules 1, 2's read-back and 4 hold whatever the outcome.
+  **Round four (D67) changes these rules.** The version 2 copy is a file of its own, under a new name; the old file
+  is only read. Rule 2's create is sent only while `ET.CLOUD_CREATE_VERIFIED` is true; the read-back stays as a
+  second check and is no longer what the plan relies on. Rule 4's "known" includes the exact, unchanged copy, and
+  the base lives and dies with the identity it was recorded for. A replace addresses the item id; a write that is not
+  confirmed advances nothing.
+  **Who verifies the create-only route, and when:** B27's builder quotes Microsoft's documentation for the route
+  used; **the owner, or the orchestrator with the owner present, runs D67 (2)'s ten refused creates on the real
+  personal OneDrive before the version-rising release is offered for `ship`**; B12 writes both into
+  `docs/STATE.md`. Until then the constant stays false and new code creates no cloud copy. Not verified by anyone
+  yet.
   Tests in item B27 ("older" names its commit): **"missing-file race"** (`<old>` finds no file; the newer device
   creates; the older uploads over it; the newer syncs: no unit removed with no choice given, differences asked, the
-  upload is version 2, the older device's next sync is refused); **"the create condition ignored"** (the stand-in
-  lets two new devices both create: the loser's read-back, or its next sync, merges with no base and nothing is
-  lost); **"same-version replacement"** (a version 2 copy with a foreign line: no base, nothing removed; control: a
+  upload is version 2, the older device's next sync is refused); **"a late second create"** (BV-22, which replaces the earlier "create condition ignored": a later rescue no longer
+  passes; with the route refusing, the second device gets "already exists" and merges; with the create route
+  unverified, no device creates and both say why); **"same-version replacement"** (a version 2 copy with a foreign line: no base, nothing removed; control: a
   true descendant merges with its base and takes a removal); **"missing checkpoint"** (the device's record lacks the
   copy id, or names another item id: no base); **"restored checkpoint"** (a device restored from a backup: the base
   is forgotten, so no base; and a device whose record is intact but 201 uploads behind: no base); **"repaired while
@@ -792,7 +928,8 @@ Tracker and Atelier:
 - **On the device only:** every price, sale, tax rate and attempt time (`eveniunt-bourse-prices`), the ledger
   (`eveniunt-bourse-ledger`), `eveniunt-bourse-device` (last view, which alerts rang), `eveniunt-bourse-alert`, the
   guard, and in the save's device-only part `device.bourse` (`mcopy`; `done`, the purchase receipts of the last 24
-  hours; `held`, the open pair questions; never in backups, codes or the cloud).
+  hours; `device.epoch`, D70 (8); never in backups, codes or the cloud). The open pair questions are **not** kept
+  here: `held` is part of the Bourse section and travels with it (D70).
 - **Rebuild:** `save.js`, `merge.js`, `storage.js`, `cloud.js`, `codec.js`, `one-look.css`, the header's page list,
   `live.js`, `ui.js`, `settings.js` and the hosted-only code of the Tracker and the Atelier change, so the Tracker
   (`tracker/dist`, `tracker/site`), the Command Center (`tracker/command-center/site`) and the Atelier
@@ -863,8 +1000,11 @@ check ids start at C197.
   cap is asked again as two halves, both charged, and a half still over the cap is failed with no third request**;
   PX-11 times: old, missing, 0, in the future, seconds against milliseconds; PX-12 "world reply"; PX-13 "confirmed
   empty" and "Oceania zero minimum"; **PX-14 "late answer", by order number: a lower-numbered failure and a
-  lower-numbered success arriving after a higher-numbered success change nothing, also with equal clock times and
-  with the clock set back between them; a deadline passed is failed; control: a higher-numbered answer replaces**).
+  lower-numbered success arriving after a higher-numbered success change nothing in the cache, also with equal clock
+  times and with the clock set back between them; a deadline passed is failed; control: a higher-numbered answer
+  replaces; "a refusal out of order" (D68): a lower-numbered answer 429 arriving after a higher-numbered success
+  leaves the cached success as it is and still starts the pause; control: a lower-numbered ordinary failure starts
+  none**).
   Accept: unit suite; `CHECK_ONLY=C113,C117,C155 npm run check` unchanged. Escalate if: PR-1 to PR-5 need an edit.
 - **B3 Save section and version (Sonnet builder; after B29).** Files: `tracker/src/core/save.js` (`checkBourse`,
   `CHECK`, `LABEL`, the labels, BI1, BI2, `CC.VERSION = 2` with `checkDoc` reading 1 and 2),
@@ -971,7 +1111,9 @@ check ids start at C197.
 - **B12 Full run and records (Haiku clerk; last).** `npm run build` twice, `npm run test:unit`, `npm run test:browser`,
   `npm run check`, at the head that would ship; the entry in `docs/STATE.md` under "Built, waiting for the owner's
   `ship`": the commit tested, `<base>`, `<old0>` and `<old>`; **B29's release date and that 30 days have passed**;
-  **the result of the owner's try of the create condition on the real OneDrive, or that it has not been done**; what
+  **the two records D67 (2) asks for (the documentation quoted, the ten refused creates on the real OneDrive) and
+  that `ET.CLOUD_CREATE_VERIFIED` was set true only after them; if either is missing the release is not offered for
+  `ship` and the item escalates**; what
   was and was not tested (the live price site, Firefox, Safari, a real phone, a real two-device sync); what now runs
   while the app is open (the watch checker on every page) and how to stop it; the save's new version, what each older
   page shows, the reload sentence and the restore offer; whether the Lists setting was built (B26) or left out; a
@@ -1094,8 +1236,13 @@ check ids start at C197.
   setting left out"** (run with `BOURSE.CREDIT` false, whatever B26's outcome, beside the same fixtures with it true
   when B26 passed: the switch is absent; a stored `tick: 'lists'` behaves as tick only and is left stored; a tick
   marks and `modules.lists` is byte-identical; a credited record already in the save is shown under "earlier trips",
-  kept, never changed, with no Undo offered; a merge of two such saves gives byte for byte what the code at `<base>`
-  gives; control with the constant true: the same tick writes both halves). Accept: `CHECK_ONLY=C208,C216 npm run
+  kept, never changed, with no Undo offered; **two comparisons, never one over the whole save: (1) a merge of two
+  such saves gives, in every field the code at `<base>` can hold (characters, the Tracker's, Atelier's, Lists',
+  Submersibles' and Settings' sections), byte for byte what the code at `<base>` gives; (2) on the off build's own
+  terms: the Bourse section's purchases, undo marks and held entries are byte for byte what went in, `modules.lists`
+  is unchanged by a tick, and no part of rule BY2, LI6 or LI7 runs (the test plants a pair that the rule would hold
+  and sees it merged by the generic rule); the off build is made and run even when B26 passed**; control with the
+  constant true: the same tick writes both halves, and an ordinary tick marks in both builds). Accept: `CHECK_ONLY=C208,C216 npm run
   check`. Escalate if: a case needs a rule section 6.7 does not give.
 - **B22 Lists' high-quality prices (Sonnet builder; after B2).** Files: `src/lists/lists.js` (D8), `check.js` C191
   rewritten as C205 (an ordinary 100 and a high-quality 10,000 each on their own row and both in the subtotal; an old
@@ -1183,7 +1330,7 @@ check ids start at C197.
   for a copy that is not a known descendant; `ET.cloudOverwrite` with the shown copy's item id and `eTag`),
   `tracker/src/app/ui.js` and `tracker/command-center/src/settings.js` (both callers: the overwrite question carries
   the copy's identity; the older-app line; a refused overwrite reads again), the cloud test file B28 names (BV-8
-  "missing-file race"; BV-9 "the create condition ignored", and honoured; BV-10 "changed since read"; BV-11
+  "missing-file race"; BV-9 replaced by BV-22 "a late second create" (see the round-four additions); BV-10 "changed since read"; BV-11
   "repaired while the question is open", with its control; BV-12 a first sync after updating behaves as today;
   BV-13 "same-version replacement" with its control; BV-14 "missing checkpoint"; BV-15 "restored checkpoint" and "201
   uploads behind"; BV-16 "no tag, no replace": every path that would send a replace without an `eTag` sends nothing;
@@ -1228,12 +1375,102 @@ check ids start at C197.
   `ET.clearState` of `<old0>`; BG-3 a blank save, a missing save, an unreadable save and a version 1 save each
   beside a guard are "replaced"; control: a version 2 save beside its guard is not; BG-4 Restore: the guard's data
   byte for byte, the replaced data kept under its own key; BG-5 "keep", asked twice; BG-6 "no page writes
-  meanwhile", for each page, each with its control; BG-7 the fallback storage with too little space: the save
-  succeeds without a guard; BG-8 a save with no guard yet (the first run of new code over a version 1 save) is read
+  meanwhile", for each page, each with its control; BG-7 (replaced, round four) "no version 2 without its guard":
+  on fallback storage and in memory new code leaves a version 1 save version 1, writes the other modules as today,
+  refuses Bourse writes and shows D64's sentence; a version 2 cloud copy is not merged there; control: on IndexedDB
+  with room the same save migrates; BG-8 a save with no guard yet (the first run of new code over a version 1 save) is read
   and written normally and gets its guard), `check.js` C217 (in a browser: the offer on each of the seven pages,
   Restore from one of them, and the other open pages follow), rebuilt copies. Accept: unit suite;
   `CHECK_ONLY=C119,C122,C145,C146,C217 npm run check`. Escalate if: an existing save test needs an edit, or the
   guard cannot be written in the same transaction as the save on IndexedDB.
+
+**Round-four additions to the items (binding; each belongs to the item named, is built and run with it, and names its
+control).**
+- **B2.** PX-14 as amended above.
+- **B3.** BS-8 "the first version 2 write has no room": the transaction is made to fail for space: the stored version
+  1 save is byte for byte as before, no guard exists, the next write is version 1, the sentence of D64 shows;
+  control: with room the same write stores version 2 and its guard. BS-9 the `extra` upgrade of D66: a two-part key
+  with `t`, one without, and both forms present; control: a three-part key is left alone. BS-10 the checker keeps a
+  `held` entry with both alternatives whole and drops one with an alternative missing. Files add nothing.
+- **B5.** BM-7 adds "a dropped cheaper row": North America's slice holds a valid listing at 120 and an entry at 90
+  with no world, which is dropped: the figure reads "cheapest seen", never "cheapest listing"; "out of order": prices
+  120 then 100 in the reply: "cheapest seen"; control: a clean, ordered slice in every region: "cheapest listing".
+- **B7.** C202 and BP-9 add the pictured route: home Gilgamesh (Aether); stops Exodus and Famfrit (Primal), Odin
+  (Light): **2 data-center hops, 1 region hop**, counted from consecutive places of the route with the home world as
+  the first; control: a trip that stays on Aether counts 0 and 0.
+- **B8.** C201's sample is one a reader can check by hand: 40 held sales that reach back 1 day, cut: "at least 5.7 a
+  day"; 14 sales over the 7 days, not cut: "2 a day"; the second profit figure is worked out in the check from the
+  shown asking price, the city rate and the shown material cost, and must equal the row's.
+- **B10, B13.** BT-4's "two new trips" uses **the same item and quality with different amounts** (3 on one device, 5
+  on the other): after the merge both units exist under their trips' keys, each answer shows its own amount, the
+  other is kept; the copy writes the current trip's key; control: one trip, one unit.
+- **B11.** C206 also reads, at 360 px and at 200% text size, the home-world source sentence in full, as text outside
+  the picker; and the hourly-limit text of D27 word for word.
+- **B12.** As amended above.
+- **B15.** BA-14 "changed while waiting": a watch request waits behind a pause or in the queue; the target, the area
+  or `oldDays` changes before its turn: it is not sent (the dispatch decision refuses it); control: unchanged, it is
+  sent when the pause ends.
+- **B16, B25.** BP-15 adds "exactly enough": 1,000 needed, the 300 cheapest hold 600, the one other stack holds 400:
+  the plan covers 1,000 with that stack and reads "1,000 of 1,000 found"; "more than enough" (the other stack holds
+  500, as before); "a true shortfall" (the other stack holds 300: every stack is weighed, "900 of 1,000 found");
+  control: 300 stacks or fewer, no label.
+- **B18.** BL-14 "a refusal after a later success" (D68 (1)), with the control that an ordinary late failure starts
+  no pause. BL-15 "a deadline is not an ending": a tab is frozen with a request open, its deadline and 25 seconds
+  pass, its request lock is still held: other tabs still count the slot as taken and never have a third request in
+  flight; when the tab closes or the request ends, the slot is free; when the browser stand-in cannot report locks,
+  one slot stays taken; control: an ended request frees its slot at once. BL-16 a watch request whose inputs changed
+  is refused at the dispatch decision; control as BA-14.
+- **B21.** C216 as amended above. C208 adds: a tick, an Undo and a typed count for a held pair are refused with the
+  sentence of D70 (4), in the Bourse and in Lists; control: another item on the same pages is written.
+- **B24.** BV-21 the older app's two unconditional uploads, as two separate cases, each made **after** the newer
+  device wrote its copy: the older Tracker's "no file seen" upload and its "replace the cloud copy" both land in the
+  old file; the version 2 file is byte for byte untouched; the newer device's next sync reads the old file, merges it
+  with no base, removes nothing; control: at `<base>`, with one file name, the same upload replaces the newer copy.
+- **B26.** Files add `tracker/src/core/storage.js` only if B28's inventory shows a caller that drops the holds a
+  merge returns; D70 needs no other storage change. Cases, each through the real cloud path and the real local path,
+  each checking the bytes of **both devices' saves and of the cloud copy**: BK-16 "declined": the sync dialog is
+  closed without an answer: this device's save holds the `held` entry with both alternatives, nothing was uploaded,
+  both live pairs are as before; BK-17 "reload": the same after the page is reloaded and after three more syncs;
+  BK-18 "Settings": the hold is created and kept by a sync started from Settings; BK-19 "unrelated edits on both
+  sides": each device then changes other items and syncs: those merge, the held pair and both alternatives are
+  unchanged on both devices and in the cloud; BK-20 "one device never returns": after one upload the cloud copy
+  alone yields both alternatives; BK-21 each answer, met by the other device, installs the same pair there; two
+  different answers are asked again; an answer against a changed entry is refused; BK-22 "Undo with no base": a
+  backup with a count of 50 and a 40-credit record is loaded on one device, the other holds 10 and the matching undo
+  mark: merged 10, the record gone, the mark kept, no question; control: without the undo mark the pair is held;
+  BK-23 "malformed": a loaded file whose record and undo mark sit on the same side, and one whose id names another
+  item: held before any count is computed, this device's intact pair unchanged; BK-24 a load with a held entry: it
+  stays when the live pair equals an alternative and is removed otherwise, in both orientations; BK-25 "a page left
+  open across a load": its Lists write is refused by the epoch even though no credit and no undo mark is left;
+  control: a page that read after the load writes. BK-10 to BK-12 now also assert that the entry holds both
+  alternatives. The earlier phrase "held is kept in the device-only part" is void.
+- **B27.** Files add the new file name in `cloud.js` and `ET.CLOUD_CREATE_VERIFIED`. BV-9 is replaced: "the create
+  condition ignored" is no longer passed by a later rescue. BV-22 "a late second create": device A creates and reads
+  its copy back; device B, which saw no file earlier, creates afterwards; A never syncs again: with the route
+  refusing (the verified behaviour) B gets "already exists", reads A's copy and merges, and A's entries are in the
+  cloud; with `ET.CLOUD_CREATE_VERIFIED` false neither device sends a create and both say why; control: one device
+  alone, constant true, creates. BV-23 "the unchanged copy": a second sync with nothing changed in the cloud and one
+  entry removed here: the base is used and the removal is uploaded, the entry does not come back; control: a foreign
+  copy with the same content brings it back as a question. BV-24 "the target is gone" and "no confirmation": a
+  replace answered "no such item", and one answered without item id and `eTag`: base, identity and the synced line
+  are as before and the next sync reads again; control: a confirmed replace advances all three. BV-25 "after a
+  guard Restore": the base is dropped and the next sync merges with no base. BV-26 the old file is never written by
+  new code (every request the stand-in receives is checked) and is read again when its `eTag` changed.
+- **B28.** Reports also the cloud file's present name and how `cloud.js` builds its address.
+- **B29.** BE-5: the version check and the erase are one transaction (a save that becomes newer between the click
+  and the write is not erased); BE-6: when the erase is refused or fails the page does not say it erased and does
+  not reload; controls: BE-1.
+- **B30.** Files: as before. BG-9 "no room": D64 (b) on a save already version 2: the write is refused, save and
+  guard byte for byte as before, the page says not saved; control: with room it writes both. BG-10 "cut off
+  part-way": the transaction is aborted after the save and before the guard, and the other way round: neither
+  changed; then the erase of `<old0>` runs and the restore offer gives back the last complete pair; control: an
+  uninterrupted write. BG-11 "a stale offer": two tabs show the offer; one restores and a tick is saved; the other
+  tab's Restore, and its "keep", change nothing and open the offer anew (which now finds nothing to offer); control:
+  the first tab's Restore. BG-12 "keep" with a readable version 1 save: adopted as version 2, the old guard's data
+  kept under its own key; with a missing, a blank and an unreadable save "keep" is not offered and "Download both
+  copies" is. BG-13 "sync waits": while the offer is open neither the Tracker's nor Settings' sync reads or uploads,
+  also one already started (its upload is not sent); control: after the answer the sync runs. BG-5 is read with
+  BG-12.
 
 ## 11. Risks, limits, owner questions
 
@@ -1281,8 +1518,21 @@ together, the setting left out by itself if the rule fails its tests, and 15 (a)
 corrected for the count limit, backups and codes, Undo on another device and fallback storage, and still left out if
 its tests fail; the fix to the old Tracker's "Erase everything" is the Bourse work's first step, released well before
 the save version rises, with no separate pull request now; a fourth outside round, with both reviewers, follows this
-correction before any Bourse code. The questions as they were asked are in `docs/bourse-questions.md` and in the
-adjudications.
+correction before any Bourse code. **Round nine (2026-11-26), after the fourth round failed the plan:** all 15
+findings are fixed with the plan's scope unchanged, the Lists setting's rule included; a fifth outside round, with
+both reviewers, follows. No question is open. The questions as they were asked are in `docs/bourse-questions.md`
+and in the adjudications.
+
+**Added by round four to the limits and to what is unverified.** Limits: on a browser without IndexedDB the save
+stays in the older format, the Bourse cannot save and the newer cloud copy is not synced there; a device that stays
+on the older app keeps its own cloud file and is not told that newer devices moved on; a pair with an open question
+cannot be ticked, undone or retyped until answered; the Bourse section grows by each open or answered pair question;
+with the create-only route unverified the newer save has no cloud sync at all, and the release is held back. Not
+verified: the create-only route on the real OneDrive (nobody has run it); that the browser reports held locks to
+other tabs as D68 needs (the Web Locks query; B18 escalates if it does not); that the price site orders listings by
+asking price (D69, B20); the present cloud file name (B28). This correction was written as exact replacements to the
+file; the planner read `docs/bourse-review-adjudication-4.md`, ChatGPT's round-four review, the ninth owner round,
+`codec.js` lines 6 to 25 and the spec lines it replaced, and did not read Mistral's round-four notes.
 
 **What was read, and what was not verified (this correction).** Read: `docs/bourse-review-adjudication-3.md`, both
 round-three reviews, the eighth round of `docs/bourse-questions.md`, `storage.js` 286 to 341, `ui.js` 988 to 1025 and
@@ -1328,8 +1578,10 @@ pairs that a purchase credited, it never stores a count that breaks its rule, th
 byte for byte, and the setting is off by default. (6) OneDrive does not refuse a create over an existing file: the
 read-back or the next sync finds a copy that does not descend from this device's, merges with no base and removes
 nothing. (7) The guard itself is lost (storage cleared by the browser): the save goes with it; that is today's risk,
-not a new one. (8) A player answers "keep what is there now" by mistake: it asks twice, and the replaced data is
-kept under its own key by Restore only, so this answer is final (stated in the question).
+not a new one. (8) A player answers "keep what is there now" by mistake: it asks twice, and since round four the
+old guard's data is stored under its own key first (D65), so it can still be downloaded. (9) A save cannot get its
+guard (no IndexedDB, or no room): it stays version 1 and the Bourse cannot save there (D64). (10) The create-only
+route is never verified: the newer save has no cloud sync and the release waits (D67).
 
 ## 13. Rounds two to five (2026-11-25)
 
@@ -1498,3 +1750,40 @@ reviewers, follows (owner, round eight).** F13, F15 and the picture side of F14 
 release that raises the save version; the backoff after a refusal starts at 15 minutes, doubles, and stops at 6
 hours; a retry of a tick lives 2 minutes and 3 tries; a cloud copy's line holds 200 ids; alert entries untouched for
 30 days are dropped; an oversized batch is split once.
+
+Round four found F01, F02, F04, F05, F07 open and F08, F10, F12, F13 partly open; section 18 says what replaced the
+entries above (the guard on fallback storage, `device.bourse.held`, the read-back as safeguard, the 25-second expiry,
+the strict comparison in 6.1, C216's whole-save comparison).
+
+## 18. Round-four outside review (2026-11-26)
+
+Both reviewers read the plan at `3282839`: ChatGPT (FAIL: 4 blockers, 9 major, 2 minor; 6 of its 16 round-three
+findings closed) and Mistral (PASS: 5 notes, among them the correction of its two wrong round-three claims).
+`docs/bourse-review-adjudication-4.md` accepted every finding and confirmed R4-01, R4-07, R4-10, R4-12, R4-13 and
+R4-14 against the spec text or the pictures. The owner decided (round nine): fix all 15 with the scope unchanged,
+then a fifth outside round with both reviewers. **The corrections below were planned by a Claude model on a
+Claude-written spec (same family) and are unreviewed; the Bourse stays paused.** R4-12 and R4-14, and the pictures
+for R4-13 and R4-15, belong to the look: the requester's.
+
+| Finding | What changed | Where | Left as a known limit |
+| --- | --- | --- | --- |
+| R4-01 a version 2 save with no guard (blocker) | Version 2 is written only where save and guard land in one transaction; elsewhere the save stays version 1, the reason is shown, backups work; a failed write changes nothing | D64, D61; section 8 (guard tests); B3 (BS-8), B30 (BG-7 replaced, BG-9, BG-10) | Without IndexedDB: no Bourse saving and no sync of the newer save |
+| R4-02 a stale restore prompt (blocker) | Restore and "keep" recheck both shown stamps in one transaction; a stale prompt changes nothing and reopens; "keep" discards nothing and is offered only for a readable save; cloud sync waits while the question is open | D65; B30 (BG-11 to BG-13) | — |
+| R4-03 the held pair's storage (blocker) | Both whole alternatives are kept in the Bourse section itself, written the same on both devices, so they travel through the existing save, merge, backup and cloud paths; written before any dialog; the pair is frozen until answered; the answer is a unit of its own | D70 (1) to (5); section 8 (schema, BY2 step 4); B26 (BK-16 to BK-21), B21 (C208), B3 (BS-10) | The section grows by each question; a held pair cannot be edited until answered |
+| R4-04 Undo without a common base; restores | A matching valid undo mark removes its record whatever the lineage; malformed or mismatched pairs are held before any arithmetic; a load rebinds or clears held entries; a page left open across a load is refused by an epoch | D70 (6) to (8); section 8 (BY2 steps 0, 1); B26 (BK-22 to BK-25) | With no base, own parts that differ are asked |
+| R4-05 two trips, one own-item key | Own items are keyed by trip, item and quality, with one fixed upgrade from the two-part key | D66; 6.8; section 8 (schema); B3 (BS-9), B13 and B10 (BT-4) | — |
+| R4-06 a blind create after the read-back (blocker) | The version 2 cloud copy is a new file, out of older apps' reach; the old file is read only to bring its content over; a create is sent only through a route verified by documentation and a run on the real service, otherwise none is sent and the release waits | D67 (1), (2); section 8; B27 (BV-22, BV-26), B24 (BV-21), B12, B28 | A device on the older app keeps its own file and is not told; the route is not yet verified by anyone |
+| R4-07 the unchanged copy read as foreign | An exact match of item id, copy id and tag is known; the base is stored with its identity and dropped after a guard Restore or a load; a replace addresses the item; an unconfirmed write advances nothing | D63, D67 (3), (4); B27 (BV-23 to BV-25) | — |
+| R4-08 refusals out of order; slots freed by time | A 429 always pauses, whatever the order of answers; a slot is freed only when the request has ended, shown by a browser lock per request, else it counts as taken; watch inputs rechecked at the dispatch decision | D68, D56; B2 (PX-14), B18 (BL-14 to BL-16), B15 (BA-14) | A frozen tab can hold one of the two slots until it closes; the lock query is unverified |
+| R4-09 C216's comparison | Two comparisons: the fields both builds can hold against the older behaviour, and the off build on its own terms, run even when the setting passed | B21 (C216) | — |
+| R4-10 the 300 stacks at equality | Stacks are added whenever the weighed supply is short | 6.1; B16 and B25 (BP-15) | — |
+| R4-11 "cheapest" from an unclean slice | "Cheapest listing" only from a clean, ordered slice in every region; otherwise "cheapest seen" | D69, D49; B5 (BM-7), B20 | If the site's order is not shown by B20's reply, every ranking figure reads "cheapest seen" |
+| R4-12 the Profit picture | (look) The check's sample is one a reader can work out by hand | B8 (C201) | The picture is the requester's |
+| R4-13 the Trip picture's hops | The pictured route is a named case: 2 data-center hops, 1 region hop, counted from the route with home first | B7 (C202), B16 (BP-9) | The picture is the requester's |
+| R4-14 the home-world picker | (look) C206 reads the source sentence in full outside the picker | B11 | The picture is the requester's |
+| R4-15 the hourly limit's wording | The limit and the pause are the Bourse's requests, and every text says so | D27; B11 | The states picture is the requester's |
+| Mistral R4-1 to R4-5 | Recorded; R4-3 is replaced by D64 | — | — |
+
+**Defaults this round set, for the reviewers and the owner to see:** the cloud file's new name (the old one with
+`-v2`); ten refused creates as the run that verifies the create-only route; "keep" stores the old guard's data
+instead of discarding it; the two-part own-item key without a trip id becomes `legacy00`.

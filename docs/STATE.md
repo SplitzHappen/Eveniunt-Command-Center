@@ -180,7 +180,11 @@ Nothing.
    the code (`docs/bourse-review-adjudication-3.md`). Owner, round eight: keep building the credit rule; the erase fix
    is the Bourse work's first step (B29, 30 days before the version rises); a fourth round with both reviewers. Look
    corrected (`27d2897`); spec corrected (31 work items, section 17, same-family and unreviewed); fourth round filed as
-   `ASG-20261126-bourse-plan-review-chatgpt-004` and `ASG-20261126-bourse-plan-review-mistral-004`.**
+   `ASG-20261126-bourse-plan-review-chatgpt-004` and `ASG-20261126-bourse-plan-review-mistral-004`; returned 2026-11-26:
+   ChatGPT FAIL (4 blockers, 9 major), Mistral PASS (`docs/bourse-review-adjudication-4.md`). Owner, round nine: fix
+   everything with the scope unchanged; a fifth round with both reviewers. Look corrected (`fb378e4`); spec corrected
+   (D64 to D70, section 18, same-family and unreviewed); fifth round filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-005` and `ASG-20261126-bourse-plan-review-mistral-005`.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
