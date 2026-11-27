@@ -96,3 +96,22 @@ The code claims and the D1 statements checked hold, in local SQLite. Live D1 is 
 
 **Ruling:** all accepted. Under the owner's fourteenth round (ChatGPT revises), they go to ChatGPT as
 `ASG-20261127-bourse-sync-design-chatgpt-003`.
+
+## Version 3 of the design (2026-11-27)
+
+The source is assignment `ASG-20261127-bourse-sync-design-chatgpt-003` (final head `1a26968`, results commit `8518eec`,
+package `d75b45e`), byte-identical to what was dispatched. The complete revision (367 lines, 97,423 bytes, down from
+106,946) replaces `docs/bourse-sync-design.md`, and its section 5 has a row for each of E-1 to E-9. The main changes:
+- Trims keep an ancestor index, an unchanged suffix and typed deletion records (E-1).
+- Every owner-bound key and receipt carries a character incarnation (E-2).
+- The D1 claim is split into a reserve and a one-way consume (E-3).
+- Personal drive ids are canonicalized (E-4).
+
+The listed simplifications:
+- one history owns the incarnation links;
+- the separate identity table is gone;
+- a trim keeps its generation;
+- one queue serves pending writes;
+- safe character matches are confirmed as one batch.
+
+No new owner choice. A fresh in-house check of version 3 follows.
