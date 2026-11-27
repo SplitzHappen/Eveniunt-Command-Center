@@ -36,7 +36,29 @@ It brings 35 acceptance tests (T01 to T35) and two owner choices.
   Submersibles and Settings become commands with a portable history. It is a larger piece of work than the Bourse
   itself.
 
+## In-house red team of the design (2026-11-27)
+
+A fresh reviewer agent (Claude: a different model family from the writer, but an in-house check, not the planned
+outside review) read the design and the code.
+
+**Verdict.** The design is sound in principle: with one seed it handles a delete followed by a re-add, a revert to the
+original value, three or more branches and repeated deliveries correctly, and it closes the "lost base revives
+deletions" class. It is not simpler than the plan it replaces: it removes held questions, the undone maps, sequence
+winners, the ancestor window and the checkpoint, but adds hashing, graph checks, scopes, consent records, file
+generations, a new helper store, and a checked command for every module's write. No blocker; 6 major and 6 minor
+faults, all at the edges.
+
+| # | Severity | Finding | Checked |
+| --- | --- | --- | --- |
+| D-1 | MAJOR | Joining two seeds leaves equal values as two concurrent writes, so an edit made before the bridge arrives reads as concurrent with it ("Keep" revives an untick). This hits every migration. A bridge must supersede all in-scope writes of its parents. | Follows from S1, S2 and section 3 |
+| D-2 | MAJOR | Character slots are reused (`model.js` 128 to 130), so a removed character's ticks and name can land on a new character in the same slot without a question. Each slot needs a fresh incarnation, and the placeholder rule must never apply against a branch that deleted the character. | Slot reuse confirmed |
+| D-3 | MAJOR | A typed count on one device meeting a new purchase on another adds them unasked (50 typed + 40 credit = 90). An own-part write concurrent with a receipt change must open the stock preview. | Follows from S6 |
+| D-4 | MAJOR | History growth: about 130 bytes per edit node (estimate, not measured) fills the 4 MiB cloud ceiling in under a year at 100 actions a day, then sync stops until a manual rollover. Define the transaction size and trim the history all devices already share. | Ceiling confirmed (`cloud.js` 142) |
+| D-5 | MAJOR | Every edit rewrites the whole history twice (main and guard) inside a synchronous storage step, and the node digest needs asynchronous WebCrypto. Store nodes as immutable records written once; compute the digest before the transaction. | Follows from S5, S11 and `save.js` 416 to 425 |
+| D-6 | MAJOR | The legacy-read grant store does not exist: the helper has only KV, which is eventually consistent and has no compare-and-set, and it keeps no drive identity. Name a D1 or Durable Object store (cost), or accept a KV put-if-absent and rely on the create-only rule. | KV confirmed (`wrangler.toml` 13) |
+| D-7 to D-12 | MINOR | Imports detach the whole save instead of their own scope; module rules need one base and use wall-clock order; answers bound to all tips can be starved; the legacy "difference aid" can never apply; the 256 MiB decode limit (today `cloud.js` 168 stops at 64 MiB); tests missing for D-1 to D-3, and T01 tests a calendar. | `cloud.js` 168 confirmed |
+
 ## Next
 
-A fresh in-house red team reads the design and the code. Then the owner decides on the design's two choices and its
+The owner decides on the design's two choices and its
 scope, the design is merged into the plan, and an outside review follows.
