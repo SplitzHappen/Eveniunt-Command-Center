@@ -190,7 +190,12 @@ Nothing.
    Look corrected (`80ac214`); spec corrected (D71 to D79, section 19, same-family and unreviewed); the sixth round was
    prepared but not filed. Before it: seven in-house red teams (owner's prompt; owner rounds eleven and twelve: keep
    checking, then simplify the move to the new cloud file); serious faults 8, 7, 4, 3, 3, 3, 2. Owner, round thirteen
-   (2026-11-27): ChatGPT redesigns the save-and-sync part, filed as `ASG-20261127-bourse-sync-design-chatgpt-001`.**
+   (2026-11-27): ChatGPT redesigns the save-and-sync part, filed as `ASG-20261127-bourse-sync-design-chatgpt-001`; delivered 2026-11-27
+   (`docs/bourse-sync-design.md`: a history of edits with deletion records); in-house red team: sound in principle,
+   6 major at the edges (`docs/bourse-review-adjudication-6.md`). Owner, round fourteen: adopt it, ChatGPT revises
+   (`ASG-20261127-bourse-sync-design-chatgpt-002`); low-storage browsers save locally only; the one-time read is
+   guarded by a free Cloudflare D1 record on the sign-in helper (the owner creates the database once). Note: the design
+   changes every module's save and sync, a larger build than the Bourse itself.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,

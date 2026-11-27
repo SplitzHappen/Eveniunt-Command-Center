@@ -286,3 +286,11 @@ marked "default (not asked)"; the owner can change any of them.
 | Question | Answer |
 | --- | --- |
 | Who finishes the save-and-sync part of the plan | **ChatGPT redesigns it** (an owner override of the usual split, in which ChatGPT reviews and does not write plans): an assignment asks ChatGPT to write a fresh design for the save, merge, cloud and migration rules, with every finding so far as input; then the requester red-teams it in-house, and an outside review follows. Not chosen: the requester fixing the two narrow open faults and sending round six; Mistral writing it; pausing. |
+
+## Fourteenth round (owner, 2026-11-27), after ChatGPT's save-and-sync design and its in-house red team
+
+| Question (`docs/bourse-review-adjudication-6.md`) | Answer |
+| --- | --- |
+| The design (a history of edits with a record for every deletion) | **Adopt it; ChatGPT revises it** for the 6 major and 6 minor findings of the in-house red team; then an in-house check and an outside review. |
+| A browser without room for the safety copy | **Save locally only:** it keeps working and moves data by backup file, with no cloud sync; updated apps never write the old cloud file. |
+| Reading the old cloud file only once | **A record on the sign-in service**, in a free Cloudflare D1 database (one row per account; the owner creates the database once). Asked first: "would this record in the sign-in service be free?" Answer given: yes, on Cloudflare's free plan (D1: 100,000 row writes and 5 million row reads a day, 5 GB), with setup effort and the risk that the free plan changes. |

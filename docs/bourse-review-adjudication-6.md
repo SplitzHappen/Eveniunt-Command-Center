@@ -60,5 +60,7 @@ faults, all at the edges.
 
 ## Next
 
-The owner decides on the design's two choices and its
-scope, the design is merged into the plan, and an outside review follows.
+The owner adopted the design (fourteenth round): ChatGPT revises it for D-1 to D-12 (assignment
+`ASG-20261127-bourse-sync-design-chatgpt-002`); browsers without room save locally only; the one-time read is guarded
+by a record in a free Cloudflare D1 database on the sign-in helper. Then an in-house check, the merge into the plan,
+and an outside review.
