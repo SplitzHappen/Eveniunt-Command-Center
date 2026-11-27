@@ -195,7 +195,9 @@ Nothing.
    6 major at the edges (`docs/bourse-review-adjudication-6.md`). Owner, round fourteen: adopt it, ChatGPT revises
    (`ASG-20261127-bourse-sync-design-chatgpt-002`); low-storage browsers save locally only; the one-time read is
    guarded by a free Cloudflare D1 record on the sign-in helper (the owner creates the database once). Note: the design
-   changes every module's save and sync, a larger build than the Bourse itself.**
+   changes every module's save and sync, a larger build than the Bourse itself. Version 2 delivered 2026-11-27; its
+   in-house check found 2 major, 7 minor (`docs/bourse/sync-design-redteam-2.md`); revision 3 filed as
+   `ASG-20261127-bourse-sync-design-chatgpt-003`.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
