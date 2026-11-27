@@ -115,3 +115,16 @@ The listed simplifications:
 - safe character matches are confirmed as one batch.
 
 No new owner choice. A fresh in-house check of version 3 follows.
+
+## In-house check of version 3 (2026-11-27)
+
+A fresh reviewer agent found 2 major and 8 minor faults; the full report is `docs/bourse/sync-design-redteam-3.md`. E-2,
+E-3, E-4, E-5, E-6, E-7 and E-8 are closed, and the D1 statements behave as designed in local SQLite.
+
+The major ones:
+- **F-1:** after a trim, a stock count can be shown as certain where the design says it must ask.
+- **F-2:** the deletion proof never shrinks, so cloud sync stops for good at the 4 MiB limit, after about 1.5 years for
+  a heavy player by the reviewer's unmeasured arithmetic. The design does not put this to the owner.
+
+Serious faults in the design across its versions: 6, 2, 2. F-2 is an owner decision, so it is put to the owner before
+another revision.
