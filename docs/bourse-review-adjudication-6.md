@@ -81,3 +81,18 @@ It removes five mechanisms of version 1:
 It specifies the D1 record: one table, one conditional insert, the drive identity read from Microsoft's app-folder
 call, and owner setup steps. It raises no new owner choice. ChatGPT tested the table and insert in a local SQLite
 database only. A fresh in-house check of version 2 follows.
+
+## In-house check of version 2 (2026-11-27)
+
+A fresh reviewer agent found 2 major and 7 minor faults, down from 6 major (full report in
+`docs/bourse/sync-design-redteam-2.md`). Seven of the twelve version-1 findings are closed with no new fault.
+
+The two major faults:
+- **E-1:** the automatic history trimming puts every device behind a cut into a full comparison, without the deletion
+  records.
+- **E-2:** character data owned by modules is still keyed by slot.
+
+The code claims and the D1 statements checked hold, in local SQLite. Live D1 is unverified.
+
+**Ruling:** all accepted. Under the owner's fourteenth round (ChatGPT revises), they go to ChatGPT as
+`ASG-20261127-bourse-sync-design-chatgpt-003`.
