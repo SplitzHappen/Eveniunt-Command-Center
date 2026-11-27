@@ -128,3 +128,9 @@ The major ones:
 
 Serious faults in the design across its versions: 6, 2, 2. F-2 is an owner decision, so it is put to the owner before
 another revision.
+
+**Ruling (owner, fifteenth round):** all accepted. F-2 is settled by the owner: a capped change log plus dropping what
+every known device has passed, with the tracked data never trimmed. The revision is filed as
+`ASG-20261127-bourse-sync-design-chatgpt-004`. The outside review afterwards goes to ChatGPT in a fresh chat and to
+Mistral.
+

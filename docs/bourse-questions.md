@@ -294,3 +294,10 @@ marked "default (not asked)"; the owner can change any of them.
 | The design (a history of edits with a record for every deletion) | **Adopt it; ChatGPT revises it** for the 6 major and 6 minor findings of the in-house red team; then an in-house check and an outside review. |
 | A browser without room for the safety copy | **Save locally only:** it keeps working and moves data by backup file, with no cloud sync; updated apps never write the old cloud file. |
 | Reading the old cloud file only once | **A record on the sign-in service**, in a free Cloudflare D1 database (one row per account; the owner creates the database once). Asked first: "would this record in the sign-in service be free?" Answer given: yes, on Cloudflare's free plan (D1: 100,000 row writes and 5 million row reads a day, 5 GB), with setup effort and the risk that the free plan changes. |
+
+## Fifteenth round (owner, 2026-11-27), after the in-house check of the design's version 3
+
+| Question (`docs/bourse-review-adjudication-6.md`, last section) | Answer |
+| --- | --- |
+| The design's deletion proof never shrinks, so cloud sync would stop for good after about 1.5 years of heavy use (estimate) | The owner asked: "cant we limit the number of saved history files instead? A completionist tracker that deletes everything sorta doesnt work you know..." Clarified: only the change log is trimmed, never the tracked data. Answer: **a cap on the change log, plus dropping log entries every known device has already synced past.** A device away longer than the kept log gets the "compare and ask" review, never silent changes. Not chosen: the cap alone; only "all devices saw it"; a manual "start fresh history" button; keeping sync's hard stop. |
+| Who reviews the revised design | **ChatGPT in a fresh chat, plus Mistral** (ChatGPT reviewing its own design is not independent; the requester's in-house checks stay alongside). |
