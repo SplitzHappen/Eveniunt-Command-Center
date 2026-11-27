@@ -280,3 +280,9 @@ marked "default (not asked)"; the owner can change any of them.
 | Question (`docs/bourse-review-adjudication-5.md`, last section) | Answer |
 | --- | --- |
 | The in-house checks stalled at 3 serious faults; two sat in the old-file checkpoint | **Simplify the move:** the old cloud file is read once, by the first device to update; every other device brings its own save when it updates; the checkpoint mechanism goes. Accepted cost: changes an older-app device makes after another device has updated reach the others only when that device itself updates. Then fix the remaining fault (an old open tab's sync record) and run another in-house check. |
+
+## Thirteenth round (owner, 2026-11-27), after the seventh in-house red team
+
+| Question | Answer |
+| --- | --- |
+| Who finishes the save-and-sync part of the plan | **ChatGPT redesigns it** (an owner override of the usual split, in which ChatGPT reviews and does not write plans): an assignment asks ChatGPT to write a fresh design for the save, merge, cloud and migration rules, with every finding so far as input; then the requester red-teams it in-house, and an outside review follows. Not chosen: the requester fixing the two narrow open faults and sending round six; Mistral writing it; pausing. |
