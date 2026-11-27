@@ -187,10 +187,10 @@ Nothing.
    `ASG-20261126-bourse-plan-review-chatgpt-005` and `ASG-20261126-bourse-plan-review-mistral-005`; returned 2026-11-26:
    ChatGPT FAIL (2 blockers, both in the Lists credit setting; 8 major), Mistral PASS
    (`docs/bourse-review-adjudication-5.md`). Owner, round ten: keep the setting; a sixth round with both reviewers.
-   Look corrected (`80ac214`); spec corrected (D71 to D79, section 19, same-family and unreviewed); sixth round filed as
-   `ASG-20261126-bourse-plan-review-chatgpt-006` and `ASG-20261126-bourse-plan-review-mistral-006`. Before round six: seven in-house red teams (owner's prompt; owner rounds eleven and twelve: keep
+   Look corrected (`80ac214`); spec corrected (D71 to D79, section 19, same-family and unreviewed); the sixth round was
+   prepared but not filed. Before it: seven in-house red teams (owner's prompt; owner rounds eleven and twelve: keep
    checking, then simplify the move to the new cloud file); serious faults 8, 7, 4, 3, 3, 3, 2. Owner, round thirteen
-   (2026-11-27): ChatGPT redesigns the save-and-sync part, filed as `ASG-20261127-bourse-sync-design-chatgpt-001`**
+   (2026-11-27): ChatGPT redesigns the save-and-sync part, filed as `ASG-20261127-bourse-sync-design-chatgpt-001`.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
