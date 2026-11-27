@@ -64,3 +64,20 @@ The owner adopted the design (fourteenth round): ChatGPT revises it for D-1 to D
 `ASG-20261127-bourse-sync-design-chatgpt-002`); browsers without room save locally only; the one-time read is guarded
 by a record in a free Cloudflare D1 database on the sign-in helper. Then an in-house check, the merge into the plan,
 and an outside review.
+
+## Version 2 of the design (2026-11-27)
+
+Source: assignment `ASG-20261127-bourse-sync-design-chatgpt-002` (final head `1e78633`, results commit `6c23a57`,
+package `56909a1`, byte-identical to what was dispatched). The complete revision (422 lines) replaces
+`docs/bourse-sync-design.md`. Its section 5 has a row for each finding D-1 to D-12.
+
+It removes five mechanisms of version 1:
+- the all-tips answer lock;
+- the whole-document detach for a partial import;
+- the unprovable old-file comparison base;
+- the duplicated graph in each save;
+- the manual-only rollover (history is now trimmed once settled).
+
+It specifies the D1 record: one table, one conditional insert, the drive identity read from Microsoft's app-folder
+call, and owner setup steps. It raises no new owner choice. ChatGPT tested the table and insert in a local SQLite
+database only. A fresh in-house check of version 2 follows.
