@@ -205,7 +205,9 @@ Nothing.
    `ASG-20261128-bourse-sync-design-chatgpt-005`; delivered 2026-11-28; its check found 2 major, 5 minor
    (`docs/bourse/sync-design-redteam-5.md`). Owner, round sixteen: outside review now (ChatGPT in a fresh chat and
    Mistral, with H-1 to H-7 attached), then one final revision; filed as
-   `ASG-20261128-bourse-sync-design-review-chatgpt-001` and `-mistral-001`.**
+   `ASG-20261128-bourse-sync-design-review-chatgpt-001` and `-mistral-001`; returned 2026-11-28: ChatGPT FAIL (approach
+   sound; H-1 to H-7 confirmed; 9 new, 5 major), Mistral PASS (2 new, minor) (`docs/bourse-review-adjudication-7.md`).
+   Final revision filed as `ASG-20261128-bourse-sync-design-chatgpt-006`.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
