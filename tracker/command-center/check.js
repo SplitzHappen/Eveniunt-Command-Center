@@ -52,7 +52,7 @@ async function context(opts = {}) {
   const errors = [], external = [];
   await ctx.route('**/*', (r) => {
     const u = r.request().url();
-    if (u.startsWith('http://127.0.0.1:' + PORT + '/') || u.startsWith('http://127.0.0.1:' + PORT2 + '/') || u.startsWith('http://127.0.0.1:' + PORT3 + '/') || u.startsWith('http://127.0.0.1:' + PORT4 + '/') || u.startsWith('http://127.0.0.1:' + PORT5 + '/') || /^(blob|data):/.test(u)) return r.continue();
+    if (u.startsWith('http://127.0.0.1:' + PORT + '/') || u.startsWith('http://127.0.0.1:' + PORT2 + '/') || u.startsWith('http://127.0.0.1:' + PORT3 + '/') || u.startsWith('http://127.0.0.1:' + PORT4 + '/') || u.startsWith('http://127.0.0.1:' + PORT5 + '/') || u.startsWith('http://127.0.0.1:' + (PORT + 5) + '/') || /^(blob|data):/.test(u)) return r.continue();
     external.push(u); return r.abort();
   });
   ctx.on('page', (p) => watch(p, errors));
@@ -9013,6 +9013,183 @@ const SHOT = BROWSER === 'chromium'; // screenshots come from the Chromium run o
         diffs.length === 0 && rowsAll.length === 4 && errs.length === 0, { rows: rowsAll, diffs: diffs.slice(0, 4), errors: errs.slice(0, 4) });
       void server;
     });
+
+    // C197 to C202: look B, the six one-look rules measured on the approved pages (docs/bourse/mock/{trip,item,profit,watch}.html; design rules
+    // C6, C7, T7, K9, C8, P3a). One in-page meter lists, per rule, every violation (element and measured value). It runs on each approved page,
+    // at 1440 and 360, default light and Azure Dragoon dark, and on a broken copy of trip.html per rule, which must fail that rule: a check that
+    // cannot fail is the failure this work exists to prevent. The six guards share one memoised run.
+    const PORT6 = PORT + 5, ROOT6 = 'http://127.0.0.1:' + PORT6 + '/';
+    const LOOKB_PAGES = ['trip', 'item', 'profit', 'watch'].map((n) => [n, ROOT6 + 'docs/bourse/mock/' + n + '.html', { ledger: '.bm-lanes', row: '.bm-lane', fig: '.bm-ans', lead: '.bm-mid', huge: '.bm-huge > b' }]);
+    // Each module move adds [name, url, map] for its moved screens (the same layout classes under the module's own names); they are measured like the mock pages.
+    const LOOKB_MOVED = [];
+    const LOOKB_CHOICES = [['default light', null, 'light'], ['azure-dragoon dark', { theme: 'dark', look: { shared: { theme: 'azure-dragoon' } } }, 'dark']];
+    const LOOKB_BROKEN = [
+      { rule: 'C6', width: 1440, css: '.ol-chap{background:var(--slab)!important;color:var(--on-slab)!important}.ol-chap h2{font-family:var(--f-disp)!important;text-transform:uppercase!important}' },
+      { rule: 'C7', width: 1440, css: '.bm-book .bm-lanes{gap:4px!important;border:0!important}.bm-book .bm-lane{border:2px solid var(--ink)!important}' },
+      { rule: 'C7', width: 1440, css: '.bm-book .bm-mid::before{background:none!important}' },
+      { rule: 'T7', width: 1440, css: '.bm-book .bm-ans,.bm-book .bm-ans .ol-fig{font:900 36px/1 var(--f-disp)!important}' },
+      { rule: 'K9', width: 1440, dom: () => { const s = document.querySelector('.bm-lane .ol-sb'); s.classList.remove('ol-r-back'); s.classList.add('ol-r-market'); } },
+      { rule: 'K9', width: 1440, css: '.ol-sb{--f:#ff00ff!important}' },
+      { rule: 'C8', width: 360, css: '.ol-slab .ol-sb{display:none!important}' },
+      { rule: 'C8', width: 1440, css: '.bm-huge>b{font-size:48px!important}' },
+      { rule: 'P3a', width: 360, css: '.ol-slab{margin-bottom:60px!important}' }
+    ];
+    const lookbMeter = (map) => {
+      const V = { C6: [], C7: [], T7: [], K9: [], C8: [], P3a: [] }, cs = (el, pseudo) => getComputedStyle(el, pseudo), px = (v) => parseFloat(v) || 0;
+      const vis = (el) => { const r = el.getBoundingClientRect(), c = cs(el); return r.width > 0 && r.height > 0 && c.visibility !== 'hidden' && c.display !== 'none'; };
+      const all = (sel, root) => [...(root || document).querySelectorAll(sel)].filter(vis);
+      const face = (el, pseudo) => String(cs(el, pseudo).fontFamily).split(',')[0].trim().replace(/["']/g, '');
+      const name = (el) => el.tagName.toLowerCase() + (el.className && el.className.baseVal === undefined ? '.' + String(el.className).trim().split(/\s+/).join('.') : '') + ' "' + (el.textContent || '').trim().slice(0, 24) + '"';
+      const alpha = (s) => { if (s === 'transparent') return 0; let m = /^rgba\([^)]*,\s*([\d.]+)\)$/.exec(s); if (m) return Number(m[1]); m = /\/\s*([\d.]+)(%?)\)\s*$/.exec(s); return m ? Number(m[1]) / (m[2] ? 100 : 1) : 1; };
+      const probe = (css) => { const p = document.createElement('span'); p.style.cssText = css; document.body.appendChild(p); const c = cs(p); const out = { color: c.color, bg: c.backgroundColor }; p.remove(); return out; };
+      const W = innerWidth, wide = W > 700, hdr = document.querySelector('.ol-hdr'), hb = hdr ? hdr.getBoundingClientRect().bottom : 0;
+      const sealColor = probe('color:var(--seal)').color;
+      // C6
+      const chaps = all('.ol-chap');
+      if (!chaps.length) V.C6.push('no .ol-chap on the page');
+      for (const c of chaps) {
+        const s = cs(c), h = c.getBoundingClientRect().height, closed = c.classList.contains('ol-closed'), min = wide ? (closed ? 48 : 64) : 44;
+        if (s.borderBottomStyle !== 'solid' || px(s.borderBottomWidth) < 2) V.C6.push(name(c) + ' rule under the head ' + s.borderBottomStyle + ' ' + s.borderBottomWidth);
+        if (alpha(s.backgroundColor) !== 0) V.C6.push(name(c) + ' has a fill ' + s.backgroundColor);
+        const n = c.querySelector('.ol-num');
+        if (!n) V.C6.push(name(c) + ' has no numeral');
+        else { const ns = cs(n); if (face(n) !== 'Fraunces' || ns.fontStyle !== 'italic' || ns.color !== sealColor) V.C6.push(name(c) + ' numeral ' + face(n) + ' ' + ns.fontStyle + ' ' + ns.color + ' (seal ' + sealColor + ')'); }
+        const h2 = c.querySelector('h2');
+        if (!h2) V.C6.push(name(c) + ' has no h2');
+        else { const hs = cs(h2); if (face(h2) !== 'Fraunces' || Number(hs.fontWeight) !== 600 || hs.textTransform !== 'none') V.C6.push(name(h2) + ' title ' + face(h2) + ' ' + hs.fontWeight + ' ' + hs.textTransform); }
+        if (h < min) V.C6.push(name(c) + ' is ' + Math.round(h) + ' px high, needs ' + min);
+      }
+      for (const h2 of all('h2', document.querySelector('main') || document.body)) if (!h2.closest('.ol-chap')) V.C6.push(name(h2) + ' is a section title outside an .ol-chap');
+      // C7
+      const rowsOf = (wrap) => all(map.row, wrap);
+      for (const wrap of all('.ol-chap-wrap')) {
+        const rows = rowsOf(wrap); if (!rows.length) continue;
+        const ledgers = new Set(rows.map((r) => r.closest(map.ledger)));
+        if (ledgers.size !== 1 || ledgers.has(null)) { V.C7.push('rows of ' + name(wrap.querySelector('h2') || wrap) + ' are not in one ledger (' + ledgers.size + ')'); continue; }
+        const L = [...ledgers][0], ls = cs(L);
+        if (px(ls.borderTopWidth) < 2 || ls.borderTopStyle !== 'solid') V.C7.push('ledger rule ' + ls.borderTopWidth + ' ' + ls.borderTopStyle);
+        rows.forEach((r, i) => {
+          const s = cs(r), prev = rows[i - 1];
+          if (px(s.borderLeftWidth) !== 0 || px(s.borderRightWidth) !== 0) V.C7.push(name(r) + ' has a side frame ' + s.borderLeftWidth + '/' + s.borderRightWidth);
+          if (!prev) { if (px(s.borderTopWidth) !== 0) V.C7.push(name(r) + ' first row has a top rule ' + s.borderTopWidth); }
+          else {
+            const gap = r.getBoundingClientRect().top - prev.getBoundingClientRect().bottom;
+            if (Math.abs(gap) > 1) V.C7.push(name(r) + ' does not touch the row above (gap ' + Math.round(gap * 10) / 10 + ')');
+            if (s.borderTopStyle !== 'dashed' || px(s.borderTopWidth) !== 1) V.C7.push(name(r) + ' separator ' + s.borderTopWidth + ' ' + s.borderTopStyle);
+          }
+          const fig = r.querySelector(map.fig);
+          if (wide && fig && /\d/.test(fig.textContent)) {
+            const lead = r.querySelector(map.lead); let ok = false, w = 0;
+            if (lead) { w = lead.getBoundingClientRect().width; ok = w >= 24 && (/radial-gradient/.test(cs(lead).backgroundImage) || /radial-gradient/.test(cs(lead, '::before').backgroundImage)); }
+            if (!ok) V.C7.push(name(r) + ' has no dotted leader (width ' + Math.round(w) + ')');
+          }
+        });
+      }
+      // T7 and K9 over every visible row
+      const rows = all(map.row), blocks = all('.ol-sb');
+      for (const r of rows) {
+        const fig = r.querySelector(map.fig); let f = null;
+        if (fig) f = fig.querySelector('.ol-fig') || (/\d/.test(fig.textContent) ? fig : null);
+        if (f) { const s = cs(f), z = px(s.fontSize); if (face(f) !== 'IBM Plex Mono' || Number(s.fontWeight) < 600 || z < 15 || z > 20) V.T7.push(name(f) + ' figure ' + face(f) + ' ' + s.fontWeight + ' ' + s.fontSize); }
+        for (const el of r.querySelectorAll('*')) {
+          if (el.closest('.ol-sb') || !vis(el)) continue;
+          { const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join('').trim(); if (own && face(el) === 'Big Shoulders Display' && (/\d/.test(own) || px(cs(el).fontSize) > 15)) V.T7.push(name(el) + ' is a display-face figure or a display word over 15 px inside a row (' + cs(el).fontSize + ')'); }
+        }
+      }
+      const ROLES = ['back', 'out', 'idle', 'bad', 'locked', 'seal', 'slab', 'gil'], KINDS = ['craft', 'gather', 'merchant', 'market', 'ready', 'short'];
+      const FILL = { back: '--back', out: '--out', idle: '--idle', bad: '--bad', locked: '--ink-2', seal: '--seal', slab: '--slab', gil: '--gil-m' };
+      for (const el of [...blocks, ...rows]) {
+        const have = ROLES.filter((x) => el.classList.contains('ol-r-' + x)), kinds = KINDS.filter((x) => el.classList.contains('ol-r-' + x));
+        if (have.length !== 1) V.K9.push(name(el) + ' has ' + have.length + ' state roles (' + have.join(',') + ')');
+        if (kinds.length) V.K9.push(name(el) + ' carries the kind role ' + kinds.join(','));
+      }
+      for (const b of blocks) {
+        const locked = b.classList.contains('ol-r-locked'), hatch = b.classList.contains('ol-hatch');
+        if (locked !== hatch) V.K9.push(name(b) + ' hatched ' + hatch + ' but locked ' + locked);
+        const role = ROLES.find((x) => b.classList.contains('ol-r-' + x)); if (!role) continue;
+        const t = document.createElement('i'); t.style.cssText = 'display:block;width:1px;height:1px;background-color:var(--f)'; b.appendChild(t);
+        const got = cs(t).backgroundColor; t.remove();
+        const want = probe('background-color:var(' + FILL[role] + ')').bg;
+        if (got !== want) V.K9.push(name(b) + ' fill ' + got + ' is not ' + FILL[role] + ' ' + want);
+      }
+      // C8
+      const slab = document.querySelector('.ol-slab');
+      if (!slab) V.C8.push('no .ol-slab');
+      else {
+        const gap = slab.getBoundingClientRect().top - hb;
+        if (gap < 0 || gap > 24) V.C8.push('answer band is ' + Math.round(gap) + ' px under the header');
+        const hg = document.querySelector(map.huge);
+        if (!hg) V.C8.push('no huge figure');
+        else { const s = cs(hg); if (face(hg) !== 'Big Shoulders Display' || Number(s.fontWeight) !== 900 || px(s.fontSize) < (wide ? 96 : 52)) V.C8.push('huge figure ' + face(hg) + ' ' + s.fontWeight + ' ' + s.fontSize); }
+        const sbs = all('.ol-slab .ol-sb');
+        if (!sbs.length) V.C8.push('no visible state block in the answer band');
+        else if (!sbs.some((b) => b.getBoundingClientRect().height >= 44)) V.C8.push('no state block in the band is 44 px high (best ' + Math.round(Math.max(...sbs.map((b) => b.getBoundingClientRect().height))) + ')');
+        // P3a
+        if (!wide && sbs.length) {
+          if (rows.length) {
+            const first = rows[0].getBoundingClientRect().top - hb;
+            if (first > 273) V.P3a.push('first row starts ' + Math.round(first) + ' px under the header');
+          } else V.P3a.push('no row');
+          const fixedTops = all('*').filter((e) => cs(e).position === 'fixed').map((e) => e.getBoundingClientRect().top).filter((t) => t > innerHeight / 2);
+          const limit = fixedTops.length ? Math.min(...fixedTops) : innerHeight;
+          const inView = rows.filter((r) => { const b = r.getBoundingClientRect(); return b.top >= hb - 0.5 && b.bottom <= limit + 0.5; }).length;
+          if (inView < 3) V.P3a.push('only ' + inView + ' rows wholly in view');
+        }
+      }
+      return V;
+    };
+    let lookbRun = null;
+    const lookbMeasure = () => lookbRun || (lookbRun = (async () => {
+      const root = path.join(CC, '..', '..');
+      const TYPES6 = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.woff2': 'font/woff2', '.woff': 'font/woff', '.png': 'image/png', '.json': 'application/json' };
+      const srv = http.createServer((req, res) => {
+        const f = path.normalize(path.join(root, decodeURIComponent(new URL(req.url, 'http://x').pathname)));
+        if (!f.startsWith(root) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { res.writeHead(404); res.end('not found'); return; }
+        res.writeHead(200, { 'content-type': TYPES6[path.extname(f)] || 'application/octet-stream' }); res.end(fs.readFileSync(f));
+      });
+      await new Promise((ok, no) => { srv.once('error', no); srv.listen(PORT6, '127.0.0.1', ok); });
+      openServers.push(srv);
+      const open = async (url, w, h, stored, scheme) => {
+        const { errors, page } = await r3Page({ viewport: { width: w, height: h }, colorScheme: scheme });
+        if (stored) await page.context().addInitScript((v) => { try { localStorage.setItem('eveniunt-tracker-ui', JSON.stringify(v)); } catch (e) { /* none */ } }, stored);
+        await page.goto(url);
+        await page.waitForSelector('.ol-hdr', { timeout: 30000 });
+        await page.evaluate(() => document.fonts.ready);
+        return { errors, page };
+      };
+      const real = [], broken = [], errs = [];
+      for (const [pname, url, map] of [...LOOKB_PAGES, ...LOOKB_MOVED]) for (const [cname, stored, scheme] of LOOKB_CHOICES) for (const [w, h] of [[1440, 1000], [360, 800]]) {
+        const { errors, page } = await open(url, w, h, stored, scheme);
+        await page.waitForTimeout(100);
+        real.push({ page: pname, choice: cname, width: w, V: await page.evaluate(lookbMeter, map) });
+        errs.push(...errors.filter((e) => !/Failed to load resource|favicon|net::ERR/.test(e)));
+        await page.context().close();
+      }
+      const [, url0, map0] = LOOKB_PAGES[0];
+      for (const b of LOOKB_BROKEN) {
+        const { errors, page } = await open(url0, b.width, b.width > 700 ? 1000 : 800, null, 'light');
+        if (b.css) await page.addStyleTag({ content: b.css });
+        if (b.dom) await page.evaluate(b.dom);
+        await page.waitForTimeout(100);
+        const V = await page.evaluate(lookbMeter, map0);
+        broken.push({ rule: b.rule, width: b.width, how: b.css || String(b.dom).slice(0, 60), count: V[b.rule].length, first: V[b.rule].slice(0, 2) });
+        errs.push(...errors.filter((e) => !/Failed to load resource|favicon|net::ERR/.test(e)));
+        await page.context().close();
+      }
+      return { real, broken, errs };
+    })());
+    const lookbGuard = (id, rule, what) => guard(id, async () => {
+      const { real, broken, errs } = await lookbMeasure();
+      const bad = real.filter((r) => r.V[rule].length), mine = broken.filter((b) => b.rule === rule);
+      record(id, what, real.length === (LOOKB_PAGES.length + LOOKB_MOVED.length) * 4 && bad.length === 0 && mine.length > 0 && mine.every((b) => b.count >= 1) && errs.length === 0,
+        { measured: real.map((r) => r.page + ' ' + r.width + ' ' + r.choice.split(' ')[0] + ': ' + r.V[rule].length), violations: bad.slice(0, 3).map((r) => ({ page: r.page, width: r.width, choice: r.choice, first: r.V[rule].slice(0, 3) })), brokenCopies: mine, errors: errs.slice(0, 4) });
+    });
+    await lookbGuard('C197', 'C6', 'Look B, C6: every section title on the approved Bourse pages is a book chapter (ruled 2 px under, no fill, Fraunces italic numeral in the accent, Fraunces 600 title never uppercase, 64 px high from 701 px and 44 px on a phone); a chapter with a fill and an uppercase display title fails');
+    await lookbGuard('C198', 'C7', 'Look B, C7: each section is one ledger (2 px solid outer rule, rows touching, 1 px dashed separators, no row frame) and from 701 px every row with a figure has a dotted leader at least 24 px wide; boxed separate lanes and a missing leader fail');
+    await lookbGuard('C199', 'T7', 'Look B, T7: a row\'s figure is IBM Plex Mono 600 at 15 to 20 px and inside a row, outside its state block, the display face holds no figure and no word over 15 px (a small fixed tag such as HQ may use it); a big display figure in a row fails');
+    await lookbGuard('C200', 'K9', 'Look B, K9: every state block and row has exactly one shared state role (no kind role), hatched is locked, and a block\'s fill is its role\'s shared token; a kind role and a module\'s own fill fail');
+    await lookbGuard('C201', 'C8', 'Look B, C8: the answer band sits within 24 px under the header, its huge figure is Big Shoulders Display 900 at 96 px from 701 px and 52 px on a phone, and its state blocks (44 px high) are shown on the phone too; hidden blocks and a 48 px figure fail');
+    await lookbGuard('C202', 'P3a', 'Look B, P3a: on a 360 x 800 phone with the answer band, the first row starts at most 273 px under the header and 3 rows are wholly in view above the first fixed bar; a taller band fails');
 
   } finally {
     await browser.close(); server.close();

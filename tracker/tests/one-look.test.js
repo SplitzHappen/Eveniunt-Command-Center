@@ -181,3 +181,46 @@ test('no header holds two controls with the same visible name or accessible name
     assert.equal(new Set(texts).size, texts.length, name + ': duplicate visible name in ' + texts.join(' | '));
   }
 });
+
+// Look B, the rules C6, C7, C8, T7, K9 and P3a (docs/design-rules.md) each name a browser check (C197 to C202) in tracker/command-center/check.js,
+// which has a guard for it and a broken copy that must fail it; and one-look.css keeps the limits those checks measure.
+test('design rules C6, C7, T7, K9, C8 and P3a each name their check, and check.js has its guard and a broken copy', () => {
+  const rules = read('docs', 'design-rules.md'), chk = read('tracker', 'command-center', 'check.js');
+  const MAP = { C6: 'C197', C7: 'C198', T7: 'C199', K9: 'C200', C8: 'C201', P3a: 'C202' };
+  for (const [rule, id] of Object.entries(MAP)) {
+    const row = rules.split('\n').find((l) => l.startsWith('| ' + rule + ' |'));
+    assert.ok(row, 'design-rules.md has a row for ' + rule);
+    assert.ok(new RegExp('\\b' + id + '\\b').test(row), 'row ' + rule + ' names its check ' + id);
+    assert.ok(chk.includes("guard('" + id + "'") || chk.includes("lookbGuard('" + id + "', '" + rule + "'"), 'check.js has the guard ' + id);
+    assert.ok(chk.includes("{ rule: '" + rule + "',"), 'check.js has a LOOKB_BROKEN entry for ' + rule);
+  }
+  assert.ok(/const LOOKB_BROKEN = \[/.test(chk) && /const LOOKB_MOVED = \[/.test(chk));
+});
+
+function cssLimits(src) {
+  const rules = rulesOf(src), bad = [], one = (sel, media) => rules.filter((r) => r.sel.split(',').map((s) => s.trim()).includes(sel) && (media === undefined || (media ? r.media : !r.media)));
+  const decl = (r, prop) => { const m = new RegExp('(?:^|[;\\s])' + prop + '\\s*:\\s*([^;]+)').exec(r.body); return m ? m[1].trim() : ''; };
+  const chap = one('.ol-chap', '');
+  if (!chap.length || !/var\(--line-2\)/.test(decl(chap[0], 'border-bottom'))) bad.push('.ol-chap border-bottom is not var(--line-2)');
+  const l2 = /--line-2\s*:\s*([^;]+)/.exec(src);
+  if (!l2 || !/^2px solid\b/.test(l2[1].trim())) bad.push('--line-2 is not 2px solid');
+  const num = one('.ol-chap .ol-num', '');
+  if (!num.length || !/^italic\b/.test(decl(num[0], 'font')) || !/var\(--f-serif\)/.test(decl(num[0], 'font')) || decl(num[0], 'color') !== 'var(--seal)') bad.push('.ol-chap .ol-num is not italic Fraunces in the seal colour');
+  const h2 = one('.ol-chap h2', '');
+  if (!h2.length || !/^600\b/.test(decl(h2[0], 'font')) || !/var\(--f-serif\)/.test(decl(h2[0], 'font'))) bad.push('.ol-chap h2 is not Fraunces 600');
+  if (!/--leader\s*:[^;]*radial-gradient/.test(src)) bad.push('--leader is not a radial-gradient');
+  const nu = one('.ol-numeral', '');
+  if (!nu.length || !/\b96px\b/.test(decl(nu[0], 'font'))) bad.push('.ol-numeral is not 96px outside media');
+  const ph = rules.filter((r) => /max-width:\s*700px/.test(r.media));
+  const nup = ph.filter((r) => r.sel.split(',').map((s) => s.trim()).includes('.ol-numeral'));
+  if (!nup.length || !nup.some((r) => parseFloat(decl(r, 'font-size')) >= 52)) bad.push('.ol-numeral is under 52px on a phone');
+  for (const r of ph) for (const s of r.sel.split(',').map((x) => x.trim())) if (/(^|\s)\.ol-(sb|sl-ans)\b/.test(s) && /display\s*:\s*none/.test(r.body)) bad.push('a phone rule hides ' + s);
+  return bad;
+}
+test('one-look.css keeps the limits of C6, C7 and C8, and the limit check can fail', () => {
+  assert.deepEqual(cssLimits(SRC), []);
+  const m1 = SRC.replace(/(\.ol-numeral \{ font: 900 )96px/, '$148px');
+  assert.notEqual(m1, SRC); assert.ok(cssLimits(m1).length > 0, 'a 48px numeral is caught');
+  const m2 = SRC.replace('font: italic 400 48px/1 var(--f-serif); color: var(--seal)', 'font: normal 400 48px/1 var(--f-serif); color: var(--seal)');
+  assert.notEqual(m2, SRC); assert.ok(cssLimits(m2).length > 0, 'a numeral that is not italic is caught');
+});
