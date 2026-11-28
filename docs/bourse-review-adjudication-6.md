@@ -134,3 +134,19 @@ every known device has passed, with the tracked data never trimmed. The revision
 `ASG-20261127-bourse-sync-design-chatgpt-004`. The outside review afterwards goes to ChatGPT in a fresh chat and to
 Mistral.
 
+
+## Version 4 of the design (2026-11-28)
+
+Source: assignment `ASG-20261127-bourse-sync-design-chatgpt-004` (final head `601be1a`, results commit `29d81a5`,
+package `04d8dba`), byte-identical to what was dispatched. The complete revision (391 lines, 104,238 bytes) replaces
+`docs/bourse-sync-design.md`, and its section 5 has a row for each of F-1 to F-10.
+
+It adds a "Change-log budget":
+- a 1 MiB cap on the log, with a 16 KiB registry of up to 64 devices' acknowledged positions;
+- dropping first what every known device has passed, then the oldest whole points if the cap requires it;
+- a labelled "compare and ask" review for a device behind the floor, with "Deleted elsewhere" where proof remains and
+  "may have been deleted elsewhere" where it was trimmed;
+- tracked data is never trimmed.
+
+The writer's estimate is about 42 days of retained log at 100 edits a day (unmeasured). Stock provenance is kept
+through a cut (F-1). No new owner choice. A fresh in-house check follows, then the outside review the owner chose.
