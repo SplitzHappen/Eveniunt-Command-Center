@@ -207,7 +207,11 @@ Nothing.
    Mistral, with H-1 to H-7 attached), then one final revision; filed as
    `ASG-20261128-bourse-sync-design-review-chatgpt-001` and `-mistral-001`; returned 2026-11-28: ChatGPT FAIL (approach
    sound; H-1 to H-7 confirmed; 9 new, 5 major), Mistral PASS (2 new, minor) (`docs/bourse-review-adjudication-7.md`).
-   Final revision filed as `ASG-20261128-bourse-sync-design-chatgpt-006`.**
+   Final revision filed as `ASG-20261128-bourse-sync-design-chatgpt-006`; version 6 delivered and fix-checked 2026-11-28
+   and merged into the plan (`docs/bourse-spec.md` section 20). **The Bourse plan is complete on paper.** Next, per the
+   owner's order: the one-look rules pull request, the module moves, then the Bourse build (erase fix first), which
+   now includes rebuilding every module's save and sync. Pull request 10 awaits the owner's `ship` as a documents-only
+   change.**
    Earlier history of this item follows.
    **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,

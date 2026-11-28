@@ -26,6 +26,8 @@ price site, the size of a 10-listing reply, and OneDrive's "create only if missi
 
 ## Binding ledger (later rounds replace earlier ones)
 
+**Save and sync (owner, rounds thirteen to sixteen, 2026-11-28):** `docs/bourse-sync-design.md` version 6 is binding for the save, merge, cloud copy, older copies, the guard, imports, stock and the one-time read of the old cloud file. Where this file disagrees on those matters, that file wins (section 20).
+
 | Decision in force | Bound by | Where here |
 | --- | --- | --- |
 | Name "Bourse"; it replaces the Tracker's Market Board (a link, the shopping list copied once) | answers 1, 2 | D9, D10 |
@@ -161,8 +163,8 @@ released by itself**; the rest is built into the one look and released **no soon
 
 **Watch, save, look**
 - **D18 Alerts run on every page of the app** (round two). D30, D40, D57, section 7.
-- **D19 The save section has a checker in `save.js`**, no arrays, every key safe. Section 8.
-- **D20 A unit removed on one side and changed on the other stays until the player answers** (rule BY0, as Lists'
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D19 The save section has a checker in `save.js`**, no arrays, every key safe. Section 8.
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D20 A unit removed on one side and changed on the other stays until the player answers** (rule BY0, as Lists'
   LY0); between tabs the same case is refused (BI1). Older copies are covered by D32.
 - **D21 The module adds layout only** (`bourse.css`, every class `bm-`, no colour value, no shared token). The gil role
   moves into `one-look.css` as `ol-r-gil`, for gil bars only; the module's sheet never names `--gil-m`.
@@ -202,7 +204,7 @@ released by itself**; the rest is built into the one look and released **no soon
   never the market purple; gold is for gil bars only. C206 measures look v3's limits.
 
 **Round-one outside review (2026-11-25)**
-- **D32 Older copies cannot merge a save that holds the new rules: the save's version becomes 2** (decided, round
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D32 Older copies cannot merge a save that holds the new rules: the save's version becomes 2** (decided, round
   six). Every older page refuses to write over a newer save **except one: the older Tracker's "Erase everything"**
   (D60), which is why the version rises only under D60's rule and with D61's guard. The backup file's own version
   rises with it (`codec.js`: `BACKUP_V` becomes 2). **The transfer code has no version but its prefix (`codec.js`
@@ -210,11 +212,11 @@ released by itself**; the rest is built into the one look and released **no soon
   app does not know and refuses with its existing sentence ("made by a newer version of the app"); a code written
   as `EVT2-` by new code would be loaded by an older app with its Bourse section. So an older copy refuses both, and new
   code reads the old ones. Section 8 gives the contract and what each older page really shows.
-- **D33 A purchase is its own record and says what it credited.** `bought` is keyed by a purchase id made at the tick.
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D33 A purchase is its own record and says what it credited.** `bought` is keyed by a purchase id made at the tick.
   A fall in need is never read as a purchase; the page never clears a mark by itself. The mark and the stock credit
   are one write (D34) with a receipt, a bounded retry that cannot credit twice, and a conditional Undo. Section 6.7;
   D46, D47 and D62 complete it.
-- **D34 One write for two sections: `CC.writeSections(parts, opts)`** in `save.js` (new). `parts` is a list of
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D34 One write for two sections: `CC.writeSections(parts, opts)`** in `save.js` (new). `parts` is a list of
   `{ name, section, known, own }`, exactly `CC.writeSection`'s arguments; all parts are checked, merged and stored in
   one `CC.transact`, in order; any refusal or error cancels all of them. A part may give `edit(storedSection)`
   instead of `section` (it runs inside the transaction on the stored section); `own.device` may be a function of the
@@ -280,7 +282,7 @@ released by itself**; the rest is built into the one look and released **no soon
   nothing", "refuses" or "does not contain" assertion has a positive control in the same test and fixture.
 
 **Round-two outside review (2026-11-26)**
-- **D46 A credit survives a merge: rule BY2, new code only.** It applies only to a Lists count for which a purchase
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D46 A credit survives a merge: rule BY2, new code only.** It applies only to a Lists count for which a purchase
   record holds, or an undo mark shows there once was, a credit: so only to players who turned on "Also add to I have
   in Lists". **A count = the player's own part + the credits of the purchase records that exist, and no merge ever
   stores a count that breaks this.** Where the two sides cannot be combined (the sum would pass 999,999 or fall under
@@ -289,12 +291,12 @@ released by itself**; the rest is built into the one look and released **no soon
   syncs** (section 8). The setting is built only if item B26 passes; otherwise it stays off and hidden, proven by
   check C216. [Clamping the sum: the next merge reads the clamp as the player's own stock and loses units. Keeping
   "this device's count" alone: a count without its records breaks the rule at once.]
-- **D47 Purchase records are never edited, a credited one leaves only by Undo, and an Undo leaves a mark.** "Still
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D47 Purchase records are never edited, a credited one leaves only by Undo, and an Undo leaves a mark.** "Still
   count them" adds a check record; "New trip" starts a trip with **its own random id** and deletes no credited
   record; a tick is bound to the need and to the wanted items behind it; Undo of a credited purchase writes
   `undone[<purchase id>]`; a receipt on the device and a bounded retry stop any second credit. Section 6.7.
   [A shared trip number: two devices that each start a new trip get the same number and share marks.]
-- **D48 The cloud copy: every write names the copy it replaces, and a copy that is not known to descend from the one
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D48 The cloud copy: every write names the copy it replaces, and a copy that is not known to descend from the one
   this device last synced is merged without removing anything.** Create only when none exists, then read it back;
   replace only with the `eTag` read; the owner's overwrite only of the very copy the question showed; lineage carried
   inside the copy (D63). `cloud.js`, section 8, item B27.
@@ -355,7 +357,7 @@ released by itself**; the rest is built into the one look and released **no soon
   **after** it. Mixed-version tests name which one they load. B28 pins `<base>` and `<old0>`; B29 pins `<old>`.
 
 **Round-three outside review (2026-11-26)**
-- **D60 "Erase everything" first, and a waiting time before the version rises.** Read in the code: `ET.clearState`
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D60 "Erase everything" first, and a waiting time before the version rises.** Read in the code: `ET.clearState`
   (`storage.js` lines 292 to 305) catches the error a newer or unreadable save raises, starts from an empty save and
   writes it back, so an older Tracker's "Erase everything" would wipe every module of a version 2 save, while its
   question promises the other modules stay. **B29, the first step, changes the shipped app: the erase refuses a save
@@ -364,7 +366,7 @@ released by itself**; the rest is built into the one look and released **no soon
   `docs/STATE.md` by B29 and checked by B12). A copy older than B29 can still sit in a browser's cache after that
   (a device long offline): D61 is for it. [Raising the version at once: every cached Tracker would hold the wiping
   erase. Waiting for "all devices updated": the app cannot know that.]
-- **D61 A guard copy, and an offer to restore.** New code keeps the last version 2 save a second time, under its own
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D61 A guard copy, and an offer to restore.** New code keeps the last version 2 save a second time, under its own
   key in the same storage (`main-guard`, with its stamp), written in the same transaction as every save. At every
   read and before every write, new code compares: **when a guard exists and the save is missing, blank, unreadable or
   of a lower version than the guard, an older copy replaced it.** New code then writes nothing over either and every
@@ -375,14 +377,14 @@ released by itself**; the rest is built into the one look and released **no soon
   showed (D65). There is no version 2 save without its guard: where the two cannot be stored together the save stays
   version 1 (D64); the earlier "no guard (known limit)" is withdrawn.** [No guard: the first sign of
   the erase would be an empty app. Restoring without asking: the player may have meant to erase.]
-- **D62 Lists' counts and the purchase records move as one unit, everywhere.** In every merge (BY2). In a backup or
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D62 Lists' counts and the purchase records move as one unit, everywhere.** In every merge (BY2). In a backup or
   transfer code loaded on this device, which **replaces** sections and does not merge them (`adoptLoaded`, `ui.js`
   lines 1016 to 1022): the credited purchase records and undo marks come from the same place as the Lists section
   (from the file when the file carries Lists, with none when the file has no Bourse section; from this device when
   it does not), and the question says so. In Settings' rebuilding of the sync base after a clash (`settings.js`
   lines 316 to 334): a count that is put back as it was at the start takes every purchase record and undo mark of
   that owner and item back with it. Rule LI6 guards a count also after its last credit is gone. Section 8.
-- **D63 A cloud copy says where it comes from.** Each uploaded copy carries, beside its data, its own random id, the
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D63 A cloud copy says where it comes from.** Each uploaded copy carries, beside its data, its own random id, the
   ids of the copies it descends from (the last 200), **the id of the first copy of this file (`root`) and the number
   of uploads since (`n`)**. `sync.drive` records the file's item id, the `eTag`, the root, the count and the
   copy id last synced, together. A copy read is **known** when the file's item id is the recorded one and either its
@@ -397,7 +399,7 @@ released by itself**; the rest is built into the one look and released **no soon
   every sync uploads, so 200 uploads are a few days of ordinary use. Section 8.
 
 **Round-four outside review (2026-11-26).** Where a sentence elsewhere in this file says otherwise, D64 to D70 rule.
-- **D64 No version 2 save without a guard stored with it.** Version 2 is written only where the save, its stamp, the
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D64 No version 2 save without a guard stored with it.** Version 2 is written only where the save, its stamp, the
   guard and the guard's stamp land in **one** storage transaction, which is IndexedDB.
   (a) **Fallback storage (device storage without IndexedDB) and memory:** new code never migrates and never writes
   version 2 there. The save stays version 1 and every existing module works as today. The Bourse cannot save there,
@@ -413,7 +415,7 @@ released by itself**; the rest is built into the one look and released **no soon
   So "new code always writes 2" now reads: version 2 with its guard, or version 1 where that is impossible, never
   version 2 alone. [A guard written "when space allows": a save that fits once but not twice would migrate, and an
   older page's erase would then be final.]
-- **D65 Restore and "keep" act only on the two copies the question showed.** The offer carries the stamps of the save
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D65 Restore and "keep" act only on the two copies the question showed.** The offer carries the stamps of the save
   and of the guard it was drawn from. Either action is one transaction that first reads both stamps again: **if one
   differs, nothing is written and the offer opens again with what is there now** (another tab already answered, or
   something changed). Restore: the replaced data is stored under its own key, then the guard's data becomes the save,
@@ -423,13 +425,13 @@ released by itself**; the rest is built into the one look and released **no soon
   fails, both copies stay untouched and the offer opens again. **While the offer is open, cloud sync does not run on
   that device**, from any page: no read is merged and nothing is uploaded; the sync line says "Cloud sync waits:
   answer the question about your saved data first." After Restore the sync base is dropped unless D67 revalidates it.
-- **D66 An own item belongs to one trip, in its key.** `extra` is keyed `<trip id>.<item id>.<nq|hq>`, so the same
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D66 An own item belongs to one trip, in its key.** `extra` is keyed `<trip id>.<item id>.<nq|hq>`, so the same
   item added on two trips started on two devices is two units, each with its own amount; choosing which trip is
   current (6.7) never mixes them. Upgrade, the same on every device: an entry found under the two-part key
   `<item id>.<nq|hq>` is read as `<its t>.<item id>.<nq|hq>`, and with no `t` as `legacy00.<item id>.<nq|hq>`; when
   both keys exist the three-part one is kept and the larger amount taken. (No shipped save holds the two-part form;
   the rule exists for saves written by builds made during this work.)
-- **D67 The version 2 cloud copy has its own file, and a base only with its identity.**
+- **[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **D67 The version 2 cloud copy has its own file, and a base only with its identity.**
   (1) **A new file name.** New code keeps its cloud copy under a new name beside the old one (the old name with
   `-v2` before its ending; B28 reports the old name from `cloud.js`). Older apps go on reading and writing the old
   file and cannot reach the new one, so their two unconditional uploads (`cloud.js` lines 193, 228) can no longer
@@ -473,7 +475,7 @@ released by itself**; the rest is built into the one look and released **no soon
   asking price for every one of its items; if it does not, every `slim` figure reads "cheapest seen" [verify].
   **A clean, ordered slice is still not enough (D77):** it shows the lowest of the rows returned, not that the site
   chose the lowest rows before cutting. The figure is "cheapest listing" only under D77; otherwise "cheapest seen".
-- **D70 A held pair keeps both alternatives, in the save's shared part.** (Replaces `device.bourse.held`.)
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D70 A held pair keeps both alternatives, in the save's shared part.** (Replaces `device.bourse.held`.)
   (1) **Where.** The Bourse section has a group `held`, one entry per `<owner>.<item>`. **Its form is D71's** (round
   five): no time in it, every differing pair in it, each named by its contents. The round-four form `{ why, at, x,
   y }` is withdrawn; where the points below say `x` and `y`, read "the alternatives". In round four's words they are
@@ -515,7 +517,7 @@ released by itself**; the rest is built into the one look and released **no soon
   checks it (D75).
 
 **Round-five outside review (2026-11-26).** Where a sentence elsewhere in this file says otherwise, D71 to D79 rule.
-- **D71 A held question is identified by what it holds, shows every pair, and is answered by name.**
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D71 A held question is identified by what it holds, shows every pair, and is answered by name.**
   (1) **Form.** An alternative is one whole pair, `{ have, bought, undone }`, written in one fixed way (keys sorted,
   no time). Its name `h` is a fixed hash of that text, 24 characters of `a-z0-9`; two alternatives are the same only
   when their texts are equal, never on the hash alone. An open question is `held["<owner>.<item>"] = { q,
@@ -560,7 +562,7 @@ released by itself**; the rest is built into the one look and released **no soon
   question by (2). The answer entry stays stored (it is small) until a new question for that pair replaces it.
   (6) Named tests, item B26: **"independent discovery"**, **"a late answer to a superseded question"**,
   **"conflicting answers with edits after one"**, **"a third device's purchase"** (round-five additions, section 10).
-- **D72 A hold reaches the cloud by a publication that chooses nothing, or it says it is only here.** When a merge
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D72 A hold reaches the cloud by a publication that chooses nothing, or it says it is only here.** When a merge
   makes or widens an open question, the device uploads at once, with the `eTag` of the copy just read, a copy made
   of: the cloud copy as read; everything the merge settled without asking; and the `held` entry. For every entry
   that is asked, and for the held pair's live count and records, **the cloud's own value is left as it is**, and this
@@ -575,7 +577,7 @@ released by itself**; the rest is built into the one look and released **no soon
   device so far. Sync to store it with your cloud copy." Until one confirmed publication, the sync line never reads
   "Synced" alone ("Synced, except one open question saved only here") and the backed-up time is not moved.
   [Uploading nothing after a decline: the only copy of both alternatives sat on one device.]
-- **D73 Entries that fail the check are set aside whole, never offered, never dropped.** A purchase record, an undo
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D73 Entries that fail the check are set aside whole, never offered, never dropped.** A purchase record, an undo
   mark or a held alternative that the checker would drop or cut (a missing or impossible field, a credit above its
   units, a name that does not match its text) is moved into `bad: { "<hash>": { from, key, o, i, raw } }`, a group
   of the Bourse section. **`raw` is the entry written out as one JSON text, at most 20,000 characters (a longer one
@@ -591,14 +593,14 @@ released by itself**; the rest is built into the one look and released **no soon
   "Discard the unreadable entry" (asked, after the download is offered). **One purchase id with two different
   contents** on the two sides, also when owner, item and quality agree, is a mismatch: both whole pairs become
   alternatives; nothing is merged from them.
-- **D74 The build without the setting never merges a count apart from its records.** With `BOURSE.CREDIT` false
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D74 The build without the setting never merges a count apart from its records.** With `BOURSE.CREDIT` false
   (B26 failed, or the off build of C216), a pair that has a credited record, an undo mark, a `held` or a `bad` entry
   on either side is **one opaque unit**: equal on both sides, nothing happens; different, this device's whole pair
   stays exactly as it is, the other side's is not taken in part, the sync dialog says "Entries made with a setting
   this version does not have differ between your devices. They stay as they are on each device.", and the upload
   leaves the cloud's own values for that pair (as D72 does). The generic rule never touches such a count or record
   by itself. This grouping is the one part of B26 that stays in the code when B26 escalates.
-- **D75 Every replacement of the save changes the epoch, and every write checks it.** Restore, "keep", a loaded
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D75 Every replacement of the save changes the epoch, and every write checks it.** Restore, "keep", a loaded
   backup or code, and "go back" each store a new random `device.epoch` in the same write. Every write of new code
   carries the epoch its page last read and is refused when the stored one differs ("The saved data was replaced.
   Reload the page."): section writes, the Tracker's own save, Settings' save of characters, and the last local step
@@ -607,7 +609,7 @@ released by itself**; the rest is built into the one look and released **no soon
   epoch nothing is uploaded) and again inside the local write that follows** (with a changed epoch nothing is
   applied and the base is not moved). A save that never had an epoch gets one at the first of those four replacements, so "none on
   both sides" cannot follow a replacement.
-- **D76 The move to the version 2 cloud copy (owner, twelfth round; rewritten).** There is no shared record of the
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D76 The move to the version 2 cloud copy (owner, twelfth round; rewritten).** There is no shared record of the
   old file in the version 2 copy, nothing is taken from the old file a second time, and no device's record of the
   old file is used against the version 2 copy. Three cases, and no other:
   (1) **The first device to update** is a device running new code that has no record of the version 2 file and
@@ -640,7 +642,7 @@ released by itself**; the rest is built into the one look and released **no soon
   limit are the lowest-priced ones; only then is `SLIM_ORDER_VERIFIED` set true, by B20, and a clean ordered slice
   (D69) counts. **B20 checks this and assumes nothing: one sorted reply is not a contract.** With neither, every
   figure from a cut slice reads "cheapest seen" and its craft "partial". The constant starts false. Not verified.
-- **D78 A newer-format backup or code is taken in only by a guarded version 2 write.** Loading a version 2 backup
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D78 A newer-format backup or code is taken in only by a guarded version 2 write.** Loading a version 2 backup
   file or transfer code first makes the guarded write of D64 with the loaded data; only when that succeeded does the
   page take the data over. Where it cannot (no IndexedDB, no room): **nothing is replaced, on screen or in storage;
   the local save and the file stay as they were**; "This backup is in the newer format, which this browser's storage
@@ -648,7 +650,7 @@ released by itself**; the rest is built into the one look and released **no soon
   backup or code loads, and a backup is saved, on such a browser exactly as today. **Writing version 1 from new code**
   (D64 (b)) is checked inside the write itself each time: the stored save must still be version 1 (another tab may
   have moved it; then nothing is written and the page reloads) and what is written must hold no Bourse section.
-- **D79 The first write that needs a trip makes it, in that same write.** "Add to trip", the one-time copy and the
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D79 The first write that needs a trip makes it, in that same write.** "Add to trip", the one-time copy and the
   first tick each run as an `edit` on the stored section (D34): when it holds no `prefs.trip` they set a new random
   id and use it for their keys in the same transaction; when it holds one they use that. Two tabs at once therefore
   share one id; two devices get two ids and the two-trips question of 6.7. Entries under `legacy00` (D66) are moved
@@ -659,7 +661,7 @@ released by itself**; the rest is built into the one look and released **no soon
 **In-house red team before round six (2026-11-26).** Where a sentence elsewhere in this file says otherwise, D80 to
 D83 rule. The choice for the red team's first finding is D80: **a new, careful merge for the cases without a base,
 and fewer such cases** (reasons at its end).
-- **D80 Without a base nothing one-sided is taken or dropped unasked: the careful merge.**
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D80 Without a base nothing one-sided is taken or dropped unasked: the careful merge.**
   (1) **The fault.** Today's merge, given no base, keeps an entry found on one side only and asks nothing (`merge.js`
   lines 87 and 88); only entries on both sides with different values are asked. An entry removed on one device is
   then "found on the other side only", comes back, and is uploaded to every device. So "merged with no base:
@@ -768,7 +770,7 @@ and fewer such cases** (reasons at its end).
   well: with the careful merge alone, a phone unused for four days would be asked about every entry.
   (6) Named tests, item B27: **"removals do not come back"** and **"two hundred and one uploads"** (the red-team
   additions, section 10).
-- **D81 In a same-device merge, "this device" is the stored save.** When a page's save meets a stored save that
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D81 In a same-device merge, "this device" is the stored save.** When a page's save meets a stored save that
   another page changed (`ET.saveMerge`, `storage.js` line 111; the section merge in `CC.writeSection`), the page's
   own copy is the stale side. **Every rule of this file that says "this device's pair stays" (BY2 step 4, D70 (3)
   and (4), D74) keeps the stored pair there, never the page's copy**; only in a merge with a copy from elsewhere
@@ -778,14 +780,14 @@ and fewer such cases** (reasons at its end).
   `storage.js` lines 235 to 239; shared writes are announced on `eveniunt-command-center`, `save.js` lines 677 to
   683; so a Tracker page can hold another module's section from before a Bourse write, and must never be the side
   that is kept.)
-- **D82 A missing count is 0, and BY2 decides before LY0.** Lists stores no entry for a count of 0 (`lists/store.js`
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D82 A missing count is 0, and BY2 decides before LY0.** Lists stores no entry for a count of 0 (`lists/store.js`
   line 301 deletes it). For BY2, LI6, LI7, the alternatives of D71 and the checker, **a missing count is the count 0
   in every quality**; a credited purchase beside no count is an ordinary pair (own part = minus its credits), not a
   malformed one and not a question. BY2 handles every pair it applies to **before** the Lists rule for "removed on
   one side, changed on the other" (LY0, `merge.js` lines 226 to 238) and takes that entry out of LY0's reach: a
   count that went to 0 on one device while another device added to it with a credit merges as 0-side own plus the
   credits, and is not "kept as changed".
-- **D83 A browser that cannot hold version 2 does not touch the version 2 cloud copy, and storage does not change
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D83 A browser that cannot hold version 2 does not touch the version 2 cloud copy, and storage does not change
   under a save.** (1) Where new code stays on version 1 (D64 (a) and (b): no IndexedDB, or no room for the guard
   even after D86's clearing), **that browser behaves towards the cloud as an older device does: it goes on syncing
   the old file exactly as today, every module, and never reads or writes the version 2 copy.** To the other devices
@@ -811,7 +813,7 @@ and fewer such cases** (reasons at its end).
   old device-storage copy.
 
 **Second in-house red team (2026-11-26).** Where a sentence elsewhere in this file says otherwise, D84 to D87 rule.
-- **D84 (rewritten by the third red team) An undo mark is final; a purchase chosen again gets a new id.** The
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D84 (rewritten by the third red team) An undo mark is final; a purchase chosen again gets a new id.** The
   earlier design (a rejection mark naming its question, a `prev` chain on questions and answers, marks made void by
   later answers) is **withdrawn whole**: the chain broke as soon as a later question started without it. There is
   one kind of mark, and it is never deleted: `undone[<id>]` means "the purchase with this id does not count",
@@ -827,13 +829,13 @@ and fewer such cases** (reasons at its end).
   both pairs, whole. A `held` entry is never put to the general clash dialog (D71 (2)), in this case either. **A device that loads a backup made before a later answer**
   has, after the load, the backup's pair and, by D70 (8), no answer entry that does not fit it; its next sync is a
   careful merge, the pairs differ, and **the pair is asked as a question** (it is not settled silently either way).
-- **D88 Two smaller rules.** (1) **Withdrawn (owner, twelfth round).** This point held, in three successive forms,
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D88 Two smaller rules.** (1) **Withdrawn (owner, twelfth round).** This point held, in three successive forms,
   the rules for a record of the old file inside the version 2 copy. That record is removed from the plan together
   with every re-reading of the old file (D76). The owner's overwrite of a damaged version 2 copy writes this
   device's data under a new root (D80 (3)) and reads no other file; the other devices then meet a copy that is not
   known and use the careful merge. (2) **`coll` with no base** follows the pair: when it differs the pair is held (D80 (2)), not "this device's
   until answered"; D87's wording applies with a base only.
-- **D85 "Made" and a handed-in step are refused when they would change a frozen count, with the reason. (The
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D85 "Made" and a handed-in step are refused when they would change a frozen count, with the reason. (The
   choice for the red team's finding 13.)** Freezing only the frozen ingredient's change inside one write was
   rejected: the craft would be counted and the ingredient not taken, and the answer to the open question would then
   install a count that never saw the craft; recording the missing change for later would be a second kind of pending
@@ -853,7 +855,7 @@ and fewer such cases** (reasons at its end).
   services keep theirs), so clearing prices never lets a burst of automatic requests through.** Prices are a cache: the
   screens then read "not fetched" until the next lookup. (3) The pages show how much the save, the guard and the
   price cache take (Settings, Import and backup), with "Clear saved prices".
-- **D87 The collectable count merges inside its pair.** Lists' unit for one owner and item is `{ nq, hq, coll }`.
+- **[Removed by `docs/bourse-sync-design.md` (version 6), section 20.]** **D87 The collectable count merges inside its pair.** Lists' unit for one owner and item is `{ nq, hq, coll }`.
   BY2 takes the whole unit out of LY0 and the generic rule, so it must merge all three: `nq` and `hq` by steps 1 to
   4; **`coll`, which no purchase credits, as an own part with no credits** (changed on one side, that side's; the
   same on both, that; differently on both, asked together with the pair's own-part question, this device's until
@@ -1016,7 +1018,7 @@ start is the world where the start plan spends most (tie: by name), named "No ho
 unknown. The answer is the total gil still to spend over every kept stop, or "known so far" (D53), with the stops,
 region hops, data-center hops and gil saved.
 
-**6.7 Purchases (D33, D34, D46, D47).** "Bought", "Buy part" and "Bought all here" make purchase records
+**[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **6.7 Purchases (D33, D34, D46, D47).** "Bought", "Buy part" and "Bought all here" make purchase records
 `{ o, i, q, n, of, cr, ls, t, at }` under new ids: `of` = that owner's need in Lists just before; `ls` = a 12-character
 fingerprint of the wanted items behind the need and what each asks for (`marketNeeds`' `from`, D14); `t` = the id of
 the current trip (`prefs.trip`, 8 random characters; made by the first write that needs one, inside that write: a
@@ -1061,7 +1063,7 @@ is never changed after it is written.
   until answered this device's is current. The other trip's marks and own items stay stored, shown in a closed group
   "From another device's trip (N)", never counted in this trip and never deleted by the app.
 
-**6.8 The trip's own items and the one-time copy (D10, D58).** `extra` holds items added by "Add to trip" or the copy,
+**[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** **6.8 The trip's own items and the one-time copy (D10, D58).** `extra` holds items added by "Add to trip" or the copy,
 each `{ qty, at, t }` under the key `<trip id>.<item id>.<nq|hq>` (D66; the copy below writes that key with the
 current trip's id); removed only by the player ("Remove from trip", asks first) or "New trip".
 The copy: the new Tracker, which alone can turn its entry keys into item numbers, writes on loading
@@ -1130,6 +1132,8 @@ Tracker and Atelier:
   watched items every N minutes, on any page. Turn this off under Alerts." No notification permission is asked.
 
 ## 8. The save: section `modules.bourse`, version 2, the guard, and the cloud copy
+
+**[Superseded by `docs/bourse-sync-design.md` (version 6), section 20.]** The save, merge, cloud, older-copy, guard, import and stock rules of this section (including BY0, BI1, BI2, BY2, BY3, LI6 and LI7) are replaced by `docs/bourse-sync-design.md`. What follows is kept as the record of earlier rounds.
 
 ```
 { v: 1,
@@ -1351,6 +1355,8 @@ not now) and Settings' line "Cloud sync waits for your answer" with "Answer now"
 on the states page comes from D36's helper.
 
 ## 10. Work items
+
+**Save-and-sync tests (section 20).** The save-related assertions of B3, B10, B13, B21, B23, B24, B26, B27, B28, B29 and B30 and of the "additions" blocks below are replaced by the acceptance tests T01 to T47 of `docs/bourse-sync-design.md` section 4, as its section 6 maps them. Their other assertions, and every other item, stay.
 
 **Order of running, after the gates of the ledger's "Order":** (B0 and B1 are done) B28, **B29 (released by itself)**,
 B2, B18, B3, B23, B30, B24, B26, B27, B4, B5, B16, B17, B13, B6, B19, B20, B7, B21, B25, B14, B8, B9, B15, B10, B22,
@@ -2192,6 +2198,8 @@ the item named, fails without its change and names its control).**
 
 ## 11. Risks, limits, owner questions
 
+**Save-and-sync limits (section 20).** The limits of the save, merge and cloud copy are those of `docs/bourse-sync-design.md` sections 2 (S13, "Change-log budget") and 8; earlier limit sentences about them below are history.
+
 **First thing to verify:** B28's inventory of writers at the real base: that the erase is the only older writer that
 writes over a newer save. If another is found, the version does not rise until it has its own fix and waiting time.
 Second: the create condition on the real OneDrive (section 8: who, and when). Third: one real `slim` reply for 100
@@ -2701,3 +2709,29 @@ Known limits left: what an older-app device changes after another device has upd
 that device updates; every device after the first is asked once at its first sync about what it and the copy do not
 share, and "keep" on an entry another device removed since brings it back; the tables of earlier rounds above
 describe the checkpoint as it then was and are history.
+
+## 20. The save-and-sync design adopted (2026-11-28)
+
+The owner's rounds thirteen to sixteen replaced this plan's save-and-sync part with a design written by ChatGPT: a
+history of edits with deletion records merged by causal history, a capped change log with device acknowledgements,
+stock as own part plus receipts, conditional cloud writes, the guard, and a one-time read of the old cloud file guarded
+by a free Cloudflare D1 record. It went through six versions, five in-house checks (findings in
+`docs/bourse/sync-design-redteam-1.md` to `-5.md`), and an outside review (ChatGPT in a fresh chat: FAIL, approach sound;
+Mistral: PASS; `docs/bourse-review-adjudication-7.md`). The final version 6 is `docs/bourse-sync-design.md`. The
+requester's fix check confirmed that each of the 18 findings of the outside review has a design change and a failing test.
+
+**What it replaces**, as its section 6 maps them:
+- decisions D19, D20, D32 to D34, D46 to D48 and D60 to D67 (marked superseded above);
+- decisions D70 to D76, D78 to D85, D87 and D88 (marked removed above);
+- sections 6.7, 6.8 and 8, with rules BY0, BI1, BI2, BY2, BY3, LI6 and LI7;
+- the save-related tests of B3, B10, B13, B21, B23, B24, B26 to B30 and the additions blocks (replaced by its T01 to T47).
+
+**What stays:** D23's share order, D58's normal-quality copy and D59's build pins; D68, D69, D77 and D86 with the
+adjustments its section 6 states; every decision, item and test outside the save-and-sync part; the owner's order (the
+one-look rules, the module moves, then the Bourse, with the erase fix first and released alone, and 30 days before the
+version rises).
+
+**Scope note for the build:** the design changes how every module saves and syncs (Tracker, Lists, Atelier,
+Submersibles, Settings), not only the Bourse. It needs the owner's one-time D1 setup (its "Owner setup") when the build
+reaches it, and live checks of D1, OneDrive and drive identities before the version-rising release.
+

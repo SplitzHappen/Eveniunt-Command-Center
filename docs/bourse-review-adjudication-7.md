@@ -56,3 +56,26 @@ ChatGPT's section 5 table of sharper test assertions is accepted as part of the 
 
 The final revision is `ASG-20261128-bourse-sync-design-chatgpt-006`. After it, the requester verifies each fix is in
 the text, which is a fix check, not a new red-team round. The design is then merged into the plan.
+
+## Fix check of version 6 and merge (2026-11-28)
+
+The source is assignment `ASG-20261128-bourse-sync-design-chatgpt-006` (final head `25d99cd`, results commit `d580dc3`,
+package `0f96596`), byte-identical to what was dispatched. Version 6 (473 lines) has one row for each of H-1 to H-7,
+N-1 to N-9, M-1 and M-2, each naming the design change and the test that must fail without it.
+
+The requester checked that the fixes appear in the text itself:
+- N-5: the whole `moved` record is carried in guarded per-device roots.
+- N-3: the reader's 64 MiB expanded limit is enforced before publishing.
+- N-8: the helper shutdown is in the owner setup and tested in T42.
+- N-9: the displayed credit mode is bound to the command.
+- H-4: Cancel applies nothing.
+- H-6 and M-1: a fixed 120-second window.
+- N-4: the proposal and the imported marker go in one conditional write.
+- N-1 and N-2: page-visit Undo and local checkpoints.
+- The new tests T45 to T47 exist.
+
+This was a fix check, not a new review round.
+
+Version 6 replaces `docs/bourse-sync-design.md` and is merged into the plan: `docs/bourse-spec.md` gains a binding-ledger
+line and section 20, the replaced decisions are marked superseded or removed, and banners are added on sections 6.7,
+6.8, 8, 10 and 11.
