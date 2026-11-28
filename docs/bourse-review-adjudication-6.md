@@ -150,3 +150,21 @@ It adds a "Change-log budget":
 
 The writer's estimate is about 42 days of retained log at 100 edits a day (unmeasured). Stock provenance is kept
 through a cut (F-1). No new owner choice. A fresh in-house check follows, then the outside review the owner chose.
+
+## In-house check of version 4 (2026-11-28)
+
+A fresh reviewer agent found no blocker, 2 major and 4 minor faults (`docs/bourse/sync-design-redteam-4.md`). F-1 to
+F-10 are closed (one caveat each on F-4 and F-10), no trim was found that changes tracked data, and the D1 statements
+behave as designed in local SQLite.
+
+The two major faults:
+- **G-1:** a device never acknowledges its own uploads, so the main editing device stays "behind" and log dropping by
+  acknowledgement never happens; "behind" also has two definitions.
+- **G-2:** a device with no local changes that falls behind the floor faces an item-by-item review, where today it
+  merges automatically.
+
+Both have local fixes. Serious faults across the design's versions: 6, 2, 2, 2.
+
+**Ruling:** all accepted. Under the owner's fourteenth round (ChatGPT revises) they go to ChatGPT as
+`ASG-20261128-bourse-sync-design-chatgpt-005`. The outside review the owner chose (ChatGPT in a fresh chat and
+Mistral) follows the next in-house check that finds no serious fault.
