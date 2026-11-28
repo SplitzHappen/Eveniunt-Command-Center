@@ -1,9 +1,21 @@
 # Where the Command Center stands
 
-Last updated: 2026-11-23.
+Last updated: 2026-11-24.
 
 ## Recently shipped
 
+- **One look, step 2: the shared foundation** (shipped 2026-11-24, merged into `main` as `3f6c3fe`; this entry still read "waiting" until the Bourse plan noticed; pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
+  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
+  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
+  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
+  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
+  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
+  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
+  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
+  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
+  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
+  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
+  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone.
 - **Lists, the crafting planner (blueprint phase 3; shipped 2026-11-24, owner's `ship`; pull request 7, merge `df139ee`).** The crafting planner that was taken back on
   2026-11-23 is rebuilt under the house style `docs/design-rules.md` (look spec `docs/lists-look-spec.md`; mock-ups
   `docs/lists-redesign/after/`; the screens as built, 1,440 px light and 360 px dark, are in
@@ -129,22 +141,79 @@ Last updated: 2026-11-23.
 
 ## Built, waiting for the owner's `ship`
 
-- **One look, step 2: the shared foundation** (pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
-  step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
-  from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
-  module's own settings read "Tracker settings" and "Atelier settings", and the Tracker's own "Menu" reads "Index". One
-  shared stylesheet (`tracker/src/app/one-look.css`, every class `ol-`) in the three builds, with the book-style section
-  title, the Solve block, fields, buttons, the state block, the index line and the answer band for new modules. The
-  Atelier now follows the app-wide theme choice (it read only its own stored choice; its own record is kept and used
-  when no app-wide choice exists), and Electrope Skyline is defined once, in the Atelier's list of 21 themes. The drift
-  check C196 and a unit test fail when a page's header, title, Solve block or fields differ or a module redefines a
-  shared token; the design rules carry the owner's choices (M1, M6, C6, T1, T5, A1). The bodies of existing screens
-  are unchanged and move later, one pull request each. Measured: full check 203 of 203 at `324f84c` (C26b not run);
-  unit and browser tests and the hosted checks pass at `e14c747`. **Not tested:** Firefox, Safari, a real phone.
+Nothing.
 
 ## Next
 
-0. **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
+0a. **The Bourse, the market module (blueprint phase 4; plan on pull request 10, branch `claude/loving-lamport-iy3cg1`).**
+   Interviewed (three rounds, `docs/bourse-questions.md`), researched (`docs/bourse-research.md`), drawn twice (look v1,
+   then look v2 toward Submersibles, `docs/bourse-look-spec.md`, `docs/bourse/`), build spec with 16 work items and a
+   same-family red team (`docs/bourse-spec.md`). **Paused by the owner (2026-11-25) until one look for the whole app is
+   settled** (item 0): the Bourse is then built straight into that look. No module code.
+
+0. **One look for the whole app: step 3, settle the one look (owner, 2026-11-25).** The owner sees every module still
+   looking like a different app (the bodies never moved after the shared foundation). Decided: pause the Bourse; draw screens both ways for the owner to pick from (done: `docs/one-look/v3/`, four
+   candidates); **the owner chose B, Atelier-led** (book chapters, one ledger per section, leaders, figures at reading size,
+   Submersibles' state colours, the answer band's blocks shown on the phone); then redraw every screen in
+   the chosen look, change the house rules to match (the owner has since chosen dark capital section bars and the
+   answer band's blocks on the phone, which change the 2026-11-24 choices), and move each module in its own pull request.
+   **2026-11-25, owner: the Bourse in look B is approved; next is a pull request that writes look B into the house
+   rules with its checks, then one pull request per module (Lists, Atelier, Tracker, Home and Settings, Submersibles),
+   the Bourse last; an outside review (ChatGPT and Mistral) of the Bourse plan and look comes before any build, prompt
+   `docs/bourse-review-prompt.md`, filed 2026-11-25 in the private Continuity repository as
+   `ASG-20261125-bourse-plan-review-chatgpt-001` and `ASG-20261125-bourse-plan-review-mistral-001` (candidate: pull
+   request 10 at `0df8781`); returned 2026-11-25: ChatGPT FAIL (2 blockers, 14 major), Mistral PASS (minor only); every finding accepted
+   (`docs/bourse-review-adjudication.md`); spec and look corrected; owner's sixth round recorded; work items B0 and B1
+   (facts only) ran and are committed (B0 report `docs/bourse/b0-report.md`; B1 saved replies and test); the second
+   outside review was filed 2026-11-25 as `ASG-20261125-bourse-plan-review-chatgpt-002` and
+   `ASG-20261125-bourse-plan-review-mistral-002` (candidate: pull request 10 at `f6610c6`); returned 2026-11-26:
+   ChatGPT FAIL again (1 blocker: the optional "also add to I have in Lists" setting can lose a purchase when two
+   devices sync; 16 major), Mistral PASS (minor only); every finding accepted except one part of the tax finding,
+   rejected on the 139 saved listings (`docs/bourse-review-adjudication-2.md`); look, examples and saved replies
+   corrected (`25bd63f`); spec corrected by the planning agent (29 work items, new section 16, same-family and
+   unreviewed). Owner, round seven (2026-11-26): build the rule that keeps the Lists count and the purchases together
+   (question 14 (a)); run a third outside review round on the corrections (question 15 (a)), filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-003` and `ASG-20261126-bourse-plan-review-mistral-003`. The Bourse stays
+   paused until the plan passes; the one-look rules pull request can go on meanwhile. Returned 2026-11-26: ChatGPT FAIL
+   (3 blockers: an older Tracker's "Erase everything" wipes every module of a version-2 save, confirmed in
+   `storage.js`; the credit rule's limits; the cloud overwrite's approval), Mistral PASS on two claims found wrong in
+   the code (`docs/bourse-review-adjudication-3.md`). Owner, round eight: keep building the credit rule; the erase fix
+   is the Bourse work's first step (B29, 30 days before the version rises); a fourth round with both reviewers. Look
+   corrected (`27d2897`); spec corrected (31 work items, section 17, same-family and unreviewed); fourth round filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-004` and `ASG-20261126-bourse-plan-review-mistral-004`; returned 2026-11-26:
+   ChatGPT FAIL (4 blockers, 9 major), Mistral PASS (`docs/bourse-review-adjudication-4.md`). Owner, round nine: fix
+   everything with the scope unchanged; a fifth round with both reviewers. Look corrected (`fb378e4`); spec corrected
+   (D64 to D70, section 18, same-family and unreviewed); fifth round filed as
+   `ASG-20261126-bourse-plan-review-chatgpt-005` and `ASG-20261126-bourse-plan-review-mistral-005`; returned 2026-11-26:
+   ChatGPT FAIL (2 blockers, both in the Lists credit setting; 8 major), Mistral PASS
+   (`docs/bourse-review-adjudication-5.md`). Owner, round ten: keep the setting; a sixth round with both reviewers.
+   Look corrected (`80ac214`); spec corrected (D71 to D79, section 19, same-family and unreviewed); the sixth round was
+   prepared but not filed. Before it: seven in-house red teams (owner's prompt; owner rounds eleven and twelve: keep
+   checking, then simplify the move to the new cloud file); serious faults 8, 7, 4, 3, 3, 3, 2. Owner, round thirteen
+   (2026-11-27): ChatGPT redesigns the save-and-sync part, filed as `ASG-20261127-bourse-sync-design-chatgpt-001`; delivered 2026-11-27
+   (`docs/bourse-sync-design.md`: a history of edits with deletion records); in-house red team: sound in principle,
+   6 major at the edges (`docs/bourse-review-adjudication-6.md`). Owner, round fourteen: adopt it, ChatGPT revises
+   (`ASG-20261127-bourse-sync-design-chatgpt-002`); low-storage browsers save locally only; the one-time read is
+   guarded by a free Cloudflare D1 record on the sign-in helper (the owner creates the database once). Note: the design
+   changes every module's save and sync, a larger build than the Bourse itself. Version 2 delivered 2026-11-27; its
+   in-house check found 2 major, 7 minor (`docs/bourse/sync-design-redteam-2.md`); revision 3 filed as
+   `ASG-20261127-bourse-sync-design-chatgpt-003`; delivered 2026-11-27 (smaller; E-2 to E-8 closed); its check found 2
+   major, 8 minor (`docs/bourse/sync-design-redteam-3.md`). Owner, round fifteen: a capped change log plus dropping what
+   every device has passed (tracked data never trimmed); the outside review goes to ChatGPT in a fresh chat and Mistral.
+   Revision 4 filed as `ASG-20261127-bourse-sync-design-chatgpt-004`; delivered 2026-11-28 (capped change log); its check
+   found 2 major, 4 minor (`docs/bourse/sync-design-redteam-4.md`); revision 5 filed as
+   `ASG-20261128-bourse-sync-design-chatgpt-005`; delivered 2026-11-28; its check found 2 major, 5 minor
+   (`docs/bourse/sync-design-redteam-5.md`). Owner, round sixteen: outside review now (ChatGPT in a fresh chat and
+   Mistral, with H-1 to H-7 attached), then one final revision; filed as
+   `ASG-20261128-bourse-sync-design-review-chatgpt-001` and `-mistral-001`; returned 2026-11-28: ChatGPT FAIL (approach
+   sound; H-1 to H-7 confirmed; 9 new, 5 major), Mistral PASS (2 new, minor) (`docs/bourse-review-adjudication-7.md`).
+   Final revision filed as `ASG-20261128-bourse-sync-design-chatgpt-006`; version 6 delivered and fix-checked 2026-11-28
+   and merged into the plan (`docs/bourse-spec.md` section 20). **The Bourse plan is complete on paper.** Next, per the
+   owner's order: the one-look rules pull request, the module moves, then the Bourse build (erase fix first), which
+   now includes rebuilding every module's save and sync. Pull request 10 awaits the owner's `ship` as a documents-only
+   change.**
+   Earlier history of this item follows.
+   **One look for the whole app** (owner, 2026-11-24: "this is ONE app so all the aesthetics of everything need to look
    cohesive"). An audit found four styles and four different page headers across Home, Tracker, Atelier,
    Submersibles, Lists and Settings, and the Atelier ignoring the chosen game theme. Step 1, mock-ups of the six
    screens in one shared style (`docs/one-look-spec.md`, `docs/one-look/`), is done and the owner chose, 2026-11-24:
