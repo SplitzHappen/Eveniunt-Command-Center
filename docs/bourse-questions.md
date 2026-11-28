@@ -301,3 +301,9 @@ marked "default (not asked)"; the owner can change any of them.
 | --- | --- |
 | The design's deletion proof never shrinks, so cloud sync would stop for good after about 1.5 years of heavy use (estimate) | The owner asked: "cant we limit the number of saved history files instead? A completionist tracker that deletes everything sorta doesnt work you know..." Clarified: only the change log is trimmed, never the tracked data. Answer: **a cap on the change log, plus dropping log entries every known device has already synced past.** A device away longer than the kept log gets the "compare and ask" review, never silent changes. Not chosen: the cap alone; only "all devices saw it"; a manual "start fresh history" button; keeping sync's hard stop. |
 | Who reviews the revised design | **ChatGPT in a fresh chat, plus Mistral** (ChatGPT reviewing its own design is not independent; the requester's in-house checks stay alongside). |
+
+## Sixteenth round (owner, 2026-11-28), after the in-house check of the design's version 5
+
+| Question (`docs/bourse-review-adjudication-6.md`, last section) | Answer |
+| --- | --- |
+| How to finish the save-and-sync design (2 narrow serious faults at each of the last four checks) | **Outside review now, then one final fix:** version 5 goes to ChatGPT in a fresh chat and to Mistral together with the in-house findings H-1 to H-7; they judge the design and confirm or reject the findings; ChatGPT then makes one final revision covering everything, and it goes into the plan. Not chosen: another ChatGPT revision first; the requester editing ChatGPT's design; pausing. |

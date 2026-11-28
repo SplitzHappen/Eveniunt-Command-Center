@@ -191,3 +191,7 @@ A fresh reviewer agent found no blocker, 2 major and 5 minor faults, each a loca
 
 Serious faults across the design's versions: 6, 2, 2, 2, 2. They narrow each round, and every fix is a local edit. The
 owner is asked how to finish.
+
+**Owner, sixteenth round:** the outside review now, with H-1 to H-7 attached, then one final revision. Filed as
+`ASG-20261128-bourse-sync-design-review-chatgpt-001` and `ASG-20261128-bourse-sync-design-review-mistral-001`.
+
