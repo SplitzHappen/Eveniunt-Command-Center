@@ -1,9 +1,23 @@
 # Where the Command Center stands
 
-Last updated: 2026-11-24.
+Last updated: 2026-11-28.
 
 ## Recently shipped
 
+- **The Bourse plan (blueprint phase 4; shipped 2026-11-28, owner's `ship`; pull request 10, squash merge `b4a8490`).**
+  Documents, static mock-ups and saved price-site replies with their test (`tracker/tests/bourse-replies.test.js`,
+  12 of 12, in `test:unit`); no module code. Sixteen owner rounds (`docs/bourse-questions.md`), research
+  (`docs/bourse-research.md`), look B for the Bourse (`docs/bourse-look-spec.md`, `docs/bourse/`, 44 pictures), and the
+  build spec (`docs/bourse-spec.md`, 31 work items). Its save-and-sync part is **`docs/bourse-sync-design.md` version
+  6**, written by ChatGPT at the owner's request: a history of edits with deletion records merged across devices, a
+  capped change log (tracked data never trimmed), stock as own part plus receipts, conditional OneDrive writes, a guard
+  copy against older app versions, and a one-time read of the old cloud file guarded by a free Cloudflare D1 record
+  (owner setup steps in the design). Reviewed by five outside rounds on the earlier plan, twelve in-house checks and an
+  outside review of the design (ChatGPT FAIL then fixed, Mistral PASS; rulings `docs/bourse-review-adjudication.md` to
+  `-7.md`); the final version was fix-checked, not reviewed again. Checks green at `4d40d64` before the merge.
+  **Not tested:** live D1, OneDrive's create and replace behaviour, drive-id formats, real sizes and phone speed (all
+  gated before the version-rising release). **Scope:** the design rebuilds every module's save and sync, a larger build
+  than the Bourse itself.
 - **One look, step 2: the shared foundation** (shipped 2026-11-24, merged into `main` as `3f6c3fe`; this entry still read "waiting" until the Bourse plan noticed; pull request 8; spec `docs/one-look-foundation-spec.md`; mock-ups of
   step 1 in `docs/one-look/`). One header on all six pages (Home, Settings, Tracker, Atelier, Submersibles, Lists), built
   from one helper, with a tool slot that keeps the Tracker's search and clock and the Atelier's language menu; the
@@ -145,11 +159,14 @@ Nothing.
 
 ## Next
 
-0a. **The Bourse, the market module (blueprint phase 4; plan on pull request 10, branch `claude/loving-lamport-iy3cg1`).**
-   Interviewed (three rounds, `docs/bourse-questions.md`), researched (`docs/bourse-research.md`), drawn twice (look v1,
-   then look v2 toward Submersibles, `docs/bourse-look-spec.md`, `docs/bourse/`), build spec with 16 work items and a
-   same-family red team (`docs/bourse-spec.md`). **Paused by the owner (2026-11-25) until one look for the whole app is
-   settled** (item 0): the Bourse is then built straight into that look. No module code.
+0a. **The Bourse: build (blueprint phase 4).** The plan shipped on 2026-11-28 (see Recently shipped). The build
+   follows the owner's order: after item 0's one-look rules pull request and the module moves, starting with B28 (the
+   baseline at the real start) and B29 (the old Tracker's "Erase everything" fix, released alone, 30 days before the
+   save version rises). The save-and-sync work follows `docs/bourse-sync-design.md` section 4 (T01 to T47); the owner
+   creates the D1 database when the build reaches it. Open side question for the owner: a probable fault in today's
+   app (with no characters, a sync from Settings or Home may replace unsynced Lists, Atelier and Submersibles changes
+   with the cloud's; mechanism confirmed in `settings.js` 294 and `merge.js` 38 to 40, not run), offered as its own fix.
+   The earlier history of this item is in this file's history and in `docs/bourse-review-adjudication.md` to `-7.md`.
 
 0. **One look for the whole app: step 3, settle the one look (owner, 2026-11-25).** The owner sees every module still
    looking like a different app (the bodies never moved after the shared foundation). Decided: pause the Bourse; draw screens both ways for the owner to pick from (done: `docs/one-look/v3/`, four
