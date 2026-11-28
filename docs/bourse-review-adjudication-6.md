@@ -180,3 +180,14 @@ package `b4222c4`), byte-identical to what was dispatched. The complete revision
   (G-2).
 
 No new owner choice. A fresh in-house check follows.
+
+## In-house check of version 5 (2026-11-28)
+
+A fresh reviewer agent found no blocker, 2 major and 5 minor faults, each a local text edit
+(`docs/bourse/sync-design-redteam-5.md`).
+- **Closed:** G-3 to G-6, with the SQL checked in local SQLite. G-2 holds.
+- **H-1 (major):** an open question on the editing device freezes its receipt, which brings back the G-1 problem.
+- **H-2 (major):** a lost first registration makes a device "unknown" and lets the log drop what it needs.
+
+Serious faults across the design's versions: 6, 2, 2, 2, 2. They narrow each round, and every fix is a local edit. The
+owner is asked how to finish.
