@@ -168,3 +168,15 @@ Both have local fixes. Serious faults across the design's versions: 6, 2, 2, 2.
 **Ruling:** all accepted. Under the owner's fourteenth round (ChatGPT revises) they go to ChatGPT as
 `ASG-20261128-bourse-sync-design-chatgpt-005`. The outside review the owner chose (ChatGPT in a fresh chat and
 Mistral) follows the next in-house check that finds no serious fault.
+
+## Version 5 of the design (2026-11-28)
+
+Source: assignment `ASG-20261128-bourse-sync-design-chatgpt-005` (final head `c46c3f4`, results commit `3f2c21b`,
+package `b4222c4`), byte-identical to what was dispatched. The complete revision (413 lines, 110,851 bytes) replaces
+`docs/bourse-sync-design.md`, and its section 5 has a row for each of G-1 to G-6. The main changes:
+- A device acknowledges its own installed upload, and "behind" is judged only by the verified installed local point
+  (G-1).
+- A device with no local changes on a group gets one labelled update for it, with removals under the normal confirmation
+  (G-2).
+
+No new owner choice. A fresh in-house check follows.
