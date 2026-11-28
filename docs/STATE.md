@@ -159,7 +159,8 @@ Nothing.
 
 ## Next
 
-0a. **The Bourse: build (blueprint phase 4).** The plan shipped on 2026-11-28 (see Recently shipped). The build
+0a. **The Bourse: build (blueprint phase 4).** The plan shipped on 2026-11-28 (see Recently shipped; its records
+   pull request 13 was merged as `7e54a38` and the website published from it). The build
    follows the owner's order: after item 0's one-look rules pull request and the module moves, starting with B28 (the
    baseline at the real start) and B29 (the old Tracker's "Erase everything" fix, released alone, 30 days before the
    save version rises). The save-and-sync work follows `docs/bourse-sync-design.md` section 4 (T01 to T47); the owner
@@ -168,12 +169,25 @@ Nothing.
    with the cloud's; mechanism confirmed in `settings.js` 294 and `merge.js` 38 to 40, not run), offered as its own fix.
    The earlier history of this item is in this file's history and in `docs/bourse-review-adjudication.md` to `-7.md`.
 
-0. **One look for the whole app: step 3, settle the one look (owner, 2026-11-25).** The owner sees every module still
+0. **One look, step 4: look B written into the house rules (pull request on `claude/one-look-rules`, 2026-11-28;
+   waiting for the owner's `ship`).** `docs/design-rules.md` now carries look B, Atelier-led: C6 restated with its limits
+   (book chapters, never a dark capital bar; the owner confirmed on 2026-11-28 that the round-three dark bars were
+   withdrawn with look B), C7 one ledger per section with leaders, C8 the answer band and its blocks, T7 figures at
+   reading size, K9 Submersibles' state colours in every module, and the phone exception P3a (with the answer band's
+   blocks: first row at most 273 px under the header, 3 rows in view). Browser checks C197 to C202 measure the approved
+   look-B pages (`docs/bourse/mock/`) at 1440 and 360 in two themes and must each fail a deliberately broken copy; a unit
+   test in `tracker/tests/one-look.test.js` ties each rule to its check and the shared stylesheet to the limits. No
+   module screen changed. Open for the Submersibles move: whether the Board's timeline lanes become ledgers (asked in its
+   look spec). Next, in the owner's order: Lists, Atelier, Tracker, Home and Settings, Submersibles (one pull request
+   each; each adds its screens to C197 to C202), then the Bourse build (item 0a).
+   Earlier history of this item follows.
+   **One look for the whole app: step 3, settle the one look (owner, 2026-11-25).** The owner sees every module still
    looking like a different app (the bodies never moved after the shared foundation). Decided: pause the Bourse; draw screens both ways for the owner to pick from (done: `docs/one-look/v3/`, four
    candidates); **the owner chose B, Atelier-led** (book chapters, one ledger per section, leaders, figures at reading size,
    Submersibles' state colours, the answer band's blocks shown on the phone); then redraw every screen in
-   the chosen look, change the house rules to match (the owner has since chosen dark capital section bars and the
-   answer band's blocks on the phone, which change the 2026-11-24 choices), and move each module in its own pull request.
+   the chosen look, change the house rules to match (the owner has since chosen the answer band's blocks on the phone,
+   which changes the 2026-11-23 phone limit; the round-three dark capital bars were withdrawn with look B, confirmed
+   2026-11-28), and move each module in its own pull request.
    **2026-11-25, owner: the Bourse in look B is approved; next is a pull request that writes look B into the house
    rules with its checks, then one pull request per module (Lists, Atelier, Tracker, Home and Settings, Submersibles),
    the Bourse last; an outside review (ChatGPT and Mistral) of the Bourse plan and look comes before any build, prompt
